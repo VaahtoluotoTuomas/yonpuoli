@@ -1,0 +1,9 @@
+# machine-specific (CLAUDE.md: no absolute paths in the repo)
+config.scd
+tests/dev_paths.scd
+tests/sclang_conf_dev.yaml
+
+# audio material and output
+samples/
+recordings/
+tests/tmp/

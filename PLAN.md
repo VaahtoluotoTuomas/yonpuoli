@@ -8,10 +8,12 @@ Milestone-mappaus: **M1 = vaiheet 0–4 · M2 = vaiheet 5–6 · M3 = vaihe 7**.
 
 - Checkboxin saa ruksata vain kun vaiheen kaikki testimarkerit ovat vihreitä **ja**
   mahdollinen kuuntelu-gate on käyttäjän hyväksymä.
-- Jokaisen `classes/`-muutoksen jälkeen ajetaan CLAUDE.md:n testikomennot järjestyksessä:
-  1. `"<sclang.exe>" -i none tests/compile_check.scd` → `CQ_COMPILE_OK`
-  2. `"<sclang.exe>" -i none tests/run_all.scd` → `CQ_TESTS_PASSED`
-  3. `"<sclang.exe>" -i none tests/nrt_safety.scd` → `CQ_SAFETY_PASSED`
+- Jokaisen `classes/`-muutoksen jälkeen ajetaan CLAUDE.md:n testikomennot järjestyksessä
+  (aina lipulla `-l tests/sclang_conf_dev.yaml`, jotta include-polut eivät riipu
+  käyttäjän globaalista confista):
+  1. `"<sclang.exe>" -l tests/sclang_conf_dev.yaml -i none tests/compile_check.scd` → `CQ_COMPILE_OK`
+  2. `"<sclang.exe>" -l tests/sclang_conf_dev.yaml -i none tests/run_all.scd` → `CQ_TESTS_PASSED`
+  3. `"<sclang.exe>" -l tests/sclang_conf_dev.yaml -i none tests/nrt_safety.scd` → `CQ_SAFETY_PASSED`
   4. DSP-muutoksissa lisäksi `tests/nrt_hold_integrity.scd` → `CQ_HOLD_OK`
 - Ennen jokaista kuuntelu-gatea: muistutus käyttäjälle **Ctrl+Shift+L** (class-lib
   recompile IDE:ssä), kun `classes/` on muuttunut.
@@ -27,29 +29,33 @@ Milestone-mappaus: **M1 = vaiheet 0–4 · M2 = vaiheet 5–6 · M3 = vaihe 7**.
 ## Vaihe 0 — Perusta ja testi-infra (ei ääntä)
 
 ### Toteutus
-- [ ] Kysy käyttäjältä SuperColliderin asennuspolku → `tests/dev_paths.scd` (gitignored)
-- [ ] `.gitignore` — `config.scd`, `tests/dev_paths.scd`, `samples/`, `recordings/`
-- [ ] `config.example.scd` — SPEC §7:n template
-- [ ] `config.scd` — käyttäjän kanssa: ASIO-laitenimi, in/out-kanavat, 16n-asetukset
-- [ ] `classes/CQSpec.sc` — **kaikki** SPEC §5:n parametrit (nimi/range/curve/default/
+- [x] Kysy käyttäjältä SuperColliderin asennuspolku → `tests/dev_paths.scd` (gitignored)
+- [x] `.gitignore` — `config.scd`, `tests/dev_paths.scd`, `tests/sclang_conf_dev.yaml`,
+      `samples/`, `recordings/`, `tests/tmp/`
+- [x] `config.example.scd` — SPEC §7:n template
+- [x] `config.scd` — luotu oletuksilla; ASIO-laitenimi asetetaan vaiheen 1
+      kuuntelu-gaten yhteydessä (`device: nil` = järjestelmän oletus siihen asti)
+- [x] `classes/CQSpec.sc` — **kaikki** SPEC §5:n 79 parametria (nimi/range/curve/default/
       lag/16n-slot) + `*clamp`, `*default`; ainoa paikka jossa rangeja on
-- [ ] `classes/CQConfig.sc` — configin lataus, oletusten täyttö, validointi,
+- [x] `classes/CQConfig.sc` — configin lataus, oletusten täyttö, validointi,
       informatiivinen hard-fail
-- [ ] Headless-ajojen includePaths-järjestely (`classes/` sclangin nähtäville,
-      ARCHITECTURE §10)
-- [ ] `tests/compile_check.scd` — luokat + (myöhemmin) SynthDefit kääntyvät ilman
+- [x] Headless-ajojen includePaths-järjestely: generoitu `tests/sclang_conf_dev.yaml`
+      (gitignored), ajot `-l tests/sclang_conf_dev.yaml` -lipulla (ARCHITECTURE §10)
+- [x] `tests/compile_check.scd` — luokat + (myöhemmin) SynthDefit kääntyvät ilman
       serveriä → `CQ_COMPILE_OK`
-- [ ] `tests/logic_tests.scd` — `CQSpecTest` (clamp-fuzzaus: NaN/inf/nil/Symbol/string),
-      `CQConfigTest`
-- [ ] `tests/run_all.scd` — UnitTest-runner → `CQ_TESTS_PASSED` / `CQ_TESTS_FAILED`
+- [x] `tests/classes/CQSpecTest.sc` + `tests/classes/CQConfigTest.sc` — UnitTest-luokat
+      (clamp-fuzzaus: NaN/inf/nil/Symbol/string; config-validointi). Huom: sclang-luokat
+      voivat asua vain include-polun `.sc`-tiedostoissa, siksi ei `logic_tests.scd`:tä
+- [x] `tests/run_all.scd` — UnitTest-runner → `CQ_TESTS_PASSED` / `CQ_TESTS_FAILED`
 
 ### Testit
-- [ ] `CQ_COMPILE_OK`
-- [ ] `CQ_TESTS_PASSED`
+- [x] `CQ_COMPILE_OK` (2026-07-15)
+- [x] `CQ_TESTS_PASSED` (884 assertiota, 0 virhettä, 2026-07-15)
 
 ### Käyttäjä-gate (ei kuuntelua)
-- [ ] Käyttäjä lisää `classes/` IDE:n `sclang_conf.yaml`:n includePathsiin,
-      Ctrl+Shift+L → luokat kääntyvät IDE:ssä ilman virheitä
+- [x] Käyttäjä lisää `classes/` JA `tests/classes/` IDE:n `sclang_conf.yaml`:n
+      includePathsiin, Ctrl+Shift+L → luokat kääntyvät IDE:ssä ilman virheitä
+      (OK 2026-07-15: `CQSpec.specs.size` → 79 IDE:ssä; vaati SC:n uudelleenkäynnistyksen)
 
 ---
 

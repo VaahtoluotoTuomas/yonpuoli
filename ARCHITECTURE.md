@@ -51,7 +51,9 @@ cocoquantus-sc/
 └── tests/
     ├── compile_check.scd       // headless: prints CQ_COMPILE_OK, exit code
     ├── run_all.scd             // UnitTest runner: prints CQ_TESTS_PASSED / _FAILED
-    ├── logic_tests.scd         // CQSpecTest, CQMatrixTest, CQSnapshotTest, CQConfigTest
+    ├── classes/                // UnitTest classes (CQSpecTest, CQMatrixTest, CQSnapshotTest,
+    │                           //   CQConfigTest) — sclang can only define classes in .sc
+    │                           //   files on an include path, not in .scd scripts
     ├── nrt_safety.scd          // NRT worst-case render + analysis: CQ_SAFETY_PASSED
     ├── nrt_hold_integrity.scd  // SPEC A4/A5 renders
     └── manual_checklist.md     // SPEC M1–M8 listening tests
@@ -321,7 +323,7 @@ its last line and sets exit code.
 | Script | What | Marker |
 |---|---|---|
 | `tests/compile_check.scd` | class lib compiles, all SynthDefs `.add` without error (no server boot — `SynthDef(...).asBytes` suffices) | `CQ_COMPILE_OK` |
-| `tests/run_all.scd` | UnitTests: `CQSpecTest` (clamp fuzzing incl. NaN/inf/nil/Symbol), `CQMatrixTest` (name↔index, weight bounds, shake determinism w/ seed), `CQSnapshotTest` (roundtrip equality, malformed-file rejection), `CQConfigTest` | `CQ_TESTS_PASSED` |
+| `tests/run_all.scd` | UnitTests (classes in `tests/classes/*.sc`): `CQSpecTest` (clamp fuzzing incl. NaN/inf/nil/Symbol), `CQMatrixTest` (name↔index, weight bounds, shake determinism w/ seed), `CQSnapshotTest` (roundtrip equality, malformed-file rejection), `CQConfigTest` | `CQ_TESTS_PASSED` |
 | `tests/nrt_safety.scd` | NRT render (scsynth non-realtime, no audio device): worst-case preset (SPEC A3) 90 s → read file, assert peak ≤ −0.75 dBFS, no NaN, |DC| ≤ 0.02 | `CQ_SAFETY_PASSED` |
 | `tests/nrt_hold_integrity.scd` | SPEC A4 (lossless hold under speed sweep, correlation ≥ 0.999) and A5 (unity looper energy) | `CQ_HOLD_OK` |
 | `tests/manual_checklist.md` | SPEC M1–M8 — human ears only | — |
@@ -349,9 +351,11 @@ the real preset data — the safety proof covers the actual shipped graph.
   (document exact steps in README for Windows: `%LOCALAPPDATA%\SuperCollider\sclang_conf.yaml`).
   After editing `classes/*.sc`, the IDE needs a class-lib recompile (Ctrl+Shift+L);
   headless test runs always compile fresh.
-- Headless runs (Claude Code): `"<sclang.exe path>" -i none <script>` with the repo
-  conf so includePaths resolve; sclang path stored in a dev-local file
-  (`tests/dev_paths.scd`, gitignored) after first session with the user.
+- Headless runs (Claude Code):
+  `"<sclang.exe path>" -l tests/sclang_conf_dev.yaml -i none <script>` — the dev conf
+  (gitignored, machine-specific) adds `<repo>/classes` and `<repo>/tests/classes` to
+  includePaths so runs never depend on the user's global conf; sclang path stored in
+  a dev-local file (`tests/dev_paths.scd`, gitignored) after first session with the user.
 - NRT needs `scsynth.exe` (same install dir); no audio device required.
 
 ## 11. Extension points (explicitly out of v1)
