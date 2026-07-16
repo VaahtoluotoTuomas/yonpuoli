@@ -4,10 +4,10 @@ Vaiheistettu checklist. Toimii CLAUDE.md:n milestone-checklistinä (TODO.md:n ro
 Normatiiviset lähteet: SPEC.md (käyttäytyminen), ARCHITECTURE.md (rakenne).
 Milestone-mappaus: **M1 = vaiheet 0–4 · M2 = vaiheet 5–6 · M3 = vaihe 7**.
 
-**Tilanne 2026-07-16:** vaiheet 0–2 valmiit ja hyväksytty (`b03692b`, `a7c278b`,
-`b7cb33a` + palautekorjaukset). **Vaihe 3 (Quantussy) toteutettu, kaikki neljä
-testimarkeria vihreitä 2026-07-16 — KUUNTELU 3 -gate odottaa käyttäjää**
-(skripti: `tests/manual_checklist.md` M3; muista Ctrl+Shift+L ensin).
+**Tilanne 2026-07-16:** vaiheet 0–3 valmiit ja hyväksytty (`b03692b`, `a7c278b`,
+`b7cb33a` + palautekorjaukset, `7f890d4`). **Vaihe 3 (Quantussy) hyväksytty
+2026-07-16** (KUUNTELU 3 läpi, `tests/manual_checklist.md` M3 ruksattu).
+**Seuraavaksi vaihe 4 (reititysmatriisi + presetit) → M1 valmis.**
 
 ## Läpileikkaavat säännöt
 
@@ -199,14 +199,14 @@ testimarkeria vihreitä 2026-07-16 — KUUNTELU 3 -gate odottaa käyttäjää**
       `CQ_HOLD_OK` (varmuudeksi, coco-DSP ennallaan) (2026-07-16)
 
 ### KUUNTELU 3 — Quantussy-tuntuma
-- [ ] `CQ.set(\coco1SlotQ, 1)` → castle 5 kuuluu coco1:n läpi
-- [ ] (a) qChaos-sweep 0→1 qFreq 4:llä: stable → vibrato → stepped wander →
+- [x] `CQ.set(\coco1SlotQ, 1)` → castle 5 kuuluu coco1:n läpi
+- [x] (a) qChaos-sweep 0→1 qFreq 4:llä: stable → vibrato → stepped wander →
       hyperchaos (purskeet, hiljaisuudet) (M3)
-- [ ] (b) qFreq-sweep: kaikki viisi skaalautuvat yhdessä, LFO↔audio ristiin pehmeästi
-- [ ] (c) Range-kytkimet siirtävät castlen infra/balcium/audio-alueelle
-- [ ] (d) `CQ.spesal(k)` -askeleet muuttavat tekstuuria kuultavasti
-- [ ] (e) qShLag: 4 ms ≈ autenttiset askeleet, isompi kesyttää
-- [ ] Käyttäjän OK → vaihe hyväksytty
+- [x] (b) qFreq-sweep: kaikki viisi skaalautuvat yhdessä, LFO↔audio ristiin pehmeästi
+- [x] (c) Range-kytkimet siirtävät castlen infra/balcium/audio-alueelle
+- [x] (d) `CQ.spesal(k)` -askeleet muuttavat tekstuuria kuultavasti
+- [x] (e) qShLag: 4 ms ≈ autenttiset askeleet, isompi kesyttää
+- [x] Käyttäjän OK → vaihe hyväksytty (2026-07-16)
 
 ### Kirjatut toteutuspäätökset (vaihe 3)
 - ARCH §4.3:n sketsissä castlen oma trig oli kehämääritelmä (trig → sh2 → hz →

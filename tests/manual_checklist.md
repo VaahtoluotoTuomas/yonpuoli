@@ -118,7 +118,7 @@ CQ.hold(1, 0);                 // record-tila: qMix pääsee looppiin
    askeleet. `CQ.set(\qShLag, 0.08);` → askeleet liukuvat, verkko kesyyntyy.
    Palauta `0.004`.
 
-- [ ] M3 hyväksytty (pvm: )
+- [x] M3 hyväksytty (pvm: 2026-07-16)
 
 ## M4 — \selfNoise-preset (vaihe 6, tulossa)
 ## M6 — \classic kenttä-äänitteellä (vaihe 4, tulossa)
