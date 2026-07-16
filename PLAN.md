@@ -62,30 +62,34 @@ Milestone-mappaus: **M1 = vaiheet 0–4 · M2 = vaiheet 5–6 · M3 = vaihe 7**.
 ## Vaihe 1 — Boot, palvelingraafi ja master-turvaketju (ensimmäinen ääni)
 
 ### Toteutus
-- [ ] `classes/CQGraph.sc` — ryhmät (ARCH §3.1), väylät (ARCH §3.2), bufferit,
+- [x] `classes/CQGraph.sc` — ryhmät (ARCH §3.1), väylät (ARCH §3.2), bufferit,
       ServerOptions configista, `s.sync`-vaiheistus, teardown, CmdPeriod-hook
-- [ ] `classes/CQState.sc` — funnel: `set` → clamp (CQSpec) → server → `changed`
-- [ ] `classes/Cocoquantus.sc` + `CQ`-alias — `*boot` (ARCH §6: hiljainen kunnes graafi
-      verifioitu → 2 s fade), `*free`, `*set/get`, `*panic`
-- [ ] `classes/CQSynthDefs.sc` alku:
+- [x] `classes/CQState.sc` — funnel: `set` → clamp (CQSpec) → server → `changed`
+      (+ `tests/classes/CQStateTest.sc`, toimii ilman serveriä)
+- [x] `classes/Cocoquantus.sc` + `CQ`-alias — `*boot` (ARCH §6: hiljainen kunnes graafi
+      verifioitu → 2 s fade), `*free`, `*set/get`, `*panic`/`*resume`, `*reboot`
+- [x] `classes/CQSynthDefs.sc` alku:
       `\cqMaster` — **koko turvaketju** (LeakDC → tanh −6 dB → Limiter 0.89/0.01 →
       bad-value squelch → boot-fade; ARCH §4.6) + meterit;
       `\cqInput` — live-tulot, preamp A/B (fuzz + bias), env followerit → aModSrc
       (ARCH §4.2)
-- [ ] `boot.scd` — käyttäjän entry point; `live.scd` — stub
-- [ ] `tests/nrt_safety.scd` v1 — NRT-infra (Score + `d_recv`, ei audiolaitetta):
-      master-ketjun kidutus (kova kohina + DC sisään) → peak ≤ −0.75 dBFS, ei NaN,
-      |DC| ≤ 0.02 → `CQ_SAFETY_PASSED`
+- [x] `boot.scd` — käyttäjän entry point; `live.scd` — stub
+- [x] `tests/nrt_safety.scd` v1 — NRT-infra (Score + `d_recv`, ei audiolaitetta):
+      master-ketjun kidutus (4× fullscale-kohina + DC ±1.0 sisään) → peak ≤ −0.75 dBFS,
+      ei NaN, |DC| ≤ 0.02; erillinen NaN-injektiorender → squelch pitää
 
 ### Testit
-- [ ] `CQ_COMPILE_OK` · `CQ_TESTS_PASSED` · `CQ_SAFETY_PASSED`
+- [x] `CQ_COMPILE_OK` · `CQ_TESTS_PASSED` (894) · `CQ_SAFETY_PASSED`
+      (torture-peak tasan 0.89 = limitterin katto; DC ~1e-4; 2026-07-15)
 
 ### KUUNTELU 1 (lyhyt) — boot & turvallisuus
-- [ ] Käyttäjä (Ctrl+Shift+L ensin): `CQ.boot` → täysi hiljaisuus, sitten 2 s fade-in
-- [ ] `CQ.set(\masterDry, 0.5)` + live-signaali sisään (puhe/modulaari) → kuuluu puhtaana
-- [ ] `CQ.panic` → välitön mute; uudelleen → palaa
-- [ ] `masterVol`-liikkeet eivät klikkaa
-- [ ] Käyttäjän OK → vaihe hyväksytty
+- [x] Käyttäjä (Ctrl+Shift+L ensin): `CQ.boot` → täysi hiljaisuus, sitten 2 s fade-in
+- [x] `CQ.set(\masterDry, 0.5)` + live-signaali sisään (puhe/modulaari) → kuuluu puhtaana
+      (vaati `device: [inDevice, outDevice]` -tuen: läppärin mikki on AMD-laite,
+      kuulokkeet Realtek — WASAPI-pari configiin; tuki lisätty CQConfig/CQGraph + SPEC §7)
+- [x] `CQ.panic` → välitön mute; uudelleen → palaa
+- [x] `masterVol`-liikkeet eivät klikkaa
+- [x] Käyttäjän OK → vaihe hyväksytty (2026-07-16)
 
 ---
 

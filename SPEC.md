@@ -398,7 +398,9 @@ gitignored):
 (
   sampleRate: 48000,          // 44.1k/48k/96k supported; coco clock capped at SR
   blockSize: 64,
-  device: nil,                // e.g. "ASIO : Fireface" on Windows
+  device: nil,                // e.g. "ASIO : Fireface" on Windows; or an
+                              // [inDevice, outDevice] pair (same host API) when
+                              // in/out are separate devices (laptop mic + phones)
   hardwareBufferSize: 256,    // latency vs. stability for live modular processing
   inChans: [0, 1],            // live stereo pair from modular/mixer
   micChan: nil,               // nil = mic path disabled entirely

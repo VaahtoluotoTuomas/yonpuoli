@@ -3,7 +3,9 @@
 (
 	sampleRate: 48000,          // 44100 / 48000 / 96000; coco clock is capped at SR
 	blockSize: 64,
-	device: nil,                // e.g. "ASIO : Fireface" on Windows; nil = system default
+	device: nil,                // "ASIO : Fireface" | nil = system default |
+	                            // [inDev, outDev] pair (same host API), e.g. WASAPI
+	                            // laptop mic in + headphones out; list: ServerOptions.devices
 	hardwareBufferSize: 256,    // latency vs. stability for live modular processing
 	inChans: [0, 1],            // live stereo pair from modular/mixer
 	micChan: nil,               // nil = mic path disabled entirely

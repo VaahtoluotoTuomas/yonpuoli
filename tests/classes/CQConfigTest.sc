@@ -47,7 +47,9 @@ CQConfigTest : UnitTest {
 			(sixteenN: (takeover: \teleport)),
 			(autoTrim: 3),
 			(folders: (samples: 42)),
-			(device: 7)
+			(device: 7),
+			(device: ["only in"]),
+			(device: [1, 2])
 		].do { |bad|
 			this.assertException({ CQConfig.validate(bad) }, Error,
 				"rejects %".format(bad));
@@ -71,5 +73,11 @@ CQConfigTest : UnitTest {
 		this.assertEquals(cfg[\device], "ASIO : Fireface", "device string accepted");
 		this.assertEquals(cfg[\micChan], 2, "micChan accepted");
 		this.assertEquals(cfg[\stemOuts], [2, 3], "stemOuts accepted");
+	}
+
+	test_deviceInOutPairAccepted {
+		var cfg = CQConfig.validate((device: ["WASAPI : mic", "WASAPI : phones"]));
+		this.assertEquals(cfg[\device], ["WASAPI : mic", "WASAPI : phones"],
+			"[inDevice, outDevice] pair accepted");
 	}
 }

@@ -87,8 +87,12 @@ CQConfig {
 			"sampleRate must be 44100, 48000 or 96000 (got %)".format(cfg[\sampleRate]));
 		this.prAssert(#[16, 32, 64, 128, 256, 512].includes(cfg[\blockSize]),
 			"blockSize must be a power of two 16..512 (got %)".format(cfg[\blockSize]));
-		this.prAssert(cfg[\device].isNil or: { cfg[\device].isString },
-			"device must be nil or a String like \"ASIO : ...\" (got %)".format(cfg[\device]));
+		this.prAssert(cfg[\device].isNil or: { cfg[\device].isString } or: {
+				cfg[\device].isKindOf(SequenceableCollection)
+				and: { cfg[\device].size == 2 }
+				and: { cfg[\device].every { |d| d.isNil or: { d.isString } } } },
+			"device must be nil, a String like \"ASIO : ...\", or [inDevice, outDevice] "
+			++ "Strings (got %)".format(cfg[\device]));
 		this.prAssert(cfg[\hardwareBufferSize].isNil or: {
 				cfg[\hardwareBufferSize].isInteger
 				and: { cfg[\hardwareBufferSize].inclusivelyBetween(16, 8192) } },
