@@ -4,9 +4,9 @@ Vaiheistettu checklist. Toimii CLAUDE.md:n milestone-checklistinä (TODO.md:n ro
 Normatiiviset lähteet: SPEC.md (käyttäytyminen), ARCHITECTURE.md (rakenne).
 Milestone-mappaus: **M1 = vaiheet 0–4 · M2 = vaiheet 5–6 · M3 = vaihe 7**.
 
-**Tilanne 2026-07-16:** vaiheet 0–1 hyväksytty (`b03692b`, `a7c278b`). Vaiheen 2
-toteutus valmis ja kaikki neljä testimarkeria vihreitä — **KUUNTELU 2 odottaa
-käyttäjää** (muista Ctrl+Shift+L ensin). Sen jälkeen: vaihe 3 (Quantussy).
+**Tilanne 2026-07-16:** vaiheet 0–2 valmiit, testit vihreitä ja kuuntelu-gatet
+hyväksytty (`b03692b`, `a7c278b`, `b7cb33a` + palautekorjaukset). Seuraavaksi:
+**vaihe 3** (Quantussy).
 
 ## Läpileikkaavat säännöt
 
@@ -140,14 +140,27 @@ käyttäjää** (muista Ctrl+Shift+L ensin). Sen jälkeen: vaihe 3 (Quantussy).
       bittitarkka; A5-drift 0.0 dB) (2026-07-16)
 
 ### KUUNTELU 2 (iso, ~15 min) — Coco-identiteetti
-- [ ] (a) Kenttä-äänite deck A:han, `coco1Hold 0` → nauhoita → `coco1Hold 1` →
+- [x] (a) Kenttä-äänite deck A:han, `coco1Hold 0` → nauhoita → `coco1Hold 1` →
       `coco1Speed`-sweep: tape-repitch; hidas = tumma/rouhea, nopea = kirkas (M1)
-- [ ] (b) Feedback-ride: 0.9 ≈ kaiut, 1.0 ≈ looper, 1.15 = eskaloituva crunch,
-      **taso pysyy vakaana** (M2)
-- [ ] (c) Flip kääntää suunnan, skip resetoi loopin alkuun (M5-osa)
-- [ ] (d) Dolby duck → "time-layer"-artikulaatio (M5-osa)
-- [ ] (e) Input 0, fb 1.1, dust ylös → "digital dust" kertyy ja jää looppiin
-- [ ] Käyttäjän OK (tai palaute-iteraatiot) → vaihe hyväksytty
+- [x] (b) Feedback-ride: 0.9 ≈ kaiut, 1.0 ≈ looper, 1.15 = eskaloituva crunch,
+      **taso pysyy vakaana** (M2). Fb-pudotuksen portaittainen tyhjennys
+      (askel/loop-kierto + bittilattian katkaisu) todettu autenttiseksi
+- [x] (c) Flip kääntää suunnan, skip resetoi loopin alkuun (M5-osa)
+- [x] (d) Dolby duck → "time-layer"-artikulaatio (M5-osa; testattu puheella
+      mikistä, preADrive 6 — tasainen tekstuuri ei artikuloi duckia kuuluvasti)
+- [x] (e) Input 0, fb 1.1, dust ylös → "digital dust" kertyy ja jää looppiin
+      (kertyy purskeina: LFNoise2-moduloitu dust + bittilattia, by design)
+- [x] Käyttäjän OK → vaihe hyväksytty (2026-07-16)
+
+### Kirjatut toteutuspäätökset (vaihe 2)
+- Power-on-kohinan täyttötaso laskettu −12 → **−26 dBFS** kuuntelupalautteen
+  perusteella (peitti ohjelmamateriaalin; taso on yksi luku
+  `CQGraph.prNoiseBuffer`:ssa).
+- sclang-stringeissä kenoviiva on escape → Windows-polut kauttaviivoilla
+  (muistutus live.scd:ssä ja manual_checklist.md:ssä); suhteelliset polut
+  ratkeavat `samples/`-kansiosta.
+- `CQ.set(\param, ...)` hyppää 30 ms lagilla → pitkät tape-sweepit tehdään
+  liu'uttamalla arvoja (16n-fader vaiheessa 5 on varsinainen interpolaattori).
 
 ---
 

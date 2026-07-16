@@ -20,6 +20,8 @@ CQ.free;                     // clean teardown
 CQ.boot;                             // power-on: RAM full of dust, loop-locked
 
 CQ.deckA.load("field.wav");          // relative paths resolve inside samples/
+// NB: use forward slashes in absolute Windows paths — backslash is the string
+// escape character in sclang ("C:/Users/..." works, "C:\Users\..." breaks)
 CQ.deckA.rate_(1.0);                 // -2..2, negative = reverse
 CQ.deckA.loop_(1);
 

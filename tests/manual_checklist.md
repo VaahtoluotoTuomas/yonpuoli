@@ -14,7 +14,12 @@ Hyödyllinen lähtötila kuunteluun:
 CQ.boot;
 CQ.deckA.load("polku/aanite.wav");    // suhteellinen polku etsitään samples/-kansiosta
 CQ.set(\masterDry, 0.3);              // kuulet myös lähteen
+CQ.set(\coco2Level, 0);               // hiljennä coco2:n power-on-kohinalooppi
 ```
+
+Huom: absoluuttisissa Windows-poluissa käytä **kauttaviivoja**
+(`"C:/Users/..."`) — kenoviiva on sclangin merkkijonoissa escape-merkki,
+joten `"C:\tuoma\..."` hajoaa (`\t` = sarkain).
 
 ---
 
@@ -30,7 +35,7 @@ Held loopin uudelleenvirityksen pitää olla nauhamainen ja jatkuva.
 5. Liu'uta arvoja edestakaisin: repitchin pitää olla portaaton (tape/doppler),
    eikä loopin sisältö saa rapistua, vaikka sweeppaat minuutin.
 
-- [ ] M1 hyväksytty (pvm: ______)
+- [x] M1 hyväksytty (pvm: 2026-07-16)
 
 ## M2 — Feedback-ride (vaihe 2)
 
@@ -42,8 +47,10 @@ Tason on pysyttävä vakaana kaikilla feedback-arvoilla (safety-invariantti).
 4. `CQ.set(\coco1Fb, 1.15);` → eskaloituva, saturoituva crunch — mutta
    äänenvoimakkuus EI kasva hallitsemattomasti (kvantisointiklippi rajaa).
 5. Aja fb hitaasti 0 → 1.25 → 0: ei koskaan tasohyppyä eikä kipeää piikkiä.
+   Huom: fb-pudotuksen jälkeen buffer tyhjenee portaittain (askel = yksi
+   loop-kierto) ja häntä katkeaa bittilattiaan — tämä on autenttista.
 
-- [ ] M2 hyväksytty (pvm: ______)
+- [x] M2 hyväksytty (pvm: 2026-07-16)
 
 ## M5 (osa) — Flip, skip, dolby (vaihe 2)
 
@@ -56,18 +63,22 @@ Duck-artikulaatio ja suunnanvaihto; dolby-osuus täydentyy GUI:sta vaiheessa 6.
 4. Delay-tilassa (`CQ.hold(1, 0)`) syötä puhetta/rytmiä ja aseta
    `CQ.set(\coco1DolbyFb, \duck);` → uusi input "lyö" vanhat kerrokset
    hiljaisemmiksi — monofoninen time-layer-artikulaatio.
+   Vinkki: duck kuuluu vain materiaalilla, jossa on taukoja (puhe mikistä,
+   `preADrive` ~6) — tasainen tekstuuri pitää key-envelopen ylhäällä
+   jatkuvasti eikä artikulaatiota synny.
 5. `CQ.set(\coco1DolbyFb, \off);` → kerrokset summautuvat taas vapaasti.
 
-- [ ] M5/vaihe-2-osa hyväksytty (pvm: ______)
+- [x] M5/vaihe-2-osa hyväksytty (pvm: 2026-07-16)
 
 ## Vaihe 2 -ekstra — Digital dust
 
 1. `CQ.set(\coco1SlotDeck, 0); CQ.set(\coco1SlotPre, 0);` (ei inputtia).
 2. `CQ.hold(1, 0); CQ.set(\coco1Fb, 1.1); CQ.set(\coco1Dust, 0.3);`
-3. Kuuntele ~30 s: rakeinen kohinapohja kertyy ja tihenee loopiksi.
+3. Kuuntele ~30 s: rakeinen kohinapohja kertyy loopiksi — purskeittain,
+   ei tasaisesti (LFNoise2-moduloitu dust + 8-bit-bittilattia, by design).
 4. `CQ.hold(1, 1);` → dust-tekstuuri jää kiertämään; `coco1Speed` virittää sitä.
 
-- [ ] Dust-workflow hyväksytty (pvm: ______)
+- [x] Dust-workflow hyväksytty (pvm: 2026-07-16)
 
 ---
 

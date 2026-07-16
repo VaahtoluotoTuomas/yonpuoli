@@ -52,9 +52,10 @@ CQGraph {
 		buses[\space] = Bus.audio(server, 2);
 		buses[\spaceRet] = Bus.audio(server, 2);
 		buses[\dry] = Bus.audio(server, 2);
-		// power-on RAM state (SPEC §4): buffers full of 8-bit-quantized noise at
-		// −12 dBFS, loop-locked via the hold=1 default — "digital dust" is a
-		// documented, intentional sound source
+		// power-on RAM state (SPEC §4): buffers full of 8-bit-quantized noise,
+		// loop-locked via the hold=1 default — "digital dust" is a documented,
+		// intentional sound source. Fill peak −26 dBFS: present when levels are
+		// pushed, but must not mask program material (KUUNTELU 2 feedback)
 		buffers[\coco1] = this.prNoiseBuffer;
 		buffers[\coco2] = this.prNoiseBuffer;
 		groups[\cq] = Group(server);
@@ -129,7 +130,7 @@ CQGraph {
 	// must run inside a Routine (build is called from waitForBoot's routine)
 	prNoiseBuffer {
 		var cond = Condition.new;
-		var data = FloatArray.fill(config[\bufFrames], { 0.25.rand2.round(2 ** -7) });
+		var data = FloatArray.fill(config[\bufFrames], { 0.05.rand2.round(2 ** -7) });
 		var buf = Buffer.loadCollection(server, data, 1, { cond.unhang });
 		cond.hang;
 		^buf
