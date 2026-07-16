@@ -380,6 +380,7 @@ CQ.shake(0.4, seed: 1234);          // reproducible chaos
 CQ.snap(\lakeDrone);  CQ.recall(\lakeDrone);  CQ.morph(\lakeDrone, \mayhem, 30);
 CQ.rec; CQ.recStop;
 CQ.panic;                           // instant mute, state preserved
+CQ.resume;                          // unmute after panic (no fade-in re-trigger)
 ```
 
 ### 6.4 Patterns (optional, M3)

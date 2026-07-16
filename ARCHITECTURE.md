@@ -90,6 +90,7 @@ and the Quantussy's internal ring (LocalIn/LocalOut).
 | `aCoco1`, `aCoco2` | audio | 1 | cocos → master, cocos (cross via InFeedback) | post-converter, post-level, pre-pan taps |
 | `aSpace` | audio | 2 | cocos → space | space send |
 | `aSpaceRet` | audio | 2 | space → master | space return |
+| `aDry` | audio | 2 | input, decks → master | untreated source monitor feed (`masterDry`, SPEC §5.6) |
 | `wDest[dest]` | control | 16 | language (CQMatrix) → consumer synth | one 16-ch weight bus per matrix destination (22 total) |
 | (params) | — | — | language → synth args via `.set` | everything in CQSpec that isn't matrix |
 
@@ -257,7 +258,7 @@ Language side on `\cq_hot`: engage −6 dB trim (a lagged synth arg), GUI notice
 | `CQSpec` | parameter registry | `*specs` (IdentityDictionary name → ControlSpec+default+lag+16n slot), `*clamp(name, val)`, `*default(name)`, mirrors SPEC §5 tables 1:1 |
 | `CQConfig` | config load/validate | reads `config.scd`, fills defaults, validates channels/paths, hard-fails informatively |
 | `CQGraph` | server plumbing | allocates buses/groups/buffers, builds ServerOptions from config, spawn order, `s.sync` between stages, teardown, CmdPeriod re-arm hook |
-| `CQState` | value store + funnel | `set(name, val)` → clamp → `synth.set` / bus write → `changed(\param, name, val)`. `get`, `asEvent` (for snapshots), `load(event)` |
+| `CQState` | value store + funnel | `set(name, val)` → clamp → `synth.set` / bus write → `changed(\param, name, val)`. `get`, `asEvent` (for snapshots), `load(event)`. Enum params travel to the server as indices into the CQSpec value list; every other layer writes symbols through the funnel |
 | `CQMatrix` | routing weights | name↔index maps (source 16, dest 22 — canonical orders §3.2/3.3), `patch/unpatch/clear`, weight cache mirrored to `wDest` buses via `setn`, `preset(\name)`, `shake(amount, seed)` (seeded `Pwhite`-style rand; touches weights + spesal only), `asArray/load` |
 | `CQMidi16n` | controller layer | `MIDIdef.cc` per fader from config map, 0–127 → spec map, optional `\pickup` takeover, hot-plug via `MIDIClient` device watch; all writes via `CQState` |
 | `CQGui` | panel | pure view: renders from `CQState`/`CQMatrix` dependant notifications, sends via funnel; meters/LEDs from `OSCdef(\cq_meters, \cq_spesal, \cq_hot)`; everything UI inside `{ }.defer`; closes cleanly on `*free` |

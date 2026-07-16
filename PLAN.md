@@ -4,6 +4,9 @@ Vaiheistettu checklist. Toimii CLAUDE.md:n milestone-checklistinä (TODO.md:n ro
 Normatiiviset lähteet: SPEC.md (käyttäytyminen), ARCHITECTURE.md (rakenne).
 Milestone-mappaus: **M1 = vaiheet 0–4 · M2 = vaiheet 5–6 · M3 = vaihe 7**.
 
+**Tilanne 2026-07-16:** vaiheet 0–1 valmiit, testit vihreitä, kuuntelu-gatet hyväksytty
+ja commitattu (`b03692b`, `a7c278b`). Seuraavaksi: **vaihe 2** (deck A + Coco-pari).
+
 ## Läpileikkaavat säännöt
 
 - Checkboxin saa ruksata vain kun vaiheen kaikki testimarkerit ovat vihreitä **ja**
@@ -24,6 +27,22 @@ Milestone-mappaus: **M1 = vaiheet 0–4 · M2 = vaiheet 5–6 · M3 = vaihe 7**.
 - Jos käyttäjälle näkyvä käyttäytyminen muuttuu palautteen perusteella → SPEC.md
   päivitetään samassa yhteydessä (SPEC ↔ CQSpec eivät saa erkaantua).
 
+### Kirjatut toteutuspäätökset (vaiheet 0–1)
+- Testiluokat asuvat `tests/classes/*.sc`-tiedostoissa (sclang ei voi määritellä
+  luokkia .scd-skripteissä); ei `logic_tests.scd`:tä. ARCHITECTURE §2/§8 korjattu.
+- Headless-ajoissa markerin jälkeinen `cleaning up OSC` -rivi on sclangin normaali
+  exit-tuloste — markerin läsnäolo + exit code 0 ratkaisevat.
+- **Enum-parametrit kulkevat serverille indeksinä** (CQSpecin values-listan järjestys);
+  CQState tekee muunnoksen — tulevat GUI/MIDI-kerrokset kirjoittavat symboleina
+  CQStaten kautta, eivät koskaan indeksejä suoraan.
+- `aDry`-väylä (2 ch): \cqInput kirjoittaa käsittelemättömän monitorisyötteen
+  (live L/R + mic), \cqMaster lukee `masterDry`-tasolla; deckit lisäävät itsensä
+  vaiheessa 2. Kirjattu ARCHITECTURE §3.2:een.
+- `config.device` hyväksyy myös `[inDevice, outDevice]`-parin (sama host-API!) —
+  tarvitaan läppäreillä, joissa mikki ja kuulokkeet ovat eri laitteita (SPEC §7).
+- `CQ.resume` lisätty panicin pariksi (SPEC §6.3); fade-in-verhokäyrä ei laukea
+  uudelleen resumessa (mute on kerroin, EnvGen pysyy arvossa 1).
+
 ---
 
 ## Vaihe 0 — Perusta ja testi-infra (ei ääntä)
@@ -33,8 +52,9 @@ Milestone-mappaus: **M1 = vaiheet 0–4 · M2 = vaiheet 5–6 · M3 = vaihe 7**.
 - [x] `.gitignore` — `config.scd`, `tests/dev_paths.scd`, `tests/sclang_conf_dev.yaml`,
       `samples/`, `recordings/`, `tests/tmp/`
 - [x] `config.example.scd` — SPEC §7:n template
-- [x] `config.scd` — luotu oletuksilla; ASIO-laitenimi asetetaan vaiheen 1
-      kuuntelu-gaten yhteydessä (`device: nil` = järjestelmän oletus siihen asti)
+- [x] `config.scd` — luotu oletuksilla; laite asetettu vaiheessa 1 (tämä läppäri:
+      WASAPI-pari AMD-mikki sisään / Realtek-kuulokkeet ulos; pöytäkoneelle tehdään
+      myöhemmin oma config.scd ulkoisen äänikortin ASIO-nimellä)
 - [x] `classes/CQSpec.sc` — **kaikki** SPEC §5:n 79 parametria (nimi/range/curve/default/
       lag/16n-slot) + `*clamp`, `*default`; ainoa paikka jossa rangeja on
 - [x] `classes/CQConfig.sc` — configin lataus, oletusten täyttö, validointi,
