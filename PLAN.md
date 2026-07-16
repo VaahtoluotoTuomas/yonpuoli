@@ -156,11 +156,24 @@ hyväksytty (`b03692b`, `a7c278b`, `b7cb33a` + palautekorjaukset). Seuraavaksi:
 - Power-on-kohinan täyttötaso laskettu −12 → **−26 dBFS** kuuntelupalautteen
   perusteella (peitti ohjelmamateriaalin; taso on yksi luku
   `CQGraph.prNoiseBuffer`:ssa).
+- `\cqCoco`n matriisikiinnityspisteet ovat defissä nollapaikkoina kommentein
+  merkittyinä (spaf-summa, in/fb-VCA-summat; flip-gate ja skip-trig tulevat
+  parametrin rinnalle) — **vaihe 4 korvaa nollat wDest-väylien lukemisella**.
+- Deck-synth on olemassa vasta latauksen jälkeen (ainoa sallittu synth churn):
+  `CQState.prSend` ohittaa puuttuvan synthin hiljaa, `CQDeck.prSwap` spawnaa
+  uuden nykyisillä state-arvoilla ja rekisteröi serveriobjektit CQGraphiin
+  (`registerSynth`/`registerBuffer`) — teardown pysyy CQGraphissa.
+- `cocoNSend`/space-parametrit eivät reititä mihinkään ennen vaihetta 7
+  (`\cqSpace`); `cocoNPan` reitittyy masteriin (`pan1`/`pan2`).
 - sclang-stringeissä kenoviiva on escape → Windows-polut kauttaviivoilla
   (muistutus live.scd:ssä ja manual_checklist.md:ssä); suhteelliset polut
-  ratkeavat `samples/`-kansiosta.
+  ratkeavat repon `samples/`-kansiosta (luotu, gitignored).
 - `CQ.set(\param, ...)` hyppää 30 ms lagilla → pitkät tape-sweepit tehdään
   liu'uttamalla arvoja (16n-fader vaiheessa 5 on varsinainen interpolaattori).
+- Kuunteluhavainnot, jotka ovat autenttista käytöstä (ei bugeja): fb-pudotus
+  tyhjenee portaittain (askel = loop-kierto + bittilattian katkaisu), dust
+  kertyy purskeina (LFNoise2-modulaatio + kvantisointikynnys), duck vaatii
+  taukoisen syötteen kuuluakseen, hold-looppi on bittitarkan staattinen.
 
 ---
 
