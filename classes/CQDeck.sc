@@ -87,7 +87,10 @@ CQDeck {
 			\buf, newBuf.bufnum,
 			\rate, state.get(this.prParam("Rate")),
 			\loop, state.get(this.prParam("Loop")),
-			\level, state.get(this.prParam("Level"))
+			\level, state.get(this.prParam("Level")),
+			\patchDepth, state.get(\patchDepth),   // deck may load after a depth change
+			\modSrcBus, graph.buses[\modSrc].index,
+			\wRateBus, graph.buses[(which ++ "_rate").asSymbol].index
 		], graph.groups[\sources], \addToHead);   // decks run before \cqInput
 		graph.registerSynth(which, synth);
 		graph.registerBuffer(which, newBuf);

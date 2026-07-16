@@ -7,7 +7,11 @@ Milestone-mappaus: **M1 = vaiheet 0–4 · M2 = vaiheet 5–6 · M3 = vaihe 7**.
 **Tilanne 2026-07-16:** vaiheet 0–3 valmiit ja hyväksytty (`b03692b`, `a7c278b`,
 `b7cb33a` + palautekorjaukset, `7f890d4`). **Vaihe 3 (Quantussy) hyväksytty
 2026-07-16** (KUUNTELU 3 läpi, `tests/manual_checklist.md` M3 ruksattu).
-**Seuraavaksi vaihe 4 (reititysmatriisi + presetit) → M1 valmis.**
+**Vaihe 4 (reititysmatriisi + presetit) koodi valmis 2026-07-16**, kaikki neljä
+markeria vihreää (A1–A5, ks. testitulokset alla). **KUUNTELU 4 -gate odottaa** —
+skripti on `manual_checklist.md`:n M6-osio (vaatii Ctrl+Shift+L, deck A -lataus,
+`CQ.patchPreset(\classic)`). M1 valmistuu vasta käyttäjän KUUNTELU 4 -hyväksynnän
+jälkeen.
 
 ## Läpileikkaavat säännöt
 
@@ -232,21 +236,26 @@ Milestone-mappaus: **M1 = vaiheet 0–4 · M2 = vaiheet 5–6 · M3 = vaihe 7**.
 ## Vaihe 4 — Reititysmatriisi + presetit → **M1 valmis**
 
 ### Toteutus
-- [ ] `classes/CQMatrix.sc` — name↔index (16 src / 22 dest, kanoniset järjestykset
+- [x] `classes/CQMatrix.sc` — name↔index (16 src / 22 dest, kanoniset järjestykset
       ARCH §3.2–3.3), painot −1…1 + clamp, `patch/unpatch/clearPatch/getPatch`,
       preset-data, `wDest`-väylät `setn`:llä
-- [ ] `CQGraph`: 22 × 16-kanavaista control-väylää; kuluttajaluvut kaikkiin defseihin:
+- [x] `CQGraph`: 22 × 16-kanavaista control-väylää; kuluttajaluvut kaikkiin defseihin:
       coco `_spaf/_inVca/_fbVca/_flip/_skip`, castle `_fm/_spesal`, deck `_rate`;
       Schmitt-kynnys gate/trig-desteille; `patchDepth`-makro (lag 50 ms)
-- [ ] Facade: `CQ.patch(\src, \dest, w)` jne.
-- [ ] Presetit: `\empty`, `\classic` (+ `\mayhem`-data A3-turvatestiä varten)
-- [ ] `CQMatrixTest` logic_testsiin (name↔index, painorajat)
-- [ ] **Täysi A3** `tests/nrt_safety.scd`: `\mayhem` + fb 1.25 + drive 40 + wrap +
+- [x] Facade: `CQ.patch(\src, \dest, w)` jne.
+- [x] Presetit: `\empty`, `\classic` (+ `\mayhem`-data A3-turvatestiä varten)
+- [x] `CQMatrixTest` logic_testsiin (name↔index, painorajat)
+- [x] **Täysi A3** `tests/nrt_safety.scd`: `\mayhem` + fb 1.25 + drive 40 + wrap +
       dust max + chaos 1 + qFreq 500 + spaf ±4, 90 s, ei inputtia
+- [x] Auditointilisäys (2026-07-16): `nrt_safety.scd` matrix-FM-regressiotesti —
+      tri1 → castle5_fm painolla 1, castle 5 audio-alueella; renderin puoliskojen
+      nollaylitysmäärien on erottava (ylös-/alas-sweep) → todistaa että
+      matriisireititys quantussyn sisällä on elossa, ei vain rajattu
 
 ### Testit — SPEC A1–A5 kaikki vihreitä = M1 exit
-- [ ] `CQ_COMPILE_OK` (A1) · `CQ_TESTS_PASSED` (A2) · `CQ_SAFETY_PASSED` (A3) ·
-      `CQ_HOLD_OK` (A4+A5)
+- [x] `CQ_COMPILE_OK` (A1) · `CQ_TESTS_PASSED` (A2, 1641) · `CQ_SAFETY_PASSED`
+      (A3, mayhem-peak 0.8806) · `CQ_HOLD_OK` (A4 korrelaatio 1.0, A5 drift 0.0 dB)
+      (2026-07-16)
 
 ### KUUNTELU 4 — M1-hyväksyntä
 - [ ] Kenttä-äänite + `CQ.patchPreset(\classic)` oletuksilla → heti "Cocoquantus-like":
@@ -255,6 +264,49 @@ Milestone-mappaus: **M1 = vaiheet 0–4 · M2 = vaiheet 5–6 · M3 = vaihe 7**.
 - [ ] `patchDepth` 1→0 kesyttää kaiken pehmeästi
 - [ ] ~20 min code-only-sessio (`live.scd`-esimerkeillä)
 - [ ] Käyttäjän M1-hyväksyntä → milestone valmis
+
+### Kirjatut toteutuspäätökset (vaihe 4)
+- `wDest`-väylät asuvat `CQGraph.buses`-sanakirjassa suoraan destinaationimellä
+  avaimena (esim. `\coco1_spaf`) — ei erillistä `w`-etuliitettä, koska nimet eivät
+  törmää audio-väylien nimiin.
+- Matriisin summat luetaan **audio-rate**illa (`mods = In.ar/InFeedback.ar(...)`,
+  `Mix(mods*w)`), ARCH §3.3:n pseudokoodin mukaisesti — sama "audio ylettyy
+  kaikkialle" -periaate kuin Quantussyn castleissa. `clockHz`/`dir`/`phase`
+  muuttuvat siksi audio-ratesta lähtien coco-defissä; tämä on tarkoituksellista,
+  ei regressio.
+- InFeedback-sääntö on **lukijakohtainen** (kirjoittajat ryhmäjärjestyksessä:
+  ch 0–9 quantussy, ch 10–11 input, ch 12–15 cocot): kanava luetaan `In.ar`illa
+  vain jos sen kirjoittaja on jo ajettu tällä blokilla, muuten `InFeedback.ar`
+  (koskematon audioväylä lukisi `In.ar`illa nollia, ei edellistä blokkia).
+  → Cocot: 0–11 `In.ar`, 12–15 `InFeedback` (sis. oman tapin). **Quantussy: 0–9
+  `InFeedback`** — se lukee omia ulostulojaan ennen kuin on kirjoittanut ne
+  tällä blokilla; yhden blokin viive on sama kuin LocalIn-ringissä — 10–11
+  `In.ar`, 12–15 `InFeedback`. Deckit: kaikki 16 `InFeedback`illä, koska deck
+  ajetaan `gSources`issa ensimmäisenä (`\addToHead`, ennen `\cqInput`iakin).
+  (Auditointikorjaus 2026-07-16: ensimmäinen toteutus luki quantussyn sisällä
+  ch 0–9 `In.ar`illa → tri/cas-lähteiset castle_fm/spesal-patchit — mm.
+  `\classic`in FM-rinki — olivat hiljaa kuolleita.)
+- `patchDepth` on ensimmäinen CQState-reitti, joka haarautuu useaan synthiin
+  (`coco1/coco2/quantussy/deckA/deckB`) — `CQState.prSend` yleistettiin
+  tunnistamaan `route[0]`:n tyypistä (Symbol = yksi pari, Array = pari-lista),
+  vanhat yksittäisreitit toimivat muuttumattomina.
+- Flip on **gate** (matriisi ORataan param-arvon kanssa, `max(...)`), skip ja
+  castleN_spesal ovat **trig**ejä (→ `Trig1.ar`), spaf/inVca/fbVca/castleN_fm
+  ovat jatkuvia summia — SPEC §5.5:n gate/trig-jaon mukaisesti. **Kaikki**
+  gate/trig-destit kulkevat Schmitt-kynnyksen läpi (`Schmidt.ar(sum, 0.3,
+  0.5)`: päälle nousten +0.5:n yli, pois alle +0.3:n) — paljas komparaattori
+  värisisi kohinaisilla summilla (SPEC §5.5 "Schmitt threshold").
+- `\mayhem`-preset on tässä vaiheessa **deterministinen** tiheä patch (jokainen
+  16×22-solu ±0.6, etumerkki vuorottelee) — ei vielä satunnaisuutta (shake tulee
+  vaiheessa 6). Tämä sama data-aineisto ajaa myös täyden A3-turvatestin.
+- `\classic`-preset: `tri1 → coco1_spaf`/`coco2_spaf` (0.35, sama LFO molempiin)
+  + 5-castlen FM-rinki `cas_k → castle_(k+1)_fm` (0.3) — SPEC §5.5:n kuvauksen
+  ("tri→spaf both Cocos, castle→castle FM ring") suora toteutus.
+- `tests/nrt_safety.scd`: mayhem-testin control-väylät alkavat offsetista 100,
+  jotta ne eivät koskaan törmää muiden testitapausten `c_set 0 0`
+  -loppumerkkiin. `render`-apufunktio hyväksyy nyt valinnaisen kesto-parametrin
+  (maxWait skaalautuu renderin pituuden mukaan) — vanhat 2-argumenttiset kutsut
+  toimivat muuttumattomina.
 
 ---
 

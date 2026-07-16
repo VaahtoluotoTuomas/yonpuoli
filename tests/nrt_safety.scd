@@ -1,11 +1,11 @@
-// NRT safety render (SPEC §10 A3 — phase-2 subset). Renders the REAL SynthDefs
-// offline (scsynth -N, no audio device) under worst-case input and asserts:
-// peak <= -0.75 dBFS, no NaN/inf, |DC| <= 0.02. Thresholds may NEVER be raised
-// (CLAUDE.md safety #6). Phase 4 extends this to the full \mayhem 90 s case.
+// NRT safety render (SPEC §10 A3). Renders the REAL SynthDefs offline (scsynth
+// -N, no audio device) under worst-case input and asserts: peak <= -0.75 dBFS,
+// no NaN/inf, |DC| <= 0.02. Thresholds may NEVER be raised (CLAUDE.md safety #6).
 // Cases: master-chain torture, coco worst case (fb 1.25 + drive 40 + wrap +
 // dust max + max cross-feed), quantussy worst case (all castles audio range,
 // chaos 1, all sends up, through coco1's converter — qMix must be audible AND
-// bounded), NaN injection.
+// bounded), the full \mayhem matrix worst case (SPEC A3, 90 s), a matrix
+// castle-FM routing-liveness regression (tri1 -> castle5_fm), NaN injection.
 // Prints CQ_SAFETY_PASSED / CQ_SAFETY_FAILED as its last line.
 // Run: "<sclang.exe>" -l tests/sclang_conf_dev.yaml -i none tests/nrt_safety.scd
 
@@ -29,6 +29,7 @@ var check = { |bool, msg|
 var bCoco1 = 4, bCoco2 = 5, bSpaceRet = 6, bDry = 8;
 var bDeckA = 10, bDeckB = 11, bPreA = 12, bPreB = 13, bQMix = 14, bModSrc = 16;
 var cocoBufFrames = 32768;   // short loop -> many recirculation passes in 10 s
+var mayhemDur = 90.0;        // SPEC A3 duration for the full-matrix worst case
 
 // what a runaway patch could hand the master: 4x full scale + DC offsets
 var tortureDef = SynthDef(\cqTestTorture, {
@@ -129,11 +130,98 @@ var makeQuantussyScore = {
 	score
 };
 
-var render = { |score, outPath|
-	var done = false, waited = 0;
+// SPEC A3: \mayhem + fb 1.25 + drive 40 + wrap on + dust max + chaos 1 + qFreq 500 +
+// spaf ±4, 90 s, no input — the full graph (input + quantussy + both cocos + master)
+// wired through the REAL matrix control buses with every cell patched (deterministic
+// \mayhem preset, CQMatrix §5.5). Matrix control buses are placed at offset 100 so
+// they never collide with the `c_set 0 0` end-of-score marker every case here uses.
+var makeMayhemScore = {
+	var score = Score.new;
+	var destNames = CQMatrix.destNames;
+	var srcNames = CQMatrix.sourceNames;
+	var busOffset = 100;
+	var wArr = destNames.collect { srcNames.collect { 0.0 } };
+	var destBus = { |name| busOffset + (destNames.indexOf(name) * 16) };
+	var cocoArgs = { |buf, pre, deck, cross, out, tap, org, coco|
+		[\buf, buf, \preBus, pre, \deckBus, deck, \qMixBus, bQMix,
+			\crossBus, cross, \outBus, out, \modSrcBus, bModSrc,
+			\modTapIdx, tap, \modOrganIdx, org,
+			\inLevel, 2, \fbLevel, 1.25, \dust, 0.5, \wrap, 1, \bits, 3,
+			\hold, 0, \organLvl, 1, \level, 1.5, \speed, 24000, \spafKnob, 4.0,
+			\slotPre, 1.5, \slotDeck, 1.5, \slotQ, 1.5, \slotX, 1.5,
+			\patchDepth, 1.0,
+			\wSpafBus, destBus.value(("coco" ++ coco ++ "_spaf").asSymbol),
+			\wInVcaBus, destBus.value(("coco" ++ coco ++ "_inVca").asSymbol),
+			\wFbVcaBus, destBus.value(("coco" ++ coco ++ "_fbVca").asSymbol),
+			\wFlipBus, destBus.value(("coco" ++ coco ++ "_flip").asSymbol),
+			\wSkipBus, destBus.value(("coco" ++ coco ++ "_skip").asSymbol)]
+	};
+	CQMatrix.presets[\mayhem].do { |t|
+		var si = srcNames.indexOf(t[0]), di = destNames.indexOf(t[1]);
+		wArr[di][si] = t[2];
+	};
+	defs.do { |d| score.add([0.0, [\d_recv, d.asBytes]]) };
+	score.add([0.0, [\b_alloc, 0, cocoBufFrames, 1]]);
+	score.add([0.0, [\b_alloc, 1, cocoBufFrames, 1]]);
+	destNames.do { |name, di| score.add([0.0, [\c_setn, busOffset + (di * 16), 16] ++ wArr[di]]) };
+	score.add([0.0, [\g_new, 1000, 0, 0]]);
+	score.add([0.0, [\s_new, \cqInput, 1001, 1, 1000,
+		\deckABus, bDeckA, \deckBBus, bDeckB, \modSrcBus, bModSrc,
+		\preABus, bPreA, \preBBus, bPreB, \dryBus, bDry,
+		\preADrive, 40, \preBDrive, 40, \preABias, 0.6, \preBBias, 0.6]]);
+	score.add([0.0, ([\s_new, \cqQuantussy, 1002, 1, 1000,
+		\modSrcBus, bModSrc, \qMixBus, bQMix,
+		\qFreq, 500, \qChaos, 1, \patchDepth, 1.0,
+		\range1, 2, \range2, 2, \range3, 2, \range4, 2, \range5, 2,
+		\send1, 1, \send2, 1, \send3, 1, \send4, 1, \send5, 1]
+		++ (1..5).collect { |k|
+			[("wFm" ++ k).asSymbol, destBus.value(("castle" ++ k ++ "_fm").asSymbol),
+			 ("wSpesal" ++ k).asSymbol, destBus.value(("castle" ++ k ++ "_spesal").asSymbol)]
+		}.flatten)]);
+	score.add([0.0, ([\s_new, \cqCoco, 1003, 1, 1000]
+		++ cocoArgs.value(0, bPreA, bDeckA, bCoco2, bCoco1, 12, 14, 1))]);
+	score.add([0.0, ([\s_new, \cqCoco, 1004, 1, 1000]
+		++ cocoArgs.value(1, bPreB, bDeckB, bCoco1, bCoco2, 13, 15, 2))]);
+	score.add([0.0, [\s_new, \cqMaster, 1005, 1, 1000,
+		\coco1Bus, bCoco1, \coco2Bus, bCoco2, \spaceRetBus, bSpaceRet, \dryBus, bDry,
+		\masterVol, 0, \masterDry, 0, \fadeIn, 1]]);
+	score.add([mayhemDur, [\c_set, 0, 0]]);
+	score
+};
+
+// matrix-routing regression (audit 2026-07-16): tri1 (infra, 0.08 Hz triangle from
+// phase 0) patched at weight 1 into castle5_fm; castle 5 on audio range at 160 Hz,
+// chaos 0, off 0 -> its pitch must sweep UP in the render's first half (tri1 > 0)
+// and DOWN in the second (tri1 < 0). Asserted via zero-crossing counts per half.
+// Guards the quantussy-reads-its-own-outputs-via-InFeedback rule: with a plain
+// In.ar the tri/cas sources are silently zero inside the quantussy and the halves
+// come out identical (the \classic castle-FM ring would be dead).
+var makeMatrixFmScore = {
+	var score = Score.new;
+	var wFm5Bus = 100;                          // clear of the c_set 0 0 end marker
+	var w = 0.0 ! 16;
+	w[0] = 1.0;                                 // source index 0 = tri1 (ARCH §3.2)
+	defs.do { |d| score.add([0.0, [\d_recv, d.asBytes]]) };
+	score.add([0.0, ([\c_setn, wFm5Bus, 16] ++ w)]);
+	score.add([0.0, [\g_new, 1000, 0, 0]]);
+	score.add([0.0, [\s_new, \cqQuantussy, 1001, 1, 1000,
+		\modSrcBus, bModSrc, \qMixBus, bQMix,
+		\qFreq, 4, \qChaos, 0, \off5, 0,
+		\range5, 2, \send5, 1,                  // castle 5: audio range, 4*40 = 160 Hz
+		\wFm5, wFm5Bus]]);
+	score.add([0.0, [\s_new, \cqMaster, 1002, 1, 1000,
+		\coco1Bus, bQMix, \coco2Bus, bPreA,     // qMix straight into the master; the
+		\spaceRetBus, bSpaceRet, \dryBus, bDry, // other inputs read silent buses
+		\masterVol, 0, \masterDry, 0, \fadeIn, 1]]);
+	score.add([dur, [\c_set, 0, 0]]);
+	score
+};
+
+var render = { |score, outPath, renderDur|
+	var done = false, waited = 0, maxWait = max(120, (renderDur ? dur) * 2);
 	score.recordNRT(nil, outPath, nil, sr, "WAV", "float", opts,
-		duration: dur, action: { done = true });
-	while { done.not and: { waited < 120 } } { 0.2.wait; waited = waited + 0.2 };
+		duration: (renderDur ? dur), action: { done = true });
+	while { done.not and: { waited < maxWait } } { 0.2.wait; waited = waited + 0.2 };
 	if(done.not) { Error("CQ NRT: render timed out: " ++ outPath).throw };
 };
 
@@ -155,6 +243,28 @@ var analyze = { |path|
 		bad: total.isNaN or: { total.abs == inf }, frames: sf.numFrames)
 };
 
+// upward zero crossings of channel 0 over [startFrame, endFrame) — a cheap,
+// deterministic pitch-activity proxy for the matrix-FM regression case
+var countCrossings = { |path, half|
+	var sf = SoundFile.openRead(path);
+	var data, numCh, start, end, count = 0, prev = 0.0, i, v;
+	if(sf.isNil) { Error("CQ NRT: cannot open render: " ++ path).throw };
+	data = FloatArray.newClear(sf.numFrames * sf.numChannels);
+	sf.readData(data);
+	sf.close;
+	numCh = sf.numChannels;
+	start = if(half == 0) { 0 } { sf.numFrames div: 2 };
+	end = if(half == 0) { sf.numFrames div: 2 } { sf.numFrames };
+	i = start;
+	while { i < end } {
+		v = data[i * numCh];
+		if((v > 0) and: { prev <= 0 }) { count = count + 1 };
+		prev = v;
+		i = i + 1;
+	};
+	count
+};
+
 opts.numOutputBusChannels = 2;
 opts.numInputBusChannels = 2;
 opts.blockSize = cfg[\blockSize];
@@ -162,12 +272,14 @@ opts.blockSize = cfg[\blockSize];
 File.mkdir(tmpDir);
 
 {
-	var r1, r2, r3, r4;
+	var r1, r2, r3, r4, r5, r6, xUp, xDown;
 	var ceiling = (-0.75).dbamp;
 	var p1 = tmpDir +/+ "nrt_safety_torture.wav";
 	var p2 = tmpDir +/+ "nrt_safety_nan.wav";
 	var p3 = tmpDir +/+ "nrt_safety_coco.wav";
 	var p4 = tmpDir +/+ "nrt_safety_quantussy.wav";
+	var p5 = tmpDir +/+ "nrt_safety_mayhem.wav";
+	var p6 = tmpDir +/+ "nrt_safety_matrixfm.wav";
 
 	try {
 		"CQ NRT: rendering torture case (% s)...".format(dur).postln;
@@ -217,6 +329,35 @@ File.mkdir(tmpDir);
 				.format(r4[\peak].round(0.0001)));
 		check.value(r4[\dcL].abs <= 0.02, "quantussy |DC left| <= 0.02");
 		check.value(r4[\dcR].abs <= 0.02, "quantussy |DC right| <= 0.02");
+
+		"CQ NRT: rendering \\mayhem full-matrix worst case (% s)...".format(mayhemDur).postln;
+		render.value(makeMayhemScore.value, p5, mayhemDur);
+		r5 = analyze.value(p5);
+		"mayhem: peak %  dcL %  dcR %  frames %".format(
+			r5[\peak].round(0.0001), r5[\dcL].round(0.00001),
+			r5[\dcR].round(0.00001), r5[\frames]).postln;
+		check.value(r5[\frames] > 0, "mayhem render produced audio");
+		check.value(r5[\bad].not, "mayhem render has no NaN/inf");
+		check.value(r5[\peak] <= ceiling,
+			"mayhem peak % <= -0.75 dBFS".format(r5[\peak].round(0.0001)));
+		check.value(r5[\peak] >= 0.25,
+			"mayhem carried signal (peak % >= 0.25, not failed-to-silence)"
+				.format(r5[\peak].round(0.0001)));
+		check.value(r5[\dcL].abs <= 0.02, "mayhem |DC left| <= 0.02");
+		check.value(r5[\dcR].abs <= 0.02, "mayhem |DC right| <= 0.02");
+
+		"CQ NRT: rendering matrix castle-FM routing check (% s)...".format(dur).postln;
+		render.value(makeMatrixFmScore.value, p6);
+		r6 = analyze.value(p6);
+		xUp = countCrossings.value(p6, 0);      // tri1 > 0: castle 5 swept upward
+		xDown = countCrossings.value(p6, 1);    // tri1 < 0: swept downward
+		"matrixfm: peak %  crossings up-half %  down-half %".format(
+			r6[\peak].round(0.0001), xUp, xDown).postln;
+		check.value(r6[\peak] >= 0.05, "matrix-FM render is not silent");
+		check.value(r6[\bad].not, "matrix-FM render has no NaN/inf");
+		check.value(xUp > (xDown * 1.3),
+			"matrix castle-FM routing is alive: up-half crossings % > 1.3 x down-half %"
+				.format(xUp, xDown));
 
 		"CQ NRT: rendering NaN-injection case...".postln;
 		render.value(makeScore.value(\cqTestNan), p2);

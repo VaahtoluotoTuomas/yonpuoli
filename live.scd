@@ -40,3 +40,24 @@ CQ.set(\coco1Organ, 0.5);            // square-stack voice, pitch tracks Speed
 CQ.set(\coco1SlotX, 0.6);            // cross-feed coco2 -> coco1
 CQ.set(\coco2SlotX, 0.4);            // ...and back (one block late by design)
 */
+
+// ---- phase 4: routing matrix / KUUNTELU 4 ----
+/*
+CQ.boot;
+CQ.deckA.load("field.wav");
+CQ.hold(1, 0);
+
+CQ.patchPreset(\classic);            // tri1 -> coco1/coco2 spaf, castle FM ring
+CQ.patchPreset(\empty);              // banana bay cleared (hardware default)
+
+CQ.patch(\envA, \coco2_fbVca, -0.5); // inverso: input duckes coco2's feedback
+CQ.patch(\cas3, \coco1_spaf, 0.7);   // castle 3 modulates coco1's speed
+CQ.getPatch(\envA, \coco2_fbVca);    // read a single cell back
+CQ.unpatch(\envA, \coco2_fbVca);     // remove one connection
+CQ.clearPatch;                       // remove everything
+
+CQ.set(\patchDepth, 0);              // global tamer: 0 = matrix has no effect
+CQ.set(\patchDepth, 1);              // full depth, lagged 50 ms either way
+
+CQ.patchPreset(\mayhem);             // dense, capped-depth stress patch (SPEC A3)
+*/

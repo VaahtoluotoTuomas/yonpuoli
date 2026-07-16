@@ -45,16 +45,21 @@ CQState {
 
 	// ---- private ----
 
+	// route[name] is either one [synthKey, argName] pair or a list of pairs
+	// (patchDepth fans out to every matrix-consumer synth) — pairs missing their
+	// synth (not yet spawned, e.g. an unloaded deck) are skipped silently
 	prSend { |name, value|
-		var route = routes[name], synth;
+		var route = routes[name], pairs;
 		if(route.isNil) { ^this };
 		if(graph.isNil or: { graph.isRunning.not }) { ^this };
-		synth = graph.synths[route[0]];
-		if(synth.isNil) { ^this };
 		if(CQSpec.kind(name) == \enum) {                 // enums travel as indices
 			value = CQSpec.at(name)[\values].indexOf(value);
 		};
-		synth.set(route[1], value);
+		pairs = if(route[0].isKindOf(Symbol)) { [route] } { route };
+		pairs.do { |pair|
+			var synth = graph.synths[pair[0]];
+			synth !? { synth.set(pair[1], value) };
+		};
 	}
 
 	// param -> [synthKey, synthArgName]; grows phase by phase
@@ -66,6 +71,9 @@ CQState {
 			r[\micGain] = [\input, \micGain];   // control exists only when mic is configured
 		};
 		[\spaceMix, \masterDry, \masterVol].do { |n| r[n] = [\master, n] };
+		// matrix macro (ARCH §3.3): fans out to every matrix-consumer synth
+		r[\patchDepth] = [[\coco1, \patchDepth], [\coco2, \patchDepth],
+			[\quantussy, \patchDepth], [\deckA, \patchDepth], [\deckB, \patchDepth]];
 		r[\monitorMute] = [\master, \mute];
 		r[\coco1Pan] = [\master, \pan1];
 		r[\coco2Pan] = [\master, \pan2];

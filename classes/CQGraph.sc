@@ -52,6 +52,10 @@ CQGraph {
 		buses[\space] = Bus.audio(server, 2);
 		buses[\spaceRet] = Bus.audio(server, 2);
 		buses[\dry] = Bus.audio(server, 2);
+		// routing matrix (ARCH §3.2/§3.3): one 16-ch control bus per destination,
+		// keyed by the destination name itself (CQMatrix.destNames) — matrix is
+		// empty at boot (all zero), CQMatrix.pushAll after spawn makes that explicit
+		CQMatrix.destNames.do { |dest| buses[dest] = Bus.control(server, 16) };
 		// power-on RAM state (SPEC §4): buffers full of 8-bit-quantized noise,
 		// loop-locked via the hold=1 default — "digital dust" is a documented,
 		// intentional sound source. Fill peak −26 dBFS: present when levels are
@@ -80,19 +84,28 @@ CQGraph {
 		synths[\quantussy] = Synth(\cqQuantussy, [
 			\modSrcBus, buses[\modSrc].index,
 			\qMixBus, buses[\qMix].index
-		], groups[\quantussy]);
+		] ++ (1..5).collect { |k|
+			[("wFm" ++ k).asSymbol, buses[("castle" ++ k ++ "_fm").asSymbol].index,
+			 ("wSpesal" ++ k).asSymbol, buses[("castle" ++ k ++ "_spesal").asSymbol].index]
+		}.flatten, groups[\quantussy]);
 		// canonical aModSrc channels: coco taps 12/13, organs 14/15 (ARCH §3.2)
 		[[\coco1, \preA, \deckA, \coco2, 12, 14],
 		 [\coco2, \preB, \deckB, \coco1, 13, 15]].do { |row|
-			synths[row[0]] = Synth(\cqCoco, [
-				\buf, buffers[row[0]].bufnum,
+			var n = row[0];
+			synths[n] = Synth(\cqCoco, [
+				\buf, buffers[n].bufnum,
 				\preBus, buses[row[1]].index,
 				\deckBus, buses[row[2]].index,
 				\qMixBus, buses[\qMix].index,
 				\crossBus, buses[row[3]].index,
-				\outBus, buses[row[0]].index,
+				\outBus, buses[n].index,
 				\modSrcBus, buses[\modSrc].index,
-				\modTapIdx, row[4], \modOrganIdx, row[5]
+				\modTapIdx, row[4], \modOrganIdx, row[5],
+				\wSpafBus, buses[(n ++ "_spaf").asSymbol].index,
+				\wInVcaBus, buses[(n ++ "_inVca").asSymbol].index,
+				\wFbVcaBus, buses[(n ++ "_fbVca").asSymbol].index,
+				\wFlipBus, buses[(n ++ "_flip").asSymbol].index,
+				\wSkipBus, buses[(n ++ "_skip").asSymbol].index
 			], groups[\cocos]);
 		};
 		synths[\master] = Synth(\cqMaster, [

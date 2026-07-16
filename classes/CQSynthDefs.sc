@@ -69,10 +69,12 @@ CQSynthDefs {
 			var rate = \rate.kr(CQSpec.default(\deckARate), CQSpec.lag(\deckARate));
 			var loop = \loop.kr(CQSpec.default(\deckALoop));
 			var level = \level.kr(CQSpec.default(\deckALevel), CQSpec.lag(\deckALevel));
+			var patchDepth = \patchDepth.kr(CQSpec.default(\patchDepth), CQSpec.lag(\patchDepth));
+			var mods = CQSynthDefs.prModsDecks(\modSrcBus.ir(0));
+			var wRate = CQSynthDefs.prMatrixWeight(\wRateBus.ir(0), patchDepth);
+			var totalRate = (rate + Mix(mods * wRate)).clip(-2, 2);  // matrix deckX_rate sum
 			var env = EnvGen.kr(Env.asr(0.025, 1, 0.025), \gate.kr(1), doneAction: 2);
-			var sig = PlayBuf.ar(1, buf,
-				rate.clip(-2, 2) * BufRateScale.kr(buf),   // matrix deck*_rate adds here (phase 4)
-				\t_trig.tr(0), 0, loop);
+			var sig = PlayBuf.ar(1, buf, totalRate * BufRateScale.kr(buf), \t_trig.tr(0), 0, loop);
 			sig = sig * level * env;
 			Out.ar(\out.ir(0), sig);
 			Out.ar(\dryBus.ir(0), sig * 0.7 ! 2);
@@ -95,7 +97,7 @@ CQSynthDefs {
 			CQSpec.at(name)[\values].indexOf(CQSpec.default(name))
 		};
 		^SynthDef(\cqQuantussy, {
-			var fb, fbTris, fbCass, qFreq, qChaos, qShLag;
+			var fb, fbTris, fbCass, qFreq, qChaos, qShLag, patchDepth, mods;
 			var castles, tris, cass, stateKr, sends;
 			fb = LocalIn.ar(10);            // [tri1..5, cas1..5] from previous block
 			fbTris = fb[0..4];
@@ -103,13 +105,20 @@ CQSynthDefs {
 			qFreq = \qFreq.kr(CQSpec.default(\qFreq), CQSpec.lag(\qFreq));
 			qChaos = \qChaos.kr(CQSpec.default(\qChaos), CQSpec.lag(\qChaos));
 			qShLag = \qShLag.kr(CQSpec.default(\qShLag), CQSpec.lag(\qShLag));
+			patchDepth = \patchDepth.kr(CQSpec.default(\patchDepth), CQSpec.lag(\patchDepth));
+			mods = CQSynthDefs.prModsQuantussy(\modSrcBus.ir(0));
 			castles = 5.collect { |k|
 				var n = k + 1;
 				var others = (0..4).removing(k);
 				var stateArg = ("state" ++ n).asSymbol.kr(0);
+				var wFm = CQSynthDefs.prMatrixWeight(("wFm" ++ n).asSymbol.ir(0), patchDepth);
+				var wSpesal = CQSynthDefs.prMatrixWeight(
+					("wSpesal" ++ n).asSymbol.ir(0), patchDepth);
+				var fmExt = Mix(mods * wFm);           // matrix castleN_fm sum (octaves)
+				var spesalGate = Schmidt.ar(Mix(mods * wSpesal), 0.3, 0.5);
+				var spesalTrig = Trig1.ar(spesalGate, SampleDur.ir); // matrix castleN_spesal
 				var state = Stepper.ar(
-					// matrix castleN_spesal trig joins this step input in phase 4
-					T2A.ar(("t_step" ++ n).asSymbol.tr(0)),
+					T2A.ar(("t_step" ++ n).asSymbol.tr(0)) + spesalTrig,
 					T2A.ar(("t_set" ++ n).asSymbol.tr(0))
 						+ Impulse.ar(0),               // boot: state := stateArg
 					0, 7, 1, stateArg);
@@ -124,8 +133,7 @@ CQSynthDefs {
 					#[0.02, 1, 40]);                   // SPEC §5.4 range multipliers
 				var off = ("off" ++ n).asSymbol
 					.kr(CQSpec.default(("c" ++ n ++ "Off").asSymbol));
-				// matrix castleN_fm sum (octaves) replaces the 0 in phase 4
-				var hz = (qFreq * range * (2 ** (off + (qChaos * 5 * sh2) + 0)))
+				var hz = (qFreq * range * (2 ** (off + (qChaos * 5 * sh2) + fmExt)))
 					.clip(0.01, 4000);
 				var tri = LFTri.ar(hz);                // phase-accumulating, FM-safe
 				var sampled = Select.ar(partner, others.collect { |i| fbTris[i] });
@@ -165,16 +173,32 @@ CQSynthDefs {
 			var buf, frames, speed, spafKnob, clockHz, ratio, dir, phase;
 			var here, hereSmooth, dolby, inSig, inVca, fbVca, inEnv, fbEnv;
 			var inCh, fbCh, record, write, outTap, organ, voice;
+			var patchDepth, mods, wSpaf, wInVca, wFbVca, wFlip, wSkip;
+			var spafSum, inVcaSum, fbVcaSum, flipGate, skipTrig;
 			buf = \buf.ir(0);
 			frames = BufFrames.ir(buf);
 			speed = \speed.kr(CQSpec.default(\coco1Speed), CQSpec.lag(\coco1Speed));
 			spafKnob = \spafKnob.kr(CQSpec.default(\coco1Spaf), CQSpec.lag(\coco1Spaf));
-			// matrix dest coco*_spaf replaces the 0 in phase 4 (sum in octaves);
+			patchDepth = \patchDepth.kr(CQSpec.default(\patchDepth), CQSpec.lag(\patchDepth));
+			mods = CQSynthDefs.prModsCocos(\modSrcBus.ir(0));
+			wSpaf = CQSynthDefs.prMatrixWeight(\wSpafBus.ir(0), patchDepth);
+			wInVca = CQSynthDefs.prMatrixWeight(\wInVcaBus.ir(0), patchDepth);
+			wFbVca = CQSynthDefs.prMatrixWeight(\wFbVcaBus.ir(0), patchDepth);
+			wFlip = CQSynthDefs.prMatrixWeight(\wFlipBus.ir(0), patchDepth);
+			wSkip = CQSynthDefs.prMatrixWeight(\wSkipBus.ir(0), patchDepth);
+			spafSum = Mix(mods * wSpaf);
+			inVcaSum = Mix(mods * wInVca);
+			fbVcaSum = Mix(mods * wFbVca);
+			// Schmitt threshold on gate/trig dests (SPEC §5.5): on rising through
+			// +0.5, off below +0.3 — a bare comparator would chatter on noisy sums
+			flipGate = max(\flip.kr(CQSpec.default(\coco1Flip)),
+				Schmidt.ar(Mix(mods * wFlip), 0.3, 0.5));  // flip = matrix gate OR param
+			skipTrig = Trig1.ar(Schmidt.ar(Mix(mods * wSkip), 0.3, 0.5), SampleDur.ir);
 			// hard clamp 1500 Hz..SR is post-modulation by design (SPEC §5.3)
-			clockHz = (speed * (2 ** (0 * spafKnob))).clip(1500, SampleRate.ir);
+			clockHz = (speed * (2 ** (spafSum * spafKnob))).clip(1500, SampleRate.ir);
 			ratio = clockHz / SampleRate.ir;
-			dir = 1 - (\flip.kr(CQSpec.default(\coco1Flip)) * 2);
-			phase = Phasor.ar(\t_skip.tr(0), ratio * dir, 0, frames, 0); // address counter
+			dir = 1 - (flipGate * 2);                  // flip = matrix gate OR param
+			phase = Phasor.ar(\t_skip.tr(0) + skipTrig, ratio * dir, 0, frames, 0); // address counter
 			here = BufRd.ar(1, buf, phase, loop: 1, interpolation: 1);   // ZOH DAC out
 			hereSmooth = BufRd.ar(1, buf, phase, loop: 1, interpolation: 4);
 			// ^ both reads sit BEFORE the write on purpose (see header comment)
@@ -193,10 +217,9 @@ CQSynthDefs {
 					* \slotQ.kr(CQSpec.default(\coco1SlotQ), CQSpec.lag(\coco1SlotQ)))
 				+ (InFeedback.ar(\crossBus.ir(0))   // other coco, one block late by design
 					* \slotX.kr(CQSpec.default(\coco1SlotX), CQSpec.lag(\coco1SlotX)));
-			// matrix VCA sums (coco*_inVca / coco*_fbVca) join these in phase 4
-			inVca = \inLevel.kr(CQSpec.default(\coco1In), CQSpec.lag(\coco1In))
+			inVca = (\inLevel.kr(CQSpec.default(\coco1In), CQSpec.lag(\coco1In)) + inVcaSum)
 				.clip(0, 2);
-			fbVca = \fbLevel.kr(CQSpec.default(\coco1Fb), CQSpec.lag(\coco1Fb))
+			fbVca = (\fbLevel.kr(CQSpec.default(\coco1Fb), CQSpec.lag(\coco1Fb)) + fbVcaSum)
 				.clip(0, 2.5);
 			inEnv = Amplitude.ar(inSig, 0.003, 0.08);
 			fbEnv = Amplitude.ar(here, 0.003, 0.08);
@@ -256,5 +279,36 @@ CQSynthDefs {
 			SendPeakRMS.kr(mix, 20, 3, '/cq_meters');
 			config[\outChans].do { |hw, i| Out.ar(hw, mix[i]) };
 		})
+	}
+
+	// ---- private (routing-matrix helpers, ARCHITECTURE §3.2/§3.3) ----
+	// aModSrc writers per group order (ARCH §3.1): ch 0-9 quantussy (gQuantussy),
+	// ch 10-11 input (gSources), ch 12-15 cocos (gCocos). A channel is read with
+	// In.ar only when its writer has already run this block; otherwise InFeedback
+	// (one block late — In.ar on an untouched bus would read silence, not old data).
+
+	// cocos run after both writers above them: only the coco taps (12-15, which
+	// include the reader's own output) are one block late
+	*prModsCocos { |modSrcBus|
+		^In.ar(modSrcBus, 12) ++ InFeedback.ar(modSrcBus + 12, 4)
+	}
+
+	// the quantussy reads its OWN outputs (0-9) — it hasn't written them yet this
+	// block, so they come via InFeedback, matching the LocalIn ring's one-block
+	// convention; env followers (10-11, gSources) are current
+	*prModsQuantussy { |modSrcBus|
+		^InFeedback.ar(modSrcBus, 10) ++ In.ar(modSrcBus + 10, 2)
+			++ InFeedback.ar(modSrcBus + 12, 4)
+	}
+
+	// decks run before every aModSrc writer (\addToHead in gSources, ahead even
+	// of \cqInput) — all 16 channels are one block late
+	*prModsDecks { |modSrcBus|
+		^InFeedback.ar(modSrcBus, 16)
+	}
+
+	// matrix weight-bus read: 50 ms smoothing + global patchDepth scaler (ARCH §3.3)
+	*prMatrixWeight { |busArg, patchDepth|
+		^Lag.kr(In.kr(busArg, 16), 0.05) * patchDepth
 	}
 }

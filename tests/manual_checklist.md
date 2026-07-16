@@ -121,6 +121,34 @@ CQ.hold(1, 0);                 // record-tila: qMix pääsee looppiin
 - [x] M3 hyväksytty (pvm: 2026-07-16)
 
 ## M4 — \selfNoise-preset (vaihe 6, tulossa)
-## M6 — \classic kenttä-äänitteellä (vaihe 4, tulossa)
+
+## M6 — \classic kenttä-äänitteellä + matriisi (vaihe 4)
+
+Alkuasetelma:
+
+```supercollider
+CQ.boot;                       // odota 2 s fade-in
+CQ.deckA.load("field.wav");    // kenttä-äänite (suhteellinen polku -> samples/)
+CQ.set(\coco2Level, 0);        // hiljennä coco2:n power-on-kohinalooppi (valinnainen)
+CQ.patchPreset(\classic);      // tri1 -> coco1/coco2 spaf, castle->castle FM-rinki
+CQ.hold(1, 0);                 // coco1 record-tilaan
+```
+
+1. Kuuntele oletusarvoilla, koskematta mihinkään muuhun: pitäisi kuulostaa heti
+   "Cocoquantus-maiselta" — huojuvalta, aliasoivalta, elävältä (SPEC M6).
+2. Inverso-banaani: `CQ.patch(\envA, \coco2_fbVca, -0.5);` — puhu/soita
+   mikistä (`CQ.set(\preASrc, \mic)` tms.) → coco2:n feedback-VCA duckkaa
+   signaalin voimakkuuden mukaan (negatiivinen paino = inverso-polariteetti).
+3. `CQ.set(\patchDepth, 0);` → koko matriisin vaikutus katoaa pehmeästi (50 ms
+   lag), ei klikkiä. `CQ.set(\patchDepth, 1);` → banaanit palaavat täyteen
+   voimaan, yhtä pehmeästi.
+4. `CQ.clearPatch;` → kaikki banaanit irti, takaisin puhtaaseen coco-ääneen.
+5. Vapaa ~20 min koodi-only-sessio (ei GUI:ta vielä) — kokeile omia patcheja,
+   esim. `CQ.patch(\cas3, \coco1_spaf, 0.7);`, `CQ.patch(\coco1, \coco2_fbVca, 0.4);`,
+   `CQ.patch(\coco2, \coco1_fbVca, 0.4);` (banaani-pari = kahden coco-ristikaiun
+   ducking). Kirjoita vain patch-rivejä ja tunnettuja `CQ.set`-kutsuja.
+
+- [ ] M6 hyväksytty (pvm: )
+
 ## M7 — 30 min abuse-sessio (vaihe 7, tulossa)
 ## M8 — 16n-faderit (vaihe 5, tulossa)

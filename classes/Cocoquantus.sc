@@ -3,7 +3,7 @@
 // CQ (bottom of file) is the short alias — classvars are shared.
 
 Cocoquantus {
-	classvar <config, <graph, <state, <server;
+	classvar <config, <graph, <state, <matrix, <server;
 	classvar configPath, deckAPlayer;
 
 	*boot { |path, onReady|
@@ -23,12 +23,14 @@ Cocoquantus {
 		graph = CQGraph(server, config);
 		graph.applyOptions;
 		state = CQState(graph);
+		matrix = CQMatrix(graph);
 		server.waitForBoot {
 			graph.build;                       // buses + groups, synced
 			CQSynthDefs.send(config, server);
 			server.sync;
 			graph.spawn;                       // synths in group order, synced
 			state.pushAll;                     // defaults + power-on state
+			matrix.pushAll;                    // matrix empty (SPEC boot sequence)
 			server.sync;
 			deckAPlayer = CQDeck(graph, state, \deckA, this.prSamplesDir);
 			graph.fadeIn;                      // silent until verified → 2 s ramp
@@ -100,6 +102,32 @@ Cocoquantus {
 		^deckAPlayer
 	}
 
+	// routing matrix facade (SPEC §5.5): all four go through CQMatrix's own
+	// funnel (clamp -1..1, mirror to the wDest bus, notify dependants)
+	*patch { |src, dest, w = 1.0|
+		if(matrix.isNil) { "Cocoquantus: not booted.".warn; ^this };
+		matrix.patch(src, dest, w);
+	}
+
+	*unpatch { |src, dest|
+		if(matrix.isNil) { "Cocoquantus: not booted.".warn; ^this };
+		matrix.unpatch(src, dest);
+	}
+
+	*clearPatch {
+		if(matrix.isNil) { "Cocoquantus: not booted.".warn; ^this };
+		matrix.clearPatch;
+	}
+
+	*getPatch { |src, dest|
+		^matrix !? { matrix.getPatch(src, dest) }
+	}
+
+	*patchPreset { |name|
+		if(matrix.isNil) { "Cocoquantus: not booted.".warn; ^this };
+		matrix.preset(name);
+	}
+
 	// panic is always reachable and preserves state (SPEC safety #3)
 	*panic {
 		this.set(\monitorMute, 1);
@@ -123,6 +151,7 @@ Cocoquantus {
 			graph.free;
 			graph = nil;
 			state = nil;
+			matrix = nil;
 			config = nil;
 			"Cocoquantus: freed.".postln;
 		}.fork(AppClock);
