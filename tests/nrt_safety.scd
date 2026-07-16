@@ -1,7 +1,9 @@
-// NRT safety render (SPEC §10 A3 — phase-1 subset). Renders the REAL SynthDefs
+// NRT safety render (SPEC §10 A3 — phase-2 subset). Renders the REAL SynthDefs
 // offline (scsynth -N, no audio device) under worst-case input and asserts:
 // peak <= -0.75 dBFS, no NaN/inf, |DC| <= 0.02. Thresholds may NEVER be raised
 // (CLAUDE.md safety #6). Phase 4 extends this to the full \mayhem 90 s case.
+// Cases: master-chain torture, coco worst case (fb 1.25 + drive 40 + wrap +
+// dust max + max cross-feed), NaN injection.
 // Prints CQ_SAFETY_PASSED / CQ_SAFETY_FAILED as its last line.
 // Run: "<sclang.exe>" -l tests/sclang_conf_dev.yaml -i none tests/nrt_safety.scd
 
@@ -21,13 +23,19 @@ var check = { |bool, msg|
 
 // NRT bus plan (in = 2, out = 2 -> private audio buses start at index 4)
 var bCoco1 = 4, bCoco2 = 5, bSpaceRet = 6, bDry = 8;
-var bDeckA = 10, bDeckB = 11, bPreA = 12, bPreB = 13, bModSrc = 16;
+var bDeckA = 10, bDeckB = 11, bPreA = 12, bPreB = 13, bQMix = 14, bModSrc = 16;
+var cocoBufFrames = 32768;   // short loop -> many recirculation passes in 10 s
 
 // what a runaway patch could hand the master: 4x full scale + DC offsets
 var tortureDef = SynthDef(\cqTestTorture, {
 	Out.ar(\c1.ir(4), WhiteNoise.ar(4) + DC.ar(0.5));
 	Out.ar(\c2.ir(5), WhiteNoise.ar(4) - DC.ar(0.5));
 	Out.ar(\dry.ir(8), PinkNoise.ar([2, 2]) + DC.ar([1, -1]));
+});
+// same abuse, but into the deck buses = through the cocos' converter chain
+var feedDef = SynthDef(\cqTestFeed, {
+	Out.ar(\a.ir(10), WhiteNoise.ar(4) + DC.ar(0.5));
+	Out.ar(\b.ir(11), WhiteNoise.ar(4) - DC.ar(0.5));
 });
 var nanDef = SynthDef(\cqTestNan, {
 	var bad = DC.ar(0) / DC.ar(0);     // NaN generator (0/0)
@@ -49,6 +57,42 @@ var makeScore = { |testDefName|
 	score.add([0.0, [\s_new, \cqMaster, 1003, 1, 1000,
 		\coco1Bus, bCoco1, \coco2Bus, bCoco2, \spaceRetBus, bSpaceRet, \dryBus, bDry,
 		\masterVol, 0, \masterDry, 1, \fadeIn, 1]]);   // vol maxed = worst case
+	score.add([dur, [\c_set, 0, 0]]);
+	score
+};
+
+// phase-2 worst case through the REAL coco pair: preamp drive/bias maxed, both
+// converter chains at inLevel 2 / fb 1.25 / dust 0.5 / wrap on / bits 3, all
+// slots (incl. cross-feed) at 1.5, recording (hold 0) — clip2/wrap2 inside the
+// recirculation is the invariant under test (SPEC §8.2)
+var makeCocoScore = {
+	var score = Score.new;
+	var cocoArgs = { |buf, pre, deck, cross, out, tap, org|
+		[\buf, buf, \preBus, pre, \deckBus, deck, \qMixBus, bQMix,
+			\crossBus, cross, \outBus, out, \modSrcBus, bModSrc,
+			\modTapIdx, tap, \modOrganIdx, org,
+			\inLevel, 2, \fbLevel, 1.25, \dust, 0.5, \wrap, 1, \bits, 3,
+			\hold, 0, \organLvl, 1, \level, 1.5, \speed, 24000,
+			\slotPre, 1.5, \slotDeck, 1.5, \slotQ, 0, \slotX, 1.5]
+	};
+	defs.do { |d| score.add([0.0, [\d_recv, d.asBytes]]) };
+	score.add([0.0, [\d_recv, feedDef.asBytes]]);
+	score.add([0.0, [\b_alloc, 0, cocoBufFrames, 1]]);
+	score.add([0.0, [\b_alloc, 1, cocoBufFrames, 1]]);
+	score.add([0.0, [\g_new, 1000, 0, 0]]);
+	score.add([0.0, [\s_new, \cqTestFeed, 1001, 1, 1000, \a, bDeckA, \b, bDeckB]]);
+	score.add([0.0, [\s_new, \cqInput, 1002, 1, 1000,
+		\deckABus, bDeckA, \deckBBus, bDeckB, \modSrcBus, bModSrc,
+		\preABus, bPreA, \preBBus, bPreB, \dryBus, bDry,
+		\preASrc, 3, \preBSrc, 4,          // enum indices: deckA, deckB
+		\preADrive, 40, \preBDrive, 40, \preABias, 0.6, \preBBias, 0.6]]);
+	score.add([0.0, ([\s_new, \cqCoco, 1003, 1, 1000]
+		++ cocoArgs.value(0, bPreA, bDeckA, bCoco2, bCoco1, 12, 14))]);
+	score.add([0.0, ([\s_new, \cqCoco, 1004, 1, 1000]
+		++ cocoArgs.value(1, bPreB, bDeckB, bCoco1, bCoco2, 13, 15))]);
+	score.add([0.0, [\s_new, \cqMaster, 1005, 1, 1000,
+		\coco1Bus, bCoco1, \coco2Bus, bCoco2, \spaceRetBus, bSpaceRet, \dryBus, bDry,
+		\masterVol, 0, \masterDry, 1, \fadeIn, 1]]);
 	score.add([dur, [\c_set, 0, 0]]);
 	score
 };
@@ -86,10 +130,11 @@ opts.blockSize = cfg[\blockSize];
 File.mkdir(tmpDir);
 
 {
-	var r1, r2;
+	var r1, r2, r3;
 	var ceiling = (-0.75).dbamp;
 	var p1 = tmpDir +/+ "nrt_safety_torture.wav";
 	var p2 = tmpDir +/+ "nrt_safety_nan.wav";
+	var p3 = tmpDir +/+ "nrt_safety_coco.wav";
 
 	try {
 		"CQ NRT: rendering torture case (% s)...".format(dur).postln;
@@ -107,6 +152,22 @@ File.mkdir(tmpDir);
 				.format(r1[\peak].round(0.0001)));
 		check.value(r1[\dcL].abs <= 0.02, "|DC left| <= 0.02");
 		check.value(r1[\dcR].abs <= 0.02, "|DC right| <= 0.02");
+
+		"CQ NRT: rendering coco worst case (% s)...".format(dur).postln;
+		render.value(makeCocoScore.value, p3);
+		r3 = analyze.value(p3);
+		"coco: peak %  dcL %  dcR %  frames %".format(
+			r3[\peak].round(0.0001), r3[\dcL].round(0.00001),
+			r3[\dcR].round(0.00001), r3[\frames]).postln;
+		check.value(r3[\frames] > 0, "coco render produced audio");
+		check.value(r3[\bad].not, "coco render has no NaN/inf");
+		check.value(r3[\peak] <= ceiling,
+			"coco peak % <= -0.75 dBFS".format(r3[\peak].round(0.0001)));
+		check.value(r3[\peak] >= 0.25,
+			"coco pair carried signal (peak % >= 0.25, not failed-to-silence)"
+				.format(r3[\peak].round(0.0001)));
+		check.value(r3[\dcL].abs <= 0.02, "coco |DC left| <= 0.02");
+		check.value(r3[\dcR].abs <= 0.02, "coco |DC right| <= 0.02");
 
 		"CQ NRT: rendering NaN-injection case...".postln;
 		render.value(makeScore.value(\cqTestNan), p2);

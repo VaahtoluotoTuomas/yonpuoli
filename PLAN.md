@@ -4,8 +4,9 @@ Vaiheistettu checklist. Toimii CLAUDE.md:n milestone-checklistinä (TODO.md:n ro
 Normatiiviset lähteet: SPEC.md (käyttäytyminen), ARCHITECTURE.md (rakenne).
 Milestone-mappaus: **M1 = vaiheet 0–4 · M2 = vaiheet 5–6 · M3 = vaihe 7**.
 
-**Tilanne 2026-07-16:** vaiheet 0–1 valmiit, testit vihreitä, kuuntelu-gatet hyväksytty
-ja commitattu (`b03692b`, `a7c278b`). Seuraavaksi: **vaihe 2** (deck A + Coco-pari).
+**Tilanne 2026-07-16:** vaiheet 0–1 hyväksytty (`b03692b`, `a7c278b`). Vaiheen 2
+toteutus valmis ja kaikki neljä testimarkeria vihreitä — **KUUNTELU 2 odottaa
+käyttäjää** (muista Ctrl+Shift+L ensin). Sen jälkeen: vaihe 3 (Quantussy).
 
 ## Läpileikkaavat säännöt
 
@@ -116,22 +117,27 @@ ja commitattu (`b03692b`, `a7c278b`). Seuraavaksi: **vaihe 2** (deck A + Coco-pa
 ## Vaihe 2 — Deck A + Coco-pari (sydän)
 
 ### Toteutus
-- [ ] `classes/CQDeck.sc` + `\cqDeck` — deck A: lataus, −6 dBFS-normalisointi,
+- [x] `classes/CQDeck.sc` + `\cqDeck` — deck A: lataus, −6 dBFS-normalisointi,
       rate/loop, bufferinvaihto crossfadella (ARCH §4.1)
-- [ ] `\cqCoco` ×2 (ARCH §4.4) — **BufRd ENNEN BufWr:ää** (load-bearing!);
+- [x] `\cqCoco` ×2 (ARCH §4.4) — **BufRd ENNEN BufWr:ää** (load-bearing!);
       converter-järjestys SPEC §5.3: input mix → dolby(in) → ×inVCA → +feedback
       (dolby(fb) → ×fbVCA) → +dust → `clip2(1)`/wrap → kvantisointi → RAM;
       hold (identity rewrite = lossless), flip, skip, dolby-helper, organ,
       bits/wrap/interp, slot-mikseri, InFeedback-ristisyöttö, speed-clamp 1500 Hz–SR
-- [ ] Power-on-tila: bufferit kohinatäytteisiä, `hold = 1` (SPEC §4)
-- [ ] Facade: `CQ.hold/flip/skip`, `CQ.deckA` (load/rate/loop)
-- [ ] `tests/nrt_hold_integrity.scd` — SPEC A4 (hold 60 s + speed-sweep ±2 okt,
+- [x] Power-on-tila: bufferit kohinatäytteisiä (8-bit-kvantisoitu, −12 dBFS),
+      `hold = 1` (SPEC §4)
+- [x] Facade: `CQ.hold/flip/skip` (arvotta = toggle), `CQ.deckA`
+      (load/rate/loop/level/restart)
+- [x] `tests/nrt_hold_integrity.scd` — SPEC A4 (hold 60 s + speed-sweep ±2 okt,
       korrelaatio ≥ 0.999) ja A5 (unity looper, energia ±1 dB / 30 s) → `CQ_HOLD_OK`
-- [ ] `tests/nrt_safety.scd` laajennus: coco fb 1.25 + drive 40 + wrap + dust max
-- [ ] `tests/manual_checklist.md` luodaan (M1, M2, M5-osat; kasvaa vaiheittain)
+- [x] `tests/nrt_safety.scd` laajennus: coco fb 1.25 + drive 40 + wrap + dust max
+      + bits 3 + ristisyöttö 1.5 molempiin suuntiin
+- [x] `tests/manual_checklist.md` luotu (M1, M2, M5-osat + dust; kasvaa vaiheittain)
 
 ### Testit
-- [ ] `CQ_COMPILE_OK` · `CQ_TESTS_PASSED` · `CQ_SAFETY_PASSED` · `CQ_HOLD_OK`
+- [x] `CQ_COMPILE_OK` · `CQ_TESTS_PASSED` (897) · `CQ_SAFETY_PASSED`
+      (coco-pahin peak 0.868 ≤ 0.89) · `CQ_HOLD_OK` (A4-korrelaatio 1.0 =
+      bittitarkka; A5-drift 0.0 dB) (2026-07-16)
 
 ### KUUNTELU 2 (iso, ~15 min) — Coco-identiteetti
 - [ ] (a) Kenttä-äänite deck A:han, `coco1Hold 0` → nauhoita → `coco1Hold 1` →

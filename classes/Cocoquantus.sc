@@ -4,7 +4,7 @@
 
 Cocoquantus {
 	classvar <config, <graph, <state, <server;
-	classvar configPath;
+	classvar configPath, deckAPlayer;
 
 	*boot { |path, onReady|
 		if(this.isBooted) {
@@ -30,6 +30,7 @@ Cocoquantus {
 			graph.spawn;                       // synths in group order, synced
 			state.pushAll;                     // defaults + power-on state
 			server.sync;
+			deckAPlayer = CQDeck(graph, state, \deckA, this.prSamplesDir);
 			graph.fadeIn;                      // silent until verified → 2 s ramp
 			CmdPeriod.add(this);
 			"Cocoquantus: ready — output fading in over 2 s.".postln;
@@ -51,6 +52,32 @@ Cocoquantus {
 		^state.get(name)
 	}
 
+	// coco performance actions (SPEC §6.3): hold/flip toggle when called without
+	// a value; both go through the state funnel. skip is a trigger, not a param —
+	// it goes straight to the synth (no CQSpec entry, nothing to clamp)
+	*hold { |n = 1, val|
+		var name = this.prCocoParam(n, "Hold");
+		name !? { this.set(name, val ?? { 1 - (this.get(name) ? 0) }) };
+	}
+
+	*flip { |n = 1, val|
+		var name = this.prCocoParam(n, "Flip");
+		name !? { this.set(name, val ?? { 1 - (this.get(name) ? 0) }) };
+	}
+
+	*skip { |n = 1|
+		var synth;
+		if(this.prCocoParam(n, "Hold").isNil) { ^this };
+		if(this.isBooted.not) { "Cocoquantus: not booted.".warn; ^this };
+		synth = graph.synths[("coco" ++ n).asSymbol];
+		synth !? { synth.set(\t_skip, 1) };
+	}
+
+	*deckA {
+		if(deckAPlayer.isNil) { "Cocoquantus: not booted — no deck A.".warn };
+		^deckAPlayer
+	}
+
 	// panic is always reachable and preserves state (SPEC safety #3)
 	*panic {
 		this.set(\monitorMute, 1);
@@ -69,6 +96,8 @@ Cocoquantus {
 				state.set(\monitorMute, 1);    // 30 ms fade before teardown
 				0.15.wait;
 			};
+			deckAPlayer !? { deckAPlayer.free };
+			deckAPlayer = nil;
 			graph.free;
 			graph = nil;
 			state = nil;
@@ -95,6 +124,21 @@ Cocoquantus {
 
 	*repoDir {
 		^this.filenameSymbol.asString.dirname.dirname
+	}
+
+	// ---- private ----
+
+	*prCocoParam { |n, suffix|
+		if(#[1, 2].includes(n).not) {
+			"Cocoquantus: coco index must be 1 or 2 (got %).".format(n).warn;
+			^nil
+		};
+		^("coco" ++ n ++ suffix).asSymbol
+	}
+
+	*prSamplesDir {
+		var dir = config[\folders][\samples].asString;
+		^if(PathName(dir).isAbsolutePath) { dir } { this.repoDir +/+ dir }
 	}
 }
 

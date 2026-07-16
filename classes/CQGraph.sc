@@ -52,6 +52,11 @@ CQGraph {
 		buses[\space] = Bus.audio(server, 2);
 		buses[\spaceRet] = Bus.audio(server, 2);
 		buses[\dry] = Bus.audio(server, 2);
+		// power-on RAM state (SPEC §4): buffers full of 8-bit-quantized noise at
+		// −12 dBFS, loop-locked via the hold=1 default — "digital dust" is a
+		// documented, intentional sound source
+		buffers[\coco1] = this.prNoiseBuffer;
+		buffers[\coco2] = this.prNoiseBuffer;
 		groups[\cq] = Group(server);
 		groups[\sources] = Group(groups[\cq], \addToTail);
 		groups[\quantussy] = Group(groups[\cq], \addToTail);
@@ -71,6 +76,20 @@ CQGraph {
 			\preBBus, buses[\preB].index,
 			\dryBus, buses[\dry].index
 		], groups[\sources]);
+		// canonical aModSrc channels: coco taps 12/13, organs 14/15 (ARCH §3.2)
+		[[\coco1, \preA, \deckA, \coco2, 12, 14],
+		 [\coco2, \preB, \deckB, \coco1, 13, 15]].do { |row|
+			synths[row[0]] = Synth(\cqCoco, [
+				\buf, buffers[row[0]].bufnum,
+				\preBus, buses[row[1]].index,
+				\deckBus, buses[row[2]].index,
+				\qMixBus, buses[\qMix].index,
+				\crossBus, buses[row[3]].index,
+				\outBus, buses[row[0]].index,
+				\modSrcBus, buses[\modSrc].index,
+				\modTapIdx, row[4], \modOrganIdx, row[5]
+			], groups[\cocos]);
+		};
 		synths[\master] = Synth(\cqMaster, [
 			\coco1Bus, buses[\coco1].index,
 			\coco2Bus, buses[\coco2].index,
@@ -86,6 +105,11 @@ CQGraph {
 		synths[\master].set(\fadeIn, 1);
 	}
 
+	// registration API for the only allowed synth churn (deck loads, recorder):
+	// callers hand ownership over so teardown stays in one place (CLAUDE.md)
+	registerSynth { |key, synth| synths[key] = synth }
+	registerBuffer { |key, buffer| buffers[key] = buffer }
+
 	// Cmd-. killed all nodes: forget them so free won't message dead IDs
 	markKilled {
 		isRunning = false;
@@ -98,5 +122,16 @@ CQGraph {
 		buffers.do(_.free);
 		this.prInit;
 		isRunning = false;
+	}
+
+	// ---- private ----
+
+	// must run inside a Routine (build is called from waitForBoot's routine)
+	prNoiseBuffer {
+		var cond = Condition.new;
+		var data = FloatArray.fill(config[\bufFrames], { 0.25.rand2.round(2 ** -7) });
+		var buf = Buffer.loadCollection(server, data, 1, { cond.unhang });
+		cond.hang;
+		^buf
 	}
 }

@@ -69,6 +69,25 @@ CQState {
 		r[\monitorMute] = [\master, \mute];
 		r[\coco1Pan] = [\master, \pan1];
 		r[\coco2Pan] = [\master, \pan2];
+		// cocos (phase 2); cocoNSend routes to \cqSpace in phase 7
+		[1, 2].do { |n|
+			var synthKey = ("coco" ++ n).asSymbol;
+			[
+				[\In, \inLevel], [\Fb, \fbLevel], [\Speed, \speed], [\Spaf, \spafKnob],
+				[\DolbyIn, \dolbyIn], [\DolbyFb, \dolbyFb], [\Hold, \hold],
+				[\Flip, \flip], [\Bits, \bits], [\Wrap, \wrap], [\Interp, \interp],
+				[\Dust, \dust], [\Organ, \organLvl], [\Level, \level],
+				[\SlotPre, \slotPre], [\SlotDeck, \slotDeck], [\SlotQ, \slotQ],
+				[\SlotX, \slotX]
+			].do { |pair|
+				r[("coco" ++ n ++ pair[0]).asSymbol] = [synthKey, pair[1]];
+			};
+		};
+		// deck A (deck B arrives in phase 5); the synth exists only after a load —
+		// prSend skips silently until then, CQDeck spawns with current values
+		r[\deckARate] = [\deckA, \rate];
+		r[\deckALevel] = [\deckA, \level];
+		r[\deckALoop] = [\deckA, \loop];
 		^r
 	}
 }
