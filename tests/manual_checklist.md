@@ -82,7 +82,44 @@ Duck-artikulaatio ja suunnanvaihto; dolby-osuus täydentyy GUI:sta vaiheessa 6.
 
 ---
 
-## M3 — Chaos-sweep (vaihe 3, tulossa)
+## M3 — Quantussy-tuntuma (vaihe 3)
+
+Alkuasetelma — Quantussy kuuluviin coco1:n läpi (castle 5 on boot-oletuksena
+audio-alueella, `c5Send 0.5`):
+
+```supercollider
+CQ.boot;                       // odota 2 s fade-in
+CQ.set(\coco2Level, 0);        // coco2:n power-on-kohinalooppi pois
+CQ.set(\coco1SlotDeck, 0);
+CQ.set(\coco1SlotPre, 0);
+CQ.set(\coco1SlotQ, 1);        // Quantussy-mix coco1:n input-mikseriin
+CQ.hold(1, 0);                 // record-tila: qMix pääsee looppiin
+```
+
+→ Castle 5:n kolmioaalto (~140 Hz) kuuluu coco1:n läpi.
+
+1. **Chaos-sweep** (`qFreq` oletuksessa 4):
+   `CQ.set(\qChaos, 0);` → täysin vakaa sävel.
+   `CQ.set(\qChaos, 0.1);` → vibratomainen huojunta.
+   `CQ.set(\qChaos, 0.4);` → askeltava satunnaiskulku (S&H-melodia).
+   `CQ.set(\qChaos, 1);` → hyperkaaos: purskeita, pillejä, hiljaisuuksia.
+2. **qFreq-sweep** (`qChaos` ~0.3): liu'uta `CQ.set(\qFreq, ...)` arvoilla
+   0.5 → 4 → 50 → 500. Kaikkien viiden castlen pitää skaalautua yhdessä ja
+   LFO↔audio-rajan ylitysten olla portaattomia (ei hyppyjä, ei klikkejä).
+3. **Range-kytkimet**:
+   `CQ.set(\c1Range, \audio); CQ.set(\c1Send, 0.5);` → toinen ääni sisään.
+   `CQ.set(\c1Range, \balcium);` → putoaa keskialueelle.
+   `CQ.set(\c1Range, \infra); CQ.set(\c1Send, 0);` → takaisin LFO:ksi.
+4. **Spesal** (`qChaos` > 0, jotta verkko elää):
+   `CQ.spesal(5);` toistuvasti → partner/mode vaihtuu, tekstuuri muuttuu
+   kuultavasti joka askeleella. Myös `CQ.spesal(3)` (FM-lähteen vaihto näkyy
+   verkon käytöksessä). `CQ.spesalSet(5, 0);` palauttaa tunnettuun tilaan.
+5. **qShLag** (`qChaos` 0.4): `CQ.set(\qShLag, 0.004);` → autenttiset kovat
+   askeleet. `CQ.set(\qShLag, 0.08);` → askeleet liukuvat, verkko kesyyntyy.
+   Palauta `0.004`.
+
+- [ ] M3 hyväksytty (pvm: )
+
 ## M4 — \selfNoise-preset (vaihe 6, tulossa)
 ## M6 — \classic kenttä-äänitteellä (vaihe 4, tulossa)
 ## M7 — 30 min abuse-sessio (vaihe 7, tulossa)

@@ -3,12 +3,16 @@
 // peak <= -0.75 dBFS, no NaN/inf, |DC| <= 0.02. Thresholds may NEVER be raised
 // (CLAUDE.md safety #6). Phase 4 extends this to the full \mayhem 90 s case.
 // Cases: master-chain torture, coco worst case (fb 1.25 + drive 40 + wrap +
-// dust max + max cross-feed), NaN injection.
+// dust max + max cross-feed), quantussy worst case (all castles audio range,
+// chaos 1, all sends up, through coco1's converter — qMix must be audible AND
+// bounded), NaN injection.
 // Prints CQ_SAFETY_PASSED / CQ_SAFETY_FAILED as its last line.
 // Run: "<sclang.exe>" -l tests/sclang_conf_dev.yaml -i none tests/nrt_safety.scd
 
 (
-var repo = thisProcess.nowExecutingPath.dirname.dirname;
+var repo = File.realpath(thisProcess.nowExecutingPath).dirname.dirname;
+// ^ realpath: nowExecutingPath is relative when sclang gets a relative script
+// argument — bare dirname would then write renders to tests/tests/tmp
 var tmpDir = repo +/+ "tests" +/+ "tmp";
 var cfg = CQConfig.validate(());       // deterministic defaults, never the user's config
 var defs = CQSynthDefs.all(cfg);
@@ -97,6 +101,34 @@ var makeCocoScore = {
 	score
 };
 
+// phase-3 case: the full quantussy at its wildest (every castle on audio range,
+// qFreq maxed, chaos 1) feeding coco1's converter via slotQ with the converter
+// itself at its phase-2 worst case — asserts the qMix path is non-silent and
+// the recirculation stays bounded (PLAN vaihe 3)
+var makeQuantussyScore = {
+	var score = Score.new;
+	defs.do { |d| score.add([0.0, [\d_recv, d.asBytes]]) };
+	score.add([0.0, [\b_alloc, 0, cocoBufFrames, 1]]);
+	score.add([0.0, [\g_new, 1000, 0, 0]]);
+	score.add([0.0, [\s_new, \cqQuantussy, 1001, 1, 1000,
+		\modSrcBus, bModSrc, \qMixBus, bQMix,
+		\qFreq, 500, \qChaos, 1,
+		\range1, 2, \range2, 2, \range3, 2, \range4, 2, \range5, 2,
+		\send1, 1, \send2, 1, \send3, 1, \send4, 1, \send5, 1]]);
+	score.add([0.0, [\s_new, \cqCoco, 1002, 1, 1000,
+		\buf, 0, \preBus, bPreA, \deckBus, bDeckA, \qMixBus, bQMix,
+		\crossBus, bCoco2, \outBus, bCoco1, \modSrcBus, bModSrc,
+		\modTapIdx, 12, \modOrganIdx, 14,
+		\inLevel, 2, \fbLevel, 1.25, \dust, 0.5, \wrap, 1, \bits, 3,
+		\hold, 0, \level, 1.5, \speed, 24000,
+		\slotPre, 0, \slotDeck, 0, \slotQ, 1.5, \slotX, 0]]);
+	score.add([0.0, [\s_new, \cqMaster, 1003, 1, 1000,
+		\coco1Bus, bCoco1, \coco2Bus, bCoco2, \spaceRetBus, bSpaceRet, \dryBus, bDry,
+		\masterVol, 0, \masterDry, 0, \fadeIn, 1]]);
+	score.add([dur, [\c_set, 0, 0]]);
+	score
+};
+
 var render = { |score, outPath|
 	var done = false, waited = 0;
 	score.recordNRT(nil, outPath, nil, sr, "WAV", "float", opts,
@@ -130,11 +162,12 @@ opts.blockSize = cfg[\blockSize];
 File.mkdir(tmpDir);
 
 {
-	var r1, r2, r3;
+	var r1, r2, r3, r4;
 	var ceiling = (-0.75).dbamp;
 	var p1 = tmpDir +/+ "nrt_safety_torture.wav";
 	var p2 = tmpDir +/+ "nrt_safety_nan.wav";
 	var p3 = tmpDir +/+ "nrt_safety_coco.wav";
+	var p4 = tmpDir +/+ "nrt_safety_quantussy.wav";
 
 	try {
 		"CQ NRT: rendering torture case (% s)...".format(dur).postln;
@@ -168,6 +201,22 @@ File.mkdir(tmpDir);
 				.format(r3[\peak].round(0.0001)));
 		check.value(r3[\dcL].abs <= 0.02, "coco |DC left| <= 0.02");
 		check.value(r3[\dcR].abs <= 0.02, "coco |DC right| <= 0.02");
+
+		"CQ NRT: rendering quantussy worst case (% s)...".format(dur).postln;
+		render.value(makeQuantussyScore.value, p4);
+		r4 = analyze.value(p4);
+		"quantussy: peak %  dcL %  dcR %  frames %".format(
+			r4[\peak].round(0.0001), r4[\dcL].round(0.00001),
+			r4[\dcR].round(0.00001), r4[\frames]).postln;
+		check.value(r4[\frames] > 0, "quantussy render produced audio");
+		check.value(r4[\bad].not, "quantussy render has no NaN/inf");
+		check.value(r4[\peak] <= ceiling,
+			"quantussy peak % <= -0.75 dBFS".format(r4[\peak].round(0.0001)));
+		check.value(r4[\peak] >= 0.25,
+			"qMix carried signal (peak % >= 0.25, not failed-to-silence)"
+				.format(r4[\peak].round(0.0001)));
+		check.value(r4[\dcL].abs <= 0.02, "quantussy |DC left| <= 0.02");
+		check.value(r4[\dcR].abs <= 0.02, "quantussy |DC right| <= 0.02");
 
 		"CQ NRT: rendering NaN-injection case...".postln;
 		render.value(makeScore.value(\cqTestNan), p2);

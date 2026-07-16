@@ -83,6 +83,13 @@ CQState {
 				r[("coco" ++ n ++ pair[0]).asSymbol] = [synthKey, pair[1]];
 			};
 		};
+		// quantussy (phase 3); spesal is a trigger action, not a param (Cocoquantus)
+		[\qFreq, \qChaos, \qShLag].do { |n| r[n] = [\quantussy, n] };
+		(1..5).do { |k|
+			r[("c" ++ k ++ "Range").asSymbol] = [\quantussy, ("range" ++ k).asSymbol];
+			r[("c" ++ k ++ "Off").asSymbol] = [\quantussy, ("off" ++ k).asSymbol];
+			r[("c" ++ k ++ "Send").asSymbol] = [\quantussy, ("send" ++ k).asSymbol];
+		};
 		// deck A (deck B arrives in phase 5); the synth exists only after a load —
 		// prSend skips silently until then, CQDeck spawns with current values
 		r[\deckARate] = [\deckA, \rate];

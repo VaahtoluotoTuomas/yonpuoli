@@ -4,9 +4,10 @@ Vaiheistettu checklist. Toimii CLAUDE.md:n milestone-checklistinä (TODO.md:n ro
 Normatiiviset lähteet: SPEC.md (käyttäytyminen), ARCHITECTURE.md (rakenne).
 Milestone-mappaus: **M1 = vaiheet 0–4 · M2 = vaiheet 5–6 · M3 = vaihe 7**.
 
-**Tilanne 2026-07-16:** vaiheet 0–2 valmiit, testit vihreitä ja kuuntelu-gatet
-hyväksytty (`b03692b`, `a7c278b`, `b7cb33a` + palautekorjaukset). Seuraavaksi:
-**vaihe 3** (Quantussy).
+**Tilanne 2026-07-16:** vaiheet 0–2 valmiit ja hyväksytty (`b03692b`, `a7c278b`,
+`b7cb33a` + palautekorjaukset). **Vaihe 3 (Quantussy) toteutettu, kaikki neljä
+testimarkeria vihreitä 2026-07-16 — KUUNTELU 3 -gate odottaa käyttäjää**
+(skripti: `tests/manual_checklist.md` M3; muista Ctrl+Shift+L ensin).
 
 ## Läpileikkaavat säännöt
 
@@ -180,17 +181,22 @@ hyväksytty (`b03692b`, `a7c278b`, `b7cb33a` + palautekorjaukset). Seuraavaksi:
 ## Vaihe 3 — Quantussy
 
 ### Toteutus
-- [ ] `\cqQuantussy` (ARCH §4.3) — 5 castlea audio-ratella, LocalIn/LocalOut-rinki,
+- [x] `\cqQuantussy` (ARCH §4.3) — 5 castlea audio-ratella, LocalIn/LocalOut-rinki,
       S&H-parit (partner = state mod 4, mode = state div 4), spesal 8 tilaa,
       taajuuskaava `qFreq × range × 2^(off + qChaos·5·sh2 + fmExt)` clip 0.01–4000 Hz,
-      qShLag, qMix (per-castle sendit), SendReply spesal-tiloista
-- [ ] Boot-oletukset: ranget `[\infra, \infra, \balcium, \infra, \audio]`,
-      off-detunet SPEC §5.4:n mukaan, c5Send 0.5
-- [ ] Facade: `CQ.spesal(k)`, `spesalSet`
-- [ ] `tests/nrt_safety.scd` lisäys: qMix-render ei-hiljainen ja rajattu
+      qShLag, qMix (per-castle sendit), SendReply spesal-tiloista (`/cq_spesal`)
+- [x] Boot-oletukset: ranget `[\infra, \infra, \balcium, \infra, \audio]`,
+      off-detunet SPEC §5.4:n mukaan, c5Send 0.5 (CQSpec-defaultit + routet →
+      pushAll hoitaa)
+- [x] Facade: `CQ.spesal(k)`, `spesalSet`
+- [x] `tests/nrt_safety.scd` lisäys: qMix-render ei-hiljainen ja rajattu
+      (kaikki castlet audio-rangella, chaos 1, sendit 1 → coco1 slotQ 1.5
+      pahimmillaan: peak 0.618, ei NaN, DC ok)
+- [x] `tests/manual_checklist.md`: M3-osio (KUUNTELU 3 -skripti)
 
 ### Testit
-- [ ] `CQ_COMPILE_OK` · `CQ_TESTS_PASSED` · `CQ_SAFETY_PASSED`
+- [x] `CQ_COMPILE_OK` · `CQ_TESTS_PASSED` (897) · `CQ_SAFETY_PASSED` ·
+      `CQ_HOLD_OK` (varmuudeksi, coco-DSP ennallaan) (2026-07-16)
 
 ### KUUNTELU 3 — Quantussy-tuntuma
 - [ ] `CQ.set(\coco1SlotQ, 1)` → castle 5 kuuluu coco1:n läpi
@@ -201,6 +207,25 @@ hyväksytty (`b03692b`, `a7c278b`, `b7cb33a` + palautekorjaukset). Seuraavaksi:
 - [ ] (d) `CQ.spesal(k)` -askeleet muuttavat tekstuuria kuultavasti
 - [ ] (e) qShLag: 4 ms ≈ autenttiset askeleet, isompi kesyttää
 - [ ] Käyttäjän OK → vaihe hyväksytty
+
+### Kirjatut toteutuspäätökset (vaihe 3)
+- ARCH §4.3:n sketsissä castlen oma trig oli kehämääritelmä (trig → sh2 → hz →
+  tri → trig). Ratkaisu: castlen **oma kello johdetaan feedback-ringin
+  (LocalIn) edellisen blokin kolmiosta** — yhden blokin viive on sama jota
+  koko rinki jo käyttää (analogisilmukan stand-in, by design, ei "korjata").
+- Spesal-laskuri on **kokonaan serverillä**: `Stepper.ar(0..7, wrap)` per
+  castle; `\t_stepN` askeltaa (vaihe 4 summaa matriisitrigin samaan
+  inputtiin), `\t_setN` lataa `\stateN`-arvon (resetval), `Impulse.ar(0)`
+  pakottaa boot-tilan. Tilat raportoidaan `SendReply`llä `/cq_spesal`
+  (kuuntelija tulee GUI:n myötä vaiheessa 6). `CQ.spesal/spesalSet` ovat
+  aktioita kuten skip — eivät CQSpec-parametreja; spesalSet clampaa mod 8.
+- Range-kertoimet (×0.02/×1/×40) ja taajuusclampit (0.01–4000 Hz) ovat
+  defissä SPEC §5.4 -viittein — enum-arvojen merkityksiä, eivät rangeja.
+- qShLag-lagattu `cas` kiertää myös feedback-ringissä (sketsin mukaisesti),
+  eli isompi qShLag kesyttää nimenomaan koko verkkoa, ei vain ulostuloa.
+- Synth-argit: `\qFreq \qChaos \qShLag`, per castle `\rangeN \offN \sendN
+  \stateN \t_stepN \t_setN` (CQState reitittää `cNRange→rangeN` jne.,
+  enumit indekseinä kuten ennenkin).
 
 ---
 

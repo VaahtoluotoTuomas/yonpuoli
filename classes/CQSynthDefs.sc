@@ -7,7 +7,8 @@
 CQSynthDefs {
 
 	*all { |config|
-		^[this.input(config), this.deck(config), this.coco(config), this.master(config)]
+		^[this.input(config), this.deck(config), this.quantussy(config),
+			this.coco(config), this.master(config)]
 	}
 
 	*send { |config, server|
@@ -75,6 +76,76 @@ CQSynthDefs {
 			sig = sig * level * env;
 			Out.ar(\out.ir(0), sig);
 			Out.ar(\dryBus.ir(0), sig * 0.7 ! 2);
+		})
+	}
+
+	// ARCHITECTURE §4.3 — five triangle castles in one synth, all at audio rate
+	// (ranges genuinely reach audio). Cross-castle signals travel through a
+	// one-block LocalIn/LocalOut ring — the accepted stand-in for the analog
+	// loop, do not "fix". Castle mechanism (SPEC §5.4, normative): castle k's
+	// square clocks its S&H pair once per cycle; state 0..7 picks partner
+	// (state mod 4 of the other four — the CD4052) and mode (state div 4:
+	// 0 = sample&hold, 1 = track&hold). S&H1 samples partner's triangle →
+	// castle out; S&H2 samples partner's castle out → internal FM:
+	// hz = qFreq × range × 2^(off + qChaos·5·sh2 + fmExt), clipped 0.01–4000 Hz.
+	// The spesal counter is server-side (Stepper 0..7, wraps): \t_stepN steps,
+	// \t_setN loads \stateN; states are reported on '/cq_spesal' for the LEDs.
+	*quantussy { |config|
+		var rangeIdx = { |name|
+			CQSpec.at(name)[\values].indexOf(CQSpec.default(name))
+		};
+		^SynthDef(\cqQuantussy, {
+			var fb, fbTris, fbCass, qFreq, qChaos, qShLag;
+			var castles, tris, cass, stateKr, sends;
+			fb = LocalIn.ar(10);            // [tri1..5, cas1..5] from previous block
+			fbTris = fb[0..4];
+			fbCass = fb[5..9];
+			qFreq = \qFreq.kr(CQSpec.default(\qFreq), CQSpec.lag(\qFreq));
+			qChaos = \qChaos.kr(CQSpec.default(\qChaos), CQSpec.lag(\qChaos));
+			qShLag = \qShLag.kr(CQSpec.default(\qShLag), CQSpec.lag(\qShLag));
+			castles = 5.collect { |k|
+				var n = k + 1;
+				var others = (0..4).removing(k);
+				var stateArg = ("state" ++ n).asSymbol.kr(0);
+				var state = Stepper.ar(
+					// matrix castleN_spesal trig joins this step input in phase 4
+					T2A.ar(("t_step" ++ n).asSymbol.tr(0)),
+					T2A.ar(("t_set" ++ n).asSymbol.tr(0))
+						+ Impulse.ar(0),               // boot: state := stateArg
+					0, 7, 1, stateArg);
+				var partner = state % 4;               // which of the other four
+				var thMode = state > 3.5;              // = state div 4
+				var sqr = fbTris[k] > 0;               // own clock, one block late by design
+				var trig = Trig1.ar(sqr, SampleDur.ir); // S&H pair clock, once per cycle
+				var sh2 = Latch.ar(
+					Select.ar(partner, others.collect { |i| fbCass[i] }), trig);
+				var range = Select.kr(
+					("range" ++ n).asSymbol.kr(rangeIdx.value(("c" ++ n ++ "Range").asSymbol)),
+					#[0.02, 1, 40]);                   // SPEC §5.4 range multipliers
+				var off = ("off" ++ n).asSymbol
+					.kr(CQSpec.default(("c" ++ n ++ "Off").asSymbol));
+				// matrix castleN_fm sum (octaves) replaces the 0 in phase 4
+				var hz = (qFreq * range * (2 ** (off + (qChaos * 5 * sh2) + 0)))
+					.clip(0.01, 4000);
+				var tri = LFTri.ar(hz);                // phase-accumulating, FM-safe
+				var sampled = Select.ar(partner, others.collect { |i| fbTris[i] });
+				var cas = Select.ar(thMode, [
+					Latch.ar(sampled, trig),           // sample & hold
+					Gate.ar(sampled, sqr)]);           // track & hold
+				[tri, Lag.ar(cas, qShLag), state]      // qShLag: declick at 4 ms default
+			};
+			tris = castles.collect { |c| c[0] };
+			cass = castles.collect { |c| c[1] };
+			stateKr = castles.collect { |c| A2K.kr(c[2]) };
+			sends = 5.collect { |k|
+				var name = ("c" ++ (k + 1) ++ "Send").asSymbol;
+				("send" ++ (k + 1)).asSymbol.kr(CQSpec.default(name), CQSpec.lag(name))
+			};
+			LocalOut.ar(tris ++ cass);
+			Out.ar(\modSrcBus.ir(0), tris ++ cass);    // canonical ch 0..9 (ARCH §3.2)
+			Out.ar(\qMixBus.ir(0), Mix(tris * sends));
+			SendReply.kr(Impulse.kr(0) + Mix(stateKr.collect { |s| Changed.kr(s) }),
+				'/cq_spesal', stateKr);                // initial states + every change
 		})
 	}
 

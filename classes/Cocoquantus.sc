@@ -73,6 +73,28 @@ Cocoquantus {
 		synth !? { synth.set(\t_skip, 1) };
 	}
 
+	// quantussy spesal (SPEC §5.4): like skip, these are actions, not CQSpec
+	// params — the 0..7 counter lives server-side (Stepper in \cqQuantussy,
+	// states reported on '/cq_spesal'). spesal(k) steps castle k's partner/mode
+	// state; spesalSet forces an absolute state.
+	*spesal { |k = 1|
+		var synth = this.prCastleSynth(k);
+		synth !? { synth.set(("t_step" ++ k).asSymbol, 1) };
+	}
+
+	*spesalSet { |k = 1, state = 0|
+		var synth = this.prCastleSynth(k);
+		if(state.isNumber.not or: { state.asFloat.isNaN or: { state.abs == inf } }) {
+			"Cocoquantus: bad spesal state % ignored.".format(state).warn;
+			^this
+		};
+		synth !? {
+			synth.set(("state" ++ k).asSymbol,
+				state.round.asInteger.mod(8),          // entry-point clamp (safety #4)
+				("t_set" ++ k).asSymbol, 1);
+		};
+	}
+
 	*deckA {
 		if(deckAPlayer.isNil) { "Cocoquantus: not booted — no deck A.".warn };
 		^deckAPlayer
@@ -134,6 +156,15 @@ Cocoquantus {
 			^nil
 		};
 		^("coco" ++ n ++ suffix).asSymbol
+	}
+
+	*prCastleSynth { |k|
+		if(#[1, 2, 3, 4, 5].includes(k).not) {
+			"Cocoquantus: castle index must be 1..5 (got %).".format(k).warn;
+			^nil
+		};
+		if(this.isBooted.not) { "Cocoquantus: not booted.".warn; ^nil };
+		^graph.synths[\quantussy]
 	}
 
 	*prSamplesDir {

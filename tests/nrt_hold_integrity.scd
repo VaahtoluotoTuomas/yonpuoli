@@ -8,7 +8,9 @@
 // Run: "<sclang.exe>" -l tests/sclang_conf_dev.yaml -i none tests/nrt_hold_integrity.scd
 
 (
-var repo = thisProcess.nowExecutingPath.dirname.dirname;
+var repo = File.realpath(thisProcess.nowExecutingPath).dirname.dirname;
+// ^ realpath: nowExecutingPath is relative when sclang gets a relative script
+// argument — bare dirname would then write renders to tests/tests/tmp
 var tmpDir = repo +/+ "tests" +/+ "tmp";
 var cfg = CQConfig.validate(());
 var defs = CQSynthDefs.all(cfg);

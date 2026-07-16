@@ -77,6 +77,10 @@ CQGraph {
 			\preBBus, buses[\preB].index,
 			\dryBus, buses[\dry].index
 		], groups[\sources]);
+		synths[\quantussy] = Synth(\cqQuantussy, [
+			\modSrcBus, buses[\modSrc].index,
+			\qMixBus, buses[\qMix].index
+		], groups[\quantussy]);
 		// canonical aModSrc channels: coco taps 12/13, organs 14/15 (ARCH §3.2)
 		[[\coco1, \preA, \deckA, \coco2, 12, 14],
 		 [\coco2, \preB, \deckB, \coco1, 13, 15]].do { |row|
