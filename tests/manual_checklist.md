@@ -242,7 +242,7 @@ CQ.patch(\coco1, \coco2_fbVca, 0.4);    // ...banaani-pari = kahden cocon
 CQ.patch(\coco2, \coco1_fbVca, 0.4);    //    ristikaiun keskinäinen ducking
 ```
 
-- [ ] M6 hyväksytty (pvm: )
+- [x] M6 hyväksytty (pvm: 2026-07-17)
 
 ## M7 — 30 min abuse-sessio (vaihe 7, tulossa)
 ## M8 — 16n-faderit (vaihe 5, tulossa)

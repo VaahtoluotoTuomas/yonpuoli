@@ -4,14 +4,15 @@ Vaiheistettu checklist. Toimii CLAUDE.md:n milestone-checklistinä (TODO.md:n ro
 Normatiiviset lähteet: SPEC.md (käyttäytyminen), ARCHITECTURE.md (rakenne).
 Milestone-mappaus: **M1 = vaiheet 0–4 · M2 = vaiheet 5–6 · M3 = vaihe 7**.
 
-**Tilanne 2026-07-16:** vaiheet 0–3 valmiit ja hyväksytty (`b03692b`, `a7c278b`,
-`b7cb33a` + palautekorjaukset, `7f890d4`). **Vaihe 3 (Quantussy) hyväksytty
-2026-07-16** (KUUNTELU 3 läpi, `tests/manual_checklist.md` M3 ruksattu).
-**Vaihe 4 (reititysmatriisi + presetit) koodi valmis 2026-07-16**, kaikki neljä
-markeria vihreää (A1–A5, ks. testitulokset alla). **KUUNTELU 4 -gate odottaa** —
-skripti on `manual_checklist.md`:n M6-osio (vaatii Ctrl+Shift+L, deck A -lataus,
-`CQ.patchPreset(\classic)`). M1 valmistuu vasta käyttäjän KUUNTELU 4 -hyväksynnän
-jälkeen.
+**Tilanne 2026-07-17: vaiheet 0–4 valmiit ja hyväksytty → M1-MILESTONE VALMIS.**
+Vaiheet 0–3: `b03692b`, `a7c278b`, `b7cb33a` (+korjaukset), `7f890d4`. Vaihe 4:
+koodi `9d384ce` (sis. täyden auditoinnin korjaukset), KUUNTELU 4 -iteraatiot
+`230f481`…`e45fa1a` (preset-paramit, spaf-kalibrointi 0.12, checklist-korjaukset,
+flip-gate-mittaus), hyväksyntä 2026-07-17 (M6 ruksattu). A1–A5 vihreät: 1647
+yksikkötestiä, mayhem-peak 0.8896, hold-korrelaatio 1.0 / drift 0.0 dB.
+**Seuraavaksi vaihe 5 (snapshotit + 16n, M2 alkaa).** Muista Ctrl+Shift+L kun
+`classes/` muuttuu; kuunteluskriptit `tests/manual_checklist.md`, patch-reseptit
+`live.scd`.
 
 ## Läpileikkaavat säännöt
 
@@ -258,12 +259,15 @@ jälkeen.
       (2026-07-16)
 
 ### KUUNTELU 4 — M1-hyväksyntä
-- [ ] Kenttä-äänite + `CQ.patchPreset(\classic)` oletuksilla → heti "Cocoquantus-like":
-      huojuva, aliasoiva, elävä, koskematta mihinkään (M6)
-- [ ] Inverso-banaani: `CQ.patch(\envA, \coco2_fbVca, -0.5)` → ducking kuuluu
-- [ ] `patchDepth` 1→0 kesyttää kaiken pehmeästi
-- [ ] ~20 min code-only-sessio (`live.scd`-esimerkeillä)
-- [ ] Käyttäjän M1-hyväksyntä → milestone valmis
+- [x] Kenttä-äänite + `CQ.patchPreset(\classic)` oletuksilla → heti "Cocoquantus-like":
+      huojuva, aliasoiva, elävä, koskematta mihinkään (M6) — spaf-syvyys
+      kuuntelukalibroitu 0.12:een (ks. kirjaukset)
+- [x] Inverso-banaani → ducking kuuluu (toteutettu coco1:een; jaettu 2a
+      spaf-välitodistus + 2b fbVca-duck loop-kierron yli, ks. kirjaukset)
+- [x] `patchDepth` 1→0 kesyttää kaiken pehmeästi (ja 0→1 palauttaa)
+- [x] ~20 min code-only-sessio (`live.scd`-reseptit R1–R6; R5:n oktaavikerros
+      ja R6:n rajattu kasautuminen todettu odotetuiksi)
+- [x] Käyttäjän M1-hyväksyntä → **milestone valmis 2026-07-17**
 
 ### Kirjatut toteutuspäätökset (vaihe 4)
 - `wDest`-väylät asuvat `CQGraph.buses`-sanakirjassa suoraan destinaationimellä
