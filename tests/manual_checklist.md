@@ -195,16 +195,26 @@ CQ.hold(1, 0);                 // coco1 record-tilaan
 CQ.set(\coco1Dust, 0);         //    (A/B-varmistus: aaltojen pitää loppua)
 CQ.set(\coco1Dust, 0.02);      //    (takaisin oletukseen)
 
-// 2. Inverso-banaani coco1:een (jota tässä asetelmassa kuunnellaan — coco2
-//    on mykistetty). HUOM: omaa ääntäsi EI ole tarkoitus kuulla — slotPre 0
-//    pitää puheen poissa loopista, se on pelkkä ohjaussignaali (envA).
-//    Kuunneltava efekti on loopin KAIKUJEN hiljeneminen puhuessasi.
-CQ.set(\preADrive, 6);         // envA riittävän vahvaksi puheella (kuten M5:ssä;
-                               // oletusdrivella 2 fb putoaa vain ~0.9 -> 0.8)
-CQ.patch(\envA, \coco1_fbVca, -0.5);
-CQ.set(\coco1Fb, 0.9);         // toistot selvästi kuuluviin
-// -> puhu lähelle mikkiä tauottaen (preamp A on jo \liveL = mikki): kaiut
-//    painuvat alas puhuessasi ja palaavat tauoilla (negatiivinen = inverso).
+// 2. Inverso-banaani coco1:een (coco2 on mykistetty). Kaksi huomiota:
+//    - Omaa ääntäsi EI kuulu: slotPre 0 pitää puheen poissa loopista,
+//      se on pelkkä ohjaussignaali (envA).
+//    - fbVca istuu kierrätyksen KIRJOITUSPOLUSSA (ennen RAMia), joten duck
+//      kuuluu vasta kun looppi kiertää takaisin (~5.5 s oletusnopeudella) —
+//      välitöntä reaktiota ei ole, sama kuin hardwaressa.
+CQ.set(\preADrive, 6);         // envA riittävän vahvaksi puheella (kuten M5:ssä)
+
+// 2a. Välitön todistus envA-reitityksestä — spaf vaikuttaa kelloon HETI:
+CQ.set(\coco1Spaf, 1);         // syvyysnuppi hetkeksi täysille
+CQ.patch(\envA, \coco1_spaf, -1);
+// -> puhu: loopin pitch sukeltaa heti puhuessasi (inverso), palaa tauoilla
+CQ.unpatch(\envA, \coco1_spaf);  CQ.set(\coco1Spaf, 0.12);   // pois
+
+// 2b. Varsinainen fbVca-duck — kuuntele loop-kierron yli:
+CQ.set(\coco1Fb, 1.05);        // kerrostuva looper: kerrokset jäävät soimaan
+CQ.patch(\envA, \coco1_fbVca, -1);
+// -> puhu YHTÄJAKSOISESTI 5-10 s (koko kierto): kerrostuma ohenee selvästi
+//    seuraavilla kierroksilla; ole hiljaa ~15 s -> kasautuu takaisin.
+//    Lyhyet tokaisut tekevät vain ~5.5 s myöhässä kuuluvia ohuita kohtia.
 CQ.unpatch(\envA, \coco1_fbVca);   // lopuksi
 CQ.set(\coco1Fb, 0.35); CQ.set(\preADrive, 2);
 

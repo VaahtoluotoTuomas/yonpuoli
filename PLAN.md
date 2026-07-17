@@ -317,6 +317,13 @@ jälkeen.
   flutter ±17 c). Drift-kuvion kvasiperiodisuus (samanmuotoiset ~6–21 s
   kolmioaallot, taajuus askeltaa kerran per sykli) todettu autenttiseksi —
   arvaamattomuus kuuluu qChaos-nupille, ei presetille.
+- KUUNTELU 4 -havainto (2026-07-17): **inVca/fbVca-duckit kuuluvat loop-
+  kierron viiveellä** (~5.5 s oletuksilla), koska VCA:t istuvat kierrätyksen
+  kirjoituspolussa ennen RAMia (SPEC §5.3:n normatiivinen järjestys; sama
+  kuin hardwaressa) — monitoroitava ääni on aina RAMista luettua. Välitön
+  kuultava env-reititys demotaan spaf-destillä (kello muuttuu heti);
+  fbVca-duck kuunnellaan yhtäjaksoisella ≥ loop-kierron puheella.
+  manual_checklist M6 kohta 2 jaettu 2a/2b tämän mukaisesti.
   Sama rakenne on välttämätön vaiheen 6 preseteille (SPEC: `\selfNoise`
   tarvitsee dust/fb-tasot, `\organMode` organ-tasot). CQMatrixTest varmistaa,
   että preset-paramit ovat olemassa olevia CQSpec-nimiä ja selviävät omasta
