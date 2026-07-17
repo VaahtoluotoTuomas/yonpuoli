@@ -98,11 +98,13 @@ CQState {
 			r[("c" ++ k ++ "Off").asSymbol] = [\quantussy, ("off" ++ k).asSymbol];
 			r[("c" ++ k ++ "Send").asSymbol] = [\quantussy, ("send" ++ k).asSymbol];
 		};
-		// deck A (deck B arrives in phase 5); the synth exists only after a load —
-		// prSend skips silently until then, CQDeck spawns with current values
-		r[\deckARate] = [\deckA, \rate];
-		r[\deckALevel] = [\deckA, \level];
-		r[\deckALoop] = [\deckA, \loop];
+		// decks: the synth exists only after a load — prSend skips silently until
+		// then, CQDeck spawns the synth with current values
+		[\deckA, \deckB].do { |d|
+			r[(d ++ "Rate").asSymbol] = [d, \rate];
+			r[(d ++ "Level").asSymbol] = [d, \level];
+			r[(d ++ "Loop").asSymbol] = [d, \loop];
+		};
 		^r
 	}
 }

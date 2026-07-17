@@ -4,7 +4,8 @@
 
 Cocoquantus {
 	classvar <config, <graph, <state, <matrix, <server;
-	classvar configPath, deckAPlayer;
+	classvar configPath, deckAPlayer, deckBPlayer, snapshotMgr, midi16n;
+	classvar spesalCache, micWatcher, micWasLive = false;
 
 	*boot { |path, onReady|
 		if(this.isBooted) {
@@ -24,6 +25,8 @@ Cocoquantus {
 		graph.applyOptions;
 		state = CQState(graph);
 		matrix = CQMatrix(graph);
+		this.prInitOsc;        // before spawn: catch the boot-time spesal report
+		this.prInitMicWatch;
 		server.waitForBoot {
 			graph.build;                       // buses + groups, synced
 			CQSynthDefs.send(config, server);
@@ -33,6 +36,11 @@ Cocoquantus {
 			matrix.pushAll;                    // matrix empty (SPEC boot sequence)
 			server.sync;
 			deckAPlayer = CQDeck(graph, state, \deckA, this.prSamplesDir);
+			deckBPlayer = CQDeck(graph, state, \deckB, this.prSamplesDir);
+			snapshotMgr = CQSnapshots(state, matrix, this.prPresetsDir,
+				{ this.spesalStates },
+				{ |states| states.do { |v, i| this.spesalSet(i + 1, v) } });
+			midi16n = CQMidi16n(state, config[\sixteenN]);  // no 16n = notice, not error
 			graph.fadeIn;                      // silent until verified → 2 s ramp
 			CmdPeriod.add(this);
 			"Cocoquantus: ready — output fading in over 2 s.".postln;
@@ -102,6 +110,54 @@ Cocoquantus {
 		^deckAPlayer
 	}
 
+	*deckB {
+		if(deckBPlayer.isNil) { "Cocoquantus: not booted — no deck B.".warn };
+		^deckBPlayer
+	}
+
+	// SPEC §5.1 linked-pair load: deck A takes L, deck B takes R of a stereo
+	// file (a mono file plays on both — CQDeck warns and falls back to ch 0)
+	*loadStereo { |filePath|
+		if(deckAPlayer.isNil or: { deckBPlayer.isNil }) {
+			"Cocoquantus: not booted — no decks.".warn;
+			^this
+		};
+		deckAPlayer.load(filePath, channel: 0);
+		deckBPlayer.load(filePath, channel: 1);
+	}
+
+	// snapshots (SPEC §6.3): save stores micGain as 0 unless includeMic — see
+	// CQSnapshots header for the full mic/panic policy
+	*snap { |name, includeMic = false, note = ""|
+		if(snapshotMgr.isNil) { "Cocoquantus: not booted.".warn; ^nil };
+		^snapshotMgr.save(name, includeMic, note)
+	}
+
+	*recall { |name|
+		if(snapshotMgr.isNil) { "Cocoquantus: not booted.".warn; ^false };
+		^snapshotMgr.recall(name)
+	}
+
+	*morph { |from, to, dur = 10|
+		if(snapshotMgr.isNil) { "Cocoquantus: not booted.".warn; ^this };
+		snapshotMgr.morph(from, to, dur);
+	}
+
+	*snapshots { ^snapshotMgr }
+
+	// 16n layer (SPEC §6.1); midiRescan re-inits MIDI after replugging mid-session
+	*midi { ^midi16n }
+
+	*midiRescan {
+		if(midi16n.isNil) { "Cocoquantus: not booted.".warn; ^this };
+		midi16n.rescan;
+	}
+
+	// last spesal states reported by the server ('/cq_spesal', SPEC §5.4)
+	*spesalStates {
+		^(spesalCache ?? { [0, 0, 0, 0, 0] }).copy
+	}
+
 	// routing matrix facade (SPEC §5.5): all four go through CQMatrix's own
 	// funnel (clamp -1..1, mirror to the wDest bus, notify dependants)
 	*patch { |src, dest, w = 1.0|
@@ -156,8 +212,19 @@ Cocoquantus {
 				state.set(\monitorMute, 1);    // 30 ms fade before teardown
 				0.15.wait;
 			};
+			snapshotMgr !? { snapshotMgr.free };   // stops a running morph
+			snapshotMgr = nil;
+			midi16n !? { midi16n.free };
+			midi16n = nil;
+			micWatcher !? { micWatcher.remove };
+			micWatcher = nil;
+			micWasLive = false;
+			OSCdef.all[\cq_spesal] !? { |d| d.free };
+			spesalCache = nil;
 			deckAPlayer !? { deckAPlayer.free };
 			deckAPlayer = nil;
+			deckBPlayer !? { deckBPlayer.free };
+			deckBPlayer = nil;
 			graph.free;
 			graph = nil;
 			state = nil;
@@ -206,9 +273,36 @@ Cocoquantus {
 		^graph.synths[\quantussy]
 	}
 
-	*prSamplesDir {
-		var dir = config[\folders][\samples].asString;
+	*prSamplesDir { ^this.prFolder(\samples) }
+	*prPresetsDir { ^this.prFolder(\presets) }
+
+	*prFolder { |key|
+		var dir = config[\folders][key].asString;
 		^if(PathName(dir).isAbsolutePath) { dir } { this.repoDir +/+ dir }
+	}
+
+	// cache the server-side spesal counters ('/cq_spesal' SendReply) so
+	// snapshots and the phase-6 LED display read the same source
+	*prInitOsc {
+		OSCdef(\cq_spesal, { |msg|
+			spesalCache = msg.copyRange(3, 7).collect { |v| v.asInteger };
+		}, '/cq_spesal');
+	}
+
+	// SPEC §7 mic warning (headless part; the GUI adds color in phase 6):
+	// warn once per 0 → live transition, through any entry point
+	*prInitMicWatch {
+		micWatcher = SimpleController(state);
+		micWatcher.put(\param, { |obj, what, name, val|
+			if(name == \micGain) {
+				if((val > 0) and: { micWasLive.not }) {
+					micWasLive = true;
+					("Cocoquantus: micGain > 0 — the mic is LIVE. Feedback risk "
+						++ "with builtin speakers; CQ.set(\\micGain, 0) to mute.").warn;
+				};
+				if(val <= 0) { micWasLive = false };
+			};
+		});
 	}
 }
 

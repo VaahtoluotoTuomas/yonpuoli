@@ -4,16 +4,17 @@ Vaiheistettu checklist. Toimii CLAUDE.md:n milestone-checklistinä (TODO.md:n ro
 Normatiiviset lähteet: SPEC.md (käyttäytyminen), ARCHITECTURE.md (rakenne).
 Milestone-mappaus: **M1 = vaiheet 0–4 · M2 = vaiheet 5–6 · M3 = vaihe 7**.
 
-**Tilanne 2026-07-17: vaiheet 0–4 valmiit ja hyväksytty → M1-MILESTONE VALMIS.**
-Vaiheet 0–3: `b03692b`, `a7c278b`, `b7cb33a` (+korjaukset), `7f890d4`. Vaihe 4:
-koodi `9d384ce` (sis. täyden auditoinnin korjaukset), KUUNTELU 4 -iteraatiot
-`230f481`…`e45fa1a` (preset-paramit, spaf-kalibrointi 0.12, checklist-korjaukset,
-flip-gate-mittaus), hyväksyntä 2026-07-17 (M6 ruksattu). A1–A5 vihreät: 1647
-yksikkötestiä, mayhem-peak 0.8896, hold-korrelaatio 1.0 / drift 0.0 dB.
-**Seuraavaksi vaihe 5 (snapshotit + 16n, M2 alkaa).** Muista Ctrl+Shift+L kun
-`classes/` muuttuu; kuunteluskriptit `tests/manual_checklist.md`, patch-reseptit
-`live.scd`. Post-v1.0-suunta (norns-portti) kirjattu tämän tiedoston loppuun —
-se ohjaa vaiheiden 5–7 rajapintavalintoja.
+**Tilanne 2026-07-17: vaiheet 0–4 valmiit ja hyväksytty (M1 VALMIS,
+kuuntelu-commitit `b03692b`…`f342ced`). Vaiheen 5 toteutus valmis** —
+CQSnapshots (save/recall/morph), CQMidi16n (jump/pickup, rescan), deck B +
+kansionavigointi + `loadStereo`, mic-varoitus, `presets/example.cqsnap.scd`.
+Kaikki markerit vihreät: A1 + A2 (1728 assertiota) + A3 (mayhem-peak 0.8807) +
+A4/A5 varmuudeksi (korrelaatio 1.0 / drift 0.0 dB). **Seuraavaksi:
+KUUNTELU/KÄYTTÖ 5 -gate käyttäjällä** — skriptit `tests/manual_checklist.md`
+(M8 + kaksi KÄYTTÖ 5 -osiota); muista Ctrl+Shift+L ennen kuin bootaat
+(`classes/` muuttui). Patch-reseptit `live.scd`. Post-v1.0-suunta
+(norns-portti) kirjattu tämän tiedoston loppuun — se ohjaa vaiheiden 5–7
+rajapintavalintoja.
 
 ## Läpileikkaavat säännöt
 
@@ -352,19 +353,26 @@ se ohjaa vaiheiden 5–7 rajapintavalintoja.
 ## Vaihe 5 — Snapshotit + 16n (M2 alku)
 
 ### Toteutus
-- [ ] `classes/CQSnapshots.sc` — save/recall/morph (ARCH §7:n tiedostoformaatti,
+- [x] `classes/CQSnapshots.sc` — save/recall/morph (ARCH §7:n tiedostoformaatti,
       version-gate, clamp latauksessa, **micGain ei koskaan auto-recallina > 0**,
       SPEC §7)
-- [ ] `classes/CQMidi16n.sc` — CC 32–47 ch 1 configista, 30 ms smoothing,
-      `\jump`/`\pickup`-takeover, hot-plug, `MIDIClient.init` guarded,
-      `MIDIdef`-avaimet `\cq_*`; kaikki kirjoitukset CQStaten kautta
-- [ ] Deck B + kansionavigointi (next/prev/random) + linked stereo -tila
-- [ ] Mic-polku (`micGain`, oletus 0) + varoituslogiikka (headless-osa)
-- [ ] `presets/`-esimerkkisnapshot
-- [ ] `CQSnapshotTest` — roundtrip-yhtäsuuruus, malformed-tiedoston hylkäys
+- [x] `classes/CQMidi16n.sc` — CC 32–47 ch 1 configista, 30 ms smoothing,
+      `\jump`/`\pickup`-takeover, hot-plug (`CQ.midiRescan`), `MIDIClient.init`
+      guarded, `MIDIdef`-avain `\cq_16n`; kaikki kirjoitukset CQStaten kautta
+- [x] Deck B + kansionavigointi (next/prev/random/loadFolder) + linked stereo
+      (`CQ.loadStereo`: L→A, R→B)
+- [x] Mic-polku (`micGain`, oletus 0) + varoituslogiikka (headless-osa:
+      varoitus kerran per 0 → live -siirtymä, mistä tahansa entry pointista)
+- [x] `presets/example.cqsnap.scd` — harva käsinkirjoitettu esimerkki
+- [x] `CQSnapshotTest` — roundtrip-yhtäsuuruus, malformed-tiedoston hylkäys,
+      clamp latauksessa, mic/panic-politiikka, morph päättyy kohteeseen;
+      lisäksi `CQMidi16nTest` — CC→param-mappaus, linked-slotit, takeover-
+      logiikka ilman MIDI-laitetta
 
 ### Testit
-- [ ] `CQ_COMPILE_OK` · `CQ_TESTS_PASSED` · `CQ_SAFETY_PASSED`
+- [x] `CQ_COMPILE_OK` · `CQ_TESTS_PASSED` (1728) · `CQ_SAFETY_PASSED`
+      (mayhem-peak 0.8807) · `CQ_HOLD_OK` varmuudeksi (DSP ennallaan;
+      korrelaatio 1.0, drift 0.0 dB) (2026-07-17)
 
 ### KUUNTELU/KÄYTTÖ 5 — 16n & muisti
 - [ ] Kaikki 16 faderia oikeissa parametreissa, liike pehmeää (≤ 20 ms tuntuma) (M8)
@@ -372,7 +380,49 @@ se ohjaa vaiheiden 5–7 rajapintavalintoja.
 - [ ] `CQ.snap(\a)` → säädä → `CQ.recall(\a)` → tila palaa korvakuulolta;
       `CQ.morph(\a, \b, 30)` liukuu musikaalisesti
 - [ ] Jump vs pickup -takeover käyttäytyy odotetusti recallin jälkeen
+- [ ] Deck B + kansionavigointi + linked stereo toimivat; mic-varoitus näkyy
 - [ ] Käyttäjän OK → vaihe hyväksytty
+
+### Kirjatut toteutuspäätökset (vaihe 5)
+- **micGain-politiikka** (SPEC §7, päivitetty sinne): `save` tallettaa micGainin
+  nollana ellei `includeMic: true` (eksplisiittinen opt-in) — auto-tallennettu
+  snapshot ei voi koskaan avata mikkiä recallissa. Recall soveltaa tiedoston
+  arvon clampattuna ja varoittaa kovaan ääneen jos se avaa mikin (käsin
+  editoitu tiedosto = käyttäjän eksplisiittinen valinta). **monitorMute ei
+  koskaan snapshotiin** kumpaankaan suuntaan: recall ei saa kumota panicia
+  (safety #3). Lisäksi mistä tahansa entry pointista tuleva micGain-nosto
+  varoittaa kerran per 0 → live -siirtymä (SimpleController CQStateen).
+- **Spesal-tilat kielipuolelle**: `OSCdef(\cq_spesal)` cachettaa serverin
+  SendReply-raportit (`Cocoquantus.spesalStates`); CQSnapshots saa spesalin
+  get/set-**funktioina** konstruktorissa — luokka ei tunne serveriä eikä
+  facadea, joten se testataan graph = nil (sama kuvio kuin CQState/CQMatrix).
+  Sama cache syöttää vaiheen 6 LED-näytön.
+- **Morph**: jatkuvat parametrit interpoloidaan **normalisoidussa (curve-)
+  avaruudessa** (exp-parametrit kuten speed liukuvat musikaalisesti, eivät
+  lineaarisesti Hz:einä), painot lineaarisesti; toggle/enum/spesal vaihtuvat
+  puolivälissä; viimeinen askel on täsmälleen `prApply(kohde)` → morphin
+  loppu ≡ `recall(kohde)` mic-politiikkaa myöten. micGain ei interpoloidu.
+  Harvan tiedoston puuttuva parametri interpoloituu nykyarvosta/-arvoon.
+- **Harvat snapshot-tiedostot sallittuja** (käsin kirjoitetut "osapresetit"):
+  listaamattomat parametrit säilyttävät nykyarvonsa. Rakenteellisesti
+  rikkinäinen tiedosto (ei Event / ei int-versiota / versio > 1 / params ei
+  Event) hylätään varoituksella tilaan koskematta; ruma matriisirivi tai
+  spesal-lista pudotetaan riveittäin. `.load`-ajon runtime-virhe napataan.
+- **CQMidi16n**: `handleCC` on julkinen → takeover-logiikka testataan ilman
+  MIDI-laitetta. Pickup: mikä tahansa ulkoinen kirjoitus (recall, koodi,
+  preset) disengagee ko. faderin (`writing`-lippu erottaa omat kirjoitukset);
+  engage kun fader ylittää nykyarvon tai osuu ±1 CC-askeleen sisään.
+  Linked-slotit seuraavat parin ensimmäistä parametria. Smoothing = CQSpecin
+  serveripuolen lagit (≥ 30 ms), ei kielipuolen suodatusta.
+- **Hot-plug**: portmidi/Windows ei tunnista laitteita kesken ajon →
+  `CQ.midiRescan` (disposeClient + init + connectAll; MIDIdefit säilyvät
+  re-initin yli). 16n:n puuttuminen bootissa on notice, ei virhe; MIDI:n
+  täysi puuttuminen degradoituu varoitukseksi (try-suojattu init).
+- **Deck-navigointi**: jokainen load skannaa ladatun tiedoston kansion
+  (wav/aif/aiff/aifc/flac), next/prev/random kulkevat sitä; ennen
+  ensimmäistä latausta fallback config-`samples/`-kansioon. `loadStereo`
+  lataa kanavan 0 → deck A ja 1 → deck B; monotiedostolla SoundFile-
+  tarkistus pudottaa kanavan nollaan varoituksella (molemmat soittavat L:ää).
 
 ---
 

@@ -376,6 +376,8 @@ CQ.patch(\envA, \coco2_fbVca, -0.5); // inverso = negative weight
 CQ.patchPreset(\quantumDrone);
 CQ.hold(1); CQ.flip(2); CQ.skip(1); CQ.spesal(4);
 CQ.deckA.load("~/field/lake.wav"); CQ.deckA.rate_(0.5);
+CQ.deckA.next; CQ.deckB.random;     // folder navigation (scans the loaded folder)
+CQ.loadStereo("~/field/pair.wav");  // linked pair: L -> deck A, R -> deck B
 CQ.shake(0.4, seed: 1234);          // reproducible chaos
 CQ.snap(\lakeDrone);  CQ.recall(\lakeDrone);  CQ.morph(\lakeDrone, \mayhem, 30);
 CQ.rec; CQ.recStop;
@@ -418,6 +420,12 @@ Notes:
 - **Mic feedback safety:** when `micChan` is set and output device is the laptop's
   speakers, GUI shows a persistent warning; `micGain` defaults to 0 and is never
   included in snapshots' recalled gains above 0 unless explicitly saved by the user.
+  Mechanism: `CQ.snap(name)` stores `micGain` as 0; `CQ.snap(name, includeMic: true)`
+  is the explicit opt-in. Recalling any snapshot whose file opens the mic posts a
+  loud warning. Setting `micGain` above 0 through any entry point warns once per
+  0 → live transition (headless; the GUI adds a persistent color in M2).
+- **Snapshots never store or recall `monitorMute`:** recall must not defeat panic
+  (§8.3 "panic always reachable"). Panic is a performance action, not memory.
 - **To modular:** stems are line-level audio (post-limiter). Castle CV to hardware is
   possible only with a DC-coupled interface — document but don't special-case.
 - 16n hot-plug: absence is fine; arrival auto-binds (device match on name "16n").

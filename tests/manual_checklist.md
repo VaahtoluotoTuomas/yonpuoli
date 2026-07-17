@@ -1,8 +1,8 @@
 # Manuaalinen kuuntelulista (SPEC M1–M8)
 
 Ihmiskorvatestit — Claude ei kuule ääntä, joten nämä tarkistaa aina käyttäjä.
-Lista kasvaa vaiheittain; M4 (`\selfNoise`), M7 (abuse-sessio) ja M8 (16n)
-täydentyvät vaiheissa 5–7.
+Lista kasvaa vaiheittain; M4 (`\selfNoise`) ja M7 (abuse-sessio) täydentyvät
+vaiheissa 6–7.
 
 **Ennen jokaista kierrosta:** jos `classes/` on muuttunut, IDE:ssä
 Ctrl+Shift+L (class-lib recompile), sitten `CQ.boot` (bootin pitää olla
@@ -245,4 +245,110 @@ CQ.patch(\coco2, \coco1_fbVca, 0.4);    //    ristikaiun keskinäinen ducking
 - [x] M6 hyväksytty (pvm: 2026-07-17)
 
 ## M7 — 30 min abuse-sessio (vaihe 7, tulossa)
-## M8 — 16n-faderit (vaihe 5, tulossa)
+
+## M8 — 16n-faderit (vaihe 5)
+
+```supercollider
+// M8 — Alkuasetelma. Kytke 16n USB:hen ENNEN boottia.
+// (classes/ muuttui vaiheessa 5 -> Ctrl+Shift+L ensin!)
+CQ.boot;
+// -> TARKISTA post-ikkunasta rivi "CQMidi16n: 16n found — CC 32..47 ch 1 live".
+//    Jos siellä lukee "no 16n detected": kytke laite ja aja
+CQ.midiRescan;                 // (vain tarvittaessa)
+CQ.deckA.load("123681__aidenfry__cricket-and-bird-field-recording.wav");
+CQ.set(\coco2Level, 0);
+CQ.hold(1, 0);                 // deck kiertää coco1:een
+```
+
+```supercollider
+// M8 testit:
+
+// 1. Faderikartta (SPEC §6.1) — liikuta yksi kerrallaan ja varmista korvalla
+//    ja/tai CQ.get-kutsulla, että oikea parametri liikkuu:
+//    F1 coco1In     F5 coco2In     F9  qFreq                F13 deckA+B Level
+//    F2 coco1Speed  F6 coco2Speed  F10 qChaos               F14 spaceMix (ei DSP:tä
+//    F3 coco1Spaf   F7 coco2Spaf   F11 preA+B Drive              vielä -> ei ääntä)
+//    F4 coco1Fb     F8 coco2Fb     F12 deckA+B Rate         F15 patchDepth
+//                                                           F16 masterVol
+CQ.get(\coco1Speed);           // esim. faderin F2 liikkeen jälkeen
+CQ.get(\deckARate);            // F12: linkitetyn parin molempien pitää muuttua
+CQ.get(\deckBRate);
+
+// 2. Pehmeys (SPEC M8/§9): aja F2 (coco1Speed) hitaasti ääripäästä toiseen
+//    -> repitchin pitää olla portaaton, ei zipper-rahinaa; F4 (fb) -ride
+//    0 -> 1.25 ei saa tuottaa tasohyppyjä. Tuntuman pitää olla <= 20 ms.
+
+// 3. Hot-plug (SPEC M8): irrota 16n USB:stä kesken session -> soitto jatkuu
+//    (ei virheryöppyä posissa). Kytke takaisin ja aja:
+CQ.midiRescan;
+//    -> faderit toimivat taas (Windows/portmidi ei hot-plugaa itsekseen).
+
+// 4. Takeover: \jump (oletus) = fader kirjoittaa heti liikkeestä.
+CQ.snap(\fadertesti);          // talleta tila
+CQ.set(\coco1Fb, 1.2);         // muuta koodista (fader F4 on nyt "väärässä")
+//    -> \jump: F4:n pienikin liike hyppäyttää arvon faderin kohtaan.
+CQ.midi.takeover = \pickup;    // vaihda pickup-tilaan
+CQ.recall(\fadertesti);        // recall siirtää arvot faderien alta
+//    -> \pickup: fader on kuuro kunnes se AJETAAN nykyisen arvon yli,
+//       sitten se tarttuu — ei hyppyjä recallin jälkeen.
+CQ.midi.takeover = \jump;      // palaa oletukseen (tai jätä pickup päälle)
+```
+
+- [ ] M8 hyväksytty (pvm: __________)
+
+## KÄYTTÖ 5 — Snapshotit & morph (vaihe 5)
+
+```supercollider
+// Snapshotit: tilan pitää palata korvakuulolta identtisenä.
+// (Lähtötila: deck A soi, jotain patchattuna, esim. CQ.patchPreset(\classic).)
+CQ.snap(\a);                   // -> post: "saved 'a' -> ...presets/a.cqsnap.scd"
+// 1. Säädä reilusti: speed, fb, pari banaania lisää, CQ.spesal(5) muutaman kerran
+CQ.set(\coco1Speed, 8000); CQ.set(\coco1Fb, 1.1);
+CQ.patch(\cas3, \coco1_spaf, 0.7);
+CQ.snap(\b);                   // talteen myös tämä
+CQ.recall(\a);                 // 2. -> tilan pitää palata korvakuulolta
+                               //    (speed/fb/banaanit/spesal — kaikki)
+CQ.morph(\a, \b, 30);          // 3. 30 s liuku a:sta b:hen: jatkuvien parametrien
+                               //    ja painojen pitää liukua MUSIKAALISESTI,
+                               //    kytkimet (hold/dolby/spesal) vaihtuvat
+                               //    puolivälissä kertarysäyksellä
+CQ.snapshots.stopMorph;        //    (tarvittaessa: keskeytys)
+CQ.recall(\a);                 // 4. recall kesken morphin = turvallinen
+
+// 5. Mic-politiikka (SPEC §7) — toimii vaikka micChan olisi nil:
+CQ.set(\micGain, 0.5);         // -> post-ikkunaan VAROITUS "mic is LIVE"
+CQ.snap(\mictesti);            // oletustallennus: micGain talletetaan nollana
+CQ.set(\micGain, 0);
+CQ.recall(\mictesti);          // -> micGain PYSYY nollassa (ei varoitusta)
+CQ.get(\micGain);              // -> 0
+```
+
+- [ ] Snapshotit + morph hyväksytty (pvm: __________)
+
+## KÄYTTÖ 5 — Deck B, kansionavigointi, linked stereo (vaihe 5)
+
+```supercollider
+// Deck B + navigointi. (Coco2 kuuluviin: sen slotDeck lukee deck B:tä.)
+CQ.set(\coco2Level, 0.8);
+CQ.set(\coco1Level, 0);        // kuunnellaan hetki pelkkää coco2:ta
+CQ.deckB.load("123681__aidenfry__cricket-and-bird-field-recording.wav");
+CQ.hold(2, 0);                 // -> deck B kiertää coco2:een
+CQ.deckB.rate_(-1);            // 1. deck B taaksepäin; F12 liikuttaa molempia
+CQ.deckB.rate_(1);
+
+// 2. Kansionavigointi (skannaa ladatun tiedoston kansion; ennen ensimmäistä
+//    latausta samples/-kansion):
+CQ.deckA.next;                 // -> post: "loaded ..." seuraava tiedosto
+CQ.deckA.prev;                 // -> edellinen
+CQ.deckA.random;               // -> satunnainen samasta kansiosta
+CQ.deckA.loadFolder("samples");// -> kansion ensimmäinen tiedosto
+
+// 3. Linked stereo (SPEC §5.1): stereotiedosto -> A saa L:n, B saa R:n.
+//    (Monotiedostolla molemmat saavat saman kanavan + varoitus posiin.)
+CQ.set(\coco1Level, 0.8);      // molemmat kuuluviin
+CQ.loadStereo("jokin_stereo.wav");
+// -> kuuntele: A/B-parin pitää olla saman äänitteen kaksi kanavaa
+//    (pan-oletukset -0.3/+0.3 levittävät ne stereokuvaan)
+```
+
+- [ ] Deck B + navigointi + stereo hyväksytty (pvm: __________)
