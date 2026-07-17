@@ -203,13 +203,21 @@ CQ.set(\coco1Dust, 0.02);      //    (takaisin oletukseen)
 //      välitöntä reaktiota ei ole, sama kuin hardwaressa.
 CQ.set(\preADrive, 6);         // envA riittävän vahvaksi puheella (kuten M5:ssä)
 
-// 2a. Välitön todistus envA-reitityksestä — spaf vaikuttaa kelloon HETI:
-CQ.set(\coco1Spaf, 1);         // syvyysnuppi hetkeksi täysille
+// 2a. Välitön todistus envA-reitityksestä — spaf vaikuttaa kelloon HETI
+//     (koko coco1:n ääneen: ensikierto + toistot re-pitchaavat yhdessä).
+//     Irrota ensin classicin tri-banaanit, jotta VAIN puhe liikuttaa kelloa
+//     (muuten nuppi täysillä syventää myös presetin oman huojunnan):
+CQ.unpatch(\tri1, \coco1_spaf);  CQ.unpatch(\tri3, \coco1_spaf);
+CQ.set(\coco1Spaf, 1);         // syvyysnuppi täysille
 CQ.patch(\envA, \coco1_spaf, -1);
-// -> puhu: loopin pitch sukeltaa heti puhuessasi (inverso), palaa tauoilla
-CQ.unpatch(\envA, \coco1_spaf);  CQ.set(\coco1Spaf, 0.12);   // pois
+// -> ilman puhetta pitchin pitää pysyä vakaana; kun puhut, loopin pitch
+//    sukeltaa HETI (jopa -1 okt, inverso) ja palaa tauoilla.
+CQ.unpatch(\envA, \coco1_spaf);
+CQ.patchPreset(\classic);      // palauttaa tri-banaanit JA nupin (0.12)
 
-// 2b. Varsinainen fbVca-duck — kuuntele loop-kierron yli:
+// 2b. Varsinainen fbVca-duck — kuuluu VAIN toistokerroksissa (feedback-
+//     haara; samplen ensikierto kulkee inVca:n kautta eikä muutu), ja
+//     vasta loop-kierron viiveellä:
 CQ.set(\coco1Fb, 1.05);        // kerrostuva looper: kerrokset jäävät soimaan
 CQ.patch(\envA, \coco1_fbVca, -1);
 // -> puhu YHTÄJAKSOISESTI 5-10 s (koko kierto): kerrostuma ohenee selvästi
