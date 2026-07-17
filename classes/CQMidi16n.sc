@@ -98,6 +98,11 @@ CQMidi16n {
 
 	prInitMidi {
 		try {
+			// chan nil = any channel (default): the atovproject 16n sends each
+			// fader on its own MIDI channel, CCs 32-47 — the CC number alone
+			// identifies the fader. An integer chan pins single-channel firmware.
+			var chanDesc = if(cfg[\chan].isNil) { "any chan" } {
+				"chan " ++ (cfg[\chan] + 1) };
 			if(MIDIClient.initialized.not) { MIDIClient.init };   // guarded (CLAUDE.md)
 			MIDIIn.connectAll;
 			MIDIdef.cc(\cq_16n, { |val, num|
@@ -105,12 +110,12 @@ CQMidi16n {
 			}, (cfg[\ccBase]..(cfg[\ccBase] + 15)), cfg[\chan]);
 			midiOK = true;
 			if(this.found16n) {
-				"CQMidi16n: 16n found — CC %..% ch % live (takeover: %)."
-					.format(cfg[\ccBase], cfg[\ccBase] + 15, cfg[\chan] + 1, takeover).postln;
+				"CQMidi16n: 16n found — CC %..% (%) live (takeover: %)."
+					.format(cfg[\ccBase], cfg[\ccBase] + 15, chanDesc, takeover).postln;
 			} {
 				("CQMidi16n: no 16n detected — plug it in and run CQ.midiRescan "
-					++ "(any device sending CC %..% on ch % works).")
-					.format(cfg[\ccBase], cfg[\ccBase] + 15, cfg[\chan] + 1).postln;
+					++ "(any device sending CC %..% on % works).")
+					.format(cfg[\ccBase], cfg[\ccBase] + 15, chanDesc).postln;
 			};
 		} { |err|
 			midiOK = false;

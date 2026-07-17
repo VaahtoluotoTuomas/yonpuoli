@@ -418,6 +418,12 @@ rajapintavalintoja.
   `CQ.midiRescan` (disposeClient + init + connectAll; MIDIdefit säilyvät
   re-initin yli). 16n:n puuttuminen bootissa on notice, ei virhe; MIDI:n
   täysi puuttuminen degradoituu varoitukseksi (try-suojattu init).
+- **Mitattu KÄYTTÖ 5:ssä (2026-07-17, MIDIFunc.trace)**: atovprojectin 16n
+  lähettää **joka faderin omalla MIDI-kanavallaan** (F1 = ch 1 … F16 = ch 16),
+  CC:t silti 32–47 — alkuperäinen `chan: 0` -suodatin päästi vain F1:n läpi.
+  Korjaus: sidonta CC-numerolla, `sixteenN.chan` on nyt **nil = mikä tahansa
+  kanava (oletus)**; kokonaisluku 0–15 lukitsee yksikanavaisen firmiksen.
+  SPEC §6.1/§7, CLAUDE.md-ympäristörivi ja configit päivitetty.
 - **Deck-navigointi**: jokainen load skannaa ladatun tiedoston kansion
   (wav/aif/aiff/aifc/flac), next/prev/random kulkevat sitä; ennen
   ensimmäistä latausta fallback config-`samples/`-kansioon. `loadStereo`

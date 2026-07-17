@@ -6,8 +6,11 @@ CQConfig {
 	classvar <>postWarnings = true;
 
 	*defaults {
-		// device, micChan and stemOuts default to nil (nil-valued keys cannot
-		// live in an Event, so they are simply absent here — see knownKeys)
+		// device, micChan, stemOuts and sixteenN.chan default to nil (nil-valued
+		// keys cannot live in an Event, so they are simply absent here).
+		// sixteenN.chan nil = accept any MIDI channel: the atovproject 16n sends
+		// each fader on its own channel (F1 = ch 1 .. F16 = ch 16), CCs 32-47 —
+		// the CC number alone identifies the fader. An integer pins one channel.
 		^(
 			sampleRate: 48000,
 			blockSize: 64,
@@ -15,7 +18,7 @@ CQConfig {
 			inChans: [0, 1],
 			outChans: [0, 1],
 			bufFrames: 131072,
-			sixteenN: (enabled: true, ccBase: 32, chan: 0, takeover: \jump),
+			sixteenN: (enabled: true, ccBase: 32, takeover: \jump),
 			folders: (samples: "samples", recordings: "recordings", presets: "presets"),
 			autoTrim: true,
 			headless: false
@@ -119,8 +122,10 @@ CQConfig {
 		this.prAssert(six[\ccBase].isInteger and: { six[\ccBase].inclusivelyBetween(0, 112) },
 			"sixteenN.ccBase must be an integer 0..112 — 16 consecutive CCs must fit (got %)"
 				.format(six[\ccBase]));
-		this.prAssert(six[\chan].isInteger and: { six[\chan].inclusivelyBetween(0, 15) },
-			"sixteenN.chan must be a MIDI channel 0..15 (got %)".format(six[\chan]));
+		this.prAssert(six[\chan].isNil or: {
+				six[\chan].isInteger and: { six[\chan].inclusivelyBetween(0, 15) } },
+			"sixteenN.chan must be nil (any channel) or a MIDI channel 0..15 (got %)"
+				.format(six[\chan]));
 		this.prAssert(#[jump, pickup].includes(six[\takeover]),
 			"sixteenN.takeover must be \\jump or \\pickup (got %)".format(six[\takeover]));
 

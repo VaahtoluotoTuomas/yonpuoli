@@ -8,7 +8,8 @@ ranges or bus layouts: they are all defined there.
 ## Environment
 
 - User's machine: Windows, SuperCollider ≥ 3.13 (IDE, `sclang.exe`, `scsynth.exe`),
-  audio interface (ASIO), atovproject 16n faderbank (USB MIDI, CC 32–47 ch 1).
+  audio interface (ASIO), atovproject 16n faderbank (USB MIDI, CC 32–47; each
+  fader on its own MIDI channel F1 = ch 1 … F16 = ch 16 — bind by CC, not chan).
 - **You cannot hear audio.** Never claim something "sounds right". Verify with the
   automated tests, then ask the user to run specific steps from
   `tests/manual_checklist.md` and report back (give exact instructions: which preset,

@@ -12,7 +12,9 @@
 	outChans: [0, 1],
 	stemOuts: nil,              // e.g. [2, 3] -> coco1, coco2 post-safety
 	bufFrames: 131072,          // Coco RAM, 2^16..2^19 (Phasor float32 precision limit)
-	sixteenN: (enabled: true, ccBase: 32, chan: 0, takeover: \jump),
+	sixteenN: (enabled: true, ccBase: 32, chan: nil, takeover: \jump),
+	                            // chan nil = any MIDI channel (atovproject 16n
+	                            // sends each fader on its own channel); 0..15 pins one
 	folders: (samples: "samples", recordings: "recordings", presets: "presets"),
 	autoTrim: true,             // watchdog -6 dB trim on sustained hot output
 	headless: false             // true = no GUI (instrument stays fully playable)

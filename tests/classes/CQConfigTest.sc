@@ -18,9 +18,17 @@ CQConfigTest : UnitTest {
 		this.assertEquals(cfg[\outChans], [0, 1], "default outChans");
 		this.assertEquals(cfg[\bufFrames], 131072, "default bufFrames");
 		this.assertEquals(cfg[\sixteenN][\ccBase], 32, "default 16n ccBase");
+		this.assert(cfg[\sixteenN][\chan].isNil,
+			"16n chan defaults to nil = any channel (atovproject per-fader channels)");
 		this.assert(cfg[\device].isNil, "device defaults to nil");
 		this.assert(cfg[\micChan].isNil, "micChan defaults to nil (mic disabled)");
 		this.assert(cfg[\stemOuts].isNil, "stemOuts defaults to nil");
+	}
+
+	test_sixteenNChanPinAccepted {
+		var cfg = CQConfig.validate((sixteenN: (chan: 3)));
+		this.assertEquals(cfg[\sixteenN][\chan], 3,
+			"an integer chan pins single-channel firmware");
 	}
 
 	test_exampleConfigLoads {
@@ -45,6 +53,8 @@ CQConfigTest : UnitTest {
 			(bufFrames: 1048576),
 			(micChan: -1),
 			(sixteenN: (takeover: \teleport)),
+			(sixteenN: (chan: 16)),
+			(sixteenN: (chan: \any)),
 			(autoTrim: 3),
 			(folders: (samples: 42)),
 			(device: 7),

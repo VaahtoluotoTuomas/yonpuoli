@@ -328,8 +328,11 @@ what each does best. (GUI-less and 16n-less operation must both remain possible.
 
 ### 6.1 16n mapping (default; remappable in `config.scd`)
 
-16n factory default: **CC 32–47, MIDI channel 1** (fader 1 = CC 32). 7-bit smoothing
-with 30 ms lag on all faders.
+16n default: **CC 32–47** (fader 1 = CC 32). The atovproject firmware sends each
+fader on its **own MIDI channel** (F1 = ch 1 … F16 = ch 16; measured 2026-07-17),
+so binding is by CC number alone: config `sixteenN.chan` is `nil` = accept any
+channel (default) or an integer 0–15 to pin single-channel firmware. 7-bit
+smoothing with 30 ms lag on all faders.
 
 | Fader | CC | Param | | Fader | CC | Param |
 |---|---|---|---|---|---|---|
@@ -410,7 +413,9 @@ gitignored):
   outChans: [0, 1],
   stemOuts: nil,              // e.g. [2, 3] → coco1, coco2 post-safety
   bufFrames: 131072,          // Coco RAM (2^16–2^19)
-  sixteenN: (enabled: true, ccBase: 32, chan: 0, takeover: \jump),
+  sixteenN: (enabled: true, ccBase: 32, chan: nil, takeover: \jump),
+                              // chan nil = any MIDI channel (per-fader channels,
+                              // §6.1); an integer 0..15 pins one channel
   folders: (samples: "samples", recordings: "recordings", presets: "presets"),
   autoTrim: true,
 )

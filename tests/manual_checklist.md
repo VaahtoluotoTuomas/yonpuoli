@@ -252,7 +252,9 @@ CQ.patch(\coco2, \coco1_fbVca, 0.4);    //    ristikaiun keskinäinen ducking
 // M8 — Alkuasetelma. Kytke 16n USB:hen ENNEN boottia.
 // (classes/ muuttui vaiheessa 5 -> Ctrl+Shift+L ensin!)
 CQ.boot;
-// -> TARKISTA post-ikkunasta rivi "CQMidi16n: 16n found — CC 32..47 ch 1 live".
+// -> TARKISTA post-ikkunasta rivi "CQMidi16n: 16n found — CC 32..47 (any chan) live"
+//    (atovprojectin 16n lähettää joka faderin omalla MIDI-kanavalla; sidonta
+//    tapahtuu CC-numerolla, configissa chan: nil).
 //    Jos siellä lukee "no 16n detected": kytke laite ja aja
 CQ.midiRescan;                 // (vain tarvittaessa)
 CQ.deckA.load("123681__aidenfry__cricket-and-bird-field-recording.wav");
