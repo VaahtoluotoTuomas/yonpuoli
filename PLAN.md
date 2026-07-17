@@ -12,7 +12,8 @@ flip-gate-mittaus), hyväksyntä 2026-07-17 (M6 ruksattu). A1–A5 vihreät: 164
 yksikkötestiä, mayhem-peak 0.8896, hold-korrelaatio 1.0 / drift 0.0 dB.
 **Seuraavaksi vaihe 5 (snapshotit + 16n, M2 alkaa).** Muista Ctrl+Shift+L kun
 `classes/` muuttuu; kuunteluskriptit `tests/manual_checklist.md`, patch-reseptit
-`live.scd`.
+`live.scd`. Post-v1.0-suunta (norns-portti) kirjattu tämän tiedoston loppuun —
+se ohjaa vaiheiden 5–7 rajapintavalintoja.
 
 ## Läpileikkaavat säännöt
 
@@ -426,3 +427,31 @@ yksikkötestiä, mayhem-peak 0.8896, hold-korrelaatio 1.0 / drift 0.0 dB.
 - [ ] Stemit modulaariin: post-safety coco1/coco2 oikeissa ulostuloissa
 - [ ] Stem-äänitys: tiedostot syntyvät configin mukaan
 - [ ] Käyttäjän hyväksyntä → **v1.0-tag**
+
+---
+
+## Post-v1.0 — v2-visio: norns-portti (sovittu 2026-07-17)
+
+Tavoiteympäristö: **norns + grid + 16n + crow-synkattu modulaari** (käyttäjällä
+on kaikki paitsi arc). Ei kuulu v1.0:n scopeen, mutta ohjaa valintoja jo nyt:
+
+- Nornsin crone-enginet ovat sclangia → SynthDefit siirtyvät lähes sellaisinaan
+  (vanilla-UGens-only pätee jo). scsynth ajaa CM3+:lla yhdellä ytimellä →
+  nykyinen graafi on rajatapaus; diettivivut (mikään ei ole identiteetti-
+  kriittinen): harva matriisi (rebuild patchin muuttuessa — tiheä 22×16
+  ar-summaus kertoo enimmäkseen nollia), Lag-pankit → yksi Lag per desti,
+  block 128/256, deckit softcutiin (cocoiksi softcut EI käy: ei kierrätyksen
+  sisäistä clip+kvantisointia), FDN pois (nornsin oma reverb).
+- **Spike v1.0:n jälkeen** (1–2 pv): coco-pari + quantussy CroneEnginenä,
+  mitataan CPU. Fallback ilman DSP-porttausta: norns pelkkänä kontrolli-
+  keskuksena (grid + crow + enkooderit → OSC → läppärin SC) — sama soittopinta.
+- Crow toimii jo läppäriltä (SerialPort, druid-protokolla): 2 CV-sisääntuloa
+  "CV-fadereina" CQState-suppilon läpi, 4 ulostuloa infra/balcium-castleille
+  (audio-rate ei kulje sarjalinkin yli) — mahdollinen pieni lisäluokka ennen
+  norns-porttia.
+- **Vaiheissa 5–7 vältettävä**: laptop-only-oletukset ytimessä; OSC-nimiavaruudet
+  ja kontrolliabstraktiot muotoillaan niin, että ne sopivat myös norns/Lua-
+  kerrokselle ja OSC-hub-fallbackille. SPEC.md pysyy porttauksen totuutena.
+- Kontrolleripohdinnan muut suunnat (MPE-pinta "elävänä banaanipöytänä",
+  Midi Fighter Twister 16n:n rinnalle nappi/valokerrokseksi — täydentää, ei
+  korvaa) kirjattu muistiin; eivät vaadi arkkitehtuurimuutoksia.
