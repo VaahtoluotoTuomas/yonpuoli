@@ -324,6 +324,14 @@ jälkeen.
   kuultava env-reititys demotaan spaf-destillä (kello muuttuu heti);
   fbVca-duck kuunnellaan yhtäjaksoisella ≥ loop-kierron puheella.
   manual_checklist M6 kohta 2 jaettu 2a/2b tämän mukaisesti.
+- KUUNTELU 4 -havainto (2026-07-17, mitattu 120 s NRT:llä): flip on SPECin
+  mukainen **taso-gate** (Schmidt >0.5 on / <0.3 off) — infra-castlen cas
+  pitää suunnan käännettynä kymmeniä sekunteja (chaos 0.01: 2 vaihtoa/120 s,
+  43 % ajasta reverse), ja ääri-chaosissa castlen oma kello voi jäätyä
+  lähes nollaan jolloin cas lakkaa päivittymästä (chaos 1.0: gate jumissa,
+  90 %/120 s) — hyperkaaoksen "silences"-päätä, autenttista; spesal-askel
+  herättää verkon. Tiheämpi flip-tanssi: balcium-range tai tri-lähde;
+  painon suuruus säätää kuinka usein kiinteä kynnys ylittyy.
   Sama rakenne on välttämätön vaiheen 6 preseteille (SPEC: `\selfNoise`
   tarvitsee dust/fb-tasot, `\organMode` organ-tasot). CQMatrixTest varmistaa,
   että preset-paramit ovat olemassa olevia CQSpec-nimiä ja selviävät omasta
