@@ -61,3 +61,62 @@ CQ.set(\patchDepth, 1);              // full depth, lagged 50 ms either way
 
 CQ.patchPreset(\mayhem);             // dense, capped-depth stress patch (SPEC A3)
 */
+
+// ---- patch recipes (KUUNTELU 4 / vapaa sessio) ----
+// Lähteet (16): tri1..5, cas1..5, envA, envB, coco1, coco2, org1, org2
+// Destit (22): coco1/2_spaf _inVca _fbVca _flip _skip, castle1..5_fm,
+//              castle1..5_spesal, deckA/B_rate
+// envA/envB ovat sileitä verhokäyriä (ducking!); muut lähteet ovat raakaa
+// signaalia — VCA-destissä AM-rousketta, spaf-destissä vibratoa/kaaosta.
+// Gate/trig-destit (flip/skip/spesal): Schmitt >0.5 päälle, <0.3 pois —
+// painon suuruus säätää kuinka usein kiinteä kynnys ylittyy.
+
+/*
+// R1 — Askeltava nauha: cas (stepped S&H) spafiin -> humalainen porras-repitch
+CQ.clearPatch;
+CQ.set(\qChaos, 0.4);              // verkko elää -> cas-arvot vaeltavat
+CQ.patch(\cas3, \coco1_spaf, 0.5);
+CQ.set(\coco1Spaf, 0.5);           // syvyys: kokeile 0.2 .. 1
+
+// R2 — Puhe hidastaa nauhurin: envA suoraan deckin nopeuteen (välitön!)
+CQ.clearPatch;
+CQ.set(\preADrive, 6);
+CQ.patch(\envA, \deckA_rate, -1);  // painolla -2 puhe ajaa deckin takaperin
+
+// R3 — Rytminen skip: LFO resetoi loopin tahdissa
+CQ.clearPatch;
+CQ.hold(1, 1);                     // lukittu looppi
+CQ.set(\c2Range, \balcium);        // tri2 LFO:sta ~sykemaiseksi
+CQ.set(\qFreq, 1);                 // ~1.2 Hz stutter; nosta = tiheampi
+CQ.patch(\tri2, \coco1_skip, 1);
+
+// R4b — Jaksollinen reverse-vuorottelu: kolmio-LFO gaten lapi
+CQ.clearPatch;  CQ.hold(1, 1);
+CQ.set(\c2Range, \balcium);  CQ.set(\qFreq, 0.5);   // tri2 ~0.6 Hz
+CQ.patch(\tri2, \coco1_flip, 1);   // eteen ~3/4, takaperin ~1/4 syklista
+
+// R4c — Satunnaiset reverse-patkat kayttokelpoisella tahdilla
+CQ.clearPatch;  CQ.hold(1, 1);
+CQ.set(\c1Range, \balcium);        // castle 1:n kello ~4 Hz -> cas1 askeltaa tiheaan
+CQ.set(\qChaos, 0.3);
+CQ.patch(\cas1, \coco1_flip, 0.8); // paino = reverse-todennakoisyys
+// Huom: infra-castlen cas askeltaa vain ~12 s valein -> pitkia reverse-jaksoja;
+// aari-chaos voi jaadyttaa castlen kellon (gate jumiin) -> CQ.spesal(k) herattaa.
+CQ.set(\c1Range, \infra); CQ.set(\c2Range, \infra); CQ.set(\qFreq, 4);  // palautus
+
+// R5 — Coco-pari: coco1 syottaa coco2:ta oktaavia alempana + AM-ristimod
+CQ.clearPatch;
+CQ.set(\coco2Level, 0.8);
+CQ.set(\coco2SlotX, 0.8);          // coco1:n ulostulo coco2:n inputtiin
+CQ.hold(2, 0);                     // coco2 nauhoittaa
+CQ.set(\coco2Speed, 12000);        // oktaavin alemmat, tummemmat kerrokset
+CQ.set(\coco2Fb, 0.9);
+CQ.patch(\coco2, \coco1_fbVca, -0.4);  // raaka audio VCA:han = AM-rousketta
+
+// R6 — Itsegeneroiva verkko (ei inputtia): looppi FM:aa castlea, castle soi looppiin
+CQ.clearPatch;
+CQ.hold(1, 0);  CQ.set(\coco1Fb, 1.0);
+CQ.patch(\coco1, \castle5_fm, 0.6);
+CQ.set(\coco1SlotQ, 0.4);
+CQ.patch(\tri4, \castle3_spesal, 1);   // verkko re-patchaa itseaan ~13 s valein
+*/
