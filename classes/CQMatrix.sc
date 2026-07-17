@@ -154,7 +154,9 @@ CQMatrix {
 					[\cas3, \castle4_fm, 0.3], [\cas4, \castle5_fm, 0.3],
 					[\cas5, \castle1_fm, 0.3]
 				],
-				params: (coco1Spaf: 0.8, coco2Spaf: 0.8)
+				params: (coco1Spaf: 0.12, coco2Spaf: 0.12)
+				// ^ ear-calibrated (KUUNTELU 4): drift ±50 c, flutter ±17 c —
+				// "worn but working tape"; 0.15 already tipped into seasick
 			),
 
 			// "dense random, capped depths" (SPEC §5.5): every source patched to

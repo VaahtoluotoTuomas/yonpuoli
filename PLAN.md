@@ -310,7 +310,13 @@ jälkeen.
   Preset-data on nyt `(matrix: [[src, dest, w]...], params: (nimi: arvo...))`;
   `CQMatrix.preset` soveltaa vain matriisiosan (ei tunne CQStatea),
   `Cocoquantus.patchPreset` soveltaa lisäksi params-osan CQState-suppilon
-  läpi (clampattu). `\classic` params: `coco1Spaf: 0.8, coco2Spaf: 0.8`.
+  läpi (clampattu). `\classic` params: `coco1Spaf/coco2Spaf` — ensin 0.8,
+  kuuntelukalibroitu **0.12**:een 2026-07-17 (käyttäjän data: 0.1 "vain
+  elävää huojuntaa" mutta puheessa hädin tuskin kuuluva, 0.15 paikoin jo
+  merisairas, 0.2 melodisissa äänissä selvä vibrato; 0.12 = drift ±50 c,
+  flutter ±17 c). Drift-kuvion kvasiperiodisuus (samanmuotoiset ~6–21 s
+  kolmioaallot, taajuus askeltaa kerran per sykli) todettu autenttiseksi —
+  arvaamattomuus kuuluu qChaos-nupille, ei presetille.
   Sama rakenne on välttämätön vaiheen 6 preseteille (SPEC: `\selfNoise`
   tarvitsee dust/fb-tasot, `\organMode` organ-tasot). CQMatrixTest varmistaa,
   että preset-paramit ovat olemassa olevia CQSpec-nimiä ja selviävät omasta
