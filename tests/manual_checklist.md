@@ -196,14 +196,17 @@ CQ.set(\coco1Dust, 0);         //    (A/B-varmistus: aaltojen pitää loppua)
 CQ.set(\coco1Dust, 0.02);      //    (takaisin oletukseen)
 
 // 2. Inverso-banaani coco1:een (jota tässä asetelmassa kuunnellaan — coco2
-//    on mykistetty):
+//    on mykistetty). HUOM: omaa ääntäsi EI ole tarkoitus kuulla — slotPre 0
+//    pitää puheen poissa loopista, se on pelkkä ohjaussignaali (envA).
+//    Kuunneltava efekti on loopin KAIKUJEN hiljeneminen puhuessasi.
+CQ.set(\preADrive, 6);         // envA riittävän vahvaksi puheella (kuten M5:ssä;
+                               // oletusdrivella 2 fb putoaa vain ~0.9 -> 0.8)
 CQ.patch(\envA, \coco1_fbVca, -0.5);
 CQ.set(\coco1Fb, 0.9);         // toistot selvästi kuuluviin
-// -> puhu mikkiin (preamp A on jo \liveL = mikki; slotPre 0 pitää äänen
-//    poissa loopista, envA seuraa sitä silti): loopin kaiut painuvat alas
-//    puhuessasi ja palaavat tauoilla (negatiivinen paino = inverso).
+// -> puhu lähelle mikkiä tauottaen (preamp A on jo \liveL = mikki): kaiut
+//    painuvat alas puhuessasi ja palaavat tauoilla (negatiivinen = inverso).
 CQ.unpatch(\envA, \coco1_fbVca);   // lopuksi
-CQ.set(\coco1Fb, 0.35);
+CQ.set(\coco1Fb, 0.35); CQ.set(\preADrive, 2);
 
 // 3. patchDepth-makro:
 CQ.set(\patchDepth, 0);        // koko matriisin vaikutus katoaa pehmeästi
