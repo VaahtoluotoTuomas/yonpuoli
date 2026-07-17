@@ -135,24 +135,36 @@ CQ.set(\coco2Level, 0);        // hiljennä coco2:n power-on-kohinalooppi
 CQ.set(\coco1SlotPre, 0);      // LÄPPÄRILLÄ: liveL = sisäinen mikki -> preamp A
                                // syöttäisi huonekohinaa coco1:een (oletus 1.0).
                                // Pöytäkoneella modulaari-inputilla jätä oletukseen.
-CQ.patchPreset(\classic);      // banaanit JA nupit: tri1+tri3 -> spaf (syvyys 0.8),
+CQ.patchPreset(\classic);      // banaanit JA nupit: tri1+tri3 -> spaf (syvyys 0.12),
                                // castle->castle FM-rinki
 CQ.hold(1, 0);                 // coco1 record-tilaan
 ```
 
+**Mikki tällä läppärillä:** sisäinen mikki ON `\liveL` (WASAPI-sisääntulolaite =
+mikkiryhmä; `inChans[0]`). ÄLÄ vaihda `\preASrc`-arvoon `\mic` — configissa on
+`micChan: nil`, joten `\mic`-lähde on hiljaisuus (SPEC §7: mic-polku kokonaan
+pois; ja `micGain`-oletus on joka tapauksessa 0). Preamp A kuulee mikin
+oletusasetuksella `\liveL`, tasona `liveGain` (oletus 1).
+
 1. Kuuntele oletusarvoilla, koskematta mihinkään muuhun: pitäisi kuulostaa heti
    "Cocoquantus-maiselta" (SPEC M6). Mitä odottaa:
-   - **Huojunta**: hidas ±reilun kolmasosan oktaavia vire-ajelehdinta (~12 s
-     jakso, tri1) + nopeampi ~3 Hz flutter (tri3) — merisairas kasettimainen
-     "wow & flutter", ja chaos 0.15 elävöittää molempien tahtia.
+   - **Huojunta**: hidas ±50 sentin vire-ajelehdinta (~6–20 s aaltoina, tri1;
+     aaltojen kesto vaihtelee chaosin ja FM-ringin mukana) + nopeampi ~3 Hz
+     ±17 sentin flutter (tri3) — "kulunut mutta toimiva nauhuri", elävää,
+     EI merisairasta. Kuuluu selvimmin sävelkorkeudellisesta/perkussiivisesta
+     materiaalista; kohinamainen materiaali ei paljasta viredriftiä.
    - **Aliasointi + 8-bit-rae** materiaalin päällä koko ajan.
    - Ensimmäiset ~15–20 s: power-on-kohina kiertää vielä pohjalla ja hiipuu
      portaittain pois (fb 0.35, askel = loop-kierto ~5.5 s) — normaalia.
-   - Dust-purskeet (oletus 0.02) rapisevat satunnaisesti pohjalla — by design,
-     hardwaren "digital dust".
-2. Inverso-banaani: `CQ.patch(\envA, \coco2_fbVca, -0.5);` — puhu/soita
-   mikistä (`CQ.set(\preASrc, \mic)` tms.) → coco2:n feedback-VCA duckkaa
-   signaalin voimakkuuden mukaan (negatiivinen paino = inverso-polariteetti).
+   - Dust-purskeet (oletus 0.02) rapisevat satunnaisina aaltoina pohjalla
+     eivätkä lopu koskaan kokonaan — by design, hardwaren "digital dust"
+     (A/B-varmistus: `CQ.set(\coco1Dust, 0)` hiljentää ne).
+2. Inverso-banaani (coco1:een, jota tässä asetelmassa kuunnellaan — coco2 on
+   mykistetty): `CQ.patch(\envA, \coco1_fbVca, -0.5); CQ.set(\coco1Fb, 0.9);`
+   → puhu mikkiin (preamp A on jo `\liveL` = mikki; slotPre 0 pitää äänen
+   poissa loopista, envA seuraa sitä silti) → loopin kaiut painuvat alas
+   puhuessasi ja palaavat tauoilla (negatiivinen paino = inverso).
+   Lopuksi: `CQ.unpatch(\envA, \coco1_fbVca); CQ.set(\coco1Fb, 0.35);`
 3. `CQ.set(\patchDepth, 0);` → koko matriisin vaikutus katoaa pehmeästi (50 ms
    lag), ei klikkiä. `CQ.set(\patchDepth, 1);` → banaanit palaavat täyteen
    voimaan, yhtä pehmeästi.
