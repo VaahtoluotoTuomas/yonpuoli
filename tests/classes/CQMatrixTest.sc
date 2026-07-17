@@ -95,6 +95,25 @@ CQMatrixTest : UnitTest {
 			"\\classic: castle FM ring segment cas1 -> castle2_fm");
 	}
 
+	test_presetClassicParams {
+		var params = CQMatrix.presets[\classic][\params];
+		this.assert(params[\coco1Spaf] > 0,
+			"\\classic raises the spaf depth knob — the tri->spaf banana is dead "
+			++ "without it (SPEC §5.3: spaf sum is scaled by cocoNSpaf)");
+		this.assert(params[\coco2Spaf] > 0, "\\classic raises coco2's spaf knob too");
+	}
+
+	test_presetParamsAreValidSpecNames {
+		CQMatrix.presets.keysValuesDo { |name, data|
+			data[\params].keysValuesDo { |k, v|
+				this.assert(CQSpec.includes(k),
+					"preset % param '%' exists in CQSpec".format(name, k));
+				this.assertEquals(CQSpec.clamp(k, v), v,
+					"preset % param % = % survives its own clamp".format(name, k, v));
+			};
+		};
+	}
+
 	test_presetMayhemDense {
 		matrix.preset(\mayhem);
 		this.assertEquals(matrix.asArray.size, 16 * 22, "\\mayhem patches every cell");

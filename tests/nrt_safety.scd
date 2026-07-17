@@ -156,7 +156,7 @@ var makeMayhemScore = {
 			\wFlipBus, destBus.value(("coco" ++ coco ++ "_flip").asSymbol),
 			\wSkipBus, destBus.value(("coco" ++ coco ++ "_skip").asSymbol)]
 	};
-	CQMatrix.presets[\mayhem].do { |t|
+	CQMatrix.presets[\mayhem][\matrix].do { |t|
 		var si = srcNames.indexOf(t[0]), di = destNames.indexOf(t[1]);
 		wArr[di][si] = t[2];
 	};

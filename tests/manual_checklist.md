@@ -128,14 +128,28 @@ Alkuasetelma:
 
 ```supercollider
 CQ.boot;                       // odota 2 s fade-in
-CQ.deckA.load("field.wav");    // kenttä-äänite (suhteellinen polku -> samples/)
-CQ.set(\coco2Level, 0);        // hiljennä coco2:n power-on-kohinalooppi (valinnainen)
-CQ.patchPreset(\classic);      // tri1 -> coco1/coco2 spaf, castle->castle FM-rinki
+CQ.deckA.load("123681__aidenfry__cricket-and-bird-field-recording.wav");
+// ^ TARKISTA post-ikkunasta rivi "CQDeck deckA: loaded ..." — jos siellä lukee
+//   "file not found", deck EI soi ja kuulet pelkkää kohinaa!
+CQ.set(\coco2Level, 0);        // hiljennä coco2:n power-on-kohinalooppi
+CQ.set(\coco1SlotPre, 0);      // LÄPPÄRILLÄ: liveL = sisäinen mikki -> preamp A
+                               // syöttäisi huonekohinaa coco1:een (oletus 1.0).
+                               // Pöytäkoneella modulaari-inputilla jätä oletukseen.
+CQ.patchPreset(\classic);      // banaanit JA nupit: tri1+tri3 -> spaf (syvyys 0.8),
+                               // castle->castle FM-rinki
 CQ.hold(1, 0);                 // coco1 record-tilaan
 ```
 
 1. Kuuntele oletusarvoilla, koskematta mihinkään muuhun: pitäisi kuulostaa heti
-   "Cocoquantus-maiselta" — huojuvalta, aliasoivalta, elävältä (SPEC M6).
+   "Cocoquantus-maiselta" (SPEC M6). Mitä odottaa:
+   - **Huojunta**: hidas ±reilun kolmasosan oktaavia vire-ajelehdinta (~12 s
+     jakso, tri1) + nopeampi ~3 Hz flutter (tri3) — merisairas kasettimainen
+     "wow & flutter", ja chaos 0.15 elävöittää molempien tahtia.
+   - **Aliasointi + 8-bit-rae** materiaalin päällä koko ajan.
+   - Ensimmäiset ~15–20 s: power-on-kohina kiertää vielä pohjalla ja hiipuu
+     portaittain pois (fb 0.35, askel = loop-kierto ~5.5 s) — normaalia.
+   - Dust-purskeet (oletus 0.02) rapisevat satunnaisesti pohjalla — by design,
+     hardwaren "digital dust".
 2. Inverso-banaani: `CQ.patch(\envA, \coco2_fbVca, -0.5);` — puhu/soita
    mikistä (`CQ.set(\preASrc, \mic)` tms.) → coco2:n feedback-VCA duckkaa
    signaalin voimakkuuden mukaan (negatiivinen paino = inverso-polariteetti).

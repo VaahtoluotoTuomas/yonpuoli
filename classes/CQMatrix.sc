@@ -100,13 +100,16 @@ CQMatrix {
 		this.changed(\clear);   // one bulk notification instead of one per cell
 	}
 
+	// applies the preset's MATRIX part only; the params part goes through the
+	// CQState funnel and is applied by Cocoquantus.patchPreset (CQMatrix must
+	// not know about CQState — ARCH §5 separation)
 	preset { |name|
 		var data = this.class.presets[name];
 		if(data.isNil) {
 			this.class.prWarn("unknown preset '" ++ name ++ "'");
 			^this
 		};
-		this.load(data);
+		this.load(data[\matrix]);
 	}
 
 	// push every current weight to the server (used once at boot and after clear/load)
@@ -126,33 +129,47 @@ CQMatrix {
 	*prWarn { |msg| if(postWarnings) { ("CQMatrix: " ++ msg).warn } }
 
 	// ---- preset data (SPEC §5.5) ----
+	// A preset is (matrix: [[src, dest, w] ...], params: (name: value ...)) —
+	// hardware patches include knob positions, not just bananas (e.g. \classic
+	// is dead without the spaf depth knob up), and SPEC's phase-6 presets
+	// (\selfNoise dust levels, \organMode organ levels) need params anyway.
+	// Params are CQSpec names, applied through the CQState funnel (clamped).
 
 	*presets {
 		^(
 			// no connections — the hardware's default, unpatched state
-			empty: [],
+			empty: (matrix: [], params: ()),
 
-			// "tri→spaf both Cocos, castle→castle FM ring" (SPEC §5.5): one slow
-			// LFO gently detunes both loops together; a 5-castle FM ring adds a
-			// second, patchable layer of cross-modulation on top of the
+			// "tri→spaf both Cocos, castle→castle FM ring" (SPEC §5.5): tri1
+			// (infra, ~0.08 Hz) is the slow tape-drift on both loops, tri3
+			// (balcium, ~3 Hz) adds audible flutter on top; the ^ knobs must be
+			// up for either to bite (SPEC §5.3: spaf sum is scaled by cocoNSpaf).
+			// A 5-castle FM ring layers patchable cross-modulation over the
 			// Quantussy's own internal ring
-			classic: [
-				[\tri1, \coco1_spaf, 0.35], [\tri1, \coco2_spaf, 0.35],
-				[\cas1, \castle2_fm, 0.3], [\cas2, \castle3_fm, 0.3],
-				[\cas3, \castle4_fm, 0.3], [\cas4, \castle5_fm, 0.3],
-				[\cas5, \castle1_fm, 0.3]
-			],
+			classic: (
+				matrix: [
+					[\tri1, \coco1_spaf, 0.35], [\tri1, \coco2_spaf, 0.35],
+					[\tri3, \coco1_spaf, 0.12], [\tri3, \coco2_spaf, 0.12],
+					[\cas1, \castle2_fm, 0.3], [\cas2, \castle3_fm, 0.3],
+					[\cas3, \castle4_fm, 0.3], [\cas4, \castle5_fm, 0.3],
+					[\cas5, \castle1_fm, 0.3]
+				],
+				params: (coco1Spaf: 0.8, coco2Spaf: 0.8)
+			),
 
 			// "dense random, capped depths" (SPEC §5.5): every source patched to
 			// every destination at a fixed, sub-maximal depth (deterministic, not
 			// literally random, so the A3 safety render is reproducible) —
 			// doubles as the SPEC A3 worst-case stress patch; musical tuning
 			// happens in phase 6
-			mayhem: destNames.collect { |dest, di|
-				sourceNames.collect { |src, si|
-					[src, dest, 0.6 * (if((si + di).even) { 1 } { -1 })]
-				}
-			}.flatten(1)
+			mayhem: (
+				matrix: destNames.collect { |dest, di|
+					sourceNames.collect { |src, si|
+						[src, dest, 0.6 * (if((si + di).even) { 1 } { -1 })]
+					}
+				}.flatten(1),
+				params: ()
+			)
 		)
 	}
 }

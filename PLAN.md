@@ -299,9 +299,22 @@ jälkeen.
 - `\mayhem`-preset on tässä vaiheessa **deterministinen** tiheä patch (jokainen
   16×22-solu ±0.6, etumerkki vuorottelee) — ei vielä satunnaisuutta (shake tulee
   vaiheessa 6). Tämä sama data-aineisto ajaa myös täyden A3-turvatestin.
-- `\classic`-preset: `tri1 → coco1_spaf`/`coco2_spaf` (0.35, sama LFO molempiin)
-  + 5-castlen FM-rinki `cas_k → castle_(k+1)_fm` (0.3) — SPEC §5.5:n kuvauksen
-  ("tri→spaf both Cocos, castle→castle FM ring") suora toteutus.
+- `\classic`-preset: `tri1 → coco1_spaf`/`coco2_spaf` (0.35, hidas drift) +
+  `tri3 → spaf` (0.12, ~3 Hz flutter balcium-castlesta) + 5-castlen FM-rinki
+  `cas_k → castle_(k+1)_fm` (0.3) — SPEC §5.5:n kuvauksen ("tri→spaf both
+  Cocos, castle→castle FM ring") toteutus.
+- **Preset = painot + nupit** (KUUNTELU 4 -löydös 2026-07-17): pelkkä
+  `tri→spaf`-banaani on kuuroa dataa, koska spaf-syvyysnuppi (`cocoNSpaf`,
+  SPEC §5.3: "spaf sum scaled by cocoNSpaf") on oletuksena 0 — M6:n
+  "warbling at defaults" ei voi toteutua ilman että preset nostaa nupin.
+  Preset-data on nyt `(matrix: [[src, dest, w]...], params: (nimi: arvo...))`;
+  `CQMatrix.preset` soveltaa vain matriisiosan (ei tunne CQStatea),
+  `Cocoquantus.patchPreset` soveltaa lisäksi params-osan CQState-suppilon
+  läpi (clampattu). `\classic` params: `coco1Spaf: 0.8, coco2Spaf: 0.8`.
+  Sama rakenne on välttämätön vaiheen 6 preseteille (SPEC: `\selfNoise`
+  tarvitsee dust/fb-tasot, `\organMode` organ-tasot). CQMatrixTest varmistaa,
+  että preset-paramit ovat olemassa olevia CQSpec-nimiä ja selviävät omasta
+  clampistaan.
 - `tests/nrt_safety.scd`: mayhem-testin control-väylät alkavat offsetista 100,
   jotta ne eivät koskaan törmää muiden testitapausten `c_set 0 0`
   -loppumerkkiin. `render`-apufunktio hyväksyy nyt valinnaisen kesto-parametrin

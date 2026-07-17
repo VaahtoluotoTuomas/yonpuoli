@@ -123,9 +123,19 @@ Cocoquantus {
 		^matrix !? { matrix.getPatch(src, dest) }
 	}
 
+	// a preset is weights + knob positions (see CQMatrix preset data): the
+	// matrix part goes through CQMatrix's funnel, the params part through
+	// CQState's — both clamped, both notify dependants
 	*patchPreset { |name|
+		var data;
 		if(matrix.isNil) { "Cocoquantus: not booted.".warn; ^this };
+		data = CQMatrix.presets[name];
+		if(data.isNil) {
+			"Cocoquantus: unknown preset '%' ignored.".format(name).warn;
+			^this
+		};
 		matrix.preset(name);
+		data[\params].keysValuesDo { |k, v| state.set(k, v) };
 	}
 
 	// panic is always reachable and preserves state (SPEC safety #3)
