@@ -9,12 +9,15 @@
 
 CQDeck {
 	classvar <audioExtensions;
+	classvar <>postWarnings = true;
 	var graph, state, <which, samplesDir;
 	var <buffer, <path, synth;
 	var <files, <fileIndex;
 
 	*initClass {
-		audioExtensions = #["wav", "aif", "aiff", "aifc", "flac"];
+		// symbols, not strings: Collection:includes compares identity (===),
+		// and two equal String instances are never identical
+		audioExtensions = #[\wav, \aif, \aiff, \aifc, \flac];
 	}
 
 	*new { |graph, state, which = \deckA, samplesDir|
@@ -26,7 +29,7 @@ CQDeck {
 		var ch;
 		if(p.isNil) { ^this };
 		if(graph.isNil or: { graph.isRunning.not }) {
-			"CQDeck: not booted — CQ.boot first.".warn;
+			this.class.prWarn("CQDeck: not booted — CQ.boot first.");
 			^this
 		};
 		ch = this.prCheckChannel(p, channel);
@@ -36,7 +39,7 @@ CQDeck {
 				action: { cond.unhang });
 			cond.hang;
 			if(newBuf.numFrames.isNil or: { newBuf.numFrames <= 0 }) {
-				("CQDeck: could not read '" ++ p ++ "'").warn;
+				this.class.prWarn("CQDeck: could not read '" ++ p ++ "'");
 				newBuf.free;
 			} {
 				newBuf.normalize(0.5);         // peak −6 dBFS on load (SPEC §5.1)
@@ -56,7 +59,7 @@ CQDeck {
 		if(d.isNil) { ^this };
 		this.prScanDir(d);
 		if(files.isEmpty) {
-			("CQDeck %: no audio files in '%'".format(which, d)).warn;
+			this.class.prWarn("CQDeck %: no audio files in '%'".format(which, d));
 			^this
 		};
 		this.load(files.first);
@@ -107,17 +110,22 @@ CQDeck {
 		if(File.exists(p)) { ^p };
 		inSamples = samplesDir +/+ filePath.asString;
 		if(File.exists(inSamples)) { ^inSamples };
-		("CQDeck: file not found: '" ++ filePath ++ "'").warn;
+		this.class.prWarn("CQDeck: file not found: '" ++ filePath ++ "'");
 		^nil
 	}
 
 	prResolveDir { |dirPath|
 		var p = dirPath.asString.standardizePath;
-		var inSamples;
+		var inSamples, sibling;
 		if(File.exists(p)) { ^p };
 		inSamples = samplesDir +/+ dirPath.asString;
 		if(File.exists(inSamples)) { ^inSamples };
-		("CQDeck: folder not found: '" ++ dirPath ++ "'").warn;
+		// sibling of the samples folder — covers loadFolder("samples") itself
+		// (any repo-root folder in the default config); the live IDE's cwd is
+		// rarely the repo, so the bare-relative check above misses these
+		sibling = samplesDir.dirname +/+ dirPath.asString;
+		if(File.exists(sibling)) { ^sibling };
+		this.class.prWarn("CQDeck: folder not found: '" ++ dirPath ++ "'");
 		^nil
 	}
 
@@ -131,8 +139,8 @@ CQDeck {
 		n = sf.numChannels;
 		sf.close;
 		if(channel >= n) {
-			("CQDeck %: file has only % channel(s) — using channel 0"
-				.format(which, n)).warn;
+			this.class.prWarn("CQDeck %: file has only % channel(s) — using channel 0"
+				.format(which, n));
 			^0
 		};
 		^channel
@@ -148,13 +156,13 @@ CQDeck {
 	prEnsureFiles {
 		if(files.isNil) { this.prScanDir(samplesDir) };
 		if(files.isEmpty) {
-			("CQDeck %: no audio files found to navigate".format(which)).warn;
+			this.class.prWarn("CQDeck %: no audio files found to navigate".format(which));
 		};
 	}
 
 	prScanDir { |d|
 		files = (d +/+ "*").pathMatch.select { |f|
-			audioExtensions.includes(f.splitext[1].asString.toLower)
+			audioExtensions.includes(f.splitext[1].asString.toLower.asSymbol)
 		}.sort;
 		fileIndex = nil;
 	}
@@ -188,4 +196,6 @@ CQDeck {
 		old !? { old.set(\gate, 0) };
 		oldBuf !? { SystemClock.sched(0.3, { oldBuf.free; nil }) };
 	}
+
+	*prWarn { |msg| if(postWarnings) { msg.warn } }
 }
