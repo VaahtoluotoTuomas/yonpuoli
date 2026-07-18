@@ -72,6 +72,9 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 - Listening iterations: propose a hypothesis → make the change → run tests → give the
   user a 3–5 step listening script → adjust from their description. One variable at a
   time.
+- `tests/manual_checklist.md` format: every test = one copy-pasteable fenced
+  ```` ```supercollider ```` block, instructions as `//` comments inside it (the user
+  runs lines straight from the file).
 - Don't refactor the sacred parts (master chain, coco core, clamp funnel) casually;
   if you must, state the invariant impact explicitly first.
 
@@ -90,3 +93,8 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   (`d_recv`) — they run in a fresh scsynth.
 - `Collection:includes` compares identity (`===`), not equality: membership
   tables must hold Symbols/Integers/Chars (immediates), never Strings.
+- Repo files contain UTF-8 (Finnish text, `±`, `→`): never edit them with PowerShell
+  text cmdlets (`Get-Content`/`Set-Content` mangle the encoding) — use the agent's
+  file tools or an editor.
+- `config.scd` must stay a pure data expression (the parenthesized Event) — no
+  trailing code; `CQConfig` uses the file's return value, and boot lives in `boot.scd`.
