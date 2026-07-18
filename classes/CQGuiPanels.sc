@@ -139,10 +139,12 @@ CQGuiPanels {
 		var panicBtn = Button().states_([
 			["PANIC", Color.white, Color.gray(0.35)],
 			["MUTED — resume", Color.white, c[\warn]]]);
-		var nameField = TextField().string_("snap");
+		// text entry holds focus while typing; Enter returns it to the key map
+		var nameField = TextField().string_("snap")
+			.action_({ |tf| tf.focus(false) });
 		var snapMenus = [PopUpMenu(), PopUpMenu()];
 		var durBox = NumberBox().value_(10).clipLo_(0.1).clipHi_(600)
-			.fixedWidth_(40);
+			.fixedWidth_(40).action_({ |b| b.focus(false) });
 		var refresh = {
 			var items = (Cocoquantus.snapshots !? { Cocoquantus.snapshots.list }) ? [];
 			snapMenus.do { |m| m.items = items };
@@ -207,10 +209,14 @@ CQGuiPanels {
 	// ---- private ----
 
 	// deck transport row (SPEC §6.2): load/next/prev/random, rate, loop, level;
-	// the row itself is the file-drop target ("drop files here")
+	// the whole box is the file-drop target, and the label shows the loaded file
 	*prDeck { |gui, which|
 		var w = gui.widgets;
 		var deck = { if(which == \deckA) { Cocoquantus.deckA } { Cocoquantus.deckB } };
+		var canDrop, doDrop, bindDrop;
+		var fileLabel = StaticText().string_("drop file here")
+			.font_(Font.sansSerif(8)).align_(\center)
+			.stringColor_(Color.gray(0.5)).fixedWidth_(86);
 		var row = View().background_(Color.gray(0.9)).layout_(VLayout(
 			HLayout(
 				StaticText().string_(which.asString.toUpper)
@@ -225,18 +231,28 @@ CQGuiPanels {
 				w.knob((which ++ "Rate").asSymbol, "rate"),
 				w.knob((which ++ "Level").asSymbol, "level"),
 				w.toggle((which ++ "Loop").asSymbol, "loop"),
-				StaticText().string_("drop\nfile").font_(Font.sansSerif(8))
-					.align_(\center).stringColor_(Color.gray(0.5)))
+				fileLabel)
 		).margins_(2).spacing_(1));
-		row.canReceiveDragHandler = {
+		gui.setDeckLabel(which, fileLabel);
+		canDrop = {
 			View.currentDrag.isString
 				or: { View.currentDrag.isKindOf(SequenceableCollection) }
 		};
-		row.receiveDragHandler = {
+		doDrop = {
 			var drag = View.currentDrag;
 			var path = if(drag.isString) { drag } { drag.first.asString };
 			deck.value.load(path);
 		};
+		// a drop lands on the deepest widget under the cursor, and QView's
+		// dragEnterEvent always accepts — so a child without handlers swallows
+		// the drag and then refuses it (defaultCanReceiveDrag ^false), leaving
+		// only the row's margin pixels droppable. Bind every descendant.
+		bindDrop = { |view|
+			view.canReceiveDragHandler = canDrop;
+			view.receiveDragHandler = doDrop;
+			view.children.do { |ch| bindDrop.value(ch) };
+		};
+		bindDrop.value(row);
 		^row
 	}
 }

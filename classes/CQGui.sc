@@ -11,6 +11,7 @@ CQGui {
 	var <window, <widgets, updaters;
 	var stateCtl, gridPanel, meterFuncs;
 	var castleLeds, spesalView, <spesalStates;
+	var deckLabels, deckCtls;
 	var noticeView, recBtn, recTimeView, recTask;
 	var micLive = false, cleaned = false;
 
@@ -28,6 +29,7 @@ CQGui {
 	// ---- panel registration API (used by CQGuiPanels while building) ----
 
 	setMeter { |key, func| meterFuncs[key] = func }
+	setDeckLabel { |which, view| deckLabels[which] = view }
 	castleLeds_ { |views| castleLeds = views }
 	spesalView_ { |view| spesalView = view }
 	notice_ { |view| noticeView = view }
@@ -45,6 +47,7 @@ CQGui {
 	prInit {
 		updaters = IdentityDictionary.new;
 		meterFuncs = IdentityDictionary.new;
+		deckLabels = IdentityDictionary.new;
 		spesalStates = Cocoquantus.spesalStates;
 		widgets = CQGuiWidgets(state, updaters);
 		{
@@ -83,7 +86,23 @@ CQGui {
 		);
 		window.view.keyDownAction = { |v, char| this.prKey(char) };
 		window.onClose = { this.prCleanup };
+		window.view.children.do { |ch| this.prDefocus(ch) };
 		window.front;
+	}
+
+	// Qt hands keyboard focus to any clicked widget, and space/tab then act on
+	// that widget instead of the SPEC §6.2 key map (space would re-toggle a
+	// clicked REC rather than panic). The panel is mouse-only: strip focus from
+	// everything except text entry, which gets Qt::ClickFocus only — typing
+	// works after a click, but they stay out of the tab chain so the window
+	// never hands them initial focus at boot. Enter releases (see widgets).
+	prDefocus { |view|
+		if(view.isKindOf(TextField) or: { view.isKindOf(NumberBox) }) {
+			view.setProperty(\focusPolicy, 2);   // Qt::ClickFocus
+		} {
+			view.canFocus = false;
+		};
+		view.children.do { |ch| this.prDefocus(ch) };
 	}
 
 	// one SimpleController fans \param notifications out to the widget
@@ -120,6 +139,30 @@ CQGui {
 				spesalView !? { spesalView.refresh };
 			}.defer;
 		}, '/cq_spesal');
+		// deck file labels: dependants of the deck players (nil when unbooted,
+		// e.g. the serverless smoke build — the labels then just keep their hint)
+		#[\deckA, \deckB].do { |which|
+			this.prDeckPlayer(which) !? { |deck|
+				var ctl = SimpleController(deck);
+				deck.path !? { this.prPaintDeckLabel(which, deck.path) };
+				ctl.put(\file, { |obj, what, path|
+					{ this.prPaintDeckLabel(which, path) }.defer;
+				});
+				deckCtls = deckCtls.add(ctl);
+			};
+		};
+	}
+
+	prDeckPlayer { |which|
+		if(Cocoquantus.graph.isNil) { ^nil };
+		^if(which == \deckA) { Cocoquantus.deckA } { Cocoquantus.deckB }
+	}
+
+	prPaintDeckLabel { |which, path|
+		deckLabels[which] !? { |lab|
+			lab.string = path.asString.basename;
+			lab.stringColor = Color.gray(0.25);
+		};
 	}
 
 	// 2 Hz language-side tick for the REC button + elapsed display (SPEC §6.2)
@@ -182,6 +225,8 @@ CQGui {
 		cleaned = true;
 		stateCtl !? { stateCtl.remove };
 		stateCtl = nil;
+		deckCtls.do { |c| c.remove };
+		deckCtls = nil;
 		gridPanel !? { gridPanel.free };
 		recTask !? { recTask.stop };
 		recTask = nil;

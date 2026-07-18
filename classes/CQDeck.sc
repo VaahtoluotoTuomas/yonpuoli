@@ -193,6 +193,7 @@ CQDeck {
 		graph.registerBuffer(which, newBuf);
 		buffer = newBuf;
 		path = newPath;
+		this.changed(\file, newPath);   // GUI file label (any load path: drop/button/nav/code)
 		old !? { old.set(\gate, 0) };
 		oldBuf !? { SystemClock.sched(0.3, { oldBuf.free; nil }) };
 	}

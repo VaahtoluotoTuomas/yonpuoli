@@ -81,7 +81,8 @@ sclang -l <conf> -i none tests/nrt_hold_integrity.scd -> CQ_HOLD_OK
 ```
 
 **Korvilla**: `tests/manual_checklist.md` — kopioitavat lohkot, aja rivi
-kerrallaan. Avoinna: **M4 + KUUNTELU 6** (GUI, presetit, shake, REC).
+kerrallaan. Avoinna: **KUUNTELU 6** (GUI, presetit, shake, REC; M4
+hyväksytty 2026-07-18).
 
 ## Hyvä tietää
 

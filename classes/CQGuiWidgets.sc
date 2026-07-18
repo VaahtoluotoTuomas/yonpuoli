@@ -60,7 +60,8 @@ CQGuiWidgets {
 		var spec = CQSpec.at(name)[\spec];
 		var b = NumberBox().clipLo_(spec.minval).clipHi_(spec.maxval)
 			.step_(1).scroll_step_(1).font_(Font.sansSerif(9));
-		b.action = { |box| state.set(name, box.value) };
+		// Enter commits, then hands keyboard focus back to the key map (CQGui)
+		b.action = { |box| state.set(name, box.value); box.focus(false) };
 		this.register(name, { |v| b.value = v });
 		^b
 	}

@@ -12,8 +12,9 @@ Vaihe 6 -toteutus (`5ab3255`): CQGui (+ CQGuiWidgets/CQGuiPanels/CQGuiMatrix),
 CQRecorder + `CQ.rec`, meteri-/LED-raportit defeissä, headless-lippu.
 Markerit vihreät: A1 + A2 (3080 assertiota) + A3 (mayhem-peak 0.89 =
 limitterin katto) + A4/A5 (korrelaatio 1.0, drift 0.0 dB) + GUI-savutesti
-(dev-skripti). **Seuraavaksi: KUUNTELU 6** (manual_checklist.md:n M4- ja
-KUUNTELU 6 -osiot; käyttäjä ajaa myöhemmässä sessiossa — muista
+(dev-skripti). KUUNTELU 6 käynnissä: **M4 (\selfNoise) hyväksytty
+2026-07-18**; jäljellä manual_checklist.md:n KUUNTELU 6 -osiot 6.1–6.6
+(GUI, presetit, shake, REC, headless, 30 min sessio — muista
 Ctrl+Shift+L ennen ensimmäistä boottia) → hyväksynnästä M2 valmis.
 Post-v1.0-suunta (norns-portti) kirjattu tämän tiedoston loppuun — se
 ohjaa vaiheiden 6–7 rajapintavalintoja.
@@ -467,10 +468,18 @@ ohjaa vaiheiden 6–7 rajapintavalintoja.
       korrelaatio 1.0, drift 0.0 dB) (2026-07-18)
 
 ### KUUNTELU 6 — M2-hyväksyntä
-- [ ] GUI-läpikäynti: meterit, hold-LEDit, spesal-näyttö, matriisigrid, file drop,
-      näppäinkartta (`1/2 q/w a/s 3..7 r space p`)
-- [ ] `\selfNoise`-preset toistaa no-input digital-dust -workflow'n (M4)
-- [ ] M5 kokonaan: flip/skip/dolby GUI:sta
+- [x] GUI-läpikäynti: meterit, hold-LEDit, spesal-näyttö, matriisigrid, file drop,
+      näppäinkartta (`1/2 q/w a/s 3..7 r space p`) (2026-07-18: hyväksytty;
+      matkalla korjattu file-drop- ja näppäimistöfokus-bugit, ks. kirjaukset)
+- [x] `\selfNoise`-preset toistaa no-input digital-dust -workflow'n (M4)
+      (2026-07-18: dust-purskeet, wobble, ristisyötön cas-portit ja
+      hold-lukitus + repitch todettu kuuntelussa ok)
+- [x] M5 kokonaan: flip/skip/dolby GUI:sta (2026-07-18: duck kuultavissa
+      joskin hienovarainen, gate ei erotu hiljaisessa huoneessa = odotettu
+      tulos; hold/flip/skip ok. Checklistin 6.2-asetelma täsmennetty: deck
+      level 0:aan testin ajaksi — duck-avain kuuntelee koko input-mixiä,
+      jatkuva deck-tekstuuri peittää artikulaation; dry-monitorointi ~0.4
+      jotta puheen kuulee heti; duckin syvyys ~ in-meterin taso)
 - [ ] REC → tiedosto syntyy, aikaleimattu, ei ylikirjoitusta
 - [ ] 30 min sessio kirjoittamatta muuta kuin patch-rivejä → **M1–M8-checklist läpi**
 - [ ] Käyttäjän M2-hyväksyntä → milestone valmis
@@ -515,6 +524,51 @@ ohjaa vaiheiden 6–7 rajapintavalintoja.
   (ei literaalirangeja); diskreetit aktiot (hold/flip/skip/spesal/shake/rec/
   panic/presetit) kutsuvat Cocoquantus-facadea, joka kirjoittaa suppiloiden
   läpi — GUI ei koskaan puhu serverille suoraan.
+- KUUNTELU 6 -löydös (2026-07-18, CC-lokilla todennettu): 16n-faderin hidas
+  liike voi laukaista **laitteen itsensä lähettämän glitch-ekskursion**
+  (F16: 112 → 72 → 113 ~150 ms:ssä, eventit 1 ms välein, sulava ramppi =
+  firmiksen suodattama ADC-kontaktihäiriö; masterVolilla ~19 dB dippi).
+  Ei softabugi: funnel seuraa syötettä uskollisesti ja GUI:n "heittely" oli
+  saman datan piirtoa. Oire korostuu hitaassa liikkeessä ja lievenee
+  käytössä → hapettunut liukurata todennäköisin. Softasuodatinta EI lisätty:
+  glitch on paikallisesti sileä eli erottamaton aidosta nopeasta eleestä
+  ilman ≥100 ms latenssia; valinnainen slew-rajoitin config-lippuna
+  harkitaan vain jos laitepuolen korjaus ei riitä. Erottelutesti tukee
+  hapettumisdiagnoosia: myös F14 (käyttämätön) dippailee, F2–F6 (paljon
+  käytetyt) eivät — laite seissyt ~vuoden kaapissa, käyttö puhdistaa radan.
+  **AVOIN (myöhempään tarkasteluun): 16n:n syvätesti** — fadereiden ajelu/
+  puhdistus, USB-portti/kaapeli-varmistus, kaikkien 16 faderin CC-lokiajo.
+  Sivuhavainto: laite lähetti nyt kaiken MIDI-kanavalla 1, vaikka vaihe 5
+  mittasi per-fader-kanavat eikä käyttäjä ole konfiguroinut/päivittänyt
+  laitetta välissä — ristiriita selvittämättä (tarkista syvätestissä
+  MIDIFunc.tracella); harmiton, sidonta on CC-numerolla.
+- KUUNTELU 6 -bugi (2026-07-18): file drop toimi vain satunnaisesti ("kerran,
+  sitten ei") — juurisyy QView'n drag-mallissa: `dragEnterEvent` hyväksyy
+  dragin aina, joten kursorin alla oleva lapsiwidget nappaa sen ja hylkää
+  dropin (`defaultCanReceiveDrag ^false`), eikä Qt propagoi rivi-View'lle;
+  droppikelpoisia olivat vain rivin ~2 px marginaalipikselit. Korjaus:
+  drop-handlerit sidotaan rekursiivisesti deck-rivin kaikkiin jälkeläisiin
+  (koko laatikko on kohde). Samalla lisätty visuaalinen kuittaus: deck-rivin
+  tiedostonimi-label, jota ajaa `CQDeck.prSwap`in `changed(\file)` →
+  CQGui:n SimpleControllerit (katetaan kaikki latauspolut: drop/nappi/
+  navigointi/koodi; nil-turvallinen serverless-buildissa). SPEC §6.2 ja
+  manual_checklist 6.1 päivitetty (toistuvat pudotukset molempiin deckeihin).
+  Käyttäjä vahvisti 2026-07-18: pudotus toimii nyt.
+- KUUNTELU 6 -bugi (2026-07-18): hiirellä klikattu nappi (esim. REC) jäi
+  Qt-näppäimistöfokukseen → space aktivoi fokusoidun napin (Qt:n oletus)
+  eikä panicia, TAB kierrätti fokusta; ikkunan `keyDownAction` ei saanut
+  näppäintä, koska fokusoitu widget kulutti sen. Korjaus: paneeli on
+  hiiripelkkä — `CQGui.prDefocus` kävelee ikkunan view-puun rekursiivisesti
+  ja asettaa `canFocus = false` kaikkeen paitsi tekstinsyöttöön (TextField/
+  NumberBox), jotka vapauttavat fokuksen Enterillä (`focus(false)`
+  action-käsittelijässä: snap-nimikenttä, morph-durBox, bits-intBox).
+  Näppäinkartta (space panic mukaan lukien) toimii nyt klikkailun jälkeenkin.
+  Jatkohavainto (käyttäjä): bootissa Qt antoi alkufokuksen tab-ketjun
+  ensimmäiselle fokusoituvalle widgetille = coco1:n bits-boksille, jolloin
+  näppäimet eivät toimineet heti. Korjaus: tekstinsyöttö saa vain
+  Qt::ClickFocus-politiikan (`setProperty(\focusPolicy, 2)`) — kirjoitus
+  onnistuu klikkauksen jälkeen, mutta widget ei ole tab-ketjussa eikä saa
+  alkufokusta. SPEC §6.2 ja manual_checklist 6.1 päivitetty (fokustesti).
 
 ---
 

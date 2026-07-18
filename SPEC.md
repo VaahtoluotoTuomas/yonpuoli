@@ -363,13 +363,18 @@ purple = SP.AF, yellow = organ, white = preamp.
 - Quantussy: qFreq & qChaos big knobs, per-castle range 3-state + activity LED +
   Spesal step button, 15-dot Spesal display, "shake" button, castle send mini-faders.
 - Sources: preamp src selectors + drive, mic gain (with warning color when >0 and
-  builtin output active), deck transport (load/next/prev, rate, loop), drop files here.
+  builtin output active), deck transport (load/next/prev, rate, loop). The whole
+  deck box is a file-drop target and shows the loaded file's name (updates on
+  every load path: drop, load button, folder navigation, code).
 - Master: volume, dry, space, limiter gain-reduction meter, notice line (mic warning;
   watchdog in M3), REC with elapsed time, PANIC (= `monitorMute`), snapshot save/recall
   + A→B morph controls (patch-preset menu lives in the matrix section).
 - Matrix: grid view (16×22) with signed weight cells, preset menu.
 - Keyboard: `1/2` hold Coco1/2 · `q/w` flip · `a/s` skip · `3..7` spesal castle 1–5 ·
-  `r` rec · `space` panic · `p` shake.
+  `r` rec · `space` panic · `p` shake. Panel widgets never take keyboard focus
+  (mouse-only), so the key map — panic included — always works after any click;
+  only text/number entry takes focus, click-to-focus only (never at boot, no
+  tab chain), and releases it on Enter.
 
 ### 6.3 Live-coding API (facade `Cocoquantus`, singleton `CQ`)
 

@@ -175,7 +175,7 @@ CQ.set(\coco1Speed, 12000);    //    ...ja viritä kuten mitä tahansa looppia
 //    (tai jatka soittoa tästä)
 ```
 
-- [ ] M4 hyväksytty (pvm: __________)
+- [x] M4 hyväksytty (pvm: 2026-07-18)
 
 ## M6 — \classic kenttä-äänitteellä + matriisi (vaihe 4)
 
@@ -405,17 +405,31 @@ CQ.set(\coco1Fb, 1.0);         // -> coco1:n fb-nuppi liikkuu ikkunassa
 // - Matriisigrid: vedä solua pystysuunnassa (oranssi = verso, sininen =
 //   inverso), oikea klikkaus irrottaa banaanin; statusrivi näyttää painon.
 // - Preset-valikko (gridin ylla): \classic -> gridiin ilmestyvät tutut solut.
-// - File drop: raahaa wav Explorerista DECK A -laatikkoon -> latautuu.
+// - File drop: raahaa wav Explorerista DECK A -laatikkoon -> latautuu ja
+//   tiedostonimi ilmestyy laatikkoon. TOISTA useampi pudotus perakkain
+//   molempiin deckeihin, myos nuppien/nappien paalle (koko laatikko kelpaa).
 // - Näppäimet ikkunassa: 1/2 hold, q/w flip, a/s skip, 3..7 spesal,
 //   r rec, space panic (nappi muuttuu "MUTED"), p shake.
+// - Fokus: heti ikkunan avauduttua (mitään klikkaamatta) paina 1 -> hold
+//   menee päälle. Klikkaa REC päälle ja pois hiirellä, paina sitten space ->
+//   PANIC toimii (space EI togglaa RECiä); TAB ei siirrä valintaa napeille.
+//   Kirjoita snap-nimikenttään, paina Enter -> näppäimet taas soittimella.
 ```
 
 ```supercollider
-// 6.2 — M5 loppuun GUI:sta: dolby-kytkimet hiirellä.
-// (deck A soi, coco1 record-tilassa; puhetta/rytmiä preamp A:han kuten M5:ssä)
-// - dolby fb -> duck hiirellä: sama time-layer-artikulaatio kuin M5:ssä
-// - dolby in -> gate: hiljainen input katkeaa (self-expander)
+// 6.2 — M5 loppuun GUI:sta: dolby-kytkimet hiirellä. Asetelma GUI:sta:
+// deck A ladattu mutta LEVEL-nuppi 0:aan (jatkuva tekstuuri pitäisi
+// duck-avaimen ylhäällä — avain kuuntelee koko input-mixiä!), coco1 HOLD
+// pois (record-tila), speed täysille (looppi ~2.7 s), master dry ~0.4
+// (kuulet puheesi heti), mic + pre A drive niin että puhe pomputtaa
+// coco1:n in-meteriä selvästi (duckin syvyys ~ tämä taso).
+// - dolby fb -> duck: puhuessasi vanhat kerrokset painuvat alas, tauoissa
+//   palaavat; kaiuissa sanat erottuvat puuroutumatta (voi olla hienovarainen)
+// - dolby in -> gate: tauoissa mikin taustakohina ei tallennu looppiin;
+//   HUOM hiljaisessa huoneessa ero voi jäädä kuulumattomaksi (ei kohinaa
+//   gatettavaksi) — se on odotettu tulos, ei vika
 // - HOLD/FLIP/SKIP GUI-napeista: sama käytös kuin koodista
+// Lopuksi: dolbyt off, mic 0, dry 0, deck level ylös, speed ~24 k
 ```
 
 ```supercollider
@@ -464,8 +478,11 @@ CQ.recStop;                    // tai REC-nappi/r-näppäin uudelleen
 // (16n:n puuttuminen on jo todettu M8:ssa: notice, ei virhettä.)
 ```
 
-- [ ] GUI-läpikäynti ok (meterit, LEDit, spesal-näyttö, grid, drop, näppäimet)
-- [ ] M5 kokonaan (dolbyt GUI:sta) ok
+- [x] GUI-läpikäynti ok (meterit, LEDit, spesal-näyttö, grid, drop, näppäimet)
+      (2026-07-18; matkalla korjattu file-drop- ja näppäimistöfokus-bugit)
+- [x] M5 kokonaan (dolbyt GUI:sta) ok (2026-07-18: duck kuultavissa joskin
+      hienovarainen; gate ei erotu hiljaisessa huoneessa = odotettu;
+      hold/flip/skip GUI:sta ok)
 - [ ] Presetit \quantumDrone / \organMode / viritetty \mayhem ok
 - [ ] Shake ok (myös seed-toisto)
 - [ ] REC ok (tiedosto syntyy, aikaleima, ei ylikirjoitusta)
