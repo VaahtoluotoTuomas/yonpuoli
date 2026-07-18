@@ -527,7 +527,9 @@ ohjaa vaiheiden 6–7 rajapintavalintoja.
       stemiin** (safety-invariantti #1)
 - [ ] Watchdog auto-trim: RMS > −6 dBFS 5 s → −6 dB trim + GUI-notice (`autoTrim`)
 - [ ] Event type `\cq` — Pbind-sekvensointi diskreeteille aktioille (SPEC §6.4)
-- [ ] `README.md` — asennus, includePaths-ohjeet Windowsille, pikastartti
+- [x] `README.md` — asennus, includePaths-ohjeet Windowsille, pikastartti
+      (aikaistettu 2026-07-18: projekti jaettiin testaajalle; suomeksi —
+      viilataan/käännetään v1.0-viimeistelyssä jos tarpeen)
 - [ ] Suorituskykytarkistus: koko instrumentti ≤ 25 % / core @ 48 kHz / block 64
 
 ### Testit — täysi re-run
