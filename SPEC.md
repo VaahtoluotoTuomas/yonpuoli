@@ -357,16 +357,19 @@ One window, four columns mirroring the hardware layout — [Sources+Preamps] [Co
 orange = triangle, gray = castle/delay out, blue = FM, green = inputs/spesal,
 purple = SP.AF, yellow = organ, white = preamp.
 
-- Coco strip: in/speed/spaf/fb knobs (mirroring 16n), **HOLD** button with red LED,
-  FLIP toggle, SKIP momentary, dolby 3-state switches, bits/wrap/interp/dust/organ
-  small controls, level/pan/send, in+out meters.
+- Coco strip: in/speed/spaf/fb knobs (mirroring 16n), slot-mixer mini-faders
+  (pre/deck/q/x — the input mix feeding the loop, §5.3), **HOLD** button with red
+  LED, FLIP toggle, SKIP momentary, dolby 3-state switches,
+  bits/wrap/interp/dust/organ small controls, level/pan/send, in+out meters.
 - Quantussy: qFreq & qChaos big knobs, per-castle range 3-state + activity LED +
-  Spesal step button, 15-dot Spesal display, "shake" button, castle send mini-faders.
+  Spesal step button, 15-dot Spesal display, "shake" button + amplitude mini-knob
+  (0–1, default 0.3; shared with the `p` key), castle send mini-faders.
 - Sources: preamp src selectors + drive, mic gain (with warning color when >0 and
   builtin output active), deck transport (load/next/prev, rate, loop). The whole
   deck box is a file-drop target and shows the loaded file's name (updates on
   every load path: drop, load button, folder navigation, code).
-- Master: volume, dry, space, limiter gain-reduction meter, notice line (mic warning;
+- Master: volume, dry, space, patchDepth ("depth" — the global matrix tamer),
+  limiter gain-reduction meter, notice line (mic warning;
   watchdog in M3), REC with elapsed time, PANIC (= `monitorMute`), snapshot save/recall
   + A→B morph controls (patch-preset menu lives in the matrix section).
 - Matrix: grid view (16×22) with signed weight cells, preset menu.

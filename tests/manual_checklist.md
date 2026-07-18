@@ -444,21 +444,38 @@ CQ.patchPreset(\organMode);    // urkupillit molemmista cocoista (kvintti-
                                // pumppaavat looppipohjaa urkujen alla,
                                // tri3-vibrato ~3 Hz
 CQ.patchPreset(\mayhem);       // tiheä kaaos - VIRITETTY: painot vaihtelevat
-                               // (ei enää tasaruudukko); patchDepth (F15)
-                               // on kesytysvipu
+                               // (ei enää tasaruudukko); patchDepth (F15 /
+                               // masterin depth-nuppi) on kesytysvipu
 CQ.set(\patchDepth, 0.3);      //   -> "mayhem 30 %" on jo musiikillista
 CQ.set(\patchDepth, 1);
 CQ.patchPreset(\empty);        // puhdas pöytä
 ```
 
 ```supercollider
-// 6.4 — Shake (SPEC §5.5): p-näppäin tai SHAKE-nappi tai koodi.
+// 6.4 — Shake (SPEC §5.5): p-näppäin tai SHAKE-nappi (amplitudinuppi napin
+// vieressä — p-näppäin käyttää samaa arvoa) tai koodi.
+// HUOM: shake heittää VAIN painot + spesalit, ei koskaan nuppeja (turva +
+// musikaalisuus) -> kuuluvuus riippuu soittimen valmistelusta, kuten
+// hardwaressa: banaanit kuuroihin kohteisiin eivät kuulu. Oletusnupeilla
+// suurin osa heitosta on hiljaista: spaf-banaanit skaalautuvat cocoNSpaf-
+// nupilla (oletus 0!), quantussyn kuulee suoraan vain slotQ:n kautta
+// (oletus 0), ja flip/skip/castle-spesal-rivit (11/22 destistä) laukeavat
+// vasta kun summa ylittää Schmitt-kynnyksen +0.5 -> amplitudilla 0.3
+// yksittäinen banaani (lähteet ~±1) ei laukaise niitä KOSKAAN.
+// Valmistele siis pöytä ennen heittoa:
+CQ.deckA.load("...");          // materiaalia looppeihin (tai mikki/live)
+CQ.set(\coco1Spaf, 0.4);  CQ.set(\coco2Spaf, 0.4);    // spaf-syvyys auki
+CQ.set(\coco1SlotQ, 0.8); CQ.set(\coco2SlotQ, 0.8);   // quantussy kuuluviin
+                               // (sama GUI:sta: coco-stripin slots-rivi
+                               // pre/deck/q/x = sisäänottomikseri)
 CQ.shake;                      // ~35 satunnaista banaania ±0.3 + spesal-arvonta
-                               // -> gridi näyttää heiton; EI koske leveleihin
-                               // eikä feedbackiin (turva + musikaalisuus)
-CQ.shake(0.6);                 // isompi amplitudi
+                               // -> gridi näyttää heiton; levelit/fb ennallaan
+CQ.shake(0.7);                 // isompi amplitudi -> myös flip/skip/spesal-
+                               // rivit voivat herätä (huiput ylittävät +0.5)
 CQ.shake(0.4, seed: 1234);     // sama seed -> sama heitto (toistettavissa)
 CQ.shake(0.4, seed: 1234);     // -> identtinen edellisen kanssa
+// GUI: käännä amplitudinuppi ~0.7, paina p -> isompi heitto samalla arvolla;
+// masterin depth-nuppi (patchDepth) kesyttää/palauttaa koko heiton pehmeästi.
 CQ.patchPreset(\empty);
 ```
 
@@ -483,9 +500,13 @@ CQ.recStop;                    // tai REC-nappi/r-näppäin uudelleen
 - [x] M5 kokonaan (dolbyt GUI:sta) ok (2026-07-18: duck kuultavissa joskin
       hienovarainen; gate ei erotu hiljaisessa huoneessa = odotettu;
       hold/flip/skip GUI:sta ok)
-- [ ] Presetit \quantumDrone / \organMode / viritetty \mayhem ok
-- [ ] Shake ok (myös seed-toisto)
-- [ ] REC ok (tiedosto syntyy, aikaleima, ei ylikirjoitusta)
-- [ ] Headless ok
-- [ ] 30 min sessio pelkillä patch-riveillä + GUI + 16n -> M1-M8 läpi
-- [ ] KUUNTELU 6 hyväksytty (pvm: __________)
+- [x] Presetit \quantumDrone / \organMode / viritetty \mayhem ok (2026-07-18)
+- [x] Shake ok (myös seed-toisto) (2026-07-18: valmisteltu pöytä — deck +
+      spaf ~0.4 + slotQ ~0.8 — ja isompi amplitudi tekevät heitoista eläviä;
+      SPEC-oletus 0.3 pidetään)
+- [x] REC ok (tiedosto syntyy, aikaleima, ei ylikirjoitusta) (2026-07-18)
+- [x] Headless ok (2026-07-18; matkalla käyttäjän config.scd:hen eksynyt
+      CQ.boot-rivi kaatoi latauksen — config on puhdas data-lauseke,
+      boot ajetaan boot.scd:stä)
+- [x] 30 min sessio pelkillä patch-riveillä + GUI + 16n -> M1-M8 läpi (2026-07-18)
+- [x] KUUNTELU 6 hyväksytty (pvm: 2026-07-18) → **M2 valmis**

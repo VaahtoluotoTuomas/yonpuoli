@@ -14,6 +14,10 @@ CQGui {
 	var deckLabels, deckCtls;
 	var noticeView, recBtn, recTimeView, recTask;
 	var micLive = false, cleaned = false;
+	// shake throw amplitude shared by the SHAKE button and the p key; GUI-local
+	// because shake is an action argument, not a CQSpec param (SPEC §5.5 —
+	// the weight clamp lives in CQMatrix.shake). 0.3 = the facade default.
+	var <>shakeAmount = 0.3;
 
 	*new { |state, matrix, config|
 		^super.newCopyArgs(state, matrix, config).prInit
@@ -197,7 +201,7 @@ CQGui {
 				if(r.notNil and: { r.isRecording })
 					{ Cocoquantus.recStop } { Cocoquantus.rec };
 			},
-			$p, { Cocoquantus.shake },
+			$p, { Cocoquantus.shake(shakeAmount) },
 			$ , {
 				if((Cocoquantus.get(\monitorMute) ? 0) > 0)
 					{ Cocoquantus.resume } { Cocoquantus.panic };

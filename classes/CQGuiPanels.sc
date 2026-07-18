@@ -28,6 +28,19 @@ CQGuiPanels {
 				w.knob(p.value("Fb"), "fb", c[\input]),
 				VLayout(outMeter, StaticText().string_("out").font_(Font.sansSerif(8)))
 			),
+			// input-mixer slots (SPEC §5.3): what feeds the loop — preamp, deck,
+			// quantussy mix, cross-feed from the other coco
+			HLayout(
+				StaticText().string_("slots").font_(Font.sansSerif(9)),
+				*([["SlotPre", "pre"], ["SlotDeck", "deck"],
+					["SlotQ", "q"], ["SlotX", "x"]].collect { |pair|
+					VLayout(
+						StaticText().string_(pair[1]).align_(\center)
+							.font_(Font.sansSerif(8)),
+						w.hslider(p.value(pair[0]), 40)
+					).spacing_(0)
+				})
+			),
 			HLayout(w.toggle(p.value("Hold"), "HOLD", c[\hold]),
 				w.toggle(p.value("Flip"), "FLIP", c[\input]), skip),
 			HLayout(
@@ -49,7 +62,18 @@ CQGuiPanels {
 
 	*quantussy { |gui|
 		var w = gui.widgets, c = CQGuiWidgets.colors;
-		var leds, spesalView, rows;
+		var leds, spesalView, rows, shakeVal, shakeKnob;
+		// shake amplitude: unbound knob (action argument, not a CQSpec param —
+		// see CQGui.shakeAmount); 0..1 knob range = the |amount| range, and
+		// CQMatrix.shake clamps again on every throw
+		shakeVal = StaticText().font_(Font.sansSerif(8)).align_(\center)
+			.stringColor_(c[\spaf]).string_("±" ++ gui.shakeAmount);
+		shakeKnob = Knob().mode_(\vert).fixedSize_(Size(22, 22))
+			.value_(gui.shakeAmount)
+			.action_({ |k|
+				gui.shakeAmount = k.value;
+				shakeVal.string = "±" ++ k.value.round(0.01);
+			});
 		leds = 5.collect {
 			View().fixedSize_(Size(12, 12)).background_(Color.gray(0.8))
 		};
@@ -90,7 +114,8 @@ CQGuiPanels {
 						.stringColor_(c[\input]),
 					spesalView,
 					Button().states_([["SHAKE", Color.white, c[\spaf]]])
-						.action_({ Cocoquantus.shake })),
+						.action_({ Cocoquantus.shake(gui.shakeAmount) }),
+					VLayout(shakeKnob, shakeVal).spacing_(0)),
 				nil
 			])
 		))
@@ -176,7 +201,8 @@ CQGuiPanels {
 					StaticText().string_("GR").font_(Font.sansSerif(8)).align_(\center)),
 				w.knob(\masterVol, "vol", nil, 44),
 				w.knob(\masterDry, "dry"),
-				w.knob(\spaceMix, "space")),
+				w.knob(\spaceMix, "space"),
+				w.knob(\patchDepth, "depth", c[\spaf])),
 			notice,
 			HLayout(recBtn, recTime, panicBtn),
 			HLayout(nameField,

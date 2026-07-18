@@ -6,9 +6,10 @@ banaanipatchausta vastaava 16×22-reititysmatriisi. Ohjaus kolmena kerroksena:
 koodi (`CQ`-facade), GUI ja 16n-faderbank — kaikki valinnaisia, kaikki
 kirjoittavat samaan tilaan.
 
-**Tilanne:** M1 (ydinääni) valmis ja kuunneltu; vaihe 6 (GUI, shake, presetit,
-recorder) toteutettu — **KUUNTELU 6 -kuuntelutestit auki**, ks.
-`tests/manual_checklist.md`. Työn tila ja checkboxit: `PLAN.md`.
+**Tilanne:** M1 (ydinääni) ja M2 (käyttöliittymät: GUI, 16n, snapshotit,
+shake, recorder) valmiit ja kuunneltu (2026-07-18). Jäljellä vaihe 7
+(space-kaiku, stemit, watchdog, patternit) → **v1.0**. Työn tila ja
+checkboxit: `PLAN.md`.
 
 ## Vaatimukset
 
@@ -81,8 +82,8 @@ sclang -l <conf> -i none tests/nrt_hold_integrity.scd -> CQ_HOLD_OK
 ```
 
 **Korvilla**: `tests/manual_checklist.md` — kopioitavat lohkot, aja rivi
-kerrallaan. Avoinna: **KUUNTELU 6** (GUI, presetit, shake, REC; M4
-hyväksytty 2026-07-18).
+kerrallaan. KUUNTELU-gatet 1–6 (M1–M8) hyväksytty 2026-07-18; seuraava
+kuuntelu on vaiheen 7 **KUUNTELU 7** (v1.0-hyväksyntä).
 
 ## Hyvä tietää
 

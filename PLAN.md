@@ -4,20 +4,17 @@ Vaiheistettu checklist. Toimii CLAUDE.md:n milestone-checklistinä (TODO.md:n ro
 Normatiiviset lähteet: SPEC.md (käyttäytyminen), ARCHITECTURE.md (rakenne).
 Milestone-mappaus: **M1 = vaiheet 0–4 · M2 = vaiheet 5–6 · M3 = vaihe 7**.
 
-**Tilanne 2026-07-18: vaiheet 0–5 valmiit ja hyväksytty; vaihe 6 toteutettu,
-KUUNTELU 6 -gate auki.** (M1 valmis, kuuntelu-commitit `b03692b`…`f342ced`;
-vaihe 5 hyväksytty 2026-07-18: `885cb24` + `38653ab` + gate-korjaus `56ab8a7`.)
-Vaihe 6 -toteutus (`5ab3255`): CQGui (+ CQGuiWidgets/CQGuiPanels/CQGuiMatrix),
-`CQ.shake`, presetit \selfNoise/\quantumDrone/\organMode + \mayhem-viritys,
-CQRecorder + `CQ.rec`, meteri-/LED-raportit defeissä, headless-lippu.
-Markerit vihreät: A1 + A2 (3080 assertiota) + A3 (mayhem-peak 0.89 =
-limitterin katto) + A4/A5 (korrelaatio 1.0, drift 0.0 dB) + GUI-savutesti
-(dev-skripti). KUUNTELU 6 käynnissä: **M4 (\selfNoise) hyväksytty
-2026-07-18**; jäljellä manual_checklist.md:n KUUNTELU 6 -osiot 6.1–6.6
-(GUI, presetit, shake, REC, headless, 30 min sessio — muista
-Ctrl+Shift+L ennen ensimmäistä boottia) → hyväksynnästä M2 valmis.
-Post-v1.0-suunta (norns-portti) kirjattu tämän tiedoston loppuun — se
-ohjaa vaiheiden 6–7 rajapintavalintoja.
+**Tilanne 2026-07-18: vaiheet 0–6 valmiit ja hyväksytty — M1 + M2 valmiit;
+seuraavaksi vaihe 7 → v1.0.** (M1 hyväksytty 2026-07-17; vaihe 5 2026-07-18:
+`885cb24` + `38653ab` + gate-korjaus `56ab8a7`. Vaihe 6: toteutus `5ab3255` —
+CQGui + CQ.shake + presetit \selfNoise/\quantumDrone/\organMode +
+\mayhem-viritys + CQRecorder — gate-korjaukset `81be310`, ja **KUUNTELU 6
+hyväksytty kokonaan 2026-07-18**; gaten aikana GUI:hin lisätty
+shake-amplitudinuppi, master-stripin depth-nuppi ja coco-strippien
+slots-rivi.) Markerit vihreät: A1 + A2 (3080 assertiota) + A3 (mayhem-peak
+0.89 = limitterin katto) + A4/A5 (korrelaatio 1.0, drift 0.0 dB) +
+GUI-savutesti (dev-skripti). Post-v1.0-suunta (norns-portti) kirjattu tämän
+tiedoston loppuun — se ohjaa vaiheen 7 rajapintavalintoja.
 
 ## Läpileikkaavat säännöt
 
@@ -480,9 +477,13 @@ ohjaa vaiheiden 6–7 rajapintavalintoja.
       level 0:aan testin ajaksi — duck-avain kuuntelee koko input-mixiä,
       jatkuva deck-tekstuuri peittää artikulaation; dry-monitorointi ~0.4
       jotta puheen kuulee heti; duckin syvyys ~ in-meterin taso)
-- [ ] REC → tiedosto syntyy, aikaleimattu, ei ylikirjoitusta
-- [ ] 30 min sessio kirjoittamatta muuta kuin patch-rivejä → **M1–M8-checklist läpi**
-- [ ] Käyttäjän M2-hyväksyntä → milestone valmis
+- [x] REC → tiedosto syntyy, aikaleimattu, ei ylikirjoitusta (2026-07-18;
+      myös headless-boot todennettu — matkalla löytyi käyttäjän config.scd:hen
+      eksynyt CQ.boot-rivi, joka kaatoi latauksen: config on puhdas
+      data-lauseke, boot ajetaan boot.scd:stä)
+- [x] 30 min sessio kirjoittamatta muuta kuin patch-rivejä → **M1–M8-checklist
+      läpi** (2026-07-18)
+- [x] Käyttäjän M2-hyväksyntä → **milestone valmis 2026-07-18**
 
 ### Kirjatut toteutuspäätökset (vaihe 6)
 - **Shake on harva heitto**, ei tiheä: jokainen solu patchataan tn. 0.1:llä
@@ -569,6 +570,29 @@ ohjaa vaiheiden 6–7 rajapintavalintoja.
   Qt::ClickFocus-politiikan (`setProperty(\focusPolicy, 2)`) — kirjoitus
   onnistuu klikkauksen jälkeen, mutta widget ei ole tab-ketjussa eikä saa
   alkufokusta. SPEC §6.2 ja manual_checklist 6.1 päivitetty (fokustesti).
+- KUUNTELU 6 -löydös (2026-07-18, shake-kuuluvuus): käyttäjä ei kuullut
+  heitosta suurta eroa — mekaaninen selitys, ei bugi. Shake heittää vain
+  painot + spesalit (SPEC §5.5), joten "preset = painot + nupit" -oppi pätee
+  heittoonkin: oletusnuppitilassa spaf-banaanit ovat kuuroja (`cocoNSpaf`
+  oletus 0), quantussya ei kuule suoraan (`cocoNSlotQ` oletus 0 → myös
+  spesal-arvonta jää epäsuoraksi), ja gate/trig-rivit (flip/skip/
+  castleN_spesal = 11/22 destistä) eivät voi laueta yksittäisestä banaanista
+  oletusamplitudilla 0.3: Schmitt-kynnys on +0.5 ja lähteet huiputtavat
+  ~±1 → summa ≤ 0.3. Checklist 6.4:ään kirjattu valmisteluohje (deck
+  soimaan, spaf ~0.4, slotQ ~0.8, amplitudi 0.6–0.8 → trig-rivit heräävät).
+  Oletusamplitudi pidetään SPEC:n 0.3:ssa — käyttäjä vahvisti samana
+  päivänä: valmistellulla pöydällä heitot heräsivät henkiin ("alkaa tulla
+  outoa kamaa"), oletusta ei muuteta; 6.3 ja 6.4 kuitattu.
+- GUI-lisäykset kesken gaten (2026-07-18, käyttäjän pyyntö): shake-
+  amplitudinuppi SHAKE-napin viereen (GUI-lokaali `CQGui.shakeAmount`,
+  oletus 0.3 = facade-default; ei CQSpec-parametri koska kyse on aktion
+  argumentista — clamp asuu `CQMatrix.shake`ssa; p-näppäin jakaa saman
+  arvon) ja `patchDepth`-nuppi ("depth") master-strippiin vol/dry/space-
+  rivin jatkoksi (CQSpec-sidottu → 16n F15 ja GUI-nuppi seuraavat
+  toisiaan). Lisäksi coco-strippiin slots-rivi (pre/deck/q/x-minisliders =
+  `cocoNSlotPre/Deck/Q/X`, CQSpec-sidotut) — sisäänottomikseri oli aiemmin
+  vain koodi/preset-reitti, mikä teki "valmistele pöytä" -workflow'sta
+  GUI:ssa mahdottoman. SPEC §6.2 päivitetty.
 
 ---
 
