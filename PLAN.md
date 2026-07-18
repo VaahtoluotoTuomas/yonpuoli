@@ -7,14 +7,16 @@ Milestone-mappaus: **M1 = vaiheet 0–4 · M2 = vaiheet 5–6 · M3 = vaihe 7**.
 **Tilanne 2026-07-18: vaiheet 0–5 valmiit ja hyväksytty; vaihe 6 toteutettu,
 KUUNTELU 6 -gate auki.** (M1 valmis, kuuntelu-commitit `b03692b`…`f342ced`;
 vaihe 5 hyväksytty 2026-07-18: `885cb24` + `38653ab` + gate-korjaus `56ab8a7`.)
-Vaihe 6 -toteutus: CQGui (+ CQGuiWidgets/CQGuiPanels/CQGuiMatrix), `CQ.shake`,
-presetit \selfNoise/\quantumDrone/\organMode + \mayhem-viritys, CQRecorder +
-`CQ.rec`, meteri-/LED-raportit defeissä, headless-lippu. Markerit vihreät:
-A1 + A2 (3080 assertiota) + A3 (mayhem-peak 0.89 = limitterin katto) + A4/A5
-(korrelaatio 1.0, drift 0.0 dB) + GUI-savutesti (dev-skripti).
-**Seuraavaksi: KUUNTELU 6** (manual_checklist.md:n KUUNTELU 6 -osio +
-M4-osio) → M2 valmis. Post-v1.0-suunta (norns-portti) kirjattu tämän
-tiedoston loppuun — se ohjaa vaiheiden 6–7 rajapintavalintoja.
+Vaihe 6 -toteutus (`5ab3255`): CQGui (+ CQGuiWidgets/CQGuiPanels/CQGuiMatrix),
+`CQ.shake`, presetit \selfNoise/\quantumDrone/\organMode + \mayhem-viritys,
+CQRecorder + `CQ.rec`, meteri-/LED-raportit defeissä, headless-lippu.
+Markerit vihreät: A1 + A2 (3080 assertiota) + A3 (mayhem-peak 0.89 =
+limitterin katto) + A4/A5 (korrelaatio 1.0, drift 0.0 dB) + GUI-savutesti
+(dev-skripti). **Seuraavaksi: KUUNTELU 6** (manual_checklist.md:n M4- ja
+KUUNTELU 6 -osiot; käyttäjä ajaa myöhemmässä sessiossa — muista
+Ctrl+Shift+L ennen ensimmäistä boottia) → hyväksynnästä M2 valmis.
+Post-v1.0-suunta (norns-portti) kirjattu tämän tiedoston loppuun — se
+ohjaa vaiheiden 6–7 rajapintavalintoja.
 
 ## Läpileikkaavat säännöt
 
