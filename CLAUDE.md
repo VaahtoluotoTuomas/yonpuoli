@@ -88,3 +88,5 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   than 2 in/out channels exist — read config.
 - NRT scripts: remember `Score` needs the SynthDefs written into the score
   (`d_recv`) — they run in a fresh scsynth.
+- `Collection:includes` compares identity (`===`), not equality: membership
+  tables must hold Symbols/Integers/Chars (immediates), never Strings.

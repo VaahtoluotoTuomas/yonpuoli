@@ -296,7 +296,9 @@ CQ.recall(\fadertesti);        // recall siirtää arvot faderien alta
 CQ.midi.takeover = \jump;      // palaa oletukseen (tai jätä pickup päälle)
 ```
 
-- [ ] M8 hyväksytty (pvm: __________)
+- [x] M8 hyväksytty (pvm: 2026-07-18 — kaikki 16 faderia, pehmeys ok, hot-plug +
+      `CQ.midiRescan` ok, jump/pickup ok; \jump jää oletukseksi. F2:n hetkellinen
+      repitch nostettaessa = speksin mukainen RAM-kellokäytös, ei bugi.)
 
 ## KÄYTTÖ 5 — Snapshotit & morph (vaihe 5)
 
@@ -325,7 +327,10 @@ CQ.recall(\mictesti);          // -> micGain PYSYY nollassa (ei varoitusta)
 CQ.get(\micGain);              // -> 0
 ```
 
-- [ ] Snapshotit + morph hyväksytty (pvm: __________)
+- [x] Snapshotit + morph hyväksytty (pvm: 2026-07-18 — recall palaa korvakuulolta,
+      morph liukuu, keskeytys ok, mic-politiikka ok. Recallin hetkellinen
+      repitch-transientti = RAM-kellokäytös, oletettu: puskurin vanha materiaali
+      soi uudella kellolla yhden kierroksen ajan.)
 
 ## KÄYTTÖ 5 — Deck B, kansionavigointi, linked stereo (vaihe 5)
 
@@ -353,4 +358,6 @@ CQ.loadStereo("jokin_stereo.wav");
 //    (pan-oletukset -0.3/+0.3 levittävät ne stereokuvaan)
 ```
 
-- [ ] Deck B + navigointi + stereo hyväksytty (pvm: __________)
+- [x] Deck B + navigointi + stereo hyväksytty (pvm: 2026-07-18 — deck B + F12-pari
+      ok; navigointi ok korjauksen `56ab8a7` jälkeen (includes-identiteettibugi +
+      loadFolder-polku); linked stereo L→A/R→B ok, monon fallback + varoitus ok)

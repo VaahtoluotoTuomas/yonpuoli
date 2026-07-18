@@ -4,17 +4,17 @@ Vaiheistettu checklist. Toimii CLAUDE.md:n milestone-checklistinä (TODO.md:n ro
 Normatiiviset lähteet: SPEC.md (käyttäytyminen), ARCHITECTURE.md (rakenne).
 Milestone-mappaus: **M1 = vaiheet 0–4 · M2 = vaiheet 5–6 · M3 = vaihe 7**.
 
-**Tilanne 2026-07-17: vaiheet 0–4 valmiit ja hyväksytty (M1 VALMIS,
-kuuntelu-commitit `b03692b`…`f342ced`). Vaiheen 5 toteutus valmis** —
-CQSnapshots (save/recall/morph), CQMidi16n (jump/pickup, rescan), deck B +
-kansionavigointi + `loadStereo`, mic-varoitus, `presets/example.cqsnap.scd`.
-Kaikki markerit vihreät: A1 + A2 (1728 assertiota) + A3 (mayhem-peak 0.8807) +
-A4/A5 varmuudeksi (korrelaatio 1.0 / drift 0.0 dB). **Seuraavaksi:
-KUUNTELU/KÄYTTÖ 5 -gate käyttäjällä** — skriptit `tests/manual_checklist.md`
-(M8 + kaksi KÄYTTÖ 5 -osiota); muista Ctrl+Shift+L ennen kuin bootaat
-(`classes/` muuttui). Patch-reseptit `live.scd`. Post-v1.0-suunta
-(norns-portti) kirjattu tämän tiedoston loppuun — se ohjaa vaiheiden 5–7
-rajapintavalintoja.
+**Tilanne 2026-07-18: vaiheet 0–5 valmiit ja hyväksytty** (M1 valmis,
+kuuntelu-commitit `b03692b`…`f342ced`; vaihe 5 toteutettu `885cb24` +
+`38653ab`, KUUNTELU/KÄYTTÖ 5 -gate läpi 2026-07-18). Gatessa löytyi ja
+korjattiin kansionavigoinnin kaksoisbugi (`56ab8a7`: Collection:includes
+vertaa identiteettiä → päätetaulukko Symboleiksi; `loadFolder("samples")`
+ratkeaa nyt samples-kansion rinnaltakin). Markerit vihreät: A1 + A2
+(1745 assertiota) + A3 (mayhem-peak 0.8861). **Seuraavaksi: vaihe 6** —
+CQGui, `CQ.shake`, loput presetit (\selfNoise/\quantumDrone/\organMode +
+\mayhem-viritys), CQRecorder, headless-varmistus → M2 valmis. Patch-reseptit
+`live.scd`. Post-v1.0-suunta (norns-portti) kirjattu tämän tiedoston
+loppuun — se ohjaa vaiheiden 6–7 rajapintavalintoja.
 
 ## Läpileikkaavat säännöt
 
@@ -375,13 +375,21 @@ rajapintavalintoja.
       korrelaatio 1.0, drift 0.0 dB) (2026-07-17)
 
 ### KUUNTELU/KÄYTTÖ 5 — 16n & muisti
-- [ ] Kaikki 16 faderia oikeissa parametreissa, liike pehmeää (≤ 20 ms tuntuma) (M8)
-- [ ] 16n irti ja takaisin kesken session → toipuu (M8)
-- [ ] `CQ.snap(\a)` → säädä → `CQ.recall(\a)` → tila palaa korvakuulolta;
-      `CQ.morph(\a, \b, 30)` liukuu musikaalisesti
-- [ ] Jump vs pickup -takeover käyttäytyy odotetusti recallin jälkeen
-- [ ] Deck B + kansionavigointi + linked stereo toimivat; mic-varoitus näkyy
-- [ ] Käyttäjän OK → vaihe hyväksytty
+- [x] Kaikki 16 faderia oikeissa parametreissa, liike pehmeää (≤ 20 ms tuntuma) (M8)
+      (2026-07-18; F2:n repitch-transientti todettu speksin mukaiseksi — RAM-kello,
+      ei pitch-nuppi)
+- [x] 16n irti ja takaisin kesken session → toipuu (M8) (2026-07-18, `CQ.midiRescan`
+      toimi, ei virheryöppyä eikä katkosta)
+- [x] `CQ.snap(\a)` → säädä → `CQ.recall(\a)` → tila palaa korvakuulolta;
+      `CQ.morph(\a, \b, 30)` liukuu musikaalisesti (2026-07-18; recallin
+      hetkellinen repitch = oletettu RAM-kellokäytös, mic-politiikka todennettu)
+- [x] Jump vs pickup -takeover käyttäytyy odotetusti recallin jälkeen
+      (2026-07-18; \jump jää oletukseksi käyttäjän valinnasta)
+- [x] Deck B + kansionavigointi + linked stereo toimivat; mic-varoitus näkyy
+      (2026-07-18; gatessa löytyi navigointibugi — korjattu `56ab8a7`,
+      regressiotestit CQDeckNavTest — jonka jälkeen next/prev/random/loadFolder
+      ok. Stereo: L→A/R→B todennettu, monon fallback + varoitus ok)
+- [x] Käyttäjän OK → vaihe hyväksytty (2026-07-18)
 
 ### Kirjatut toteutuspäätökset (vaihe 5)
 - **micGain-politiikka** (SPEC §7, päivitetty sinne): `save` tallettaa micGainin
