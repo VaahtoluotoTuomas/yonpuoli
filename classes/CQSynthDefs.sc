@@ -8,7 +8,7 @@ CQSynthDefs {
 
 	*all { |config|
 		^[this.input(config), this.deck(config), this.quantussy(config),
-			this.coco(config), this.master(config)]
+			this.coco(config), this.master(config), this.record(config)]
 	}
 
 	*send { |config, server|
@@ -154,6 +154,9 @@ CQSynthDefs {
 			Out.ar(\qMixBus.ir(0), Mix(tris * sends));
 			SendReply.kr(Impulse.kr(0) + Mix(stateKr.collect { |s| Changed.kr(s) }),
 				'/cq_spesal', stateKr);                // initial states + every change
+			// GUI activity LEDs (SPEC §6.2): instantaneous tri values at 15 Hz —
+			// infra castles visibly oscillate, audio-rate ones read as flicker
+			SendReply.kr(Impulse.kr(15), '/cq_castle', tris.collect { |t| A2K.kr(t) });
 		})
 	}
 
@@ -172,7 +175,7 @@ CQSynthDefs {
 		^SynthDef(\cqCoco, {
 			var buf, frames, speed, spafKnob, clockHz, ratio, dir, phase;
 			var here, hereSmooth, dolby, inSig, inVca, fbVca, inEnv, fbEnv;
-			var inCh, fbCh, record, write, outTap, organ, voice;
+			var inCh, fbCh, record, write, outTap, organ, voice, lvl;
 			var patchDepth, mods, wSpaf, wInVca, wFbVca, wFlip, wSkip;
 			var spafSum, inVcaSum, fbVcaSum, flipGate, skipTrig;
 			buf = \buf.ir(0);
@@ -242,10 +245,12 @@ CQSynthDefs {
 			voice = outTap
 				+ (organ * \organLvl.kr(CQSpec.default(\coco1Organ), CQSpec.lag(\coco1Organ))
 					* 0.3);
-			Out.ar(\outBus.ir(0),
-				voice * \level.kr(CQSpec.default(\coco1Level), CQSpec.lag(\coco1Level)));
+			lvl = \level.kr(CQSpec.default(\coco1Level), CQSpec.lag(\coco1Level));
+			Out.ar(\outBus.ir(0), voice * lvl);
 			Out.ar(\modSrcBus.ir(0) + \modTapIdx.ir(12), outTap);  // canonical ch 12/13
 			Out.ar(\modSrcBus.ir(0) + \modOrganIdx.ir(14), organ); // canonical ch 14/15
+			// GUI in/out meters (SPEC §6.2); replyID tells the two instances apart
+			SendPeakRMS.kr([inSig, voice * lvl], 20, 3, '/cq_cocometers', \meterId.ir(0));
 		})
 	}
 
@@ -265,19 +270,35 @@ CQSynthDefs {
 			var vol = \masterVol.kr(CQSpec.default(\masterVol), CQSpec.lag(\masterVol)).dbamp;
 			var mute = 1 - \mute.kr(0, CQSpec.lag(\monitorMute));
 			var fade = EnvGen.kr(Env([0, 1], [2]), \fadeIn.kr(0)); // silent boot → 2 s ramp
-			var mix;
+			var mix, preLim, grDb;
 			mix = Pan2.ar(coco1, pan1) + Pan2.ar(coco2, pan2)
 				+ (spaceRet * spaceMix) + (dry * masterDry);
 			mix = mix * vol * mute;
 			mix = LeakDC.ar(mix);
 			mix = (mix * 0.5).tanh;                    // −6 dB headroom glue
+			preLim = mix;
 			mix = Limiter.ar(mix, 0.89, 0.01);         // brickwall ≈ −1 dBFS
+			// GUI limiter GR meter (SPEC §6.2): dB the Limiter stage is taking off,
+			// measured pre-fade so panic/boot-fade cannot fake a reduction
+			grDb = (Amplitude.kr(preLim, 0.01, 0.3).max(1e-6).ampdb
+				- Amplitude.kr(mix, 0.01, 0.3).max(1e-6).ampdb).max(0);
+			SendReply.kr(Impulse.kr(20), '/cq_gr', grDb);
 			mix = mix.collect { |ch|                   // NaN/inf → silence (SPEC §8.6)
 				Select.ar(CheckBadValues.ar(ch, post: 0) > 0, [ch, DC.ar(0)])
 			};
 			mix = mix * fade;
 			SendPeakRMS.kr(mix, 20, 3, '/cq_meters');
 			config[\outChans].do { |hw, i| Out.ar(hw, mix[i]) };
+		})
+	}
+
+	// SPEC §5.7 recorder tap (spawned by CQRecorder at the tail of gMaster,
+	// only while recording): reads the HARDWARE output buses after \cqMaster
+	// has written them, so the file is exactly the post-safety signal the
+	// speakers got — the safety chain is inherited by construction (safety #1)
+	*record { |config|
+		^SynthDef(\cqRecord, {
+			DiskOut.ar(\buf.ir(0), [In.ar(\outL.ir(0)), In.ar(\outR.ir(1))]);
 		})
 	}
 

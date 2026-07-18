@@ -114,6 +114,40 @@ CQMatrixTest : UnitTest {
 		};
 	}
 
+	test_presetMatrixEntriesValid {
+		CQMatrix.presets.keysValuesDo { |name, data|
+			data[\matrix].do { |t|
+				this.assert(CQMatrix.srcIndex(t[0]).notNil,
+					"preset % source '%' exists".format(name, t[0]));
+				this.assert(CQMatrix.destIndex(t[1]).notNil,
+					"preset % dest '%' exists".format(name, t[1]));
+				this.assert(t[2].abs <= 1.0,
+					"preset % weight % in range".format(name, t[2]));
+			};
+		};
+	}
+
+	// phase-6 presets carry their load-bearing knobs (preset = weights + knobs,
+	// the KUUNTELU 4 lesson: a banana into a closed knob is dead data)
+	test_presetPhase6Params {
+		var sn = CQMatrix.presets[\selfNoise][\params];
+		var qd = CQMatrix.presets[\quantumDrone][\params];
+		var om = CQMatrix.presets[\organMode][\params];
+		this.assertEquals(sn[\coco1Hold], 0,
+			"\\selfNoise records (dust cannot accumulate under hold)");
+		this.assert(sn[\coco1Fb] >= 1.0, "\\selfNoise loops its dust (fb >= unity)");
+		this.assert(sn[\coco1Dust] > 0.1, "\\selfNoise raises the dust knob");
+		this.assertEquals(sn[\coco1SlotPre], 0, "\\selfNoise is no-input (pre slot shut)");
+		this.assertEquals(sn[\coco1SlotDeck], 0, "\\selfNoise is no-input (deck slot shut)");
+		this.assertEquals(qd[\c1Range], \audio, "\\quantumDrone lifts castles to audio");
+		this.assert(qd[\coco1SlotQ] > 0, "\\quantumDrone opens the qMix slot");
+		this.assert(qd[\c1Send] > 0, "\\quantumDrone sends the castles out");
+		this.assert(om[\coco1Organ] > 0.5, "\\organMode raises organ 1");
+		this.assert(om[\coco2Organ] > 0.5, "\\organMode raises organ 2");
+		this.assert(om[\coco1Spaf] > 0,
+			"\\organMode opens the spaf knob for the tri3 vibrato banana");
+	}
+
 	test_presetMayhemDense {
 		matrix.preset(\mayhem);
 		this.assertEquals(matrix.asArray.size, 16 * 22, "\\mayhem patches every cell");
@@ -121,6 +155,55 @@ CQMatrixTest : UnitTest {
 			this.assert(t[2].abs <= 1.0, "\\mayhem weight % stays in range".format(t[2]));
 			this.assert(t[2] != 0.0, "\\mayhem weight is never zero");
 		};
+	}
+
+	test_shakeSeedDeterminism {
+		var m1 = CQMatrix(nil), m2 = CQMatrix(nil);
+		var sp1 = m1.shake(0.4, seed: 1234);
+		var sp2 = m2.shake(0.4, seed: 1234);
+		this.assertEquals(m1.asArray, m2.asArray,
+			"same seed reproduces the same weight throw (SPEC §5.5)");
+		this.assertEquals(sp1, sp2, "same seed reproduces the same spesal states");
+		m2 = CQMatrix(nil);
+		m2.shake(0.4, seed: 4321);
+		this.assert(m1.asArray != m2.asArray, "a different seed throws differently");
+	}
+
+	test_shakeBoundsAndShape {
+		var spesal = matrix.shake(0.4, seed: 99);
+		var cells = matrix.asArray;
+		this.assert(cells.size > 0, "shake patches something (seed 99)");
+		this.assert(cells.size < (16 * 22),
+			"shake stays sparse — it is a banana handful, not \\mayhem");
+		cells.do { |t|
+			this.assert(t[2].abs <= 0.4,
+				"shake weight % honors ±amount".format(t[2]));
+		};
+		this.assertEquals(spesal.size, 5, "shake returns one state per castle");
+		spesal.do { |v|
+			this.assert(v.isInteger and: { v.inclusivelyBetween(0, 7) },
+				"spesal state % is an integer 0..7".format(v));
+		};
+	}
+
+	test_shakeReplacesOldThrow {
+		matrix.patch(\envA, \deckA_rate, 1.0);
+		matrix.shake(0.3, seed: 7);
+		this.assert(matrix.getPatch(\envA, \deckA_rate).abs <= 0.3,
+			"shake clears the previous patch before throwing (old cell is gone "
+			++ "or re-thrown within ±amount)");
+	}
+
+	test_shakeAmountClampFuzz {
+		var spesal;
+		matrix.shake(99, seed: 5);
+		matrix.asArray.do { |t|
+			this.assert(t[2].abs <= 1.0, "amount over 1 clamps to the weight range");
+		};
+		spesal = matrix.shake(0.0 / 0.0, seed: 5);
+		this.assertEquals(matrix.asArray, [],
+			"NaN amount degrades to an empty throw, never to raw values");
+		this.assertEquals(spesal.size, 5, "spesal states still arrive on a bad amount");
 	}
 
 	test_unknownPresetSafe {

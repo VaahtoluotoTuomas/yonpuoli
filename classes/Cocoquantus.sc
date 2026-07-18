@@ -4,7 +4,8 @@
 
 Cocoquantus {
 	classvar <config, <graph, <state, <matrix, <server;
-	classvar configPath, deckAPlayer, deckBPlayer, snapshotMgr, midi16n;
+	classvar configPath, deckAPlayer, deckBPlayer, snapshotMgr, midi16n, recorder;
+	classvar guiPanel;
 	classvar spesalCache, micWatcher, micWasLive = false;
 
 	*boot { |path, onReady|
@@ -41,6 +42,9 @@ Cocoquantus {
 				{ this.spesalStates },
 				{ |states| states.do { |v, i| this.spesalSet(i + 1, v) } });
 			midi16n = CQMidi16n(state, config[\sixteenN]);  // no 16n = notice, not error
+			recorder = CQRecorder(graph, config, this.prFolder(\recordings));
+			if(config[\headless] != true) { this.gui };  // ARCH §6 step 7; the
+			                                   // instrument is complete without it
 			graph.fadeIn;                      // silent until verified → 2 s ramp
 			CmdPeriod.add(this);
 			"Cocoquantus: ready — output fading in over 2 s.".postln;
@@ -194,6 +198,39 @@ Cocoquantus {
 		data[\params].keysValuesDo { |k, v| state.set(k, v) };
 	}
 
+	// GUI (SPEC §6.2): opens at boot unless headless; reopens a closed window.
+	// A window the user closed leaves the instrument fully playable (SPEC §6)
+	*gui {
+		if(this.isBooted.not) { "Cocoquantus: not booted.".warn; ^nil };
+		if(guiPanel.isNil or: { guiPanel.isClosed }) {
+			guiPanel = CQGui(state, matrix, config);
+		};
+		^guiPanel
+	}
+
+	// recorder (SPEC §5.7): timestamped post-safety master WAV, never overwrites
+	*rec {
+		if(recorder.isNil) { "Cocoquantus: not booted.".warn; ^this };
+		recorder.start;
+	}
+
+	*recStop {
+		if(recorder.isNil) { "Cocoquantus: not booted.".warn; ^this };
+		recorder.stop;
+	}
+
+	*recorder { ^recorder }
+
+	// SPEC §5.5 shake: randomize matrix weights (±amount, sparse) + spesal
+	// states — never levels/feedback (safety+musicality rule; CQMatrix.shake
+	// only reaches weights by construction). seed makes the throw reproducible
+	*shake { |amount = 0.3, seed|
+		var spesal;
+		if(matrix.isNil) { "Cocoquantus: not booted.".warn; ^this };
+		spesal = matrix.shake(amount, seed);
+		spesal.do { |v, i| this.spesalSet(i + 1, v) };
+	}
+
 	// panic is always reachable and preserves state (SPEC safety #3)
 	*panic {
 		this.set(\monitorMute, 1);
@@ -208,10 +245,14 @@ Cocoquantus {
 		if(graph.isNil) { ^this };
 		CmdPeriod.remove(this);
 		{
+			recorder !? { recorder.stop };     // close the file before teardown (ARCH §6)
+			recorder = nil;
 			if(graph.isRunning) {
 				state.set(\monitorMute, 1);    // 30 ms fade before teardown
 				0.15.wait;
 			};
+			guiPanel !? { guiPanel.free };         // closes window, frees \cq_gui_* defs
+			guiPanel = nil;
 			snapshotMgr !? { snapshotMgr.free };   // stops a running morph
 			snapshotMgr = nil;
 			midi16n !? { midi16n.free };

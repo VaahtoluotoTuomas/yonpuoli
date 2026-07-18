@@ -101,6 +101,7 @@ CQGraph {
 				\outBus, buses[n].index,
 				\modSrcBus, buses[\modSrc].index,
 				\modTapIdx, row[4], \modOrganIdx, row[5],
+				\meterId, if(n == \coco1) { 1 } { 2 },   // '/cq_cocometers' replyID
 				\wSpafBus, buses[(n ++ "_spaf").asSymbol].index,
 				\wInVcaBus, buses[(n ++ "_inVca").asSymbol].index,
 				\wFbVcaBus, buses[(n ++ "_fbVca").asSymbol].index,

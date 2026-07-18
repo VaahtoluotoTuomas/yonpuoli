@@ -272,8 +272,9 @@ Outputs published to the mod source bus: `tri1..tri5` (±1 triangle), `cas1..cas
 - `patchDepth` (0–1, default 1.0, lag 50 ms): global scaler over all matrix weights —
   a "how alive is it" macro and instant tamer.
 - API: `patch(src, dest, w)`, `unpatch(src, dest)`, `clearPatch`, `getPatch`,
-  `patchPreset(\name)`, `shake(amount: 0.3, seed: nil)` (randomize weights ±amount and
-  spesal states; never touches levels/feedback — safety+musicality rule).
+  `patchPreset(\name)`, `shake(amount: 0.3, seed: nil)` (throw a sparse random patch —
+  each cell with ~10% probability, weights ±amount — plus random spesal states; never
+  touches levels/feedback — safety+musicality rule; same seed = same throw).
 - Named presets shipped in v1 (derived from documented hardware patches):
   `\empty`, `\classic` (tri→spaf both Cocos, castle→castle FM ring),
   `\selfNoise` (dust looping + VCA wobble), `\quantumDrone` (castles as audio, skip/flip
@@ -363,8 +364,9 @@ purple = SP.AF, yellow = organ, white = preamp.
   Spesal step button, 15-dot Spesal display, "shake" button, castle send mini-faders.
 - Sources: preamp src selectors + drive, mic gain (with warning color when >0 and
   builtin output active), deck transport (load/next/prev, rate, loop), drop files here.
-- Master: volume, dry, space, limiter gain-reduction meter, watchdog notice, REC with
-  elapsed time, PANIC (= `monitorMute`), preset menu + save, snapshot morph slider.
+- Master: volume, dry, space, limiter gain-reduction meter, notice line (mic warning;
+  watchdog in M3), REC with elapsed time, PANIC (= `monitorMute`), snapshot save/recall
+  + A→B morph controls (patch-preset menu lives in the matrix section).
 - Matrix: grid view (16×22) with signed weight cells, preset menu.
 - Keyboard: `1/2` hold Coco1/2 · `q/w` flip · `a/s` skip · `3..7` spesal castle 1–5 ·
   `r` rec · `space` panic · `p` shake.

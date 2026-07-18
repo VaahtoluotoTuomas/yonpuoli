@@ -155,7 +155,27 @@ CQ.set(\qShLag, 0.004);        // takaisin: autenttiset kovat askeleet
 
 - [x] M3 hyväksytty (pvm: 2026-07-16)
 
-## M4 — \selfNoise-preset (vaihe 6, tulossa)
+## M4 — \selfNoise-preset (vaihe 6)
+
+```supercollider
+// M4 — \selfNoise: no-input digital-dust -workflow yhtenä eleenä
+// (vaiheen 2 dust-resepti presetiksi paketoituna + VCA-wobble).
+CQ.boot;                       // (tai jatka sessiota)
+CQ.patchPreset(\selfNoise);    // sulkee pre/deck-slotit, hold 0, fb 1.1,
+                               // dust ylös, slotX-ristisyöttö 0.3,
+                               // tri->fbVca-wobble + cas->inVca-portit + spaf-drift
+// 1. Kuuntele ~60 s ilman inputtia: rakeinen dust-pohja kertyy molempiin
+//    looppeihin PURSKEINA (ei tasaisesti); feedback-wobble hengittää
+//    tiheyttä hitaasti, cas-askeleet avaavat/sulkevat ristisyöttöä.
+//    Loopit eri kelloilla (24k/18k) - pari ei lukitu samaan fraasiin.
+CQ.set(\qChaos, 0.5);          // 2. villimmät askeleet wobble/gate-lähteisiin
+CQ.hold(1); CQ.hold(2);        // 3. lukitse tekstuuri looppipariksi...
+CQ.set(\coco1Speed, 12000);    //    ...ja viritä kuten mitä tahansa looppia
+// 4. Palautus: CQ.patchPreset(\empty); CQ.hold(1, 0); CQ.hold(2, 0);
+//    (tai jatka soittoa tästä)
+```
+
+- [ ] M4 hyväksytty (pvm: __________)
 
 ## M6 — \classic kenttä-äänitteellä + matriisi (vaihe 4)
 
@@ -361,3 +381,94 @@ CQ.loadStereo("jokin_stereo.wav");
 - [x] Deck B + navigointi + stereo hyväksytty (pvm: 2026-07-18 — deck B + F12-pari
       ok; navigointi ok korjauksen `56ab8a7` jälkeen (includes-identiteettibugi +
       loadFolder-polku); linked stereo L→A/R→B ok, monon fallback + varoitus ok)
+
+---
+
+## KUUNTELU 6 — GUI, shake, presetit, REC (vaihe 6)
+
+```supercollider
+// 6.1 — GUI-läpikäynti. (classes/ muuttui -> Ctrl+Shift+L ensin!)
+CQ.boot;                       // -> GUI-ikkuna aukeaa itsekseen (headless: false)
+CQ.deckA.load("123681__aidenfry__cricket-and-bird-field-recording.wav");
+CQ.hold(1, 0);
+// Tarkista ikkunasta (mitään koskematta):
+// - Master-meterit (out) elävät; coco1:n in/out-meterit elävät, coco2:n in
+//   on lähes tyhjä (vain power-on-looppi kiertää).
+// - Quantussy: C1..C5-LEDit — infra-castlet sykkivät hitaasti oranssina,
+//   C5 (audio) värisee; spesal-näytön 15 pistettä = 5 castlen tila bitteinä.
+// - Coco-stripin nupit OVAT oikeissa arvoissa (in 0.8, fb 0.35, ...).
+// Ristiinkytkentä (funnel toimii molempiin suuntiin):
+CQ.set(\coco1Fb, 1.0);         // -> coco1:n fb-nuppi liikkuu ikkunassa
+// - Käännä GUI:n fb-nuppia -> CQ.get(\coco1Fb) seuraa; 16n-fader F4 liikuttaa
+//   samaa nuppia (kolme kerrosta, yksi tila).
+// - HOLD-nappi: punainen kun päällä; FLIP/SKIP kuuluvat kuten M5:ssä.
+// - Matriisigrid: vedä solua pystysuunnassa (oranssi = verso, sininen =
+//   inverso), oikea klikkaus irrottaa banaanin; statusrivi näyttää painon.
+// - Preset-valikko (gridin ylla): \classic -> gridiin ilmestyvät tutut solut.
+// - File drop: raahaa wav Explorerista DECK A -laatikkoon -> latautuu.
+// - Näppäimet ikkunassa: 1/2 hold, q/w flip, a/s skip, 3..7 spesal,
+//   r rec, space panic (nappi muuttuu "MUTED"), p shake.
+```
+
+```supercollider
+// 6.2 — M5 loppuun GUI:sta: dolby-kytkimet hiirellä.
+// (deck A soi, coco1 record-tilassa; puhetta/rytmiä preamp A:han kuten M5:ssä)
+// - dolby fb -> duck hiirellä: sama time-layer-artikulaatio kuin M5:ssä
+// - dolby in -> gate: hiljainen input katkeaa (self-expander)
+// - HOLD/FLIP/SKIP GUI-napeista: sama käytös kuin koodista
+```
+
+```supercollider
+// 6.3 — Uudet presetit (kuuntele jokaista ~1-2 min):
+CQ.patchPreset(\quantumDrone); // castle-klusteri drone-parina: neljä castlea
+                               // audiolla cocojen läpi (coco2 oktaavin alla),
+                               // flipit tanssivat vastakkain (cas3 ±),
+                               // tri1 resetoi coco2:n fraasin ~12 s välein
+CQ.patchPreset(\organMode);    // urkupillit molemmista cocoista (kvintti-
+                               // suhde 3:2); soita melodioita F2/F6-fadereilla
+                               // (speed = urkujen pitch); cas-askeleet
+                               // pumppaavat looppipohjaa urkujen alla,
+                               // tri3-vibrato ~3 Hz
+CQ.patchPreset(\mayhem);       // tiheä kaaos - VIRITETTY: painot vaihtelevat
+                               // (ei enää tasaruudukko); patchDepth (F15)
+                               // on kesytysvipu
+CQ.set(\patchDepth, 0.3);      //   -> "mayhem 30 %" on jo musiikillista
+CQ.set(\patchDepth, 1);
+CQ.patchPreset(\empty);        // puhdas pöytä
+```
+
+```supercollider
+// 6.4 — Shake (SPEC §5.5): p-näppäin tai SHAKE-nappi tai koodi.
+CQ.shake;                      // ~35 satunnaista banaania ±0.3 + spesal-arvonta
+                               // -> gridi näyttää heiton; EI koske leveleihin
+                               // eikä feedbackiin (turva + musikaalisuus)
+CQ.shake(0.6);                 // isompi amplitudi
+CQ.shake(0.4, seed: 1234);     // sama seed -> sama heitto (toistettavissa)
+CQ.shake(0.4, seed: 1234);     // -> identtinen edellisen kanssa
+CQ.patchPreset(\empty);
+```
+
+```supercollider
+// 6.5 — REC (SPEC §5.7): nauhoita hetki mitä tahansa yllä olevaa.
+CQ.rec;                        // GUI: REC punaiseksi + aika juoksee
+                               // -> post: "recording -> ...recordings/cq_..."
+CQ.recStop;                    // tai REC-nappi/r-näppäin uudelleen
+// -> TARKISTA: recordings/-kansiossa uusi cq_YYMMDD_HHMMSS.wav, 24-bit,
+//    sisältö = mitä kaiuttimista kuului (post-safety). Uusi rec = UUSI
+//    tiedosto, koskaan ylikirjoitusta.
+```
+
+```supercollider
+// 6.6 — Headless-varmistus: config.scd -> headless: true, boottaa uudelleen
+// -> ei ikkunaa, kaikki toimii koodista + 16n:stä. Palauta headless: false.
+// (16n:n puuttuminen on jo todettu M8:ssa: notice, ei virhettä.)
+```
+
+- [ ] GUI-läpikäynti ok (meterit, LEDit, spesal-näyttö, grid, drop, näppäimet)
+- [ ] M5 kokonaan (dolbyt GUI:sta) ok
+- [ ] Presetit \quantumDrone / \organMode / viritetty \mayhem ok
+- [ ] Shake ok (myös seed-toisto)
+- [ ] REC ok (tiedosto syntyy, aikaleima, ei ylikirjoitusta)
+- [ ] Headless ok
+- [ ] 30 min sessio pelkillä patch-riveillä + GUI + 16n -> M1-M8 läpi
+- [ ] KUUNTELU 6 hyväksytty (pvm: __________)

@@ -112,6 +112,34 @@ CQMatrix {
 		this.load(data[\matrix]);
 	}
 
+	// SPEC §5.5 shake: throw a fresh handful of bananas on the bay — a sparse
+	// random patch (each cell patched with prob. shakeDensity, weight ±amount)
+	// plus 5 random spesal states, returned for the caller to apply
+	// (Cocoquantus.shake; this class knows no server counters). Never touches
+	// levels/feedback by construction: only weights live here. A seed makes the
+	// throw reproducible (SPEC: shake(0.4, seed: 1234)); the language-side rand
+	// stream is restored afterwards so a seeded shake has no side effects.
+	shake { |amount = 0.3, seed|
+		var amt = this.class.clampWeight(amount).abs;
+		var saved = thisThread.randData;
+		var spesal;
+		seed !? { thisThread.randSeed = seed.asInteger };
+		this.prInit;
+		weights.do { |row, di|
+			row.size.do { |si|
+				if(this.class.shakeDensity.coin) { weights[di][si] = amt.rand2 };
+			};
+		};
+		spesal = 5.collect { 8.rand };
+		seed !? { thisThread.randData = saved };
+		this.prPushAll;
+		this.changed(\clear);   // bulk notification: dependants re-read everything
+		^spesal
+	}
+
+	// ~10% of 16x22 cells = ~35 bananas — a full but still readable table
+	*shakeDensity { ^0.1 }
+
 	// push every current weight to the server (used once at boot and after clear/load)
 	pushAll { this.prPushAll }
 
@@ -159,15 +187,93 @@ CQMatrix {
 				// "worn but working tape"; 0.15 already tipped into seasick
 			),
 
-			// "dense random, capped depths" (SPEC §5.5): every source patched to
-			// every destination at a fixed, sub-maximal depth (deterministic, not
-			// literally random, so the A3 safety render is reproducible) —
-			// doubles as the SPEC A3 worst-case stress patch; musical tuning
-			// happens in phase 6
+			// "dust looping + VCA wobble" (SPEC §5.5, M4): the no-input digital-dust
+			// workflow as one gesture — external slots closed, both converters
+			// recording (hold 0) over unity feedback so their own dust accumulates;
+			// slotX cross-feed makes the two loops chew on each other. Infra tris
+			// breathe the feedback VCAs (dust-density waves), infra/balcium cas
+			// steps gate the cross-feed, slow spaf drift keeps the grain shifting.
+			// Different speeds = different loop lengths -> the pair never phase-locks
+			selfNoise: (
+				matrix: [
+					[\tri2, \coco1_fbVca, 0.15], [\tri4, \coco2_fbVca, 0.15],
+					[\cas1, \coco1_inVca, 0.3], [\cas3, \coco2_inVca, 0.3],
+					[\tri1, \coco1_spaf, 0.25], [\tri3, \coco2_spaf, 0.25]
+				],
+				params: (
+					coco1Hold: 0, coco2Hold: 0,
+					coco1Fb: 1.1, coco2Fb: 1.1,
+					coco1Dust: 0.3, coco2Dust: 0.25,
+					coco1SlotPre: 0, coco2SlotPre: 0,
+					coco1SlotDeck: 0, coco2SlotDeck: 0,
+					coco1SlotX: 0.3, coco2SlotX: 0.3,
+					coco1Spaf: 0.4, coco2Spaf: 0.4,
+					coco2Speed: 18000
+				)
+			),
+
+			// "castles as audio, skip/flip animation" (SPEC §5.5): four castles up
+			// on audio range as the drone cluster (castle 3 stays balcium = the
+			// animator), both cocos record the qMix smear (fb just under unity).
+			// cas3 gates the flips with OPPOSITE polarity — the pair reverses
+			// alternately; tri1 fires an occasional skip (phrase reset ~12 s);
+			// a mutual castle-FM pair thickens the cluster; slow anti-phase spaf
+			// makes the two loops breathe apart. Coco2 an octave down for weight
+			quantumDrone: (
+				matrix: [
+					[\cas3, \coco1_flip, 0.6], [\cas3, \coco2_flip, -0.6],
+					[\tri1, \coco2_skip, 0.55],
+					[\cas1, \castle2_fm, 0.25], [\cas2, \castle1_fm, 0.25],
+					[\tri1, \coco1_spaf, 0.3], [\tri1, \coco2_spaf, -0.3]
+				],
+				params: (
+					c1Range: \audio, c2Range: \audio, c3Range: \balcium,
+					c4Range: \audio, c5Range: \audio,
+					c1Send: 0.4, c2Send: 0.4, c3Send: 0, c4Send: 0.4, c5Send: 0.5,
+					qChaos: 0.25,
+					coco1SlotQ: 1.0, coco2SlotQ: 1.0,
+					coco1SlotPre: 0, coco2SlotPre: 0,
+					coco1SlotDeck: 0, coco2SlotDeck: 0,
+					coco1Hold: 0, coco2Hold: 0,
+					coco1Fb: 0.95, coco2Fb: 0.95,
+					coco1Spaf: 0.25, coco2Spaf: 0.25,
+					coco2Speed: 12000
+				)
+			),
+
+			// "organ outs as voices, cas->VCAs, tri->spaf light" (SPEC §5.5): the
+			// address-counter squares up on both cocos as sustained voices — speeds
+			// in a 3:2 ratio put organ 2 a fifth below organ 1 (play melodies with
+			// the speed faders F2/F6). cas steps pump the loop bed's VCAs under the
+			// organs; tri3 (~3 Hz) through a light spaf knob is the shared vibrato
+			// (spaf moves the RAM clock -> organ pitch follows, SPEC §5.3)
+			organMode: (
+				matrix: [
+					[\cas1, \coco1_inVca, 0.4], [\cas4, \coco2_inVca, 0.4],
+					[\cas2, \coco1_fbVca, 0.3], [\cas5, \coco2_fbVca, 0.3],
+					[\tri3, \coco1_spaf, 0.2], [\tri3, \coco2_spaf, 0.2]
+				],
+				params: (
+					coco1Organ: 0.7, coco2Organ: 0.7,
+					coco1Spaf: 0.1, coco2Spaf: 0.1,
+					coco1Hold: 0, coco2Hold: 0,
+					coco1Fb: 0.9, coco2Fb: 0.9,
+					coco2Speed: 16000
+				)
+			),
+
+			// "dense random, capped depths" (SPEC §5.5): every cell patched, but at
+			// deterministic pseudo-random depths (sin hash, |w| <= 0.55) instead of
+			// phase 4's rigid ±0.6 checkerboard — varied magnitudes decorrelate the
+			// mod sums, so gates/trigs fire irregularly instead of in lockstep
+			// (phase-6 musical tuning). Deterministic on purpose: this same data is
+			// the SPEC A3 worst-case stress patch (nrt_safety.scd) and must render
+			// reproducibly. Zero-rounding cells are floored to 0.05 to stay dense
 			mayhem: (
 				matrix: destNames.collect { |dest, di|
 					sourceNames.collect { |src, si|
-						[src, dest, 0.6 * (if((si + di).even) { 1 } { -1 })]
+						var w = (sin((si * 5.7) + (di * 2.3)) * 0.55).round(0.01);
+						[src, dest, if(w == 0.0) { 0.05 } { w }]
 					}
 				}.flatten(1),
 				params: ()

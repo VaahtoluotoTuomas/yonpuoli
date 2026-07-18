@@ -4,17 +4,17 @@ Vaiheistettu checklist. Toimii CLAUDE.md:n milestone-checklistinä (TODO.md:n ro
 Normatiiviset lähteet: SPEC.md (käyttäytyminen), ARCHITECTURE.md (rakenne).
 Milestone-mappaus: **M1 = vaiheet 0–4 · M2 = vaiheet 5–6 · M3 = vaihe 7**.
 
-**Tilanne 2026-07-18: vaiheet 0–5 valmiit ja hyväksytty** (M1 valmis,
-kuuntelu-commitit `b03692b`…`f342ced`; vaihe 5 toteutettu `885cb24` +
-`38653ab`, KUUNTELU/KÄYTTÖ 5 -gate läpi 2026-07-18). Gatessa löytyi ja
-korjattiin kansionavigoinnin kaksoisbugi (`56ab8a7`: Collection:includes
-vertaa identiteettiä → päätetaulukko Symboleiksi; `loadFolder("samples")`
-ratkeaa nyt samples-kansion rinnaltakin). Markerit vihreät: A1 + A2
-(1745 assertiota) + A3 (mayhem-peak 0.8861). **Seuraavaksi: vaihe 6** —
-CQGui, `CQ.shake`, loput presetit (\selfNoise/\quantumDrone/\organMode +
-\mayhem-viritys), CQRecorder, headless-varmistus → M2 valmis. Patch-reseptit
-`live.scd`. Post-v1.0-suunta (norns-portti) kirjattu tämän tiedoston
-loppuun — se ohjaa vaiheiden 6–7 rajapintavalintoja.
+**Tilanne 2026-07-18: vaiheet 0–5 valmiit ja hyväksytty; vaihe 6 toteutettu,
+KUUNTELU 6 -gate auki.** (M1 valmis, kuuntelu-commitit `b03692b`…`f342ced`;
+vaihe 5 hyväksytty 2026-07-18: `885cb24` + `38653ab` + gate-korjaus `56ab8a7`.)
+Vaihe 6 -toteutus: CQGui (+ CQGuiWidgets/CQGuiPanels/CQGuiMatrix), `CQ.shake`,
+presetit \selfNoise/\quantumDrone/\organMode + \mayhem-viritys, CQRecorder +
+`CQ.rec`, meteri-/LED-raportit defeissä, headless-lippu. Markerit vihreät:
+A1 + A2 (3080 assertiota) + A3 (mayhem-peak 0.89 = limitterin katto) + A4/A5
+(korrelaatio 1.0, drift 0.0 dB) + GUI-savutesti (dev-skripti).
+**Seuraavaksi: KUUNTELU 6** (manual_checklist.md:n KUUNTELU 6 -osio +
+M4-osio) → M2 valmis. Post-v1.0-suunta (norns-portti) kirjattu tämän
+tiedoston loppuun — se ohjaa vaiheiden 6–7 rajapintavalintoja.
 
 ## Läpileikkaavat säännöt
 
@@ -443,19 +443,26 @@ loppuun — se ohjaa vaiheiden 6–7 rajapintavalintoja.
 ## Vaihe 6 — GUI, shake, loput presetit, perusäänitys → **M2 valmis**
 
 ### Toteutus
-- [ ] `classes/CQGui.sc` — SPEC §6.2: neljä kolumnia + master-strip, banaaniväri-
+- [x] `classes/CQGui.sc` — SPEC §6.2: neljä kolumnia + master-strip, banaaniväri-
       koodi, meterit/LEDit OSCdefeillä, matriisigrid, file drop, näppäinkartta;
-      puhdas view (dependants, `{ }.defer`, ei server-pollausta)
-- [ ] `CQ.shake(amount, seed)` — vain painot + spesal, ei koskaan level/feedback;
-      determinismitesti seedillä logic_testsiin
-- [ ] Presetit: `\selfNoise`, `\quantumDrone`, `\organMode` + `\mayhem`in
-      musiikillinen viritys
-- [ ] `classes/CQRecorder.sc` — master 2ch 24-bit wav, timestamped
-      `recordings/cq_YYMMDD_HHMMSS.wav`, ei koskaan ylikirjoita → GUI:n REC
-- [ ] Headless-tila varmistettu: instrumentti toimii ilman GUI:ta ja ilman 16n:ää
+      puhdas view (dependants, `{ }.defer`, ei server-pollausta). Jaettu kokorajan
+      takia: `CQGuiWidgets.sc` (param-sidottu widget-tehdas + väripaletti),
+      `CQGuiPanels.sc` (kolumnit + master-strip), `CQGuiMatrix.sc` (grid)
+- [x] `CQ.shake(amount, seed)` — vain painot + spesal, ei koskaan level/feedback;
+      determinismitesti seedillä CQMatrixTestiin (+ rajat, harvuus, roska-amount)
+- [x] Presetit: `\selfNoise`, `\quantumDrone`, `\organMode` + `\mayhem`in
+      musiikillinen viritys (sin-hash-painot; pysyy tiheänä = A3-data ennallaan)
+- [x] `classes/CQRecorder.sc` — master 2ch 24-bit wav, timestamped
+      `recordings/cq_YYMMDD_HHMMSS.wav`, ei koskaan ylikirjoita → GUI:n REC;
+      `CQRecorderTest` (aikaleimaformaatti + collision-suffiksi)
+- [x] Headless-tila varmistettu: boot avaa GUIn vain jos `headless: false`;
+      kaikki toiminnot facade-API:ssa ilman GUIta/16n:ää (testiajot ajavat
+      koko kirjaston GUIttä; 16n-degradaatio todettu M8:ssa)
 
 ### Testit
-- [ ] `CQ_COMPILE_OK` · `CQ_TESTS_PASSED` · `CQ_SAFETY_PASSED`
+- [x] `CQ_COMPILE_OK` · `CQ_TESTS_PASSED` (3080) · `CQ_SAFETY_PASSED`
+      (mayhem-peak 0.89) · `CQ_HOLD_OK` varmuudeksi (meteri-tapit defeissä;
+      korrelaatio 1.0, drift 0.0 dB) (2026-07-18)
 
 ### KUUNTELU 6 — M2-hyväksyntä
 - [ ] GUI-läpikäynti: meterit, hold-LEDit, spesal-näyttö, matriisigrid, file drop,
@@ -465,6 +472,47 @@ loppuun — se ohjaa vaiheiden 6–7 rajapintavalintoja.
 - [ ] REC → tiedosto syntyy, aikaleimattu, ei ylikirjoitusta
 - [ ] 30 min sessio kirjoittamatta muuta kuin patch-rivejä → **M1–M8-checklist läpi**
 - [ ] Käyttäjän M2-hyväksyntä → milestone valmis
+
+### Kirjatut toteutuspäätökset (vaihe 6)
+- **Shake on harva heitto**, ei tiheä: jokainen solu patchataan tn. 0.1:llä
+  (~35 banaania) painolla ±amount — tiheä satunnaisuus on jo \mayhemin rooli.
+  `CQMatrix.shake` palauttaa 5 spesal-arvontaa (luokka ei tunne serverin
+  laskureita); `Cocoquantus.shake` soveltaa ne `spesalSet`-reittiä. Seedattu
+  ajo tallettaa ja palauttaa kielisäikeen rand-streamin — ei sivuvaikutuksia.
+- **\mayhem-viritys säilyttää tiheyden**: painot sin-hashista
+  (`0.55·sin(5.7·si + 2.3·di)`, pyöristys 0.01, nollat → 0.05), koska sama
+  data ajaa A3-turvarenderin — vaihteleva magnitudi rikkoo vaiheen 4
+  tasaruudukon kuolleen symmetrian (gatet/trigit eivät enää laukea tahdissa),
+  mutta joka solu pysyy patchattuna (CQMatrixTest vartioi).
+- **Preset-nupit**: \selfNoise sulkee pre/deck-slotit ja avaa dustin/fb:n
+  (M4-workflow); \quantumDrone nostaa 4 castlea audiolle ja ajaa ne cocojen
+  läpi eri kelloilla; \organMode virittää coco-kellot 3:2-suhteeseen (urku-
+  kvintti) — kaikki KUUNTELU 4:n "preset = painot + nupit" -opin mukaisesti.
+- **CQRecorder** lukee hardware-out-väylät `gMaster`-hännässä → tiedosto on
+  täsmälleen post-safety-signaali (invariantti #1 rakenteesta). Synth/buffer-
+  churn luovutetaan CQGraphille nauhoituksen ajaksi ja rekisteröidään nil:ksi
+  stopissa (IdentityDictionaryn nil-put poistaa avaimen) — teardown-omistus
+  pysyy yhdessä paikassa. `CQ.free` sulkee tiedoston ennen graafin purkua.
+- **Meteri-/LED-raportit defeissä**: '/cq_cocometers' (in/out-peakit,
+  replyID 1/2 erottaa instanssit), '/cq_castle' (trien hetkisarvot 15 Hz —
+  infra näkyy sykkeenä, audio välkkeenä), '/cq_gr' (limitterivaiheen reduktio
+  dB:nä, mitattu ennen fade/mute-kerrointa ettei panic näytä valereduktiota).
+  Lähetykset ovat ehdottomia (~20 Hz control-rate, kuulumattomia NRT:ssäkin).
+- **GUI:n OSCdefit ovat GUIn omia** (`\cq_gui_*`) — Cocoquantuksen
+  `\cq_spesal`-cache säilyy koskemattomana; molemmat kuuntelevat samaa
+  osoitetta. Ikkunan sulkeminen (myös käyttäjän X) ajaa idempotentin
+  `prCleanup`in: dependantit, OSCdefit ja REC-tick vapautuvat aina.
+- **Morph GUI:ssa**: A/B-snapshot-popupit + kesto + MORPH-nappi (SPEC §6.2
+  päivitetty; "morph-slider"-scrubbaus vaatisi CQSnapshotsiin
+  interpolaatio-API:n — lisätään jos gate kaipaa).
+- **GUI-savutesti** on dev-skripti (scratchpad, ei repo-suitea koska avaa
+  oikean ikkunan): rakentaa CQGuin serverittömillä CQState/CQMatrix-
+  instansseilla, ajaa koko parametripyyhkäisyn updatereiden läpi, mic-
+  varoituksen, shake-redraw'n ja freen. Ajettu vihreänä 2026-07-18.
+- GUI:n jatkuvat säätimet sitoutuvat parametreihin CQSpecin map/unmapilla
+  (ei literaalirangeja); diskreetit aktiot (hold/flip/skip/spesal/shake/rec/
+  panic/presetit) kutsuvat Cocoquantus-facadea, joka kirjoittaa suppiloiden
+  läpi — GUI ei koskaan puhu serverille suoraan.
 
 ---
 
