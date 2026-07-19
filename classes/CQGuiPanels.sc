@@ -34,8 +34,8 @@ CQGuiPanels {
 				VLayout(inMeter.view, this.prLabel("in", \whisper, \center)),
 				VLayout(w.knob(p.value("In"), "in", nil),
 					this.prEndpoint(gui, d.value("_inVca"), \socket, \line, \wedge)).spacing_(0),
-				w.knob(p.value("Speed"), "speed", nil),
-				VLayout(w.knob(p.value("Spaf"), "spaf", CQInk.palette(\day)[\spaf]),
+				w.knob(p.value("Speed"), "speed", nil, \featured),
+				VLayout(w.knob(p.value("Spaf"), "spaf", CQInk.palette(\day)[\spaf], \featured),
 					this.prEndpoint(gui, d.value("_spaf"), \socket, \spaf)).spacing_(0),
 				VLayout(w.knob(p.value("Fb"), "fb", nil),
 					this.prEndpoint(gui, d.value("_fbVca"), \socket, \line, \wedge)).spacing_(0),
@@ -53,11 +53,13 @@ CQGuiPanels {
 					).spacing_(0)
 				})
 			),
+			nil,
 			HLayout(w.toggle(p.value("Hold"), "HOLD", CQInk.palette(\day)[\hold]),
 				w.toggle(p.value("Flip"), "flip", CQInk.palette(\day)[\input]),
 				this.prEndpoint(gui, d.value("_flip"), \socket, \line, \flip, true),
 				skip.view,
 				this.prEndpoint(gui, d.value("_skip"), \socket, \line, \spark, true)),
+			nil,
 			HLayout(
 				w.enumSel(p.value("DolbyIn"), nil, "dolby in"),
 				w.enumSel(p.value("DolbyFb"), nil, "dolby fb")),
@@ -65,13 +67,14 @@ CQGuiPanels {
 				w.intBox(p.value("Bits")),
 				w.toggle(p.value("Wrap"), "wrap", CQInk.palette(\day)[\fm]),
 				w.enumSel(p.value("Interp"), nil, "read")),
+			nil,
 			HLayout(w.knob(p.value("Dust"), "dust", CQInk.palette(\day)[\cas]),
 				w.knob(p.value("Organ"), "organ", CQInk.palette(\day)[\organ]),
 				w.knob(p.value("Level"), "level"),
 				w.knob(p.value("Pan"), "pan"),
 				w.knob(p.value("Send"), "send")),
 			nil
-		).spacing_(4))
+		).spacing_(6))
 	}
 
 	*quantussy { |gui|
@@ -126,9 +129,11 @@ CQGuiPanels {
 		};
 		^this.prPanel("quantussy", \tri, 220, VLayout(
 			View().fixedHeight_(22),
-			HLayout(w.knob(\qFreq, "q freq", c[\tri], 44),
-				w.knob(\qChaos, "chaos", c[\tri], 44)),
+			HLayout(w.knob(\qFreq, "q freq", c[\tri], \primary),
+				w.knob(\qChaos, "chaos", c[\tri], \primary)),
+			nil,
 			*(rows ++ [
+				nil,
 				HLayout(
 					this.prLabel("spesal", \input),
 					spesalView,
@@ -137,7 +142,7 @@ CQGuiPanels {
 					VLayout(shakeKnob.view, shakeVal).spacing_(0)),
 				nil
 			])
-		).spacing_(4))
+		).spacing_(6))
 	}
 
 	*sources { |gui|
@@ -169,10 +174,12 @@ CQGuiPanels {
 				this.prLabel("pre b"), this.prEndpoint(gui, \envB, \jack, \input),
 				w.enumSel(\preBSrc, nil, "source"),
 				w.knob(\preBDrive, "drive", c[\cas]), w.knob(\preBBias, "bias", c[\cas])),
+			nil,
 			micRow,
+			nil,
 			this.prDeck(gui, \deckA), this.prDeck(gui, \deckB),
 			nil
-		).spacing_(6))
+		).spacing_(8))
 	}
 
 	*master { |gui|
@@ -214,10 +221,10 @@ CQGuiPanels {
 					this.prLabel("out", \whisper, \center, \range)).spacing_(0),
 				VLayout(grMeter.view,
 					this.prLabel("gr", \whisper, \center, \range)).spacing_(0),
-				w.knob(\masterVol, "vol", nil, 44, \recess),
-				w.knob(\masterDry, "dry", nil, 34, \recess),
-				w.knob(\spaceMix, "space", nil, 34, \recess),
-				w.knob(\patchDepth, "depth", c[\spaf], 34, \recess),
+				w.knob(\masterVol, "vol", nil, \primary, \recess),
+				w.knob(\masterDry, "dry", nil, \standard, \recess),
+				w.knob(\spaceMix, "space", nil, \standard, \recess),
+				w.knob(\patchDepth, "depth", c[\spaf], \standard, \recess),
 				nil,
 				VLayout(notice,
 					HLayout(recBtn.view, recTime, panicBtn.view, nil).spacing_(8)).spacing_(6)

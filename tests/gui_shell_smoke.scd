@@ -30,7 +30,7 @@ abort = { |error|
 		gui = CQGui(state, matrix, config);
 		AppClock.sched(0.25, {
 			try {
-				var master = gui.shell.masterView, volKnob, oldVol;
+				var master = gui.shell.masterView, volKnob, qKnob, trimKnob, oldVol;
 				check.value(gui.window.notNil and: { gui.window.isClosed.not },
 					"real Qt window constructed");
 				check.value(gui.shellState.lifecycleState == \open,
@@ -52,6 +52,15 @@ abort = { |error|
 				};
 				oldVol = state.get(\masterVol);
 				check.value(volKnob.notNil, "Ink master-vol knob exists as a functional control");
+				qKnob = gui.inkControls.detect { |control|
+					control.kind == \knob and: { control.label == "q freq" }
+				};
+				trimKnob = gui.inkControls.detect { |control|
+					control.kind == \knob and: { control.label == "dust" }
+				};
+				check.value(qKnob.notNil and: { trimKnob.notNil }
+					and: { qKnob.diameter > trimKnob.diameter },
+					"Day uses functional knob-size hierarchy, not uniform control weight");
 				volKnob !? {
 					volKnob.view.mouseDownAction.value(volKnob.view, 24, 30);
 					volKnob.view.mouseMoveAction.value(volKnob.view, 24, 20);

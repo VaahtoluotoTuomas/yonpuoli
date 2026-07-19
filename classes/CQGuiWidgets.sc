@@ -17,8 +17,9 @@ CQGuiWidgets {
 	}
 
 	// labeled knob for continuous params; color = banana accent on the label
-	knob { |name, label, color, size = 34, surface = \ground|
-		var family = this.prFamily(color), k = this.prOwn(CQInkControl.knob(label, family));
+	knob { |name, label, color, role = \standard, surface = \ground|
+		var family = this.prFamily(color), diameter = CQInk.knobDiameter(role);
+		var k = this.prOwn(CQInkControl.knob(label, family, \day, diameter));
 		k.surface = surface;
 		k.action = { |v| state.set(name, CQSpec.map(name, v.value)) };
 		this.register(name, { |v|

@@ -641,9 +641,12 @@ shake as lowercase word-buttons beside it.
 
 ### 16.7 Widgets (day-panel language)
 
-- **Knob**: Ø 26 circle, 1.5 px ink, wedge pointer, value arc (2 px) from
-  min-angle to current — whisper-colored, family-accented where the param
-  has a family (the spaf knob wears a purple arc). Drag brightens pointer
+- **Knob**: three reviewed body sizes express breadth of consequence, never
+  current value: standard Ø 26 for trims/mix/routing; featured Ø 32 for the
+  two Coco identity controls `speed` / `spaf`; primary Ø 36 for `q freq`,
+  `chaos` and master `vol`. All use 1.5 px ink, wedge pointer and a 2 px value
+  arc from min-angle to current — whisper-colored, family-accented where the
+  param has a family (the spaf knob wears a purple arc). Drag brightens pointer
   and arc to full ink. No 3D, no gloss.
 - **Slider** (slots, sends): hairline rail, Ø 8 thumb, whisper value fill.
 - **Meters**: 1 px ink outline, whisper fill, 1 px peak tick; the GR meter
@@ -713,8 +716,11 @@ information. Nothing else moves uninvited.
 
 ### 16.10 Space & scale
 
-Day keeps the v1.0 column geometry; widgets align to an 8 px spacing grid;
-skin sockets sit 4–6 px from their control's bounding circle. Night bodies
+Day keeps the v1.0 column geometry; widgets align to an 8 px spacing grid.
+At heights above the 720 px minimum, spare vertical paper is divided between
+semantic control clusters (source / performance / codec / output), not pooled
+as one empty basement below a top-packed form. Skin sockets sit 4–6 px from
+their control's bounding circle. Night bodies
 scale with the window (minimum 1280×720) but **stroke widths and font sizes
 stay in px** — ink does not thicken when the paper grows. Sockets never
 closer than 24 px center-to-center (hit law, §11).

@@ -43,8 +43,17 @@ CQInk {
 	*strokes { ^(hairline: 1.0, normal: 1.5, strong: 2.0, state: 3.0) }
 	*metrics {
 		^(grid: 8, labelSize: 10, numberSize: 10, noticeSize: 11,
-			rangeSize: 9, knobDiameter: 26, buttonRadius: 3,
+			rangeSize: 9, knobDiameter: 26, featuredKnobDiameter: 32,
+			primaryKnobDiameter: 36, buttonRadius: 3,
 			socketSpacing: 24)
+	}
+	*knobDiameter { |role = \standard|
+		var m = this.metrics;
+		^switch(role,
+			\featured, { m[\featuredKnobDiameter] },
+			\primary, { m[\primaryKnobDiameter] },
+			{ m[\knobDiameter] }
+		)
 	}
 
 	*font { |role = \label|
@@ -203,9 +212,10 @@ CQInk {
 	}
 
 	*drawKnob { |rect, value = 0, label = "", display = "", family,
-		skin = \day, active = false|
+		skin = \day, active = false, diameter|
 		var palette = this.palette(skin), m = this.metrics;
-		var center = Point(rect.center.x, rect.top + 27), radius = m[\knobDiameter] / 2;
+		var radius = (diameter ? m[\knobDiameter]) / 2;
+		var center = Point(rect.center.x, rect.top + 14 + radius);
 		var start = 0.75pi, sweep = 1.5pi, angle, pointer, accent;
 		value = value.clip(0, 1);
 		accent = palette[family] ?? { palette[\whisper] };

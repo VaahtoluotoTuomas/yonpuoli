@@ -4,13 +4,19 @@
 
 CQInkControl {
 	classvar <drawErrors = 0;
-	var <view, <kind, <value = 0, <label, <skin, <family, <options;
+	var <view, <kind, <value = 0, <label, <skin, <family, <options, <diameter = 26;
 	var action, display = "", pressed = false, hover = false, enabled = true;
 	var toggle = false, momentary = false, glyph, danger = false, downward = false;
 	var surface = \ground, startX = 0, startY = 0, startValue = 0;
 
-	*knob { |label, family, skin = \day|
-		^super.new.prInit(\knob, label, family, skin, Size(48, 56))
+	*knob { |label, family, skin = \day, knobDiameter|
+		var control, m = CQInk.metrics;
+		knobDiameter = (knobDiameter ? m[\knobDiameter])
+			.clip(m[\knobDiameter], m[\primaryKnobDiameter]);
+		control = super.new.prInit(\knob, label, family, skin,
+			Size(knobDiameter + 22, knobDiameter + 30));
+		control.prKnobDiameter(knobDiameter);
+		^control
 	}
 
 	*slider { |width = 56, family, skin = \day|
@@ -69,6 +75,7 @@ CQInkControl {
 
 	prOptions { |items| options = items; ^this }
 	prMeterMode { |isDanger, fillsDown| danger = isDanger; downward = fillsDown; ^this }
+	prKnobDiameter { |newDiameter| diameter = newDiameter; ^this }
 
 	action_ { |func| action = func; ^this }
 	value_ { |newValue| value = newValue ? 0; view.refresh; ^this }
@@ -155,7 +162,8 @@ CQInkControl {
 		var bounds = view.bounds.moveTo(0, 0);
 		switch(kind,
 			\knob, {
-				CQInk.drawKnob(bounds, value, label, display, family, skin, pressed or: { hover })
+				CQInk.drawKnob(bounds, value, label, display, family, skin,
+					pressed or: { hover }, diameter)
 			},
 			\slider, { CQInk.drawSlider(bounds, value, skin, family) },
 			\button, {

@@ -78,10 +78,16 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   rollback baseline on 2026-07-19: four organ columns, custom Ink controls, 16 source
   jacks, 22 destination sockets, hit-transparent gravity cables, corrected gate-lamp
   anchors, +1 px typography and stronger neutrals. The user approved the visual
-  direction and cable look but requested a reversible layout/size-hierarchy experiment
-  before banana interaction work. Keep that experiment uncommitted until visual review.
+  direction and cable look. The follow-up layout/size-hierarchy experiment was also
+  accepted: vertical slack is distributed between semantic clusters, with 26 px
+  standard, 32 px featured (Coco speed/spaf), and 36 px primary (q freq/chaos/master
+  vol) knobs. This is the preferred Day baseline; `3d631dd` remains the tighter rollback.
+- Before banana interaction work, the user requested an expert UIX assessment of the
+  remaining large quiet areas, including whether Madrona/Sumu-like *informative*
+  visualization is appropriate. Do not add decorative filler: establish what live
+  signal/state a mark communicates and get visual approval first.
 - The accepted foundation markers and current G1 detail are recorded in `PLAN.md`.
-  The Day checkpoint gate is 3,280 unit passes / 0 failures, `CQ_SAFETY_PASSED`, and
+  The Day checkpoint gate is 3,283 unit passes / 0 failures, `CQ_SAFETY_PASSED`, and
   `CQ_GUI_SHELL_PASSED`; G1 as a whole is not complete.
 - The four former `GUI_SPEC.md` seams were resolved by the user on 2026-07-19 and are
   recorded in the spec and `PLAN.md`: nine charge channels, the G1 harvest lasso,
