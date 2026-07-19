@@ -102,13 +102,17 @@ kompaktit toiminnalliset saarekkeet, 26/34/44 px knob-hierarkian, Cocon normatii
 muistipolkua näyttävät kaksitasoiset signaalikaaviot ja Quantussyn spesal-tilasta sekä
 `/cq_castle`-aktiivisuudesta elävän viiden linnakkeen topologian. Visualisoinnit näyttävät
 olemassa olevaa rakennetta/tilaa eivätkä täytä paperia koristeella. Hyväksytyn checkpointin
-portti on `CQ_COMPILE_OK`, 3 359 unit-passia / 0 failurea, `CQ_GUI_SHELL_PASSED`,
+portti on `CQ_COMPILE_OK`, 3 361 unit-passia / 0 failurea, `CQ_GUI_SHELL_PASSED`,
 `CQ_SAFETY_PASSED` ja `CQ_HOLD_OK` (A4-korrelaatio 1.0, A5-drifti 0.0 dB).
 
+Seuraava layout-katselmointi hyväksyttiin myös: Quantussyn ensimmäinen range-rail ja
+Coco-slot-rail ovat samassa globaalissa Y-koordinaatissa, topologia käyttää laajemman
+alakentän, `dust`/`rail` väistävät kaavioviivaa, bits/wrap ovat linjassa ja Masterin
+REC/PANIC-osuma-alueet ovat 88×34 / 112×34 px. Detaljitason hienosäätöön palataan vasta,
+kun muutkin G1-osiot ovat valmiimpia.
+
 G1 ei silti ole valmis: varsinainen mouse banana grammar, aura, Spellbook ja
-Drawer-sisällöt puuttuvat. Ennen niiden jatkoa tehdään käyttäjän pyytämä pieni
-layout-katselmointi: Quantussy-rivien kohdistus Coco-slot-riviin, topologian levitys,
-Coco-kaaviotekstien väistö, bits/wrap-kohdistus ja suuremmat REC/PANIC-osuma-alueet.
+Drawer-sisällöt puuttuvat.
 
 - [x] Yksi Day/Night-ikkunakuori, pysyvä Master-strip ja Drawer vähintään 1280×720:ssa.
 - [ ] Yhteinen Ink kit: normatiivinen paletti, viiva, glyphit ja session-seedattu
@@ -199,11 +203,9 @@ Night map ja Weather Machine — tehdään seuraavalla tavalla:
 1. Varmista `archipelago`-haara, puhdas työpuu ja lue `CLAUDE.md`, `PLAN.md` sekä
    `GUI_SPEC.md` kokonaan. F0–F2 ja hyväksytty ensimmäinen Day/cable-checkpoint ovat
    valmiit; älä toista niitä.
-2. Viimeistele ja näytä pyydetty Day-kohdistuskierros: Quantussy-range-rivit ylemmäs,
-   topologia laajemmaksi, Coco-polun dust/rail-tekstit irti viivasta, bits/wrap samaan
-   linjaan sekä suuremmat REC/PANIC-painikkeet. Älä lisää keskelle sisällötöntä animaatiota.
-3. Jatka sen jälkeen PLAN-järjestyksessä koko banana grammariin ja auditioniin ja
-   niiden jälkeen Drawer Inspector/Spellbook/Memory -sisältöihin.
+2. Jatka PLAN-järjestyksessä koko banana grammariin ja auditioniin. Säilytä hyväksytty
+   Day-layout; siirrä detaljitason visuaalinen hienosäätö myöhempään yhteiskatselmukseen.
+3. Jatka niiden jälkeen Drawer Inspector/Spellbook/Memory -sisältöihin.
 4. Pysähdy jokaisen ensimmäisen ajettavan GUI-osan kohdalla yllä olevaan visuaaliseen
    välitarkastukseen. Älä aloita varsinaista G2 Night mapia ennen valmista G1-porttia.
 

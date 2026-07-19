@@ -8,8 +8,8 @@ CQGuiCastleConstellation {
 	*new { |gui| ^super.new.prInit(gui) }
 
 	*normalizedPositions {
-		^[Point(0.13, 0.28), Point(0.48, 0.06), Point(0.86, 0.30),
-			Point(0.72, 0.80), Point(0.22, 0.83)]
+		^[Point(0.04, 0.25), Point(0.48, 0.08), Point(0.96, 0.26),
+			Point(0.80, 0.87), Point(0.12, 0.90)]
 	}
 
 	*partnerIndex { |castleIndex, state|

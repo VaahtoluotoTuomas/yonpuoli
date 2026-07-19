@@ -378,6 +378,7 @@ CQInk {
 		linePoints.drop(1).do { |point| Pen.lineTo(point) };
 		Pen.stroke;
 		points.do { |point, i|
+			var labelRect;
 			Pen.fillColor = if(i == 0) { palette[\input] } {
 				if(i == (points.size - 1)) { palette[\cas] } { palette[\ground] }
 			};
@@ -385,10 +386,18 @@ CQInk {
 			Pen.width = this.strokes[\hairline];
 			Pen.addOval(Rect.aboutPoint(point, 3.5, 3.5));
 			Pen.fillStroke;
-			Pen.stringCenteredIn(labels[i],
-				Rect(point.x - (xStep * 0.48),
-					if(i < 4) { point.y + 8 } { point.y - 18 },
-					xStep * 0.96, 10),
+			labelRect = if(i == 3) {
+				Rect(point.x - 50, point.y + 8, 42, 10)
+			} {
+				if(i == 4) {
+					Rect(point.x - 50, point.y + 8, 42, 10)
+				} {
+					Rect(point.x - (xStep * 0.48),
+						if(i < 4) { point.y + 8 } { point.y - 18 },
+						xStep * 0.96, 10)
+				}
+			};
+			Pen.stringCenteredIn(labels[i], labelRect,
 				this.font(\range), palette[\whisper]);
 		};
 		last = points.last;

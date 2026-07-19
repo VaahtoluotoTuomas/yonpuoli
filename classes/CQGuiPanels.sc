@@ -22,12 +22,16 @@ CQGuiPanels {
 		var skip = this.prButton(gui, "skip", 52, false, true, \input, \spark);
 		var title = "coco " ++ n;
 		var identity, performance, converter, output, signalPath;
+		var bitsControl, wrapControl;
 		skip.action = { Cocoquantus.skip(n) };
 		gui.setSkipButton(n, skip);   // brief flash on any skip (click/code/pattern)
 		gui.setMeter(("coco" ++ n).asSymbol, { |inPk, outPk|
 			inMeter.value = this.ampMeter(inPk);
 			outMeter.value = this.ampMeter(outPk);
 		});
+		bitsControl = w.intBox(p.value("Bits"));
+		wrapControl = this.prLowerButton(
+			w.toggle(p.value("Wrap"), "wrap", CQInk.palette(\day)[\fm]), 58);
 		identity = VLayout(
 			HLayout(nil, this.prEndpoint(gui, d.value(""), \jack, \cas),
 				this.prLabel("voice", \cas),
@@ -68,8 +72,8 @@ CQGuiPanels {
 				w.enumSel(p.value("DolbyIn"), nil, "dolby in"),
 				w.enumSel(p.value("DolbyFb"), nil, "dolby fb")),
 			HLayout(
-				w.intBox(p.value("Bits")),
-				w.toggle(p.value("Wrap"), "wrap", CQInk.palette(\day)[\fm]),
+				bitsControl,
+				wrapControl,
 				w.enumSel(p.value("Interp"), nil, "read"))
 		).spacing_(4);
 		output = HLayout(w.knob(p.value("Dust"), "dust", CQInk.palette(\day)[\cas]),
@@ -92,7 +96,7 @@ CQGuiPanels {
 
 	*quantussy { |gui|
 		var w = gui.widgets, c = CQGuiWidgets.colors;
-		var leds, spesalView, rows, shakeKnob, shakeButton;
+		var leds, spesalView, rows, shakeKnob, shakeButton, macro, castles;
 		// shake amplitude: unbound knob (action argument, not a CQSpec param —
 		// see CQGui.shakeAmount); 0..1 knob range = the |amount| range, and
 		// CQMatrix.shake clamps again on every throw
@@ -129,14 +133,19 @@ CQGuiPanels {
 				w.hslider(("c" ++ (k + 1) ++ "Send").asSymbol)
 			)
 		};
-		^this.prPanel("quantussy", \tri, 220, VLayout(
-			View().fixedHeight_(22),
+		macro = View().fixedHeight_(108).background_(c[\ground]).layout_(
 			HLayout(w.knob(\qFreq, "q freq", c[\tri], \primary),
 				w.knob(\qChaos, "chaos", c[\tri], \primary),
 				shakeKnob.view,
-				VLayout(nil, shakeButton, nil)),
-			this.prGap(12),
-			VLayout(*rows).spacing_(4),
+				VLayout(nil, shakeButton, nil)).margins_(0)
+		);
+		castles = View().fixedHeight_(196).background_(c[\ground]).layout_(
+			VLayout(*rows).margins_(0).spacing_(4)
+		);
+		^this.prPanel("quantussy", \tri, 220, VLayout(
+			View().fixedHeight_(22),
+			macro,
+			castles,
 			this.prGap(12),
 			spesalView
 		).spacing_(6))
@@ -202,6 +211,8 @@ CQGuiPanels {
 		gui.notice_(notice);
 		gui.recButton_(recBtn);
 		gui.recTime_(recTime);
+		recBtn.view.fixedSize = Size(88, 34);
+		panicBtn.view.fixedSize = Size(112, 34);
 		recBtn.action = { |b|
 			if(b.value == 1) { Cocoquantus.rec } { Cocoquantus.recStop };
 		};
@@ -342,6 +353,14 @@ CQGuiPanels {
 	}
 
 	*prGap { |height = 12| ^View().fixedHeight_(height) }
+
+	*prLowerButton { |view, width = 58|
+		var holder = View().fixedSize_(Size(width, 36))
+			.background_(CQInk.palette(\day)[\ground]);
+		holder.layout = VLayout(this.prGap(10), view, this.prGap(2))
+			.margins_(0).spacing_(0);
+		^holder
+	}
 
 	*prCocoSignalPath { |seed|
 		var view = UserView().minHeight_(96).background_(CQInk.palette(\day)[\ground]);

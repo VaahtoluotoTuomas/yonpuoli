@@ -56,5 +56,9 @@ CQGuiCastleConstellationTest : UnitTest {
 			point.x.inclusivelyBetween(0, 1)
 				and: { point.y.inclusivelyBetween(0, 1) }
 		}, "all normalized nodes remain inside the drawing field");
+		this.assert((first.collect(_.x).maxItem - first.collect(_.x).minItem) >= 0.9,
+			"castle nodes use nearly the full topology width");
+		this.assert((first.collect(_.y).maxItem - first.collect(_.y).minItem) >= 0.8,
+			"castle nodes use the expanded topology height");
 	}
 }

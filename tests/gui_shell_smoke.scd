@@ -30,7 +30,8 @@ abort = { |error|
 		gui = CQGui(state, matrix, config);
 		AppClock.sched(0.25, {
 			try {
-				var master = gui.shell.masterView, volKnob, qKnob, speedKnob, trimKnob, oldVol;
+				var master = gui.shell.masterView, volKnob, qKnob, speedKnob, trimKnob;
+				var recControl, panicControl, sliders, ranges, oldVol;
 				check.value(gui.window.notNil and: { gui.window.isClosed.not },
 					"real Qt window constructed");
 				check.value(gui.shellState.lifecycleState == \open,
@@ -66,6 +67,26 @@ abort = { |error|
 					and: { [trimKnob.diameter, speedKnob.diameter, qKnob.diameter]
 						== [26, 34, 44] },
 					"Day renders the experimental 26/34/44 knob hierarchy");
+				recControl = gui.inkControls.detect { |control|
+					control.kind == \button and: { control.label == "REC" }
+				};
+				panicControl = gui.inkControls.detect { |control|
+					control.kind == \button and: { control.label == "PANIC" }
+				};
+				check.value(recControl.notNil and: { panicControl.notNil }
+					and: { recControl.view.bounds.width >= 88 }
+					and: { recControl.view.bounds.height >= 34 }
+					and: { panicControl.view.bounds.width >= 112 }
+					and: { panicControl.view.bounds.height >= 34 },
+					"REC and PANIC expose deliberate large hit areas");
+				sliders = gui.inkControls.select { |control| control.kind == \slider };
+				ranges = gui.inkControls.select { |control|
+					control.kind == \switch and: { control.label == "range" }
+				};
+				check.value(sliders.notEmpty and: { ranges.notEmpty }
+					and: { (sliders[0].view.absoluteBounds.center.y
+						- (ranges[0].view.absoluteBounds.top + 22)).abs <= 1 },
+					"Quantussy castle 1 range rail aligns with the Coco 1 slot rail");
 				volKnob !? {
 					volKnob.view.mouseDownAction.value(volKnob.view, 24, 30);
 					volKnob.view.mouseMoveAction.value(volKnob.view, 24, 20);

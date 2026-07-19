@@ -653,7 +653,8 @@ shake as lowercase word-buttons beside it.
   fills downward in danger-red.
 - **Buttons**: rounded rect (r 3), 1.5 px ink outline, paper fill; latched
   on = ink fill with paper text; momentary = 120 ms ink flash (the existing
-  skip flash, generalized).
+  skip flash, generalized). Persistent safety/transport actions carry larger
+  hit areas in the Master strip: REC 88×34 px, PANIC 112×34 px.
 - **HOLD LED**: Ø 8; off = hollow ring; on = danger-red fill with a soft
   radial glow — the only glowing thing on paper.
 - **3-state switches** (range, dolby): three tick positions on a short rail,
@@ -728,7 +729,11 @@ the page. Spare paper belongs to an informative instrument view: each Coco has
 a static two-row map of the normative mix → dolby → VCA/feedback → dust → rail
 → bits → RAM → output memory path, while Quantussy devotes its lower field to
 the live spesal topology above. These are state/signal maps, not decorative
-filler or invented waveform displays. Skin sockets sit 4–6 px from
+filler or invented waveform displays. The first Quantussy range rail shares
+the exact horizontal baseline of the Coco slot rails; the remaining castle
+rows descend from it. Diagram labels must clear their paths (`dust` / `rail`
+sit beside the turn, never on its vertical stroke), and adjacent `bits` /
+`wrap` bodies share a top edge. Skin sockets sit 4–6 px from
 their control's bounding circle. Night bodies
 scale with the window (minimum 1280×720) but **stroke widths and font sizes
 stay in px** — ink does not thicken when the paper grows. Sockets never
