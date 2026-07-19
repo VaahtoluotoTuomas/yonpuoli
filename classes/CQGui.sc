@@ -8,8 +8,8 @@
 
 CQGui {
 	var state, matrix, config;
-	var <window, <widgets, updaters;
-	var stateCtl, gridPanel, meterFuncs;
+	var <window, <widgets, updaters, <shellState, <shell;
+	var stateCtl, gridPanel, meterFuncs, <audition;
 	var castleLeds, spesalView, <spesalStates;
 	var deckLabels, deckCtls, skipButtons;
 	var noticeView, recBtn, recTimeView, recTask, hotTask;
@@ -23,12 +23,18 @@ CQGui {
 		^super.newCopyArgs(state, matrix, config).prInit
 	}
 
-	isClosed { ^window.isNil or: { window.isClosed } }
+	isClosed {
+		^shellState.lifecycleState == \closed
+			or: { window.notNil and: { window.isClosed } }
+	}
 
 	free {
+		shellState.beginClose;
 		this.prCleanup;
 		{ window !? { if(window.isClosed.not) { window.close } } }.defer;
 	}
+
+	cancelAudition { audition !? { audition.panic } }
 
 	// ---- panel registration API (used by CQGuiPanels while building) ----
 
@@ -50,6 +56,8 @@ CQGui {
 	// ---- private ----
 
 	prInit {
+		audition = CQAudition(matrix);
+		shellState = CQGuiShellState(audition);
 		updaters = IdentityDictionary.new;
 		meterFuncs = IdentityDictionary.new;
 		deckLabels = IdentityDictionary.new;
@@ -57,43 +65,54 @@ CQGui {
 		spesalStates = Cocoquantus.spesalStates;
 		widgets = CQGuiWidgets(state, updaters);
 		{
-			this.prBuild;
-			this.prListen;
-			this.prStartRecTask;
+			if(cleaned.not and: { shellState.canBuild }) {
+				this.prBuild;
+				this.prListen;
+				this.prStartRecTask;
+				shellState.markOpen;
+			};
 		}.defer;
 	}
 
 	prBuild {
-		var presetMenu = PopUpMenu()
-			.items_(["preset…"] ++ CQMatrix.presets.keys.asArray
-				.collect(_.asString).sort);
-		presetMenu.action = { |m|
-			if(m.value > 0) { Cocoquantus.patchPreset(m.item.asSymbol) };
-		};
+		var dayView, nightView, masterView, inspectorView, spellbookView, memoryView;
+		var night = CQInk.palette(\night), minimum = shellState.minSize;
 		gridPanel = CQGuiMatrix(matrix);
-		window = Window("Cocoquantus", Rect(50, 50, 1120, 740));
-		window.view.layout = VLayout(
+		dayView = View().background_(CQInk.palette(\day)[\ground]).layout_(
 			HLayout(
 				CQGuiPanels.sources(this),
 				CQGuiPanels.coco(this, 1),
 				CQGuiPanels.quantussy(this),
-				CQGuiPanels.coco(this, 2),
-				CQGuiPanels.master(this)
-			),
-			HLayout(
-				StaticText().string_("MATRIX").font_(Font.sansSerif(11, true)),
-				presetMenu,
-				StaticText()
-					.string_("keys: 1/2 hold · q/w flip · a/s skip · "
-						++ "3..7 spesal · r rec · space panic · p shake")
-					.font_(Font.sansSerif(9)).stringColor_(Color.gray(0.45)),
-				nil),
-			HLayout(gridPanel.view, nil)
-		);
+				CQGuiPanels.coco(this, 2)
+			).margins_(8).spacing_(6));
+		nightView = UserView().background_(night[\ground]);
+		nightView.drawFunc = {
+			var center = nightView.bounds.center;
+			Pen.stringCenteredIn("night map · G2", Rect.aboutPoint(center, 240, 30),
+				Font.sansSerif(13), night[\whisper]);
+			CQInk.drawGlyph(\night, Rect.aboutPoint(center - Point(0, 38), 12, 12),
+				night[\line]);
+		};
+		masterView = CQGuiPanels.master(this);
+		inspectorView = View().layout_(HLayout(gridPanel.view, nil).margins_(4));
+		spellbookView = this.prDrawerPlaceholder("spellbook · G1.4");
+		memoryView = this.prDrawerPlaceholder("memory · G1.4");
+		shell = CQGuiShell(shellState, dayView, nightView, masterView,
+			inspectorView, spellbookView, memoryView);
+		window = Window("Cocoquantus · Archipelago",
+			Rect(50, 50, minimum[0], minimum[1]));
+		window.view.minSize = Size(minimum[0], minimum[1]);
+		window.view.layout = VLayout(shell.view).margins_(0).spacing_(0);
 		window.view.keyDownAction = { |v, char| this.prKey(char) };
-		window.onClose = { this.prCleanup };
+		window.onClose = { shellState.close; this.prCleanup };
 		window.view.children.do { |ch| this.prDefocus(ch) };
 		window.front;
+	}
+
+	prDrawerPlaceholder { |label|
+		var palette = CQInk.palette(\day);
+		^StaticText().string_(label).align_(\center)
+			.font_(Font.sansSerif(10)).stringColor_(palette[\whisper])
 	}
 
 	// Qt hands keyboard focus to any clicked widget, and space/tab then act on
@@ -197,6 +216,14 @@ CQGui {
 
 	// SPEC §6.2 keyboard map
 	prKey { |char|
+		if(char.notNil and: { char.ascii == 27 }) {
+			audition.escape;
+			^this
+		};
+		if(char.notNil and: { char.ascii == 9 }) {
+			shell.toggleView(this.prTextHasFocus);
+			^this
+		};
 		switch(char,
 			$1, { Cocoquantus.hold(1) },
 			$2, { Cocoquantus.hold(2) },
@@ -220,6 +247,13 @@ CQGui {
 				};
 			}
 		);
+	}
+
+	prTextHasFocus {
+		var focused = GUI.focusView;
+		^focused.notNil and: {
+			focused.isKindOf(TextField) or: { focused.isKindOf(NumberBox) }
+		}
 	}
 
 	// composes the persistent mic warning (SPEC §7) and the transient watchdog
@@ -258,8 +292,10 @@ CQGui {
 	// idempotent teardown shared by free and the window's close box: language-
 	// side listeners die here so a closed window leaves no dangling \cq_gui_*
 	prCleanup {
+		audition !? { audition.free };
 		if(cleaned) { ^this };
 		cleaned = true;
+		shellState.close;
 		stateCtl !? { stateCtl.remove };
 		stateCtl = nil;
 		deckCtls.do { |c| c.remove };

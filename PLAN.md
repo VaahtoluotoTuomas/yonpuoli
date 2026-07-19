@@ -44,33 +44,40 @@ Toteutusjärjestys on sitova, ellei uusi evidenssi muuta riippuvuuksia.
 
 ### F0 — vihreä lähtötilanne ja sopimustestit
 
-- [ ] Aja compile-, unit-, NRT safety- ja hold-integrity-baseline ja tallenna markerit.
-- [ ] Lisää hermettiset reproducerit CQ-AUD-001–004:lle ennen niiden korjauksia.
-- [ ] Lukitse `CQMatrix`-sopimus testeillä: full read, clampattu batch write, täsmälleen
+- [x] Aja compile-, unit-, NRT safety- ja hold-integrity-baseline ja tallenna markerit.
+- [x] Lisää hermettiset reproducerit CQ-AUD-001–004:lle ennen niiden korjauksia.
+- [x] Lukitse `CQMatrix`-sopimus testeillä: full read, clampattu batch write, täsmälleen
   yksi notification sekä committed/transient-raja.
-- [ ] Toteuta serveritön audition-tilakonetesti jokaiselle `GUI_SPEC.md` §4.1:n
+- [x] Toteuta serveritön audition-tilakonetesti jokaiselle `GUI_SPEC.md` §4.1:n
   plant/revert/cancel-polulle.
+
+Baseline 2026-07-19 ennen toteutusmuutoksia: `CQ_COMPILE_OK`, 3 082 unit-passia / 0
+failurea ja `CQ_TESTS_PASSED`, `CQ_SAFETY_PASSED`, `CQ_HOLD_OK`.
 
 ### F1 — auditin julkaisun estäjät
 
-- [ ] **P0 / CQ-AUD-001:** validoi hardware-output-indeksit globaalisti uniikeiksi ja
+- [x] **P0 / CQ-AUD-001:** validoi hardware-output-indeksit globaalisti uniikeiksi ja
   stem/master-joukot erillisiksi ennen serverin käynnistystä.
-- [ ] **P1 / CQ-AUD-004:** tee session generation, rollback, todellinen reboot ja
-  peruutettava GUI-init eksplisiittiseksi lifecycleksi.
-- [ ] **P1 / CQ-AUD-002:** tee recorderista omistettu
+- [x] **P1 / CQ-AUD-003–004:** tee todellinen server-reboot, session generation,
+  rollback ja peruutettava GUI-init eksplisiittiseksi lifecycleksi.
+- [x] **P1 / CQ-AUD-002:** tee recorderista omistettu
   idle/starting/recording/stopping/error-tilakone paikallisella resurssiomistuksella.
-- [ ] **P1 / CQ-AUD-003:** toteuta varmennetun löydöksen vaatima deck-load- ja linked
-  stereo -korjaus roadmapin rajauksen mukaan.
-- [ ] Aja kunkin korjauksen kohdetesti ja koko baseline uudelleen.
+- [x] **Roadmap 3.1 / CQ-AUD-005 ja -008:** toteuta varmennettujen löydösten vaatima
+  deck-load-transaction ja linked stereo -korjaus roadmapin rajauksen mukaan.
+- [x] Aja kunkin korjauksen kohdetesti ja koko baseline uudelleen.
 
 ### F2 — Archipelagon käyttäytymisperusta
 
-- [ ] Lisää pienin testien vaatima `CQMatrix` full-read/batch-write-API muuttamatta
+- [x] Lisää pienin testien vaatima `CQMatrix` full-read/batch-write-API muuttamatta
   nykyistä `patch`- tai snapshot triple -formaattia.
-- [ ] Toteuta audition-tilakone ensin ilman uusia piirtoeleitä.
-- [ ] Varmista, että GUI pysyy `CQState`/`CQMatrix`-tilan asiakkaana eikä kirjoita
+- [x] Toteuta audition-tilakone ensin ilman uusia piirtoeleitä.
+- [x] Varmista, että GUI pysyy `CQState`/`CQMatrix`-tilan asiakkaana eikä kirjoita
   serverille ohi nykyisten suppiloiden.
-- [ ] Ratkaise tämän tiedoston avoimet GUI-spec-saumat ennen niitä käyttävää pintaa.
+- [x] Ratkaise tämän tiedoston avoimet GUI-spec-saumat ennen niitä käyttävää pintaa.
+
+Foundation-portti 2026-07-19: `CQ_COMPILE_OK`, 3 176 unit-passia / 0 failurea ja
+`CQ_TESTS_PASSED`, `CQ_SAFETY_PASSED`; viimeisen DSP-muutoksen jälkeen lisäksi
+`CQ_LINKED_STEREO_PASSED` (L/R-offsetit 0/0) ja `CQ_HOLD_OK`.
 
 ## Archipelago-portit
 

@@ -76,9 +76,13 @@ CQSynthDefs {
 			var totalRate = (rate + Mix(mods * wRate)).clip(-2, 2);  // matrix deckX_rate sum
 			var env = EnvGen.kr(Env.asr(0.025, 1, 0.025), \gate.kr(1), doneAction: 2);
 			var sig = PlayBuf.ar(1, buf, totalRate * BufRateScale.kr(buf), \t_trig.tr(0), 0, loop);
+			var dryChannel = \dryChannel.ir(-1); // -1 mono, 0/1 linked L/R
 			sig = sig * level * env;
 			Out.ar(\out.ir(0), sig);
-			Out.ar(\dryBus.ir(0), sig * 0.7 ! 2);
+			Out.ar(\dryBus.ir(0), [
+				sig * (dryChannel < 0.5),
+				sig * (dryChannel.abs > 0.5)
+			] * 0.7);
 		})
 	}
 

@@ -84,16 +84,6 @@ CQGuiWidgets {
 
 	// shared banana color code (SPEC §6.2)
 	*colors {
-		^(
-			tri: Color.new255(230, 130, 20),      // orange = triangle
-			cas: Color.gray(0.45),                // gray = castle/delay out
-			fm: Color.new255(60, 110, 220),       // blue = FM
-			input: Color.new255(30, 150, 70),     // green = inputs/spesal
-			spaf: Color.new255(150, 60, 200),     // purple = SP.AF
-			organ: Color.new255(200, 170, 0),     // yellow = organ
-			pre: Color.gray(0.95),                // white = preamp
-			hold: Color.new255(200, 30, 30),      // HOLD LED red
-			warn: Color.new255(220, 40, 40)
-		)
+		^CQInk.palette(\day)
 	}
 }

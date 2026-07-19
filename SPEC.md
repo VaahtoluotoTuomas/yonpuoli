@@ -183,7 +183,11 @@ ranges, curves, defaults. All setters clamp to range. `exp` = exponential mappin
 Decks: load single files or a folder (`samples/`); next/prev/random file navigation;
 buffers are peak-normalized to −6 dBFS on load (consistent gain staging for field
 recordings). Formats: anything libsndfile reads (wav/aiff/flac). Mono files play as
-mono; stereo files: deck A takes L, deck B takes R when loaded as a linked pair.
+mono; stereo files: deck A takes L, deck B takes R when loaded as a linked pair. A
+linked pair becomes audible only after both buffers are ready: its two players start in
+one server bundle, and the dry monitor preserves L/R rather than summing them to dual
+mono. Standalone deck loads remain dual mono in the dry monitor. Async loads are
+last-request-wins and cannot publish after deck/session teardown.
 
 ### 5.2 Preamps A / B
 
@@ -310,10 +314,17 @@ range, +1.6 dBFS for dense material at vol 0. `CQ.testWatchdog` simulates a trip
 - Main out: stereo to `outChans` (config, default [0,1]).
 - Optional stems to additional interface outputs (config `stemOuts`, e.g. [2,3,4,5]):
   post-safety Coco1, Coco2 (mono each) — for re-processing in the modular in real time.
+- Every configured hardware-output index is globally unique: `outChans` contains no
+  duplicates, `stemOuts` contains no duplicates, and the two sets are disjoint. Invalid
+  aliasing is rejected before server boot because separate post-limiter `Out` writes to
+  one physical bus would otherwise sum after the safety ceiling.
 - Recorder: `rec` / `recStop`. Writes 24-bit WAV, timestamped
   `recordings/cq_YYMMDD_HHMMSS.wav`, never overwrites. Optional stem recording
   (`recStems: true`, config choice): `rec` writes a 4-channel file — master L/R plus
   the post-safety Coco1 and Coco2 stems (same taps as `stemOuts`) — instead of stereo.
+  Runtime state is explicitly `idle/starting/recording/stopping/error`; one start attempt
+  owns its path, buffer and writer synth until stop/error cleanup completes. A second REC
+  cannot create another writer, and stop/free during starting cancels that attempt.
 
 ---
 
@@ -413,6 +424,12 @@ CQ.resume;                          // unmute after panic (no fade-in re-trigger
 CQ.resetTrim;                       // restore level after a watchdog auto-trim (§5.6)
 ```
 
+Lifecycle is explicit and readable as `CQ.lifecycleState`:
+`\stopped/\booting/\running/\stopping/\failed`. `CQ.free` invalidates pending async
+work immediately; boot failures roll back partial ownership. `CQ.reboot` performs a real
+restart of `Server.default` so device/sample-rate/block-size/I/O options take effect; as
+an explicitly strong operation, it also stops unrelated synths using that shared server.
+
 ### 6.4 Patterns (optional, M3)
 
 Event type `\cq` sequences discrete actions on a TempoClock — generative "player
@@ -447,8 +464,8 @@ gitignored):
   hardwareBufferSize: 256,    // latency vs. stability for live modular processing
   inChans: [0, 1],            // live stereo pair from modular/mixer
   micChan: nil,               // nil = mic path disabled entirely
-  outChans: [0, 1],
-  stemOuts: nil,              // e.g. [2, 3] → coco1, coco2 post-safety
+  outChans: [0, 1],           // unique physical indices
+  stemOuts: nil,              // e.g. [2, 3] → unique + disjoint from outChans
   bufFrames: 131072,          // Coco RAM (2^16–2^19)
   sixteenN: (enabled: true, ccBase: 32, chan: nil, takeover: \jump),
                               // chan nil = any MIDI channel (per-fader channels,
@@ -488,7 +505,8 @@ Notes:
 4. All gain-class parameters are lagged ≥ 30 ms server-side (no zipper steps, no
    instant jumps to loud).
 5. Boot sequence is silent until the graph is verified, then fades in over 2 s.
-   `CmdPeriod` leaves silence (never a raw unprocessed path) and the facade can rebuild.
+   `CmdPeriod`, stale async work, boot failure and unexpected server quit invalidate the
+   session and leave silence (never a raw unprocessed path); the facade can rebuild.
 6. NaN/inf anywhere in the chain is squelched to silence and reported, never emitted.
 7. The NRT safety test (§10) gates every change: worst-case preset must render with
    peak ≤ −0.75 dBFS, no NaN, |DC| < 0.02.

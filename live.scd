@@ -13,6 +13,7 @@ CQ.resume;                   // and back
 
 CQ.get(\masterVol);          // read any parameter
 CQ.free;                     // clean teardown
+// CQ.reboot;                // strong: really restarts Server.default (stops other synths)
 */
 
 // ---- phase 2: deck A + the coco pair / KUUNTELU 2 ----

@@ -50,7 +50,7 @@ CQMatrix {
 		^v.asFloat.clip(-1.0, 1.0)
 	}
 
-	patch { |src, dest, w = 1.0|
+	patch { |src, dest, w = 1.0, origin = \code, committed = true, operation = \patch|
 		var si = sourceNames.indexOf(src), di = destNames.indexOf(dest);
 		if(si.isNil or: { di.isNil }) {
 			this.class.prWarn("unknown patch % -> %".format(src, dest));
@@ -58,7 +58,8 @@ CQMatrix {
 		};
 		weights[di][si] = this.class.clampWeight(w);
 		this.prPush(di);
-		this.changed(\patch, src, dest, weights[di][si]);
+		this.changed(\patch, src, dest, weights[di][si],
+			origin, committed, operation);
 	}
 
 	unpatch { |src, dest| this.patch(src, dest, 0.0) }
@@ -72,6 +73,35 @@ CQMatrix {
 	getPatch { |src, dest|
 		var si = sourceNames.indexOf(src), di = destNames.indexOf(dest);
 		^if(si.isNil or: { di.isNil }) { 0.0 } { weights[di][si] }
+	}
+
+	// Dense [destination][source] transaction API for Archipelago surfaces.
+	// Reads are deep copies; writes validate the complete shape before replacing
+	// state, clamp every cell, push each destination once, and notify once.
+	fullMatrix {
+		^weights.collect { |row| row.copy }
+	}
+
+	writeMatrix { |dense, origin = \code, committed = true, operation = \writeMatrix|
+		var valid, next;
+		valid = dense.isKindOf(SequenceableCollection)
+			and: { dense.size == destNames.size }
+			and: { dense.every { |row|
+				row.isKindOf(SequenceableCollection)
+					and: { row.size == sourceNames.size }
+			} };
+		if(valid.not) {
+			this.class.prWarn("dense matrix must be % destinations x % sources"
+				.format(destNames.size, sourceNames.size));
+			^this
+		};
+		next = dense.collect { |row|
+			row.collect { |value| this.class.clampWeight(value) }
+		};
+		weights = next;
+		this.prPushAll;
+		this.changed(\matrix, origin, committed, operation);
+		^this
 	}
 
 	// every non-zero cell as [src, dest, weight] — the snapshot matrix format

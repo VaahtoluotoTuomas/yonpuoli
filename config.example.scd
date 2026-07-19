@@ -9,8 +9,8 @@
 	hardwareBufferSize: 256,    // latency vs. stability for live modular processing
 	inChans: [0, 1],            // live stereo pair from modular/mixer
 	micChan: nil,               // nil = mic path disabled entirely
-	outChans: [0, 1],
-	stemOuts: nil,              // e.g. [2, 3] -> coco1, coco2 post-safety
+	outChans: [0, 1],           // main stereo; indices must be unique
+	stemOuts: nil,              // e.g. [2, 3] -> unique + disjoint from outChans
 	bufFrames: 131072,          // Coco RAM, 2^16..2^19 (Phasor float32 precision limit)
 	sixteenN: (enabled: true, ccBase: 32, chan: nil, takeover: \jump),
 	                            // chan nil = any MIDI channel (atovproject 16n
