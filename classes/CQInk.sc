@@ -43,8 +43,8 @@ CQInk {
 	*strokes { ^(hairline: 1.0, normal: 1.5, strong: 2.0, state: 3.0) }
 	*metrics {
 		^(grid: 8, labelSize: 10, numberSize: 10, noticeSize: 11,
-			rangeSize: 9, knobDiameter: 26, featuredKnobDiameter: 32,
-			primaryKnobDiameter: 36, buttonRadius: 3,
+			rangeSize: 9, knobDiameter: 26, featuredKnobDiameter: 34,
+			primaryKnobDiameter: 44, buttonRadius: 3,
 			socketSpacing: 24)
 	}
 	*knobDiameter { |role = \standard|
@@ -348,6 +348,141 @@ CQInk {
 		Pen.stroke;
 		Pen.stringCenteredIn(title.asString, Rect(rect.left, rect.top + 4, rect.width, 12),
 			this.font(\label), palette[\line]);
+	}
+
+	// A functional overview of the normative Coco converter order. This is not
+	// a waveform: it makes the otherwise dispersed control islands read as one
+	// memory instrument, from the input mixer to the RAM output tap.
+	*drawCocoSignalPath { |rect, skin = \day, seed = 0|
+		var palette = this.palette(skin), labels, points, linePoints;
+		var left, right, topY, bottomY, xStep, last, before, delta, length, unit, normal;
+		labels = ["mix", "dolby", "vca+fb", "dust", "rail", "bits", "ram", "out"];
+		left = rect.left + 16;
+		right = rect.right - 16;
+		topY = rect.top + 29;
+		bottomY = rect.bottom - 21;
+		xStep = (right - left) / 3;
+		points = [
+			Point(left, topY), Point(left + xStep, topY),
+			Point(left + (xStep * 2), topY), Point(right, topY),
+			Point(right, bottomY), Point(left + (xStep * 2), bottomY),
+			Point(left + xStep, bottomY), Point(left, bottomY)
+		];
+		linePoints = this.wobble(points, seed, 0.65);
+		Pen.stringLeftJustIn("signal memory path",
+			Rect(rect.left + 2, rect.top + 3, rect.width - 4, 10),
+			this.font(\range), palette[\whisper]);
+		Pen.strokeColor = palette[\whisper].copy.alpha_(0.72);
+		Pen.width = this.strokes[\hairline];
+		Pen.moveTo(linePoints.first);
+		linePoints.drop(1).do { |point| Pen.lineTo(point) };
+		Pen.stroke;
+		points.do { |point, i|
+			Pen.fillColor = if(i == 0) { palette[\input] } {
+				if(i == (points.size - 1)) { palette[\cas] } { palette[\ground] }
+			};
+			Pen.strokeColor = if(#[4, 5].includes(i)) { palette[\fm] } { palette[\line] };
+			Pen.width = this.strokes[\hairline];
+			Pen.addOval(Rect.aboutPoint(point, 3.5, 3.5));
+			Pen.fillStroke;
+			Pen.stringCenteredIn(labels[i],
+				Rect(point.x - (xStep * 0.48),
+					if(i < 4) { point.y + 8 } { point.y - 18 },
+					xStep * 0.96, 10),
+				this.font(\range), palette[\whisper]);
+		};
+		last = points.last;
+		before = points[points.size - 2];
+		delta = last - before;
+		length = sqrt(delta.x.squared + delta.y.squared).max(0.001);
+		unit = delta / length;
+		normal = Point(unit.y.neg, unit.x);
+		Pen.strokeColor = palette[\cas];
+		Pen.line(last, last - (unit * 6) + (normal * 3));
+		Pen.line(last, last - (unit * 6) - (normal * 3));
+		Pen.stroke;
+	}
+
+	// The Quantussy map receives semantic geometry from its view class. A single
+	// link means sample-and-hold; the parallel link means track-and-hold. The
+	// three beads preserve the established 15-bit display, while the small dot
+	// inside each castle reports the instantaneous /cq_castle activity sample.
+	*drawCastleConstellation { |rect, points, partners, modes, states, activity,
+		skin = \day, seed = 0|
+		var palette = this.palette(skin), map, mapped, contour;
+		map = Rect(rect.left + 20, rect.top + 23, rect.width - 40, rect.height - 46);
+		mapped = points.collect { |point|
+			Point(map.left + (point.x * map.width), map.top + (point.y * map.height))
+		};
+		Pen.stringLeftJustIn("spesal topology",
+			Rect(rect.left + 2, rect.top + 2, 90, 10),
+			this.font(\range), palette[\whisper]);
+		Pen.stringRightJustIn("S sample  T track",
+			Rect(rect.right - 105, rect.top + 2, 103, 10),
+			this.font(\range), palette[\whisper]);
+		contour = this.wobble(mapped ++ [mapped.first], seed, 0.7);
+		Pen.strokeColor = palette[\whisper].copy.alpha_(0.22);
+		Pen.width = this.strokes[\hairline];
+		Pen.moveTo(contour.first);
+		contour.drop(1).do { |point| Pen.lineTo(point) };
+		Pen.stroke;
+		mapped.do { |start, i|
+			this.drawDirectedLink(start, mapped[partners[i]], modes[i], skin);
+		};
+		mapped.do { |center, i|
+			var state = states[i].asInteger, act = (activity[i] ? 0).clip(-1, 1);
+			Pen.fillColor = palette[\recess];
+			Pen.strokeColor = palette[\tri];
+			Pen.width = this.strokes[\normal];
+			Pen.addOval(Rect.aboutPoint(center, 11, 11));
+			Pen.fillStroke;
+			Pen.stringCenteredIn((i + 1).asString,
+				Rect.aboutPoint(center - Point(0, 2), 8, 8),
+				this.font(\range), palette[\line]);
+			Pen.fillColor = palette[\cas];
+			Pen.addOval(Rect.aboutPoint(center + Point(act * 6, 5), 1.8, 1.8));
+			Pen.fill;
+			3.do { |bit|
+				var bitCenter = center + Point((bit - 1) * 6, 16);
+				Pen.fillColor = if(state.bitTest(2 - bit)) {
+					palette[\input]
+				} {
+					palette[\recess]
+				};
+				Pen.strokeColor = palette[\whisper];
+				Pen.width = this.strokes[\hairline];
+				Pen.addOval(Rect.aboutPoint(bitCenter, 2.1, 2.1));
+				Pen.fillStroke;
+			};
+			Pen.stringAtPoint(if(modes[i]) { "T" } { "S" }, center + Point(13, -6),
+				this.font(\range), palette[\line]);
+			Pen.stringAtPoint(state.asString, center + Point(12, 10),
+				this.font(\range), palette[\whisper]);
+		};
+	}
+
+	*drawDirectedLink { |start, end, track = false, skin = \day|
+		var palette = this.palette(skin), delta, length, unit, normal;
+		var from, to, arrow, wing;
+		delta = end - start;
+		length = sqrt(delta.x.squared + delta.y.squared).max(0.001);
+		unit = delta / length;
+		normal = Point(unit.y.neg, unit.x);
+		from = start + (unit * 13);
+		to = end - (unit * 14);
+		Pen.strokeColor = palette[\input].copy.alpha_(0.58);
+		Pen.width = this.strokes[\hairline];
+		Pen.line(from, to);
+		Pen.stroke;
+		if(track) {
+			Pen.line(from + (normal * 3), to + (normal * 3));
+			Pen.stroke;
+		};
+		arrow = to - (unit * 2);
+		wing = 4;
+		Pen.line(arrow, arrow - (unit * wing) + (normal * 2.4));
+		Pen.line(arrow, arrow - (unit * wing) - (normal * 2.4));
+		Pen.stroke;
 	}
 
 	*drawToolHeader { |rect, title, skin = \day|

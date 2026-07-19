@@ -84,13 +84,13 @@ CQInkTest : UnitTest {
 		this.assertEquals(metrics[\noticeSize], 11, "notice and spellbook text is 11 px");
 		this.assertEquals(metrics[\rangeSize], 9, "range letters are 9 px");
 		this.assertEquals(metrics[\knobDiameter], 26, "standard knob body is 26 px");
-		this.assertEquals(metrics[\featuredKnobDiameter], 32,
-			"featured instrument-shaping knob body is 32 px");
-		this.assertEquals(metrics[\primaryKnobDiameter], 36,
-			"primary macro knob body is 36 px");
+		this.assertEquals(metrics[\featuredKnobDiameter], 34,
+			"featured instrument-shaping knob body is 34 px");
+		this.assertEquals(metrics[\primaryKnobDiameter], 44,
+			"primary macro knob body is 44 px");
 		this.assertEquals(#[standard, featured, primary].collect { |role|
 			CQInk.knobDiameter(role) },
-			[26, 32, 36], "semantic knob hierarchy resolves through the Ink kit");
+			[26, 34, 44], "semantic knob hierarchy resolves through the Ink kit");
 		this.assertEquals(metrics[\buttonRadius], 3, "button corner radius is 3 px");
 		this.assertEquals(metrics[\socketSpacing], 24,
 			"socket centers never approach closer than 24 px");

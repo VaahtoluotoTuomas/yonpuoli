@@ -30,7 +30,7 @@ abort = { |error|
 		gui = CQGui(state, matrix, config);
 		AppClock.sched(0.25, {
 			try {
-				var master = gui.shell.masterView, volKnob, qKnob, trimKnob, oldVol;
+				var master = gui.shell.masterView, volKnob, qKnob, speedKnob, trimKnob, oldVol;
 				check.value(gui.window.notNil and: { gui.window.isClosed.not },
 					"real Qt window constructed");
 				check.value(gui.shellState.lifecycleState == \open,
@@ -58,9 +58,14 @@ abort = { |error|
 				trimKnob = gui.inkControls.detect { |control|
 					control.kind == \knob and: { control.label == "dust" }
 				};
-				check.value(qKnob.notNil and: { trimKnob.notNil }
-					and: { qKnob.diameter > trimKnob.diameter },
-					"Day uses functional knob-size hierarchy, not uniform control weight");
+				speedKnob = gui.inkControls.detect { |control|
+					control.kind == \knob and: { control.label == "speed" }
+				};
+				check.value(qKnob.notNil and: { speedKnob.notNil }
+					and: { trimKnob.notNil }
+					and: { [trimKnob.diameter, speedKnob.diameter, qKnob.diameter]
+						== [26, 34, 44] },
+					"Day renders the experimental 26/34/44 knob hierarchy");
 				volKnob !? {
 					volKnob.view.mouseDownAction.value(volKnob.view, 24, 30);
 					volKnob.view.mouseMoveAction.value(volKnob.view, 24, 20);
@@ -73,11 +78,20 @@ abort = { |error|
 					"Day/Night hard cut reached Night");
 				check.value(gui.shell.masterView === master,
 					"the same Master view persists across the hard cut");
+				NetAddr.localAddr.sendMsg('/cq_spesal', 0, 0, 0, 1, 4, 6, 7);
+				NetAddr.localAddr.sendMsg('/cq_castle', 0, 0,
+					-0.8, -0.25, 0.35, 0.9, 0.1);
 				gui.shell.toggleDrawer;
 				// QView.visible_ crosses the Qt event queue; observe it on the
 				// next GUI tick rather than reading the stale native property.
 				AppClock.sched(0.05, {
 					try {
+						check.value(gui.spesalStates == [0, 1, 4, 6, 7],
+							"spesal OSC drives the constellation partner and mode state");
+						check.value(gui.castleValues.collect { |value, i|
+							(value - [-0.8, -0.25, 0.35, 0.9, 0.1][i]).abs < 0.001
+						}.every { |value| value },
+							"castle OSC drives the five constellation activity marks");
 						check.value(CQInkControl.drawErrors == 0,
 							"Ink controls paint without callback errors");
 						check.value(gui.shellState.drawerOpen

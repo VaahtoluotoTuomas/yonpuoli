@@ -38,4 +38,15 @@ CQGuiVisualContractTest : UnitTest {
 		this.assertEquals(CQGuiPanels.destEndpointNames, CQMatrix.destNames,
 			"Day has exactly the canonical 22 destination sockets");
 	}
+
+	test_columnsPublishFunctionalIslands {
+		this.assertEquals(CQGuiPanels.cocoIslands,
+			#[identity, performance, converter, output],
+			"Coco groups controls by signal and performance role");
+		this.assertEquals(CQGuiPanels.sourcesIslands, #[inputs, decks],
+			"Sources distinguishes live inputs from file decks");
+		this.assertEquals(CQGuiPanels.quantussyIslands,
+			#[macro, castles, topology],
+			"Quantussy gives its functional topology a deliberate region");
+	}
 }

@@ -94,16 +94,21 @@ source jackia / 22 destination socketia ja hit-transparent overlay ovat olemassa
 Käyttäjä hyväksyi yleisen kuvallisen suunnan, kaapelien kaaret/paksuudet/värit sekä
 10/10/11/9 px typografian ja vahvemmat neutraalit. Gate/trig-kaapelit ankkuroidaan
 glyph-socketiin eikä viereiseen charge-lamppuun; passiivinen lamp bead erottuu
-patch-kohteesta. Nykyinen portti on 3 283 unit-passia / 0 failurea,
-`CQ_GUI_SHELL_PASSED` ja `CQ_SAFETY_PASSED`.
+patch-kohteesta.
 
-Ensimmäinen versio on palautuspisteessä `3d631dd`. Sen päälle tehty väljempi layout
-hyväksyttiin toiseksi checkpointiksi: ylimääräinen korkeus jaetaan semanttisten ryhmien
-väliin ja knob-hierarkia on standard 26 / featured 32 / primary 36 px. Se on nykyinen
-ensisijainen Day-suunta. G1 ei silti ole valmis: varsinainen mouse banana grammar,
-aura, Spellbook ja Drawer-sisällöt puuttuvat. Ennen seuraavaa visuaalista muutosta
-arvioidaan vielä, tarvitseeko tyhjä tila informatiivista signaalivisualisointia vai
-parempaa paikallista mittakaavaa/ryhmittelyä; koristeellista täytettä ei lisätä.
+Ensimmäinen versio on palautuspisteessä `3d631dd` ja sen väljempi 26/32/36-versio
+checkpointissa `b3d0096`. Käyttäjä hyväksyi seuraavaksi uuden ensisijaisen Day-suunnan:
+kompaktit toiminnalliset saarekkeet, 26/34/44 px knob-hierarkian, Cocon normatiivista
+muistipolkua näyttävät kaksitasoiset signaalikaaviot ja Quantussyn spesal-tilasta sekä
+`/cq_castle`-aktiivisuudesta elävän viiden linnakkeen topologian. Visualisoinnit näyttävät
+olemassa olevaa rakennetta/tilaa eivätkä täytä paperia koristeella. Hyväksytyn checkpointin
+portti on `CQ_COMPILE_OK`, 3 359 unit-passia / 0 failurea, `CQ_GUI_SHELL_PASSED`,
+`CQ_SAFETY_PASSED` ja `CQ_HOLD_OK` (A4-korrelaatio 1.0, A5-drifti 0.0 dB).
+
+G1 ei silti ole valmis: varsinainen mouse banana grammar, aura, Spellbook ja
+Drawer-sisällöt puuttuvat. Ennen niiden jatkoa tehdään käyttäjän pyytämä pieni
+layout-katselmointi: Quantussy-rivien kohdistus Coco-slot-riviin, topologian levitys,
+Coco-kaaviotekstien väistö, bits/wrap-kohdistus ja suuremmat REC/PANIC-osuma-alueet.
 
 - [x] Yksi Day/Night-ikkunakuori, pysyvä Master-strip ja Drawer vähintään 1280×720:ssa.
 - [ ] Yhteinen Ink kit: normatiivinen paletti, viiva, glyphit ja session-seedattu
@@ -194,13 +199,12 @@ Night map ja Weather Machine — tehdään seuraavalla tavalla:
 1. Varmista `archipelago`-haara, puhdas työpuu ja lue `CLAUDE.md`, `PLAN.md` sekä
    `GUI_SPEC.md` kokonaan. F0–F2 ja hyväksytty ensimmäinen Day/cable-checkpoint ovat
    valmiit; älä toista niitä.
-2. Käy käyttäjän kanssa läpi hyväksytyn väljennetyn Day-layoutin UIX-arvio: korjataanko
-   jäljellä oleva mittakaava ryhmittelyllä/elementtikoolla vai aidosti informatiivisella
-   visualisoinnilla. Säilytä Madrona-tyyppisestä referenssistä periaate, älä kopioi ilmettä.
-3. Toteuta ja näytä vain hyväksytty Day-tarkennus; älä täytä paperia koristeanimaatiolla.
-4. Jatka sen jälkeen PLAN-järjestyksessä koko banana grammariin ja auditioniin ja
+2. Viimeistele ja näytä pyydetty Day-kohdistuskierros: Quantussy-range-rivit ylemmäs,
+   topologia laajemmaksi, Coco-polun dust/rail-tekstit irti viivasta, bits/wrap samaan
+   linjaan sekä suuremmat REC/PANIC-painikkeet. Älä lisää keskelle sisällötöntä animaatiota.
+3. Jatka sen jälkeen PLAN-järjestyksessä koko banana grammariin ja auditioniin ja
    niiden jälkeen Drawer Inspector/Spellbook/Memory -sisältöihin.
-5. Pysähdy jokaisen ensimmäisen ajettavan GUI-osan kohdalla yllä olevaan visuaaliseen
+4. Pysähdy jokaisen ensimmäisen ajettavan GUI-osan kohdalla yllä olevaan visuaaliseen
    välitarkastukseen. Älä aloita varsinaista G2 Night mapia ennen valmista G1-porttia.
 
 Night-organismeja tai Weather Machinea ei piirretä ennen G1:n behavior foundationia.

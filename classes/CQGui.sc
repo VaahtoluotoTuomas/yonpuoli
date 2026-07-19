@@ -12,7 +12,7 @@ CQGui {
 	var stateCtl, gridPanel, meterFuncs, <audition;
 	var <endpoints, <cableOverlay;
 	var <inkControls;
-	var castleLeds, spesalView, <spesalStates;
+	var castleLeds, spesalView, <spesalStates, <castleValues;
 	var deckLabels, deckCtls, skipButtons;
 	var noticeView, recBtn, recTimeView, recTask, hotTask;
 	var micLive = false, hotLive = false, cleaned = false;
@@ -71,6 +71,7 @@ CQGui {
 		deckLabels = IdentityDictionary.new;
 		skipButtons = IdentityDictionary.new;
 		spesalStates = Cocoquantus.spesalStates;
+		castleValues = [0, 0, 0, 0, 0];
 		inkControls = List.new;
 		endpoints = IdentityDictionary.new;
 		widgets = CQGuiWidgets(state, updaters, this);
@@ -172,11 +173,15 @@ CQGui {
 		}, '/cq_cocometers');
 		OSCdef(\cq_gui_castle, { |msg|
 			{
+				castleValues = msg.copyRange(3, 7).collect { |value|
+					(value ? 0).clip(-1, 1)
+				};
 				castleLeds !? {
 					castleLeds.do { |led, i|
-						led.value = (((msg[3 + i] ? 0) + 1) * 0.5).clip(0, 1);
+						led.value = ((castleValues[i] + 1) * 0.5).clip(0, 1);
 					};
 				};
+				spesalView !? { spesalView.refresh };
 			}.defer;
 		}, '/cq_castle');
 		OSCdef(\cq_gui_spesal, { |msg|

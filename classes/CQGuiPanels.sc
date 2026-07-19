@@ -10,6 +10,9 @@ CQGuiPanels {
 	*memoryItems { ^#[snapshotName, snapshotSave, snapshotRecall, morph] }
 	*sourceEndpointNames { ^CQMatrix.sourceNames }
 	*destEndpointNames { ^CQMatrix.destNames }
+	*cocoIslands { ^#[identity, performance, converter, output] }
+	*sourcesIslands { ^#[inputs, decks] }
+	*quantussyIslands { ^#[macro, castles, topology] }
 
 	*coco { |gui, n|
 		var w = gui.widgets;
@@ -18,14 +21,14 @@ CQGuiPanels {
 		var inMeter = this.prMeter(gui), outMeter = this.prMeter(gui);
 		var skip = this.prButton(gui, "skip", 52, false, true, \input, \spark);
 		var title = "coco " ++ n;
+		var identity, performance, converter, output, signalPath;
 		skip.action = { Cocoquantus.skip(n) };
 		gui.setSkipButton(n, skip);   // brief flash on any skip (click/code/pattern)
 		gui.setMeter(("coco" ++ n).asSymbol, { |inPk, outPk|
 			inMeter.value = this.ampMeter(inPk);
 			outMeter.value = this.ampMeter(outPk);
 		});
-		^this.prPanel(title, \cas, 110 + n, VLayout(
-			View().fixedHeight_(22),
+		identity = VLayout(
 			HLayout(nil, this.prEndpoint(gui, d.value(""), \jack, \cas),
 				this.prLabel("voice", \cas),
 				this.prEndpoint(gui, ("org" ++ n).asSymbol, \jack, \organ),
@@ -52,63 +55,62 @@ CQGuiPanels {
 						w.hslider(p.value(pair[0]), 40)
 					).spacing_(0)
 				})
-			),
-			nil,
-			HLayout(w.toggle(p.value("Hold"), "HOLD", CQInk.palette(\day)[\hold]),
+			)
+		).spacing_(4);
+		performance = HLayout(
+			w.toggle(p.value("Hold"), "HOLD", CQInk.palette(\day)[\hold]),
 				w.toggle(p.value("Flip"), "flip", CQInk.palette(\day)[\input]),
 				this.prEndpoint(gui, d.value("_flip"), \socket, \line, \flip, true),
 				skip.view,
-				this.prEndpoint(gui, d.value("_skip"), \socket, \line, \spark, true)),
-			nil,
+				this.prEndpoint(gui, d.value("_skip"), \socket, \line, \spark, true));
+		converter = VLayout(
 			HLayout(
 				w.enumSel(p.value("DolbyIn"), nil, "dolby in"),
 				w.enumSel(p.value("DolbyFb"), nil, "dolby fb")),
 			HLayout(
 				w.intBox(p.value("Bits")),
 				w.toggle(p.value("Wrap"), "wrap", CQInk.palette(\day)[\fm]),
-				w.enumSel(p.value("Interp"), nil, "read")),
-			nil,
-			HLayout(w.knob(p.value("Dust"), "dust", CQInk.palette(\day)[\cas]),
+				w.enumSel(p.value("Interp"), nil, "read"))
+		).spacing_(4);
+		output = HLayout(w.knob(p.value("Dust"), "dust", CQInk.palette(\day)[\cas]),
 				w.knob(p.value("Organ"), "organ", CQInk.palette(\day)[\organ]),
 				w.knob(p.value("Level"), "level"),
 				w.knob(p.value("Pan"), "pan"),
-				w.knob(p.value("Send"), "send")),
-			nil
+				w.knob(p.value("Send"), "send"));
+		signalPath = this.prCocoSignalPath(410 + n);
+		^this.prPanel(title, \cas, 110 + n, VLayout(
+			View().fixedHeight_(22),
+			identity,
+			this.prGap(12),
+			performance,
+			this.prGap(12),
+			converter,
+			signalPath,
+			output
 		).spacing_(6))
 	}
 
 	*quantussy { |gui|
 		var w = gui.widgets, c = CQGuiWidgets.colors;
-		var leds, spesalView, rows, shakeVal, shakeKnob;
+		var leds, spesalView, rows, shakeKnob, shakeButton;
 		// shake amplitude: unbound knob (action argument, not a CQSpec param —
 		// see CQGui.shakeAmount); 0..1 knob range = the |amount| range, and
 		// CQMatrix.shake clamps again on every throw
-		shakeVal = this.prLabel("±" ++ gui.shakeAmount, \spaf, \center, \number);
 		shakeKnob = gui.registerInkControl(CQInkControl.knob("amount", \spaf));
 		shakeKnob.value = gui.shakeAmount;
 		shakeKnob.display = gui.shakeAmount.round(0.01).asString;
 		shakeKnob.action = { |k|
 			gui.shakeAmount = k.value;
 			k.display = k.value.round(0.01).asString;
-			shakeVal.string = "±" ++ k.value.round(0.01);
 		};
+		shakeButton = this.prActionButton(gui, "shake", 54, \spaf,
+			{ Cocoquantus.shake(gui.shakeAmount) });
 		leds = 5.collect {
 			this.prLamp(gui)
 		};
 		gui.castleLeds_(leds);
 		// the 15-dot spesal display (SPEC §6.2): 5 castles x 3 bits of state 0..7
-		spesalView = UserView().fixedSize_(Size(64, 62))
-			.background_(c[\ground]).drawFunc_({
-			gui.spesalStates.do { |st, i|
-				3.do { |bit|
-					Pen.fillColor = if(st.asInteger.bitTest(2 - bit)) {
-						c[\input] } { c[\recess] };
-					Pen.fillOval(Rect(bit * 14 + 2, i * 12 + 2, 9, 9));
-				};
-				Pen.stringAtPoint(st.asString, 46@(i * 12 + 1),
-					CQInk.font(\range), c[\whisper]);
-			};
-		});
+		spesalView = CQGuiCastleConstellation(gui).view;
 		gui.spesalView_(spesalView);
 		rows = 5.collect { |k|
 			var step = this.prButton(gui, "step", 42, false, true, \input, \spark);
@@ -130,18 +132,13 @@ CQGuiPanels {
 		^this.prPanel("quantussy", \tri, 220, VLayout(
 			View().fixedHeight_(22),
 			HLayout(w.knob(\qFreq, "q freq", c[\tri], \primary),
-				w.knob(\qChaos, "chaos", c[\tri], \primary)),
-			nil,
-			*(rows ++ [
-				nil,
-				HLayout(
-					this.prLabel("spesal", \input),
-					spesalView,
-					this.prActionButton(gui, "shake", 54, \spaf,
-						{ Cocoquantus.shake(gui.shakeAmount) }),
-					VLayout(shakeKnob.view, shakeVal).spacing_(0)),
-				nil
-			])
+				w.knob(\qChaos, "chaos", c[\tri], \primary),
+				shakeKnob.view,
+				VLayout(nil, shakeButton, nil)),
+			this.prGap(12),
+			VLayout(*rows).spacing_(4),
+			this.prGap(12),
+			spesalView
 		).spacing_(6))
 	}
 
@@ -166,20 +163,23 @@ CQGuiPanels {
 		});
 		^this.prPanel("sources", \input, 330, VLayout(
 			View().fixedHeight_(22),
-			HLayout(
-				this.prLabel("pre a"), this.prEndpoint(gui, \envA, \jack, \input),
-				w.enumSel(\preASrc, nil, "source"),
-				w.knob(\preADrive, "drive", c[\cas]), w.knob(\preABias, "bias", c[\cas])),
-			HLayout(
-				this.prLabel("pre b"), this.prEndpoint(gui, \envB, \jack, \input),
-				w.enumSel(\preBSrc, nil, "source"),
-				w.knob(\preBDrive, "drive", c[\cas]), w.knob(\preBBias, "bias", c[\cas])),
-			nil,
-			micRow,
-			nil,
-			this.prDeck(gui, \deckA), this.prDeck(gui, \deckB),
+			VLayout(
+				HLayout(
+					this.prLabel("pre a"), this.prEndpoint(gui, \envA, \jack, \input),
+					w.enumSel(\preASrc, nil, "source"),
+					w.knob(\preADrive, "drive", c[\cas]), w.knob(\preABias, "bias", c[\cas])),
+				HLayout(
+					this.prLabel("pre b"), this.prEndpoint(gui, \envB, \jack, \input),
+					w.enumSel(\preBSrc, nil, "source"),
+					w.knob(\preBDrive, "drive", c[\cas]), w.knob(\preBBias, "bias", c[\cas])),
+				micRow
+			).spacing_(6),
+			this.prGap(16),
+			this.prDeck(gui, \deckA),
+			this.prGap(8),
+			this.prDeck(gui, \deckB),
 			nil
-		).spacing_(8))
+		).spacing_(6))
 	}
 
 	*master { |gui|
@@ -293,7 +293,7 @@ CQGuiPanels {
 			.font_(CQInk.font(\number)).align_(\left)
 			.stringColor_(c[\whisper]).fixedSize_(Size(118, 14));
 		var title = if(which == \deckA) { "deck a" } { "deck b" };
-		var row = UserView().fixedHeight_(108).background_(c[\ground]);
+		var row = UserView().fixedHeight_(126).background_(c[\ground]);
 		row.drawFunc = { CQInk.drawToolBox(row.bounds.moveTo(0, 0), title, \day) };
 		row.layout = VLayout(
 			View().fixedHeight_(16),
@@ -339,6 +339,16 @@ CQGuiPanels {
 		label = StaticText().string_(text).font_(CQInk.font(role)).align_(align)
 			.stringColor_(palette[color] ?? { palette[\whisper] }).fixedHeight_(12);
 		^label
+	}
+
+	*prGap { |height = 12| ^View().fixedHeight_(height) }
+
+	*prCocoSignalPath { |seed|
+		var view = UserView().minHeight_(96).background_(CQInk.palette(\day)[\ground]);
+		view.drawFunc = {
+			CQInk.drawCocoSignalPath(view.bounds.moveTo(0, 0), \day, seed)
+		};
+		^view
 	}
 
 	*prPanel { |title, family, seed, layout|
