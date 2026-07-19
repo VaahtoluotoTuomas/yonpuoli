@@ -504,7 +504,7 @@ Grounds & neutrals:
 | ground | paper `#F4EDE0` | sky `#12141C` |
 | ground recess (strip, drawer) | `#E7DECB` | slate `#1A1D26` |
 | line | ink `#2A251E` | bone-ink `#A9AEB8` |
-| whisper (labels, idle values) | `#6F6557` | `#6A6F7B` |
+| whisper (labels, idle values) | `#62594D` | `#7A808C` |
 | spark / highlight | (use ink) | bone `#EDE6D2` |
 
 Families (jack dots, socket rings, knob arcs) — pigment by day, phosphor by
@@ -513,7 +513,7 @@ night:
 | family | pigment | phosphor |
 |---|---|---|
 | triangle (tri) | `#D98324` | `#FFB13D` |
-| castle out (cas) | `#857F73` | `#B7B1A3` |
+| castle out (cas) | `#797267` | `#C1BAAD` |
 | fm | `#3D6FA5` | `#64A7FF` |
 | inputs / spesal | `#4F8A50` | `#62D06A` |
 | spaf | `#7C58A8` | `#B287FF` |
@@ -563,8 +563,10 @@ Laws:
 - Two faces only, via generic constructors (code-only, platform-safe):
   `Font.sansSerif` for labels, `Font.monospace` for numbers, the spellbook
   and filenames.
-- Sizes: 9 px labels and values, 10 px spellbook/notice line, 8 px range
-  letters. Lowercase everywhere; only PANIC, REC and HOLD may shout.
+- Sizes: **10 px labels and values, 11 px spellbook/notice line, 9 px range
+  letters**. These are the laptop-legibility values approved after the first
+  real Day-skin review; do not shrink them back to the earlier 9/10/8 sketch.
+  Lowercase everywhere; only PANIC, REC and HOLD may shout.
 - Labels are whispers: whisper color, close to their object, never boxed.
   The project's own words — spaf, spesal, verso, balcium — are decoration
   enough.
@@ -627,7 +629,7 @@ existing warning made flesh. The day panel's mic control keeps its own
 warning-color law unchanged.
 
 **Birds (decks).** Three strokes each — two wing béziers + a body dot,
-span ≈ 30 px; filename in 9 px mono whisper beneath; the rate socket under
+span ≈ 30 px; filename in 10 px mono whisper beneath; the rate socket under
 the wing. Flutter = 1 px wing bob at ambient rate while the deck's level
 > 0.05 (client-side state, no polling). On file-drag hover the bird
 brightens (drop target law, §16.7).
@@ -658,7 +660,7 @@ shake as lowercase word-buttons beside it.
 - **Spesal display**: geometry kept from v1.0, re-inked.
 - **Drawer & inspector**: the ledger look is honest here — rectangles, grids
   and right angles allowed; the inspector heatmap recolors to verso amber /
-  inverso blue on paper; 8 px mono row/column labels.
+  inverso blue on paper; 9 px mono row/column labels.
 - **Drop targets**: on drag-over, the deck box (day) or bird (night) gains a
   2 px dashed ink border — the only dashed rectangle in the app.
 

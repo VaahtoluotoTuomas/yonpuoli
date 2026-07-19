@@ -31,6 +31,10 @@ CQInkTest : UnitTest {
 			"Day danger is #C43D2B");
 		this.assertEquals(this.prRgb(night[\danger]), [255, 107, 84],
 			"Night danger is #FF6B54");
+		this.assertEquals(this.prRgb(day[\whisper]), [98, 89, 77],
+			"Day whisper is the reviewed higher-contrast #62594D");
+		this.assertEquals(this.prRgb(night[\whisper]), [122, 128, 140],
+			"Night whisper is the reviewed higher-contrast #7A808C");
 	}
 
 	test_paletteInventoryIsCompleteInBothSkins {
@@ -63,9 +67,38 @@ CQInkTest : UnitTest {
 		if(this.prRequireInk.not) { ^this };
 		this.assertEquals(inkClass.strokes, (hairline: 1.0, normal: 1.5,
 			strong: 2.0, state: 3.0), "fixed 1/1.5/2/3 px hierarchy");
-		#[hold, flip, skip, spesal, panic, rec, drawer, day, night].do { |name|
+		#[wedge, flip, spark, wave, tickRing, pendulum, hold, panic, rec,
+			drawer, day, night].do { |name|
 			this.assert(inkClass.glyphNames.includes(name),
 				"8x8 Pen glyph inventory includes %".format(name));
 		};
+	}
+
+	test_visualMetricsComeFromOneNotebookGrammar {
+		var metrics;
+		if(this.prRequireInk.not) { ^this };
+		metrics = inkClass.metrics;
+		this.assertEquals(metrics[\grid], 8, "Day layout uses the 8 px spacing grid");
+		this.assertEquals(metrics[\labelSize], 10, "labels are reviewed 10 px whispers");
+		this.assertEquals(metrics[\numberSize], 10, "numeric values are 10 px mono");
+		this.assertEquals(metrics[\noticeSize], 11, "notice and spellbook text is 11 px");
+		this.assertEquals(metrics[\rangeSize], 9, "range letters are 9 px");
+		this.assertEquals(metrics[\knobDiameter], 26, "knob body is exactly 26 px");
+		this.assertEquals(metrics[\buttonRadius], 3, "button corner radius is 3 px");
+		this.assertEquals(metrics[\socketSpacing], 24,
+			"socket centers never approach closer than 24 px");
+	}
+
+	test_cableGeometryFallsIntoThePaperField {
+		var points;
+		if(inkClass.respondsTo(\cablePoints).not) {
+			this.assert(false, "Ink kit owns gravity-sag cable geometry");
+			^this
+		};
+		points = inkClass.cablePoints(Point(0, 0), Point(120, 0), 12);
+		this.assertEquals(points.first, Point(0, 0), "cable begins at its source jack");
+		this.assertEquals(points.last, Point(120, 0), "cable ends at its destination socket");
+		this.assert(points.collect(_.y).maxItem > 18,
+			"gravity sag carries long cables into the open paper field");
 	}
 }

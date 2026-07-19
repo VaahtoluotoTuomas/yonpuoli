@@ -73,12 +73,16 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   `audit/VERIFIED_FINDINGS.md` over historical severities in the first audit reports.
 - Archipelago work belongs on the `archipelago` integration branch. F0–F2 were
   accepted on 2026-07-19; the foundation and first runnable G1 shell/Ink version were
-  committed as `1f4a210`. The G1 version is a review checkpoint, not a visually
-  accepted design. Do not repeat the foundation implementation. The next action is
-  the user's visual review of that shell, followed by G1 Day skin in `PLAN.md` order.
-- The accepted foundation markers are recorded in `PLAN.md`. The current G1-WIP gate
-  is `CQ_COMPILE_OK`, 3,245 unit passes / 0 failures, `CQ_SAFETY_PASSED`, and
-  `CQ_GUI_SHELL_PASSED`.
+  committed as `1f4a210`. Do not repeat the foundation implementation.
+- The first complete Day-skin/planted-cable visual checkpoint was accepted as a
+  rollback baseline on 2026-07-19: four organ columns, custom Ink controls, 16 source
+  jacks, 22 destination sockets, hit-transparent gravity cables, corrected gate-lamp
+  anchors, +1 px typography and stronger neutrals. The user approved the visual
+  direction and cable look but requested a reversible layout/size-hierarchy experiment
+  before banana interaction work. Keep that experiment uncommitted until visual review.
+- The accepted foundation markers and current G1 detail are recorded in `PLAN.md`.
+  The Day checkpoint gate is 3,280 unit passes / 0 failures, `CQ_SAFETY_PASSED`, and
+  `CQ_GUI_SHELL_PASSED`; G1 as a whole is not complete.
 - The four former `GUI_SPEC.md` seams were resolved by the user on 2026-07-19 and are
   recorded in the spec and `PLAN.md`: nine charge channels, the G1 harvest lasso,
   display-only mic sprout and static REC transition/error states. Do not reopen or

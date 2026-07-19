@@ -19,9 +19,10 @@ CQGuiMatrix {
 
 	prBuild {
 		var srcs = CQMatrix.sourceNames, dests = CQMatrix.destNames;
+		var palette = CQInk.palette(\day);
 		var w = labW + (dests.size * cellW);
 		var h = labH + (srcs.size * cellH);
-		grid = UserView().fixedSize_(Size(w, h)).background_(Color.gray(0.92));
+		grid = UserView().fixedSize_(Size(w, h)).background_(palette[\recess]);
 		grid.drawFunc = { this.prDraw(srcs, dests) };
 		grid.mouseDownAction = { |v, x, y, mod, btn|
 			this.prMouseDown(x, y, btn, srcs, dests)
@@ -29,7 +30,7 @@ CQGuiMatrix {
 		grid.mouseMoveAction = { |v, x, y| this.prMouseMove(y, srcs, dests) };
 		grid.mouseUpAction = { dragSi = nil };
 		status = StaticText().string_("banana bay — drag a cell, right-click clears")
-			.font_(Font.sansSerif(9)).stringColor_(Color.gray(0.4));
+			.font_(CQInk.font(\label)).stringColor_(palette[\whisper]);
 		view = View().layout_(
 			VLayout(grid, status).spacing_(1).margins_(0));
 		ctl = SimpleController(matrix);
@@ -41,18 +42,18 @@ CQGuiMatrix {
 
 	prDraw { |srcs, dests|
 		var colors = CQGuiWidgets.colors;
-		Pen.font = Font.sansSerif(8);
+		Pen.font = CQInk.font(\range);
 		dests.do { |dest, di|                       // rotated column headers
 			Pen.use {
 				Pen.translate(labW + (di * cellW) + (cellW / 2) + 3, labH - 4);
 				Pen.rotate(-0.5pi);
-				Pen.stringAtPoint(dest.asString, 0@0, Font.sansSerif(8),
-					Color.gray(0.25));
+				Pen.stringAtPoint(dest.asString, 0@0, CQInk.font(\range),
+					colors[\whisper]);
 			};
 		};
 		srcs.do { |src, si|                         // row labels
 			Pen.stringAtPoint(src.asString, 2@(labH + (si * cellH) + 2),
-				Font.sansSerif(8), Color.gray(0.25));
+				CQInk.font(\range), colors[\whisper]);
 		};
 		dests.do { |dest, di|
 			srcs.do { |src, si|
@@ -60,9 +61,9 @@ CQGuiMatrix {
 				var r = Rect(labW + (di * cellW), labH + (si * cellH),
 					cellW - 1, cellH - 1);
 				Pen.fillColor = case
-					{ wght > 0 } { colors[\tri].alpha_(wght.abs.max(0.15)) }
-					{ wght < 0 } { colors[\fm].alpha_(wght.abs.max(0.15)) }
-					{ Color.gray(0.97) };
+					{ wght > 0 } { colors[\verso].copy.alpha_(wght.abs.max(0.15)) }
+					{ wght < 0 } { colors[\inverso].copy.alpha_(wght.abs.max(0.15)) }
+					{ colors[\ground] };
 				Pen.fillRect(r);
 			};
 		};

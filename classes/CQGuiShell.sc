@@ -5,39 +5,60 @@
 CQGuiShell {
 	var state;
 	var <view, <dayView, <nightView, <masterView, <drawerView;
-	var contentStack, drawerStack, toolbarView, modeButton, drawerButton, tabButtons;
+	var contentStack, drawerStack, drawerPages, toolbarView, toolbarTitle;
+	var modeButton, drawerButton, tabButtons, skinAction;
 
-	*new { |state, dayView, nightView, masterView, inspectorView, spellbookView, memoryView|
+	*new { |state, dayView, nightView, masterView, inspectorView, spellbookView,
+		memoryView, skinAction|
 		^super.new.prInit(state, dayView, nightView, masterView,
-			inspectorView, spellbookView, memoryView)
+			inspectorView, spellbookView, memoryView, skinAction)
 	}
 
 	prInit { |shellState, dayContent, nightContent, masterContent,
-		inspectorView, spellbookView, memoryView|
+		inspectorView, spellbookView, memoryView, applySkin|
 		var day = CQInk.palette(\day), tabRow;
 		state = shellState;
+		skinAction = applySkin;
 		dayView = dayContent;
 		nightView = nightContent;
 		masterView = masterContent;
-		modeButton = Button().fixedWidth_(92).action_({ this.toggleView(false) });
-		drawerButton = Button().fixedWidth_(92).action_({ this.toggleDrawer });
-		toolbarView = View().fixedHeight_(32).background_(day[\recess]);
+		modeButton = CQInkControl.button("night", 66).surface_(\recess)
+			.action_({ this.toggleView(false) });
+		drawerButton = CQInkControl.button("drawer", 82).surface_(\recess)
+			.action_({ this.toggleDrawer });
+		toolbarTitle = StaticText().string_("cocoquantus · archipelago")
+			.font_(CQInk.font(\label)).stringColor_(day[\line])
+			.align_(\left).fixedWidth_(180);
+		toolbarView = UserView().fixedHeight_(32).background_(day[\recess]);
+		toolbarView.drawFunc = {
+			var palette = CQInk.palette(state.viewMode);
+			Pen.strokeColor = palette[\whisper];
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.line(Point(8, 31), Point(toolbarView.bounds.width - 8, 31));
+			Pen.stroke;
+		};
 		toolbarView.layout = HLayout(
-			StaticText().string_("COCOQUANTUS · ARCHIPELAGO")
-				.font_(Font.sansSerif(11, true)).stringColor_(day[\line]),
-			nil, modeButton, drawerButton
+			toolbarTitle, nil, modeButton.view, drawerButton.view
 		).margins_(8).spacing_(6);
 		contentStack = StackLayout(dayView, nightView).mode_(\stackOne);
 		tabButtons = IdentityDictionary.new;
 		#[inspector, spellbook, memory].do { |tab|
-			tabButtons[tab] = Button().fixedWidth_(92).states_([[tab.asString]])
-				.action_({ this.selectDrawer(tab) });
+			tabButtons[tab] = CQInkControl.button(tab.asString, 86, \day, true)
+				.surface_(\recess).action_({ this.selectDrawer(tab) });
 		};
-		tabRow = HLayout(tabButtons[\inspector], tabButtons[\spellbook],
-			tabButtons[\memory], nil).margins_(4).spacing_(4);
-		drawerStack = StackLayout(inspectorView, spellbookView, memoryView)
+		tabRow = HLayout(tabButtons[\inspector].view, tabButtons[\spellbook].view,
+			tabButtons[\memory].view, nil).margins_(4).spacing_(4);
+		drawerPages = [inspectorView, spellbookView, memoryView];
+		drawerStack = StackLayout(*drawerPages)
 			.mode_(\stackOne);
-		drawerView = View().fixedHeight_(270).background_(day[\recess]);
+		drawerView = UserView().fixedHeight_(250).background_(day[\recess]);
+		drawerView.drawFunc = {
+			var palette = CQInk.palette(state.viewMode);
+			Pen.strokeColor = palette[\line].copy.alpha_(0.35);
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.line(Point(0, 1), Point(drawerView.bounds.width, 1));
+			Pen.stroke;
+		};
 		drawerView.layout = VLayout(tabRow, drawerStack).margins_(6).spacing_(4);
 		view = View().background_(day[\ground]);
 		view.layout = VLayout(toolbarView, View().layout_(contentStack), drawerView,
@@ -70,14 +91,21 @@ CQGuiShell {
 		view.background = palette[\ground];
 		toolbarView.background = palette[\recess];
 		drawerView.background = palette[\recess];
+		drawerPages.do { |page| page.background = palette[\recess] };
 		masterView.background = palette[\recess];
-		modeButton.states = [[if(skin == \day) { "night" } { "day" },
-			palette[\line], palette[\recess]]];
-		drawerButton.states = [[if(state.drawerOpen) { "close drawer" } { "drawer" },
-			palette[\line], palette[\recess]]];
+		toolbarTitle.stringColor = palette[\line];
+		modeButton.skin = skin;
+		modeButton.label = if(skin == \day) { "night" } { "day" };
+		drawerButton.skin = skin;
+		drawerButton.label = if(state.drawerOpen) { "close drawer" } { "drawer" };
 		tabButtons.keysValuesDo { |tab, button|
+			button.skin = skin;
 			button.value = (tab == state.drawerTab).binaryValue;
 		};
+		skinAction !? { skinAction.value(skin) };
+		toolbarView.refresh;
+		drawerView.refresh;
+		masterView.refresh;
 		^this
 	}
 }

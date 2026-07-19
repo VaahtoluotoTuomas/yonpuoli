@@ -13,6 +13,9 @@ var check = { |condition, message|
 		("FAIL: " ++ message).postln;
 	};
 };
+CQInkControl.resetDrawErrors;
+matrix.patch(\tri1, \coco1_spaf, 0.55);
+matrix.patch(\envB, \castle3_fm, -0.45);
 abort = { |error|
 	error !? { error.reportError };
 	("FAIL: GUI shell smoke aborted"
@@ -27,13 +30,35 @@ abort = { |error|
 		gui = CQGui(state, matrix, config);
 		AppClock.sched(0.25, {
 			try {
-				var master = gui.shell.masterView;
+				var master = gui.shell.masterView, volKnob, oldVol;
 				check.value(gui.window.notNil and: { gui.window.isClosed.not },
 					"real Qt window constructed");
 				check.value(gui.shellState.lifecycleState == \open,
 					"shell lifecycle reached open");
 				check.value(gui.shellState.minSize == [1280, 720],
 					"minimum contract is 1280x720");
+				check.value(gui.endpoints.size == 38
+					and: { CQMatrix.sourceNames.every { |name| gui.endpoints[name].notNil } }
+					and: { CQMatrix.destNames.every { |name| gui.endpoints[name].notNil } },
+					"Day registers the canonical 16 jacks and 22 sockets");
+				check.value(gui.endpoints[\castle5_spesal][\anchor] == Point(9, 10),
+					"gate cable anchors on its glyph socket, not between socket and lamp");
+				check.value(gui.cableOverlay.view.acceptsMouse.not,
+					"cable overlay is hit-transparent to the controls below");
+				check.value(gui.cableOverlay.cableCount == 2,
+					"overlay renders every planted matrix cable");
+				volKnob = gui.inkControls.detect { |control|
+					control.kind == \knob and: { control.label == "vol" }
+				};
+				oldVol = state.get(\masterVol);
+				check.value(volKnob.notNil, "Ink master-vol knob exists as a functional control");
+				volKnob !? {
+					volKnob.view.mouseDownAction.value(volKnob.view, 24, 30);
+					volKnob.view.mouseMoveAction.value(volKnob.view, 24, 20);
+					volKnob.view.mouseUpAction.value(volKnob.view, 24, 20);
+				};
+				check.value(state.get(\masterVol) != oldVol,
+					"Ink knob gesture writes through the CQState funnel");
 				gui.shell.toggleView(false);
 				check.value(gui.shellState.viewMode == \night,
 					"Day/Night hard cut reached Night");
@@ -44,6 +69,8 @@ abort = { |error|
 				// next GUI tick rather than reading the stale native property.
 				AppClock.sched(0.05, {
 					try {
+						check.value(CQInkControl.drawErrors == 0,
+							"Ink controls paint without callback errors");
 						check.value(gui.shellState.drawerOpen
 							and: { gui.shell.drawerView.visible },
 							"click action opens Drawer above Master");

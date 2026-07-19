@@ -10,6 +10,8 @@ CQGui {
 	var state, matrix, config;
 	var <window, <widgets, updaters, <shellState, <shell;
 	var stateCtl, gridPanel, meterFuncs, <audition;
+	var <endpoints, <cableOverlay;
+	var <inkControls;
 	var castleLeds, spesalView, <spesalStates;
 	var deckLabels, deckCtls, skipButtons;
 	var noticeView, recBtn, recTimeView, recTask, hotTask;
@@ -46,6 +48,12 @@ CQGui {
 	notice_ { |view| noticeView = view }
 	recButton_ { |btn| recBtn = btn }
 	recTime_ { |view| recTimeView = view }
+	registerInkControl { |control| inkControls.add(control); ^control }
+	registerEndpoint { |name, kind, endpointView, anchor|
+		endpoints[name] = (name: name, kind: kind, view: endpointView, anchor: anchor);
+		^endpointView
+	}
+	currentSkin { ^shellState.viewMode }
 
 	// SPEC §7: persistent warning color while the mic is live (M2 GUI part)
 	micNotice { |live|
@@ -63,7 +71,9 @@ CQGui {
 		deckLabels = IdentityDictionary.new;
 		skipButtons = IdentityDictionary.new;
 		spesalStates = Cocoquantus.spesalStates;
-		widgets = CQGuiWidgets(state, updaters);
+		inkControls = List.new;
+		endpoints = IdentityDictionary.new;
+		widgets = CQGuiWidgets(state, updaters, this);
 		{
 			if(cleaned.not and: { shellState.canBuild }) {
 				this.prBuild;
@@ -75,30 +85,39 @@ CQGui {
 	}
 
 	prBuild {
-		var dayView, nightView, masterView, inspectorView, spellbookView, memoryView;
+		var dayContent, dayView, nightView, masterView;
+		var inspectorView, spellbookView, memoryView;
 		var night = CQInk.palette(\night), minimum = shellState.minSize;
 		gridPanel = CQGuiMatrix(matrix);
-		dayView = View().background_(CQInk.palette(\day)[\ground]).layout_(
+		dayContent = View().background_(CQInk.palette(\day)[\ground]).layout_(
 			HLayout(
 				CQGuiPanels.sources(this),
 				CQGuiPanels.coco(this, 1),
 				CQGuiPanels.quantussy(this),
 				CQGuiPanels.coco(this, 2)
-			).margins_(8).spacing_(6));
+			).margins_(8).spacing_(8));
+		cableOverlay = CQGuiCableOverlay(matrix, endpoints);
+		dayView = View().background_(CQInk.palette(\day)[\ground]).layout_(
+			StackLayout(cableOverlay.view, dayContent).mode_(\stackAll));
 		nightView = UserView().background_(night[\ground]);
 		nightView.drawFunc = {
-			var center = nightView.bounds.center;
-			Pen.stringCenteredIn("night map · G2", Rect.aboutPoint(center, 240, 30),
-				Font.sansSerif(13), night[\whisper]);
-			CQInk.drawGlyph(\night, Rect.aboutPoint(center - Point(0, 38), 12, 12),
-				night[\line]);
+			var center = nightView.bounds.center, horizon = center.y + 34;
+			Pen.strokeColor = night[\whisper];
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.addArc(center - Point(0, 34), 82, 0.15pi, 0.7pi);
+			Pen.stroke;
+			Pen.stringCenteredIn("night map waits for the day grammar",
+				Rect.aboutPoint(Point(center.x, horizon + 40), 220, 12),
+				CQInk.font(\label), night[\whisper]);
 		};
 		masterView = CQGuiPanels.master(this);
 		inspectorView = View().layout_(HLayout(gridPanel.view, nil).margins_(4));
 		spellbookView = this.prDrawerPlaceholder("spellbook · G1.4");
-		memoryView = this.prDrawerPlaceholder("memory · G1.4");
+		memoryView = CQGuiPanels.memory(this);
 		shell = CQGuiShell(shellState, dayView, nightView, masterView,
-			inspectorView, spellbookView, memoryView);
+			inspectorView, spellbookView, memoryView,
+			{ |skin| this.prApplySkin(skin) });
+		this.prApplySkin(shellState.viewMode);
 		window = Window("Cocoquantus · Archipelago",
 			Rect(50, 50, minimum[0], minimum[1]));
 		window.view.minSize = Size(minimum[0], minimum[1]);
@@ -112,7 +131,7 @@ CQGui {
 	prDrawerPlaceholder { |label|
 		var palette = CQInk.palette(\day);
 		^StaticText().string_(label).align_(\center)
-			.font_(Font.sansSerif(10)).stringColor_(palette[\whisper])
+			.font_(CQInk.font(\notice)).stringColor_(palette[\whisper])
 	}
 
 	// Qt hands keyboard focus to any clicked widget, and space/tab then act on
@@ -133,7 +152,6 @@ CQGui {
 	// one SimpleController fans \param notifications out to the widget
 	// updaters; OSCdefs carry the server reports (meters, LEDs, spesal)
 	prListen {
-		var colors = CQGuiWidgets.colors;
 		stateCtl = SimpleController(state);
 		stateCtl.put(\param, { |obj, what, name, val|
 			{ updaters[name].do { |f| f.value(val) } }.defer;
@@ -156,8 +174,7 @@ CQGui {
 			{
 				castleLeds !? {
 					castleLeds.do { |led, i|
-						led.background = Color.gray(0.85)
-							.blend(colors[\tri], (((msg[3 + i] ? 0) + 1) * 0.5).clip(0, 1));
+						led.value = (((msg[3 + i] ? 0) + 1) * 0.5).clip(0, 1);
 					};
 				};
 			}.defer;
@@ -192,7 +209,7 @@ CQGui {
 	prPaintDeckLabel { |which, path|
 		deckLabels[which] !? { |lab|
 			lab.string = path.asString.basename;
-			lab.stringColor = Color.gray(0.25);
+			lab.stringColor = CQInk.palette(shellState.viewMode)[\line];
 		};
 	}
 
@@ -283,10 +300,30 @@ CQGui {
 	prFlashSkip { |n|
 		var b = skipButtons[n];
 		if(cleaned) { ^this };
-		b !? {
-			b.states_([["SKIP", Color.white, CQGuiWidgets.colors[\input]]]);
-			AppClock.sched(0.12, { if(cleaned.not) { b.states_([["SKIP"]]) }; nil });
+		b !? { b.flash };
+	}
+
+	prApplySkin { |skin|
+		var palette = CQInk.palette(skin);
+		inkControls.do { |control| control.skin = skin };
+		cableOverlay !? { cableOverlay.skin = skin };
+		noticeView !? { noticeView.stringColor = palette[\whisper] };
+		recTimeView !? { recTimeView.stringColor = palette[\danger] };
+		shell !? {
+			this.prReinkText(shell.masterView, palette);
+			this.prReinkText(shell.drawerView, palette);
 		};
+		^this
+	}
+
+	prReinkText { |view, palette|
+		if(view.isKindOf(StaticText)) { view.stringColor = palette[\whisper] };
+		if(view.isKindOf(TextField) or: { view.isKindOf(NumberBox) }
+			or: { view.isKindOf(PopUpMenu) }) {
+			view.stringColor = palette[\line];
+			view.background = palette[\ground];
+		};
+		view.children.do { |child| this.prReinkText(child, palette) };
 	}
 
 	// idempotent teardown shared by free and the window's close box: language-
@@ -301,6 +338,8 @@ CQGui {
 		deckCtls.do { |c| c.remove };
 		deckCtls = nil;
 		gridPanel !? { gridPanel.free };
+		cableOverlay !? { cableOverlay.free };
+		cableOverlay = nil;
 		recTask !? { recTask.stop };
 		recTask = nil;
 		hotTask !? { hotTask.stop };
