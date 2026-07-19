@@ -8,6 +8,9 @@ Nykyinen runtime on toimiva v1.0-pohja, mutta riippumaton auditointi varmisti yh
 P0-julkaisun estäjän ja kolme P1-vakausvikaa. Seuraava kehitysvaihe on Archipelago-GUI;
 sitä ei nimetä vakaaksi releaseksi ennen alla olevia foundation-portteja.
 
+**Aktiivinen työhaara:** `archipelago`. GUI_SPECin neljä aiempaa määrittelysaumaa
+ratkaistiin käyttäjän päätöksellä 2026-07-19; avoimia GUI-käyttäytymispäätöksiä ei ole.
+
 ## Auktoriteettijärjestys
 
 1. [`SPEC.md`](SPEC.md), erityisesti §8, määrää parametrit, DSP-käyttäytymisen ja
@@ -78,7 +81,8 @@ Toteutusjärjestys on sitova, ellei uusi evidenssi muuta riippuvuuksia.
   epäsymmetria ilman kuva-assetteja tai icon-fontteja.
 - [ ] Dayn 16 source jackia ja 22 destination socketia oikeilla organ skin -koodeilla.
 - [ ] Hit-safe cable overlay ja koko yhteinen banana grammar: audition, WYHIWYG plant,
-  move, rip, wheel, polarity, solo-light, Esc ja 32 operaation Ctrl+Z.
+  move, rip, harvest-lasso (§4.4), wheel, polarity, solo-light, Esc ja 32 operaation
+  Ctrl+Z.
 - [ ] Drawer: Inspector, notification-streamiin perustuva Spellbook ja snapshot/morph
   Memory.
 - [ ] `/cq_aura`: 16 kanonista source-magnitudea noin 15 Hz; ambient redraw enintään
@@ -103,16 +107,29 @@ Toteutusjärjestys on sitova, ellei uusi evidenssi muuta riippuvuuksia.
 - [ ] Weather-operaatiot eivät muuta `CQSpec`-parametreja; `patchDepth` säilyy.
 - [ ] `GUI_SPEC.md` §13:n automaatio, kuuntelu ja käyttäjän visuaalinen hyväksyntä.
 
-## Avoimet GUI_SPEC-päätökset
+## Ratkaistut GUI_SPEC-päätökset
 
-Näitä ei toteuteta oman tulkinnan varassa:
+Nämä ovat nyt normatiivisia eivätkä enää toteutusta estäviä saumoja:
 
-- [ ] `/cq_charge`: speksin 11 summaa vs inventaarion 9 gate/trig-kohdetta.
-- [ ] `harvest`: nimi undo-luettelossa ilman määriteltyä elettä tai semantiikkaa.
-- [ ] `mic root`: varoituksen visuaalinen koti ilman uutta 17. matriisilähdettä.
-- [ ] REC: starting/stopping/error-tilojen normatiivinen look.
+- [x] `/cq_charge`: speksin 11 summaa vs inventaarion 9 gate/trig-kohdetta.
+  — Päätös 2026-07-19: 9 kanavaa; kanoninen järjestys = matriisin destinaatio-
+  järjestys suodatettuna gate/trigeihin (GUI_SPEC §9).
+- [x] `harvest`: nimi undo-luettelossa ilman määriteltyä elettä tai semantiikkaa.
+  — Päätös 2026-07-19: määritelty eleeksi (GUI_SPEC §4.4): tyhjältä pohjalta
+  aloitettu oikean napin vapaa lasso, molemmat näkymät, endpoint-säännöllä
+  "kierrä elin = riisu se", yksi commit/undo-op/spellbook-merkintä, Esc peruu;
+  kuuluu G1-kielioppiin.
+- [x] `mic root`: varoituksen visuaalinen koti ilman uutta 17. matriisilähdettä.
+  — Päätös 2026-07-19: ei-patchattava mic-verso juurten vieressä, 3 tilaa:
+  ei piirretä (ei konfiguroitu) / lepäävä whisper-silmu (micChan asetettu,
+  micGain 0) / danger-punainen (micChan asetettu JA micGain > 0) (GUI_SPEC §16.6).
+- [x] REC: starting/stopping/error-tilojen normatiivinen look.
+  — Päätös 2026-07-19: staattiset välitilat, ei uutta animaatiota: starting…/
+  stopping… okratekstinä elapsed-paikalla + nappi ei reagoi; error = ontto
+  rengas + piirretty vinoviiva + syy notice-rivillä, kuittautuu seuraavasta
+  painalluksesta (GUI_SPEC §16.8).
 
-Päätökset kirjataan ensin `GUI_SPEC.md`:ään ja sen jälkeen tähän sekä GUI-
+Päätökset on kirjattu ensin `GUI_SPEC.md`:ään ja synkronoitu tähän sekä GUI-
 toteutussuunnitelmaan.
 
 ## Jokaisen portin hyväksyntä

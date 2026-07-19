@@ -8,9 +8,9 @@ GUI-työssä autoritatiivinen käyttäytymis- ja visuaalinen määrittely on
 [`../GUI_SPEC.md`](../GUI_SPEC.md). `SPEC.md` voittaa parametri-, DSP- ja
 turvallisuusristiriidat, `ARCHITECTURE.md` säilyttää pure-view/funnel/ownership-
 rajat. Roadmap ei saa poiketa `GUI_SPEC.md`:stä ilman käyttäjän etukäteishyväksyntää.
-`GUI_DEVELOPMENT_PLAN.md`:n neljä eksplisiittistä spesifikaatiosaumaa (charge-count,
-harvest, mic root ja REC-välitilat) kysytään ennen niiden relevanttia toteutusta;
-niitä ei ratkaista teknisellä oletuksella.
+`GUI_DEVELOPMENT_PLAN.md`:n neljä aiempaa spesifikaatiosaumaa ratkaistiin käyttäjän
+päätöksellä 2026-07-19 ja kirjattiin `GUI_SPEC.md`:ään: 9-kanavainen charge,
+G1-harvest-lasso, display-only mic sprout sekä staattiset REC-välitilat/error.
 
 Työjärjestys on tarkoituksellinen. Milestone 0 tekee virheistä toistettavia,
 Milestone 1 sulkee ainoan P0:n, Milestone 2 korjaa P1-elinkaaren, ja vasta sen jälkeen
@@ -83,8 +83,9 @@ Kaikissa vaiheissa suojataan nämä invariantit:
   `GUI_SPEC.md` §4.1 audition-revert-polut palauttavat matriisin; 44,1/48/96 kHz sekä
   block size 32/64/128 saavat selkeän pass/unsupported-tuloksen.
 - **Testit:** fake/spy-graph, Day/Night/Drawer/Master-inventaario, matrix transaction ja
-  operation-boundary, serverless interaction state machine, Qt build/close/reopen,
-  NRT safety -matriisi lyhyellä renderillä.
+  operation-boundary mukaan lukien harvestin yksi batch-operaatio, serverless
+  interaction state machine, Qt build/close/reopen, NRT safety -matriisi lyhyellä
+  renderillä.
 - **Regressioriskit:** älä lukitse frontend-luokkajakoa tai widget-lukumäärää testiin;
   lukitse canonical nimet, funnelit, ilmoitusmäärä ja käyttäytymissopimus.
 - **Erillinen commit:** kyllä.
@@ -216,9 +217,11 @@ Kaikissa vaiheissa suojataan nämä invariantit:
   presentation model ja GUI-testit.
 - **Riippuvuudet:** 2.3 recorderille, 3.1 deckille; `autoTrim`-tila facadesta luettavaksi.
 - **Hyväksymiskriteerit:** persistent Masterin REC/elapsed, PANIC/mute, GR ja notice;
-  Day/Night deck filename/drop; Drawer Memory recall/morph sekä mic-varoitus saavat
-  tilansa omistavilta runtime-olioilta. Näkyvä muoto noudattaa vain `GUI_SPEC.md`
-  §2, §5, §8, §12 ja §16.8:n state tablea; puuttuva uusi tila lisätään ensin speciin.
+  REC idle/starting/recording/stopping/error ja seuraavan REC-painalluksen error-
+  kuittaus; Day/Night deck filename/drop; Drawer Memory recall/morph sekä Dayn mic-
+  varoitus ja Nightin display-only mic sprout saavat tilansa omistavilta runtime-
+  olioilta. Näkyvä muoto noudattaa vain `GUI_SPEC.md` §2, §5, §8, §12, §16.6 ja
+  §16.8:n tiloja; puuttuva uusi tila lisätään ensin speciin.
 - **Testit:** presentation-mallin unit-testit kaikille tilasiirtymille ja Qt-smoke
   ulkoisilla `CQ.set`/MIDI-tyylisillä muutoksilla, close/reopenilla sekä
   Day/Night/Drawer-vaihdoilla.
@@ -276,7 +279,8 @@ Kaikissa vaiheissa suojataan nämä invariantit:
 - **Hyväksymiskriteerit:** syvä full-matrix-read; 352 solun clampattu batch-write
   yhdellä push-kierroksella ja yhdellä notificationilla; committed vs transient-
   ilmoitukset mahdollistavat Spellbookin ilman gesture-layer-hookkia; operation-
-  boundary vastaa `GUI_SPEC.md` §4.3:a; code writes eivät mene GUI-local-undoon.
+  boundary vastaa `GUI_SPEC.md` §4.3–4.4:ää; harvest on yksi batch-operaatio ja code
+  writes eivät mene GUI-local-undoon.
 - **Testit:** invalid/NaN/inf/over-range kaikkiin soluihin, deep-copy-mutaatio,
   notification count, serverless ja fake-bus push, audition exclusion, GUI/code/
   preset/shake/compass/breed-operaatiot.
@@ -371,13 +375,15 @@ Kaikissa vaiheissa suojataan nämä invariantit:
 - **Riippuvuudet:** 6.1 ja 4.3; F0-audition-testit; nykyiset 16 source / 22 destination
   canonical nimet.
 - **Hyväksymiskriteerit:** skin sockets oikeissa kodeissa; overlay hit-testaa vain
-  ≥12 px jack/socket/cable-targetit; koko §4 grammar, WYHIWYG, exhaustive audition
-  revert, 32-op GUI undo; Inspector touch-and-listen; Spellbook kaikkien kerrosten
-  committed matrix-operaatioille; Memory relocation; `/cq_aura` 16 magnitudia noin
-  15 Hz; Dayn nykyinen muscle memory ja keyboard map säilyvät.
+  ≥12 px jack/socket/cable-targetit ja harvestille vain tyhjän pohjan; koko §4 grammar,
+  WYHIWYG, exhaustive audition revert, §4.4:n harvest-preview/batch/no-op/Esc ja 32-op
+  GUI undo; Inspector touch-and-listen; Spellbook kaikkien kerrosten committed matrix-
+  operaatioille; Memory relocation; `/cq_aura` 16 magnitudia noin 15 Hz; Dayn nykyinen
+  muscle memory ja keyboard map säilyvät.
 - **Testit:** kaikki §4.1 exit-pathit, operation boundaries, wheel/flip/move/rip/
-  stacked-plug, overlay-vs-widget/drop, spellbook inclusion/exclusion, aura order/rate,
-  GUI CPU noin ≤3 %, G1 listening gate.
+  stacked-plug, harvestin <8 px/no-op/closing-chord/~12 px sampling/endpoint/catch/
+  preview/Esc/yksi undo+spellbook, overlay-vs-widget/drop, spellbook inclusion/
+  exclusion, aura order/rate, GUI CPU noin ≤3 %, G1 listening gate.
 - **Regressioriskit:** audition voi jäädä matriisiin, overlay voi syödä knob-eleen tai
   mouse-rate write zipperöidä. Älä lisää server-lagia ilman käyttäjän hyväksyntää;
   mittaa ja käytä ensisijaisesti client-write thinning/glideä.
@@ -394,8 +400,9 @@ Kaikissa vaiheissa suojataan nämä invariantit:
 - **Riippuvuudet:** hyväksytty G1; §16.6 anatomy; nykyinen `/cq_spesal`, deck-drop ja
   source-aura.
 - **Hyväksymiskriteerit:** viisi castlea oikeassa `k→k+1`-ringissä; Cocos left/right,
-  roots below, birds above; spiral phase spark, flip/hold state; 11 charge-lamppua
-  post-weight/pre-Schmitt; solo-light; deck bird drop; exact toolbar; Master pysyy;
+  roots below, birds above; ei-patchattava kolmitilainen mic sprout; spiral phase
+  spark, flip/hold state; 9 charge-lamppua post-weight/pre-Schmitt kanonisessa
+  destination-järjestyksessä; solo-light; deck bird drop; exact toolbar; Master pysyy;
   kaikki liike on telemetrian välittämää ja ≤15 Hz.
 - **Testit:** source/dest home inventory, topology order, no-number/no-Space-body-
   visual contract, phase/charge payload, gate/trig lamp states, solo/Esc, deck child-

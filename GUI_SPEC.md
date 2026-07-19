@@ -129,6 +129,7 @@ charge instead of leaving silence mysterious.
 | Shift held at release | plant AND keep the source in hand (click-click mode: each click plants, Esc drops) | commits per plant |
 | press a planted banana (socket end or cable) | back in hand, carrying its weight; release in void = **rip** (w → 0); release on another socket = **move** | commit; undo op |
 | right-click socket/cable | instant rip (matches inspector) | commit; undo op |
+| right-drag starting on empty ground | **harvest**: freehand lasso — on release, every planted banana caught inside rips together (§4.4) | commit; one undo op |
 | wheel over socket/cable | |w| nudge ± 0.05 (Ctrl: ± 0.01), sign preserved, floor 0.05 | funnel |
 | Alt+click socket/cable | polarity flip (verso ↔ inverso) | funnel; undo op |
 | double-click any jack/socket/body | **solo-light**: its bananas bright, everything else dim; repeat or Esc releases | view-only |
@@ -161,6 +162,27 @@ grow-or-wither hold / compass left-release. Elastic compass gestures (§7.1)
 and auditions never enter the ring. Code-layer writes (`live.scd`) are not in
 this undo — the spellbook is their memory. Undo writes go through the batched
 funnel like any other client.
+
+### 4.4 Harvest — the lasso
+
+- **Start**: a right-button drag beginning on empty ground — no jack, socket,
+  cable or widget under the press — in either view. A press that travels
+  < 8 px is a no-op, never a lasso.
+- **The loop**: the drag draws a freehand path; the region is that path
+  closed by a chord back to its start (virtually while drawing, actually on
+  release).
+- **Membership**: sample every *planted* cable's drawn path, endpoints
+  included, ~every 12 px; a banana is caught if any sample falls inside the
+  region. Because endpoints count, circling an organ strips it bare — every
+  socket and jack inside brings all its bananas. The audition banana is never
+  harvestable: it belongs to the hand and reverts by §4.1.
+- **Preview**: while the lasso is open, every currently-caught banana lifts
+  its plug 2 px and gains a danger-red under-glow (polarity color unchanged —
+  the hue-alone law, §16.2). Leaving the region drops the mark.
+- **Release**: the whole catch rips together through the batched write — one
+  commit, one undo op, one spellbook entry (§8). An empty catch is a silent
+  no-op with no undo entry.
+- **Esc** cancels mid-draw; marks drop, nothing changes.
 
 ---
 
@@ -227,7 +249,7 @@ gesture. The weather machine gives the matrix a macro plane. **The landscape
 law binds everything in this section: weather tools write weights only.** No
 CQSpec parameter is ever touched by compass, grow, wither, breed or shake
 (same law as SPEC §5.5 shake). Knobs belong to hands. Corollary, recorded in
-PLAN (KUUNTELU 4): a landscape can be *deaf* if its depth-knobs are down —
+`docs/history/PLAN_v1.0.md` (KUUNTELU 4): a landscape can be *deaf* if its depth-knobs are down —
 aura and charge lamps make that visible instead of mysterious.
 
 ### 7.1 Compass — the 2D patch-blend pad (~140 px, night toolbar)
@@ -275,7 +297,10 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
 - **Spellbook**: an append-only log of *committed* matrix ops from **all
   layers** (GUI gestures, code, presets, shake, compass commits — never
   auditions or per-frame compass writes), each as a copyable line in the
-  code layer's own tongue: `CQ.patch(\tri3, \coco1_spaf, 0.4)`. Buttons:
+  code layer's own tongue: `CQ.patch(\tri3, \coco1_spaf, 0.4)`. Batch
+  commits (harvest, breed, compass release, preset, shake) log as one
+  `// tool` comment line followed by the diffed cell lines — a harvest reads
+  as `// harvest` plus its `CQ.patch(\src, \dest, 0)` lines. Buttons:
   copy line · **copy all as preset data** (`(matrix: [[src, dest, w], ...])`
   to clipboard). The GUI teaches the language instead of competing with it.
 - **Memory**: snapshot save/recall list + A→B morph controls (relocated from
@@ -295,7 +320,12 @@ same pattern as the existing meters:
 |---|---|---|---|
 | G1 | `/cq_aura` | 16 source magnitudes (lagged \|amp\|, canonical source order) | jack glow, cable pulse, root/castle/body glow |
 | G2 | loop phase | coco read-head position 0..1, appended to `/cq_cocometers` or its own message (implementers' choice) | the spiral spark |
-| G2 | `/cq_charge` | the 11 gate/trig destination sums (post-weight, pre-Schmitt) | charge lamps — the answer to "why is my flip banana silent" |
+| G2 | `/cq_charge` | the 9 gate/trig destination sums (post-weight, pre-Schmitt) | charge lamps — the answer to "why is my flip banana silent" |
+
+`/cq_charge` canonical channel order = the matrix destination order filtered
+to gates/trigs, nine channels: `coco1_flip, coco1_skip, coco2_flip,
+coco2_skip, castle1_spesal, castle2_spesal, castle3_spesal, castle4_spesal,
+castle5_spesal`.
 
 No safety thresholds change; NRT tests keep their caps; message merging is
 the implementers' choice. Added sends must fit the §11 performance budget.
@@ -342,7 +372,8 @@ sub-event in `config.scd`, clamped on load.
   the reference laptop — SPEC §9's 25 % envelope must hold with the GUI open.
 - **Overlay hit-testing**: the cable layer must not steal knob/button
   interactions; only jacks/sockets/cables are targets (≥ 12 px, magnetic
-  candidate halo).
+  candidate halo). The one exception is the harvest lasso's right-drag
+  (§4.4), which may claim only empty ground.
 - **Focus law unchanged**: widgets non-focusable; text entry is click-focus
   only and releases on Enter; Tab flips views only when no text entry has
   focus; Esc and Ctrl+Z handled at window level.
@@ -384,7 +415,8 @@ gate, manual_checklist blocks in the established copy-pasteable format.
   path, assert matrix equality); unit test for the batched write (clamps,
   single notification). Listening gate: plant `tri3 → coco1_spaf` *by ear*
   (the swell audible before commit); move a banana; rip by yank; wheel-trim;
-  Ctrl+Z; spellbook lines match the actions.
+  lasso-harvest a few and Ctrl+Z the whole catch back; spellbook lines match
+  the actions.
 - **G2 — the night map**: archipelago bodies + spiral read-head (+ phase
   telemetry) + charge lamps (`/cq_charge`) + solo-light + toolbar presets/
   shake + deck-bird file drop. Listening gate: patch a flip banana while
@@ -405,7 +437,7 @@ gate, manual_checklist blocks in the established copy-pasteable format.
 - No touchscreen/tablet assumptions — hover is load-bearing by design.
 - No changes to the 16n or code layers beyond the spellbook bridge.
 - Space (`\cqSpace`) controls stay minimal pending the post-v1.0 space-concept
-  decision (PLAN, vaihe 7 kirjaukset) — the night map gives space no body
+  decision (`docs/history/PLAN_v1.0.md`, vaihe 7 kirjaukset) — the night map gives space no body
   until it knows what space *is*.
 
 ---
@@ -416,7 +448,7 @@ gate, manual_checklist blocks in the established copy-pasteable format.
   audio rate; mouse-rate stepping is probably fine (a hardware banana contact
   is a step too). If audible on sustained sources, thin GUI writes to ~30 Hz
   or add a small client-side glide. Do not add server-side lag without
-  checking the norns diet note (PLAN post-v1.0: one Lag per dest is the
+  checking the norns diet note (`docs/history/PLAN_v1.0.md` post-v1.0: one Lag per dest is the
   ceiling).
 - **Overlay performance** on the reference laptop: if the full-window cable
   layer runs hot, split static and animated layers — implementers' craft.
@@ -585,8 +617,14 @@ breathes 0.55 → 1.0 with the coco's out level.
 
 **Roots (inputs).** Two branching wobbled polylines (3 segments) growing from
 the bottom edge, envA left, envB right; tips = green Ø 7 dots with radial
-glow ∝ follower aura. If `micGain` > 0, the mic root's tip ring turns
-danger-red (the existing warning made flesh).
+glow ∝ follower aura. Beside them grows a small **mic sprout** — display
+only, never a jack: the mic is not one of the 16 sources but an optional
+input feeding the preamps, so nothing on the sprout can be grabbed or
+patched. Three states: not drawn at all when no mic is configured; a dormant
+whisper-colored bud when configured (`micChan` set) with `micGain` = 0; bud
+and tip ring danger-red while `micChan` is set **and** `micGain` > 0 — the
+existing warning made flesh. The day panel's mic control keeps its own
+warning-color law unchanged.
 
 **Birds (decks).** Three strokes each — two wing béziers + a body dot,
 span ≈ 30 px; filename in 9 px mono whisper beneath; the rate socket under
@@ -643,10 +681,14 @@ shake as lowercase word-buttons beside it.
 | | grabbed | full alpha, follows cursor |
 | | inverso | barbs: 3 px cross-ticks every 24 px along the path |
 | | solo-dim | everything un-solo'd at 25 % alpha |
+| | marked for harvest | plug lifts 2 px + danger-red under-glow; polarity color unchanged (§16.2) |
+| harvest lasso | drawing | 1 px hairline, danger-red at 60 % alpha — exactly the hand's path plus the closing chord; no wobble (the player's own line is drawn true) |
 | PANIC | unmuted | danger-red outline word-button |
 | | muted | filled danger-red + 3 px red rule across the master strip top; **the panel is never dimmed** — state must stay readable |
 | REC | idle | hollow danger-red ring |
+| | starting / stopping | static: lowercase `starting…` / `stopping…` in warning ochre where the elapsed sits; the button ignores presses; no animation |
 | | recording | filled ring + mono elapsed, colon blinking at 1 Hz |
+| | error | hollow ring with a drawn slash (path, not a typed ✕); the reason in the notice line in danger red; clears on the next REC press |
 | notice line | info / warning / danger | whisper / warning ochre / danger-red text |
 
 ### 16.9 Motion

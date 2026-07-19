@@ -74,8 +74,10 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 - Archipelago work belongs on the `archipelago` integration branch. Start with the
   baseline, P0/P1 reproducer tests, matrix transaction contracts and audition state
   machine listed in `PLAN.md`; do not begin with Night-map drawing.
-- Four unresolved `GUI_SPEC.md` seams are listed in `PLAN.md`. Ask the user and record
-  the decision in the spec before implementing the affected behavior.
+- The four former `GUI_SPEC.md` seams were resolved by the user on 2026-07-19 and are
+  recorded in the spec and `PLAN.md`: nine charge channels, the G1 harvest lasso,
+  display-only mic sprout and static REC transition/error states. Do not reopen or
+  reinterpret them without the user's approval.
 
 ## Workflow
 
