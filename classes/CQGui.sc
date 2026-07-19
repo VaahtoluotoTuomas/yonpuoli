@@ -12,8 +12,8 @@ CQGui {
 	var stateCtl, gridPanel, meterFuncs;
 	var castleLeds, spesalView, <spesalStates;
 	var deckLabels, deckCtls;
-	var noticeView, recBtn, recTimeView, recTask;
-	var micLive = false, cleaned = false;
+	var noticeView, recBtn, recTimeView, recTask, hotTask;
+	var micLive = false, hotLive = false, cleaned = false;
 	// shake throw amplitude shared by the SHAKE button and the p key; GUI-local
 	// because shake is an action argument, not a CQSpec param (SPEC §5.5 —
 	// the weight clamp lives in CQMatrix.shake). 0.3 = the facade default.
@@ -143,6 +143,8 @@ CQGui {
 				spesalView !? { spesalView.refresh };
 			}.defer;
 		}, '/cq_spesal');
+		// watchdog notice (SPEC §5.6): same '/cq_hot' the facade acts on
+		OSCdef(\cq_gui_hot, { { this.prHotNotice }.defer }, '/cq_hot');
 		// deck file labels: dependants of the deck players (nil when unbooted,
 		// e.g. the serverless smoke build — the labels then just keep their hint)
 		#[\deckA, \deckB].do { |which|
@@ -214,12 +216,26 @@ CQGui {
 		);
 	}
 
+	// composes the persistent mic warning (SPEC §7) and the transient watchdog
+	// notice (SPEC §5.6); the hot notice self-clears ~12 s after the last event
 	prUpdateNotice {
-		noticeView !? {
-			noticeView.string = if(micLive) {
-				"MIC LIVE — feedback risk with builtin speakers"
-			} { "" };
+		var parts = [];
+		if(micLive) { parts = parts.add("MIC LIVE — feedback risk with builtin speakers") };
+		if(hotLive) {
+			parts = parts.add(if(config[\autoTrim] == true) {
+				"OUTPUT HOT — auto-trimmed −6 dB"
+			} {
+				"OUTPUT HOT (> 5 s)"
+			});
 		};
+		noticeView !? { noticeView.string = parts.join(" · ") };
+	}
+
+	prHotNotice {
+		hotLive = true;
+		this.prUpdateNotice;
+		hotTask !? { hotTask.stop };
+		hotTask = Task { 12.wait; hotLive = false; this.prUpdateNotice }.play(AppClock);
 	}
 
 	// idempotent teardown shared by free and the window's close box: language-
@@ -234,7 +250,9 @@ CQGui {
 		gridPanel !? { gridPanel.free };
 		recTask !? { recTask.stop };
 		recTask = nil;
+		hotTask !? { hotTask.stop };
+		hotTask = nil;
 		#[cq_gui_meters, cq_gui_gr, cq_gui_coco, cq_gui_castle,
-			cq_gui_spesal].do { |k| OSCdef.all[k] !? { |d| d.free } };
+			cq_gui_spesal, cq_gui_hot].do { |k| OSCdef.all[k] !? { |d| d.free } };
 	}
 }

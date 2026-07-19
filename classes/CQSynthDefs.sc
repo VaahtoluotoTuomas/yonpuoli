@@ -8,7 +8,8 @@ CQSynthDefs {
 
 	*all { |config|
 		^[this.input(config), this.deck(config), this.quantussy(config),
-			this.coco(config), this.master(config), this.record(config)]
+			this.coco(config), this.space(config), this.master(config),
+			this.record(config), this.recordStems(config)]
 	}
 
 	*send { |config, server|
@@ -247,10 +248,41 @@ CQSynthDefs {
 					* 0.3);
 			lvl = \level.kr(CQSpec.default(\coco1Level), CQSpec.lag(\coco1Level));
 			Out.ar(\outBus.ir(0), voice * lvl);
+			// pan-placed post-fader send to the FDN (SPEC §5.3, cocoNSend). gCocos
+			// runs before gFx, so the send lands the same block the space processes
+			// it and the master reads the return — no extra latency (ARCH §3.1/§4.4)
+			Out.ar(\spaceBus.ir(0), Pan2.ar(voice * lvl,
+				\pan.kr(CQSpec.default(\coco1Pan), CQSpec.lag(\coco1Pan)),
+				\spaceSend.kr(CQSpec.default(\coco1Send), CQSpec.lag(\coco1Send))));
 			Out.ar(\modSrcBus.ir(0) + \modTapIdx.ir(12), outTap);  // canonical ch 12/13
 			Out.ar(\modSrcBus.ir(0) + \modOrganIdx.ir(14), organ); // canonical ch 14/15
 			// GUI in/out meters (SPEC §6.2); replyID tells the two instances apart
 			SendPeakRMS.kr([inSig, voice * lvl], 20, 3, '/cq_cocometers', \meterId.ir(0));
+		})
+	}
+
+	// ARCHITECTURE §4.5 — small 4-line FDN reverb, vanilla UGens only, default
+	// OFF (spaceMix 0). Four mutually-prime DelayC lines scaled by spaceSize, a
+	// Householder feedback matrix (orthogonal → norm-preserving), one-pole high
+	// damping at spaceDamp in the feedback path, LeakDC on the input so no DC can
+	// accumulate in the recirculation. The feedback gain is hard-capped at 0.98
+	// (< 1 ⇒ always decays, never diverges); the master safety chain bounds the
+	// return regardless (safety #1). in ← aSpace (cocoNSend), out → aSpaceRet.
+	*space { |config|
+		^SynthDef(\cqSpace, {
+			var in = LeakDC.ar(In.ar(\inBus.ir(0), 2));
+			var size = \spaceSize.kr(CQSpec.default(\spaceSize), CQSpec.lag(\spaceSize));
+			var damp = \spaceDamp.kr(CQSpec.default(\spaceDamp), CQSpec.lag(\spaceDamp));
+			var g = size.min(0.98);                        // decay/size; hard cap 0.98
+			var dampCoef = exp(-2pi * damp / SampleRate.ir).clip(0, 0.999);
+			var times = [0.0293, 0.0373, 0.0437, 0.0531]; // s, ~29/37/44/53 ms (ARCH §4.5)
+			var prev = LocalIn.ar(4);                      // delay outs, previous block
+			var damped = OnePole.ar(prev, dampCoef);       // one-pole damping in the loop
+			var reflected = damped - (damped.sum * 0.5);   // Householder H = I − (2/N)11ᵀ
+			var node = (reflected * g) + ([in[0], in[1], in[0], in[1]] * 0.3);
+			var delays = 4.collect { |i| DelayC.ar(node[i], 0.07, times[i] * size) };
+			LocalOut.ar(delays);
+			Out.ar(\outBus.ir(0), [delays[0] + delays[3], delays[1] + delays[2]]);
 		})
 	}
 
@@ -270,7 +302,7 @@ CQSynthDefs {
 			var vol = \masterVol.kr(CQSpec.default(\masterVol), CQSpec.lag(\masterVol)).dbamp;
 			var mute = 1 - \mute.kr(0, CQSpec.lag(\monitorMute));
 			var fade = EnvGen.kr(Env([0, 1], [2]), \fadeIn.kr(0)); // silent boot → 2 s ramp
-			var mix, preLim, grDb;
+			var mix, preLim, grDb, stem1, stem2, hotRms, hotTimer;
 			mix = Pan2.ar(coco1, pan1) + Pan2.ar(coco2, pan2)
 				+ (spaceRet * spaceMix) + (dry * masterDry);
 			mix = mix * vol * mute;
@@ -287,8 +319,33 @@ CQSynthDefs {
 				Select.ar(CheckBadValues.ar(ch, post: 0) > 0, [ch, DC.ar(0)])
 			};
 			mix = mix * fade;
+			// watchdog auto-trim (SPEC §5.6): a −6 dB step applied POST-limiter (so it
+			// genuinely lowers output RMS, not just what the limiter re-pins), lagged
+			// 100 ms so it never zippers. Language engages it on '/cq_hot' when config
+			// autoTrim is on; default 1 = 0 dB, reset to 1 on every (re)boot.
+			mix = mix * \trim.kr(1, 0.1);
+			// sustained-hot detector: master RMS (~300 ms window) above −6 dBFS held a
+			// continuous 5 s → one '/cq_hot'. Measured on the trimmed output so a trim
+			// self-clears the condition; Sweep resets on every cool→hot edge, so brief
+			// peaks the limiter already caught never trip it — only sustained loudness.
+			hotRms = Lag.ar(((mix[0] + mix[1]) * 0.5).squared, 0.3).sqrt;
+			hotTimer = Sweep.ar(hotRms > (-6.0).dbamp, 1) * (hotRms > (-6.0).dbamp);
+			SendReply.kr(Trig1.kr(A2K.kr(hotTimer > 5), ControlDur.ir), '/cq_hot');
 			SendPeakRMS.kr(mix, 20, 3, '/cq_meters');
 			config[\outChans].do { |hw, i| Out.ar(hw, mix[i]) };
+			// stems (SPEC §5.7): each post-safety Coco through the IDENTICAL safety
+			// chain (invariant #1), plus the same mute + boot-fade as the master but
+			// never the master vol — an independent line-level feed to the modular.
+			// Always published to private buses (stem recorder reads them); also to
+			// hardware stemOuts when configured.
+			stem1 = CQSynthDefs.prSafetyChain(coco1 * mute) * fade;
+			stem2 = CQSynthDefs.prSafetyChain(coco2 * mute) * fade;
+			Out.ar(\stem1Bus.ir(0), stem1);
+			Out.ar(\stem2Bus.ir(0), stem2);
+			config[\stemOuts] !? { |outs|
+				Out.ar(outs[0], stem1);
+				Out.ar(outs[1] ? outs[0], stem2);
+			};
 		})
 	}
 
@@ -300,6 +357,30 @@ CQSynthDefs {
 		^SynthDef(\cqRecord, {
 			DiskOut.ar(\buf.ir(0), [In.ar(\outL.ir(0)), In.ar(\outR.ir(1))]);
 		})
+	}
+
+	// SPEC §5.7 stem recorder: master L/R plus the two post-safety Coco stems the
+	// \cqMaster synth publishes to private buses (each already through the identical
+	// safety chain, invariant #1). 4-ch file; same gMaster-tail tap as \cqRecord.
+	*recordStems { |config|
+		^SynthDef(\cqRecordStems, {
+			DiskOut.ar(\buf.ir(0), [
+				In.ar(\outL.ir(0)), In.ar(\outR.ir(1)),
+				In.ar(\stem1.ir(0)), In.ar(\stem2.ir(0))
+			]);
+		})
+	}
+
+	// the sacred safety chain (SPEC §8.1, ARCH §4.6), factored so every stem is
+	// provably identical to it (safety #1: "identical chain on each stem"). The
+	// master's own main path keeps the chain inline because it interleaves the
+	// GR-meter tap between the tanh and the Limiter. Mono in, mono out.
+	// LeakDC → tanh (−6 dB headroom) → Limiter(0.89, 0.01) → NaN/inf squelch.
+	*prSafetyChain { |sig|
+		var m = LeakDC.ar(sig);
+		m = (m * 0.5).tanh;
+		m = Limiter.ar(m, 0.89, 0.01);
+		^Select.ar(CheckBadValues.ar(m, post: 0) > 0, [m, DC.ar(0)])
 	}
 
 	// ---- private (routing-matrix helpers, ARCHITECTURE §3.2/§3.3) ----

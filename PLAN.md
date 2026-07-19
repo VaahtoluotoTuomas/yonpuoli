@@ -4,8 +4,11 @@ Vaiheistettu checklist. Toimii CLAUDE.md:n milestone-checklistinä (TODO.md:n ro
 Normatiiviset lähteet: SPEC.md (käyttäytyminen), ARCHITECTURE.md (rakenne).
 Milestone-mappaus: **M1 = vaiheet 0–4 · M2 = vaiheet 5–6 · M3 = vaihe 7**.
 
-**Tilanne 2026-07-18: vaiheet 0–6 valmiit ja hyväksytty — M1 + M2 valmiit;
-seuraavaksi vaihe 7 → v1.0.** (M1 hyväksytty 2026-07-17; vaihe 5 2026-07-18:
+**Tilanne 2026-07-18: vaiheet 0–6 valmiit ja hyväksytty (M1 + M2). Vaiheen 7 koodi
+toteutettu ja automaattimarkerit vihreät (space-FDN, stemit + stem-äänitys,
+watchdog, `\cq`-eventtityyppi; A1 + A2 3082 assertiota + A3 space/stem-turva +
+A4/A5 korrelaatio 1.0) — jäljellä KUUNTELU 7 (M7 abuse + space/stem/pattern-kuuntelu)
++ suorituskykymittaus → v1.0.** (M1 hyväksytty 2026-07-17; vaihe 5 2026-07-18:
 `885cb24` + `38653ab` + gate-korjaus `56ab8a7`. Vaihe 6: toteutus `5ab3255` —
 CQGui + CQ.shake + presetit \selfNoise/\quantumDrone/\organMode +
 \mayhem-viritys + CQRecorder — gate-korjaukset `81be310`, ja **KUUNTELU 6
@@ -599,28 +602,77 @@ tiedoston loppuun — se ohjaa vaiheen 7 rajapintavalintoja.
 ## Vaihe 7 — Space, stemit, watchdog, patternit, viimeistely → **v1.0**
 
 ### Toteutus
-- [ ] `\cqSpace` — 4-linjainen FDN (DelayC, Householder, damping; feedback ≤ 0.98;
-      ARCH §4.5), spaceMix/Size/Damp, oletus OFF
-- [ ] Stem-ulostulot (`stemOuts`) + stem-äänitys — **identtinen turvaketju joka
-      stemiin** (safety-invariantti #1)
-- [ ] Watchdog auto-trim: RMS > −6 dBFS 5 s → −6 dB trim + GUI-notice (`autoTrim`)
-- [ ] Event type `\cq` — Pbind-sekvensointi diskreeteille aktioille (SPEC §6.4)
+- [x] `\cqSpace` — 4-linjainen FDN (DelayC, Householder, one-pole damping; feedback
+      ≤ 0.98; ARCH §4.5), spaceMix/Size/Damp, oletus OFF. Coco-send pan-sijoitettuna
+      (`cocoNSend` → `\spaceSend`, `cocoNPan` haaroitettu master + coco); gFx-ryhmä
+      spawnaa synthin cocojen ja masterin väliin
+- [x] Stem-ulostulot (`stemOuts`) + stem-äänitys (`recStems`) — **identtinen
+      turvaketju joka stemiin** (safety #1): master julkaisee post-safety coco1/coco2
+      yksityisille väylille (jaettu `prSafetyChain`), + mute + boot-fade mutta ei
+      master-volia; HW-stemit configin `stemOuts`-kanaviin, `\cqRecordStems` (4-ch:
+      master L/R + stemit) recorderiin
+- [x] Watchdog auto-trim: master mittaa RMS:n (~300 ms), > −6 dBFS jatkuvasti 5 s →
+      `/cq_hot` (Sweep-portitettu ajastin); facade askeltaa `\trim` −6 dB (lattia
+      −18, post-limiter) jos `autoTrim`, muuten pelkkä varoitus; GUI-notice + p
+      `CQ.resetTrim`/reboot palauttaa
+- [x] Event type `\cq` — Pbind-sekvensointi (hold/flip/skip/spesal/set/patch/deck/
+      shake), dispatch facaden läpi (`prCqAction`); puuttuva/`\rest`/bootaamaton =
+      hiljainen no-op (SPEC §6.4)
 - [x] `README.md` — asennus, includePaths-ohjeet Windowsille, pikastartti
       (aikaistettu 2026-07-18: projekti jaettiin testaajalle; suomeksi —
       viilataan/käännetään v1.0-viimeistelyssä jos tarpeen)
 - [ ] Suorituskykytarkistus: koko instrumentti ≤ 25 % / core @ 48 kHz / block 64
+      (vaatii käyttäjän mittauksen livenä — KUUNTELU 7:ssä `s.avgCPU`/`s.peakCPU`)
 
 ### Testit — täysi re-run
-- [ ] `CQ_COMPILE_OK` · `CQ_TESTS_PASSED` · `CQ_SAFETY_PASSED` · `CQ_HOLD_OK`
-      (A1–A5 kaikki)
+- [x] `CQ_COMPILE_OK` · `CQ_TESTS_PASSED` (3082) · `CQ_SAFETY_PASSED` (space-FDN
+      peak 0.88 ei-diverging + molemmat stemit ≤ katto & ei-hiljaiset) · `CQ_HOLD_OK`
+      (korrelaatio 1.0, drift 0.0 dB — coco-ydin ennallaan) (2026-07-18)
 
 ### KUUNTELU 7 — v1.0-hyväksyntä
 - [ ] M7 abuse-sessio: 30 min kuulokkeilla tahallista väärinkäyttöä —
       **mikään ei koskaan satu**
-- [ ] Space: laadukas, oletuksena pois, mix/size/damp toimivat
+- [ ] Space: laadukas, oletuksena pois, mix/size/damp toimivat (F14 spaceMix soi nyt)
+- [ ] Watchdog: aja output kuumaksi ≥ 5 s → auto-trim −6 dB + GUI-notice;
+      `CQ.resetTrim` palauttaa
+- [ ] Patternit: `\cq`-Pbind soittaa hold/skip/spesal/deck-aktioita tempossa
 - [ ] Stemit modulaariin: post-safety coco1/coco2 oikeissa ulostuloissa
-- [ ] Stem-äänitys: tiedostot syntyvät configin mukaan
+      (config `stemOuts`)
+- [ ] Stem-äänitys: 4-ch tiedosto syntyy configin `recStems: true` -lipulla
+- [ ] Suorituskyky: `s.avgCPU`/`s.peakCPU` täydellä pöydällä ≤ 25 %
 - [ ] Käyttäjän hyväksyntä → **v1.0-tag**
+
+### Kirjatut toteutuspäätökset (vaihe 7)
+- **Space-send tulee cocoista, ei masterista**: gFx (space) ajetaan ennen gMasteria,
+  joten masterin on saatava spaceRet samalla blokilla → sendin täytyy tulla
+  aiemmasta ryhmästä (gCocos). Coco kirjoittaa `Pan2(voice·lvl, pan, cocoNSend)`
+  aSpace-väylälle; pan luetaan cocosta (`cocoNPan` haaroitettu masteriin JA cocoon,
+  patchDepth-kuvion mukaisesti). Post-fader (send seuraa coco-level-nuppia).
+- **FDN**: 4× DelayC (29/37/44/53 ms × spaceSize), Householder `H = I − (2/N)11ᵀ`
+  (ortogonaali → norm-säilyttävä → ei koskaan diverge), one-pole damping
+  (`OnePole`, kerroin `exp(-2π·spaceDamp/SR)`) feedback-polussa, LeakDC sisääntulossa
+  (ei DC:tä kiertoon). Feedback-gain `= spaceSize.min(0.98)` (kova katto 0.98).
+  Injektio 0.3 = kuuntelusäädettävä lähtöarvo (KUUNTELU 7). Master-turvaketju
+  rajaa returnin joka tapauksessa (safety #1).
+- **Stemit aina laskettuna**: master julkaisee post-safety coco1/coco2 yksityisille
+  `stem1`/`stem2`-väylille aina (jaettu `prSafetyChain` = LeakDC→tanh→Limiter→squelch,
+  tekstuaalisesti identtinen pääpolun kanssa; NRT todistaa ≤ katto). HW-stemit vain
+  jos `stemOuts` configissa; stem-äänitys lukee samat väylät → toimii ilman
+  konfiguroituja ulostuloja. Masterin **pääpolku jätettiin koskematta** (siinä on
+  GR-mittarin haara tanhin ja limitterin välissä) — stemit oma lohko, jaettu
+  turvafunktio estää polkujen erkaantumisen.
+- **Watchdog mittaa post-trim-outputin** (Sweep-portitettu 5 s ajastin: nollautuu
+  joka cool→hot-reunalla, joten limitterin jo napanneet piikit eivät laukaise —
+  vain jatkuva kuumuus). `\trim` on **limitterin JÄLKEEN**: −6 dB ennen limitteriä
+  ei laskisi ulostuloa jos signaali on niin kuuma että limitteri pitää sen katossa.
+  Facade askeltaa −6 dB per `/cq_hot` (lattia −18); reboot/`resetTrim` = unity.
+  NRT:ssä `/cq_hot` laukeaa (kovat renderit) mutta on vaaraton (ei kieltä =
+  ei trimmiä; limitteri rajaa yksin — turvatesti pysyy 0.89:ssä).
+- **`\cq`-eventtityyppi**: yksi aktio per eventti, dispatch facaden `prCqAction`in
+  läpi (suppilot pysyvät). Bootaamaton/`\rest`/puuttuva aktio = **hiljainen** no-op
+  (ei varoitusryöppyä kun pattern soi reboottien yli) — siksi prCqAction ei voi
+  yksikkötestata itse dispatchia serverittä; testi kattaa rekisteröinnin +
+  no-op-turvallisuuden, varsinainen laukaisu KUUNTELU 7:ssä.
 
 ---
 

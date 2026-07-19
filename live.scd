@@ -120,3 +120,32 @@ CQ.patch(\coco1, \castle5_fm, 0.6);
 CQ.set(\coco1SlotQ, 0.4);
 CQ.patch(\tri4, \castle3_spesal, 1);   // verkko re-patchaa itseaan ~13 s valein
 */
+
+// ---- phase 7: space, watchdog, patternit / KUUNTELU 7 ----
+/*
+CQ.boot;
+CQ.deckA.load("field.wav");  CQ.hold(1, 0);
+
+// Space (FDN-kaiku, oletuksena pois): kumpikin tarvitaan, send + mix
+CQ.set(\coco1Send, 0.6);             // coco1 -> space (post-fader, pan-sijoitettu)
+CQ.set(\spaceMix, 0.4);              // paluutaso (16n F14)
+CQ.set(\spaceSize, 0.85);            // 0.3 tiukka .. 0.98 pitka hanta (feedback <= 0.98)
+CQ.set(\spaceDamp, 4500);            // 500 tumma .. 12000 kirkas
+CQ.set(\spaceMix, 0);                // pois
+
+// Watchdog: aja kuumaksi -> auto-trim -6 dB 5 s jalkeen (config autoTrim)
+CQ.trimDb;                           // nykyinen trim (0 = ei trimmia)
+CQ.resetTrim;                        // palauta 0 dB kasin
+
+// Patternit (\cq-eventtityyppi): diskreetit aktiot tempossa
+p = Pbind(\type, \cq, \action, \spesal, \castle, 3, \dur, Pexprand(0.5, 3)).play;
+p.stop;
+p = Pbind(\type, \cq, \action, Pseq([\skip, \flip], inf), \coco, 1, \dur, 1).play;
+p.stop;
+// aktiot: \hold \flip \skip (\coco); \spesal (\castle, \state); \set (\param,
+// \value); \patch (\src \dest \weight); \deck (\deck \a/\b, \do next/prev/
+// random/restart); \shake (\amount \seed). \rest / bootaamaton = no-op.
+
+// Stemit (config stemOuts: [2,3] + reboot): post-safety coco1/coco2 modulaariin.
+// Stem-aanitys (config recStems: true + reboot): CQ.rec -> 4-ch tiedosto.
+*/

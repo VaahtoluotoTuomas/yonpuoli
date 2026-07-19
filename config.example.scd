@@ -17,5 +17,7 @@
 	                            // sends each fader on its own channel); 0..15 pins one
 	folders: (samples: "samples", recordings: "recordings", presets: "presets"),
 	autoTrim: true,             // watchdog -6 dB trim on sustained hot output
+	recStems: false,            // true = CQ.rec writes a 4-ch file (master L/R +
+	                            // post-safety coco1 + coco2 stems) instead of stereo
 	headless: false             // true = no GUI (instrument stays fully playable)
 )

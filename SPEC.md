@@ -305,7 +305,8 @@ automatic −6 dB trim engages with a GUI notice (config `autoTrim: true`).
   post-safety Coco1, Coco2 (mono each) — for re-processing in the modular in real time.
 - Recorder: `rec` / `recStop`. Writes 24-bit WAV, timestamped
   `recordings/cq_YYMMDD_HHMMSS.wav`, never overwrites. Optional stem recording
-  (master + coco1 + coco2 + qMix as a 6-ch file or separate files, config choice).
+  (`recStems: true`, config choice): `rec` writes a 4-channel file — master L/R plus
+  the post-safety Coco1 and Coco2 stems (same taps as `stemOuts`) — instead of stereo.
 
 ---
 
@@ -396,12 +397,25 @@ CQ.snap(\lakeDrone);  CQ.recall(\lakeDrone);  CQ.morph(\lakeDrone, \mayhem, 30);
 CQ.rec; CQ.recStop;
 CQ.panic;                           // instant mute, state preserved
 CQ.resume;                          // unmute after panic (no fade-in re-trigger)
+CQ.resetTrim;                       // restore level after a watchdog auto-trim (§5.6)
 ```
 
 ### 6.4 Patterns (optional, M3)
 
-Event type `\cq` allowing Pbind sequencing of discrete actions (hold/flip/skip/spesal/
-deck triggers) on TempoClock — generative "player piano" sessions. Not core.
+Event type `\cq` sequences discrete actions on a TempoClock — generative "player
+piano" sessions. Each event carries an `\action` plus its arguments and dispatches
+through the facade (so every write still passes the funnels). A missing/`\rest`
+action or an unbooted instrument is a silent no-op, so a pattern can carry Rests and
+survive a `free`/reboot. Actions: `\hold`/`\flip` (`\coco`, optional `\val`),
+`\skip` (`\coco`), `\spesal` (`\castle`, optional `\state`), `\set` (`\param`,
+`\value`), `\patch` (`\src`, `\dest`, `\weight`), `\deck` (`\deck` = `\a`/`\b`,
+`\do` = `\next`/`\prev`/`\random`/`\restart`), `\shake` (`\amount`, `\seed`). E.g.
+
+```supercollider
+Pbind(\type, \cq, \action, \spesal, \castle, 3, \dur, Pexprand(0.5, 4)).play;
+```
+
+Not core.
 
 ---
 
@@ -428,6 +442,7 @@ gitignored):
                               // §6.1); an integer 0..15 pins one channel
   folders: (samples: "samples", recordings: "recordings", presets: "presets"),
   autoTrim: true,
+  recStems: false,            // true → CQ.rec writes 4-ch: master L/R + coco1/coco2 stems
 )
 ```
 

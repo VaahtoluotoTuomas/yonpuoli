@@ -21,13 +21,15 @@ CQConfig {
 			sixteenN: (enabled: true, ccBase: 32, takeover: \jump),
 			folders: (samples: "samples", recordings: "recordings", presets: "presets"),
 			autoTrim: true,
+			recStems: false,
 			headless: false
 		)
 	}
 
 	*knownKeys {
 		^#[sampleRate, blockSize, device, hardwareBufferSize, inChans, micChan,
-			outChans, stemOuts, bufFrames, sixteenN, folders, autoTrim, headless]
+			outChans, stemOuts, bufFrames, sixteenN, folders, autoTrim, recStems,
+			headless]
 	}
 
 	*load { |path|
@@ -138,6 +140,8 @@ CQConfig {
 
 		this.prAssert(cfg[\autoTrim].isKindOf(Boolean),
 			"autoTrim must be true or false (got %)".format(cfg[\autoTrim]));
+		this.prAssert(cfg[\recStems].isKindOf(Boolean),
+			"recStems must be true or false (got %)".format(cfg[\recStems]));
 		this.prAssert(cfg[\headless].isKindOf(Boolean),
 			"headless must be true or false (got %)".format(cfg[\headless]));
 	}

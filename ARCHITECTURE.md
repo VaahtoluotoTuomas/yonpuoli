@@ -361,7 +361,8 @@ the real preset data — the safety proof covers the actual shipped graph.
 
 ## 11. Extension points (explicitly out of v1)
 
-- Pattern event type `\cq` (M3 stub), OSC remote control, MIDI clock → spesal sync,
-  >2 Cocos (bus layout already generalizes via index arrays), multi-instance via
-  additional servers, per-castle range CV (hardware has a switch; a `\rangeMorph`
-  continuous crossfade could be a v2 experiment).
+- OSC remote control, MIDI clock → spesal sync, >2 Cocos (bus layout already
+  generalizes via index arrays), multi-instance via additional servers, per-castle
+  range CV (hardware has a switch; a `\rangeMorph` continuous crossfade could be a v2
+  experiment). (The pattern event type `\cq` shipped in M3 — see SPEC §6.4 and the
+  `Cocoquantus.prCqAction` dispatcher.)

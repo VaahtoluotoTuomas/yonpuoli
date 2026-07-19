@@ -22,7 +22,7 @@ CQRecorder {
 	}
 
 	start {
-		var outChans;
+		var outChans, useStems, def, numCh, stemArgs;
 		if(this.isRecording) {
 			this.class.prWarn("already recording -> " ++ path);
 			^this
@@ -32,22 +32,31 @@ CQRecorder {
 			^this
 		};
 		outChans = config[\outChans];
+		// SPEC §5.7 config choice: recStems -> 4-ch file (master L/R + the two
+		// post-safety Coco stems \cqMaster publishes to private buses); else 2-ch
+		useStems = config[\recStems] == true;
+		def = if(useStems) { \cqRecordStems } { \cqRecord };
+		numCh = if(useStems) { 4 } { 2 };
+		stemArgs = if(useStems) {
+			[\stem1, graph.buses[\stem1].index, \stem2, graph.buses[\stem2].index]
+		} { [] };
 		path = this.class.nextFreePath(dir);
 		{
 			if(File.exists(dir).not) { File.mkdir(dir) };
-			buffer = Buffer.alloc(graph.server, 65536, 2);
+			buffer = Buffer.alloc(graph.server, 65536, numCh);
 			graph.server.sync;
 			buffer.write(path, "wav", "int24", 0, 0, true);   // leaveOpen for DiskOut
 			graph.server.sync;
-			synth = Synth(\cqRecord, [
+			synth = Synth(def, [
 				\buf, buffer.bufnum,
 				\outL, outChans[0],
 				\outR, outChans[1] ? outChans[0]
-			], graph.groups[\master], \addToTail);
+			] ++ stemArgs, graph.groups[\master], \addToTail);
 			graph.registerSynth(\recorder, synth);
 			graph.registerBuffer(\recorder, buffer);
 			startTime = Main.elapsedTime;
-			("CQRecorder: recording -> " ++ path).postln;
+			("CQRecorder: recording % -> %".format(
+				if(useStems) { "4-ch stems" } { "master" }, path)).postln;
 		}.fork;
 	}
 

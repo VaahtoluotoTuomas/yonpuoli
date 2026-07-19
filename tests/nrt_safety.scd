@@ -16,9 +16,12 @@ var repo = File.realpath(thisProcess.nowExecutingPath).dirname.dirname;
 var tmpDir = repo +/+ "tests" +/+ "tmp";
 var cfg = CQConfig.validate(());       // deterministic defaults, never the user's config
 var defs = CQSynthDefs.all(cfg);
+var stemCfg = CQConfig.validate((stemOuts: [2, 3]));   // phase 7: stem-out master
+var stemMasterDef = CQSynthDefs.master(stemCfg);       // same \cqMaster def, stemOuts baked
 var dur = 10.0;
 var sr = 48000;
 var opts = ServerOptions.new;
+var opts4 = ServerOptions.new;         // 4-ch out for the stem render (mix + 2 stems)
 var results = List.new;
 var ok = true;
 var check = { |bool, msg|
@@ -28,6 +31,11 @@ var check = { |bool, msg|
 // NRT bus plan (in = 2, out = 2 -> private audio buses start at index 4)
 var bCoco1 = 4, bCoco2 = 5, bSpaceRet = 6, bDry = 8;
 var bDeckA = 10, bDeckB = 11, bPreA = 12, bPreB = 13, bQMix = 14, bModSrc = 16;
+// phase 7: space send bus (2ch) + the master's post-safety stem taps + a dump bus
+// (past bModSrc's 16 channels, 16..31). Every \cqMaster below is given the stem
+// buses so its always-on stem writes never land on hardware out 0 (they carry the
+// full post-safety Coco signal, not silence — leaking them would double the mix).
+var bSpace = 32, bStem1 = 34, bStem2 = 35, bDump = 36;
 var cocoBufFrames = 32768;   // short loop -> many recirculation passes in 10 s
 var mayhemDur = 90.0;        // SPEC A3 duration for the full-matrix worst case
 
@@ -60,7 +68,7 @@ var makeScore = { |testDefName|
 	score.add([0.0, [\s_new, testDefName, 1002, 1, 1000,
 		\c1, bCoco1, \c2, bCoco2, \dry, bDry]]);
 	score.add([0.0, [\s_new, \cqMaster, 1003, 1, 1000,
-		\coco1Bus, bCoco1, \coco2Bus, bCoco2, \spaceRetBus, bSpaceRet, \dryBus, bDry,
+		\coco1Bus, bCoco1, \coco2Bus, bCoco2, \spaceRetBus, bSpaceRet, \dryBus, bDry, \stem1Bus, bStem1, \stem2Bus, bStem2,
 		\masterVol, 0, \masterDry, 1, \fadeIn, 1]]);   // vol maxed = worst case
 	score.add([dur, [\c_set, 0, 0]]);
 	score
@@ -96,7 +104,7 @@ var makeCocoScore = {
 	score.add([0.0, ([\s_new, \cqCoco, 1004, 1, 1000]
 		++ cocoArgs.value(1, bPreB, bDeckB, bCoco1, bCoco2, 13, 15))]);
 	score.add([0.0, [\s_new, \cqMaster, 1005, 1, 1000,
-		\coco1Bus, bCoco1, \coco2Bus, bCoco2, \spaceRetBus, bSpaceRet, \dryBus, bDry,
+		\coco1Bus, bCoco1, \coco2Bus, bCoco2, \spaceRetBus, bSpaceRet, \dryBus, bDry, \stem1Bus, bStem1, \stem2Bus, bStem2,
 		\masterVol, 0, \masterDry, 1, \fadeIn, 1]]);
 	score.add([dur, [\c_set, 0, 0]]);
 	score
@@ -124,7 +132,7 @@ var makeQuantussyScore = {
 		\hold, 0, \level, 1.5, \speed, 24000,
 		\slotPre, 0, \slotDeck, 0, \slotQ, 1.5, \slotX, 0]]);
 	score.add([0.0, [\s_new, \cqMaster, 1003, 1, 1000,
-		\coco1Bus, bCoco1, \coco2Bus, bCoco2, \spaceRetBus, bSpaceRet, \dryBus, bDry,
+		\coco1Bus, bCoco1, \coco2Bus, bCoco2, \spaceRetBus, bSpaceRet, \dryBus, bDry, \stem1Bus, bStem1, \stem2Bus, bStem2,
 		\masterVol, 0, \masterDry, 0, \fadeIn, 1]]);
 	score.add([dur, [\c_set, 0, 0]]);
 	score
@@ -183,7 +191,7 @@ var makeMayhemScore = {
 	score.add([0.0, ([\s_new, \cqCoco, 1004, 1, 1000]
 		++ cocoArgs.value(1, bPreB, bDeckB, bCoco1, bCoco2, 13, 15, 2))]);
 	score.add([0.0, [\s_new, \cqMaster, 1005, 1, 1000,
-		\coco1Bus, bCoco1, \coco2Bus, bCoco2, \spaceRetBus, bSpaceRet, \dryBus, bDry,
+		\coco1Bus, bCoco1, \coco2Bus, bCoco2, \spaceRetBus, bSpaceRet, \dryBus, bDry, \stem1Bus, bStem1, \stem2Bus, bStem2,
 		\masterVol, 0, \masterDry, 0, \fadeIn, 1]]);
 	score.add([mayhemDur, [\c_set, 0, 0]]);
 	score
@@ -211,15 +219,84 @@ var makeMatrixFmScore = {
 		\wFm5, wFm5Bus]]);
 	score.add([0.0, [\s_new, \cqMaster, 1002, 1, 1000,
 		\coco1Bus, bQMix, \coco2Bus, bPreA,     // qMix straight into the master; the
-		\spaceRetBus, bSpaceRet, \dryBus, bDry, // other inputs read silent buses
+		\spaceRetBus, bSpaceRet, \dryBus, bDry, \stem1Bus, bStem1, \stem2Bus, bStem2, // other inputs read silent buses
 		\masterVol, 0, \masterDry, 0, \fadeIn, 1]]);
 	score.add([dur, [\c_set, 0, 0]]);
 	score
 };
 
-var render = { |score, outPath, renderDur|
+// phase 7: the FDN under stress (ARCH §4.5). A Coco's worst-case self-noise is sent
+// to \cqSpace at full send with spaceMix 1, size 0.98 (feedback capped at 0.98) and
+// least damping (most energy retained). The Coco's DIRECT out is dumped and the
+// master's Coco inputs read a silent bus, so the render is ONLY the reverb return:
+// proves the FDN stays bounded AND non-silent (a diverging feedback matrix would blow
+// to inf, caught by `bad`; a broken send would read silent, caught by non-silence).
+var makeSpaceScore = {
+	var score = Score.new;
+	defs.do { |d| score.add([0.0, [\d_recv, d.asBytes]]) };
+	score.add([0.0, [\d_recv, feedDef.asBytes]]);
+	score.add([0.0, [\b_alloc, 0, cocoBufFrames, 1]]);
+	score.add([0.0, [\g_new, 1000, 0, 0]]);
+	score.add([0.0, [\s_new, \cqTestFeed, 1001, 1, 1000, \a, bDeckA, \b, bDeckB]]);
+	score.add([0.0, [\s_new, \cqCoco, 1002, 1, 1000,
+		\buf, 0, \preBus, bPreA, \deckBus, bDeckA, \qMixBus, bQMix,
+		\crossBus, bCoco2, \outBus, bDump, \spaceBus, bSpace, \modSrcBus, bModSrc,
+		\modTapIdx, 12, \modOrganIdx, 14,
+		\inLevel, 2, \fbLevel, 1.25, \dust, 0.5, \wrap, 1, \bits, 3,
+		\hold, 0, \level, 1.0, \speed, 24000,
+		\slotPre, 0, \slotDeck, 1.5, \slotQ, 0, \slotX, 0,
+		\spaceSend, 1.0, \pan, -0.3]]);
+	score.add([0.0, [\s_new, \cqSpace, 1003, 1, 1000,
+		\inBus, bSpace, \outBus, bSpaceRet, \spaceSize, 0.98, \spaceDamp, 12000]]);
+	score.add([0.0, [\s_new, \cqMaster, 1004, 1, 1000,
+		\coco1Bus, bQMix, \coco2Bus, bQMix,     // silent (no quantussy in this score)
+		\spaceRetBus, bSpaceRet, \dryBus, bDry, \stem1Bus, bStem1, \stem2Bus, bStem2,
+		\masterVol, 0, \masterDry, 0, \spaceMix, 1, \fadeIn, 1]]);
+	score.add([dur, [\c_set, 0, 0]]);
+	score
+};
+
+// phase 7: stem outputs (SPEC §5.7, safety #1 "identical chain on each stem"). The
+// master is built with stemOuts [2,3]; the coco worst case drives it and the render
+// is 4-ch. Channels 2 & 3 are the post-safety Coco1/Coco2 stems — asserted bounded
+// AND non-silent, proving the safety chain holds on the stems, not just the main mix.
+var makeStemScore = {
+	var score = Score.new;
+	var cocoArgs = { |buf, pre, deck, cross, out, tap, org|
+		[\buf, buf, \preBus, pre, \deckBus, deck, \qMixBus, bQMix,
+			\crossBus, cross, \outBus, out, \spaceBus, bSpace, \modSrcBus, bModSrc,
+			\modTapIdx, tap, \modOrganIdx, org,
+			\inLevel, 2, \fbLevel, 1.25, \dust, 0.5, \wrap, 1, \bits, 3,
+			\hold, 0, \organLvl, 1, \level, 1.5, \speed, 24000,
+			\slotPre, 1.5, \slotDeck, 1.5, \slotQ, 0, \slotX, 1.5]
+	};
+	defs.do { |d| score.add([0.0, [\d_recv, d.asBytes]]) };
+	score.add([0.0, [\d_recv, feedDef.asBytes]]);
+	score.add([0.0, [\d_recv, stemMasterDef.asBytes]]);   // \cqMaster rebuilt with stemOuts
+	score.add([0.0, [\b_alloc, 0, cocoBufFrames, 1]]);
+	score.add([0.0, [\b_alloc, 1, cocoBufFrames, 1]]);
+	score.add([0.0, [\g_new, 1000, 0, 0]]);
+	score.add([0.0, [\s_new, \cqTestFeed, 1001, 1, 1000, \a, bDeckA, \b, bDeckB]]);
+	score.add([0.0, [\s_new, \cqInput, 1002, 1, 1000,
+		\deckABus, bDeckA, \deckBBus, bDeckB, \modSrcBus, bModSrc,
+		\preABus, bPreA, \preBBus, bPreB, \dryBus, bDry,
+		\preASrc, 3, \preBSrc, 4, \preADrive, 40, \preBDrive, 40,
+		\preABias, 0.6, \preBBias, 0.6]]);
+	score.add([0.0, ([\s_new, \cqCoco, 1003, 1, 1000]
+		++ cocoArgs.value(0, bPreA, bDeckA, bCoco2, bCoco1, 12, 14))]);
+	score.add([0.0, ([\s_new, \cqCoco, 1004, 1, 1000]
+		++ cocoArgs.value(1, bPreB, bDeckB, bCoco1, bCoco2, 13, 15))]);
+	score.add([0.0, [\s_new, \cqMaster, 1005, 1, 1000,
+		\coco1Bus, bCoco1, \coco2Bus, bCoco2,
+		\spaceRetBus, bSpaceRet, \dryBus, bDry, \stem1Bus, bStem1, \stem2Bus, bStem2,
+		\masterVol, 0, \masterDry, 0, \fadeIn, 1]]);
+	score.add([dur, [\c_set, 0, 0]]);
+	score
+};
+
+var render = { |score, outPath, renderDur, renderOpts|
 	var done = false, waited = 0, maxWait = max(120, (renderDur ? dur) * 2);
-	score.recordNRT(nil, outPath, nil, sr, "WAV", "float", opts,
+	score.recordNRT(nil, outPath, nil, sr, "WAV", "float", renderOpts ? opts,
 		duration: (renderDur ? dur), action: { done = true });
 	while { done.not and: { waited < maxWait } } { 0.2.wait; waited = waited + 0.2 };
 	if(done.not) { Error("CQ NRT: render timed out: " ++ outPath).throw };
@@ -265,14 +342,31 @@ var countCrossings = { |path, half|
 	count
 };
 
+// max abs over one channel of a multichannel render — per-stem peak (phase 7)
+var chanPeak = { |path, ch|
+	var sf = SoundFile.openRead(path);
+	var data, numCh, peak = 0.0, i;
+	if(sf.isNil) { Error("CQ NRT: cannot open render: " ++ path).throw };
+	data = FloatArray.newClear(sf.numFrames * sf.numChannels);
+	sf.readData(data);
+	sf.close;
+	numCh = sf.numChannels;
+	i = ch;
+	while { i < data.size } { peak = max(peak, data[i].abs); i = i + numCh };
+	peak
+};
+
 opts.numOutputBusChannels = 2;
 opts.numInputBusChannels = 2;
 opts.blockSize = cfg[\blockSize];
+opts4.numOutputBusChannels = 4;        // phase 7 stem render: mix (0,1) + stems (2,3)
+opts4.numInputBusChannels = 2;
+opts4.blockSize = cfg[\blockSize];
 
 File.mkdir(tmpDir);
 
 {
-	var r1, r2, r3, r4, r5, r6, xUp, xDown;
+	var r1, r2, r3, r4, r5, r6, rSpace, rStem, xUp, xDown, stem1Pk, stem2Pk;
 	var ceiling = (-0.75).dbamp;
 	var p1 = tmpDir +/+ "nrt_safety_torture.wav";
 	var p2 = tmpDir +/+ "nrt_safety_nan.wav";
@@ -280,6 +374,8 @@ File.mkdir(tmpDir);
 	var p4 = tmpDir +/+ "nrt_safety_quantussy.wav";
 	var p5 = tmpDir +/+ "nrt_safety_mayhem.wav";
 	var p6 = tmpDir +/+ "nrt_safety_matrixfm.wav";
+	var pSpace = tmpDir +/+ "nrt_safety_space.wav";
+	var pStem = tmpDir +/+ "nrt_safety_stem.wav";
 
 	try {
 		"CQ NRT: rendering torture case (% s)...".format(dur).postln;
@@ -358,6 +454,42 @@ File.mkdir(tmpDir);
 		check.value(xUp > (xDown * 1.3),
 			"matrix castle-FM routing is alive: up-half crossings % > 1.3 x down-half %"
 				.format(xUp, xDown));
+
+		"CQ NRT: rendering \\cqSpace FDN stress (% s)...".format(dur).postln;
+		render.value(makeSpaceScore.value, pSpace);
+		rSpace = analyze.value(pSpace);
+		"space: peak %  dcL %  dcR %  frames %".format(
+			rSpace[\peak].round(0.0001), rSpace[\dcL].round(0.00001),
+			rSpace[\dcR].round(0.00001), rSpace[\frames]).postln;
+		check.value(rSpace[\frames] > 0, "space render produced audio");
+		check.value(rSpace[\bad].not, "space FDN has no NaN/inf (feedback capped 0.98)");
+		check.value(rSpace[\peak] <= ceiling,
+			"space peak % <= -0.75 dBFS".format(rSpace[\peak].round(0.0001)));
+		check.value(rSpace[\peak] >= 0.02,
+			"space reverb return is not silent (peak %)".format(rSpace[\peak].round(0.0001)));
+		check.value(rSpace[\dcL].abs <= 0.02, "space |DC left| <= 0.02");
+		check.value(rSpace[\dcR].abs <= 0.02, "space |DC right| <= 0.02");
+
+		"CQ NRT: rendering stem outputs (4-ch, % s)...".format(dur).postln;
+		render.value(makeStemScore.value, pStem, dur, opts4);
+		rStem = analyze.value(pStem);
+		stem1Pk = chanPeak.value(pStem, 2);
+		stem2Pk = chanPeak.value(pStem, 3);
+		"stem: peak %  coco1(ch2) %  coco2(ch3) %  frames %".format(
+			rStem[\peak].round(0.0001), stem1Pk.round(0.0001),
+			stem2Pk.round(0.0001), rStem[\frames]).postln;
+		check.value(rStem[\frames] > 0, "stem render produced audio");
+		check.value(rStem[\bad].not, "stem render has no NaN/inf");
+		check.value(rStem[\peak] <= ceiling,
+			"stem: all channels peak % <= -0.75 dBFS".format(rStem[\peak].round(0.0001)));
+		check.value(stem1Pk <= ceiling,
+			"coco1 stem (ch2) % <= -0.75 dBFS".format(stem1Pk.round(0.0001)));
+		check.value(stem2Pk <= ceiling,
+			"coco2 stem (ch3) % <= -0.75 dBFS".format(stem2Pk.round(0.0001)));
+		check.value(stem1Pk >= 0.05,
+			"coco1 stem carries signal (identical safety chain on stems, #1)");
+		check.value(stem2Pk >= 0.05,
+			"coco2 stem carries signal (identical safety chain on stems, #1)");
 
 		"CQ NRT: rendering NaN-injection case...".postln;
 		render.value(makeScore.value(\cqTestNan), p2);

@@ -264,7 +264,9 @@ CQ.patch(\coco2, \coco1_fbVca, 0.4);    //    ristikaiun keskinäinen ducking
 
 - [x] M6 hyväksytty (pvm: 2026-07-17)
 
-## M7 — 30 min abuse-sessio (vaihe 7, tulossa)
+## M7 — 30 min abuse-sessio (vaihe 7)
+
+Osa KUUNTELU 7:ää — ks. tiedoston loppu.
 
 ## M8 — 16n-faderit (vaihe 5)
 
@@ -510,3 +512,121 @@ CQ.recStop;                    // tai REC-nappi/r-näppäin uudelleen
       boot ajetaan boot.scd:stä)
 - [x] 30 min sessio pelkillä patch-riveillä + GUI + 16n -> M1-M8 läpi (2026-07-18)
 - [x] KUUNTELU 6 hyväksytty (pvm: 2026-07-18) → **M2 valmis**
+
+---
+
+## KUUNTELU 7 — space, watchdog, patternit, stemit, M7 abuse (vaihe 7 → v1.0)
+
+Viimeinen kuuntelu-gate. (`classes/` muuttui → **Ctrl+Shift+L** ennen boottia.)
+
+```supercollider
+// 7.1 — Space (SPEC §5.6): 4-linjainen FDN-kaiku, oletuksena POIS (spaceMix 0).
+// (Lähtötila: deck A soi coco1:n läpi.)
+CQ.boot;
+CQ.deckA.load("123681__aidenfry__cricket-and-bird-field-recording.wav");
+CQ.hold(1, 0);
+CQ.set(\coco1Send, 0.6);        // coco1 -> space-send auki (post-fader, pan-sijoitettu)
+CQ.set(\spaceMix, 0.4);         // kaiun paluutaso kuuluviin (16n F14 liikuttaa samaa)
+// 1. Kaiun pitää ilmestyä (pieni huone/levy, ~30-50 ms viiveet). Kumpikin
+//    tarvitaan: ilman coco1Sendiä TAI spaceMixiä = kuiva.
+CQ.set(\spaceSize, 0.3);        // 2. lyhyt, tiukka häntä...
+CQ.set(\spaceSize, 0.98);       //    ...pitkä häntä (feedback katossa 0.98, ei jää soimaan ikuisesti)
+CQ.set(\spaceDamp, 800);        // 3. tumma (vaimennettu ylä)...
+CQ.set(\spaceDamp, 12000);      //    ...kirkas
+CQ.set(\coco2Send, 0.6);        // 4. molemmat cocot kaikuun (pan -0.3/+0.3 levittää)
+CQ.set(\spaceMix, 0);           // lopuksi: kaiku pois (purismi)
+```
+
+```supercollider
+// 7.2 — Watchdog auto-trim (SPEC §5.6): master-RMS > -6 dBFS yhtäjaksoisesti
+// 5 s -> automaattinen -6 dB trim + notice. (config autoTrim: true.)
+CQ.boot;
+CQ.patchPreset(\mayhem);        // tiheä kaaos
+CQ.set(\coco1SlotQ, 1); CQ.set(\coco2SlotQ, 1);  // quantussy kuuluviin
+CQ.hold(1, 0); CQ.hold(2, 0);
+CQ.set(\masterVol, -3);         // aja kovaa (turvaketju rajaa aina)
+// 1. Odota ~5 s jatkuvaa kuumaa outputtia -> post-ikkuna: "WATCHDOG — output
+//    hot > 5 s, auto-trim now -6 dB", GUI:n notice-rivi: "OUTPUT HOT —
+//    auto-trimmed -6 dB". Kuulet ~6 dB pudotuksen.
+CQ.trimDb;                      // -> -6 (tai -12/-18 jos kuuma jatkui askelittain)
+CQ.resetTrim;                   // 2. palauttaa 0 dB:hen (taso palaa)
+CQ.set(\masterVol, -12); CQ.patchPreset(\empty);  // lopuksi
+```
+
+```supercollider
+// 7.3 — Patternit (\cq-eventtityyppi, SPEC §6.4): Pbind sekvensoi diskreettejä
+// aktioita tempossa. (Lähtötila: jokin soi, esim. deck A hold 0 + \classic.)
+CQ.boot;
+CQ.deckA.load("123681__aidenfry__cricket-and-bird-field-recording.wav");
+CQ.hold(1, 0); CQ.patchPreset(\classic);
+// 1. Spesal-askellus tempossa castleen 3:
+p = Pbind(\type, \cq, \action, \spesal, \castle, 3, \dur, Pexprand(0.5, 3)).play;
+p.stop;
+// 2. Rytminen skip/flip-vuorottelu coco1:lle:
+p = Pbind(\type, \cq, \action, Pseq([\skip, \flip], inf), \coco, 1, \dur, 1).play;
+p.stop;
+// 3. Speed-heitto sekvenssinä:
+p = Pbind(\type, \cq, \action, \set, \param, \coco1Speed,
+    \value, Prand([6000, 12000, 24000, 48000], inf), \dur, 2).play;
+p.stop;
+// 4. Deck-navigointi tempossa:
+p = Pbind(\type, \cq, \action, \deck, \deck, \a, \do, \next, \dur, 8).play;
+p.stop;
+// -> aktioiden pitää laueta tarkasti tempossa. \rest / bootaamaton = hiljainen
+//    no-op (pattern selviää reboottien yli varoittelematta).
+```
+
+```supercollider
+// 7.4 — Stem-ulostulot (SPEC §5.7): post-safety coco1/coco2 lisäulostuloihin
+// modulaariin. Vaatii >= 4-kanavaisen äänikortin.
+// config.scd:hen  stemOuts: [2, 3]  (kanavat coco1=3, coco2=4), boottaa uudelleen.
+// 1. Kuuntele modulaarista kanavat 3-4: coco1 kanavassa 3, coco2 kanavassa 4,
+//    molemmat post-safety (identtinen limitteri + squelch) = ei koskaan
+//    vaarallista tasoa. Master-miksi jatkuu kanavissa 1-2.
+// 2. PANIC (space) mykistää myös stemit; boot-fade koskee stemejäkin (turva).
+```
+
+```supercollider
+// 7.5 — Stem-äänitys (SPEC §5.7): config.scd:hen  recStems: true,  boottaa uudelleen.
+CQ.rec;                         // 4-ch: master L/R + coco1 + coco2 -stemit
+CQ.recStop;                     // -> post: "recording 4-ch stems -> ...cq_....wav"
+// -> TARKISTA: recordings/-kansion wav on 4-kanavainen (Reaper/Audacity);
+//    kanavat 3-4 ovat post-safety cocot. recStems: false -> takaisin 2-ch masteriin.
+```
+
+```supercollider
+// 7.6 — Suorituskyky (SPEC §9): koko instrumentti raskaimmillaan <= 25 % / core
+// @ 48 kHz / block 64. (GUI + 16n auki mittauksen aikana.)
+CQ.boot;
+CQ.deckA.load("123681__aidenfry__cricket-and-bird-field-recording.wav");
+CQ.hold(1, 0); CQ.hold(2, 0);
+CQ.patchPreset(\mayhem);                          // raskain patch
+CQ.set(\coco1SlotQ, 1); CQ.set(\coco2SlotQ, 1);
+CQ.set(\coco1Send, 0.5); CQ.set(\coco2Send, 0.5); CQ.set(\spaceMix, 0.4);  // space päällä
+CQ.server.avgCPU.round(0.1);   // -> keskimääräinen CPU-% (aja pari kertaa)
+CQ.server.peakCPU.round(0.1);  // -> piikki-% (tavoite: reilusti alle 25)
+```
+
+```supercollider
+// 7.7 — M7 abuse-sessio (SPEC M7): 30 min kuulokkeilla tahallista väärinkäyttöä.
+// Kaikki ääripäissä yhtä aikaa — tavoite: MIKÄÄN ei koskaan satu korvia, ei
+// tasohyppyjä, ei kipeitä piikkejä (turvaketju + watchdog pitävät kurissa).
+CQ.patchPreset(\mayhem); CQ.shake(1.0);           // maksimikaaos
+CQ.set(\coco1Fb, 1.25); CQ.set(\coco2Fb, 1.25);   // feedback yli unityn
+CQ.set(\coco1Speed, 3000); CQ.set(\coco2Speed, 48000);
+CQ.set(\qChaos, 1); CQ.set(\qFreq, 500);
+CQ.set(\coco1Wrap, 1); CQ.set(\coco1Dust, 0.5);
+CQ.set(\spaceMix, 1); CQ.set(\spaceSize, 0.98);   // kaiku täysille
+CQ.set(\masterVol, 0);                            // täysi volume
+// -> limitteri (-1 dBFS) + watchdog pitävät tason kurissa AINA.
+CQ.panic; CQ.resume;                              // panic aina tavoitettavissa
+```
+
+- [ ] 7.1 Space ok (mix/size/damp; oletus pois)
+- [ ] 7.2 Watchdog ok (auto-trim + notice; `CQ.resetTrim` palauttaa)
+- [ ] 7.3 Patternit ok (`\cq`-aktiot tempossa)
+- [ ] 7.4 Stemit ok (post-safety coco1/coco2; jos ≥ 4-ch kortti)
+- [ ] 7.5 Stem-äänitys ok (4-ch tiedosto, `recStems: true`)
+- [ ] 7.6 Suorituskyky ok (≤ 25 % / core)
+- [ ] 7.7 M7 abuse ok (mikään ei satu)
+- [ ] KUUNTELU 7 hyväksytty (pvm: ____) → **v1.0-tag**

@@ -52,6 +52,11 @@ CQGraph {
 		buses[\space] = Bus.audio(server, 2);
 		buses[\spaceRet] = Bus.audio(server, 2);
 		buses[\dry] = Bus.audio(server, 2);
+		// post-safety Coco stems (SPEC §5.7): \cqMaster publishes each Coco through
+		// the identical safety chain here; hardware stem outs and the stem recorder
+		// both read these (kept internal so stem recording needs no configured outs)
+		buses[\stem1] = Bus.audio(server, 1);
+		buses[\stem2] = Bus.audio(server, 1);
 		// routing matrix (ARCH §3.2/§3.3): one 16-ch control bus per destination,
 		// keyed by the destination name itself (CQMatrix.destNames) — matrix is
 		// empty at boot (all zero), CQMatrix.pushAll after spawn makes that explicit
@@ -99,6 +104,7 @@ CQGraph {
 				\qMixBus, buses[\qMix].index,
 				\crossBus, buses[row[3]].index,
 				\outBus, buses[n].index,
+				\spaceBus, buses[\space].index,
 				\modSrcBus, buses[\modSrc].index,
 				\modTapIdx, row[4], \modOrganIdx, row[5],
 				\meterId, if(n == \coco1) { 1 } { 2 },   // '/cq_cocometers' replyID
@@ -109,11 +115,17 @@ CQGraph {
 				\wSkipBus, buses[(n ++ "_skip").asSymbol].index
 			], groups[\cocos]);
 		};
+		synths[\space] = Synth(\cqSpace, [
+			\inBus, buses[\space].index,
+			\outBus, buses[\spaceRet].index
+		], groups[\fx]);
 		synths[\master] = Synth(\cqMaster, [
 			\coco1Bus, buses[\coco1].index,
 			\coco2Bus, buses[\coco2].index,
 			\spaceRetBus, buses[\spaceRet].index,
-			\dryBus, buses[\dry].index
+			\dryBus, buses[\dry].index,
+			\stem1Bus, buses[\stem1].index,
+			\stem2Bus, buses[\stem2].index
 		], groups[\master]);
 		server.sync;
 		isRunning = true;

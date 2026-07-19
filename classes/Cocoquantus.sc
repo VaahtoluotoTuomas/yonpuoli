@@ -6,7 +6,7 @@ Cocoquantus {
 	classvar <config, <graph, <state, <matrix, <server;
 	classvar configPath, deckAPlayer, deckBPlayer, snapshotMgr, midi16n, recorder;
 	classvar guiPanel;
-	classvar spesalCache, micWatcher, micWasLive = false;
+	classvar spesalCache, micWatcher, micWasLive = false, trimDb = 0;
 
 	*boot { |path, onReady|
 		if(this.isBooted) {
@@ -14,6 +14,7 @@ Cocoquantus {
 			^this
 		};
 		configPath = path ?? { this.repoDir +/+ "config.scd" };
+		trimDb = 0;                            // watchdog trim resets each boot (SPEC §5.6)
 		config = if(File.exists(configPath.asString)) {
 			CQConfig.load(configPath)
 		} {
@@ -28,6 +29,7 @@ Cocoquantus {
 		matrix = CQMatrix(graph);
 		this.prInitOsc;        // before spawn: catch the boot-time spesal report
 		this.prInitMicWatch;
+		this.prRegisterCqEvent; // \cq pattern event type (SPEC §6.4)
 		server.waitForBoot {
 			graph.build;                       // buses + groups, synced
 			CQSynthDefs.send(config, server);
@@ -241,6 +243,16 @@ Cocoquantus {
 		this.set(\monitorMute, 0);
 	}
 
+	// clear a watchdog auto-trim back to 0 dB (SPEC §5.6): the operator's "I've
+	// fixed the patch, restore level" after the output ran hot. A (re)boot also
+	// resets it — the fresh master synth starts at unity trim.
+	*resetTrim {
+		trimDb = 0;
+		if(this.isBooted) { graph.synths[\master] !? { |m| m.set(\trim, 1) } };
+	}
+
+	*trimDb { ^trimDb }
+
 	*free {
 		if(graph.isNil) { ^this };
 		CmdPeriod.remove(this);
@@ -261,6 +273,7 @@ Cocoquantus {
 			micWatcher = nil;
 			micWasLive = false;
 			OSCdef.all[\cq_spesal] !? { |d| d.free };
+			OSCdef.all[\cq_hot] !? { |d| d.free };
 			spesalCache = nil;
 			deckAPlayer !? { deckAPlayer.free };
 			deckAPlayer = nil;
@@ -328,6 +341,20 @@ Cocoquantus {
 		OSCdef(\cq_spesal, { |msg|
 			spesalCache = msg.copyRange(3, 7).collect { |v| v.asInteger };
 		}, '/cq_spesal');
+		// watchdog (SPEC §5.6): the server flags sustained-hot output on '/cq_hot'.
+		// With autoTrim on, step the master trim down −6 dB (floor −18 dB); otherwise
+		// just warn. The GUI shows its own notice (CQGui listens to the same address).
+		OSCdef(\cq_hot, {
+			if(config.notNil and: { config[\autoTrim] == true }) {
+				trimDb = max(trimDb - 6, -18);
+				graph !? { graph.synths[\master] !? { |m| m.set(\trim, trimDb.dbamp) } };
+				("Cocoquantus: WATCHDOG — output hot > 5 s, auto-trim now % dB "
+					++ "(CQ.resetTrim to restore).").format(trimDb).warn;
+			} {
+				("Cocoquantus: WATCHDOG — output hot > 5 s "
+					++ "(autoTrim off — no trim applied).").warn;
+			};
+		}, '/cq_hot');
 	}
 
 	// SPEC §7 mic warning (headless part; the GUI adds color in phase 6):
@@ -344,6 +371,57 @@ Cocoquantus {
 				if(val <= 0) { micWasLive = false };
 			};
 		});
+	}
+
+	// SPEC §6.4 — Pbind sequencing of discrete actions on a TempoClock: a
+	// generative "player piano". Event type \cq dispatches ONE action per event
+	// through the facade, so every write still passes the funnels. Registered once;
+	// re-registering on reboot is harmless. A missing/\rest action or an unbooted
+	// instrument is a silent no-op, so a pattern may carry Rests and survive a
+	// free/reboot. Examples:
+	//   Pbind(\type, \cq, \action, \skip,   \coco, 1,             \dur, 1).play
+	//   Pbind(\type, \cq, \action, \spesal, \castle, 3,           \dur, Pexprand(0.5, 4)).play
+	//   Pbind(\type, \cq, \action, \hold,   \coco, 2, \val, 1,    \dur, 4).play
+	//   Pbind(\type, \cq, \action, \deck,   \deck, \a, \do, \next, \dur, 8).play
+	//   Pbind(\type, \cq, \action, \set,    \param, \coco1Fb, \value, 1.1, \dur, 2).play
+	*prRegisterCqEvent {
+		Event.addEventType(\cq, { Cocoquantus.prCqAction(currentEnvironment) });
+	}
+
+	// dispatch one \cq event (kept out of the event-type closure so it is unit-
+	// testable and degrades gracefully when the instrument is down)
+	*prCqAction { |ev|
+		var action = ev[\action];
+		if(action.isNil or: { action == \rest }) { ^this };   // Rest / no-op
+		if(this.isBooted.not) { ^this };                       // silent when down
+		switch(action,
+			\hold,   { this.hold(ev[\coco] ? 1, ev[\val]) },
+			\flip,   { this.flip(ev[\coco] ? 1, ev[\val]) },
+			\skip,   { this.skip(ev[\coco] ? 1) },
+			\spesal, {
+				if(ev[\state].notNil)
+					{ this.spesalSet(ev[\castle] ? 1, ev[\state]) }
+					{ this.spesal(ev[\castle] ? 1) };
+			},
+			\set,    { ev[\param] !? { this.set(ev[\param], ev[\value]) } },
+			\patch,  { this.patch(ev[\src], ev[\dest], ev[\weight] ? 1.0) },
+			\deck,   { this.prCqDeck(ev) },
+			\shake,  { this.shake(ev[\amount] ? 0.3, ev[\seed]) },
+			{ "Cocoquantus: \\cq event — unknown action '%' ignored.".format(action).warn }
+		);
+	}
+
+	*prCqDeck { |ev|
+		var deck = if((ev[\deck] ? \a) == \b) { this.deckB } { this.deckA };
+		deck !? {
+			switch(ev[\do] ? \next,
+				\next,    { deck.next },
+				\prev,    { deck.prev },
+				\random,  { deck.random },
+				\restart, { deck.restart },
+				{ "Cocoquantus: \\cq deck op '%' ignored.".format(ev[\do]).warn }
+			);
+		};
 	}
 }
 
