@@ -6,10 +6,11 @@ banaanipatchausta vastaava 16×22-reititysmatriisi. Ohjaus kolmena kerroksena:
 koodi (`CQ`-facade), GUI ja 16n-faderbank — kaikki valinnaisia, kaikki
 kirjoittavat samaan tilaan.
 
-**Tilanne:** M1 (ydinääni) ja M2 (käyttöliittymät: GUI, 16n, snapshotit,
-shake, recorder) valmiit ja kuunneltu (2026-07-18). Jäljellä vaihe 7
-(space-kaiku, stemit, watchdog, patternit) → **v1.0**. Työn tila ja
-checkboxit: `PLAN.md`.
+**Tilanne: 🎉 v1.0 (2026-07-19).** M1 (ydinääni), M2 (GUI, 16n, snapshotit,
+shake, recorder) ja M3 (space-kaiku, stemit, watchdog, `\cq`-patternit) valmiit ja
+kuunneltu. CPU raskaimmillaan ~20–23 % (≤ 25 %). Ainoa live-todentamaton on
+stem-ulostulot/-äänitys, jotka vaativat ≥4-kanavaisen äänikortin (toteutus + NRT-turva
+valmiit; live-kuuntelu v1.0.1:ssä). Työn tila ja checkboxit: `PLAN.md`.
 
 ## Vaatimukset
 

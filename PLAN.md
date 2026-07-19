@@ -4,11 +4,14 @@ Vaiheistettu checklist. Toimii CLAUDE.md:n milestone-checklistinä (TODO.md:n ro
 Normatiiviset lähteet: SPEC.md (käyttäytyminen), ARCHITECTURE.md (rakenne).
 Milestone-mappaus: **M1 = vaiheet 0–4 · M2 = vaiheet 5–6 · M3 = vaihe 7**.
 
-**Tilanne 2026-07-18: vaiheet 0–6 valmiit ja hyväksytty (M1 + M2). Vaiheen 7 koodi
-toteutettu ja automaattimarkerit vihreät (space-FDN, stemit + stem-äänitys,
-watchdog, `\cq`-eventtityyppi; A1 + A2 3082 assertiota + A3 space/stem-turva +
-A4/A5 korrelaatio 1.0) — jäljellä KUUNTELU 7 (M7 abuse + space/stem/pattern-kuuntelu)
-+ suorituskykymittaus → v1.0.** (M1 hyväksytty 2026-07-17; vaihe 5 2026-07-18:
+**Tilanne 2026-07-19: 🎉 v1.0 SAAVUTETTU — kaikki vaiheet 0–7 valmiit ja hyväksytty
+(M1 + M2 + M3).** KUUNTELU 7 hyväksytty 2026-07-19 (space, watchdog, patternit,
+suorituskyky ~20–23 % ≤ 25 %, M7 abuse "mikään ei satu"). Ainoa live-todentamaton:
+**stemit (7.4/7.5)** — toteutus + NRT-turva valmiit, mutta live-kuuntelu vaatii ≥4-ch
+äänikortin, jota käyttäjällä ei nyt ole → siirretty, kirjattu v1.0.1-todennukseen.
+Markerit vihreät: A1 + A2 (3082) + A3 (mayhem/space/stem ≤ katto) + A4/A5 (korrelaatio
+1.0). Reverbin *luonne* on avoin post-v1.0-suunnittelukysymys (ks. vaihe 7 kirjaukset).
+(M1 hyväksytty 2026-07-17; vaihe 5 2026-07-18:
 `885cb24` + `38653ab` + gate-korjaus `56ab8a7`. Vaihe 6: toteutus `5ab3255` —
 CQGui + CQ.shake + presetit \selfNoise/\quantumDrone/\organMode +
 \mayhem-viritys + CQRecorder — gate-korjaukset `81be310`, ja **KUUNTELU 6
@@ -646,7 +649,8 @@ tiedoston loppuun — se ohjaa vaiheen 7 rajapintavalintoja.
 - [ ] **Stem-äänitys (SIIRRETTY, sama syy)**: 4-ch tiedosto `recStems: true`
 - [x] Suorituskyky: avgCPU ~20–23 %, peak ~23 % raskaimmalla asetelmalla (mayhem +
       space + 2 dense sample + GUI) → **≤ 25 %** (SPEC §9) (2026-07-19, laptop)
-- [ ] Käyttäjän hyväksyntä → **v1.0-tag** (stemit jäävät live-todennettavaksi)
+- [x] **Käyttäjän hyväksyntä 2026-07-19 → v1.0** (stemit 7.4/7.5: toteutus + NRT-turva
+      valmiit, live-kuuntelu → v1.0.1 kun ≥4-ch kortti saatavilla)
 
 ### Kirjatut toteutuspäätökset (vaihe 7)
 - **Space-send tulee cocoista, ei masterista**: gFx (space) ajetaan ennen gMasteria,
