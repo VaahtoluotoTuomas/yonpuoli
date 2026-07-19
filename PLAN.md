@@ -754,6 +754,89 @@ tiedoston loppuun — se ohjaa vaiheen 7 rajapintavalintoja.
 
 ---
 
+## Post-v1.0 — Archipelago-GUI (hyväksytty 2026-07-19)
+
+`GUI_SPEC.md` on tästä eteenpäin uuden GUI:n autoritatiivinen käyttäytymis- ja
+visuaalinen määrittely. `SPEC.md` säilyy parametrien, DSP:n ja turvallisuuden totuutena
+(§8 voittaa ristiriidat), `ARCHITECTURE.md` pure-view/funnel/ownership-totuutena.
+Tekninen kompromissi `GUI_SPEC.md`:n eleisiin, rakenteeseen, vakioihin,
+turvallisuusreunoihin tai Ink & Phosphor -kieleen hyväksytetään käyttäjällä ennen
+muutosta.
+
+Päärakenne on lukittu:
+
+- yksi ikkuna;
+- **Day** = nykyiset neljä instrumenttisaraketta, skin sockets ja cable overlay;
+- **Night** = topology-true Archipelago ilman nuppeja tai numeroita;
+- molemmissa pysyvä, koskaan peittymätön Master-strip;
+- clickillä avautuva Drawer: Inspector (vanha grid), Spellbook ja Memory;
+- PC-alone on ensisijainen target: mouse + QWERTY, 16n säilyy valinnaisena;
+- vanha grid säilyy täsmäinspectorina, ei pääasiallisena patchauspintana;
+- Space ei saa Night-bodya ennen erillistä konseptipäätöstä;
+- ei Advanced-paneelia, image assetteja, icon-fontteja, teema-engineä tai DAW-eleitä.
+
+Auditin korjausjärjestys ennen Archipelagon portteja:
+
+- [ ] CQ-AUD-001: output-kanavien globaali uniqueness/disjoint-validointi (P0).
+- [ ] CQ-AUD-004: session generation, rollback ja peruutettava GUI-init (P1;
+      audition-revert riippuu tästä).
+- [ ] CQ-AUD-002: recorderin omistettu tilakone ennen uuden Master-stripin REC-
+      sidontaa (P1).
+- [ ] `CQMatrix` full-read + clampattu batch-write + yksi notification sekä committed/
+      transient-operaatioraja. Nykyinen `patch` ja snapshot triple -formaatti säilyvät.
+- [ ] Serverless audition-state-machine-testit kaikille `GUI_SPEC.md` §4.1:n
+      revert-poluille ennen ensimmäistä uutta patch-gesturea.
+
+### G1 — Day skin
+
+- [ ] Yhteinen Ink kit ja normatiivinen paletti/line/glyph/session-seed-perusta.
+- [ ] Yksi Day/Night + persistent Master + Drawer -ikkunakuori, minimi 1280×720.
+- [ ] Dayn 16 source jackia ja 22 destination socketia oikeille organ-skin-kodeille.
+- [ ] Hit-safe cable overlay, stacked plugs ja koko banana grammar: audition,
+      WYHIWYG plant, move, rip, wheel, polarity, solo-light, Esc ja 32-op Ctrl+Z.
+- [ ] Drawer Inspector touch-and-listen, Spellbook notification-streamistä ja
+      snapshot/morph Memory-välilehdelle.
+- [ ] `/cq_aura`: 16 canonical source magnitudea noin 15 Hz; informatiivinen glow/
+      cable pulse, ambient redraw ≤15 Hz ja GUI CPU noin ≤3 %.
+- [ ] `GUI_SPEC.md` §13 G1 automation + listening gate + käyttäjän visuaalinen
+      hyväksyntä ennen G1-statuscommittia.
+
+### G2 — Night map
+
+- [ ] Viiden castlen oikeansuuntainen ring, Coco-spiraalit left/right, roots below,
+      birds above; §16.6 anatomy ja seeded asymmetry.
+- [ ] Loop-phase/read-head spark ja `/cq_charge` 11 gate/trig-summalle post-weight/
+      pre-Schmitt.
+- [ ] Solo-light, deck-bird recursive drop ja tarkka Night toolbar.
+- [ ] Ei numeroita, Space-bodya tai dekoratiivista motionia; Master pysyy näkyvänä.
+- [ ] `GUI_SPEC.md` §13 G2 automation + listening gate + käyttäjän visuaalinen
+      hyväksyntä.
+
+### G3 — Weather machine
+
+- [ ] Compass: neljä weights-only-matriisimuistia, bilinear left commit, right elastic,
+      ≤60 Hz batch writes, yksi undo-op.
+- [ ] Versioned/validated/clamped `presets/compass.cqcompass.scd` autosave/load.
+- [ ] Grow/wither 2.5 Hz hold-operaatioina ja Breed täsmällisillä §7-vakioilla.
+- [ ] Mikään weather-operaatio ei muuta CQSpec-parametreja; `patchDepth` säilyy.
+- [ ] `GUI_SPEC.md` §13 G3 automation + listening gate + käyttäjän hyväksyntä.
+
+Tarkempi file/dependency/test/risk/commit-jako:
+`audit/GUI_DEVELOPMENT_PLAN.md` ja `audit/REMEDIATION_ROADMAP.md`.
+
+Ennen relevanttia UI-toteutusta kysyttävät, ei-arvattavat spec-saumat on kirjattu
+GUI-suunnitelmaan: `/cq_charge` 11 vs inventaarion 9 gate/trig-kohdetta, määrittelemätön
+`harvest`, erillisen `mic root` -kodin puuttuminen 16 source -inventaarioista sekä
+recorderin starting/stopping/error-lookit. Ne eivät estä testiperustaa tai matrix-
+API:a.
+
+**Seuraavan session aloitus:** aja vihreä compile/unit/NRT/Hold-baseline, lisää
+`CQMatrix` transaction- ja audition-revert-testit, toteuta niiden vaatima pieni matrix-
+API ja vasta sen jälkeen aloita Ink kit/ikkunakuori. Night-organismeja ei piirretä
+ennen G1:n behavior foundationia.
+
+---
+
 ## Post-v1.0 — v2-visio: norns-portti (sovittu 2026-07-17)
 
 Tavoiteympäristö: **norns + grid + 16n + crow-synkattu modulaari** (käyttäjällä

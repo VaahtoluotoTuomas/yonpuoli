@@ -360,6 +360,12 @@ macros, sources, global. Takeover mode configurable: `\jump` (default) or `\pick
 
 ### 6.2 GUI panel
 
+> **Version note:** the panel below documents the shipped v1.0 GUI. The adopted
+> post-v1.0 Archipelago GUI behavior and visual language are normative in
+> [`GUI_SPEC.md`](GUI_SPEC.md); until its G1–G3 gates ship, this subsection remains the
+> description of the running implementation. This SPEC still wins for parameters,
+> DSP and all §8 safety invariants.
+
 One window, four columns mirroring the hardware layout — [Sources+Preamps] [Coco1]
 [Quantussy] [Coco2] — plus a master strip. Uses the banana color code as accents:
 orange = triangle, gray = castle/delay out, blue = FM, green = inputs/spesal,
