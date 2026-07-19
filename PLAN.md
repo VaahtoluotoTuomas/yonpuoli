@@ -79,9 +79,21 @@ Foundation-portti 2026-07-19: `CQ_COMPILE_OK`, 3 176 unit-passia / 0 failurea ja
 `CQ_TESTS_PASSED`, `CQ_SAFETY_PASSED`; viimeisen DSP-muutoksen jälkeen lisäksi
 `CQ_LINKED_STEREO_PASSED` (L/R-offsetit 0/0) ja `CQ_HOLD_OK`.
 
+Foundation hyväksyttiin 2026-07-19. Se ja G1:n ensimmäinen shell/Ink-versio
+commitoitiin `archipelago`-haaraan commitissa `1f4a210`; G1-versio on visuaalista
+katselmointia odottava tarkistuspiste, ei hyväksytty ulkoasu. Foundation-vaihetta ei
+aloiteta seuraavassa sessiossa uudelleen.
+
 ## Archipelago-portit
 
 ### G1 — Day skin
+
+**Nykytila:** ensimmäinen ajettava ikkunakuori ja Ink-kitin pohja ovat olemassa.
+Qt-smoke varmistaa 1280×720-kuoren, Day/Night hard cutin, pysyvän Masterin, Drawerin
+ja siistin sulkemisen (`CQ_GUI_SHELL_PASSED`). Nykyinen koko portti on
+`CQ_COMPILE_OK`, 3 245 unit-passia / 0 failurea ja `CQ_SAFETY_PASSED`. Dayn varsinainen
+organ skin, banana grammar ja Drawer-sisällöt puuttuvat, eikä shellin ulkoasua ole
+vielä visuaalisesti hyväksytty. Alla olevia G1-checkboxeja ei siksi merkitä valmiiksi.
 
 - [ ] Yksi Day/Night-ikkunakuori, pysyvä Master-strip ja Drawer vähintään 1280×720:ssa.
 - [ ] Yhteinen Ink kit: normatiivinen paletti, viiva, glyphit ja session-seedattu
@@ -153,15 +165,32 @@ Lisäksi relevantit `GUI_SPEC.md` §13:n serverless interaction-testit, manuaali
 kuuntelu, visuaalinen tarkastus 100/125/150 % skaalauksilla sekä CPU/resource-soak on
 hyväksyttävä. G-porttia ei merkitä valmiiksi pelkän toteutuscommitin perusteella.
 
+### GUI-osien välitarkastukset
+
+Jokainen käyttäjälle näkyvä osa — esimerkiksi Day skin, banana-kaapelit, Drawer-paneeli,
+Night map ja Weather Machine — tehdään seuraavalla tavalla:
+
+1. Toteuta pienin ajettava ensimmäinen versio ja sen käyttäytymistestit.
+2. Aja pakolliset compile/unit/NRT-portit sekä osan oma GUI-smoke.
+3. Näytä versio käyttäjälle kuvana tai ajettavana näkymänä ja kerro myös keskeneräiset
+   kohdat. Pysähdy visuaalista palautetta varten.
+4. Tee visuaalinen viimeistely palautteen perusteella. Älä aloita seuraavaa näkyvää
+   kokonaisuutta ennen palautetta.
+5. Viimeistään hyväksytyn milestone-tarkastuksen jälkeen tee commit ja push
+   `archipelago`-haaraan.
+
 ## Seuraavan toteutussession ensimmäiset askeleet
 
-1. Varmista `archipelago`-haara ja puhdas työpuu.
-2. Aja neljän testin baseline muuttamatta lähdekoodia.
-3. Lisää ensin CQ-AUD-001–004-reproducerit sekä matrix transaction- ja audition-
-   revert-testit; varmista, että ne epäonnistuvat tarkoitetusta syystä.
-4. Korjaa CQ-AUD-001 ja aja koko baseline.
-5. Etene lifecycle/recorder/deck-perustaan ja vasta sitten `CQMatrix`-API:in.
-6. Aloita Ink kit ja ikkunakuori vasta, kun F0–F2:n riippuvuudet ovat vihreitä.
+1. Varmista `archipelago`-haara, puhdas työpuu ja lue `CLAUDE.md`, `PLAN.md` sekä
+   `GUI_SPEC.md` kokonaan. F0–F2 on valmis; älä toista toteutusta.
+2. SuperColliderissa käännä luokkakirjasto uudelleen (`Ctrl+Shift+L`). Varmista
+   tarvittaessa nykyinen shell ajamalla `tests/gui_shell_smoke.scd`.
+3. Näytä käyttäjälle G1-shellin nykyinen ensimmäinen versio ennen uusia
+   ulkoasuratkaisuja ja kerää palaute Day/Night-kehyksestä, Masterista ja Drawerista.
+4. Toteuta palautteen jälkeen G1 Day skin pieninä näkyvinä osina PLANin järjestyksessä:
+   ensin organ skin -jackit/socketit, sitten banana grammar ja vasta sen jälkeen Drawer.
+5. Pysähdy jokaisen ensimmäisen ajettavan GUI-osan kohdalla yllä olevaan visuaaliseen
+   välitarkastukseen. Älä aloita varsinaista G2 Night mapia ennen valmista G1-porttia.
 
 Night-organismeja tai Weather Machinea ei piirretä ennen G1:n behavior foundationia.
 

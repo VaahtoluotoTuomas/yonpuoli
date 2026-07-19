@@ -71,18 +71,31 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 - The detailed v1.0 implementation log is frozen at `docs/history/PLAN_v1.0.md`.
 - The verified audit result is indexed by `audit/README.md`; use
   `audit/VERIFIED_FINDINGS.md` over historical severities in the first audit reports.
-- Archipelago work belongs on the `archipelago` integration branch. Start with the
-  baseline, P0/P1 reproducer tests, matrix transaction contracts and audition state
-  machine listed in `PLAN.md`; do not begin with Night-map drawing.
+- Archipelago work belongs on the `archipelago` integration branch. F0–F2 were
+  accepted on 2026-07-19; the foundation and first runnable G1 shell/Ink version were
+  committed as `1f4a210`. The G1 version is a review checkpoint, not a visually
+  accepted design. Do not repeat the foundation implementation. The next action is
+  the user's visual review of that shell, followed by G1 Day skin in `PLAN.md` order.
+- The accepted foundation markers are recorded in `PLAN.md`. The current G1-WIP gate
+  is `CQ_COMPILE_OK`, 3,245 unit passes / 0 failures, `CQ_SAFETY_PASSED`, and
+  `CQ_GUI_SHELL_PASSED`.
 - The four former `GUI_SPEC.md` seams were resolved by the user on 2026-07-19 and are
   recorded in the spec and `PLAN.md`: nine charge channels, the G1 harvest lasso,
   display-only mic sprout and static REC transition/error states. Do not reopen or
   reinterpret them without the user's approval.
+- `Cocoquantus.sc` is currently about 645 lines after the lifecycle work. The user
+  explicitly accepts that size for now; split it when ownership becomes clearer or
+  further growth would make the class harder to maintain, not as a risky handoff-only
+  refactor.
 
 ## Workflow
 
 - Work in `PLAN.md` order and tick an item only when its relevant automated and manual
   gates pass; do not create competing current-status checklists.
+- For every new visible GUI part (for example Day skin, Drawer, Night map, Compass),
+  stop after its first runnable and tested version, show it to the user, explain what
+  is still provisional, and wait for visual feedback before deeper styling or the
+  next visible part. Commit and push no later than each user-approved milestone.
 - Small, focused changes; after green tests, update SPEC.md if user-visible behavior
   changed (SPEC and CQSpec must never drift apart).
 - Listening iterations: propose a hypothesis → make the change → run tests → give the
