@@ -295,8 +295,15 @@ Outputs published to the mod source bus: `tri1..tri5` (±1 triangle), `cas1..cas
 **Master safety chain (fixed, non-bypassable):** mix → `LeakDC` → soft saturation with
 −6 dB headroom (`tanh`) → `Limiter.ar(ceiling: 0.89 ≈ −1 dBFS, dur: 0.01)` → bad-value
 squelch (NaN/inf → 0) → boot fade envelope → hardware outs. **Identical chain on each
-stem output.** A watchdog measures master RMS; if RMS > −6 dBFS sustained 5 s, an
-automatic −6 dB trim engages with a GUI notice (config `autoTrim: true`).
+stem output.** A watchdog measures the **driven** master-mix RMS (post-vol, pre-safety-
+chain; per channel, louder wins); if RMS > −6 dBFS sustained 5 s it posts a notice
+(console + GUI). With `autoTrim: true` (opt-in, **default off**) it additionally engages an
+automatic −6 dB ease-off, held until `CQ.resetTrim`/reboot. This is a **comfort feature,
+not a safety guarantee**: the limiter (§8.1) and bounded recirculation (§8.2) are the
+safety; the watchdog only eases sustained loud *driving*. (It measures the driven mix, not
+the tamed output — the tanh + limiter chain holds the output near −6 dBFS RMS or below
+regardless of drive, so an output threshold never reliably fires; the driven mix is a wide
+range, +1.6 dBFS for dense material at vol 0. `CQ.testWatchdog` simulates a trip.)
 
 ### 5.7 Stems and recorder
 
@@ -441,7 +448,7 @@ gitignored):
                               // chan nil = any MIDI channel (per-fader channels,
                               // §6.1); an integer 0..15 pins one channel
   folders: (samples: "samples", recordings: "recordings", presets: "presets"),
-  autoTrim: true,
+  autoTrim: false,            // watchdog notice always; true = opt-in −6 dB auto-ease
   recStems: false,            // true → CQ.rec writes 4-ch: master L/R + coco1/coco2 stems
 )
 ```
@@ -477,9 +484,13 @@ Notes:
 5. Boot sequence is silent until the graph is verified, then fades in over 2 s.
    `CmdPeriod` leaves silence (never a raw unprocessed path) and the facade can rebuild.
 6. NaN/inf anywhere in the chain is squelched to silence and reported, never emitted.
-7. Watchdog auto-trim (§5.6) unless disabled in config.
-8. The NRT safety test (§10) gates every change: worst-case preset must render with
+7. The NRT safety test (§10) gates every change: worst-case preset must render with
    peak ≤ −0.75 dBFS, no NaN, |DC| < 0.02.
+
+Safety comes entirely from 1–7 above (bounded recirculation + brickwall limiter make a
+damaging level impossible). The watchdog (§5.6) is **not** a safety requirement — it is
+an optional comfort feature (sustained-loud notice; opt-in −6 dB auto-ease via
+`autoTrim`), default off, and may be disabled or removed without weakening safety.
 
 ---
 

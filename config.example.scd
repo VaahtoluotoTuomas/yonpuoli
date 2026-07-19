@@ -16,7 +16,9 @@
 	                            // chan nil = any MIDI channel (atovproject 16n
 	                            // sends each fader on its own channel); 0..15 pins one
 	folders: (samples: "samples", recordings: "recordings", presets: "presets"),
-	autoTrim: true,             // watchdog -6 dB trim on sustained hot output
+	autoTrim: false,            // watchdog: notice always shows; true = also auto-trim
+	                            // -6 dB on sustained hard driving (comfort, not safety —
+	                            // the limiter is the safety). Opt-in.
 	recStems: false,            // true = CQ.rec writes a 4-ch file (master L/R +
 	                            // post-safety coco1 + coco2 stems) instead of stereo
 	headless: false             // true = no GUI (instrument stays fully playable)

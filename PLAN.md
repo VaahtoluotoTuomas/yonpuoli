@@ -674,6 +674,58 @@ tiedoston loppuun — se ohjaa vaiheen 7 rajapintavalintoja.
   yksikkötestata itse dispatchia serverittä; testi kattaa rekisteröinnin +
   no-op-turvallisuuden, varsinainen laukaisu KUUNTELU 7:ssä.
 
+### KUUNTELU 7 -löydökset ja korjaukset (2026-07-19)
+- **7.1 space hyväksytty**, mutta kaksi jatkokohtaa:
+  - **AVOIN ISO KYSYMYS — millainen "space" sopii Cocoquantukseen (palataan
+    myöhemmin, v1.0:n jälkeen).** Nykyinen `\cqSpace` on metallinen/plate — seuraus
+    minimalistisesta ARCH §4.5:n rakenteesta (4 linjaa + lyhyet 29–53 ms viiveet =
+    harva kaikutiheys), ei erikseen speksattu esteettinen tavoite. Käyttäjän
+    linjaus 2026-07-19: **ei silota nyt eikä lisätä paramejä GUI:hin** — sen sijaan
+    isompi suunnittelukysymys auki: (a) minkälainen reverb ylipäätään sopii
+    Cocoquantus-estetiikkaan, (b) sopiiko *erillinen* reverb siihen ollenkaan, vai
+    (c) voisiko "space" olla jonkinlainen **Cocoquantuksen omasta arkkitehtuurista
+    nouseva suhteellinen, kontekstitietoinen makro** (esim. coco-kellojen/
+    quantussy-verkon johdannainen tila-tuntu, ei bolt-on-FDN). Ei kosketa
+    `\cqSpace`en ennen tätä keskustelua. GUI:n space-size/damp-nupit odottavat
+    samaa ratkaisua (turha viilata GUI:ta ennen kuin space-konsepti on päätetty).
+- **GUI-bugi (korjattu)**: Cmd-. (Ctrl+.) tappaa serverigraafin muttei kielipuolen
+  olioita → vanha GUI-ikkuna jää auki mutta jäätyneenä (OSCdefit vapautuvat Cmd-.:ssä,
+  ei mittareita). `CQ.boot` (ei `reboot`) näki vanhan guiPanelin "auki, ei suljettu"
+  → ei luonut uutta ikkunaa. Korjaus: (a) `cmdPeriod` sulkee kuolleen GUI:n heti
+  (`guiPanel.free`, nil), (b) `boot` itsekorjautuu — jos `graph.notNil` (jäänyt
+  kuollut sessio), ajaa `free` + reschedule-boot (kuten `reboot`), jolloin myös
+  midi16n/snapshot/deck-oliot siivotaan eivätkä MIDIdefit kahdennu. Tämän jälkeen
+  Cmd-. + `CQ.boot` avaa tuoreen GUI:n.
+- **Watchdog-bugi (juurisyy: mitattiin väärää signaalia; korjattu + verifioitu
+  päästä-päähän)**: watchdog ei lauennut käyttäjän kolmessa yrityksessä (myös samplet
+  soimassa). Kolme iteraatiota + NRT-mittaukset paljastivat: **turvaketju (tanh +
+  limitteri) tekee OUTPUTISTA aina hallitun** (~−6 dBFS RMS tai alle materiaalista
+  riippumatta), joten *outputin* RMS:ää mittaava detektori ei koskaan luotettavasti
+  ylitä mitään kynnystä (−6 saavuttamaton, −9/−12 vaatii ääriharvinaisen tiheyden).
+  Mitattu (NRT, vol 0): dense laulu → coco1/2 RMS −0.3/−0.2, **driven-mix (pre-safety,
+  Pan2-summa ennen tanhia) = +1.6 dBFS**, mutta output vain −6.3; cricket-äänite −38.
+  **Korjaus: detektori mittaa nyt DRIVEN-miksiä** (`mix * vol * mute` ennen LeakDC:tä)
+  eikä kesytettyä outputtia — SPEC:n alkuperäinen **−6 dBFS on oikein tähän signaaliin**
+  (kuvaa kuinka kovaa masteria ajetaan; leveä alue, ei limitterin puristama). Per-kanava
+  (kovempi voittaa). Verifioitu erillisrenderillä: seva-laulu + fb 1.25 + slotX + level
+  1.5 + vol 0 → driven-huippu 1.862 → detektori laukeaa 9.4 s:ssä (loopin täyttö ~4 s +
+  5 s jatkuvaa). Lisätty **`CQ.testWatchdog`** — lähettää simuloidun `/cq_hot`:n kieleen,
+  jotta notice/trim-polku voidaan varmistaa ilman kuumaa audiota (eristää polku- vs.
+  taso-ongelman). SPEC §5.6 + manual_checklist 7.2 (johtaa testWatchdogilla + dense
+  sample, EI cricket). −6 dB trim (lattia −18, post-limiter), 5 s kesto ennallaan.
+  Käyttäjän kalibrointi 2026-07-19: testWatchdog + dense sample -laukaisu **toimivat**.
+- **Watchdog-päätös (käyttäjä 2026-07-19): notice + opt-in trim.** Käyttäjä kyseenalaisti
+  koko watchdogin tarpeen — perustellusti: **turvallisuus tulee arkkitehtuurista**
+  (rajattu coco-kierrätys #2 + brickwall-limitteri #1), ei watchdogista, joka on pelkkä
+  **mukavuusominaisuus** (jatkuvan kovan *ajamisen* pehmennys, ei huipputurva). Päätös:
+  **`autoTrim` oletukseksi `false`** — detektori + notice (konsoli + GUI) jäävät aina
+  informatiiviseksi, auto-trim vain opt-in `autoTrim: true`. SPEC §8: watchdog **poistettu
+  turvavaatimuksista** (§8 nyt 7 kohtaa; lisätty lause "safety comes entirely from 1–7,
+  watchdog is optional comfort"). SPEC §5.6/§7 + CQConfig-oletus + config.example +
+  manual_checklist 7.2 päivitetty. `\trim`-mekanismi, `CQ.resetTrim`, `CQ.testWatchdog`
+  jäävät (opt-in-käyttäjille). CLAUDE.md:n invarianttilistaa EI muutettu (watchdog ei
+  ollut siellä; #7 = äänitykset).
+
 ---
 
 ## Post-v1.0 — v2-visio: norns-portti (sovittu 2026-07-17)

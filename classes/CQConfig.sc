@@ -20,7 +20,7 @@ CQConfig {
 			bufFrames: 131072,
 			sixteenN: (enabled: true, ccBase: 32, takeover: \jump),
 			folders: (samples: "samples", recordings: "recordings", presets: "presets"),
-			autoTrim: true,
+			autoTrim: false,    // watchdog: notice always; auto-trim is opt-in (SPEC §5.6)
 			recStems: false,
 			headless: false
 		)

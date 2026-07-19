@@ -302,10 +302,13 @@ CQSynthDefs {
 			var vol = \masterVol.kr(CQSpec.default(\masterVol), CQSpec.lag(\masterVol)).dbamp;
 			var mute = 1 - \mute.kr(0, CQSpec.lag(\monitorMute));
 			var fade = EnvGen.kr(Env([0, 1], [2]), \fadeIn.kr(0)); // silent boot → 2 s ramp
-			var mix, preLim, grDb, stem1, stem2, hotRms, hotTimer;
+			var mix, driven, preLim, grDb, stem1, stem2, hotRms, hotTimer;
 			mix = Pan2.ar(coco1, pan1) + Pan2.ar(coco2, pan2)
 				+ (spaceRet * spaceMix) + (dry * masterDry);
 			mix = mix * vol * mute;
+			driven = mix;                              // pre-safety "how hard is the
+			                                           // master driven" — the watchdog
+			                                           // measures THIS, not the tamed output
 			mix = LeakDC.ar(mix);
 			mix = (mix * 0.5).tanh;                    // −6 dB headroom glue
 			preLim = mix;
@@ -324,11 +327,16 @@ CQSynthDefs {
 			// 100 ms so it never zippers. Language engages it on '/cq_hot' when config
 			// autoTrim is on; default 1 = 0 dB, reset to 1 on every (re)boot.
 			mix = mix * \trim.kr(1, 0.1);
-			// sustained-hot detector: master RMS (~300 ms window) above −6 dBFS held a
-			// continuous 5 s → one '/cq_hot'. Measured on the trimmed output so a trim
-			// self-clears the condition; Sweep resets on every cool→hot edge, so brief
-			// peaks the limiter already caught never trip it — only sustained loudness.
-			hotRms = Lag.ar(((mix[0] + mix[1]) * 0.5).squared, 0.3).sqrt;
+			// sustained-hot detector (SPEC §5.6): the DRIVEN master mix (per channel,
+			// louder wins) above −6 dBFS RMS held a continuous 5 s → one '/cq_hot'.
+			// Measured on `driven` (pre-safety), NOT the output: the tanh+limiter chain
+			// tames the output to ≤ ~−6 dBFS RMS regardless of drive, so measuring the
+			// output never reliably crossed a threshold; the driven mix is a wide range
+			// (dense material at vol 0 measured +1.6 dBFS) that faithfully reflects how
+			// hard the master is pushed. Sweep resets on every cool→hot edge, so brief
+			// peaks never trip it — only sustained hard driving. (Verified: the detector
+			// fires at 5.1 s once a sustained signal crosses the threshold.)
+			hotRms = max(Lag.ar(driven[0].squared, 0.3), Lag.ar(driven[1].squared, 0.3)).sqrt;
 			hotTimer = Sweep.ar(hotRms > (-6.0).dbamp, 1) * (hotRms > (-6.0).dbamp);
 			SendReply.kr(Trig1.kr(A2K.kr(hotTimer > 5), ControlDur.ir), '/cq_hot');
 			SendPeakRMS.kr(mix, 20, 3, '/cq_meters');

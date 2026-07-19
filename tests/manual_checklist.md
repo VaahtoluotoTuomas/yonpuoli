@@ -538,19 +538,36 @@ CQ.set(\spaceMix, 0);           // lopuksi: kaiku pois (purismi)
 ```
 
 ```supercollider
-// 7.2 — Watchdog auto-trim (SPEC §5.6): master-RMS > -6 dBFS yhtäjaksoisesti
-// 5 s -> automaattinen -6 dB trim + notice. (config autoTrim: true.)
+// 7.2 — Watchdog (SPEC §5.6): kun masteria AJETAAN kovaa yhtäjaksoisesti 5 s ->
+// notice (konsoli + GUI). Mittaa kuinka kovaa masteria AJETAAN (driven-mix,
+// pre-safety, kynnys -6 dBFS), EI kesytettyä outputtia.
+// HUOM: auto-trim (-6 dB) on OPT-IN — config autoTrim oletus on false (mukavuus,
+// ei turva; limitteri hoitaa turvan). Oletuksena watchdog vain ILMOITTAA.
 CQ.boot;
-CQ.patchPreset(\mayhem);        // tiheä kaaos
-CQ.set(\coco1SlotQ, 1); CQ.set(\coco2SlotQ, 1);  // quantussy kuuluviin
+
+// A) Notice-polku (varmista riippumatta audiotasosta):
+CQ.testWatchdog;   // -> post: "watchdog — driving the master hard..." + GUI-notice
+                   //    "OUTPUT HOT (> 5 s)". EI trimmiä (autoTrim false oletus).
+CQ.trimDb;         // -> 0 (oletuksena ei trimmata)
+
+// B) Todellinen audiolaukaisu: TIHEÄ jatkuva materiaali (EI harva cricket! se ajaa
+//    vain ~-20 dBFS). Tiheä laulu/orkesteri + tiheysnupit + TÄYSI vol:
+CQ.deckA.load("91112__krishnanow__seva-sound.wav");   // tiheä laulu
+CQ.deckB.load("91112__krishnanow__seva-sound.wav");
 CQ.hold(1, 0); CQ.hold(2, 0);
-CQ.set(\masterVol, -3);         // aja kovaa (turvaketju rajaa aina)
-// 1. Odota ~5 s jatkuvaa kuumaa outputtia -> post-ikkuna: "WATCHDOG — output
-//    hot > 5 s, auto-trim now -6 dB", GUI:n notice-rivi: "OUTPUT HOT —
-//    auto-trimmed -6 dB". Kuulet ~6 dB pudotuksen.
-CQ.trimDb;                      // -> -6 (tai -12/-18 jos kuuma jatkui askelittain)
-CQ.resetTrim;                   // 2. palauttaa 0 dB:hen (taso palaa)
-CQ.set(\masterVol, -12); CQ.patchPreset(\empty);  // lopuksi
+CQ.set(\coco1Fb, 1.25); CQ.set(\coco2Fb, 1.25);
+CQ.set(\coco1SlotX, 1.2); CQ.set(\coco2SlotX, 1.2);
+CQ.set(\coco1Level, 1.5); CQ.set(\coco2Level, 1.5);
+CQ.set(\masterVol, 0);          // TÄYSI vol (driven-mix ~ +5 dBFS mitattuna)
+// -> ~5-10 s (loopin täytyttyä) -> notice "OUTPUT HOT" (ei tason muutosta oletuksena)
+CQ.set(\masterVol, -12);
+CQ.set(\coco1Fb, 0.35); CQ.set(\coco2Fb, 0.35);
+CQ.set(\coco1SlotX, 0); CQ.set(\coco2SlotX, 0);
+CQ.set(\coco1Level, 0.8); CQ.set(\coco2Level, 0.8);   // oletukset takaisin
+
+// C) (Valinnainen) auto-trim opt-in: config.scd -> autoTrim: true, reboot, toista B.
+//    Nyt laukeaminen vetää -6 dB (CQ.trimDb -> -6, ~6 dB pudotus); CQ.resetTrim
+//    palauttaa. testWatchdog vetää myös trimin kun autoTrim: true.
 ```
 
 ```supercollider
@@ -612,18 +629,23 @@ CQ.server.peakCPU.round(0.1);  // -> piikki-% (tavoite: reilusti alle 25)
 // Kaikki ääripäissä yhtä aikaa — tavoite: MIKÄÄN ei koskaan satu korvia, ei
 // tasohyppyjä, ei kipeitä piikkejä (turvaketju + watchdog pitävät kurissa).
 CQ.patchPreset(\mayhem); CQ.shake(1.0);           // maksimikaaos
+(1..5).do { |k| CQ.set(("c" ++ k ++ "Range").asSymbol, \audio);
+             CQ.set(("c" ++ k ++ "Send").asSymbol, 1) };  // quantussy audiolle
 CQ.set(\coco1Fb, 1.25); CQ.set(\coco2Fb, 1.25);   // feedback yli unityn
+CQ.set(\coco1SlotQ, 1.5); CQ.set(\coco2SlotQ, 1.5);   // quantussy + ristisyöttö sisään
+CQ.set(\coco1SlotX, 1.5); CQ.set(\coco2SlotX, 1.5);   // -> aidosti tiheä/kuuma
+CQ.set(\coco1Level, 1.5); CQ.set(\coco2Level, 1.5);
 CQ.set(\coco1Speed, 3000); CQ.set(\coco2Speed, 48000);
 CQ.set(\qChaos, 1); CQ.set(\qFreq, 500);
-CQ.set(\coco1Wrap, 1); CQ.set(\coco1Dust, 0.5);
+CQ.set(\coco1Wrap, 1); CQ.set(\coco1Dust, 0.5); CQ.set(\coco2Dust, 0.5);
 CQ.set(\spaceMix, 1); CQ.set(\spaceSize, 0.98);   // kaiku täysille
 CQ.set(\masterVol, 0);                            // täysi volume
-// -> limitteri (-1 dBFS) + watchdog pitävät tason kurissa AINA.
+// -> limitteri (-1 dBFS) + watchdog (nyt ~-8 dBFS, laukeaa) pitävät kurissa AINA.
 CQ.panic; CQ.resume;                              // panic aina tavoitettavissa
 ```
 
 - [ ] 7.1 Space ok (mix/size/damp; oletus pois)
-- [ ] 7.2 Watchdog ok (auto-trim + notice; `CQ.resetTrim` palauttaa)
+- [ ] 7.2 Watchdog ok (notice oletuksena; auto-trim opt-in `autoTrim: true`)
 - [ ] 7.3 Patternit ok (`\cq`-aktiot tempossa)
 - [ ] 7.4 Stemit ok (post-safety coco1/coco2; jos ≥ 4-ch kortti)
 - [ ] 7.5 Stem-äänitys ok (4-ch tiedosto, `recStems: true`)

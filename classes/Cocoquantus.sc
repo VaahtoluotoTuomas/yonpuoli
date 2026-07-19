@@ -13,6 +13,16 @@ Cocoquantus {
 			"Cocoquantus: already booted — CQ.free first.".warn;
 			^this
 		};
+		// a session killed by Cmd-. leaves the language side dangling (GUI window,
+		// MIDI defs, OSCdefs) while the server graph is gone. Booting again must not
+		// stack on that — tear the dead session down first, then boot fresh. This is
+		// what makes CQ.boot after Cmd-. reopen a LIVE GUI instead of returning the
+		// old frozen one (whose OSCdefs Cmd-. already freed). Mirrors CQ.reboot.
+		if(graph.notNil) {
+			this.free;
+			AppClock.sched(0.8, { this.boot(path, onReady); nil });
+			^this
+		};
 		configPath = path ?? { this.repoDir +/+ "config.scd" };
 		trimDb = 0;                            // watchdog trim resets each boot (SPEC §5.6)
 		config = if(File.exists(configPath.asString)) {
@@ -253,6 +263,15 @@ Cocoquantus {
 
 	*trimDb { ^trimDb }
 
+	// diagnostic (SPEC §5.6): simulate a watchdog trip so the notice + auto-trim path
+	// can be verified without driving the master genuinely hot. Sends a real '/cq_hot'
+	// to the language, exercising the exact OSCdefs the server's SendReply would hit.
+	*testWatchdog {
+		NetAddr("127.0.0.1", NetAddr.langPort).sendMsg('/cq_hot', 0, -1);
+		("Cocoquantus: testWatchdog — sent a simulated /cq_hot. Expect a warning + "
+			++ "(if autoTrim) CQ.trimDb -6, and the GUI notice line.").postln;
+	}
+
 	*free {
 		if(graph.isNil) { ^this };
 		CmdPeriod.remove(this);
@@ -299,6 +318,9 @@ Cocoquantus {
 	*cmdPeriod {
 		if(graph.notNil and: { graph.isRunning }) {
 			graph.markKilled;
+			guiPanel !? { guiPanel.free };   // the window is dead (server + its OSCdefs
+			guiPanel = nil;                  // gone) — close it now so a reboot/boot
+			                                 // opens a fresh one, not a frozen ghost
 			("Cocoquantus: Cmd-. killed the server graph (output is silent). "
 				++ "Run CQ.reboot to rebuild.").postln;
 		};
@@ -348,11 +370,13 @@ Cocoquantus {
 			if(config.notNil and: { config[\autoTrim] == true }) {
 				trimDb = max(trimDb - 6, -18);
 				graph !? { graph.synths[\master] !? { |m| m.set(\trim, trimDb.dbamp) } };
-				("Cocoquantus: WATCHDOG — output hot > 5 s, auto-trim now % dB "
+				("Cocoquantus: WATCHDOG — driving hard > 5 s, auto-trim now % dB "
 					++ "(CQ.resetTrim to restore).").format(trimDb).warn;
 			} {
-				("Cocoquantus: WATCHDOG — output hot > 5 s "
-					++ "(autoTrim off — no trim applied).").warn;
+				// notice-only (default): the limiter already keeps it safe; auto-trim
+				// is opt-in (config autoTrim: true) — a comfort ease-off, not safety
+				("Cocoquantus: watchdog — driving the master hard (> 5 s). Limiter has "
+					++ "it safe; config autoTrim: true adds an automatic −6 dB ease-off.").postln;
 			};
 		}, '/cq_hot');
 	}
