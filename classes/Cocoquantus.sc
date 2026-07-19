@@ -96,7 +96,12 @@ Cocoquantus {
 		if(this.prCocoParam(n, "Hold").isNil) { ^this };
 		if(this.isBooted.not) { "Cocoquantus: not booted.".warn; ^this };
 		synth = graph.synths[("coco" ++ n).asSymbol];
-		synth !? { synth.set(\t_skip, 1) };
+		synth !? {
+			synth.set(\t_skip, 1);
+			// skip is momentary (no state to display) — notify the GUI for a
+			// brief button flash so code/pattern-driven skips are visible too
+			state !? { state.changed(\action, \skip, n) };
+		};
 	}
 
 	// quantussy spesal (SPEC §5.4): like skip, these are actions, not CQSpec

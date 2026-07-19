@@ -11,7 +11,7 @@ CQGui {
 	var <window, <widgets, updaters;
 	var stateCtl, gridPanel, meterFuncs;
 	var castleLeds, spesalView, <spesalStates;
-	var deckLabels, deckCtls;
+	var deckLabels, deckCtls, skipButtons;
 	var noticeView, recBtn, recTimeView, recTask, hotTask;
 	var micLive = false, hotLive = false, cleaned = false;
 	// shake throw amplitude shared by the SHAKE button and the p key; GUI-local
@@ -34,6 +34,7 @@ CQGui {
 
 	setMeter { |key, func| meterFuncs[key] = func }
 	setDeckLabel { |which, view| deckLabels[which] = view }
+	setSkipButton { |n, btn| skipButtons[n] = btn }
 	castleLeds_ { |views| castleLeds = views }
 	spesalView_ { |view| spesalView = view }
 	notice_ { |view| noticeView = view }
@@ -52,6 +53,7 @@ CQGui {
 		updaters = IdentityDictionary.new;
 		meterFuncs = IdentityDictionary.new;
 		deckLabels = IdentityDictionary.new;
+		skipButtons = IdentityDictionary.new;
 		spesalStates = Cocoquantus.spesalStates;
 		widgets = CQGuiWidgets(state, updaters);
 		{
@@ -116,6 +118,10 @@ CQGui {
 		stateCtl = SimpleController(state);
 		stateCtl.put(\param, { |obj, what, name, val|
 			{ updaters[name].do { |f| f.value(val) } }.defer;
+		});
+		// momentary actions with no persistent state: skip fires a brief button flash
+		stateCtl.put(\action, { |obj, what, action, n|
+			if(action == \skip) { { this.prFlashSkip(n) }.defer };
 		});
 		OSCdef(\cq_gui_meters, { |msg|
 			{ meterFuncs[\master].value(msg[3], msg[5]) }.defer;
@@ -236,6 +242,17 @@ CQGui {
 		this.prUpdateNotice;
 		hotTask !? { hotTask.stop };
 		hotTask = Task { 12.wait; hotLive = false; this.prUpdateNotice }.play(AppClock);
+	}
+
+	// brief highlight on the SKIP button so code/pattern-driven skips are visible
+	// (skip is momentary — no lasting state like flip's toggle)
+	prFlashSkip { |n|
+		var b = skipButtons[n];
+		if(cleaned) { ^this };
+		b !? {
+			b.states_([["SKIP", Color.white, CQGuiWidgets.colors[\input]]]);
+			AppClock.sched(0.12, { if(cleaned.not) { b.states_([["SKIP"]]) }; nil });
+		};
 	}
 
 	// idempotent teardown shared by free and the window's close box: language-

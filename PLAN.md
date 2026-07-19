@@ -621,8 +621,9 @@ tiedoston loppuun — se ohjaa vaiheen 7 rajapintavalintoja.
 - [x] `README.md` — asennus, includePaths-ohjeet Windowsille, pikastartti
       (aikaistettu 2026-07-18: projekti jaettiin testaajalle; suomeksi —
       viilataan/käännetään v1.0-viimeistelyssä jos tarpeen)
-- [ ] Suorituskykytarkistus: koko instrumentti ≤ 25 % / core @ 48 kHz / block 64
-      (vaatii käyttäjän mittauksen livenä — KUUNTELU 7:ssä `s.avgCPU`/`s.peakCPU`)
+- [x] Suorituskykytarkistus: koko instrumentti ≤ 25 % / core — mitattu **avgCPU
+      ~20–23 %, peak ~23 %** raskaimmalla asetelmalla (mayhem + space + 2 dense
+      sample + GUI), laptop 2026-07-19 (SPEC §9)
 
 ### Testit — täysi re-run
 - [x] `CQ_COMPILE_OK` · `CQ_TESTS_PASSED` (3082) · `CQ_SAFETY_PASSED` (space-FDN
@@ -630,17 +631,22 @@ tiedoston loppuun — se ohjaa vaiheen 7 rajapintavalintoja.
       (korrelaatio 1.0, drift 0.0 dB — coco-ydin ennallaan) (2026-07-18)
 
 ### KUUNTELU 7 — v1.0-hyväksyntä
-- [ ] M7 abuse-sessio: 30 min kuulokkeilla tahallista väärinkäyttöä —
-      **mikään ei koskaan satu**
-- [ ] Space: laadukas, oletuksena pois, mix/size/damp toimivat (F14 spaceMix soi nyt)
-- [ ] Watchdog: aja output kuumaksi ≥ 5 s → auto-trim −6 dB + GUI-notice;
-      `CQ.resetTrim` palauttaa
-- [ ] Patternit: `\cq`-Pbind soittaa hold/skip/spesal/deck-aktioita tempossa
-- [ ] Stemit modulaariin: post-safety coco1/coco2 oikeissa ulostuloissa
-      (config `stemOuts`)
-- [ ] Stem-äänitys: 4-ch tiedosto syntyy configin `recStems: true` -lipulla
-- [ ] Suorituskyky: `s.avgCPU`/`s.peakCPU` täydellä pöydällä ≤ 25 %
-- [ ] Käyttäjän hyväksyntä → **v1.0-tag**
+- [x] M7 abuse-sessio: tahallista väärinkäyttöä ääriasetuksilla — **mikään ei satu**
+      (2026-07-19; todettu **ilman watchdogia** → turva tulee arkkitehtuurista)
+- [x] Space: oletuksena pois, mix/size/damp toimivat (2026-07-19; reverbin *luonne*
+      avoin suunnittelukysymys, ks. kirjaukset — ei estä v1.0:aa)
+- [x] Watchdog: notice + opt-in trim; `CQ.testWatchdog` + dense-sample-laukaisu
+      todettu (2026-07-19; `autoTrim` oletus false — käyttäjän valinta)
+- [x] Patternit: `\cq`-Pbind soittaa hold/skip/spesal/deck-aktioita tempossa
+      (2026-07-19; speed terävä, flip selvä, skip = coco-loop-reset + GUI-välähdys,
+      spesal = tekstuurinen morph. deck-navigointi ok)
+- [ ] **Stemit (SIIRRETTY): tarvitsee ≥4-ch äänikortin** — post-safety coco1/coco2
+      `stemOuts`-kanaviin; NRT-turvatesti todistaa rajautumisen, live-kuuntelu
+      myöhemmin kun kortti saatavilla
+- [ ] **Stem-äänitys (SIIRRETTY, sama syy)**: 4-ch tiedosto `recStems: true`
+- [x] Suorituskyky: avgCPU ~20–23 %, peak ~23 % raskaimmalla asetelmalla (mayhem +
+      space + 2 dense sample + GUI) → **≤ 25 %** (SPEC §9) (2026-07-19, laptop)
+- [ ] Käyttäjän hyväksyntä → **v1.0-tag** (stemit jäävät live-todennettavaksi)
 
 ### Kirjatut toteutuspäätökset (vaihe 7)
 - **Space-send tulee cocoista, ei masterista**: gFx (space) ajetaan ennen gMasteria,
@@ -725,6 +731,22 @@ tiedoston loppuun — se ohjaa vaiheen 7 rajapintavalintoja.
   manual_checklist 7.2 päivitetty. `\trim`-mekanismi, `CQ.resetTrim`, `CQ.testWatchdog`
   jäävät (opt-in-käyttäjille). CLAUDE.md:n invarianttilistaa EI muutettu (watchdog ei
   ollut siellä; #7 = äänitykset).
+- **7.3-havainnot (2026-07-19)**: (a) **spesal on tekstuurinen**, ei terävä rytmi-
+  trigger — se vaihtaa S&H-partneria/moodia eli morphaa kaaosverkon rakennetta
+  (hardwaren "touching the node scrambles it"); kuuluu hitaana siirtymänä kun
+  quantussy on audibly auki, ei percussiivisena iskuna (by design). Terävät patternit
+  → skip/flip/speed. (b) **skip = coco RAM-loopin vaiheen reset**, ei koske deckiin
+  (deck on erillinen soitin; `CQ.deckA.restart` resetoi sen) — käyttäjän havainto
+  ("looppi alkuun, deck jatkaa") on oikea käytös. (c) **Skip-nappiin lisätty
+  hetkellinen välähdys**: skip on momentaani (ei tilaa kuten flip-toggle), joten
+  koodi/pattern-skippi ei näkynyt GUI:ssa → `Cocoquantus.skip` ilmoittaa nyt
+  `state.changed(\action, \skip, n)`, CQGui välähdyttää SKIP-napin ~120 ms (kaikki
+  lähteet: klikkaus/koodi/pattern). Todettu toimivaksi.
+- **7.6/7.7 hyväksytty (2026-07-19)**: CPU raskaimmillaan ~20–23 % (≤ 25 %); abuse-
+  sessio ääriasetuksilla ei tuottanut sattuvia ääniä **ilman watchdogia** — vahvistaa
+  että turva on arkkitehtuurissa (limitteri + rajattu kierrätys). **Stemit (7.4/7.5)
+  siirretty**: käyttäjällä ei nyt ≥4-ch korttia; toteutus + NRT-turva valmiit,
+  live-kuuntelu myöhemmin.
 
 ---
 

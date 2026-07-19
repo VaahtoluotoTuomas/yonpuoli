@@ -644,11 +644,13 @@ CQ.set(\masterVol, 0);                            // täysi volume
 CQ.panic; CQ.resume;                              // panic aina tavoitettavissa
 ```
 
-- [ ] 7.1 Space ok (mix/size/damp; oletus pois)
-- [ ] 7.2 Watchdog ok (notice oletuksena; auto-trim opt-in `autoTrim: true`)
-- [ ] 7.3 Patternit ok (`\cq`-aktiot tempossa)
-- [ ] 7.4 Stemit ok (post-safety coco1/coco2; jos ≥ 4-ch kortti)
-- [ ] 7.5 Stem-äänitys ok (4-ch tiedosto, `recStems: true`)
-- [ ] 7.6 Suorituskyky ok (≤ 25 % / core)
-- [ ] 7.7 M7 abuse ok (mikään ei satu)
-- [ ] KUUNTELU 7 hyväksytty (pvm: ____) → **v1.0-tag**
+- [x] 7.1 Space ok (mix/size/damp; oletus pois) (2026-07-19; reverbin luonne avoin
+      suunnittelukysymys)
+- [x] 7.2 Watchdog ok (notice oletuksena; auto-trim opt-in `autoTrim: true`) (2026-07-19)
+- [x] 7.3 Patternit ok (`\cq`-aktiot tempossa; skip = coco-loop-reset + GUI-välähdys,
+      spesal tekstuurinen) (2026-07-19)
+- [ ] 7.4 Stemit — **SIIRRETTY**: tarvitsee ≥4-ch äänikortin (NRT-turva ok, live myöh.)
+- [ ] 7.5 Stem-äänitys — **SIIRRETTY, sama syy** (4-ch tiedosto, `recStems: true`)
+- [x] 7.6 Suorituskyky ok (avgCPU ~20–23 %, peak ~23 % ≤ 25 %) (2026-07-19, laptop)
+- [x] 7.7 M7 abuse ok (mikään ei satu ääriasetuksilla, ilman watchdogia) (2026-07-19)
+- [ ] KUUNTELU 7 hyväksytty (pvm: ____) → **v1.0-tag** (stemit jäävät live-todennukseen)

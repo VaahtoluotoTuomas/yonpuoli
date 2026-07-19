@@ -13,6 +13,7 @@ CQGuiPanels {
 		var outMeter = LevelIndicator().fixedSize_(Size(10, 68));
 		var skip = Button().states_([["SKIP"]])
 			.action_({ Cocoquantus.skip(n) });
+		gui.setSkipButton(n, skip);   // brief flash on any skip (click/code/pattern)
 		gui.setMeter(("coco" ++ n).asSymbol, { |inPk, outPk|
 			inMeter.value = this.ampMeter(inPk);
 			outMeter.value = this.ampMeter(outPk);
