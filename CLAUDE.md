@@ -1,9 +1,11 @@
 # CLAUDE.md — CocoquantusSC
 
-SuperCollider emulation of the Ciat-Lonbarde Cocoquantus 2. Read `SPEC.md` first
-(behavior, parameter tables, safety — normative), then `ARCHITECTURE.md` (structure,
-SynthDef sketches, tests — normative for code shape). Do not invent parameters,
-ranges or bus layouts: they are all defined there.
+SuperCollider emulation of the Ciat-Lonbarde Cocoquantus 2. Read `PLAN.md` for the
+current handoff, then `SPEC.md` (behavior, parameter tables, safety — normative) and
+`ARCHITECTURE.md` (structure, SynthDef sketches, tests — normative for code shape).
+For any GUI work, read `GUI_SPEC.md` completely: it is authoritative for structure,
+interaction, constants, visual language and motion, while SPEC §8 wins any safety
+conflict. Do not invent parameters, ranges, bus layouts or ambiguous GUI behavior.
 
 ## Environment
 
@@ -43,7 +45,8 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 - Server objects (buses/groups/buffers) are owned by `CQGraph` only; pass the server
   in, never assume `Server.default` inside classes; `s.sync` between boot stages.
 - GUI: view-only client of `CQState`/`CQMatrix` dependants; all UI code in `{ }.defer`;
-  no server polling loops.
+  no server polling loops. A technical compromise against `GUI_SPEC.md` requires the
+  user's approval before implementation.
 - `MIDIdef`/`OSCdef` keys namespaced `\cq_*`; all freed in `Cocoquantus.free`.
 - No `.play`/scratch code in `classes/`; demos go in `live.scd`.
 - No Quarks or extension plugins in the core (vanilla UGens only).
@@ -63,10 +66,21 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 6. NRT safety thresholds (peak ≤ −0.75 dBFS, no NaN, |DC| ≤ 0.02) may not be raised.
 7. Recordings always create new timestamped files.
 
+## Current handoff
+
+- The detailed v1.0 implementation log is frozen at `docs/history/PLAN_v1.0.md`.
+- The verified audit result is indexed by `audit/README.md`; use
+  `audit/VERIFIED_FINDINGS.md` over historical severities in the first audit reports.
+- Archipelago work belongs on the `archipelago` integration branch. Start with the
+  baseline, P0/P1 reproducer tests, matrix transaction contracts and audition state
+  machine listed in `PLAN.md`; do not begin with Night-map drawing.
+- Four unresolved `GUI_SPEC.md` seams are listed in `PLAN.md`. Ask the user and record
+  the decision in the spec before implementing the affected behavior.
+
 ## Workflow
 
-- Work milestone by milestone (SPEC §11); keep a `TODO.md` checklist per milestone
-  and tick items only when the relevant tests pass.
+- Work in `PLAN.md` order and tick an item only when its relevant automated and manual
+  gates pass; do not create competing current-status checklists.
 - Small, focused changes; after green tests, update SPEC.md if user-visible behavior
   changed (SPEC and CQSpec must never drift apart).
 - Listening iterations: propose a hypothesis → make the change → run tests → give the

@@ -5,7 +5,7 @@
 > prioriteetteja sekä `REMEDIATION_ROADMAP.md`:n järjestystä. Uuden GUI:n ratkaisut
 > tulevat repositoryn `GUI_SPEC.md`:stä.
 
-Auditointi tehtiin repositoryn commitissa 43724f31b8f53a407cb56bd61972ed736aabb944 (main, tag v1.0). Vakavuusluokat ja luottamustasot noudattavat AUDIT_PROMPT.md:tä. Varmistettu tarkoittaa, että havainto on osoitettu lähdekoodista, dokumentaatiosta tai suoritetulla testillä. Vahva epäily tarkoittaa, että mekanismi on osoitettu, mutta vaikutusta ei ajettu loppuun live-runtime- tai laitteistoympäristössä. Testaamaton tarkoittaa suunnitteluriskiä ilman riittävää toteutusnäyttöä.
+Auditointi tehtiin repositoryn commitissa 43724f31b8f53a407cb56bd61972ed736aabb944 (main, tag v1.0). Vakavuusluokat ja luottamustasot noudattavat `audit/prompts/AUDIT_PROMPT.md`:tä. Varmistettu tarkoittaa, että havainto on osoitettu lähdekoodista, dokumentaatiosta tai suoritetulla testillä. Vahva epäily tarkoittaa, että mekanismi on osoitettu, mutta vaikutusta ei ajettu loppuun live-runtime- tai laitteistoympäristössä. Testaamaton tarkoittaa suunnitteluriskiä ilman riittävää toteutusnäyttöä.
 
 ## Yhteenveto
 
@@ -222,7 +222,7 @@ Kaksi P0-löydöstä ovat julkaisun estäviä: hyväksytty lähtökonfiguraatio 
 | Vakavuus | P2 |
 | Luottamus | vahva epäily |
 | Vaikutus | Käyttäjä voi tulkita näkyvän Space- tai Shake-ohjaimen rikkinäiseksi, koska vaikutuksen edellytykset ovat muualla paneelissa eikä GUI ilmaise niitä. |
-| Tarkka sijainti | classes/CQGuiPanels.sc:67-76,118,195-206; classes/CQSpec.sc:175,187,190,212; classes/CQSynthDefs.sc:119,196-200; PLAN.md:579-591; tests/manual_checklist.md:457-477,523-535 |
+| Tarkka sijainti | classes/CQGuiPanels.sc:67-76,118,195-206; classes/CQSpec.sc:175,187,190,212; classes/CQSynthDefs.sc:119,196-200; docs/history/PLAN_v1.0.md:579-591; tests/manual_checklist.md:457-477,523-535 |
 | Tekninen perustelu | spaceMix ei tuota ääntä, jos molempien Cocojen Send-arvot ovat nolla. Shake 0.3 jää monessa oletustilassa vähäiseksi, koska Spaf ja Q-slotit ovat nollassa sekä porttikynnys on 0.5. GUI ei näytä riippuvuuksia. |
 | Toisto | Boottaa default-state, nosta vain spaceMix; tämän jälkeen nosta Coco Send. Testaa vastaavasti Shake 0.3 ensin default-stateen ja sitten manuaalin edellytysasetuksilla. |
 | Havaittu evidenssi | Oletusarvot ja signaalireitit ovat varmistettuja. Käytettävyysvaikutusta ei tässä auditissa kuunneltu tai käyttäjätestattu. |
@@ -312,7 +312,7 @@ Kaksi P0-löydöstä ovat julkaisun estäviä: hyväksytty lähtökonfiguraatio 
 | Vakavuus | P2 |
 | Luottamus | varmistettu |
 | Vaikutus | Väärä widget-bind, state-route tai Synth-argumentin nimi voi läpäistä unit- ja NRT-sarjan, vaikka näkyvä kontrolli ei vaikuttaisi ääneen. |
-| Tarkka sijainti | PLAN.md:526-529; tests/classes/CQStateTest.sc:1,9; tests/nrt_safety.scd:21-24,299; tests/nrt_hold_integrity.scd:15-18,94; tests-hakemiston inventaario |
+| Tarkka sijainti | docs/history/PLAN_v1.0.md:526-529; tests/classes/CQStateTest.sc:1,9; tests/nrt_safety.scd:21-24,299; tests/nrt_hold_integrity.scd:15-18,94; tests-hakemiston inventaario |
 | Tekninen perustelu | PLAN mainitsee scratch-GUI-smoken, mutta sitä ei ole repositoryn testeissä. State-testit käyttävät graph=nil-tilaa ja NRT antaa SynthDef-argumentit suoraan. Testihakemistossa ei ole CQGui-viittauksia. |
 | Toisto | Riko paikallisesti testibranchissa yhden GUI-kontrollin bind-nimi tai yhden route-argumentin nimi ja aja nykyinen sarja; se ei kata koko päästä-päähän-ketjua. |
 | Havaittu evidenssi | Testien rakenne ja puuttuvat GUI-viitteet tarkastettiin. Scratch-smoken tulosta ei voitu toistaa repositoryn aineistosta. |
@@ -327,7 +327,7 @@ Kaksi P0-löydöstä ovat julkaisun estäviä: hyväksytty lähtökonfiguraatio 
 | Vakavuus | P2 |
 | Luottamus | varmistettu |
 | Vaikutus | Käyttäjä voi antaa watchdogille turvallisuusvastuun, päätellä väärin release-hyväksynnän tai odottaa runtime-ominaisuuksia, joita toteutus ei tarjoa. |
-| Tarkka sijainti | tests/manual_checklist.md:628-643,647-656; SPEC.md:8,298-303,311-316,490-493; README.md:9-13,85-87; PLAN.md:7-13,636-653; ARCHITECTURE.md:263,285,294-295; config.example.scd:13; classes/CQConfig.sc:111,149-156; classes/CQMidi16n.sc:73-82; classes/CQGraph.sc:43-76; classes/Cocoquantus.sc:38,308 |
+| Tarkka sijainti | tests/manual_checklist.md:628-643,647-656; SPEC.md:8,298-303,311-316,490-493; README.md:9-13,85-87; docs/history/PLAN_v1.0.md:7-13,636-653; ARCHITECTURE.md:263,285,294-295; config.example.scd:13; classes/CQConfig.sc:111,149-156; classes/CQMidi16n.sc:73-82; classes/CQGraph.sc:43-76; classes/Cocoquantus.sc:38,308 |
 | Tekninen perustelu | Manuaalin abuse-osuus sanoo turvaketjun ja watchdogin pitävän kurissa, vaikka SPEC ja PLAN määrittelevät watchdogin ei-turvalliseksi notice/comfort-toiminnoksi. README/PLAN ilmoittavat v1.0:n hyväksytyksi, mutta README ja checklist jättävät KUUNTELU 7:n tai stem-livekohdat avoimeksi. SPEC antaa stemOuts-esimerkiksi neljä kanavaa [2,3,4,5], vaikka validaattori hyväksyy täsmälleen kaksi ja config-esimerkki käyttää [2,3]. ARCHITECTURE lupaa automaattisen MIDI-hotplug-watchin, deck-placeholderit ja live-state-recoveryn, joita koodi ei toteuta kuvatulla tavalla. |
 | Toisto | Lue mainitut normatiiviset kohdat rinnakkain ja vertaa CQMidi16n-, CQGraph- ja boot-koodiin. |
 | Havaittu evidenssi | Ristiriidat ovat suoria teksti- ja koodihavaintoja. Neljän stemOuts-arvon SPEC-esimerkki hylätään CQConfig.prCheckChansin 2..2-kokorajan vuoksi. PLANissa on historiallista kuuntelunäyttöä, mutta yksi kanoninen status puuttuu. |
@@ -402,8 +402,8 @@ Kaksi P0-löydöstä ovat julkaisun estäviä: hyväksytty lähtökonfiguraatio 
 | Vakavuus | Info |
 | Luottamus | varmistettu |
 | Vaikutus | Cocoquantus/Ciat-Lonbarde-historiaa ei voi auditoida itsenäisesti repositoryn ulkopuolisiin alkuperäislähteisiin asti. AGENTS.md- tai erillistä known-issues-lähdettä ei voitu sisällyttää auditointiin. |
-| Tarkka sijainti | AUDIT_PROMPT.md:29-36; SPEC.md:40-57,557-569; repositoryn juuren ja dokumenttitiedostojen inventaario |
-| Tekninen perustelu | SPEC nimeää Peter Blasserin kuvauksen, julkaistun kaavion/Richard Brewsterin ja Perfect Circuitin, mutta repositoryssa ei ole bibliografiaa, URL-osoitteita tai arkistoituja lähteitä. AGENTS.md puuttuu. Erillistä TODO/known-issues-tiedostoa ei ole; PLAN.md toimii osittain tässä roolissa. |
+| Tarkka sijainti | audit/prompts/AUDIT_PROMPT.md:29-36; SPEC.md:40-57,557-569; repositoryn juuren ja dokumenttitiedostojen inventaario |
+| Tekninen perustelu | SPEC nimeää Peter Blasserin kuvauksen, julkaistun kaavion/Richard Brewsterin ja Perfect Circuitin, mutta repositoryssa ei ole bibliografiaa, URL-osoitteita tai arkistoituja lähteitä. AGENTS.md puuttuu. Auditointihetken `PLAN.md`, nykyinen `docs/history/PLAN_v1.0.md`, toimi osittain tässä roolissa. |
 | Toisto | Suorita rg --files ja hae AGENTS.md, TODO, known issues, bibliography, http-viitteet sekä mainitut lähdenimet. |
 | Havaittu evidenssi | Inventaario vahvisti puuttuvat tiedostot ja lähdeviitteet. |
 | Suositeltu korjaussuunta | Lisää versionhallittu lähdeluettelo tai arkistoidut viitteet, merkitse väitteiden alkuperä ja pidä fakta, toteutushavainto sekä esteettinen tulkinta erillään. AGENTS.md ei ole tarpeen vain auditointia varten, ellei projekti halua repository-kohtaisia agenttiohjeita. |

@@ -6,7 +6,7 @@ Tämä raportti arvioi projektin rakenteellista ja äänellistä suhdetta siihen
 
 Siksi tässä raportissa käytetään aina seuraavaa jakoa:
 
-1. **Paikalliseen projektidokumentaatioon perustuva väite** kertoo, mitä `SPEC.md`, `ARCHITECTURE.md`, `PLAN.md`, `README.md` tai projektin testidokumentaatio väittää. Se ei ole tässä auditissa ulkoisesti varmennettu historiallinen fakta.
+1. **Paikalliseen projektidokumentaatioon perustuva väite** kertoo, mitä `SPEC.md`, `ARCHITECTURE.md`, nykyinen `docs/history/PLAN_v1.0.md`, `README.md` tai projektin testidokumentaatio väittää. Se ei ole tässä auditissa ulkoisesti varmennettu historiallinen fakta.
 2. **Koodihavainto** kertoo, mitä nykyinen toteutus tekee tarkastettujen lähdekoodirivien perusteella.
 3. **Esteettinen tulkinta** on auditoijan arvio todennäköisestä kuultavasta tai soitettavasta luonteesta. Sitä ei pidetä kuuntelutuloksena.
 4. **Suositus** on suunnitteluehdotus, ei kuvaus alkuperäisestä laitteesta.
@@ -32,7 +32,7 @@ Lossless/bit-exact hold on projektin vaatimus; koodi sekä samat peak-arvot,
 korrelaatio 1,0 ja 0,0 dB drift tukevat sitä, mutta nykyinen A4-testi ei tee
 sample- tai bittivertailua.
 
-Toteutus ei pyri piirisimulaatioon, eikä sen pidäkään `SPEC.md:29–34`:n mukaan pyrkiä. Eniten projektin omaa tulkintaa ovat Quantussyn kahdeksan tilan tarkka partner/mode-kartta, address-counter-organin syntetisointi ja banaanipaneelin korvaava nimetty matriisi. Eniten ytimestä erillisiä ovat tiedostodekit, snapshotit, recorder, masterDry, watchdog ja nykyinen Space-FDN. Näistä Space on ainoa, jonka esteettinen rooli on myös projektin omassa suunnitelmassa nimenomaisesti auki (`PLAN.md:688–700`).
+Toteutus ei pyri piirisimulaatioon, eikä sen pidäkään `SPEC.md:29–34`:n mukaan pyrkiä. Eniten projektin omaa tulkintaa ovat Quantussyn kahdeksan tilan tarkka partner/mode-kartta, address-counter-organin syntetisointi ja banaanipaneelin korvaava nimetty matriisi. Eniten ytimestä erillisiä ovat tiedostodekit, snapshotit, recorder, masterDry, watchdog ja nykyinen Space-FDN. Näistä Space on ainoa, jonka esteettinen rooli on myös projektin omassa suunnitelmassa nimenomaisesti auki (`docs/history/PLAN_v1.0.md:688–700`).
 
 ## A/B/C-kartta
 
@@ -268,7 +268,7 @@ Säilytä ei-ohitettava turvaketju ja pidä masterDry oletuksena nollassa. Korja
 
 - `SPEC.md:284–306` nimeää Spacen valinnaiseksi FDN-reverbiksi ja asettaa `spaceMix`-oletuksen nollaan.
 - `SPEC.md:567` toteaa paikallisen projektidokumentaation tasolla, ettei tavoitellussa laitteessa ole reverb-efektiä.
-- `PLAN.md:688–700` dokumentoi käyttäjän 2026-07-19 linjauksen: nykyinen Space koetaan metalliseksi/plate-tyyppiseksi, eikä sitä tai GUI-parametreja tule viilata ennen suurempaa konseptipäätöstä. Vaihtoehtona mainitaan Cocon omasta arkkitehtuurista nouseva kontekstitietoinen makro.
+- `docs/history/PLAN_v1.0.md:688–700` dokumentoi käyttäjän 2026-07-19 linjauksen: nykyinen Space koetaan metalliseksi/plate-tyyppiseksi, eikä sitä tai GUI-parametreja tule viilata ennen suurempaa konseptipäätöstä. Vaihtoehtona mainitaan Cocon omasta arkkitehtuurista nouseva kontekstitietoinen makro.
 
 ### Koodihavainto
 

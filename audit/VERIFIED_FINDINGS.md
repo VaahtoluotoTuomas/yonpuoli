@@ -1,7 +1,8 @@
 # Varmennetut löydökset
 
 Auditointipäivä: 2026-07-19
-Arvioija: riippumaton pääarviointi `AUDIT_EVAL.md`:n mukaan
+Arvioija: riippumaton pääarviointi
+[`prompts/AUDIT_EVAL.md`](prompts/AUDIT_EVAL.md):n mukaan
 
 Tässä tiedostossa ovat vain lähdekoodista tarkistetut ja joko ajolla toistetut tai
 deterministisesti toteutuksesta osoitetut löydökset. Prioriteetti kuvaa varmennettua

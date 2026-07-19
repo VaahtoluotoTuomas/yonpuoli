@@ -7,3 +7,6 @@ tests/sclang_conf_dev.yaml
 samples/
 recordings/
 tests/tmp/
+
+# Archipelago GUI runtime state (not a user preset)
+/presets/compass.cqcompass.scd

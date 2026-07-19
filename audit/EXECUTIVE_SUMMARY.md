@@ -30,16 +30,23 @@ Auditin julkaisusuositus on siksi:
 
 ## Laajuus ja menetelmä
 
-Auditoinnin ensisijainen ohje oli repositoryn AUDIT_PROMPT.md. Luettiin kokonaan:
+Auditoinnin ensisijainen ohje oli repositoryn
+`audit/prompts/AUDIT_PROMPT.md`. Luettiin kokonaan:
 
-- README.md, SPEC.md, ARCHITECTURE.md, PLAN.md ja CLAUDE.md
+- README.md, SPEC.md, ARCHITECTURE.md, nykyinen
+  `docs/history/PLAN_v1.0.md` ja CLAUDE.md
 - tests/manual_checklist.md
 - kaikki classes-, tests-, presets- ja config-esimerkkitiedostot
 - paikallisen SuperCollider 3.13:n relevantti Server.waitForBoot/Server.reboot-toteutus.
 
 Työ jaettiin rinnakkain arkkitehtuuri/runtime-, DSP/fidelity- sekä feature/GUI-osuuksiin. Kaikki osuudet valmistuivat ennen synteesiä. Lähdekoodia ei muutettu; vain audit-hakemiston raportit kirjoitettiin.
 
-AGENTS.md:ää tai erillistä TODO/known-issues-tiedostoa ei löytynyt. PLAN.md toimii osittain status- ja tehtävähistoriana. Repositoryssa ei myöskään ole lähdeketjua, jolla Cocoquantus/Ciat-Lonbarde-historialliset väitteet voisi vahvistaa itsenäisesti; fidelity-raportti erottaa siksi projektidokumentaation väitteet, koodihavainnot ja esteettisen tulkinnan.
+AGENTS.md:ää tai erillistä TODO/known-issues-tiedostoa ei löytynyt. Nykyinen
+`docs/history/PLAN_v1.0.md` toimi auditointihetkellä osittain status- ja
+tehtävähistoriana. Repositoryssa ei myöskään ole lähdeketjua, jolla
+Cocoquantus/Ciat-Lonbarde-historialliset väitteet voisi vahvistaa itsenäisesti;
+fidelity-raportti erottaa siksi projektidokumentaation väitteet, koodihavainnot ja
+esteettisen tulkinnan.
 
 ## Oikeasti ajettu testinäyttö
 

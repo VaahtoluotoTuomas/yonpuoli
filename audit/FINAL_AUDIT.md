@@ -1,7 +1,7 @@
 # Lopullinen auditointiarvio
 
 Auditointipäivä: 2026-07-19
-Ohje: `AUDIT_EVAL.md`
+Ohje: [`prompts/AUDIT_EVAL.md`](prompts/AUDIT_EVAL.md)
 Laajuus: kaikki `audit/`-raportit, koko alkuperäinen lähdekoodi, testit ja keskeinen
 dokumentaatio. Lähdekoodia ei muutettu.
 

@@ -202,8 +202,8 @@ viittä offsetia.
 | Parametri | Dokumentaatio | GUI | Tila-/API-reitti | DSP-kohde | Testievidenssi | Tila |
 |---|---|---|---|---|---|---|
 | **spaceMix** | D6 | MASTER-osion space-nuppi, CQGuiPanels.sc:203-206 | CQState → master.spaceMix, CQState.sc:73 | cqMaster skaalaa stereo-FDN-paluuta, CQSynthDefs.sc:300,306-307 | T-SPEC, T-MIDI F14, T-SPACE, manuaali 523-535 | GUI + API + DSP; riippuvuuden affordanssi CQ-AUD-014 |
-| **spaceSize** | D6 | Ei ole | CQState → space.spaceSize, CQState.sc:74 | cqSpacen viiveiden skaalaus/feedback-luonne, CQSynthDefs.sc:265-288 | T-SPEC; T-SPACEn suora SynthDef; manuaali 532-535; tilareittiä ei ole testattu suoraan | **Vain API:ssa (API-only)** + DSP; GUI-konsepti on eksplisiittisesti lykätty tiedostossa PLAN.md:687-700 |
-| **spaceDamp** | D6 | Ei ole | CQState → space.spaceDamp, CQState.sc:74 | cqSpacen vaimennussuodatin feedback-verkossa, CQSynthDefs.sc:267,275-288 | T-SPEC; T-SPACEn suora SynthDef; manuaali 532-535; tilareittiä ei ole testattu suoraan | **Vain API:ssa (API-only)** + DSP; GUI-konsepti on eksplisiittisesti lykätty tiedostossa PLAN.md:687-700 |
+| **spaceSize** | D6 | Ei ole | CQState → space.spaceSize, CQState.sc:74 | cqSpacen viiveiden skaalaus/feedback-luonne, CQSynthDefs.sc:265-288 | T-SPEC; T-SPACEn suora SynthDef; manuaali 532-535; tilareittiä ei ole testattu suoraan | **Vain API:ssa (API-only)** + DSP; GUI-konsepti on eksplisiittisesti lykätty tiedostossa docs/history/PLAN_v1.0.md:687-700 |
+| **spaceDamp** | D6 | Ei ole | CQState → space.spaceDamp, CQState.sc:74 | cqSpacen vaimennussuodatin feedback-verkossa, CQSynthDefs.sc:267,275-288 | T-SPEC; T-SPACEn suora SynthDef; manuaali 532-535; tilareittiä ei ole testattu suoraan | **Vain API:ssa (API-only)** + DSP; GUI-konsepti on eksplisiittisesti lykätty tiedostossa docs/history/PLAN_v1.0.md:687-700 |
 | **masterDry** | D6 | MASTER-osion dry-nuppi, CQGuiPanels.sc:203-206 | CQState → master.masterDry, CQState.sc:73 | cqMasterin kuivan lähteen osuus, CQSynthDefs.sc:301,306-307 | T-SPEC, T-MASTERin suora DSP, laaja käyttö manuaalin asetelmissa | GUI + API + DSP |
 | **masterVol** | D6 | MASTER-osion vol-nuppi, CQGuiPanels.sc:203-206 | CQState → master.masterVol, CQState.sc:73 | dB-gain ennen turvaketjua, CQSynthDefs.sc:302 | T-SPEC, T-MIDI F16, T-MASTERin pahin tapaus, watchdog-manuaali | GUI + API + DSP |
 | **monitorMute** | D6, D11 | PANIC/MUTED-painike ja välilyöntioikotie, CQGuiPanels.sc:165-193; CQGui.sc:213-215 | CQState → master.mute, CQState.sc:78; CQ.panic/CQ.resume-facade | 30 ms mykistys Masteriin ja stemeihin, CQSynthDefs.sc:303-307,349-350 | T-SPEC; T-SNAP todistaa, ettei panic palaudu recallissa; manuaaliset GUI- ja stem-panic-tarkistukset | GUI-toiminto + API + DSP |
@@ -243,13 +243,13 @@ viittä offsetia.
 2. GUI-kattavuus on täsmälleen 71/79. Alussa luetellut kahdeksan puuttuvaa
    GUI-ohjainta eivät ole puuttuvia DSP-ominaisuuksia. qShLag ja c1Off–c5Off
    sopivat ehdokkaiksi Advanced Quantussy -osioon; spaceSize ja spaceDamp
-   edellyttävät tiedostoon PLAN.md:687-700 kirjattua avoinna olevaa
+   edellyttävät tiedostoon docs/history/PLAN_v1.0.md:687-700 kirjattua avoinna olevaa
    Space-konseptipäätöstä.
 3. Unit-kattavuus on vahvimmillaan arvojen turvallisuudessa, serialisoinnissa,
    matriisidatassa ja serverittömässä MIDI-logiikassa. NRT-kattavuus on vahvimmillaan
    rajauksessa ja valitussa DSP-käyttäytymisessä. Se ohittaa yleensä CQState-reitit.
 4. Repossa ei ole commitoitua päästä päähän GUI → CQState → reitti →
-   Synth-argumentti-testiä. Tiedostossa PLAN.md:526-529 mainittua historiallista
+   Synth-argumentti-testiä. Tiedostossa docs/history/PLAN_v1.0.md:526-529 mainittua historiallista
    scratch-smokea ei voi toistaa repon sisällöstä. Tämä on CQ-AUD-020.
 5. Nimetyt sisäänrakennetut presetit eivät ole deterministisiä koko tilan
    presettejä. Serveritön sekvenssitesti löysi 13 jäännösarvoa reitillä

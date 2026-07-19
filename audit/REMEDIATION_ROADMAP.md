@@ -1,7 +1,8 @@
 # Korjaus- ja kehitysroadmap
 
 Päivitetty: 2026-07-19
-Lähde: `AUDIT_EVAL.md` ja `VERIFIED_FINDINGS.md`
+Lähde: [`prompts/AUDIT_EVAL.md`](prompts/AUDIT_EVAL.md) ja
+[`VERIFIED_FINDINGS.md`](VERIFIED_FINDINGS.md)
 
 GUI-työssä autoritatiivinen käyttäytymis- ja visuaalinen määrittely on
 [`../GUI_SPEC.md`](../GUI_SPEC.md). `SPEC.md` voittaa parametri-, DSP- ja

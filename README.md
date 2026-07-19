@@ -6,11 +6,15 @@ banaanipatchausta vastaava 16×22-reititysmatriisi. Ohjaus kolmena kerroksena:
 koodi (`CQ`-facade), GUI ja 16n-faderbank — kaikki valinnaisia, kaikki
 kirjoittavat samaan tilaan.
 
-**Tilanne: 🎉 v1.0 (2026-07-19).** M1 (ydinääni), M2 (GUI, 16n, snapshotit,
-shake, recorder) ja M3 (space-kaiku, stemit, watchdog, `\cq`-patternit) valmiit ja
-kuunneltu. CPU raskaimmillaan ~20–23 % (≤ 25 %). Ainoa live-todentamaton on
-stem-ulostulot/-äänitys, jotka vaativat ≥4-kanavaisen äänikortin (toteutus + NRT-turva
-valmiit; live-kuuntelu v1.0.1:ssä). Työn tila ja checkboxit: `PLAN.md`.
+**Tilanne: v1.0-pohja + Archipelago-kehitysvaihe (2026-07-19).** M1–M3:n toteutus ja
+kuuntelukierros ovat valmiit; CPU oli raskaimmillaan ~20–23 % (≤ 25 %). Julkaisun
+jälkeinen auditointi varmisti kuitenkin yhden P0-julkaisun estäjän ja kolme P1-
+vakausvikaa, joten v1.0 on historiallinen baseline eikä tämänhetkinen “vakaa”-lupaus.
+Uusi GUI toteutetaan `GUI_SPEC.md`:n mukaan audit-korjausten päälle. Ajantasainen
+työjärjestys: `PLAN.md`; auditin lukujärjestys: `audit/README.md`.
+
+Stem-ulostulojen/-äänityksen toteutus ja NRT-turva ovat valmiit, mutta niiden live-
+kuuntelu odottaa ≥4-kanavaista äänikorttia.
 
 ## Vaatimukset
 
@@ -66,8 +70,8 @@ Näppäimet GUI-ikkunassa: `1/2` hold · `q/w` flip · `a/s` skip · `3..7` spes
 
 ## Testaus
 
-**Claude Codella** (suositus): avaa terminaali repokansiossa, aja `claude` ja
-sano *"lue PLAN.md ja jatka"*. Ensimmäisessä sessiossa Claude kysyy
+**Kehitysagentilla**: pyydä sitä lukemaan ensin `CLAUDE.md` ja `PLAN.md`; GUI-työssä
+myös koko `GUI_SPEC.md`. Ensimmäisessä sessiossa agentti kysyy
 SuperColliderin asennuspolun ja generoi kehitysconfit itse; sen jälkeen se
 ajaa headless-testit ja ohjaa kuuntelutestit askel kerrallaan.
 
@@ -83,8 +87,9 @@ sclang -l <conf> -i none tests/nrt_hold_integrity.scd -> CQ_HOLD_OK
 ```
 
 **Korvilla**: `tests/manual_checklist.md` — kopioitavat lohkot, aja rivi
-kerrallaan. KUUNTELU-gatet 1–6 (M1–M8) hyväksytty 2026-07-18; seuraava
-kuuntelu on vaiheen 7 **KUUNTELU 7** (v1.0-hyväksyntä).
+kerrallaan. Historiallinen v1.0-kuuntelukierros valmistui 2026-07-19; seuraavat
+kuuntelu- ja visuaaliset portit kuuluvat audit-korjauksille ja `GUI_SPEC.md` §13:n
+G1–G3-vaiheille.
 
 ## Hyvä tietää
 
@@ -106,7 +111,10 @@ kuuntelu on vaiheen 7 **KUUNTELU 7** (v1.0-hyväksyntä).
 | Tiedosto | Rooli |
 |---|---|
 | `SPEC.md` | Käyttäytyminen, parametrit, turvasäännöt (normatiivinen) |
+| `GUI_SPEC.md` | Archipelago-GUI:n rakenne, eleet ja visuaalikieli (normatiivinen) |
 | `ARCHITECTURE.md` | Koodin rakenne, väylät, testiarkkitehtuuri (normatiivinen) |
-| `PLAN.md` | Vaiheistettu checklist — **työn ajantasainen tila** |
+| `PLAN.md` | **Työn ajantasainen järjestys ja tila** |
+| `audit/README.md` | Audit-raporttien auktoriteetti ja lukujärjestys |
+| `docs/history/PLAN_v1.0.md` | Jäädytetty v1.0-toteutusloki ja historialliset checkboxit |
 | `CLAUDE.md` | Claude Code -työohjeet (testikomennot, invariantit) |
 | `tests/manual_checklist.md` | Kuuntelutestit (M1–M8), suomeksi |
