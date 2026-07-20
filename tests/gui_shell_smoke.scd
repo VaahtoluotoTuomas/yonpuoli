@@ -32,8 +32,14 @@ abort = { |error|
 			try {
 				var master = gui.shell.masterView, volKnob, qKnob, speedKnob, trimKnob;
 				var recControl, panicControl, sliders, ranges, oldVol;
+				var sourceView, destView, destPoint, sourceOrigin, dragPoint, cableHit;
+				var groundView, harvestRecord, harvestCenter, harvestPoints, localPoints;
+				var beforeHarvest, afterHarvest, hoverPoint, fileLabel, loopControl;
+				var trackedView, trackedControl;
 				check.value(gui.window.notNil and: { gui.window.isClosed.not },
 					"real Qt window constructed");
+				check.value(gui.window.acceptsMouseOver,
+					"window enables real Qt mouse-over delivery to child cable hit tests");
 				check.value(gui.shellState.lifecycleState == \open,
 					"shell lifecycle reached open");
 				check.value(gui.shellState.minSize == [1280, 720],
@@ -48,6 +54,80 @@ abort = { |error|
 					"cable overlay is hit-transparent to the controls below");
 				check.value(gui.cableOverlay.cableCount == 2,
 					"overlay renders every planted matrix cable");
+				check.value(gui.bananaController.notNil
+					and: { gui.bananaBodies.size == 4 }
+					and: { gui.endpoints.values.every { |endpoint|
+						endpoint[\view].mouseDownAction.notNil
+					} },
+					"banana controller binds every endpoint and four organ bodies");
+				cableHit = gui.cableOverlay.cableRecords.first;
+				cableHit = gui.cableOverlay.patchAt(cableHit[\points]
+					[cableHit[\points].size div: 2]);
+				check.value(cableHit.notNil and: { cableHit[\src] == \tri1 }
+					and: { cableHit[\dest] == \coco1_spaf },
+					"drawn cable path exposes its narrow semantic hit target");
+				groundView = gui.bananaBodies[\sources][\view];
+				trackedControl = gui.inkControls.detect { |control| control.isInteractive };
+				trackedView = trackedControl.view;
+				check.value(trackedView.mouseOverAction.notNil and: {
+					trackedView.getProperty(\mouseTracking) == true
+				}, "a Day child control passes real Qt hover moves to cable hit-testing");
+				trackedView.mouseEnterAction.value(trackedView);
+				check.value(trackedControl.hover,
+					"interactive Ink control enters its immediate visual hover state");
+				gui.bananaGrammar.hoverCable = cableHit;
+				hoverPoint = gui.cableOverlay.view.mapToGlobal(cableHit[\points]
+					[cableHit[\points].size div: 2]) - trackedView.mapToGlobal(0@0);
+				trackedView.mouseOverAction.value(trackedView, hoverPoint.x, hoverPoint.y);
+				check.value(gui.bananaGrammar.hoverCable.isNil,
+					"controls-first priority suppresses a cable target over a control");
+				trackedView.mouseLeaveAction.value(trackedView);
+				check.value(trackedControl.hover.not,
+					"interactive Ink control clears its hover state on leave");
+				hoverPoint = gui.cableOverlay.view.mapToGlobal(cableHit[\points]
+					[cableHit[\points].size div: 2]) - groundView.mapToGlobal(0@0);
+				groundView.mouseOverAction.value(groundView, hoverPoint.x, hoverPoint.y);
+				check.value(gui.bananaGrammar.isCableHovered(\tri1, \coco1_spaf),
+					"open-ground hover exposes one precise cable target");
+				gui.bananaGrammar.hoverCable = nil;
+				sourceView = gui.endpoints[\org2][\view];
+				destView = gui.endpoints[\deckB_rate][\view];
+				destPoint = destView.mapToGlobal(gui.endpoints[\deckB_rate][\anchor]);
+				sourceOrigin = sourceView.mapToGlobal(0@0);
+				dragPoint = destPoint - sourceOrigin;
+				sourceView.mouseDownAction.value(sourceView, 9, 10, 0, 0, 1);
+				sourceView.mouseMoveAction.value(sourceView, dragPoint.x, dragPoint.y, 0);
+				sourceView.mouseUpAction.value(sourceView, dragPoint.x, dragPoint.y, 0, 0);
+				check.value(matrix.getPatch(\org2, \deckB_rate) == 0.5,
+					"real endpoint drag auditions and plants WYHIWYG through the funnel");
+				gui.window.view.keyDownAction.value(gui.window.view, $z, 262144);
+				check.value(matrix.getPatch(\org2, \deckB_rate) == 0.0,
+					"window-level Ctrl+Z restores the endpoint plant");
+				harvestRecord = gui.cableOverlay.cableRecords.first;
+				harvestCenter = harvestRecord[\points]
+					[harvestRecord[\points].size div: 2];
+				harvestPoints = [harvestCenter + (-20@(-20)),
+					harvestCenter + (20@(-20)), harvestCenter + (20@20),
+					harvestCenter + (-20@20)];
+				localPoints = harvestPoints.collect { |point|
+					gui.cableOverlay.view.mapToGlobal(point) - groundView.mapToGlobal(0@0)
+				};
+				beforeHarvest = matrix.fullMatrix.asCompileString;
+				groundView.mouseDownAction.value(groundView,
+					localPoints[0].x, localPoints[0].y, 0, 1, 1);
+				groundView.mouseMoveAction.value(groundView,
+					localPoints[1].x, localPoints[1].y, 0);
+				groundView.mouseMoveAction.value(groundView,
+					localPoints[2].x, localPoints[2].y, 0);
+				groundView.mouseUpAction.value(groundView,
+					localPoints[3].x, localPoints[3].y, 0, 1);
+				afterHarvest = matrix.fullMatrix.asCompileString;
+				check.value(afterHarvest != beforeHarvest,
+					"real ground right-drag harvest removes its caught cable");
+				gui.window.view.keyDownAction.value(gui.window.view,
+					nil, 262144, 26, 0, 90);
+				check.value(matrix.fullMatrix.asCompileString == beforeHarvest,
+					"native Windows Ctrl+Z restores the complete harvest batch");
 				volKnob = gui.inkControls.detect { |control|
 					control.kind == \knob and: { control.label == "vol" }
 				};
@@ -87,6 +167,22 @@ abort = { |error|
 					and: { (sliders[0].view.absoluteBounds.center.y
 						- (ranges[0].view.absoluteBounds.top + 22)).abs <= 1 },
 					"Quantussy castle 1 range rail aligns with the Coco 1 slot rail");
+				ranges[0].view.mouseDownAction.value(ranges[0].view, 1, 18);
+				ranges[0].view.mouseMoveAction.value(ranges[0].view,
+					ranges[0].view.bounds.width - 1, 18);
+				ranges[0].view.mouseUpAction.value(ranges[0].view,
+					ranges[0].view.bounds.width - 1, 18);
+				check.value(state.get(\c1Range) == \audio,
+					"range switch supports click-drag selection across its rail");
+				fileLabel = gui.deckLabel(\deckA);
+				loopControl = gui.inkControls.detect { |control|
+					control.kind == \button and: { control.label == "loop" }
+				};
+				check.value(fileLabel.bounds.width >= 144
+					and: { fileLabel.bounds.height >= 36 }
+					and: { (fileLabel.absoluteBounds.left
+						- loopControl.view.absoluteBounds.right) >= 6 },
+					"deck filename has full glyph height and breathing room after loop");
 				volKnob !? {
 					volKnob.view.mouseDownAction.value(volKnob.view, 24, 30);
 					volKnob.view.mouseMoveAction.value(volKnob.view, 24, 20);

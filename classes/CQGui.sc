@@ -10,6 +10,7 @@ CQGui {
 	var state, matrix, config;
 	var <window, <widgets, updaters, <shellState, <shell;
 	var stateCtl, gridPanel, meterFuncs, <audition;
+	var <bananaGrammar, <bananaController, <bananaBodies;
 	var <endpoints, <cableOverlay;
 	var <inkControls;
 	var castleLeds, spesalView, <spesalStates, <castleValues;
@@ -36,12 +37,17 @@ CQGui {
 		{ window !? { if(window.isClosed.not) { window.close } } }.defer;
 	}
 
-	cancelAudition { audition !? { audition.panic } }
+	cancelAudition { bananaGrammar !? { bananaGrammar.panic } }
+	shake {
+		bananaGrammar.performUndoable({ Cocoquantus.shake(shakeAmount) });
+		^this
+	}
 
 	// ---- panel registration API (used by CQGuiPanels while building) ----
 
 	setMeter { |key, func| meterFuncs[key] = func }
 	setDeckLabel { |which, view| deckLabels[which] = view }
+	deckLabel { |which| ^deckLabels[which] }
 	setSkipButton { |n, btn| skipButtons[n] = btn }
 	castleLeds_ { |views| castleLeds = views }
 	spesalView_ { |view| spesalView = view }
@@ -52,6 +58,37 @@ CQGui {
 	registerEndpoint { |name, kind, endpointView, anchor|
 		endpoints[name] = (name: name, kind: kind, view: endpointView, anchor: anchor);
 		^endpointView
+	}
+	registerBananaBody { |name, bodyView, members|
+		bananaBodies[name] = (name: name, view: bodyView, members: members);
+		^bodyView
+	}
+	drawEndpoint { |name, kind, center, family, glyph, lamp = false|
+		var palette = CQInk.palette(\day), endpointState;
+		endpointState = if(kind == \jack) {
+			if(bananaGrammar.isSourceInHand(name)) { \inHand } {
+				if(bananaGrammar.hoverEndpoint == name) { \hover } { \idle }
+			}
+		} {
+			if(bananaGrammar.isCandidate(name)) { \candidate } {
+				if(bananaGrammar.hoverEndpoint == name) { \hover } {
+					if(matrix.asArray.any { |patch| patch[1] == name }) {
+						\occupied
+					} {
+						\idle
+					}
+				}
+			}
+		};
+		if(kind == \jack) {
+			CQInk.drawJack(center, family, \day, endpointState)
+		} {
+			CQInk.drawSocket(center, family, \day, endpointState,
+				bananaGrammar.handWeight);
+			glyph !? { CQInk.drawGlyph(glyph, Rect(5, 6, 8, 8), palette[family]) };
+			if(lamp) { CQInk.drawLamp(Point(25, 10), 0, false, \day) };
+		};
+		^this
 	}
 	currentSkin { ^shellState.viewMode }
 
@@ -65,7 +102,8 @@ CQGui {
 
 	prInit {
 		audition = CQAudition(matrix);
-		shellState = CQGuiShellState(audition);
+		bananaGrammar = CQBananaGrammar(matrix, audition);
+		shellState = CQGuiShellState(bananaGrammar);
 		updaters = IdentityDictionary.new;
 		meterFuncs = IdentityDictionary.new;
 		deckLabels = IdentityDictionary.new;
@@ -74,6 +112,7 @@ CQGui {
 		castleValues = [0, 0, 0, 0, 0];
 		inkControls = List.new;
 		endpoints = IdentityDictionary.new;
+		bananaBodies = IdentityDictionary.new;
 		widgets = CQGuiWidgets(state, updaters, this);
 		{
 			if(cleaned.not and: { shellState.canBuild }) {
@@ -97,7 +136,10 @@ CQGui {
 				CQGuiPanels.quantussy(this),
 				CQGuiPanels.coco(this, 2)
 			).margins_(8).spacing_(8));
-		cableOverlay = CQGuiCableOverlay(matrix, endpoints);
+		cableOverlay = CQGuiCableOverlay(matrix, endpoints, bananaGrammar);
+		bananaController = CQGuiBananaController(
+			bananaGrammar, endpoints, bananaBodies, cableOverlay, inkControls);
+		bananaController.bindGround(dayContent);
 		dayView = View().background_(CQInk.palette(\day)[\ground]).layout_(
 			StackLayout(cableOverlay.view, dayContent).mode_(\stackAll));
 		nightView = UserView().background_(night[\ground]);
@@ -121,9 +163,14 @@ CQGui {
 		this.prApplySkin(shellState.viewMode);
 		window = Window("Cocoquantus · Archipelago",
 			Rect(50, 50, minimum[0], minimum[1]));
+		// SuperCollider's Qt backend suppresses child mouseOverAction callbacks
+		// unless the containing window explicitly enables mouse-over delivery.
+		window.acceptsMouseOver = true;
 		window.view.minSize = Size(minimum[0], minimum[1]);
 		window.view.layout = VLayout(shell.view).margins_(0).spacing_(0);
-		window.view.keyDownAction = { |v, char| this.prKey(char) };
+		window.view.keyDownAction = { |v, char, modifiers, unicode, keycode, key|
+			this.prKey(char, modifiers ? 0, unicode, keycode, key)
+		};
 		window.onClose = { shellState.close; this.prCleanup };
 		window.view.children.do { |ch| this.prDefocus(ch) };
 		window.front;
@@ -237,9 +284,18 @@ CQGui {
 	}
 
 	// SPEC §6.2 keyboard map
-	prKey { |char|
+	prKey { |char, modifiers = 0, unicode, keycode, key|
+		var ascii, undoKey;
+		ascii = char !? { char.ascii };
+		undoKey = #[26, 90, 122].includes(ascii)
+			or: { #[26, 90, 122].includes(unicode) }
+			or: { key == 90 };
+		if(modifiers.isCtrl and: { undoKey }) {
+			bananaGrammar.undo;
+			^this
+		};
 		if(char.notNil and: { char.ascii == 27 }) {
-			audition.escape;
+			bananaGrammar.escape;
 			^this
 		};
 		if(char.notNil and: { char.ascii == 9 }) {
@@ -258,7 +314,7 @@ CQGui {
 				if(r.notNil and: { r.isRecording })
 					{ Cocoquantus.recStop } { Cocoquantus.rec };
 			},
-			$p, { Cocoquantus.shake(shakeAmount) },
+			$p, { this.shake },
 			$ , {
 				if((Cocoquantus.get(\monitorMute) ? 0) > 0)
 					{ Cocoquantus.resume } { Cocoquantus.panic };
@@ -334,7 +390,7 @@ CQGui {
 	// idempotent teardown shared by free and the window's close box: language-
 	// side listeners die here so a closed window leaves no dangling \cq_gui_*
 	prCleanup {
-		audition !? { audition.free };
+		bananaGrammar !? { bananaGrammar.free };
 		if(cleaned) { ^this };
 		cleaned = true;
 		shellState.close;
@@ -343,6 +399,8 @@ CQGui {
 		deckCtls.do { |c| c.remove };
 		deckCtls = nil;
 		gridPanel !? { gridPanel.free };
+		bananaController !? { bananaController.free };
+		bananaController = nil;
 		cableOverlay !? { cableOverlay.free };
 		cableOverlay = nil;
 		recTask !? { recTask.stop };

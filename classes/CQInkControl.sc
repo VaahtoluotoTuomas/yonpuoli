@@ -5,7 +5,7 @@
 CQInkControl {
 	classvar <drawErrors = 0;
 	var <view, <kind, <value = 0, <label, <skin, <family, <options, <diameter = 26;
-	var action, display = "", pressed = false, hover = false, enabled = true;
+	var action, display = "", pressed = false, <hover = false, enabled = true;
 	var toggle = false, momentary = false, glyph, danger = false, downward = false;
 	var surface = \ground, startX = 0, startY = 0, startValue = 0;
 
@@ -65,6 +65,8 @@ CQInkControl {
 		this.prBind;
 		^this
 	}
+
+	isInteractive { ^#[knob, slider, button, switch, number].includes(kind) }
 
 	prButtonMode { |isToggle, isMomentary, icon|
 		toggle = isToggle;
@@ -134,11 +136,20 @@ CQInkControl {
 			};
 		};
 		view.mouseMoveAction = { |v, x, y|
+			var index;
 			if(pressed and: { enabled }) {
 				switch(kind,
 					\knob, { value = (startValue + ((startY - y) / 100)).clip(0, 1) },
 					\number, { value = (startValue + ((startY - y) / 100)).clip(0, 1) },
-					\slider, { value = (x / v.bounds.width).clip(0, 1) }
+					\slider, { value = (x / v.bounds.width).clip(0, 1) },
+					\switch, {
+						index = (((x / v.bounds.width) * options.size).floor.asInteger)
+							.clip(0, options.size - 1);
+						if(index != value) {
+							value = index;
+							action.value(this)
+						}
+					}
 				);
 				if(#[knob, number, slider].includes(kind)) { action.value(this) };
 				view.refresh;
@@ -165,12 +176,14 @@ CQInkControl {
 				CQInk.drawKnob(bounds, value, label, display, family, skin,
 					pressed or: { hover }, diameter)
 			},
-			\slider, { CQInk.drawSlider(bounds, value, skin, family) },
+			\slider, { CQInk.drawSlider(bounds, value, skin, family, pressed or: { hover }) },
 			\button, {
-				CQInk.drawButton(bounds, label, skin, value > 0, pressed, family, glyph, surface)
+				CQInk.drawButton(bounds, label, skin, value > 0, pressed, family,
+					glyph, surface, hover)
 			},
 			\switch, {
-				CQInk.drawSwitch(bounds, label, options, value.asInteger, skin, family)
+				CQInk.drawSwitch(bounds, label, options, value.asInteger, skin,
+					family, pressed or: { hover })
 			},
 			\number, {
 				CQInk.drawNumber(bounds, label, display, skin, pressed or: { hover }, surface)

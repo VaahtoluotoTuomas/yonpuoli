@@ -3,10 +3,12 @@
 // matrix reads and redraw notifications stay on CQMatrix's public contracts.
 
 CQGuiCableOverlay {
-	var matrix, endpoints, ctl;
+	var matrix, endpoints, grammar, ctl, gestureCtl;
 	var <view, <skin = \day;
 
-	*new { |matrix, endpoints| ^super.newCopyArgs(matrix, endpoints).prBuild }
+	*new { |matrix, endpoints, grammar|
+		^super.newCopyArgs(matrix, endpoints, grammar).prBuild
+	}
 
 	skin_ { |newSkin|
 		skin = newSkin;
@@ -17,26 +19,15 @@ CQGuiCableOverlay {
 
 	free {
 		ctl !? { ctl.remove };
+		gestureCtl !? { gestureCtl.remove };
 		ctl = nil;
+		gestureCtl = nil;
 	}
 
 	cableCount { ^matrix.asArray.size }
 	endpointCount { ^endpoints.size }
 
-	prBuild {
-		view = UserView().background_(CQInk.palette(skin)[\clear]);
-		view.acceptsMouse = false;
-		view.drawFunc = {
-			try { this.prDraw } { |error| CQInkControl.noteDrawError(error) }
-		};
-		ctl = SimpleController(matrix);
-		ctl.put(\patch, { { view.refresh }.defer });
-		ctl.put(\clear, { { view.refresh }.defer });
-		ctl.put(\matrix, { { view.refresh }.defer });
-		^this
-	}
-
-	prPoint { |name|
+	pointFor { |name|
 		var endpoint = endpoints[name], localCenter, globalCenter, overlayOrigin;
 		if(endpoint.isNil) { ^nil };
 		localCenter = endpoint[\anchor] ?? {
@@ -48,15 +39,156 @@ CQGuiCableOverlay {
 		^globalCenter - overlayOrigin
 	}
 
-	prDraw {
-		matrix.asArray.do { |patch|
-			var start = this.prPoint(patch[0]), finish = this.prPoint(patch[1]);
-			var weight = patch[2];
-			if(start.notNil and: { finish.notNil }) {
-				CQInk.drawCable(start, finish, weight, skin, 0.88);
-				CQInk.drawPlug(start, weight, skin);
-				CQInk.drawPlug(finish, weight, skin);
+	cableRecords {
+		var patches;
+		patches = matrix.asArray;
+		^patches.collect { |patch|
+			var sameDest, index, count, spread, start, finish, distance, segments;
+			sameDest = patches.select { |other| other[1] == patch[1] };
+			index = sameDest.indexOf(patch) ? 0;
+			count = sameDest.size;
+			spread = grammar.hoverEndpoint == patch[1] and: { count > 1 };
+			start = this.pointFor(patch[0]);
+			finish = this.pointFor(patch[1]);
+			if(spread) {
+				finish = finish + Point((index - ((count - 1) * 0.5)) * 5, 0)
+			};
+			distance = this.prDistance(start, finish);
+			segments = max(8, (distance / 12).ceil.asInteger);
+			(src: patch[0], dest: patch[1], weight: patch[2], start: start,
+				finish: finish, points: CQInk.cablePoints(start, finish, segments))
+		}
+	}
+
+	nearestDestination { |point|
+		var best, bestDistance, current, currentDistance;
+		bestDistance = grammar.auditionRadius;
+		CQMatrix.destNames.do { |dest|
+			var center, distance;
+			center = this.pointFor(dest);
+			distance = this.prDistance(point, center);
+			if(distance <= bestDistance) {
+				bestDistance = distance;
+				best = (dest: dest, distance: distance);
 			};
 		};
+		// A small hold bias prevents a cable from hopping between neighbouring
+		// sockets while the pointer crosses their overlapping capture edges.
+		current = grammar.candidateDest;
+		if(current.notNil and: { best.notNil } and: { best[\dest] != current }) {
+			currentDistance = this.prDistance(point, this.pointFor(current));
+			if(currentDistance <= grammar.auditionRadius
+				and: { (best[\distance] + 6) >= currentDistance }) {
+				best = (dest: current, distance: currentDistance)
+			};
+		};
+		^best
+	}
+
+	patchAt { |point, threshold = 7|
+		var best, bestDistance;
+		bestDistance = threshold;
+		this.cableRecords.do { |record|
+			record[\points].doAdjacentPairs { |a, b|
+				var distance;
+				distance = this.prSegmentDistance(point, a, b);
+				if(distance <= bestDistance) {
+					bestDistance = distance;
+					best = record;
+				};
+			};
+		};
+		^best
+	}
+
+	patchAtSocket { |dest, point|
+		var best, bestDistance = 12;
+		this.cableRecords.do { |record|
+			var distance;
+			if(record[\dest] == dest) {
+				distance = this.prDistance(point, record[\finish]);
+				if(distance <= bestDistance) {
+					bestDistance = distance;
+					best = record;
+				};
+			};
+		};
+		^best
+	}
+
+	prBuild {
+		view = UserView().background_(CQInk.palette(skin)[\clear]);
+		view.acceptsMouse = false;
+		view.drawFunc = {
+			try { this.prDraw } { |error| CQInkControl.noteDrawError(error) }
+		};
+		ctl = SimpleController(matrix);
+		ctl.put(\patch, { { view.refresh }.defer });
+		ctl.put(\clear, { { view.refresh }.defer });
+		ctl.put(\matrix, { { view.refresh }.defer });
+		gestureCtl = SimpleController(grammar);
+		gestureCtl.put(\gesture, { { view.refresh }.defer });
+		^this
+	}
+
+	prDraw {
+		var start, finish, weight, alpha, lifted, focused, hasFocus;
+		hasFocus = grammar.hoverCable.notNil;
+		this.cableRecords.do { |record|
+			if(grammar.isGrabbed(record[\src], record[\dest]).not
+				and: { grammar.isTransient(record[\src], record[\dest]).not }) {
+				focused = grammar.isCableHovered(record[\src], record[\dest]);
+				alpha = if(focused) { 1.0 } {
+					if(grammar.isCableDim(record[\src], record[\dest])) { 0.22 } {
+						if(hasFocus) { 0.46 } { 0.88 }
+					}
+				};
+				lifted = if(grammar.isHarvested(record[\src], record[\dest])) { 2 } {
+					if(focused) { 1 } { 0 }
+				};
+				if(lifted > 0) {
+					if(grammar.isHarvested(record[\src], record[\dest])) {
+						CQInk.drawCableGlow(record[\start], record[\finish], skin)
+					} {
+						CQInk.drawCableFocus(record[\start], record[\finish], skin)
+					}
+				};
+				CQInk.drawCable(record[\start], record[\finish], record[\weight], skin, alpha);
+				CQInk.drawPlug(record[\start], record[\weight], skin);
+				CQInk.drawPlug(record[\finish], record[\weight], skin, lifted);
+			};
+		};
+		if(grammar.isInHand and: { grammar.cursor.notNil }) {
+			start = this.pointFor(grammar.handSource);
+			finish = if(grammar.candidateDest.notNil) {
+				this.pointFor(grammar.candidateDest)
+			} {
+				grammar.cursor
+			};
+			weight = grammar.handWeight ? 0.5;
+			alpha = if(grammar.candidateDest.notNil) { 0.6 } { 1.0 };
+			CQInk.drawCable(start, finish, weight, skin, alpha);
+			CQInk.drawPlug(start, weight, skin);
+			CQInk.drawPlug(finish, weight, skin,
+				if(grammar.candidateDest.notNil) { 3 } { 0 });
+		};
+		grammar.lassoPath !? { |path| CQInk.drawLasso(path, skin) };
+	}
+
+	prSegmentDistance { |point, a, b|
+		var dx, dy, lengthSq, t, projection;
+		dx = b.x - a.x;
+		dy = b.y - a.y;
+		lengthSq = dx.squared + dy.squared;
+		if(lengthSq <= 0.0001) { ^this.prDistance(point, a) };
+		t = ((((point.x - a.x) * dx) + ((point.y - a.y) * dy)) / lengthSq)
+			.clip(0, 1);
+		projection = Point(a.x + (t * dx), a.y + (t * dy));
+		^this.prDistance(point, projection)
+	}
+
+	prDistance { |a, b|
+		if(a.isNil or: { b.isNil }) { ^inf };
+		^sqrt((b.x - a.x).squared + (b.y - a.y).squared)
 	}
 }

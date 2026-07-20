@@ -515,6 +515,47 @@ CQ.recStop;                    // tai REC-nappi/r-näppäin uudelleen
 
 ---
 
+## ARCHIPELAGO G1 — banana grammar + audition
+
+```supercollider
+// G1 banana/audition — classes/ muuttui: Ctrl+Shift+L ennen tätä blokkia.
+CQ.boot;
+CQ.deckA.load("123681__aidenfry__cricket-and-bird-field-recording.wav");
+CQ.patchPreset(\empty); CQ.hold(1, 0); CQ.set(\coco1Spaf, 1);
+// 1. Paina Quantussyn tri3-oranssia jackia vasemmalla ja vedä hitaasti kohti
+//    coco 1:n spaf-nupin alla olevaa violettia socketia. Ennen vapautusta
+//    viremodulaation pitää PAISUA etäisyyden neliönä; poistu 40 px säteeltä:
+//    audition katoaa täysin. Palaa lähelle ja vapauta: kuulet täsmälleen saman
+//    painon, jonka näet istutettuna — ei piilotettua plant-oletusta.
+// 2. Tartu istutettuun plugiin/kaapeliin ja siirrä se coco 2 spafiin; vapauta
+//    tyhjälle paperille = rip. Ctrl+Z palauttaa koko move/rip-operaation kerralla.
+// 3. Kaapelin/socket-stackin päällä: staattinen mustekorostus näyttää täsmälleen
+//    kohdistetun kaapelin. Wheel = |w| ±0.05, Ctrl+wheel = ±0.01,
+//    Alt+click vaihtaa verso/inverso-polariteetin, oikea click rippaa heti.
+//    Oikealla jackista aloittaminen istuttaa suoraan sinisen inverso-banaanin.
+// 4. Istuta 3–5 banaania. Aloita oikea drag TYHJÄLTÄ paperilta ja kierrä
+//    vapaa lasso Cocon ympäri: punaisella alivalotetut kaapelit irtoavat yhtenä
+//    harvest-operaationa; yksi Ctrl+Z palauttaa koko saaliin. Esc kesken lasson
+//    peruu mitään muuttamatta.
+// 5. Double-click jack/socket/organ body = solo-light (muut kaapelit 25 %).
+//    "Organ body" = Coco/Quantussy-organismipaneelin tyhjä taustapinta,
+//    ei organ-lähtöjack. Esc vapauttaa solon ja pudottaa kädessä olevan banaanin.
+//    Space/PANIC, Tab, ikkunan sulku ja Cmd-. eivät saa koskaan jättää
+//    audition-painoa matriisiin.
+// 6. Hoveroi potikoita, slidereita, valitsimia, nappeja sekä jack/socket-pisteitä:
+//    jokaisen interaktiivisen elementin pitää saada välitön, hillitty staattinen
+//    fokus ilman arvon muutosta. Vie osoitin kohtaan, jossa johto ylittää säätimen:
+//    säätimen fokus voittaa, kaapelin fokus katoaa ja ele vaikuttaa säätimeen.
+//    Tyhjällä paperilla kaapeli voittaa: kohde pysyy täysvahvana, muut kaapelit
+//    himmenevät ja haalea mustealleviiva kertoo tarkan click/wheel-kohteen.
+```
+
+- [x] G1 banana/audition visuaalinen katselmus hyväksytty (2026-07-20;
+      koko G1:n 100/125/150 % loppupyyhkäisy tehdään vielä G1-portissa)
+- [x] G1 banana/audition kuuntelu hyväksytty (2026-07-20)
+
+---
+
 ## KUUNTELU 7 — space, watchdog, patternit, stemit, M7 abuse (vaihe 7 → v1.0)
 
 Viimeinen kuuntelu-gate. (`classes/` muuttui → **Ctrl+Shift+L** ennen boottia.)

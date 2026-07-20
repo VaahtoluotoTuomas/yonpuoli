@@ -184,6 +184,35 @@ funnel like any other client.
   no-op with no undo entry.
 - **Esc** cancels mid-draw; marks drop, nothing changes.
 
+### 4.5 Hover and dense-patch hit priority
+
+- **Controls first.** A visible interactive control owns its rectangular hit
+  area even when one or more cables cross it. Its own hover cue appears and
+  cable focus clears; click/drag/wheel operate the control. The overlay may
+  never advertise a cable action that the next mouse gesture will not receive.
+- **Cables on paper.** On non-interactive paper, labels and organism body, the
+  nearest cable inside its narrow path target owns the pointer. It reaches
+  full alpha with a soft, static ink under-stroke while unrelated planted
+  cables recede to 46 % alpha. No pulse or telemetry aura is used for focus.
+- **Endpoints are cable territory.** Jack/socket/plug hover wins in its own
+  geometry. A socket stack still fans out (§3.2), providing the precision path
+  when several bananas share an endpoint. At a control crossing, select the
+  cable from an exposed span or its endpoint instead.
+- **One hover language.** Every interactive Ink control responds immediately:
+  knobs gain a quiet outer ring, slider/switch handles a small halo, and
+  buttons a light wash plus stronger outline. Read-only meters and lamps do
+  not pretend to be interactive. Hover is static and never changes state.
+
+Deferred dense-patch escape hatches, recorded but **not current gestures**:
+
+1. A Drawer `cable opacity` control, with the focused cable remaining fully
+   legible, is evaluated with the completed G1 Drawer.
+2. If controls-first plus endpoint fan-out is insufficient, add a transient
+   **banana-focus** hold mode that temporarily gives the cable layer priority;
+   its key/modifier and visible mode notice require a separate usability gate.
+3. A persistent edit/performance mode is the fallback only if the transient
+   model fails. It must not be introduced merely to solve visual clutter.
+
 ---
 
 ## 5. Day panel
@@ -199,7 +228,7 @@ body. What changes:
 - **Cable overlay.** A window-spanning layer draws bananas across columns. It
   must never steal mouse events from knobs and buttons — only jacks, sockets
   and cables are hit targets (targets ≥ 12 px, magnetic halo marks the current
-  candidate).
+  candidate). The controls-first law and cable focus are defined by §4.5.
 - **Declutter.** Number boxes, snapshot save/recall and morph A/B/duration
   move to the drawer's memory tab. Deck file-drop + filename label stay.
   Meters, LEDs, spesal display, shake button + amount knob stay (amount is
@@ -341,7 +370,7 @@ sub-event in `config.scd`, clamped on load.
 | constant | default | meaning |
 |---|---|---|
 | `handStrength` | 0.5 (0..1) | audition & plant ceiling |
-| `auditionRadius` | 80 px | socket capture distance |
+| `auditionRadius` | 40 px | socket capture distance |
 | audition curve | closeness² | swell late, near the socket |
 | `inspectorPlant` | 0.3 | double-click plant weight (= shake default) |
 | wheel step | 0.05 / Ctrl 0.01 | weight nudge |
@@ -690,11 +719,13 @@ shake as lowercase word-buttons beside it.
 | | Schmitt on (gate) | lit steady |
 | | fired (trig) | 120 ms spark bloom |
 | cable | planted | width 1.5–3 px ∝ \|w\|, alpha pulses with source aura |
+| | hover target | full alpha + soft 6 px ink under-stroke at 22 %; unrelated planted cables recede to 46 % |
 | | grabbed | full alpha, follows cursor |
 | | inverso | barbs: 3 px cross-ticks every 24 px along the path |
 | | solo-dim | everything un-solo'd at 25 % alpha |
 | | marked for harvest | plug lifts 2 px + danger-red under-glow; polarity color unchanged (§16.2) |
 | harvest lasso | drawing | 1 px hairline, danger-red at 60 % alpha — exactly the hand's path plus the closing chord; no wobble (the player's own line is drawn true) |
+| interactive control | hover | static semantic focus per §4.5; no value/state change |
 | PANIC | unmuted | danger-red outline word-button |
 | | muted | filled danger-red + 3 px red rule across the master strip top; **the panel is never dimmed** — state must stay readable |
 | REC | idle | hollow danger-red ring |

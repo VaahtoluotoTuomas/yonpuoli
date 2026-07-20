@@ -1,0 +1,203 @@
+// GUI_SPEC §4 behavior contract for the serverless banana grammar.
+
+CQBananaGrammarTest : UnitTest {
+	var matrix, audition, grammar;
+
+	setUp {
+		CQMatrix.postWarnings = false;
+		matrix = CQMatrix(nil);
+		audition = CQAudition(matrix);
+		grammar = CQBananaGrammar(matrix, audition);
+	}
+
+	tearDown {
+		grammar !? { grammar.free };
+		CQMatrix.postWarnings = true;
+	}
+
+	prAssertGestureExit { |selector, label|
+		var before = matrix.fullMatrix;
+		grammar.startSource(\tri2, 1);
+		grammar.updateCandidate(\coco1_spaf, 10);
+		grammar.perform(selector);
+		this.assertEquals(matrix.fullMatrix, before,
+			label ++ " restores exact matrix equality");
+		this.assert(grammar.isInHand.not, label ++ " drops the banana in hand");
+	}
+
+	test_sourceAuditionUsesClosenessAndPlantsWhatWasHeard {
+		grammar.startSource(\tri1, 1);
+		grammar.updateCandidate(\coco1_spaf, 20);
+		this.assertEquals(matrix.getPatch(\tri1, \coco1_spaf), 0.125,
+			"half-radius audition uses handStrength * closeness squared");
+		grammar.releaseCandidate;
+		this.assertEquals(matrix.getPatch(\tri1, \coco1_spaf), 0.125,
+			"plant commits exactly the audible audition weight");
+		this.assertEquals(grammar.undoCount, 1, "plant is one undo operation");
+		grammar.undo;
+		this.assertEquals(matrix.getPatch(\tri1, \coco1_spaf), 0.0,
+			"Ctrl+Z restores the pre-plant matrix");
+	}
+
+	test_hoverCableIsStableViewOnlyState {
+		var before = matrix.fullMatrix;
+		grammar.hoverCable = (src: \tri1, dest: \coco1_spaf, weight: 0.5);
+		this.assert(grammar.isCableHovered(\tri1, \coco1_spaf),
+			"hover identifies the cable targeted by mouse gestures");
+		grammar.hoverCable = nil;
+		this.assert(grammar.isCableHovered(\tri1, \coco1_spaf).not,
+			"leaving the cable clears its targeting feedback");
+		this.assertEquals(matrix.fullMatrix, before,
+			"hover feedback never writes the matrix");
+	}
+
+	test_everyGuiLifecycleExitRevertsTheIntegratedGesture {
+		#[viewToggle, windowClose, cmdPeriod, panic, free].do { |selector|
+			this.prAssertGestureExit(selector, selector.asString)
+		};
+	}
+
+	test_inversoAndShiftKeepSourceInHand {
+		grammar.startSource(\cas2, -1);
+		grammar.updateCandidate(\coco1_inVca, 0);
+		grammar.releaseCandidate(true);
+		this.assertEquals(matrix.getPatch(\cas2, \coco1_inVca), -0.5,
+			"right-button source plants inverso");
+		this.assert(grammar.isSourceInHand(\cas2),
+			"Shift-release keeps the source in click-click mode");
+		grammar.updateCandidate(\coco2_inVca, 0);
+		grammar.releaseCandidate(false);
+		this.assertEquals(matrix.getPatch(\cas2, \coco2_inVca), -0.5,
+			"the kept source plants again");
+		this.assert(grammar.isInHand.not, "ordinary release drops the kept source");
+	}
+
+	test_moveIsOneBatchAndUndoRestoresBothCells {
+		var notifications = 0, ctl;
+		matrix.patch(\tri3, \coco1_spaf, 0.42);
+		ctl = SimpleController(matrix);
+		ctl.put(\matrix, { notifications = notifications + 1 });
+		grammar.grab(\tri3, \coco1_spaf);
+		grammar.updateCandidate(\coco2_spaf, 20);
+		grammar.releaseCandidate;
+		this.assertEquals(matrix.getPatch(\tri3, \coco1_spaf), 0.0,
+			"move clears the original socket");
+		this.assertEquals(matrix.getPatch(\tri3, \coco2_spaf), 0.42,
+			"move carries the planted weight unchanged");
+		this.assertEquals(notifications, 1, "move commits as one batch notification");
+		grammar.undo;
+		this.assertEquals(matrix.getPatch(\tri3, \coco1_spaf), 0.42,
+			"move undo restores the origin");
+		this.assertEquals(matrix.getPatch(\tri3, \coco2_spaf), 0.0,
+			"move undo clears the destination");
+		ctl.remove;
+	}
+
+	test_yankAndInstantRipAreUndoable {
+		matrix.patch(\envA, \castle1_fm, 0.3);
+		grammar.grab(\envA, \castle1_fm);
+		grammar.releaseVoid;
+		this.assertEquals(matrix.getPatch(\envA, \castle1_fm), 0.0,
+			"releasing a grabbed banana in the void rips it");
+		grammar.undo;
+		this.assertEquals(matrix.getPatch(\envA, \castle1_fm), 0.3,
+			"yank rip is undoable");
+		grammar.instantRip(\envA, \castle1_fm);
+		this.assertEquals(matrix.getPatch(\envA, \castle1_fm), 0.0,
+			"right-click rips immediately");
+	}
+
+	test_polarityAndWheelPreserveTheWeightLaws {
+		matrix.patch(\org1, \deckA_rate, 0.07);
+		grammar.polarityFlip(\org1, \deckA_rate);
+		this.assertEquals(matrix.getPatch(\org1, \deckA_rate), -0.07,
+			"Alt-click flips polarity without changing magnitude");
+		grammar.wheel(\org1, \deckA_rate, -1, false);
+		this.assertEquals(matrix.getPatch(\org1, \deckA_rate), -0.05,
+			"coarse wheel respects the 0.05 planted floor");
+		grammar.wheel(\org1, \deckA_rate, 1, true);
+		this.assert((matrix.getPatch(\org1, \deckA_rate) + 0.06).abs < 0.0001,
+			"Ctrl-wheel nudges magnitude by 0.01 and preserves sign");
+	}
+
+	test_harvestUsesCableSamplesAndOneUndoEntry {
+		var cables, notifications = 0, ctl;
+		matrix.patch(\tri1, \coco1_spaf, 0.4);
+		matrix.patch(\cas1, \coco2_spaf, -0.3);
+		cables = [
+			(src: \tri1, dest: \coco1_spaf, points: [10@10, 20@20, 30@30]),
+			(src: \cas1, dest: \coco2_spaf, points: [70@70, 80@80, 90@90])
+		];
+		ctl = SimpleController(matrix);
+		ctl.put(\matrix, { notifications = notifications + 1 });
+		grammar.beginHarvest(0@0);
+		grammar.updateHarvest(40@0, cables);
+		grammar.updateHarvest(40@40, cables);
+		grammar.updateHarvest(0@40, cables);
+		this.assert(grammar.isHarvested(\tri1, \coco1_spaf),
+			"lasso preview marks a cable when any sampled point is inside");
+		this.assert(grammar.isHarvested(\cas1, \coco2_spaf).not,
+			"lasso preview leaves outside cables alone");
+		grammar.finishHarvest(cables);
+		this.assertEquals(matrix.getPatch(\tri1, \coco1_spaf), 0.0,
+			"harvest rips the entire catch");
+		this.assertEquals(matrix.getPatch(\cas1, \coco2_spaf), -0.3,
+			"harvest preserves cables outside the region");
+		this.assertEquals(notifications, 1,
+			"harvest is one batch notification and one operation");
+		this.assertEquals(grammar.undoCount, 1, "harvest adds one undo entry");
+		grammar.undo;
+		this.assertEquals(matrix.getPatch(\tri1, \coco1_spaf), 0.4,
+			"one undo restores the whole harvest catch");
+		ctl.remove;
+	}
+
+	test_guiMatrixActionIsOneUndoableOperation {
+		var before = matrix.fullMatrix;
+		grammar.performUndoable({ matrix.shake(0.3, 1234) });
+		this.assert(matrix.fullMatrix != before,
+			"GUI SHAKE changes the matrix through its existing funnel");
+		this.assertEquals(grammar.undoCount, 1,
+			"GUI SHAKE contributes one banana-grammar undo entry");
+		grammar.undo;
+		this.assertEquals(matrix.fullMatrix, before,
+			"one Ctrl+Z restores the complete pre-SHAKE matrix");
+	}
+
+	test_shortHarvestAndEscapeAreNoOps {
+		var before = matrix.fullMatrix;
+		grammar.beginHarvest(0@0);
+		grammar.updateHarvest(4@3, []);
+		grammar.finishHarvest([]);
+		this.assertEquals(matrix.fullMatrix, before,
+			"right drag shorter than 8 px is a silent no-op");
+		this.assertEquals(grammar.undoCount, 0, "empty short lasso adds no undo");
+		grammar.beginHarvest(0@0);
+		grammar.updateHarvest(20@20, []);
+		grammar.escape;
+		this.assert(grammar.isHarvesting.not, "Esc cancels an open harvest lasso");
+	}
+
+	test_soloLightIsViewOnlyAndEscReleasesIt {
+		var before = matrix.fullMatrix;
+		grammar.toggleSoloEndpoint(\jack, \tri1);
+		this.assert(grammar.isCableDim(\tri1, \coco1_spaf).not,
+			"solo jack keeps its own bananas bright");
+		this.assert(grammar.isCableDim(\cas1, \coco1_spaf),
+			"solo jack dims unrelated bananas");
+		grammar.escape;
+		this.assert(grammar.isCableDim(\cas1, \coco1_spaf).not,
+			"Esc releases solo-light");
+		this.assertEquals(matrix.fullMatrix, before, "solo-light never writes the matrix");
+	}
+
+	test_undoRingHonorsConfiguredDepth {
+		grammar = CQBananaGrammar(matrix, audition, 0.5, 80, 2);
+		grammar.instantRip(\tri1, \coco1_spaf);
+		matrix.patch(\tri1, \coco1_spaf, 0.2);
+		grammar.polarityFlip(\tri1, \coco1_spaf);
+		grammar.polarityFlip(\tri1, \coco1_spaf);
+		grammar.polarityFlip(\tri1, \coco1_spaf);
+		this.assertEquals(grammar.undoCount, 2, "undo ring drops entries beyond its depth");
+	}
+}

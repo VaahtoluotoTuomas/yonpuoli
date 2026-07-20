@@ -13,6 +13,18 @@ CQGuiPanels {
 	*cocoIslands { ^#[identity, performance, converter, output] }
 	*sourcesIslands { ^#[inputs, decks] }
 	*quantussyIslands { ^#[macro, castles, topology] }
+	*bodyEndpointNames { |name|
+		^switch(name,
+			\sources, { #[envA, envB, deckA_rate, deckB_rate] },
+			\coco1, { #[coco1, org1, coco1_spaf, coco1_inVca, coco1_fbVca,
+				coco1_flip, coco1_skip] },
+			\coco2, { #[coco2, org2, coco2_spaf, coco2_inVca, coco2_fbVca,
+				coco2_flip, coco2_skip] },
+			\quantussy, { CQMatrix.sourceNames.copyRange(0, 9)
+				++ CQMatrix.destNames.copyRange(10, 19) },
+			{ [] }
+		)
+	}
 
 	*coco { |gui, n|
 		var w = gui.widgets;
@@ -82,7 +94,7 @@ CQGuiPanels {
 				w.knob(p.value("Pan"), "pan"),
 				w.knob(p.value("Send"), "send"));
 		signalPath = this.prCocoSignalPath(410 + n);
-		^this.prPanel(title, \cas, 110 + n, VLayout(
+		^this.prPanel(gui, ("coco" ++ n).asSymbol, title, \cas, 110 + n, VLayout(
 			View().fixedHeight_(22),
 			identity,
 			this.prGap(12),
@@ -108,7 +120,7 @@ CQGuiPanels {
 			k.display = k.value.round(0.01).asString;
 		};
 		shakeButton = this.prActionButton(gui, "shake", 54, \spaf,
-			{ Cocoquantus.shake(gui.shakeAmount) });
+			{ gui.shake });
 		leds = 5.collect {
 			this.prLamp(gui)
 		};
@@ -142,7 +154,7 @@ CQGuiPanels {
 		castles = View().fixedHeight_(196).background_(c[\ground]).layout_(
 			VLayout(*rows).margins_(0).spacing_(4)
 		);
-		^this.prPanel("quantussy", \tri, 220, VLayout(
+		^this.prPanel(gui, \quantussy, "quantussy", \tri, 220, VLayout(
 			View().fixedHeight_(22),
 			macro,
 			castles,
@@ -170,7 +182,7 @@ CQGuiPanels {
 			micRow.refresh;
 			gui.micNotice(v > 0);
 		});
-		^this.prPanel("sources", \input, 330, VLayout(
+		^this.prPanel(gui, \sources, "sources", \input, 330, VLayout(
 			View().fixedHeight_(22),
 			VLayout(
 				HLayout(
@@ -302,7 +314,7 @@ CQGuiPanels {
 		var canDrop, doDrop, bindDrop;
 		var fileLabel = StaticText().string_("drop file here")
 			.font_(CQInk.font(\number)).align_(\left)
-			.stringColor_(c[\whisper]).fixedSize_(Size(118, 14));
+			.stringColor_(c[\whisper]).fixedSize_(Size(144, 36));
 		var title = if(which == \deckA) { "deck a" } { "deck b" };
 		var row = UserView().fixedHeight_(126).background_(c[\ground]);
 		row.drawFunc = { CQInk.drawToolBox(row.bounds.moveTo(0, 0), title, \day) };
@@ -320,7 +332,9 @@ CQGuiPanels {
 						\socket, \line, \pendulum)).spacing_(0),
 				w.knob((which ++ "Level").asSymbol, "level"),
 				w.toggle((which ++ "Loop").asSymbol, "loop"),
-				VLayout(this.prLabel("file", \whisper, \left, \range), fileLabel).spacing_(0), nil)
+				View().fixedWidth_(6),
+				VLayout(this.prLabel("file", \whisper, \left, \range).fixedHeight_(14),
+					fileLabel).spacing_(2), nil)
 		).margins_(6).spacing_(2);
 		gui.setDeckLabel(which, fileLabel);
 		canDrop = {
@@ -370,14 +384,14 @@ CQGuiPanels {
 		^view
 	}
 
-	*prPanel { |title, family, seed, layout|
+	*prPanel { |gui, bodyName, title, family, seed, layout|
 		var palette = CQInk.palette(\day), panel;
 		panel = UserView().background_(palette[\ground]);
 		panel.drawFunc = {
 			CQInk.drawOrganFrame(panel.bounds.moveTo(0, 0), title, family, \day, seed)
 		};
 		panel.layout = layout.margins_(8);
-		^panel
+		^gui.registerBananaBody(bodyName, panel, this.bodyEndpointNames(bodyName))
 	}
 
 	*prEndpoint { |gui, name, kind, family = \line, glyph, lamp = false|
@@ -385,15 +399,7 @@ CQGuiPanels {
 		endpoint = UserView().fixedSize_(Size(width, 20)).background_(palette[\ground]);
 		endpoint.drawFunc = {
 			var center = Point(9, 10);
-			if(kind == \jack) {
-				CQInk.drawJack(center, family, \day)
-			} {
-				CQInk.drawSocket(center, family, \day);
-				glyph !? {
-					CQInk.drawGlyph(glyph, Rect(5, 6, 8, 8), palette[family])
-				};
-				if(lamp) { CQInk.drawLamp(Point(25, 10), 0, false, \day) };
-			};
+			gui.drawEndpoint(name, kind, center, family, glyph, lamp);
 		};
 		// Lamp-bearing gate/trig views are wider than the socket itself.  Keep the
 		// cable anchor on the socket glyph at x=9, never midway to its charge lamp.

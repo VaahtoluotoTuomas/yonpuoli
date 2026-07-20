@@ -115,30 +115,51 @@ CQInk {
 	}
 
 	*drawJack { |center, family, skin = \day, state = \idle, aura = 0|
-		var palette = this.palette(skin), radius = if(state == \inHand) { 5 } { 4 };
+		var palette = this.palette(skin), radius;
+		radius = switch(state, \inHand, { 5 }, \hover, { 4.5 }, { 4 });
 		if(aura > 0) {
 			Pen.fillColor = palette[family].copy.alpha_((aura * 0.22).clip(0, 0.22));
 			Pen.addOval(Rect.aboutPoint(center, 8 + (aura * 5), 8 + (aura * 5)));
+			Pen.fill;
+		};
+		if(state == \hover) {
+			Pen.fillColor = palette[family].copy.alpha_(0.10);
+			Pen.addOval(Rect.aboutPoint(center, 7, 7));
 			Pen.fill;
 		};
 		Pen.fillColor = palette[family];
 		Pen.addOval(Rect.aboutPoint(center, radius, radius));
 		Pen.fill;
 		Pen.strokeColor = palette[\line];
-		Pen.width = this.strokes[\hairline];
+		Pen.width = if(state == \hover) { this.strokes[\normal] } { this.strokes[\hairline] };
 		Pen.addOval(Rect.aboutPoint(center, radius + 1, radius + 1));
 		Pen.stroke;
 	}
 
-	*drawSocket { |center, family, skin = \day, state = \idle|
-		var palette = this.palette(skin), radius = if(state == \candidate) { 7.2 } { 6 };
+	*drawSocket { |center, family, skin = \day, state = \idle, candidateWeight|
+		var palette = this.palette(skin), radius, halo;
+		radius = if(state == \candidate) { 7.2 } { 6 };
 		if(state == \candidate) {
-			Pen.fillColor = palette[family].copy.alpha_(0.18);
+			halo = if((candidateWeight ? 1) < 0) {
+				palette[\inverso]
+			} {
+				palette[\verso]
+			};
+			Pen.fillColor = halo.copy.alpha_(0.18);
 			Pen.addOval(Rect.aboutPoint(center, 11, 11));
 			Pen.fill;
 		};
+		if(state == \hover) {
+			Pen.fillColor = palette[family].copy.alpha_(0.09);
+			Pen.addOval(Rect.aboutPoint(center, 9, 9));
+			Pen.fill;
+		};
 		Pen.strokeColor = palette[family];
-		Pen.width = if(state == \occupied) { this.strokes[\strong] } { this.strokes[\normal] };
+		Pen.width = if(#[occupied, hover].includes(state)) {
+			this.strokes[\strong]
+		} {
+			this.strokes[\normal]
+		};
 		Pen.addOval(Rect.aboutPoint(center, radius, radius));
 		Pen.stroke;
 	}
@@ -196,6 +217,37 @@ CQInk {
 		};
 	}
 
+	*drawCableGlow { |start, end, skin = \day|
+		var palette = this.palette(skin), controls = this.cableControls(start, end);
+		Pen.strokeColor = palette[\danger].copy.alpha_(0.34);
+		Pen.width = 6;
+		Pen.moveTo(start);
+		Pen.curveTo(end, controls[0], controls[1]);
+		Pen.stroke;
+	}
+
+	// Static, hue-independent targeting cue. The animated/translucent aura is
+	// reserved for signal telemetry; mouse focus gets a crisp ink under-stroke.
+	*drawCableFocus { |start, end, skin = \day|
+		var palette = this.palette(skin), controls = this.cableControls(start, end);
+		Pen.strokeColor = palette[\line].copy.alpha_(0.22);
+		Pen.width = 6;
+		Pen.moveTo(start);
+		Pen.curveTo(end, controls[0], controls[1]);
+		Pen.stroke;
+	}
+
+	*drawLasso { |points, skin = \day|
+		var palette = this.palette(skin);
+		if(points.isNil or: { points.size < 2 }) { ^this };
+		Pen.strokeColor = palette[\danger].copy.alpha_(0.6);
+		Pen.width = this.strokes[\hairline];
+		Pen.moveTo(points.first);
+		points.copyToEnd(1).do { |point| Pen.lineTo(point) };
+		Pen.lineTo(points.first);
+		Pen.stroke;
+	}
+
 	*cableControls { |start, end|
 		var sag = max(28, (end.x - start.x).abs * 0.20);
 		^[start + Point(0, sag), end + Point(0, sag)]
@@ -219,6 +271,12 @@ CQInk {
 		var start = 0.75pi, sweep = 1.5pi, angle, pointer, accent;
 		value = value.clip(0, 1);
 		accent = palette[family] ?? { palette[\whisper] };
+		if(active) {
+			Pen.strokeColor = accent.copy.alpha_(0.32);
+			Pen.width = this.strokes[\hairline];
+			Pen.addOval(Rect.aboutPoint(center, radius + 6, radius + 6));
+			Pen.stroke;
+		};
 		Pen.stringCenteredIn(label.asString, Rect(rect.left, rect.top, rect.width, 11),
 			this.font(\label), palette[\whisper]);
 		Pen.strokeColor = palette[\line];
@@ -241,15 +299,22 @@ CQInk {
 	}
 
 	*drawButton { |rect, label, skin = \day, active = false, pressed = false,
-		accent = \line, glyph, surface = \ground|
+		accent = \line, glyph, surface = \ground, hover = false|
 		var palette = this.palette(skin), body = rect.insetBy(1, 2), ink = palette[accent];
 		var fill = if(active or: { pressed }) { ink } { palette[surface] };
 		var text = if(active or: { pressed }) { palette[surface] } { ink };
 		Pen.fillColor = fill;
-		Pen.strokeColor = ink;
-		Pen.width = this.strokes[\normal];
 		Pen.addRoundedRect(body, this.metrics[\buttonRadius], this.metrics[\buttonRadius]);
-		Pen.fillStroke;
+		Pen.fill;
+		if(hover and: { active.not } and: { pressed.not }) {
+			Pen.fillColor = ink.copy.alpha_(0.07);
+			Pen.addRoundedRect(body, this.metrics[\buttonRadius], this.metrics[\buttonRadius]);
+			Pen.fill;
+		};
+		Pen.strokeColor = ink;
+		Pen.width = if(hover) { this.strokes[\strong] } { this.strokes[\normal] };
+		Pen.addRoundedRect(body, this.metrics[\buttonRadius], this.metrics[\buttonRadius]);
+		Pen.stroke;
 		glyph !? {
 			this.drawGlyph(glyph, Rect(body.left + 6, body.center.y - 4, 8, 8), text);
 		};
@@ -259,7 +324,7 @@ CQInk {
 			this.font(\label), text);
 	}
 
-	*drawSlider { |rect, value = 0, skin = \day, family|
+	*drawSlider { |rect, value = 0, skin = \day, family, hover = false|
 		var palette = this.palette(skin), rail, x, accent;
 		value = value.clip(0, 1);
 		rail = Rect(rect.left + 5, rect.center.y - 1, rect.width - 10, 2);
@@ -272,13 +337,22 @@ CQInk {
 		Pen.strokeColor = accent;
 		Pen.line(Point(rail.left, rail.center.y), Point(x, rail.center.y));
 		Pen.stroke;
+		if(hover) {
+			Pen.fillColor = accent.copy.alpha_(0.11);
+			Pen.addOval(Rect.aboutPoint(Point(x, rail.center.y), 7, 7));
+			Pen.fill;
+			Pen.strokeColor = accent.copy.alpha_(0.48);
+			Pen.width = this.strokes[\hairline];
+			Pen.addOval(Rect.aboutPoint(Point(x, rail.center.y), 6, 6));
+			Pen.stroke;
+		};
 		Pen.fillColor = palette[\ground];
 		Pen.strokeColor = palette[\line];
 		Pen.addOval(Rect.aboutPoint(Point(x, rail.center.y), 4, 4));
 		Pen.fillStroke;
 	}
 
-	*drawSwitch { |rect, label, options, index = 0, skin = \day, family|
+	*drawSwitch { |rect, label, options, index = 0, skin = \day, family, hover = false|
 		var palette = this.palette(skin), y = rect.top + 22, left = rect.left + 7;
 		var width = rect.width - 14, step, accent;
 		accent = palette[family] ?? { palette[\line] };
@@ -295,6 +369,15 @@ CQInk {
 			Pen.line(Point(x, y - 3), Point(x, y + 3));
 			Pen.stroke;
 			if(i == index) {
+				if(hover) {
+					Pen.fillColor = accent.copy.alpha_(0.11);
+					Pen.addOval(Rect.aboutPoint(Point(x, y), 7, 7));
+					Pen.fill;
+					Pen.strokeColor = accent.copy.alpha_(0.48);
+					Pen.width = this.strokes[\hairline];
+					Pen.addOval(Rect.aboutPoint(Point(x, y), 6, 6));
+					Pen.stroke;
+				};
 				Pen.fillColor = accent;
 				Pen.addOval(Rect.aboutPoint(Point(x, y), 3, 3));
 				Pen.fill;

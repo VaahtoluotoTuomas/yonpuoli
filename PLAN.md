@@ -1,6 +1,6 @@
 # CocoquantusSC — ajantasainen kehityssuunnitelma
 
-Päivitetty 2026-07-19. Tämä tiedosto kertoo, mitä tehdään seuraavaksi. Valmiin v1.0-
+Päivitetty 2026-07-20. Tämä tiedosto kertoo, mitä tehdään seuraavaksi. Valmiin v1.0-
 toteutuksen yksityiskohtainen työpäiväkirja ja alkuperäiset checkboxit on jäädytetty
 tiedostoon [`docs/history/PLAN_v1.0.md`](docs/history/PLAN_v1.0.md).
 
@@ -111,18 +111,26 @@ alakentän, `dust`/`rail` väistävät kaavioviivaa, bits/wrap ovat linjassa ja 
 REC/PANIC-osuma-alueet ovat 88×34 / 112×34 px. Detaljitason hienosäätöön palataan vasta,
 kun muutkin G1-osiot ovat valmiimpia.
 
-G1 ei silti ole valmis: varsinainen mouse banana grammar, aura, Spellbook ja
-Drawer-sisällöt puuttuvat.
+Mouse banana grammar + audition hyväksyttiin 2026-07-20. Mukana ovat WYHIWYG
+plant/move/rip, polarity/wheel, harvest-lasso, solo-light, 32 operaation undo,
+GUI-SHAKEn yhden operaation undo, 40 px audition-tartunta, controls-first-hit-laki
+sekä käyttäjän hyväksymä yhtenäinen hover-kielioppi. Portti: `CQ_COMPILE_OK`,
+3 411 unit-passia / 0 failurea, `CQ_GUI_SHELL_PASSED` ja `CQ_SAFETY_PASSED`;
+viimeinen DSP-portti säilyi `CQ_HOLD_OK` (A4 1.0, A5 0.0 dB).
+
+G1 ei silti ole valmis: Drawer Inspector/Spellbook/Memory, `/cq_aura` ja koko G1:n
+lopullinen skaalaus-, kuuntelu- ja resurssiportti puuttuvat.
 
 - [x] Yksi Day/Night-ikkunakuori, pysyvä Master-strip ja Drawer vähintään 1280×720:ssa.
-- [ ] Yhteinen Ink kit: normatiivinen paletti, viiva, glyphit ja session-seedattu
+- [x] Yhteinen Ink kit: normatiivinen paletti, viiva, glyphit ja session-seedattu
   epäsymmetria ilman kuva-assetteja tai icon-fontteja.
 - [x] Dayn 16 source jackia ja 22 destination socketia oikeilla organ skin -koodeilla.
-- [ ] Hit-safe cable overlay ja koko yhteinen banana grammar: audition, WYHIWYG plant,
+- [x] Hit-safe cable overlay ja koko yhteinen banana grammar: audition, WYHIWYG plant,
   move, rip, harvest-lasso (§4.4), wheel, polarity, solo-light, Esc ja 32 operaation
   Ctrl+Z.
 - [ ] Drawer: Inspector, notification-streamiin perustuva Spellbook ja snapshot/morph
-  Memory.
+  Memory. Valmiin Drawerin tiheystestissä arvioidaan §4.5:n optio `cable opacity`;
+  sitä ei lisätä sokkona ennen testiä.
 - [ ] `/cq_aura`: 16 kanonista source-magnitudea noin 15 Hz; ambient redraw enintään
   15 Hz ja GUI CPU noin enintään 3 %.
 - [ ] `GUI_SPEC.md` §13:n automaatio, kuuntelu ja käyttäjän visuaalinen hyväksyntä.
@@ -166,6 +174,12 @@ Nämä ovat nyt normatiivisia eivätkä enää toteutusta estäviä saumoja:
   stopping… okratekstinä elapsed-paikalla + nappi ei reagoi; error = ontto
   rengas + piirretty vinoviiva + syy notice-rivillä, kuittautuu seuraavasta
   painalluksesta (GUI_SPEC §16.8).
+- [x] Tiheän patchin hit-prioriteetti ja jatkopolku.
+  — Päätös 2026-07-20: säätimen näkyvä hit-alue voittaa sen yli kulkevan johdon;
+  kaapeli kohdistuu tyhjällä paperilla tai endpointista ja muut kaapelit
+  himmenevät. Drawer `cable opacity` ja hetkellinen banana-focus arvioidaan
+  myöhemmin omalla käytettävyysgatella. Pysyvä edit/performance-mode säilyy
+  viimeisenä varavaihtoehtona (GUI_SPEC §4.5).
 
 Päätökset on kirjattu ensin `GUI_SPEC.md`:ään ja synkronoitu tähän sekä GUI-
 toteutussuunnitelmaan.
@@ -201,11 +215,12 @@ Night map ja Weather Machine — tehdään seuraavalla tavalla:
 ## Seuraavan toteutussession ensimmäiset askeleet
 
 1. Varmista `archipelago`-haara, puhdas työpuu ja lue `CLAUDE.md`, `PLAN.md` sekä
-   `GUI_SPEC.md` kokonaan. F0–F2 ja hyväksytty ensimmäinen Day/cable-checkpoint ovat
-   valmiit; älä toista niitä.
-2. Jatka PLAN-järjestyksessä koko banana grammariin ja auditioniin. Säilytä hyväksytty
-   Day-layout; siirrä detaljitason visuaalinen hienosäätö myöhempään yhteiskatselmukseen.
-3. Jatka niiden jälkeen Drawer Inspector/Spellbook/Memory -sisältöihin.
+   `GUI_SPEC.md` kokonaan. F0–F2, hyväksytty Day/Ink-layout ja banana grammar +
+   audition ovat valmiit; älä toista niitä.
+2. Jatka PLAN-järjestyksessä Drawer Inspector/Spellbook/Memory -sisältöihin. Presetin
+   GUI-apply liitetään samaan matrix-undo-rinkiin; Drawer-tiheystestissä arvioidaan
+   §4.5:n `cable opacity` -optio.
+3. Jatka Drawerin jälkeen `/cq_aura`-telemetriaan ja G1:n lopulliseen porttiin.
 4. Pysähdy jokaisen ensimmäisen ajettavan GUI-osan kohdalla yllä olevaan visuaaliseen
    välitarkastukseen. Älä aloita varsinaista G2 Night mapia ennen valmista G1-porttia.
 

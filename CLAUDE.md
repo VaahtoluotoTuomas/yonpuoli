@@ -84,13 +84,16 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 - The Madrona/Sumu reference contributed only the principle that a visualization must
   expose actual sound/state structure. Do not add decorative filler or animation.
 - The accepted foundation markers and current G1 detail are recorded in `PLAN.md`.
-  The preferred Day checkpoint gate is 3,361 unit passes / 0 failures,
-  `CQ_GUI_SHELL_PASSED`, `CQ_SAFETY_PASSED` and `CQ_HOLD_OK`; G1 as a whole is not
-  complete. The follow-up alignment pass was also accepted: Quantussy range 1 and the
-  Coco slot rails share the exact global Y coordinate, the topology is spread wider,
+  The Day/banana checkpoint accepted on 2026-07-20 has 3,411 unit passes / 0 failures,
+  `CQ_GUI_SHELL_PASSED`, `CQ_SAFETY_PASSED` and the unchanged `CQ_HOLD_OK`; G1 as a
+  whole is not complete. The follow-up alignment pass was also accepted: Quantussy
+  range 1 and the Coco slot rails share the exact global Y coordinate, the topology is spread wider,
   Coco path labels clear their strokes, bits/wrap align, and REC/PANIC use 88×34 /
-  112×34 hit areas. Defer detail-level visual tuning until more G1 sections exist;
-  continue next with banana grammar and audition.
+  112×34 hit areas. The accepted banana grammar now includes audition/WYHIWYG,
+  plant/move/rip/harvest, polarity/wheel, solo-light, lifecycle revert, 32-op undo
+  including GUI SHAKE, a 40 px capture radius, controls-first dense-patch priority and
+  reviewed hover feedback. Continue next with Drawer Inspector/Spellbook/Memory,
+  then `/cq_aura`; preset apply joins the undo ring when its Drawer GUI path exists.
 - The four former `GUI_SPEC.md` seams were resolved by the user on 2026-07-19 and are
   recorded in the spec and `PLAN.md`: nine charge channels, the G1 harvest lasso,
   display-only mic sprout and static REC transition/error states. Do not reopen or
