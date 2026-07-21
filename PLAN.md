@@ -1,15 +1,22 @@
 # CocoquantusSC — ajantasainen kehityssuunnitelma
 
-Päivitetty 2026-07-21. Tämä tiedosto kertoo, mitä tehdään seuraavaksi. Valmiin v1.0-
+Päivitetty 2026-07-22. Tämä tiedosto kertoo, mitä tehdään seuraavaksi. Valmiin v1.0-
 toteutuksen yksityiskohtainen työpäiväkirja ja alkuperäiset checkboxit on jäädytetty
 tiedostoon [`docs/history/PLAN_v1.0.md`](docs/history/PLAN_v1.0.md).
 
 **Tilanne yhdellä rivillä:** foundation F0–F2 ja **koko G1 ovat valmiita ja käyttäjän
-hyväksymiä**, §13:n loppuportti mukaan lukien (hyväksytty 2026-07-21, commit `295d14d`);
-G2 Night mapista anatomia (G2.1–G2.2) ja **koko night touch grammar visuaalisine
-palautteineen (G2.3–G2.3b) on hyväksytty 2026-07-21**; seuraavaksi G2:n loput osat
-pieninä katselmoitavina lisäyksinä (ensin loop-phase/read-head spark), sitten G2:n
-§13-portti ja vasta sen jälkeen G3 Weather machine.
+hyväksymiä** §13:n loppuportteineen (2026-07-21, commit `295d14d`); **G2:n koko
+rakennettu yöpinta on hyväksytty ja §13:n loppuportti läpäisty 2026-07-22**
+(G2.1–G2.5 rakennuspalikat, loppuportti G2.6–G2.9) — mutta **G2 ei ole kuitattu**,
+koska §13:n scopesta puuttuu vielä kaksi rakentamatonta osaa: deck-bird
+drag-over-korostus ja Night toolbar. Ne ovat seuraavat askeleet, ja vasta niiden
+jälkeen G3 Weather machine.
+
+**Seuraava askel konkreettisesti:** deck-bird drag-over-korostus (§16.7; pieni,
+koskee sekä Dayn deck-laatikkoa että yön lintua), sitten Night toolbar. Toolbar
+on käyttäjän päätöksellä 2026-07-22 jätetty hautumaan: sen sijoittelusta ja
+ulkoasusta on käyty keskustelu, jota **ei ole tarkoituksella kirjattu** — se
+päätetään uudelleen kun toolbar aloitetaan.
 
 **Aktiivinen työhaara:** `archipelago`. GUI_SPECin neljä aiempaa määrittelysaumaa
 ratkaistiin käyttäjän päätöksellä 2026-07-19; avoimia GUI-käyttäytymispäätöksiä ei ole.
@@ -308,16 +315,17 @@ coco-ulostulosta ja lintujen flutter.
   toimivat, palaute alla korjattu) ja **uusintakatselmointi G2.3b hyväksytty
   2026-07-21** (chevron, sisäkello, reel pearl, myrsky-iiris ja hoverit
   silmällä ja korvalla; manuaalitesti G2.3b).
-- [ ] Loop phase/read-head spark ja käyttäjän vahvistaman payloadin `/cq_charge`.
-  *Spark-osuus toteutettu ja **hyväksytty 2026-07-21** (manuaalitesti G2.4,
-  5 Hz:n tikitys mukaan lukien): `/cq_phase`-telemetria 5 Hz `\cqCoco`-defissä (oma viesti — lähetys-
-  taajuus on kahden shell-kerroksen uudelleenpiirron katto, §10), luunvaalea
-  lukupääkomeetta suuntahäntineen (suunta luetaan vaiheen todellisesta
-  kulusta, wrap-tietoisesti — matriisi-flip näkyy totuudenmukaisesti),
-  komeetan napautus = skip (§6.1:n viimeinen yökoti; slop 4 px erottaa
-  napautuksen kelauksesta), staattinen hover-halo, delta-portti (~1,5 px)
-  harventaa lähes paikallaan olevan kelan piirrot. Ei telemetriaa = ei
-  komeettaa. `/cq_charge` on oma seuraava lisäyksensä.*
+- [x] Loop phase/read-head spark. **Hyväksytty 2026-07-21 (manuaalitesti G2.4)
+  ja uudelleen G2.9:n kolmen muutoksen jälkeen 2026-07-22.**
+  `/cq_phase`-telemetria 5 Hz `\cqCoco`-defissä (oma viesti — lähetystaajuus on
+  kahden shell-kerroksen uudelleenpiirron katto, §10), luunvaalea lukupää-
+  komeetta suuntahäntineen (suunta luetaan serverin audio-tason keskiarvosta,
+  joten matriisi-flip näkyy totuudenmukaisesti eikä aliasoi), staattinen
+  hover-halo, delta-portti (~1,5 px) harventaa lähes paikallaan olevan kelan
+  piirrot. Ei telemetriaa = ei komeettaa. **Komeetan napautus = skip poistui
+  2026-07-22** (ks. G2.9): komeetta on nyt pelkkä näyttö ja skipillä on oma
+  paikallaan pysyvä merkki suun chevronin alla. Viesti kantaa nyt kolme arvoa:
+  osoite, suunnan keskiarvo ja skipin taajuus hertseinä.
 - [x] `/cq_charge`-latauslamput (9 kanavaa, GUI_SPEC §9). **Hyväksytty
   2026-07-21 (manuaalitesti G2.5).** Lataus lähetetään
   niistä samoista synteistä, jotka summat jo laskevat — coco 1 (replyID 1),
@@ -364,7 +372,9 @@ coco-ulostulosta ja lintujen flutter.
   sen on näytettävä, mikä on saavutettava ilman koodia, mikropolitiikka, pyhä
   näppäinkartta, PANICin pysyvä näkyvyys, headless-vaatimus). `GUI_SPEC.md` §1:n
   maininta "edit deferred until adoption" päivitetty vastaavasti.
-- [ ] Ei numeroita, Space-bodya tai dekoratiivista motionia; Master pysyy näkyvänä.
+- [x] Ei numeroita, Space-bodya tai dekoratiivista motionia; Master pysyy
+  näkyvänä. *(Todettu loppuportissa 2026-07-21/22. Ainoa liike yössä on
+  §16.9:n valkoisella listalla ja telemetrian ajamaa — ei yhtään omaa kelloa.)*
 - [x] **Loppuportin G2.6–G2.8 hyväksytty** (käyttäjä 2026-07-21): kuuntelugate,
   skaalaus 100/125/150 % ja CPU-soak. Soakissa sclang liikkui `mayhem`illa
   3–6,8 %; se osuu dokumentoituun haarukkaan (SPEC §9:n ~3 % koskee *soitetun
@@ -413,8 +423,20 @@ coco-ulostulosta ja lintujen flutter.
      **kehykset ajavat tuiketta, ei oma kello** — pysähtynyt serveri jähmettää
      merkin sen sijaan että se animoisi väitettä elossaolosta. Kirjattu
      §16.9:ään yleisenä lakina kaikelle ambient-liikkeelle.
-- [ ] `GUI_SPEC.md` §13:n käyttäjän visuaalinen hyväksyntä G2.9:n korjauksille
-  (lohko G2.9b) ja sen jälkeen G2:n kokonaishyväksyntä.
+- [x] `GUI_SPEC.md` §13:n käyttäjän visuaalinen hyväksyntä G2.9:n korjauksille
+  (lohko G2.9b) — **hyväksytty 2026-07-22**, tuike mukaan lukien.
+
+**G2:n tila 2026-07-22: yön PINTA on valmis ja hyväksytty, mutta G2 ei ole
+kuitattu.** §13:n G2-scope on "archipelago bodies + spiral read-head + charge
+lamps + solo-light + **toolbar presets/shake** + **deck-bird file drop**".
+Kaksi viimeistä eivät ole valmiit, ja ne ovat tämän listan kaksi avointa
+kohtaa: **deck-bird drag-over-korostus** (tiedostopudotus toimii, §16.7:n
+katkoviivakorostus puuttuu sekä Dayn deck-laatikosta että yön linnusta) ja
+**Night toolbar** (jätetty käyttäjän päätöksellä hautumaan 2026-07-22; sen
+sijoittelusta ja ulkoasusta on käyty keskustelu, jota EI ole kirjattu — se
+tehdään vasta kun toolbar aloitetaan). Kaikki muu G2:ssa on hyväksytty:
+G2.1–G2.5 rakennuspalikat sekä loppuportti G2.6–G2.9. Portti on siis
+läpäisty kaiken rakennetun osalta; puuttuu vain kaksi rakentamatonta osaa.
 
 **G2.3-kuuntelukierros 1 (2026-07-21):** kaikki seitsemän kosketuspistettä
 toimivat korvalla; palaute käsitelty samana päivänä (`GUI_SPEC.md` §6.1 ja

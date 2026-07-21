@@ -83,10 +83,30 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   `/cq_castle` activity. Do not call that instantaneous sample a waveform.
 - The Madrona/Sumu reference contributed only the principle that a visualization must
   expose actual sound/state structure. Do not add decorative filler or animation.
-- **G1 is complete and accepted, §13 end gate included (2026-07-21, `295d14d`). The
-  next phase is G2 Night map (`GUI_SPEC.md` §16.6). Do not rebuild or "improve" G1
-  surface on your own initiative.** `PLAN.md` holds the detail and the exact next
-  steps. The gate exposed three real defects, all fixed in existing surface: Day's
+- **G1 is complete and accepted, §13 end gate included (2026-07-21, `295d14d`).**
+- **G2's whole built night surface is accepted and its §13 gate passed (2026-07-22).
+  G2 itself is NOT signed off**: §13's G2 scope still contains two unbuilt parts —
+  the deck-bird drag-over highlight (§16.7's dashed border, missing on *both* the Day
+  deck box and the night bird; the file drop itself works) and the Night toolbar (§6).
+  Those are the next steps, in that order. **Do not rebuild or "improve" accepted G1
+  or G2 surface on your own initiative.** `PLAN.md` holds the detail.
+  - The Night toolbar was deliberately left to simmer by the user (2026-07-22). A
+    discussion of its placement and look was held and **deliberately not recorded** —
+    decide it again with the user when the toolbar actually starts.
+  - The night's read head cost four review rounds and produced laws worth keeping:
+    **a moving target is not a control** (skip's tap on the comet was replaced by a
+    stationary mark under the mouth chevron); **a regime display measures the
+    condition, not a quantity the condition destroys** (the first struck mark drew a
+    reach that collapses to sub-pixel exactly when the regime is clearest);
+    **motion carries only a quantity the eye can integrate** — above ~10 Hz a rate is
+    drawn as weight, because the fastest blink a 5 Hz surface can draw is slower than
+    the truth; and **ambient motion is driven by the telemetry frames, never by a
+    clock of its own**, so a stalled server freezes the mark instead of animating a
+    claim about liveness (§9's law, in motion). All four are in `GUI_SPEC.md`.
+  - Below the 1280×570 minimum stage the castles' endpoint views already cover their
+    inner clocks. Known, out of scope, and the reason the minimum is a floor rather
+    than a suggestion — remember it if the night's scale-up is ever done.
+- The G1 gate exposed three real defects, all fixed in existing surface: Day's
   two min-sized diagrams absorbed all vertical slack on maximize (now anchored at
   150/176 px with the slack collecting as paper), the cable layer rebuilt bezier
   geometry every frame and paid ~30 `Pen.stroke` calls per inverso cable, and a
@@ -121,11 +141,14 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 - `/cq_aura` law: no telemetry is not the same as zero. `CQGui.auraFor` returns `nil`
   until the server reports, and every drawing surface must keep its static reviewed
   look in that case. Focus, solo-dim and hover never pulse (`GUI_SPEC.md` §4.5).
-- Latest full gate on `archipelago` (2026-07-21, `295d14d`): 3,467 unit passes / 0
-  failures, `CQ_COMPILE_OK`, `CQ_SAFETY_PASSED`, `CQ_HOLD_OK`, `CQ_GUI_SHELL_PASSED`,
-  `CQ_GUI_DRAWER_PASSED`, `CQ_GUI_DRAWER_REENTRY_PASSED`. Measured on the user's
-  machine: server 19.8–21.5 % against SPEC §9's 25 % ceiling, GUI 2.8–3.8 % at rest
-  with 20 planted cables.
+- Latest full gate on `archipelago` (2026-07-22): 4,947 unit passes / 0 failures,
+  `CQ_COMPILE_OK`, `CQ_SAFETY_PASSED`, `CQ_HOLD_OK`, `CQ_GUI_SHELL_PASSED`,
+  `CQ_GUI_DRAWER_PASSED`, `CQ_GUI_DRAWER_REENTRY_PASSED`, `CQ_GUI_NIGHT_PASSED`.
+  Measured on the user's machine: server 19.8–21.5 % against SPEC §9's 25 % ceiling,
+  GUI 2.8–3.8 % at rest with 20 planted cables, and 3–6.8 % with `mayhem`'s 352
+  cables — seven times `auraCableLimit`, so inside the documented band rather than a
+  regression. Which repaint actually triggers that has **not** been measured in the
+  real Qt paint event; do it with the offscreen buffer, do not guess (G1.3's lesson).
 - The four former `GUI_SPEC.md` seams were resolved by the user on 2026-07-19 and are
   recorded in the spec and `PLAN.md`: nine charge channels, the G1 harvest lasso,
   display-only mic sprout and static REC transition/error states. Do not reopen or

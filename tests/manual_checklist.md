@@ -1297,9 +1297,14 @@ CQ.hold(1, 0); CQ.patchPreset(\empty);
   `mayhem`illa = 352 johtoa, 7× `auraCableLimit`. SPEC §9:n ~3 % koskee
   soitetun kokoista patchia, joten tämä ei ole regressio. Kaapelikerroksen
   todellinen laukaisija mitataan vasta offscreen-puskurin yhteydessä.)
-- [ ] G2.9 lukupään havainnot ratkaistu (kolme päätöstä tehty ja toteutettu
-  2026-07-22 — tarkista lohko G2.9b)
-- [ ] **G2 valmis** (pvm: )
+- [x] G2.9 lukupään havainnot ratkaistu ja hyväksytty (pvm: 2026-07-22, neljän
+  kierroksen jälkeen: skipin paikallaan pysyvä merkki, reel notch, iskumerkki,
+  nopeus painona ja tuike. Lohkot G2.9b kohdat 1–5c.)
+- [ ] **G2 valmis** — *avoinna vain kaksi rakentamatonta osaa*: deck-bird
+  drag-over-korostus (§16.7, puuttuu sekä Daysta että yöstä) ja Night toolbar
+  (§6). Kaikki rakennettu pinta on hyväksytty ja koko portti läpäisty
+  2026-07-22: `CQ_COMPILE_OK`, 4 947 unit-passia / 0 failurea,
+  `CQ_SAFETY_PASSED`, `CQ_HOLD_OK`, neljä GUI-smokea.
 
 **G2.9:n ratkaisut (2026-07-22).** Kolme päätöstä, kaikki nyt normatiivisia
 (`GUI_SPEC.md` §6.1 ja §16.6):
