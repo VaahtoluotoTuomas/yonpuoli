@@ -5,6 +5,10 @@
 CQGuiBananaController {
 	var grammar, endpoints, bodies, overlay, controls, controlViews;
 	var gestureCtl, matrixCtl;
+	// With one grammar feeding two stages (Day and Night), the hidden stage's
+	// per-gesture endpoint refreshes are pure language-to-Qt bridge waste: Qt
+	// repaints the whole stage anyway when the hard cut shows it. nil = always.
+	var <>refreshGate;
 
 	*new { |grammar, endpoints, bodies, overlay, controls|
 		^super.newCopyArgs(grammar, endpoints, bodies, overlay, controls).prInit
@@ -271,6 +275,7 @@ CQGuiBananaController {
 	}
 
 	prRefresh {
+		if(refreshGate.notNil and: { refreshGate.value.not }) { ^this };
 		endpoints.values.do { |endpoint| endpoint[\view].refresh };
 		overlay.view.refresh;
 		^this

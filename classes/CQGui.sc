@@ -11,7 +11,7 @@ CQGui {
 	var <window, <widgets, updaters, <shellState, <shell, <drawer;
 	var stateCtl, gridPanel, meterFuncs, <audition;
 	var <bananaGrammar, <bananaController, <bananaBodies;
-	var <endpoints, <cableOverlay;
+	var <endpoints, <cableOverlay, <nightMap;
 	var <inkControls;
 	var castleLeds, spesalView, <spesalStates, <castleValues;
 	// GUI_SPEC §9: 16 source magnitudes, nil until the server has actually
@@ -55,8 +55,13 @@ CQGui {
 	// ---- panel registration API (used by CQGuiPanels while building) ----
 
 	setMeter { |key, func| meterFuncs[key] = func }
-	setDeckLabel { |which, view| deckLabels[which] = view }
-	deckLabel { |which| ^deckLabels[which] }
+	// both stages carry a filename label per deck (Day box, Night bird); each
+	// keeps its own skin's ink, so the hidden twin never wears the wrong color
+	setDeckLabel { |which, view, ink|
+		deckLabels[which] = (deckLabels[which] ?? { List.new }).add(
+			(view: view, ink: ink ?? { CQInk.palette(\day)[\line] }));
+	}
+	deckLabel { |which| ^deckLabels[which] !? { |list| list.first[\view] } }
 	setSkipButton { |n, btn| skipButtons[n] = btn }
 	castleLeds_ { |views| castleLeds = views }
 	spesalView_ { |view| spesalView = view }
@@ -72,8 +77,8 @@ CQGui {
 		bananaBodies[name] = (name: name, view: bodyView, members: members);
 		^bodyView
 	}
-	drawEndpoint { |name, kind, center, family, glyph, lamp = false|
-		var palette = CQInk.palette(\day), endpointState;
+	drawEndpoint { |name, kind, center, family, glyph, lamp = false, skin = \day|
+		var palette = CQInk.palette(skin), endpointState;
 		endpointState = if(kind == \jack) {
 			if(bananaGrammar.isSourceInHand(name)) { \inHand } {
 				if(bananaGrammar.hoverEndpoint == name) { \hover } { \idle }
@@ -90,12 +95,15 @@ CQGui {
 			}
 		};
 		if(kind == \jack) {
-			CQInk.drawJack(center, family, \day, endpointState, this.auraFor(name) ? 0)
+			CQInk.drawJack(center, family, skin, endpointState, this.auraFor(name) ? 0)
 		} {
-			CQInk.drawSocket(center, family, \day, endpointState,
+			CQInk.drawSocket(center, family, skin, endpointState,
 				bananaGrammar.handWeight);
-			glyph !? { CQInk.drawGlyph(glyph, Rect(5, 6, 8, 8), palette[family]) };
-			if(lamp) { CQInk.drawLamp(Point(25, 10), 0, false, \day) };
+			glyph !? {
+				CQInk.drawGlyph(glyph,
+					Rect(center.x - 4, center.y - 4, 8, 8), palette[family])
+			};
+			if(lamp) { CQInk.drawLamp(center + Point(16, 0), 0, false, skin) };
 		};
 		^this
 	}
@@ -143,9 +151,9 @@ CQGui {
 	}
 
 	prBuild {
-		var dayContent, dayView, nightView, masterView;
+		var dayContent, dayView, masterView;
 		var inspectorView, spellbookView, memoryView;
-		var night = CQInk.palette(\night), minimum = shellState.minSize;
+		var minimum = shellState.minSize;
 		dayContent = View().background_(CQInk.palette(\day)[\ground]).layout_(
 			HLayout(
 				CQGuiPanels.sources(this),
@@ -160,17 +168,11 @@ CQGui {
 		bananaController.bindGround(dayContent);
 		dayView = View().background_(CQInk.palette(\day)[\ground]).layout_(
 			StackLayout(cableOverlay.view, dayContent).mode_(\stackAll));
-		nightView = UserView().background_(night[\ground]);
-		nightView.drawFunc = {
-			var center = nightView.bounds.center, horizon = center.y + 34;
-			Pen.strokeColor = night[\whisper];
-			Pen.width = CQInk.strokes[\hairline];
-			Pen.addArc(center - Point(0, 34), 82, 0.15pi, 0.7pi);
-			Pen.stroke;
-			Pen.stringCenteredIn("night map waits for the day grammar",
-				Rect.aboutPoint(Point(center.x, horizon + 40), 220, 12),
-				CQInk.font(\label), night[\whisper]);
-		};
+		nightMap = CQGuiNightMap(this, state, matrix, config);
+		// a hidden stage's gesture repaints are pure bridge waste; Qt repaints
+		// it in full the moment the hard cut shows it again
+		bananaController.refreshGate = { shellState.viewMode == \day };
+		nightMap.controller.refreshGate = { shellState.viewMode == \night };
 		masterView = CQGuiPanels.master(this);
 		drawer = CQGuiDrawer(this, state, matrix, audition, bananaGrammar);
 		shellState.audition = drawer;
@@ -178,7 +180,7 @@ CQGui {
 		inspectorView = drawer.inspectorView;
 		spellbookView = drawer.spellbookView;
 		memoryView = drawer.memoryView;
-		shell = CQGuiShell(shellState, dayView, nightView, masterView,
+		shell = CQGuiShell(shellState, dayView, nightMap.stageView, masterView,
 			inspectorView, spellbookView, memoryView,
 			{ |skin| this.prApplySkin(skin) });
 		this.prApplySkin(shellState.viewMode);
@@ -267,6 +269,7 @@ CQGui {
 			{
 				spesalStates = msg.copyRange(3, 7).collect { |v| v.asInteger };
 				spesalView !? { spesalView.refresh };
+				nightMap !? { nightMap.spesalChanged };
 			}.defer;
 		}, '/cq_spesal');
 		// watchdog notice (SPEC §5.6): same '/cq_hot' the facade acts on
@@ -326,6 +329,12 @@ CQGui {
 			auraValues.every { |value, i| (value - auraPainted[i]).abs < 0.01 }
 		}) { ^this };
 		auraPainted = auraValues;
+		// only the visible stage spends the frame; the hidden twin repaints in
+		// full anyway the moment the hard cut shows it
+		if(shellState.viewMode == \night) {
+			nightMap !? { nightMap.auraFrame(auraValues) };
+			^this
+		};
 		CQMatrix.sourceNames.do { |src|
 			endpoints[src] !? { |endpoint| endpoint[\view].refresh };
 		};
@@ -344,9 +353,9 @@ CQGui {
 	}
 
 	prPaintDeckLabel { |which, path|
-		deckLabels[which] !? { |lab|
-			lab.string = path.asString.basename;
-			lab.stringColor = CQInk.palette(shellState.viewMode)[\line];
+		deckLabels[which].do { |record|
+			record[\view].string = path.asString.basename;
+			record[\view].stringColor = record[\ink];
 		};
 	}
 
@@ -449,10 +458,11 @@ CQGui {
 		b !? { b.flash };
 	}
 
+	// each stage's cable overlay keeps its own fixed skin (Day ink, Night
+	// phosphor); only the shared chrome re-inks across the hard cut
 	prApplySkin { |skin|
 		var palette = CQInk.palette(skin);
 		inkControls.do { |control| control.skin = skin };
-		cableOverlay !? { cableOverlay.skin = skin };
 		drawer !? { drawer.applySkin(skin) };
 		noticeView !? { noticeView.stringColor = palette[\whisper] };
 		recTimeView !? { recTimeView.stringColor = palette[\danger] };
@@ -491,6 +501,8 @@ CQGui {
 		bananaController = nil;
 		cableOverlay !? { cableOverlay.free };
 		cableOverlay = nil;
+		nightMap !? { nightMap.free };
+		nightMap = nil;
 		recTask !? { recTask.stop };
 		recTask = nil;
 		hotTask !? { hotTask.stop };

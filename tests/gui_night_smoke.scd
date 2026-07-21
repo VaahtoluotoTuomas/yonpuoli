@@ -1,0 +1,218 @@
+// G2 Qt smoke: construct the real shell, cross the hard cut into the Night
+// map, and assert the archipelago carries the full banana grammar — endpoints,
+// plant, undo, harvest, the §4.1 view-flip audition revert — plus the
+// telemetry laws (fireflies ride only moving aura frames; no telemetry = the
+// static reviewed ink). Prints CQ_GUI_NIGHT_PASSED / CQ_GUI_NIGHT_FAILED.
+
+(
+var state = CQState(nil);
+var matrix = CQMatrix(nil);
+var config = CQConfig.validate((headless: true));
+var gui, ok = true, abort;
+var check = { |condition, message|
+	if(condition) { ("ok:   " ++ message).postln } {
+		ok = false;
+		("FAIL: " ++ message).postln;
+	};
+};
+var auraMsg = { |casValue|
+	['/cq_aura', 0, 0, 0.2, 0, 0, 0, 0, casValue, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+};
+CQInkControl.resetDrawErrors;
+matrix.patch(\tri1, \coco1_spaf, 0.55);
+matrix.patch(\envB, \castle3_fm, -0.45);
+abort = { |error|
+	error !? { error.reportError };
+	("FAIL: GUI night smoke aborted"
+		++ (error !? { ": " ++ error.errorString } ? "")).postln;
+	gui !? { gui.free };
+	"CQ_GUI_NIGHT_FAILED".postln;
+	1.exit;
+};
+
+{
+	try {
+		gui = CQGui(state, matrix, config);
+		AppClock.sched(0.25, {
+			try {
+				var map = gui.nightMap;
+				check.value(map.notNil, "night map is built with the shell");
+				check.value(map.endpoints.size == 38
+					and: { CQMatrix.sourceNames.every { |n| map.endpoints[n].notNil } }
+					and: { CQMatrix.destNames.every { |n| map.endpoints[n].notNil } },
+					"night registers its own canonical 16 jacks and 22 sockets");
+				check.value(map.overlay !== gui.cableOverlay
+					and: { map.overlay.skin == \night }
+					and: { map.overlay.view.acceptsMouse.not },
+					"night owns a hit-transparent phosphor cable overlay");
+				check.value(gui.cableOverlay.skin == \day,
+					"the day overlay keeps its own fixed ink");
+				check.value(map.endpoints.values.every { |endpoint|
+					endpoint[\view].mouseDownAction.notNil
+				}, "the shared grammar controller binds every night endpoint");
+				check.value(map.holdStates[0] == (state.get(\coco1Hold) > 0.5),
+					"hold seal state mirrors the power-on param");
+				check.value(map.sproutState == \hidden,
+					"no mic configured: the sprout is not drawn at all");
+				gui.shell.toggleView(false);
+				check.value(gui.shellState.viewMode == \night,
+					"hard cut reached the night map");
+				AppClock.sched(0.2, {
+					try {
+						var geo = map.geometry, expected, view;
+						var sourceView, destView, destPoint, dragPoint;
+						var before, triView, target, movePoint;
+						check.value(geo.notNil, "night geometry is laid out");
+						expected = geo[\endpoints][\tri1];
+						view = map.endpoints[\tri1][\view];
+						check.value(
+							(view.bounds.left - (expected.x - 13)).abs < 1
+							and: { (view.bounds.top - (expected.y - 13)).abs < 1 },
+							"a castle leaf jack sits exactly on its computed home");
+						check.value(map.overlay.cableCount == 2,
+							"night overlay renders every planted matrix cable");
+						sourceView = map.endpoints[\org2][\view];
+						destView = map.endpoints[\deckB_rate][\view];
+						destPoint = destView.mapToGlobal(
+							map.endpoints[\deckB_rate][\anchor]);
+						dragPoint = destPoint - sourceView.mapToGlobal(0@0);
+						sourceView.mouseDownAction.value(sourceView, 13, 13, 0, 0, 1);
+						sourceView.mouseMoveAction.value(sourceView,
+							dragPoint.x, dragPoint.y, 0);
+						sourceView.mouseUpAction.value(sourceView,
+							dragPoint.x, dragPoint.y, 0, 0);
+						check.value(matrix.getPatch(\org2, \deckB_rate) == 0.5,
+							"night endpoint drag auditions and plants WYHIWYG");
+						gui.window.view.keyDownAction.value(gui.window.view,
+							$z, 262144);
+						check.value(matrix.getPatch(\org2, \deckB_rate) == 0.0,
+							"window-level Ctrl+Z restores the night plant");
+						// §4.1: the view flip is a normative audition revert path
+						before = matrix.fullMatrix.asCompileString;
+						triView = map.endpoints[\tri3][\view];
+						target = map.endpoints[\coco1_spaf];
+						movePoint = target[\view].mapToGlobal(target[\anchor])
+							- triView.mapToGlobal(0@0);
+						triView.mouseDownAction.value(triView, 13, 13, 0, 0, 1);
+						triView.mouseMoveAction.value(triView,
+							movePoint.x, movePoint.y, 0);
+						check.value(gui.bananaGrammar.isInHand,
+							"a night banana auditions in hand");
+						gui.shell.toggleView(false);
+						check.value(gui.bananaGrammar.isInHand.not
+							and: { matrix.fullMatrix.asCompileString == before },
+							"the view flip drops the hand and reverts — no leak");
+						gui.shell.toggleView(false);
+						AppClock.sched(0.15, {
+							try {
+								var records, mid, harvestPoints, localPoints;
+								var beforeHarvest, ground;
+								check.value(map.fireflyPhase == 0,
+									"the river rests before any telemetry");
+								NetAddr.localAddr.sendMsg(*auraMsg.value(0.5));
+								AppClock.sched(0.1, {
+									NetAddr.localAddr.sendMsg(*auraMsg.value(0.9));
+									nil
+								});
+								AppClock.sched(0.25, {
+									try {
+										var phase = map.fireflyPhase;
+										check.value(phase > 0,
+											"moving aura frames carry the fireflies k -> k+1");
+										NetAddr.localAddr.sendMsg(*auraMsg.value(0.9));
+										AppClock.sched(0.15, {
+											try {
+												check.value(map.fireflyPhase == phase,
+													"a still bay keeps a still river (early-out)");
+												state.set(\coco1Hold, 0);
+												state.set(\c2Range, \infra);
+												NetAddr.localAddr.sendMsg('/cq_spesal',
+													0, 0, 3, 0, 0, 0, 0);
+												AppClock.sched(0.25, {
+													try {
+														check.value(map.holdStates[0] == false,
+															"releasing hold unseals the spiral");
+														check.value(map.rangeLetters[1] == "i",
+															"the castle range letter follows its param");
+														check.value(gui.spesalStates[0] == 3,
+															"spesal OSC lights the night dial state");
+														// harvest on night paper, one batch undo
+														records = map.overlay.cableRecords;
+														mid = records.first[\points]
+															[records.first[\points].size div: 2];
+														harvestPoints = [mid + (-20@(-20)),
+															mid + (20@(-20)), mid + (20@20),
+															mid + (-20@20)];
+														ground = map.groundView;
+														localPoints = harvestPoints.collect { |p|
+															map.overlay.view.mapToGlobal(p)
+																- ground.mapToGlobal(0@0)
+														};
+														beforeHarvest =
+															matrix.fullMatrix.asCompileString;
+														ground.mouseDownAction.value(ground,
+															localPoints[0].x, localPoints[0].y,
+															0, 1, 1);
+														ground.mouseMoveAction.value(ground,
+															localPoints[1].x, localPoints[1].y, 0);
+														ground.mouseMoveAction.value(ground,
+															localPoints[2].x, localPoints[2].y, 0);
+														ground.mouseUpAction.value(ground,
+															localPoints[3].x, localPoints[3].y,
+															0, 1);
+														check.value(matrix.fullMatrix
+															.asCompileString != beforeHarvest,
+															"a night lasso harvests its catch");
+														gui.window.view.keyDownAction.value(
+															gui.window.view, nil, 262144, 26, 0, 90);
+														check.value(matrix.fullMatrix
+															.asCompileString == beforeHarvest,
+															"Ctrl+Z restores the whole night harvest");
+														check.value(CQInkControl.drawErrors == 0,
+															"night surfaces paint without callback errors");
+														gui.free;
+														AppClock.sched(0.25, {
+															try {
+																check.value(gui.shellState
+																	.lifecycleState == \closed,
+																	"GUI free reaches closed");
+																#[cq_gui_meters, cq_gui_gr,
+																	cq_gui_coco, cq_gui_castle,
+																	cq_gui_spesal, cq_gui_hot,
+																	cq_gui_aura].do { |key|
+																	check.value(OSCdef.all[key].isNil,
+																		"cleanup removed %".format(key));
+																};
+																if(ok) {
+																	"CQ_GUI_NIGHT_PASSED".postln;
+																	0.exit
+																} {
+																	"CQ_GUI_NIGHT_FAILED".postln;
+																	1.exit
+																};
+															} { |error| abort.value(error) };
+															nil
+														});
+													} { |error| abort.value(error) };
+													nil
+												});
+											} { |error| abort.value(error) };
+											nil
+										});
+									} { |error| abort.value(error) };
+									nil
+								});
+							} { |error| abort.value(error) };
+							nil
+						});
+					} { |error| abort.value(error) };
+					nil
+				});
+			} { |error| abort.value(error) };
+			nil
+		});
+	} { |error|
+		abort.value(error);
+	};
+}.defer;
+)

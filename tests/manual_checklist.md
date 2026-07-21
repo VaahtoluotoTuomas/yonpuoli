@@ -907,3 +907,47 @@ CQ.patchPreset(\empty);
   ja morphin 30 Hz -virran; korjattu, ks. lohko G1.3b. Morph jää ~5–6 %:iin
   tietoisesti — kirjattu SPEC §9:ään ja PLAN.md:n "Myöhemmin"-osioon.)
 - [x] **G1 valmis** (pvm: 2026-07-21) → seuraava vaihe on G2 Night map
+
+## G2 NIGHT — ensimmäinen visuaalinen katselmointi (arkkipelagon anatomia)
+
+Ensimmäinen ajettava Night map: §16.6:n anatomia + koko banana grammar yöllä.
+Aja ensin automaatio (neljä markkeria + nyt neljä GUI-smokea vihreinä).
+Katselmoitavana on anatomia ja tunnelma — read-head-kipinä, /cq_charge-lamput,
+body-solo, bird-drop ja Night-toolbar tulevat seuraavissa askelissa.
+
+```supercollider
+// G2.1 — anatomia ja topologiatotuudet. (Ctrl+Shift+L ensin.)
+CQ.boot;
+// - Paina Tab: kova leikkaus yöhön. Master-strip pysyy alla ja toimii.
+// - Viisi castlea epäsäännöllisessä ringissä, castle 1 ylhäällä; ringin
+//   hiusviiva kulkee linnakkeiden ALI (joki virtaa niiden läpi).
+// - Jokaisella castlella: tri-lehti (oranssi jack, klo 1-2), cas-kruunu
+//   (harmaa jack + kolme hammasta, klo 10-11), sininen fm-kuu (klo 4),
+//   vihreä spesal-kuu + lamppu (klo 8), 8-pykäläinen spesal-kellotaulu
+//   jonka nykyinen tila palaa, ja i/b/a-kirjain alhaalla (klo 6).
+// - Coco 1 -spiraali vasemmalla, coco 2 oikealla, suut kohti rinkiä;
+//   org-hedelmä roikkuu varressa spiraalin sisäkierrokselta; viisi kuuta
+//   kaaressa spiraalin alla (spaf / inVca / fbVca / flip+lamppu / skip+lamppu).
+// - Juuret kasvavat alareunasta: envA vasemmalla, envB oikealla, vihreät kärjet.
+// - Linnut ylhäällä: deck A vasemmalla, deck B oikealla, rate-kuu siiven alla.
+// - EI numeroita missään yöllä; tekstiä vain i/b/a ja tiedostonimet.
+```
+
+```supercollider
+// G2.2 — yön banana grammar ja elävyys.
+CQ.boot; CQ.patchPreset(\empty); CQ.set(\coco1Spaf, 1);
+// - Istuta KORVALLA tri3-lehti -> coco 1:n spaf-kuu: sama audition-paisunta
+//   ja WYHIWYG kuin päivällä; kaapeli kaartuu kappaleiden yli.
+// - Kun serveri soi, castlet hehkuvat aurastaan ja ringin tulikärpäset
+//   kiertävät suuntaan 1 -> 2 -> 3 -> 4 -> 5 (sama kuin \classic-FM-rinki).
+//   Huomaa: joki virtaa kun lahti elää — täysin hiljaisessa soittimessa
+//   se lepää (tietoinen §10-budjettivalinta, kysytään katselmoinnissa).
+// - CQ.hold(1, 1): coco 1:n uloin kierros sulkeutuu punaiseksi sinetiksi.
+//   CQ.hold(1, 0) avaa sen. CQ.flip(1): suun chevron kääntyy.
+// - Tuplaklikkaa jack/socket: solo-light himmentää muut kaapelit; Esc vapauttaa.
+// - Lasso-harvest tyhjällä vedellä toimii kuten päivällä; Ctrl+Z palauttaa.
+// - Tab takaisin päivään: kaikki istutettu näkyy samoin siellä.
+CQ.patchPreset(\empty);
+```
+
+- [ ] G2 ensimmäinen Night-katselmointi hyväksytty (pvm: ______)
