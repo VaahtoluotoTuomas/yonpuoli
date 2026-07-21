@@ -1050,3 +1050,63 @@ CQ.patchPreset(\empty);
 ```
 
 - [x] G2.4 lukupääkomeetta ja skip-napautus hyväksytty (pvm: 2026-07-21)
+
+**Palattava G2:n loppytestauksessa (käyttäjän havainnot 2026-07-21).** Komeetta
+hyväksyttiin toimivana, mutta kolme asiaa jäi auki eikä niitä korjata nyt vaan
+katselmoidaan uudelleen §13-portissa:
+
+1. **Nopeilla nopeuksilla komeettaa on lähes mahdotonta klikata** — skip-napautus
+   vaatii osumisen liikkuvaan kohteeseen, ja nopealla speedillä osoite ehtii
+   siirtyä ennen painallusta. (Vaihtoehtoja arvioitavaksi: suurempi osumasäde
+   nopeuden mukaan, osuma viimeisimpään piirrettyyn kotiin, tai skip-napautuksen
+   toinen koti.)
+2. **Komeetta on liian saman näköinen kuin nopeutta näyttävä reel pearl** —
+   §16.2:n "ei merkitystä pelkällä sävyllä" -laki ratkaistiin muodolla (napukka
+   vs. häntä), mutta ero ei käytännössä lue tarpeeksi selvästi.
+3. **Komeetan nykivä liike pitää tarkastella uudestaan** — 5 Hz:n tikitys on
+   tietoinen piirtobudjettipäätös (§9/§10), mutta sen luettavuus liikkeenä
+   arvioidaan vielä kerran ennen G2:n hyväksyntää.
+
+## G2.5 — latauslamput (`/cq_charge`) ja rungon solo-light
+
+Yhdeksän gate/trig-soketin vieressä oleva lamppu näyttää nyt todellisen
+latauksen: `Mix(mods * w)` täsmälleen siinä muodossa kuin Schmitt sen näkee
+(SPEC §5.5: päälle +0.5, pois +0.3). Lamppu palaa täydellä kukinnalla, kun
+lataus ylittää kynnyksen. Lataus on huippupidätetty serverillä (nousu heti,
+lasku 0,15 s), koska liipaisu voi kestää yhden näytteen. Sama lamppu on
+molemmissa nahoissa. Lisäksi yöllä on nyt rungon solo-light: kaksoisnapautus
+linnakkeen rungolla, kuoren paperilla tai ringin vedellä.
+
+```supercollider
+// G2.5 — lamput ja rungon solo SILMÄLLÄ ja KORVALLA. (Ctrl+Shift+L ensin.)
+CQ.boot; CQ.patchPreset(\classic);
+// - PIMEÄ LEPO: ennen bootia ja heti sen jälkeen kaikki 9 gate/trig-lamppua
+//   ovat himmeitä helmiä. Ei telemetriaa ≠ nolla — lamppu ei keksi arvoa.
+CQ.patch(\tri3, \coco1_flip, 0.25);
+// - VAJAA LATAUS: coco 1:n FLIP-lampun (Day, FLIP-napin vieressä) täyttö
+//   sykkii nyt tri3:n tahdissa (~3 Hz) mutta EI syty täyteen — eikä flip
+//   käänny. Kuuntele: lukusuunta pysyy. Juuri tämä hiljaisuus oli ennen
+//   selittämätön; nyt panelilla näkyy, että lataus jää kynnyksen alle.
+CQ.patch(\tri3, \coco1_flip, 0.9);
+// - LAUKAISU: lamppu syttyy täyteen ja saa kukinnan, ja flip alkaa kääntyä
+//   ~3 Hz:n tahdissa (kuuluu selvästi loopin suunnan tärinänä). Vaihda
+//   Tabilla yöhön: sama lamppu coco 1:n flip-kuun vieressä kertoo saman.
+CQ.patch(\tri3, \castle3_spesal, 0.8);
+// - SPESAL-LIIPAISU: castle 3:n spesal-lamppu välähtää joka laukaisulla ja
+//   kellotaulun tila askeltaa mukana. Vertaa 5-näppäimeen — sama teko.
+CQ.patch(\tri5, \coco2_skip, 0.8);
+// - YKSI NÄYTE RIITTÄÄ: tri5 on audiotaajuinen, joten skip laukeaa satoja
+//   kertoja sekunnissa (kuuluu jyrinänä). Lamppu pysyy palamassa — se on
+//   huippupidätetty, eikä siis valehtele "pimeää" liipaisujen välissä.
+CQ.patch(\tri5, \coco2_skip, 0);
+// - RUNGON SOLO (yö, Tab): kaksoisnapauta castle 3:n runkoa (EI sisäkelloa)
+//   — kaikki muut johdot himmenevät. Kaksoisnapauta uudestaan = vapautuu.
+//   Kokeile myös kuoren paperia (spiraalin kierrosten välissä) ja ringin
+//   vettä castleiden sisäpuolella. Esc vapauttaa aina.
+// - KELLO VOITTAA: kaksoisnapauta sisäkelloa nopeasti — spesal askeltaa
+//   KAHDESTI eikä solo syty (§4.5 controls first). Sama koskee silmää,
+//   sydäntä ja chevronia: toinen napautus kuuluu säätimelle.
+CQ.patchPreset(\empty);
+```
+
+- [ ] G2.5 latauslamput ja rungon solo-light hyväksytty (pvm: )

@@ -80,4 +80,41 @@ CQGuiNightMapTest : UnitTest {
 				"crescent % maps a real CQSpec parameter".format(name));
 		};
 	}
+
+	// GUI_SPEC §6: solo-light on a body lights everything touching it. The
+	// night's bodies are its own anatomy, but they keep the Day panel's names
+	// where the organ is the same — one grammar must not hold two solos for it.
+	test_soloBodiesAreTheNightAnatomy {
+		this.assertEquals(CQGuiNightMap.bodyNames,
+			#[castle1, castle2, castle3, castle4, castle5, coco1, coco2, quantussy],
+			"five castles, two shells and the ring carry the night's body solo");
+		this.assertEquals(CQGuiNightMap.bodyEndpointNames(\castle3),
+			#[tri3, cas3, castle3_fm, castle3_spesal],
+			"a castle body owns its two buds and its two moons");
+		this.assertEquals(CQGuiNightMap.bodyEndpointNames(\coco2),
+			CQGuiPanels.bodyEndpointNames(\coco2),
+			"a shell is the Day coco panel's own body, so one solo serves both");
+		this.assertEquals(CQGuiNightMap.bodyEndpointNames(\quantussy),
+			CQGuiPanels.bodyEndpointNames(\quantussy),
+			"the ring is the Day quantussy panel's own body");
+		this.assert(CQGuiNightMap.bodyEndpointNames(\bogus).isEmpty,
+			"an unknown body claims no endpoints");
+	}
+
+	test_everyBodyMemberIsACanonicalEndpoint {
+		CQGuiNightMap.bodyNames.do { |name|
+			var members = CQGuiNightMap.bodyEndpointNames(name);
+			this.assert(members.notEmpty, "% is a real body".format(name));
+			members.do { |member|
+				this.assert(CQMatrix.srcIndex(member).notNil
+					or: { CQMatrix.destIndex(member).notNil },
+					"body member % is a canonical jack or socket".format(member));
+			};
+		};
+		// roots and birds hold one endpoint each: an own body would only be a
+		// second name for the jack/socket solo that already lights those cables
+		this.assert(CQGuiNightMap.bodyNames.every { |name|
+			CQGuiNightMap.bodyEndpointNames(name).size > 1
+		}, "no body duplicates a single endpoint's solo");
+	}
 }

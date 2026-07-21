@@ -95,9 +95,12 @@ CQGuiBananaController {
 		^this
 	}
 
+	// A body may register members without a view: the night bodies own their own
+	// first gesture pass (§6.1) and hand the body name in through groundDown, so
+	// binding them here would overwrite the touch grammar they installed.
 	prBindBodies {
 		bodies.keysValuesDo { |name, body|
-			this.prBindGroundView(body[\view], name)
+			body[\view] !? { |view| this.prBindGroundView(view, name) }
 		};
 		^this
 	}
@@ -305,6 +308,7 @@ CQGuiBananaController {
 	}
 
 	prBodyName { |view|
+		if(view.isNil) { ^nil };
 		^bodies.keys.detect { |name| bodies[name][\view] === view }
 	}
 }

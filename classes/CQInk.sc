@@ -181,6 +181,14 @@ CQInk {
 		Pen.fillColor = palette[\recess];
 		Pen.addOval(Rect.aboutPoint(center, 4, 4));
 		Pen.fill;
+		// Past the Schmitt's on-threshold the bead blooms (GUI_SPEC §16.8): a
+		// gate reads as lit steady, a trig as the bloom decaying with the
+		// server's peak-hold. Costs two Pen calls only while something fires.
+		if(on) {
+			Pen.fillColor = palette[\lamp].copy.alpha_(0.28);
+			Pen.addOval(Rect.aboutPoint(center, 7, 7));
+			Pen.fill;
+		};
 		Pen.fillColor = palette[\lamp].copy.alpha_(fill);
 		Pen.addOval(Rect.aboutPoint(center, 4, 4));
 		Pen.fill;

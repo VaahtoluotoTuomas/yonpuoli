@@ -274,6 +274,16 @@ eye but must keep the topology truths):
   the filename is written small under the bird.
 - Cables follow the same grammar (§4), arcing around bodies, pulsing with
   their source's aura. Solo-light on a body lights everything touching it.
+  The night's bodies (landed 2026-07-21): each **castle** (its two buds, its
+  fm and spesal moons), each **shell** (mouth, fruit and its five moons) and
+  the **ring's water** — the last two under the Day panel's own body names
+  `coco1` / `coco2` / `quantussy`, so one shared grammar never holds two
+  solos for one organ, while the castles are the night's finer bodies. Roots
+  and birds get no body: each carries a single endpoint whose own jack/socket
+  solo already lights the very same cables. Controls-first (§4.5) binds at
+  every click count — a fast second tap on the inner clock, the heart, the
+  chevron, the read head or the eye belongs to that touch point, never to the
+  body behind it, so the body solo is taken on the organism's bare paper.
 - **Night toolbar** (small, lowercase): patch-preset menu · shake · grow ·
   wither · breed · amount mini-knob · the compass pad (§7).
 
@@ -425,7 +435,7 @@ meters:
 |---|---|---|---|
 | G1 | `/cq_aura` | 16 source magnitudes (lagged \|amp\|, canonical source order) | jack glow, cable pulse, root/castle/body glow |
 | G2 | `/cq_phase` | coco read-head position 0..1, replyID 1/2 (landed 2026-07-21 as its own message at **5 Hz** on purpose: the send rate is the two shells' repaint ceiling — §10, one shell repaint ≈ 30 Pen calls, so 15 Hz would spend the whole ~3 % GUI budget on two dots) | the spiral spark |
-| G2 | `/cq_charge` | the 9 gate/trig destination sums (post-weight, pre-Schmitt) | charge lamps — the answer to "why is my flip banana silent" |
+| G2 | `/cq_charge` | the 9 gate/trig destination sums (post-weight, pre-Schmitt); landed 2026-07-21 as **three 15 Hz blocks** sent by the synths that already compute those sums — coco 1 (replyID 1) and coco 2 (replyID 2) report their own flip/skip pair, the quantussy (replyID 3) all five spesal sums. Each sum is **peak-held at audio rate** (instant rise, 0.15 s fall) before `A2K`, because a trigger crossing can last a single sample and a plain control-rate sample would miss it; the fall is also §16.8's fired bloom. No second copy of the sums exists in the graph, so a lamp can never disagree with its Schmitt | charge lamps — the answer to "why is my flip banana silent" |
 
 `/cq_charge` canonical channel order = the matrix destination order filtered
 to gates/trigs, nine channels: `coco1_flip, coco1_skip, coco2_flip,
@@ -489,6 +499,11 @@ sub-event in `config.scd`, clamped on load.
   quiet moment lands at once, so a knob turn, a 16n fader, a code `set`, a plant and
   a rip stay instant, and only a continuous stream is thinned. Pacing may drop
   intermediate frames but never the last value.
+- **Charge lamps repaint one at a time, on change only** (landed 2026-07-21): a
+  `/cq_charge` block refreshes just those lamp views whose own charge moved by
+  ≥ 0.02. An unpatched gate sums to exactly zero forever and costs nothing at
+  all; a steadily held gate is steady ink. This is §16.6's stillness law applied
+  to the panel, and it is what keeps nine 15 Hz channels inside the budget.
 - **Cable pulse density limit**: a planted cable costs about eleven language-to-Qt
   Pen calls, so the cable layer's ambient repaint is O(cables). Past
   `CQGuiCableOverlay.auraCableLimit` (48) planted cables the cables stop pulsing
@@ -850,9 +865,10 @@ shake as lowercase word-buttons beside it.
 | | candidate | magnetic halo: ring ×1.2 + soft glow in the held cable's polarity color |
 | | auditioning | plug floats 3 px above the rim, cable at 60 % alpha |
 | | occupied | plug seated, insertion depth ∝ \|w\| |
-| gate/trig lamp | charging | lamp fill alpha = charge / 0.5, lamp color |
-| | Schmitt on (gate) | lit steady |
-| | fired (trig) | 120 ms spark bloom |
+| gate/trig lamp | no telemetry | the same dark recessed bead as a zero charge: a lamp has nothing to overstate, so silence and zero may look alike here. `chargeFor` still returns `nil`, so no other surface can mistake one for the other (§9) |
+| | charging | lamp fill alpha = charge / 0.5, lamp color |
+| | Schmitt on (gate) | lit steady + a Ø 14 bloom at 28 % (landed 2026-07-21: one mechanism, `charge ≥ 0.5`, drawn only while lit) |
+| | fired (trig) | the same bloom, decaying with the server's 0.15 s peak-hold — no client-side timer |
 | cable | planted | width 1.5–3 px ∝ \|w\|, alpha pulses with source aura |
 | | hover target | full alpha + soft 6 px ink under-stroke at 22 %; unrelated planted cables recede to 46 % |
 | | grabbed | full alpha, follows cursor |

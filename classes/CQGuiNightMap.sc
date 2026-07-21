@@ -10,7 +10,7 @@
 
 CQGuiNightMap {
 	var gui, state, matrix, config;
-	var <stageView, <container, <overlay, <controller, <touch, <endpoints;
+	var <stageView, <container, <overlay, <controller, <touch, <endpoints, <bodies;
 	var <groundView, <ringView, <eyeView, <castleViews, <shellViews, <birdViews;
 	var <crescentViews, crescentNorms, activeCrescents, hoverCrescents, labels;
 	var <geometry, <eyeActive = false;
@@ -50,6 +50,39 @@ CQGuiNightMap {
 			^(kind: \socket, family: \input, glyph: \spark, lamp: true)
 		};
 		^(kind: \socket, family: \line, glyph: \pendulum)
+	}
+
+	// §6 solo-light bodies at night — the anatomy's own groupings (§16.6), and
+	// deliberately the Day panel's own body names where the grouping is the
+	// same organ, so one shared grammar cannot hold two solos for one body.
+	// The castles are the night's own finer bodies. Roots and birds carry
+	// exactly one endpoint each: their jack/socket solo already lights the very
+	// same cables, so a body there would be a second name for one act.
+	*bodyNames {
+		^#[castle1, castle2, castle3, castle4, castle5, coco1, coco2, quantussy]
+	}
+
+	*bodyEndpointNames { |name|
+		var string = name.asString, n;
+		if(name == \quantussy) {
+			^CQMatrix.sourceNames.copyRange(0, 9)
+				++ CQMatrix.destNames.copyRange(10, 19)
+		};
+		n = string.last.asString;
+		if(string.beginsWith("castle")) {
+			^[("tri" ++ n).asSymbol, ("cas" ++ n).asSymbol,
+				("castle" ++ n ++ "_fm").asSymbol,
+				("castle" ++ n ++ "_spesal").asSymbol]
+		};
+		if(string.beginsWith("coco")) {
+			^[("coco" ++ n).asSymbol, ("org" ++ n).asSymbol,
+				("coco" ++ n ++ "_spaf").asSymbol,
+				("coco" ++ n ++ "_inVca").asSymbol,
+				("coco" ++ n ++ "_fbVca").asSymbol,
+				("coco" ++ n ++ "_flip").asSymbol,
+				("coco" ++ n ++ "_skip").asSymbol]
+		};
+		^[]
 	}
 
 	// §6.1 crescent inventory: three continuous coco moons per shell plus one
@@ -119,6 +152,13 @@ CQGuiNightMap {
 		var norm = gui.phaseNorms[i];
 		if(geometry.isNil or: { norm.isNil }) { ^nil };
 		^CQNightGeometry.spiralPoint(geometry[\cocos][i], norm)
+	}
+
+	// one gate/trig lamp whose charge actually moved (CQGui gates the §9 stream
+	// and picks the visible stage; the hidden twin repaints at the hard cut)
+	chargeChanged { |name|
+		if(freed) { ^this };
+		endpoints[name] !? { |endpoint| endpoint[\view].refresh };
 	}
 
 	crescentActive { |name, flag|
@@ -217,8 +257,15 @@ CQGuiNightMap {
 		this.prBindTouch;
 		crescentControls = List.new;
 		crescentViews.values.do { |view| crescentControls.add((view: view)) };
+		// The night bodies own their own first gesture pass (§6.1), so they
+		// register members only — no view for the controller to re-bind, or it
+		// would overwrite the touch handlers installed just above.
+		bodies = IdentityDictionary.new;
+		this.class.bodyNames.do { |name|
+			bodies[name] = (name: name, members: this.class.bodyEndpointNames(name))
+		};
 		controller = CQGuiBananaController(gui.bananaGrammar, endpoints,
-			IdentityDictionary.new, overlay, crescentControls);
+			bodies, overlay, crescentControls);
 		controller.bindGround(container);
 		touch.controller = controller;
 		this.prBindDrops;

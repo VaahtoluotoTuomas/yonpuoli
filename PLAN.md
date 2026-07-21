@@ -318,10 +318,34 @@ coco-ulostulosta ja lintujen flutter.
   napautuksen kelauksesta), staattinen hover-halo, delta-portti (~1,5 px)
   harventaa lähes paikallaan olevan kelan piirrot. Ei telemetriaa = ei
   komeettaa. `/cq_charge` on oma seuraava lisäyksensä.*
+- [x] `/cq_charge`-latauslamput (9 kanavaa, GUI_SPEC §9). *Toteutettu
+  2026-07-21, odottaa manuaalitestin G2.5 hyväksyntää.* Lataus lähetetään
+  niistä samoista synteistä, jotka summat jo laskevat — coco 1 (replyID 1),
+  coco 2 (replyID 2) ja quantussy (replyID 3), kukin 15 Hz — joten lamppu ei
+  voi olla eri mieltä kuin oma Schmittinsä eikä grafiin synny toista kopiota
+  summista. Summa huippupidätetään audio-tasolla ennen `A2K`:ta (nousu heti,
+  lasku 0,15 s): yhden näytteen mittainen liipaisu jäisi muuten kokonaan
+  näkemättä, ja sama lasku on §16.8:n kukinta. Piirto: lamppu kerrallaan,
+  vain kun sen oma lataus liikkui (≥ 0.02) — kytkemätön gate summautuu ikuisesti
+  tarkalleen nollaan eikä maksa mitään. Ei telemetriaa = himmeä lepohelmi.
 - [ ] Solo-light (body), deck-bird drag-over-korostus ja täsmällinen Night
-  toolbar. *(Endpoint- ja kaapelisolo sekä bird-drop toimivat jo.)*
+  toolbar. *(Endpoint- ja kaapelisolo sekä bird-drop toimivat jo. **Rungon
+  solo-light toteutettu 2026-07-21**, odottaa G2.5:n hyväksyntää: yön rungot
+  ovat viisi linnaketta, kaksi kuorta ja ringin vesi — kaksi jälkimmäistä
+  Dayn omilla nimillä `coco1`/`coco2`/`quantussy`, joten yksi jaettu kielioppi
+  ei pidä kahta soloa samasta elimestä. Juuret ja linnut eivät saa runkoa:
+  niillä on yksi endpoint, jonka oma solo sytyttää täsmälleen samat johdot.
+  §4.5 sitoo joka klikkausmäärällä — nopea toinen napautus sisäkellolla,
+  sydämellä, chevronilla, lukupäässä tai silmässä kuuluu sille säätimelle,
+  ei takana olevalle rungolle.)*
 - [ ] Ei numeroita, Space-bodya tai dekoratiivista motionia; Master pysyy näkyvänä.
 - [ ] `GUI_SPEC.md` §13:n automaatio, kuuntelu ja käyttäjän visuaalinen hyväksyntä.
+  **Loppuportissa palataan kolmeen G2.4:n avoimeen havaintoon** (käyttäjä
+  2026-07-21, kirjattu `tests/manual_checklist.md`:n G2.4-kohtaan): nopeilla
+  nopeuksilla komeettaa on lähes mahdotonta klikata (skip-napautus liikkuvaan
+  kohteeseen), komeetta näyttää liian samalta kuin nopeuden reel pearl, ja
+  komeetan nykivän liikkeen luettavuus arvioidaan vielä kerran. Komeetta on
+  hyväksytty toimivana; näitä ei korjata ennen §13-porttia.
 
 **G2.3-kuuntelukierros 1 (2026-07-21):** kaikki seitsemän kosketuspistettä
 toimivat korvalla; palaute käsitelty samana päivänä (`GUI_SPEC.md` §6.1 ja
@@ -452,7 +476,11 @@ jokaisen jälkeen.**
       erotetaan muodolla, ei sävyllä (§16.2/§16.6). *(Hyväksytty 2026-07-21,
       manuaalitesti G2.4.)*
    2. `/cq_charge`-lamput (9 kanavaa, GUI_SPEC §9) ja body-solo-light.
+      *(Toteutettu 2026-07-21; manuaalitesti G2.5 odottaa käyttäjän
+      katselmointia.)*
    3. Deck-bird drag-over-korostus (§16.7) ja täsmällinen Night toolbar.
+      **Ennen tätä askelta pidetään käyttäjän kanssa tarkistus** (päätös
+      2026-07-21): Night toolbaria ei aloiteta ilman sitä.
    4. G2:n §13-portti: automaatio, kuuntelugate, 100/125/150 % skaalaus,
       CPU/resurssisoak ja käyttäjän visuaalinen hyväksyntä.
 4. Muista G1:n opetus piirtobudjetista: `GUI_SPEC.md` §10 sitoo myös Nightin. Ambient

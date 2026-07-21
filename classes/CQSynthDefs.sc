@@ -103,7 +103,7 @@ CQSynthDefs {
 		};
 		^SynthDef(\cqQuantussy, {
 			var fb, fbTris, fbCass, qFreq, qChaos, qShLag, patchDepth, mods;
-			var castles, tris, cass, stateKr, sends;
+			var castles, tris, cass, stateKr, spesalSums, sends;
 			fb = LocalIn.ar(10);            // [tri1..5, cas1..5] from previous block
 			fbTris = fb[0..4];
 			fbCass = fb[5..9];
@@ -120,7 +120,8 @@ CQSynthDefs {
 				var wSpesal = CQSynthDefs.prMatrixWeight(
 					("wSpesal" ++ n).asSymbol.ir(0), patchDepth);
 				var fmExt = Mix(mods * wFm);           // matrix castleN_fm sum (octaves)
-				var spesalGate = Schmidt.ar(Mix(mods * wSpesal), 0.3, 0.5);
+				var spesalSum = Mix(mods * wSpesal);   // pre-Schmitt = its §9 charge
+				var spesalGate = Schmidt.ar(spesalSum, 0.3, 0.5);
 				var spesalTrig = Trig1.ar(spesalGate, SampleDur.ir); // matrix castleN_spesal
 				var state = Stepper.ar(
 					T2A.ar(("t_step" ++ n).asSymbol.tr(0)) + spesalTrig,
@@ -145,11 +146,13 @@ CQSynthDefs {
 				var cas = Select.ar(thMode, [
 					Latch.ar(sampled, trig),           // sample & hold
 					Gate.ar(sampled, sqr)]);           // track & hold
-				[tri, Lag.ar(cas, qShLag), state]      // qShLag: declick at 4 ms default
+				// qShLag: declick at 4 ms default
+				[tri, Lag.ar(cas, qShLag), state, spesalSum]
 			};
 			tris = castles.collect { |c| c[0] };
 			cass = castles.collect { |c| c[1] };
 			stateKr = castles.collect { |c| A2K.kr(c[2]) };
+			spesalSums = castles.collect { |c| c[3] };
 			sends = 5.collect { |k|
 				var name = ("c" ++ (k + 1) ++ "Send").asSymbol;
 				("send" ++ (k + 1)).asSymbol.kr(CQSpec.default(name), CQSpec.lag(name))
@@ -162,6 +165,12 @@ CQSynthDefs {
 			// GUI activity LEDs (SPEC §6.2): instantaneous tri values at 15 Hz —
 			// infra castles visibly oscillate, audio-rate ones read as flicker
 			SendReply.kr(Impulse.kr(15), '/cq_castle', tris.collect { |t| A2K.kr(t) });
+			// GUI_SPEC §9 `/cq_charge`, castle block: the five spesal sums the
+			// Schmitts above already read, peak-held like the coco pair (see
+			// \cqCoco) so a single-sample crossing still reaches the lamp.
+			// replyID 3 — the coco instances own 1 and 2.
+			SendReply.kr(Impulse.kr(15), '/cq_charge',
+				A2K.kr(LagUD.ar(spesalSums, 0, 0.15)), 3);
 		})
 	}
 
@@ -182,7 +191,7 @@ CQSynthDefs {
 			var here, hereSmooth, dolby, inSig, inVca, fbVca, inEnv, fbEnv;
 			var inCh, fbCh, record, write, outTap, organ, voice, lvl;
 			var patchDepth, mods, wSpaf, wInVca, wFbVca, wFlip, wSkip;
-			var spafSum, inVcaSum, fbVcaSum, flipGate, skipTrig;
+			var spafSum, inVcaSum, fbVcaSum, flipSum, skipSum, flipGate, skipTrig;
 			buf = \buf.ir(0);
 			frames = BufFrames.ir(buf);
 			speed = \speed.kr(CQSpec.default(\coco1Speed), CQSpec.lag(\coco1Speed));
@@ -199,9 +208,11 @@ CQSynthDefs {
 			fbVcaSum = Mix(mods * wFbVca);
 			// Schmitt threshold on gate/trig dests (SPEC §5.5): on rising through
 			// +0.5, off below +0.3 — a bare comparator would chatter on noisy sums
+			flipSum = Mix(mods * wFlip);
+			skipSum = Mix(mods * wSkip);
 			flipGate = max(\flip.kr(CQSpec.default(\coco1Flip)),
-				Schmidt.ar(Mix(mods * wFlip), 0.3, 0.5));  // flip = matrix gate OR param
-			skipTrig = Trig1.ar(Schmidt.ar(Mix(mods * wSkip), 0.3, 0.5), SampleDur.ir);
+				Schmidt.ar(flipSum, 0.3, 0.5));            // flip = matrix gate OR param
+			skipTrig = Trig1.ar(Schmidt.ar(skipSum, 0.3, 0.5), SampleDur.ir);
 			// hard clamp 1500 Hz..SR is post-modulation by design (SPEC §5.3)
 			clockHz = (speed * (2 ** (spafSum * spafKnob))).clip(1500, SampleRate.ir);
 			ratio = clockHz / SampleRate.ir;
@@ -268,6 +279,15 @@ CQSynthDefs {
 			// calls (~1.6 ms), so 15 Hz would spend the GUI budget on two dots.
 			SendReply.kr(Impulse.kr(5), '/cq_phase',
 				A2K.kr(phase / frames), \meterId.ir(0));
+			// GUI_SPEC §9 `/cq_charge` — this coco's two gate/trig sums exactly as
+			// the Schmitt above sees them (post-weight, pre-threshold), so the lamp
+			// cannot disagree with the DSP. Peak-held at audio rate before A2K
+			// (instant rise, 0.15 s fall): a trigger crossing can last a single
+			// sample and a plain control-rate sample would miss it — a lamp that
+			// answers "why is my flip banana silent" may not lie by omission, and
+			// the fall doubles as §16.8's fired bloom. replyID = the coco's meterId.
+			SendReply.kr(Impulse.kr(15), '/cq_charge',
+				A2K.kr(LagUD.ar([flipSum, skipSum], 0, 0.15)), \meterId.ir(0));
 		})
 	}
 

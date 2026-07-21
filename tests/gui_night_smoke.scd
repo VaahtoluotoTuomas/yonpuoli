@@ -350,6 +350,65 @@ abort = { |error|
 															check.value(map.birdViews.every { |bird|
 																bird.canReceiveDragHandler.notNil
 															}, "both birds accept the file drop");
+															// ---- §9 charge lamps ----
+															check.value(gui.chargeFor(\coco1_flip).isNil,
+																"before telemetry a lamp has no charge to draw");
+															gui.prChargeFrame(1, [0.62, 0.0]);
+															gui.prChargeFrame(3, [0, 0, 0.9, 0, 0]);
+															check.value(
+																(gui.chargeFor(\coco1_flip) - 0.62).abs < 1e-6
+																and: { gui.chargeFor(\coco1_skip) == 0 }
+																and: { (gui.chargeFor(\castle3_spesal) - 0.9)
+																	.abs < 1e-6 },
+																"night charge blocks land on their own lamps");
+															check.value(gui.chargeFor(\coco2_flip).isNil,
+																"a block that never reported stays unreported");
+															// ---- §6 body solo-light ----
+															castleView = map.castleViews[1];
+															castleTwo = map.geometry[\castles][1];
+															check.value(map.overlay.patchAt(
+																castleTwo[\box].leftTop + (4@4)).isNil,
+																"precondition: no cable crosses the castle's corner");
+															castleView.mouseDownAction.value(castleView,
+																4, 4, 0, 0, 2);
+															check.value(
+																gui.bananaGrammar.soloTarget.notNil
+																and: { gui.bananaGrammar.soloTarget[\kind]
+																	== \body }
+																and: { gui.bananaGrammar.soloTarget[\name]
+																	== \castle2 },
+																"a double-click on a castle body solos that castle");
+															check.value(gui.bananaGrammar
+																.isCableDim(\envB, \castle3_fm),
+																"an unrelated cable dims under the body solo");
+															castleView.mouseDownAction.value(castleView,
+																4, 4, 0, 0, 2);
+															check.value(gui.bananaGrammar.soloTarget.isNil,
+																"pressing the same body again releases the light");
+															// the dial owns its area at every click count (§4.5)
+															dialPoint = CQNightGeometry.polar(
+																castleTwo[\center], castleTwo[\dialR],
+																0.25pi) - castleTwo[\box].leftTop;
+															castleView.mouseDownAction.value(castleView,
+																dialPoint.x, dialPoint.y, 0, 0, 2);
+															check.value(gui.bananaGrammar.soloTarget.isNil,
+																"a fast second tap on the inner clock is a step, not a solo");
+															shell.mouseDownAction.value(shell, 3, 3, 0, 0, 2);
+															check.value(
+																gui.bananaGrammar.soloTarget.notNil
+																and: { gui.bananaGrammar.soloTarget[\name]
+																	== \coco1 },
+																"shell paper carries the coco body solo");
+															gui.bananaGrammar.escape;
+															local = map.geometry[\ringBox].leftTop;
+															map.ringView.mouseDownAction.value(
+																map.ringView, 6, 6, 0, 0, 2);
+															check.value(
+																gui.bananaGrammar.soloTarget.notNil
+																and: { gui.bananaGrammar.soloTarget[\name]
+																	== \quantussy },
+																"the ring's water solos the whole Quantussy body");
+															gui.bananaGrammar.escape;
 															touchDone.value;
 														};
 														check.value(CQInkControl.drawErrors == 0,
@@ -363,7 +422,8 @@ abort = { |error|
 																#[cq_gui_meters, cq_gui_gr,
 																	cq_gui_coco, cq_gui_castle,
 																	cq_gui_spesal, cq_gui_hot,
-																	cq_gui_aura, cq_gui_phase].do { |key|
+																	cq_gui_aura, cq_gui_phase,
+																	cq_gui_charge].do { |key|
 																	check.value(OSCdef.all[key].isNil,
 																		"cleanup removed %".format(key));
 																};

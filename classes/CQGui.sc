@@ -18,6 +18,10 @@ CQGui {
 	// reported. No telemetry = no pulse, so serverless and headless surfaces
 	// keep exactly the reviewed static Day look.
 	var <auraValues, auraPainted;
+	// GUI_SPEC §9 `/cq_charge`: the nine gate/trig sums, in three blocks (the
+	// two cocos and the castle row report their own). Same law as the aura —
+	// a slot stays nil until its synth has spoken.
+	var <chargeValues, chargePainted, <chargeNames, chargeIndex;
 	var deckLabels, deckCtls, skipButtons;
 	var noticeView, recBtn, recTimeView, recTask, hotTask;
 	var micLive = false, hotLive = false, cleaned = false;
@@ -29,6 +33,23 @@ CQGui {
 
 	*new { |state, matrix, config|
 		^super.newCopyArgs(state, matrix, config).prInit
+	}
+
+	// GUI_SPEC §9: the canonical `/cq_charge` channel order is the matrix
+	// destination order filtered to gates and trigs — derived here rather than
+	// re-typed, so the lamps can never drift from CQMatrix's own truth.
+	*chargeNames {
+		^CQMatrix.destNames.select { |name|
+			var tail = name.asString;
+			tail.endsWith("_flip") or: { tail.endsWith("_skip") }
+				or: { tail.endsWith("_spesal") }
+		}
+	}
+
+	// which slots of the nine a given SendReply block carries (§9 order):
+	// the cocos report their own pair, the quantussy its five castles
+	*chargeBlock { |replyId|
+		^switch(replyId.asInteger, 1, { 0 }, 2, { 2 }, 3, { 4 }, { nil })
 	}
 
 	isClosed {
@@ -103,7 +124,13 @@ CQGui {
 				CQInk.drawGlyph(glyph,
 					Rect(center.x - 4, center.y - 4, 8, 8), palette[family])
 			};
-			if(lamp) { CQInk.drawLamp(center + Point(16, 0), 0, false, skin) };
+			if(lamp) {
+				var charge = this.chargeFor(name) ? 0;
+				// §16.8: fill = charge / 0.5; at and above the Schmitt's on-threshold
+				// the lamp is lit (steady for a gate, a decaying bloom for a trig —
+				// the server's own peak-hold fall, no client-side timer)
+				CQInk.drawLamp(center + Point(16, 0), charge, charge >= 0.5, skin)
+			};
 		};
 		^this
 	}
@@ -116,6 +143,15 @@ CQGui {
 		var index = CQMatrix.srcIndex(name);
 		if(auraValues.isNil or: { index.isNil }) { ^nil };
 		^auraValues[index]
+	}
+
+	// One gate/trig destination's live charge (post-weight, pre-Schmitt), or nil
+	// while its synth has said nothing — the §9 law again: a dark lamp because
+	// nobody reported is not a lamp reporting zero.
+	chargeFor { |dest|
+		var index = chargeIndex[dest];
+		if(index.isNil) { ^nil };
+		^chargeValues[index]
 	}
 
 	// SPEC §7: persistent warning color while the mic is live (M2 GUI part)
@@ -137,6 +173,11 @@ CQGui {
 		spesalStates = Cocoquantus.spesalStates;
 		castleValues = [0, 0, 0, 0, 0];
 		phaseNorms = [nil, nil];   // nil until '/cq_phase' reports (§9: no telemetry ≠ 0)
+		chargeNames = this.class.chargeNames;
+		chargeIndex = IdentityDictionary.new;
+		chargeNames.do { |name, i| chargeIndex[name] = i };
+		chargeValues = Array.newClear(chargeNames.size);   // same law as the aura
+		chargePainted = Array.newClear(chargeNames.size);
 		inkControls = List.new;
 		endpoints = IdentityDictionary.new;
 		bananaBodies = IdentityDictionary.new;
@@ -266,6 +307,12 @@ CQGui {
 				this.prPaintAura;
 			}.defer;
 		}, '/cq_aura');
+		// GUI_SPEC §9 `/cq_charge`: three 15 Hz blocks (coco 1, coco 2, the five
+		// castles) fill one nine-slot cache. The send rate is the §10 ambient
+		// ceiling; the repaint gate below keeps a still panel free.
+		OSCdef(\cq_gui_charge, { |msg|
+			{ this.prChargeFrame(msg[2], msg.copyRange(3, msg.size - 1)) }.defer;
+		}, '/cq_charge');
 		OSCdef(\cq_gui_spesal, { |msg|
 			{
 				spesalStates = msg.copyRange(3, 7).collect { |v| v.asInteger };
@@ -351,6 +398,39 @@ CQGui {
 				overlay.view.refresh
 			};
 		};
+	}
+
+	// One '/cq_charge' block. Each lamp is repainted only when its own charge
+	// actually moved — the stillness law of §16.6 applied to the panel: an
+	// unpatched gate sums to exactly zero forever and costs nothing at all, and
+	// a steadily held gate is steady ink. Only the visible stage spends the
+	// frame; the hidden twin repaints in full at the hard cut.
+	prChargeFrame { |replyId, values|
+		var base, night;
+		if(cleaned) { ^this };
+		base = this.class.chargeBlock(replyId ? 0);
+		if(base.isNil) { ^this };
+		night = shellState.viewMode == \night;
+		values.do { |value, i|
+			var slot = base + i, previous, charge;
+			if(slot < chargeValues.size) {
+				charge = (value ? 0).asFloat.clip(0, 1);   // every entry clamps
+				previous = chargePainted[slot];
+				chargeValues[slot] = charge;
+				if(previous.isNil or: { (charge - previous).abs >= 0.02 }) {
+					chargePainted[slot] = charge;
+					this.prPaintLamp(chargeNames[slot], night);
+				};
+			};
+		};
+	}
+
+	prPaintLamp { |name, night|
+		if(night) {
+			nightMap !? { |map| map.chargeChanged(name) };
+			^this
+		};
+		endpoints[name] !? { |endpoint| endpoint[\view].refresh };
 	}
 
 	// one '/cq_phase' frame: cache the clamped truth, and only the visible
@@ -527,7 +607,8 @@ CQGui {
 		hotTask !? { hotTask.stop };
 		hotTask = nil;
 		#[cq_gui_meters, cq_gui_gr, cq_gui_coco, cq_gui_castle,
-			cq_gui_spesal, cq_gui_hot, cq_gui_aura, cq_gui_phase].do { |k|
+			cq_gui_spesal, cq_gui_hot, cq_gui_aura, cq_gui_phase,
+			cq_gui_charge].do { |k|
 			OSCdef.all[k] !? { |d| d.free }
 		};
 	}

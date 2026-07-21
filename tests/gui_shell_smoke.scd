@@ -223,6 +223,10 @@ abort = { |error|
 					"the same Master view persists across the hard cut");
 				check.value(gui.auraValues.isNil and: { gui.auraFor(\tri1).isNil },
 					"an unreported source has no invented aura value");
+				check.value(gui.chargeValues.every { |value| value.isNil }
+					and: { gui.chargeFor(\coco1_flip).isNil }
+					and: { gui.chargeFor(\masterVol).isNil },
+					"an unreported gate has no invented charge (no telemetry != 0)");
 				beforeAuraAlpha = CQGuiCableOverlay.plantedAlpha(gui.auraFor(\tri1));
 				NetAddr.localAddr.sendMsg('/cq_spesal', 0, 0, 0, 1, 4, 6, 7);
 				NetAddr.localAddr.sendMsg('/cq_castle', 0, 0,
@@ -230,6 +234,13 @@ abort = { |error|
 				// 16 canonical magnitudes, two of them deliberately out of range
 				NetAddr.localAddr.sendMsg('/cq_aura', 0, 0,
 					1.4, 0.5, 0.25, 0, 0, -0.3, 0, 0, 0, 0, 0.8, 0, 0.6, 0, 0, 0);
+				// GUI_SPEC §9: three blocks fill the nine lamps; two values are
+				// deliberately out of range, and one replyID does not exist
+				NetAddr.localAddr.sendMsg('/cq_charge', 0, 1, 0.7, 0.2);
+				NetAddr.localAddr.sendMsg('/cq_charge', 0, 2, 0.0, 1.6);
+				NetAddr.localAddr.sendMsg('/cq_charge', 0, 3,
+					0.1, 0.2, -0.4, 0.9, 0.55);
+				NetAddr.localAddr.sendMsg('/cq_charge', 0, 9, 0.9, 0.9);
 				gui.shell.toggleDrawer;
 				// QView.visible_ crosses the Qt event queue; observe it on the
 				// next GUI tick rather than reading the stale native property.
@@ -254,6 +265,12 @@ abort = { |error|
 							"a hot source's cable reads stronger than a silent one's");
 						check.value(beforeAuraAlpha == 0.88,
 							"without telemetry the cable keeps the reviewed static ink");
+						check.value((gui.chargeFor(\coco1_flip) - 0.7).abs < 0.001
+							and: { (gui.chargeFor(\coco1_skip) - 0.2).abs < 0.001 }
+							and: { gui.chargeFor(\coco2_skip) == 1.0 }
+							and: { gui.chargeFor(\castle3_spesal) == 0.0 }
+							and: { (gui.chargeFor(\castle5_spesal) - 0.55).abs < 0.001 },
+							"charge OSC clamps and lands on the nine canonical lamps");
 						// A patch too dense to repaint inside the frame budget falls
 						// back to that same static ink instead of pulsing late.
 						check.value(gui.cableOverlay.auraPulses,
@@ -281,7 +298,8 @@ abort = { |error|
 								check.value(gui.shellState.lifecycleState == \closed,
 									"GUI free reaches closed");
 								#[cq_gui_meters, cq_gui_gr, cq_gui_coco, cq_gui_castle,
-									cq_gui_spesal, cq_gui_hot, cq_gui_aura].do { |key|
+									cq_gui_spesal, cq_gui_hot, cq_gui_aura,
+									cq_gui_charge].do { |key|
 									check.value(OSCdef.all[key].isNil,
 										"cleanup removed %".format(key));
 								};

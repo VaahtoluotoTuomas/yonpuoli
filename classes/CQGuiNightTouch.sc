@@ -36,10 +36,14 @@ CQGuiNightTouch {
 
 	shellDown { |index, view, x, y, modifiers = 0, button = 0, clicks = 1|
 		var point = this.prPoint(view, x, y), geo = map.geometry, coco, n, spark;
+		var body = ("coco" ++ (index + 1)).asSymbol;
 		if(geo.isNil) { ^this };
-		if(button != 0 or: { clicks > 1 } or: { modifiers.isAlt }
+		// §4.5 controls first, at every click count: a fast second tap belongs to
+		// the touch point under it, never to the body solo behind it. Shell paper
+		// between the turns is what carries the double-click to the body.
+		if(button != 0 or: { modifiers.isAlt }
 			or: { overlay.patchAt(point).notNil }) {
-			^this.forwardDown(view, x, y, modifiers, button, clicks)
+			^this.forwardDown(view, x, y, modifiers, button, clicks, body)
 		};
 		coco = geo[\cocos][index];
 		n = index + 1;
@@ -65,7 +69,7 @@ CQGuiNightTouch {
 				angle: this.class.angleAt(coco[\center], point));
 			^this
 		};
-		^this.forwardDown(view, x, y, modifiers, button, clicks)
+		^this.forwardDown(view, x, y, modifiers, button, clicks, body)
 	}
 
 	shellMove { |index, view, x, y, modifiers = 0|
@@ -109,7 +113,10 @@ CQGuiNightTouch {
 	ringDown { |view, x, y, modifiers = 0, button = 0, clicks = 1|
 		var point = this.prPoint(view, x, y), geo = map.geometry;
 		if(geo.isNil) { ^this };
-		if(button == 0 and: { clicks == 1 } and: { modifiers.isAlt.not }
+		// the eye owns its own area at every click count (§4.5); the water
+		// inside the ring belongs to the ring body — the night home of the Day
+		// panel's own `quantussy` solo, so both stages share one solo state
+		if(button == 0 and: { modifiers.isAlt.not }
 			and: { overlay.patchAt(point).isNil }
 			and: { CQNightGeometry.distance(point, geo[\eye]) <= 12 }) {
 			eyeDrag = (start: point,
@@ -117,7 +124,7 @@ CQGuiNightTouch {
 			map.eyeActive = true;
 			^this
 		};
-		^this.forwardDown(view, x, y, modifiers, button, clicks)
+		^this.forwardDown(view, x, y, modifiers, button, clicks, \quantussy)
 	}
 
 	ringMove { |view, x, y, modifiers = 0|
@@ -149,13 +156,16 @@ CQGuiNightTouch {
 	castleDown { |k, view, x, y, modifiers = 0, button = 0, clicks = 1|
 		var point = this.prPoint(view, x, y), geo = map.geometry;
 		if(geo.isNil) { ^this };
-		if(button == 0 and: { clicks == 1 } and: { modifiers.isAlt.not }
+		// the inner clock owns its area at every click count (§4.5), so two fast
+		// taps are two steps — never one step plus a body solo behind it
+		if(button == 0 and: { modifiers.isAlt.not }
 			and: { overlay.patchAt(point).isNil }
 			and: { CQNightGeometry.dialHit(geo[\castles][k], point) }) {
 			Cocoquantus.spesal(k + 1);
 			^this
 		};
-		^this.forwardDown(view, x, y, modifiers, button, clicks)
+		^this.forwardDown(view, x, y, modifiers, button, clicks,
+			("castle" ++ (k + 1)).asSymbol)
 	}
 
 	// ---- crescents: dedicated small controls, vertical drag = value ----
@@ -204,9 +214,11 @@ CQGuiNightTouch {
 		^this
 	}
 
-	forwardDown { |view, x, y, modifiers, button, clicks|
+	// bodyName carries the pressed body's §6 solo identity down to the shared
+	// ground grammar; everything else about the press behaves as on Day paper
+	forwardDown { |view, x, y, modifiers, button, clicks, bodyName|
 		controller !? {
-			controller.groundDown(view, x, y, modifiers, button, clicks, nil)
+			controller.groundDown(view, x, y, modifiers, button, clicks, bodyName)
 		};
 		^this
 	}

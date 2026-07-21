@@ -55,6 +55,64 @@ CQGuiVisualContractTest : UnitTest {
 			"the graph ships a dedicated /cq_aura telemetry def");
 	}
 
+	// GUI_SPEC §9 `/cq_charge`: nine gate/trig sums in matrix destination order.
+	// The channel list is derived from CQMatrix, never re-typed, so the lamps
+	// cannot drift from the routing truth they report on.
+	test_chargeChannelsAreTheNineGateTrigDestinations {
+		this.assertEquals(CQGui.chargeNames,
+			[\coco1_flip, \coco1_skip, \coco2_flip, \coco2_skip,
+				\castle1_spesal, \castle2_spesal, \castle3_spesal,
+				\castle4_spesal, \castle5_spesal],
+			"charge channels = the matrix destination order filtered to gate/trigs");
+		this.assertEquals(CQGui.chargeBlock(1), 0, "coco 1 reports slots 0-1");
+		this.assertEquals(CQGui.chargeBlock(2), 2, "coco 2 reports slots 2-3");
+		this.assertEquals(CQGui.chargeBlock(3), 4, "the castle row reports slots 4-8");
+		this.assert(CQGui.chargeBlock(9).isNil,
+			"an unknown replyID claims no lamp slot");
+	}
+
+	// The charge is sent by the synths that already compute the sums, so the
+	// lamp reads exactly what the Schmitt reads (no second, drifting copy).
+	test_chargeIsSentBySynthsThatOwnTheSums {
+		var config = CQConfig.validate(());
+		var coco = this.prReplies(config, \cqCoco);
+		var quantussy = this.prReplies(config, \cqQuantussy);
+		var cocoCharge = coco.detect { |reply| reply[\name] == '/cq_charge' };
+		var castleCharge = quantussy.detect { |reply| reply[\name] == '/cq_charge' };
+		this.assert(cocoCharge.notNil and: { castleCharge.notNil },
+			"both the coco def and the quantussy def report their charges");
+		this.assertEquals(cocoCharge[\values], 2,
+			"each coco instance reports its own flip and skip sum");
+		this.assertEquals(castleCharge[\values], 5,
+			"the quantussy reports all five spesal sums at once");
+		this.assertEquals((2 * cocoCharge[\values]) + castleCharge[\values],
+			CQGui.chargeNames.size,
+			"the two coco instances and the castle row cover all nine lamps");
+		this.assertEquals(castleCharge[\replyID], 3,
+			"the castle block claims replyID 3 — the cocos own 1 and 2");
+		// the sums the lamps report on must not have cost the DSP a second copy
+		this.assert(coco.collect { |reply| reply[\name] }.includes('/cq_phase'),
+			"extracting the sums left the read-head telemetry intact");
+		this.assert(quantussy.collect { |reply| reply[\name] }
+			.includes('/cq_castle'),
+			"extracting the sums left the castle activity telemetry intact");
+	}
+
+	// SendReply's UGen inputs are [trig, replyID, nameLength, name..., values...].
+	// Names come back as Symbols: `includes` compares identity (CLAUDE.md).
+	prReplies { |config, defName|
+		var def = CQSynthDefs.all(config).detect { |d| d.name == defName };
+		if(def.isNil) { ^[] };
+		^def.children.select { |ugen| ugen.isKindOf(SendReply) }
+			.collect { |ugen|
+				var size = ugen.inputs[2].asInteger;
+				(name: String.newFrom(ugen.inputs.copyRange(3, 2 + size)
+						.collect { |code| code.asInteger.asAscii }).asSymbol,
+					replyID: ugen.inputs[1],
+					values: ugen.inputs.size - 3 - size)
+			}
+	}
+
 	test_cableAlphaPulsesWithSourceAuraOnly {
 		this.assertEquals(CQGuiCableOverlay.plantedAlpha(nil), 0.88,
 			"no telemetry leaves the planted cable at its reviewed static alpha");
