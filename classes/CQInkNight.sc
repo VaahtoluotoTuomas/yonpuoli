@@ -122,7 +122,7 @@ CQInkNight {
 	// since the G2 gate; the hand's skip lives on the mouth's own mark.
 	*drawShell { |coco, origin, holdOn = false, flipMode = \forward,
 		speedNorm = 0.5, hover = false, sparkNorm, sparkDir = 1,
-		skipHover = false, skipFlash = false, scatter = false,
+		skipHover = false, skipFlash = false, struck = false,
 		rimHover = false, skin = \night|
 		var palette = CQInk.palette(skin), notch, normal, reach, spark, tail;
 		Pen.translate(origin.x.neg, origin.y.neg);
@@ -185,19 +185,17 @@ CQInkNight {
 		// the read head, drawn last so the moving comet passes over the notch
 		sparkNorm !? {
 			spark = CQNightGeometry.spiralPoint(coco, sparkNorm);
-			if(scatter) {
-				// re-triggered faster than 5 Hz can show: the comet stops
-				// pretending to be a point and draws the reach it actually
-				// manages out of the eye. Same law as the chevron's shuttle
-				// state — show the regime, not a value the frame cannot carry.
-				Pen.strokeColor = palette[\spark].copy.alpha_(0.4);
-				Pen.width = CQInk.strokes[\normal];
-				Pen.moveTo(CQNightGeometry.spiralPoint(coco, 0));
-				5.do { |step|
-					Pen.lineTo(CQNightGeometry.spiralPoint(coco,
-						sparkNorm * ((step + 1) / 5)))
-				};
-				Pen.stroke;
+			if(struck) {
+				// re-triggered faster than 5 Hz can show: the head wears the
+				// skip glyph itself — one vocabulary, and the cause is drawn
+				// where the effect is (§1's proximity law). A mark of STATE,
+				// never of extent: the first try at this drew the reach out of
+				// the eye, and that reach collapses to nothing exactly when
+				// the regime is clearest, so the mark vanished when it was
+				// most needed (caught at the G2 gate, 2026-07-22). The tail
+				// goes with it — a direction means nothing under hammering.
+				CQInk.drawGlyph(\skip, Rect.aboutPoint(spark, 5, 5),
+					palette[\spark].copy.alpha_(0.75));
 			} {
 				tail = CQNightGeometry.spiralPoint(coco,
 					(sparkNorm - (sparkDir.sign * 0.01)).clip(0, 1));

@@ -17,7 +17,7 @@ CQGuiNightMap {
 	var <eyeFreqNorm = 0.5, <eyeChaosNorm = 0.15;
 	var <speedNorms, <shellHover, <dialHover, <bodyHover, <rimHover, <ringHover = false;
 	var <sparkDirs, <skipHover, <skipFlash, sparkPainted, flipPainted;
-	var scatterCount, <scatterOn;
+	var struckCount, <struckOn;
 	var <fireflyPhase = 0.0, lastFireflyTime, castlePainted;
 	var <holdStates, <flipStates, <rangeLetters, <sproutState;
 	var freed = false;
@@ -136,7 +136,7 @@ CQGuiNightMap {
 	// A move under ~1.5 px along the line keeps the frame.
 	paintPhase { |i|
 		var norm = gui.phaseNorms[i], mean = gui.phaseDirs[i];
-		var delta, mode, scatter, repaint = false;
+		var delta, mode, struck, repaint = false;
 		if(freed) { ^this };
 		// the chevron's regime can change while the address barely moves — a
 		// shuttled loop goes nowhere — so it gets its own gate
@@ -145,8 +145,8 @@ CQGuiNightMap {
 		// so does the comet's: a hammered loop never leaves the eye, and a
 		// bead crawling near zero would read as "almost stopped" — the exact
 		// opposite of the truth
-		scatter = this.prScatter(i);
-		if(scatter != scatterOn[i]) { scatterOn[i] = scatter; repaint = true };
+		struck = this.prStruck(i);
+		if(struck != struckOn[i]) { struckOn[i] = struck; repaint = true };
 		// the tail shares the chevron's one truth wherever the server reports a
 		// settled direction; the wrap-aware travel stays the fallback
 		if(mean.notNil and: { mean.abs > this.class.shuttleFloor }) {
@@ -172,18 +172,18 @@ CQGuiNightMap {
 	// skip's charge is peak-held 0.15 s on the server (§9), so if it is still
 	// lit when the next 5 Hz phase frame lands, the loop was restarted inside
 	// that window. Two frames running means the head is being thrown back
-	// faster than the eye can follow, and the comet switches to its scatter.
+	// faster than the eye can follow, and it wears the struck mark (§16.6).
 	// No new telemetry and no client-side timer: the charge already says it.
-	*scatterFrames { ^2 }
+	*struckFrames { ^2 }
 
-	prScatter { |i|
+	prStruck { |i|
 		var charge = gui.chargeFor(("coco" ++ (i + 1) ++ "_skip").asSymbol);
 		if(charge.notNil and: { charge >= 0.5 }) {
-			scatterCount[i] = scatterCount[i] + 1;
+			struckCount[i] = struckCount[i] + 1;
 		} {
-			scatterCount[i] = 0;
+			struckCount[i] = 0;
 		};
-		^scatterCount[i] >= this.class.scatterFrames
+		^struckCount[i] >= this.class.struckFrames
 	}
 
 	// any skip flashes the mouth mark, exactly as it flashes the Day button —
@@ -268,8 +268,8 @@ CQGuiNightMap {
 		sparkDirs = [1, 1];
 		skipHover = [false, false];
 		skipFlash = [false, false];
-		scatterCount = [0, 0];
-		scatterOn = [false, false];
+		struckCount = [0, 0];
+		struckOn = [false, false];
 		sparkPainted = Array.newClear(2);
 		flipPainted = Array.newClear(2);
 		rangeLetters = ["", "", "", "", ""];
@@ -698,7 +698,7 @@ CQGuiNightMap {
 		CQInkNight.drawShell(coco, coco[\shellBox].leftTop,
 			holdStates[i], this.flipMode(i), speedNorms[i], shellHover[i],
 			gui.phaseNorms[i], sparkDirs[i], skipHover[i], skipFlash[i],
-			scatterOn[i], rimHover[i], \night);
+			struckOn[i], rimHover[i], \night);
 	}
 
 	prDrawBird { |i|

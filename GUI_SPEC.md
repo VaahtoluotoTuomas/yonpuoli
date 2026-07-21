@@ -455,7 +455,7 @@ meters:
 |---|---|---|---|
 | G1 | `/cq_aura` | 16 source magnitudes (lagged \|amp\|, canonical source order) | jack glow, cable pulse, root/castle/body glow |
 | G2 | `/cq_phase` | coco read-head position 0..1 **and the read direction as an audio-rate mean** (`Lag.ar(dir, 0.15)`), replyID 1/2 (landed 2026-07-21 as its own message at **5 Hz** on purpose: the send rate is the two shells' repaint ceiling — §10, one shell repaint ≈ 30 Pen calls, so 15 Hz would spend the whole ~3 % GUI budget on two dots). The direction is a *mean*, not a sample, because a flip banana can reverse the loop far faster than 5 Hz can sample it: ±1 = settled, near 0 = shuttling. Deriving direction client-side from consecutive positions aliased and was replaced | the spiral spark, the comet's tail and the mouth chevron |
-| G2 | `/cq_charge` | the 9 gate/trig destination sums (post-weight, pre-Schmitt); landed 2026-07-21 as **three 15 Hz blocks** sent by the synths that already compute those sums — coco 1 (replyID 1) and coco 2 (replyID 2) report their own flip/skip pair, the quantussy (replyID 3) all five spesal sums. Each sum is **peak-held at audio rate** (instant rise, 0.15 s fall) before `A2K`, because a trigger crossing can last a single sample and a plain control-rate sample would miss it; the fall is also §16.8's fired bloom. No second copy of the sums exists in the graph, so a lamp can never disagree with its Schmitt | charge lamps — the answer to "why is my flip banana silent" — and, for `cocoN_skip`, the comet's scatter regime (§16.6) |
+| G2 | `/cq_charge` | the 9 gate/trig destination sums (post-weight, pre-Schmitt); landed 2026-07-21 as **three 15 Hz blocks** sent by the synths that already compute those sums — coco 1 (replyID 1) and coco 2 (replyID 2) report their own flip/skip pair, the quantussy (replyID 3) all five spesal sums. Each sum is **peak-held at audio rate** (instant rise, 0.15 s fall) before `A2K`, because a trigger crossing can last a single sample and a plain control-rate sample would miss it; the fall is also §16.8's fired bloom. No second copy of the sums exists in the graph, so a lamp can never disagree with its Schmitt | charge lamps — the answer to "why is my flip banana silent" — and, for `cocoN_skip`, the read head's struck mark (§16.6) |
 
 `/cq_charge` canonical channel order = the matrix destination order filtered
 to gates/trigs, nine channels: `coco1_flip, coco1_skip, coco2_flip,
@@ -825,12 +825,16 @@ belongs to **events** alone — the read head, fired lamps — while settings ar
 drawn in line ink. The comet has a third state of its own, by the same regime
 law as the chevron: while the `cocoN_skip` charge is still lit on two
 consecutive `/cq_phase` frames — i.e. the loop is being restarted faster than
-5 Hz can show — the comet stops pretending to be a point and draws the reach
-it actually manages out of the eye as a short smear along the spiral (spark at
-40 %, the bead still at the last sampled address). A bead crawling near zero
-would otherwise read as "almost stopped", the exact opposite of the truth.
-No new telemetry and no client-side timer: the server's 0.15 s peak-hold on
-the charge already says it. Flip reverses comet and chevron.
+5 Hz can show — the head is **struck**, and wears the §16.5 spark glyph (Ø 10,
+spark at 75 %) instead of its tail. A bead crawling near zero would otherwise
+read as "almost stopped", the exact opposite of the truth, and a direction
+means nothing under hammering. No new telemetry and no client-side timer: the
+server's 0.15 s peak-hold on the charge already says it. **The struck mark is
+a state, never an extent** (2026-07-22, second attempt): the first version
+drew the reach the head manages out of the eye, and that reach collapses to
+sub-pixel exactly when the regime is clearest — a mark that disappears when it
+is most needed. Any regime display owes this: measure the *condition*, not a
+quantity the condition destroys. Flip reverses comet and chevron.
 **Hold**: the outermost turn
 closes into a full circle and tints danger-red at 60 % — the loop is sealed;
 the **heart** at the spiral's innermost eye (small Ø ≈ 5 mark, red while

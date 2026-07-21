@@ -384,10 +384,16 @@ coco-ulostulosta ja lintujen flutter.
      line-musteella. Vanha helmi oli 0,2 px komeettaa isompi ja samanvärinen —
      ei ero, jota käsi voi käyttää. Spark-muste varattiin tapahtumille.
   3. **Komeetalle kolmas tila**: kun `cocoN_skip`-lataus on palanut kahdella
-     peräkkäisellä `/cq_phase`-kehyksellä, komeetta lakkaa teeskentelemästä
-     pistettä ja piirtää silmästä ulos sen kantaman, jonka se oikeasti ehtii.
-     Sama laki kuin chevronin sukkulointitilalla: näytä regime, älä arvoa.
-     Ei uutta telemetriaa eikä ajastinta — huippupidätetty lataus kertoo sen jo.
+     peräkkäisellä `/cq_phase`-kehyksellä, lukupää on *iskun alla* ja saa
+     hännän tilalle §16.5:n kipinäglyfin. Sama laki kuin chevronin
+     sukkulointitilalla: näytä regime, älä arvoa. Ei uutta telemetriaa eikä
+     ajastinta — huippupidätetty lataus kertoo sen jo.
+     **Toinen yritys** (2026-07-22): ensimmäinen versio piirsi silmästä ulos
+     sen kantaman, jonka pää ehtii, ja käyttäjä ei nähnyt siitä mitään. Syy ei
+     ollut piirrossa vaan suunnittelussa: kantama = nopeus × skipien väli,
+     eli se kutistuu alle pikselin juuri silloin kun regime on selvin. Merkki
+     katosi silloin kun sitä eniten tarvittiin. Yleistettiin `GUI_SPEC.md`
+     §16.6:een: **regime-näyttö mittaa ehtoa, ei suuretta jonka ehto tuhoaa.**
 - [ ] `GUI_SPEC.md` §13:n käyttäjän visuaalinen hyväksyntä G2.9:n korjauksille
   (lohko G2.9b) ja sen jälkeen G2:n kokonaishyväksyntä.
 

@@ -1309,7 +1309,9 @@ CQ.hold(1, 0); CQ.patchPreset(\empty);
 2. **Nopeuden helmi → lovi uran poikki.** Muoto erottaa, ei sävy: asetus
    asteikolla vs. liikkuva kappale. Spark-muste on nyt varattu tapahtumille.
 3. **Komeetalle kolmas tila.** Kun skipiä hakataan nopeammin kuin 5 Hz näyttää,
-   komeetta piirtää silmästä ulos sen kantaman, jonka se ehtii — regime, ei arvo.
+   lukupää on iskun alla ja saa hännän tilalle kipinäglyfin — regime, ei arvo.
+   (Ensimmäinen versio piirsi kantaman silmästä ulos. Se katosi juuri silloin
+   kun sitä tarvittiin, koska kantama kutistuu nollaan kun skip tihenee.)
 
 ```supercollider
 // G2.9b — kolmen ratkaisun tarkistus SILMÄLLÄ. (Ctrl+Shift+L ensin!)
@@ -1332,11 +1334,15 @@ CQ.set(\coco1Speed, 0.3);
 //    paikallaan? Vie osoitin spiraalille — viiva kirkastuu ja lovi pitenee.
 //    Kelaa vedolla: lovi liikkuu sormen mukana kuten ennenkin.
 CQ.patch(\tri5, \coco1_skip, 0.8);
-// 5. KOLMAS TILA: tri5 on audiotaajuinen, joten skip laukeaa satoja kertoja
-//    sekunnissa. Komeetan pitää nyt muuttua sumeaksi kaareksi, joka lähtee
-//    sisäsilmästä ja kertoo kuinka pitkälle luku ehtii — ei enää yksinäiseksi
-//    palloksi, joka näyttää melkein pysähtyneeltä. Vertaa: laske paino 0:aan,
-//    ja komeetan pitää palata pisteeksi seuraavan parin kehyksen sisällä.
+// 5. KOLMAS TILA — huom: koco 1, EI coco 2 (checklistissä on G2.5-lohkossa
+//    lähes samanlainen rivi coco 2:lle; jos ajat sen, merkki syttyy oikein
+//    mutta väärään kuoreen). Lukupään pallo saa nyt ympärilleen
+//    kipinämerkin — saman glyfin kuin suun skip-merkki — ja häntä katoaa:
+//    "tätä lyödään koko ajan". Se ei väitä mitään matkasta, koska matkaa ei
+//    ole: hakattuna pää ei ehdi lähteä silmästä. Vertaa: laske paino 0:aan,
+//    ja pallon pitää palata tavalliseksi komeetaksi hännällä parin kehyksen
+//    sisällä. Varmista tarvittaessa, että regime tunnistuu oikeaan kuoreen:
+CQ.gui.nightMap.struckOn;   // -> [ true, false ] kun coco 1 on hakattavana
 CQ.patch(\tri5, \coco1_skip, 0);
 // 6. Toista kohdat 1 ja 5 coco 2:lle (oikea kuori) — merkit ovat peilikuvia.
 CQ.patchPreset(\empty);

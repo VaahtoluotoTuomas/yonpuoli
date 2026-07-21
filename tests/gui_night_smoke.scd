@@ -335,8 +335,8 @@ abort = { |error|
 															shell.mouseLeaveAction.value(shell);
 															check.value(map.skipHover[0].not,
 																"leaving rests the mark");
-															check.value(map.scatterOn[0].not,
-																"a quiet skip leaves the comet a point");
+															check.value(map.struckOn[0].not,
+																"a quiet skip leaves the comet a plain point");
 															gui.prPhaseFrame(1, 0.64);
 															check.value(map.sparkDirs[0] == 1,
 																"a forward frame turns the comet's tail forward");
@@ -384,16 +384,21 @@ abort = { |error|
 															// would read as "almost stopped" — the opposite
 															// of the truth. The peak-held skip charge says so
 															// already, so no new telemetry and no timer.
+															// The mark is STATE, not extent: the reach out of
+															// the eye collapses to nothing exactly when the
+															// regime is clearest (G2 gate, 2026-07-22).
 															gui.prChargeFrame(1, [0.62, 1.0]);
 															gui.prPhaseFrame(1, 0.04);
-															check.value(map.scatterOn[0].not,
+															check.value(map.struckOn[0].not,
 																"one lit frame is a skip, not yet a regime");
 															gui.prPhaseFrame(1, 0.03);
-															check.value(map.scatterOn[0],
-																"two lit frames running scatter the comet");
+															check.value(map.struckOn[0],
+																"two lit frames running mark the head struck");
+															check.value(map.struckOn[1].not,
+																"the other shell's head is left alone");
 															gui.prChargeFrame(1, [0.62, 0]);
 															gui.prPhaseFrame(1, 0.5);
-															check.value(map.scatterOn[0].not,
+															check.value(map.struckOn[0].not,
 																"a released skip returns the comet to a point");
 															// ---- the chevron reads the real travel ----
 															// \cqCoco takes max(param, matrix gate), so a
