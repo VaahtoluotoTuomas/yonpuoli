@@ -1353,6 +1353,12 @@ CQ.set(\qFreq, 6);     // hidas hakkaus: kevyt nelisakarainen merkki
 CQ.set(\qFreq, 400);   // audiotaajuinen: raskas kahdeksansakarainen
 CQ.gui.phaseSkipHz;    // sama luku Hz:nä, jos haluat nähdä sen numerona
 CQ.set(\qFreq, 6);
+// 5c. TUIKE: merkin pitää tuikkia koko ajan kun tila on päällä — sakarat
+//    lyhenevät ja himmenevät joka telemetriakehyksellä (5 Hz), ja nopeilla
+//    taajuuksilla sakaraparit vaihtavat painotusta, jolloin tähti tuikkii
+//    eikä vain syki. Tuike EI ole liipaisunopeus vaan merkki siitä, että tila
+//    on elossa. Tarkista myös se, mitä se lupaa: pysäytä serveri (CQ.free) —
+//    merkin pitää jähmettyä, ei jäädä tuikkimaan omin päin.
 CQ.patch(\tri5, \coco1_skip, 0);
 // 6. Toista kohdat 1 ja 5 coco 2:lle (oikea kuori) — merkit ovat peilikuvia.
 CQ.patchPreset(\empty);

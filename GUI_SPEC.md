@@ -849,8 +849,18 @@ past the midpoint, alpha 0.55 → 0.9, on a **logarithmic** 8 Hz → 2 kHz scale
 to the eight steps the drawing can distinguish so a drifting rate cannot
 repaint the shell for a difference nobody can see. The rate rides `/cq_phase`
 as a third value rather than opening a fourth stream (§15 leaves message
-merging free; §10 counts messages and Pen calls, not floats). Flip reverses
-comet and chevron.
+merging free; §10 counts messages and Pen calls, not floats).
+
+The struck mark **twinkles**, alternating on every telemetry frame — §16.9's
+whitelisted read-head spark, ambient at the telemetry rate: the arms shorten
+to 74 % and dim to 78 %, and past the rate's midpoint the two pairs trade
+emphasis so the star scintillates rather than merely pulses. This says *the
+state is live*, which weight alone cannot — a heavy static star and a heavy
+frozen one look identical. It is driven **by the frames, never by a clock of
+its own**, so a stalled server freezes the mark instead of animating a claim
+about liveness it can no longer make: §9's "no telemetry is not zero", in
+motion. It is not the trigger rate and never claims to be. Flip reverses comet
+and chevron.
 **Hold**: the outermost turn
 closes into a full circle and tints danger-red at 60 % — the loop is sealed;
 the **heart** at the spiral's innermost eye (small Ø ≈ 5 mark, red while
@@ -994,6 +1004,16 @@ Easing: linear or single-pole decay only — no bounces, no overshoot. The one
 comedy allowed is the damped cable wobble on plant. Ambient motion whitelist:
 aura breathing, ring fireflies, read-head sparks, deck flutter — all of them
 information. Nothing else moves uninvited.
+
+Every ambient motion is driven **by the telemetry frames themselves, never by
+a clock of its own** (made explicit 2026-07-22 with the struck read head).
+A mark that animates on its own timer keeps promising liveness after the
+server has stopped speaking, which is exactly what §9 forbids in stillness.
+This also fixes what any ambient motion may mean: it can say *this is live*,
+and it can carry a quantity slow enough for the eye to integrate — but it can
+never carry a rate the frames cannot resolve. Above roughly 10 Hz a rate is
+drawn as weight (§16.6's struck mark), because the fastest blink this surface
+could draw would be slower than the truth.
 
 ### 16.10 Space & scale
 

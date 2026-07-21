@@ -405,6 +405,14 @@ coco-ulostulosta ja lintujen flutter.
      kolmantena arvona (§15 sallii viestien yhdistämisen; §10 laskee viestejä
      ja Pen-kutsuja, ei liukulukuja). Laki `GUI_SPEC.md` §16.6:een:
      **liike kantaa vain sen suureen, jonka silmä ehtii integroida.**
+     **Neljäs kierros** (2026-07-22, käyttäjän pyyntö): merkki **tuikkii**
+     joka telemetriakehyksellä, jotta tilan näkee olevan *päällä* — sakarat
+     lyhenevät 74 %:iin ja himmenevät, ja nopeuden puolivälin jälkeen parit
+     vaihtavat painotusta, jolloin tähti tuikkii eikä vain sykähtele. Tämä on
+     §16.9:n valkoisella listalla oleva read-head spark. Olennaista:
+     **kehykset ajavat tuiketta, ei oma kello** — pysähtynyt serveri jähmettää
+     merkin sen sijaan että se animoisi väitettä elossaolosta. Kirjattu
+     §16.9:ään yleisenä lakina kaikelle ambient-liikkeelle.
 - [ ] `GUI_SPEC.md` §13:n käyttäjän visuaalinen hyväksyntä G2.9:n korjauksille
   (lohko G2.9b) ja sen jälkeen G2:n kokonaishyväksyntä.
 

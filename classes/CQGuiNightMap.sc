@@ -17,7 +17,7 @@ CQGuiNightMap {
 	var <eyeFreqNorm = 0.5, <eyeChaosNorm = 0.15;
 	var <speedNorms, <shellHover, <dialHover, <bodyHover, <rimHover, <ringHover = false;
 	var <sparkDirs, <skipHover, <skipFlash, sparkPainted, flipPainted;
-	var struckCount, <struckOn, <struckNorms;
+	var struckCount, <struckOn, <struckNorms, <struckBlink;
 	var <fireflyPhase = 0.0, lastFireflyTime, castlePainted;
 	var <holdStates, <flipStates, <rangeLetters, <sproutState;
 	var freed = false;
@@ -152,6 +152,16 @@ CQGuiNightMap {
 		if(struck and: { rate != struckNorms[i] }) {
 			struckNorms[i] = rate;
 			repaint = true;
+		};
+		// and the mark twinkles once per frame while the state is in force —
+		// §16.9's read-head spark, ambient at the telemetry rate. The frames
+		// drive it, so a stalled server freezes the mark rather than animating
+		// a claim about liveness it can no longer make (§9's law, in motion)
+		if(struck) {
+			struckBlink[i] = struckBlink[i].not;
+			repaint = true;
+		} {
+			struckBlink[i] = false;
 		};
 		// the tail shares the chevron's one truth wherever the server reports a
 		// settled direction; the wrap-aware travel stays the fallback
@@ -289,6 +299,7 @@ CQGuiNightMap {
 		struckCount = [0, 0];
 		struckOn = [false, false];
 		struckNorms = [0, 0];
+		struckBlink = [false, false];
 		sparkPainted = Array.newClear(2);
 		flipPainted = Array.newClear(2);
 		rangeLetters = ["", "", "", "", ""];
@@ -717,7 +728,8 @@ CQGuiNightMap {
 		CQInkNight.drawShell(coco, coco[\shellBox].leftTop,
 			holdStates[i], this.flipMode(i), speedNorms[i], shellHover[i],
 			gui.phaseNorms[i], sparkDirs[i], skipHover[i], skipFlash[i],
-			struckOn[i], struckNorms[i], rimHover[i], \night);
+			if(struckOn[i]) { struckNorms[i] }, struckBlink[i],
+			rimHover[i], \night);
 	}
 
 	prDrawBird { |i|

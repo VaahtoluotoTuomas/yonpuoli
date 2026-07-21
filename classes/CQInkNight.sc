@@ -122,7 +122,7 @@ CQInkNight {
 	// since the G2 gate; the hand's skip lives on the mouth's own mark.
 	*drawShell { |coco, origin, holdOn = false, flipMode = \forward,
 		speedNorm = 0.5, hover = false, sparkNorm, sparkDir = 1,
-		skipHover = false, skipFlash = false, struck = false, struckNorm = 0,
+		skipHover = false, skipFlash = false, struckNorm, struckTwinkle = false,
 		rimHover = false, skin = \night|
 		var palette = CQInk.palette(skin), notch, normal, reach, spark, tail;
 		Pen.translate(origin.x.neg, origin.y.neg);
@@ -185,8 +185,10 @@ CQInkNight {
 		// the read head, drawn last so the moving comet passes over the notch
 		sparkNorm !? {
 			spark = CQNightGeometry.spiralPoint(coco, sparkNorm);
-			if(struck) {
-				this.drawStruck(spark, struckNorm, skin);
+			// struckNorm is nil unless the head is being hammered — the same
+			// nil-or-value idiom the whole night uses for "state not in force"
+			if(struckNorm.notNil) {
+				this.drawStruck(spark, struckNorm, struckTwinkle, skin);
 			} {
 				tail = CQNightGeometry.spiralPoint(coco,
 					(sparkNorm - (sparkDir.sign * 0.01)).clip(0, 1));
@@ -215,16 +217,27 @@ CQInkNight {
 	// rate we invented, slower than the truth and decorative besides (§16.12).
 	// A tachometer, not a strobe: the arms grow with the rate and a second,
 	// diagonal pair opens past the midpoint. Four Pen lines, one stroke.
-	*drawStruck { |center, rateNorm = 0, skin = \night|
+	// The mark also **twinkles**, alternating on every telemetry frame (§16.9's
+	// read-head spark, ambient at the telemetry rate). That says "this state is
+	// live", which the rate's weight alone cannot: a heavy static star and a
+	// heavy frozen one look the same. It is driven BY the frames rather than by
+	// a clock of its own, so a stalled server freezes the mark instead of
+	// animating a lie about liveness — the moving version of §9's law that no
+	// telemetry is not zero. It is not the trigger rate and never claims to be.
+	*drawStruck { |center, rateNorm = 0, twinkle = false, skin = \night|
 		var palette = CQInk.palette(skin);
 		var norm = (rateNorm ? 0).clip(0, 1);
 		var reach = 4 + (6 * norm);
-		Pen.strokeColor = palette[\spark].copy.alpha_(0.55 + (0.35 * norm));
+		var cross = reach * if(twinkle) { 0.74 } { 1.0 };
+		Pen.strokeColor = palette[\spark].copy.alpha_(
+			(0.55 + (0.35 * norm)) * if(twinkle) { 0.78 } { 1.0 });
 		Pen.width = CQInk.strokes[\normal];
-		Pen.line(center + Point(reach.neg, 0), center + Point(reach, 0));
-		Pen.line(center + Point(0, reach.neg), center + Point(0, reach));
+		Pen.line(center + Point(cross.neg, 0), center + Point(cross, 0));
+		Pen.line(center + Point(0, cross.neg), center + Point(0, cross));
 		if(norm > 0.5) {
-			var diagonal = reach * 0.7;
+			// past the midpoint the two pairs trade emphasis instead of merely
+			// pulsing: the star scintillates, which reads as alive at a glance
+			var diagonal = reach * 0.7 * if(twinkle) { 1.0 } { 0.72 };
 			Pen.line(center + Point(diagonal.neg, diagonal.neg),
 				center + Point(diagonal, diagonal));
 			Pen.line(center + Point(diagonal, diagonal.neg),

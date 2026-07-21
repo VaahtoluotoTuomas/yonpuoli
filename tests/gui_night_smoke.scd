@@ -174,7 +174,7 @@ abort = { |error|
 															var speedBefore, freqBefore, chaosBefore;
 															var samples, cablePoint, cableRecord;
 															var castleTwo, castleView, dialPoint;
-															var sparkPoint, holdBefore, flipBefore;
+															var sparkPoint, holdBefore, flipBefore, blinkBefore;
 															shell = map.shellViews[0];
 															coco = map.geometry[\cocos][0];
 															crescent = map.crescentViews[\coco1Spaf];
@@ -403,10 +403,20 @@ abort = { |error|
 															gui.prPhaseFrame(1, 0.03, 1, 1500);
 															check.value(map.struckNorms[0] > 0.9,
 																"an audio-rate hammering wears the heaviest mark");
+															// the twinkle rides the frames, so a stalled
+															// server freezes the mark instead of lying
+															blinkBefore = map.struckBlink[0];
+															gui.prPhaseFrame(1, 0.03, 1, 1500);
+															check.value(map.struckBlink[0] != blinkBefore,
+																"every telemetry frame twinkles the struck mark");
+															gui.prPhaseFrame(1, 0.03, 1, 1500);
+															check.value(map.struckBlink[0] == blinkBefore,
+																"the twinkle alternates, it does not drift");
 															gui.prChargeFrame(1, [0.62, 0]);
 															gui.prPhaseFrame(1, 0.5, 1, 0);
-															check.value(map.struckOn[0].not,
-																"a released skip returns the comet to a point");
+															check.value(map.struckOn[0].not
+																and: { map.struckBlink[0].not },
+																"a released skip returns the comet to a still point");
 															// ---- the chevron reads the real travel ----
 															// \cqCoco takes max(param, matrix gate), so a
 															// patched flip reverses the loop without ever
