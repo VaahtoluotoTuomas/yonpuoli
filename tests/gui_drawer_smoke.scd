@@ -112,8 +112,8 @@ CQInkControl.resetDrawErrors;
 							check.value(gui.shell.drawerButton.label == "drawer"
 								and: { gui.shell.drawerButton.view.mouseDownAction.notNil },
 								"toolbar action keeps the stable global Drawer name");
-							check.value(drawer.memoryGui.seedList.items.first == "live patch · now",
-								"Memory seed bank always exposes the live patch as its first seed");
+							check.value(drawer.memoryGui.snapshotList.items.first == "live patch · now",
+								"Memory always exposes the live patch above the saved snapshots");
 							check.value(drawer.memoryGui.fingerprint.bounds.width == 840
 								and: { drawer.memoryGui.fingerprint.bounds.height == 300 },
 								"Memory gives the live/selected patch a substantial fingerprint");

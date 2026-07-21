@@ -759,7 +759,10 @@ CQ.boot;
 
 - [x] G1 Drawer behavior/touch 1–5 hyväksytty (2026-07-20; `cable opacity`: ei tarvita)
 - [x] G1 Drawer workbench + patch loom -kokeilu 6 hyväksytty (2026-07-20)
-- [ ] G1 Drawer toolbar/alignment/Spellbook/seed-bank-viimeistely 7 hyväksytty (pvm: ____)
-- [ ] G1 muistisanasto 8 tarkistettu (pvm: ____)
-- [ ] G1 Qt-jäätymisregressio 9 tarkistettu (pvm: ____)
+- [x] G1 Drawer toolbar/alignment/Spellbook/seed-bank-viimeistely 7 hyväksytty
+      (2026-07-21)
+- [ ] G1 muistisanasto 8 tarkistettu (pvm: ____ — sanat vaihtuivat päätöksen
+      jälkeen; silmäile Memory-sivu seuraavalla käynnistyksellä)
+- [x] G1 Qt-jäätymisregressio 9 tarkistettu (2026-07-21; Tab hiiri Coco 1:n
+      päällä ei enää jäädytä ikkunaa)
 - [ ] G1 Drawer myöhempi soitettavuus- ja kuunteluportti hyväksytty (pvm: ____)

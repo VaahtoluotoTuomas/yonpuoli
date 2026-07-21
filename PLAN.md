@@ -147,20 +147,24 @@ Serveritön visuaaliharness on
 `tests/gui_drawer_preview.scd`. Hyväksytyn ytimen jälkeinen viimeistelyprototyyppi siirtää
 aina `drawer`-nimisen tabin Nightin viereen, linjaa Inspectorin kaikki tiedot 1128 px
 loom-railiin, korjaa Spellbookin Qt-rivivärit ja korvaa tyhjän Memory-lomakkeen seed
-bankilla. Tämä viimeistelykierros odottaa vielä käyttäjän visuaalista katselmointia.
+bankilla.
 
-Viimeistelykierros commitoitiin `7eadd6f`. Sen jälkeen käyttäjä hyväksyi 2026-07-21
-kaksi asiaa. **Muistisanasto:** soittimessa on täsmälleen kaksi muistisanaa —
+Viimeistelykierros hyväksyttiin visuaalisesti 2026-07-21 (manuaalitesti 7) ja
+commitoitiin `7eadd6f`. Samalla käyttäjä hyväksyi kaksi asiaa. **Muistisanasto:** soittimessa on täsmälleen kaksi muistisanaa —
 *preset* on koodissa elävä patch-resepti (painot + ne nupit, joita ilman banaanit ovat
 kuuroja) ja *snapshot* on levylle tallennettu soittimen tila. Memory-sivu saa käyttää
 "seed bank" -metaforaa otsikkonaan, mutta sen kohteet ovat snapshotteja; GUI:n
 kolmas sana poistettiin. **Qt-jäätymiskorjaus:** näkymän piilotus hiiren osoittimen
 alta lukitsi koko ikkunan (Tab Day-paneelin päällä), koska Qt kutsui kieltä samalla
 kun kielisäie odotti Qt:ta. Day/Night- ja Drawer-vaihdot menevät nyt jonoon
-(`CQGuiShell.prSwapStage`), ja shell state on synkroninen totuus.
+(`CQGuiShell.prSwapStage`), ja shell state on synkroninen totuus. Korjaus
+todennettiin manuaalitestillä 9 sekä ajamalla GUI-smoket osoitin ikkunan päällä —
+juuri se tila, joka ennen jumitti joka kerta.
 
-G1 ei silti ole valmis: Drawerin viimeistelypalaute, soitettavuuskoe, `/cq_aura` ja lopullinen
-skaalaus-, kuuntelu- ja resurssiportti puuttuvat.
+Drawerin rakennustyö on tämän jälkeen valmis: Inspector, Spellbook ja Memory ovat
+visuaalisesti hyväksyttyjä eikä avoimia Drawer-suunnittelupäätöksiä ole. G1 ei silti
+ole valmis: `/cq_aura`, koko G1:n soitettavuus- ja kuunteluportti sekä
+100/125/150 % skaalaus- ja resurssitarkastus puuttuvat.
 
 - [x] Yksi Day/Night-ikkunakuori, pysyvä Master-strip ja Drawer vähintään 1280×720:ssa.
 - [x] Yhteinen Ink kit: normatiivinen paletti, viiva, glyphit ja session-seedattu
@@ -169,10 +173,10 @@ skaalaus-, kuuntelu- ja resurssiportti puuttuvat.
 - [x] Hit-safe cable overlay ja koko yhteinen banana grammar: audition, WYHIWYG plant,
   move, rip, harvest-lasso (§4.4), wheel, polarity, solo-light, Esc ja 32 operaation
   Ctrl+Z.
-- [ ] Drawer: Inspector, notification-streamiin perustuva Spellbook ja snapshot/morph
-  Memory. Behavior/touch-testit 1–5 ovat hyväksyttyjä ja `cable opacity` on päätetty
-  jättää pois; workbench + patch loom -ydin on hyväksytty. Toolbar/linjaus/Spellbook/
-  seed-bank-viimeistelyn visuaalinen katselmointi ja myöhempi soitettavuuskoe puuttuvat.
+- [x] Drawer: Inspector, notification-streamiin perustuva Spellbook ja snapshot/morph
+  Memory. Manuaalitestit 1–7 ja 9 hyväksytty (2026-07-21); `cable opacity` päätetty
+  jättää pois. Drawerin oma soitettavuus- ja kuuntelukoe ajetaan osana alla olevaa
+  G1:n yhteistä §13-porttia, ei erillisenä Drawer-gattina.
 - [ ] `/cq_aura`: 16 kanonista source-magnitudea noin 15 Hz; ambient redraw enintään
   15 Hz ja GUI CPU noin enintään 3 %.
 - [ ] `GUI_SPEC.md` §13:n automaatio, kuuntelu ja käyttäjän visuaalinen hyväksyntä.
@@ -257,16 +261,16 @@ Night map ja Weather Machine — tehdään seuraavalla tavalla:
 ## Seuraavan toteutussession ensimmäiset askeleet
 
 1. Varmista `archipelago`-haara, puhdas työpuu ja lue `CLAUDE.md`, `PLAN.md` sekä
-   `GUI_SPEC.md` kokonaan. F0–F2, hyväksytty Day/Ink-layout ja banana grammar +
-   audition ovat valmiit; älä toista niitä.
-2. Avaa `tests/gui_drawer_preview.scd` ja katselmoi hyväksytyn workbench + patch loom
-   -ytimen viimeistely: vakaa `drawer` Nightin vieressä, 1128 px Inspector-raili,
-   leikkaamaton footer, lähempänä loom-kenttää olevat ryhmäotsikot, luettava Spellbook
-   sekä Memory seed bankin live-patch-sormenjälki. Behavior 1–6 ja päätös
-   "ei `cable opacitya`" ovat jo hyväksyttyjä. Saved-seed recall/morph katselmoidaan
-   bootatun soittimen kanssa; aura ja varsinainen soitettavuuskoe eivät kuulu tähän
-   staattiseen katselmukseen.
-3. Jatka hyväksytyn Drawerin jälkeen `/cq_aura`-telemetriaan ja G1:n lopulliseen porttiin.
+   `GUI_SPEC.md` kokonaan. F0–F2, hyväksytty Day/Ink-layout, banana grammar +
+   audition ja koko Drawer ovat valmiit; älä toista niitä.
+2. Toteuta `/cq_aura` (GUI_SPEC §9): 16 kanonista source-magnitudia noin 15 Hz
+   yhtenä ehdottomana control-rate SendReplynä, kuten olemassa olevat meterit.
+   Kieli lukee sen namespacoidulla OSCdefillä; ambient redraw ≤ 15 Hz ja GUI CPU
+   ≈ ≤ 3 % (§10/§11). Aura ruokkii jack glow'n, kaapelipulssin ja body glow'n —
+   ei mitään muuta liikettä. NRT-turvakynnykset eivät muutu.
+3. Aja G1:n lopullinen §13-portti: neljä markkeria, GUI-smoket, kuuntelugate
+   (istuta `tri3 → coco1_spaf` korvalla, siirrä, rippaa, wheel-trimmaa,
+   lasso-harvestaa ja peru), 100/125/150 % skaalaustarkastus ja CPU/resurssisoak.
 4. Pysähdy jokaisen ensimmäisen ajettavan GUI-osan kohdalla yllä olevaan visuaaliseen
    välitarkastukseen. Älä aloita varsinaista G2 Night mapia ennen valmista G1-porttia.
 

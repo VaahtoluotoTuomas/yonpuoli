@@ -4,16 +4,17 @@
 //
 // Naming law (GUI_SPEC §8): "seed bank" names the page metaphor, but every item
 // in it is a *snapshot* — the instrument has exactly two memory words, presets
-// (patch recipes in code) and snapshots (saved instrument state on disk).
-// The seed* identifiers below are page-local, never user-visible vocabulary.
+// (patch recipes in code) and snapshots (saved instrument state on disk). The
+// word seed appears in exactly one place, the page header; labels, hints and
+// identifiers all say snapshot.
 
 CQGuiMemory {
 	classvar contentW = 1128, fingerprintW = 840, fingerprintH = 300;
 
 	var gui, state, matrix, snapshots, matrixCtl, morphCtl;
-	var skin = \day, seedNames, selectedData, labels, menus, panels;
+	var skin = \day, snapshotNames, selectedData, labels, menus, panels;
 	var nameField, aMenu, bMenu, durationBox, detailTitle, detailHint;
-	var <view, <seedList, <fingerprint, <morphMeter, <selectedName;
+	var <view, <snapshotList, <fingerprint, <morphMeter, <selectedName;
 
 	*new { |gui, state, matrix, snapshots|
 		^super.newCopyArgs(gui, state, matrix, snapshots).prBuild
@@ -36,10 +37,10 @@ CQGuiMemory {
 		view.background = palette[\recess];
 		panels.do { |panel| panel.background = palette[\recess]; panel.refresh };
 		labels.do { |label| label.stringColor = palette[\whisper] };
-		seedList.background = palette[\ground];
-		seedList.stringColor = palette[\line];
-		seedList.selectedStringColor = palette[\line];
-		seedList.hiliteColor = palette[\spaf].copy.alpha_(0.28);
+		snapshotList.background = palette[\ground];
+		snapshotList.stringColor = palette[\line];
+		snapshotList.selectedStringColor = palette[\line];
+		snapshotList.hiliteColor = palette[\spaf].copy.alpha_(0.28);
 		menus.do { |menu|
 			menu.background = palette[\ground];
 			menu.stringColor = palette[\line];
@@ -57,20 +58,22 @@ CQGuiMemory {
 
 	refresh {
 		var index;
-		seedNames = if(snapshots.isNil) { [] } { snapshots.list };
-		seedList.items = ["live patch · now"] ++ seedNames;
-		menus.do { |menu| menu.items = seedNames };
-		index = if(selectedName.isNil) { 0 } { seedNames.indexOf(selectedName.asString) };
+		snapshotNames = if(snapshots.isNil) { [] } { snapshots.list };
+		snapshotList.items = ["live patch · now"] ++ snapshotNames;
+		menus.do { |menu| menu.items = snapshotNames };
+		index = if(selectedName.isNil) { 0 } {
+			snapshotNames.indexOf(selectedName.asString)
+		};
 		if(index.isNil) { selectedName = nil; index = 0 } { index = index + 1 };
-		seedList.value = index;
-		this.prSelectSeed;
+		snapshotList.value = index;
+		this.prSelectSnapshot;
 		^this
 	}
 
 	// ---- private ----
 
 	prBuild {
-		var palette = CQInk.palette(\day), seedPanel, morphPanel, header, body;
+		var palette = CQInk.palette(\day), snapshotPanel, morphPanel, header, body;
 		var saveButton, recallButton, refreshButton, morphButton;
 		labels = List.new;
 		menus = List.new;
@@ -81,25 +84,25 @@ CQGuiMemory {
 		nameField = TextField().string_("snapshot").font_(CQInk.font(\number))
 			.stringColor_(palette[\line]).background_(palette[\ground])
 			.fixedSize_(Size(154, 24)).action_({ |field| field.focus(false) });
-		seedList = ListView().selectionMode_(\single).font_(CQInk.font(\spellbook))
+		snapshotList = ListView().selectionMode_(\single).font_(CQInk.font(\spellbook))
 			.stringColor_(palette[\line]).selectedStringColor_(palette[\line])
 			.hiliteColor_(palette[\spaf].copy.alpha_(0.28))
 			.background_(palette[\ground]).fixedSize_(Size(266, 194));
-		seedList.action = { this.prSelectSeed };
-		seedList.selectionAction = { this.prSelectSeed };
+		snapshotList.action = { this.prSelectSnapshot };
+		snapshotList.selectionAction = { this.prSelectSnapshot };
 		saveButton = this.prButton("save snapshot", 104, \line, { this.prSave });
 		recallButton = this.prButton("recall", 66, \line, { this.prRecall });
 		refreshButton = this.prButton("refresh", 66, \line, { this.refresh });
 
-		seedPanel = UserView().fixedSize_(Size(280, fingerprintH))
+		snapshotPanel = UserView().fixedSize_(Size(280, fingerprintH))
 			.background_(palette[\recess]);
-		seedPanel.drawFunc = {
-			CQInk.drawToolBox(seedPanel.bounds.moveTo(0, 0), "saved snapshots", skin)
+		snapshotPanel.drawFunc = {
+			CQInk.drawToolBox(snapshotPanel.bounds.moveTo(0, 0), "saved snapshots", skin)
 		};
-		seedPanel.layout = VLayout(
+		snapshotPanel.layout = VLayout(
 			View().fixedHeight_(18),
 			HLayout(nameField, saveButton).spacing_(6),
-			seedList,
+			snapshotList,
 			HLayout(recallButton, refreshButton, nil).spacing_(6)
 		).margins_(7).spacing_(6);
 
@@ -116,7 +119,7 @@ CQGuiMemory {
 		).margins_(0).spacing_(0);
 
 		body = View().fixedSize_(Size(contentW, fingerprintH)).layout_(
-			HLayout(seedPanel, fingerprint).margins_(0).spacing_(8));
+			HLayout(snapshotPanel, fingerprint).margins_(0).spacing_(8));
 
 		aMenu = this.prMenu;
 		bMenu = this.prMenu;
@@ -143,7 +146,7 @@ CQGuiMemory {
 				nil, morphMeter).spacing_(6)
 		).margins_(7).spacing_(4);
 
-		panels = [seedPanel, fingerprint, morphPanel, morphMeter];
+		panels = [snapshotPanel, fingerprint, morphPanel, morphMeter];
 		view = View().background_(palette[\recess]).layout_(VLayout(
 			HLayout(nil, header, nil),
 			HLayout(nil, body, nil),
@@ -185,15 +188,15 @@ CQGuiMemory {
 		^button.view
 	}
 
-	prSelectSeed {
-		var index = seedList.value ? 0;
+	prSelectSnapshot {
+		var index = snapshotList.value ? 0;
 		if(index <= 0) {
 			selectedName = nil;
 			selectedData = nil;
 			detailTitle.string = "live patch · now";
 			detailHint.string = "select a saved snapshot to compare it with the live patch";
 		} {
-			selectedName = seedNames.at(index - 1);
+			selectedName = snapshotNames.at(index - 1);
 			selectedData = snapshots !? { snapshots.read(selectedName.asSymbol) };
 			detailTitle.string = selectedName.asString;
 			detailHint.string = "outlined knots differ from the live patch";
