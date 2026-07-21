@@ -366,6 +366,36 @@ abort = { |error|
 															check.value(map.birdViews.every { |bird|
 																bird.canReceiveDragHandler.notNil
 															}, "both birds accept the file drop");
+															// ---- §16.7: the hovered bird wears the border ----
+															check.value(gui.dropTarget.isNil,
+																"no drag, no dashed border anywhere");
+															View.prSetCurrentDrag("amen.wav");
+															map.birdViews[0].canReceiveDragHandler
+																.value(map.birdViews[0]);
+															check.value(gui.dropTargetIs(
+																CQGuiNightMap.dropTargetName(\deckA)),
+																"a hovering file marks the bird under it");
+															map.birdViews[1].canReceiveDragHandler
+																.value(map.birdViews[1]);
+															check.value(gui.dropTargetIs(
+																CQGuiNightMap.dropTargetName(\deckB))
+																and: { gui.dropTargetIs(CQGuiNightMap
+																	.dropTargetName(\deckA)).not },
+																"only ever one target is marked");
+															gui.dropTargetClear;
+															map.endpoints[\deckA_rate][\view]
+																.canReceiveDragHandler.value;
+															check.value(gui.dropTargetIs(
+																CQGuiNightMap.dropTargetName(\deckA)),
+																"the wing socket marks the bird, not itself");
+															map.birdViews[0].receiveDragHandler.value;
+															check.value(gui.dropTarget.isNil,
+																"the drop clears the border at once");
+															View.prClearCurrentDrag;
+															map.birdViews[0].canReceiveDragHandler
+																.value(map.birdViews[0]);
+															check.value(gui.dropTarget.isNil,
+																"something that is not a file marks nothing");
 															// ---- §9 charge lamps ----
 															check.value(gui.chargeFor(\coco1_flip).isNil,
 																"before telemetry a lamp has no charge to draw");

@@ -140,6 +140,27 @@ CQGuiVisualContractTest : UnitTest {
 			"before layout the box has no width and nothing is cut away");
 	}
 
+	// §16.7's dashed border is one law with two homes. Day and Night must name
+	// their targets apart, because one CQGui holds the mark for both skins and
+	// a collision would light the wrong box on the stage you cannot see.
+	test_bothSkinsNameTheirDropTargetsApart {
+		#[deckA, deckB].do { |which|
+			var day = CQGuiPanels.dropTargetName(which);
+			var night = CQGuiNightMap.dropTargetName(which);
+			this.assert(day.isKindOf(Symbol) and: { night.isKindOf(Symbol) },
+				"% names its drop targets with Symbols".format(which));
+			this.assert(day != night,
+				"Day's % box and the night's % bird are distinct targets"
+					.format(which, which));
+		};
+		this.assert(CQGuiPanels.dropTargetName(\deckA)
+			!= CQGuiPanels.dropTargetName(\deckB),
+			"the two Day deck boxes are distinct targets");
+		this.assert(CQGuiNightMap.dropTargetName(\deckA)
+			!= CQGuiNightMap.dropTargetName(\deckB),
+			"the two birds are distinct targets");
+	}
+
 	test_cableAlphaPulsesWithSourceAuraOnly {
 		this.assertEquals(CQGuiCableOverlay.plantedAlpha(nil), 0.88,
 			"no telemetry leaves the planted cable at its reviewed static alpha");

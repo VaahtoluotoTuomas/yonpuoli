@@ -12,11 +12,10 @@ koska §13:n scopesta puuttuu vielä kaksi rakentamatonta osaa: deck-bird
 drag-over-korostus ja Night toolbar. Ne ovat seuraavat askeleet, ja vasta niiden
 jälkeen G3 Weather machine.
 
-**Seuraava askel konkreettisesti:** deck-bird drag-over-korostus (§16.7; pieni,
-koskee sekä Dayn deck-laatikkoa että yön lintua), sitten Night toolbar. Toolbar
-on käyttäjän päätöksellä 2026-07-22 jätetty hautumaan: sen sijoittelusta ja
-ulkoasusta on käyty keskustelu, jota **ei ole tarkoituksella kirjattu** — se
-päätetään uudelleen kun toolbar aloitetaan.
+**Seuraava askel konkreettisesti:** Night toolbar. Se on käyttäjän päätöksellä
+2026-07-22 jätetty hautumaan: sen sijoittelusta ja ulkoasusta on käyty
+keskustelu, jota **ei ole tarkoituksella kirjattu** — se päätetään uudelleen
+kun toolbar aloitetaan. Sitä ennen käyttäjän silmä lohkoon G2.10.
 
 **Aktiivinen työhaara:** `archipelago`. GUI_SPECin neljä aiempaa määrittelysaumaa
 ratkaistiin käyttäjän päätöksellä 2026-07-19; avoimia GUI-käyttäytymispäätöksiä ei ole.
@@ -349,10 +348,22 @@ coco-ulostulosta ja lintujen flutter.
   chevronilla, lukupäässä tai silmässä kuuluu sille säätimelle, ja siellä
   missä kelauspinta kulkee lähellä kuoren kehää, kelaus voittaa omalla
   vihjeellään.
-- [ ] **Deck-bird drag-over-korostus (§16.7).** Huom: `drop target` -laki
-  koskee §16.7:n mukaan sekä Dayn deck-laatikkoa että yön lintua, eikä
-  katkoviivakorostusta ole toteutettu kummallekaan — molemmat kuuluvat tähän
-  samaan askeleeseen (tiedostopudotus itsessään toimii jo molemmissa).
+- [x] **Deck-bird drag-over-korostus (§16.7)** — toteutettu 2026-07-22
+  molemmille nahoille yhdestä `CQInk.drawDropTarget`-primitiivistä (koko appin
+  ainoa katkoviivasuorakaide). Merkki on Dayssa deck-laatikossa ja yöllä
+  linnussa; myös nimikyltti ja siipisoketti sytyttävät *linnun* reunan, koska
+  §16.7 merkitsee kehon eikä sen osia. Yksi kohde kerrallaan, jaettuna
+  `CQGui`:ssä (nahat eivät ole koskaan yhtä aikaa näkyvissä), ja Day/Night
+  nimeävät kohteensa erikseen (`day_deckA` / `night_deckA`), mikä on
+  yksikkötestattu.
+  **Qt-rajoitus, joka pitää tietää:** sclangille ei tule *drag-leave*-callbackia
+  — vain `canReceiveDrag`-predikaatti ja itse pudotus. Korostus siis viritetään
+  predikaatista ja puretaan vahtikoiralla, jonka jokainen uusi kutsu virittää
+  uudelleen (`CQGui.dropTargetHold`, 0,4 s); pudotus nollaa sen heti. Jos Qt
+  kysyy predikaattia vain kerran per sisääntulo eikä joka liikkeellä, reuna
+  näkyy 0,4 s ja vetäytyy — **kumpikin maailma on siedettävä eikä kumpikaan
+  jää mainostamaan kohdetta, josta veto on jo poistunut.** Kumpi maailma on
+  kyseessä, selviää vasta oikealla tiedostovedolla (lohko G2.10).
 - [ ] **Täsmällinen Night toolbar** (§6: patch-preset-valikko · shake · grow ·
   wither · breed · amount-mininuppi · kompassilevy). Sisällöstä olemassa jo:
   preset-valikko (Inspectorin otsikko), shake ja amount (Day). Grow/wither/
@@ -426,17 +437,15 @@ coco-ulostulosta ja lintujen flutter.
 - [x] `GUI_SPEC.md` §13:n käyttäjän visuaalinen hyväksyntä G2.9:n korjauksille
   (lohko G2.9b) — **hyväksytty 2026-07-22**, tuike mukaan lukien.
 
-**G2:n tila 2026-07-22: yön PINTA on valmis ja hyväksytty, mutta G2 ei ole
-kuitattu.** §13:n G2-scope on "archipelago bodies + spiral read-head + charge
+**G2:n tila 2026-07-22: kaikki muu on rakennettu ja hyväksytty paitsi Night
+toolbar.** §13:n G2-scope on "archipelago bodies + spiral read-head + charge
 lamps + solo-light + **toolbar presets/shake** + **deck-bird file drop**".
-Kaksi viimeistä eivät ole valmiit, ja ne ovat tämän listan kaksi avointa
-kohtaa: **deck-bird drag-over-korostus** (tiedostopudotus toimii, §16.7:n
-katkoviivakorostus puuttuu sekä Dayn deck-laatikosta että yön linnusta) ja
-**Night toolbar** (jätetty käyttäjän päätöksellä hautumaan 2026-07-22; sen
-sijoittelusta ja ulkoasusta on käyty keskustelu, jota EI ole kirjattu — se
-tehdään vasta kun toolbar aloitetaan). Kaikki muu G2:ssa on hyväksytty:
-G2.1–G2.5 rakennuspalikat sekä loppuportti G2.6–G2.9. Portti on siis
-läpäisty kaiken rakennetun osalta; puuttuu vain kaksi rakentamatonta osaa.
+Deck-bird drop ja sen §16.7-korostus ovat nyt valmiit (korostus odottaa vielä
+käyttäjän silmää, lohko G2.10). Avoinna on siis enää **Night toolbar**, joka
+on jätetty käyttäjän päätöksellä hautumaan 2026-07-22: sen sijoittelusta ja
+ulkoasusta on käyty keskustelu, jota **EI ole kirjattu** — se tehdään vasta
+kun toolbar aloitetaan. Kaikki muu G2:ssa on hyväksytty: G2.1–G2.5
+rakennuspalikat sekä loppuportti G2.6–G2.9.
 
 **G2.3-kuuntelukierros 1 (2026-07-21):** kaikki seitsemän kosketuspistettä
 toimivat korvalla; palaute käsitelty samana päivänä (`GUI_SPEC.md` §6.1 ja

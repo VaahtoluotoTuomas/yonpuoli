@@ -85,11 +85,15 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   expose actual sound/state structure. Do not add decorative filler or animation.
 - **G1 is complete and accepted, §13 end gate included (2026-07-21, `295d14d`).**
 - **G2's whole built night surface is accepted and its §13 gate passed (2026-07-22).
-  G2 itself is NOT signed off**: §13's G2 scope still contains two unbuilt parts —
-  the deck-bird drag-over highlight (§16.7's dashed border, missing on *both* the Day
-  deck box and the night bird; the file drop itself works) and the Night toolbar (§6).
-  Those are the next steps, in that order. **Do not rebuild or "improve" accepted G1
-  or G2 surface on your own initiative.** `PLAN.md` holds the detail.
+  G2 itself is NOT signed off**: §13's G2 scope still contains one unbuilt part, the
+  **Night toolbar** (§6). That is the next step. **Do not rebuild or "improve"
+  accepted G1 or G2 surface on your own initiative.** `PLAN.md` holds the detail.
+  - §16.7's dashed drop-target border landed 2026-07-22 for both skins from one
+    `CQInk.drawDropTarget`. Qt hands sclang **no drag-leave callback** — only the
+    `canReceiveDrag` predicate and the drop — so the border is armed by the predicate
+    and released by a watchdog each further call re-arms (`CQGui.dropTargetHold`).
+    Whether Qt polls the predicate per drag-move or only per enter is **unmeasured**;
+    both worlds are tolerable by design. Do not "fix" this without a real file drag.
   - The Night toolbar was deliberately left to simmer by the user (2026-07-22). A
     discussion of its placement and look was held and **deliberately not recorded** —
     decide it again with the user when the toolbar actually starts.

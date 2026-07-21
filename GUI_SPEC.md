@@ -953,7 +953,15 @@ shake as lowercase word-buttons beside it.
   and right angles allowed; the inspector heatmap recolors to verso amber /
   inverso blue on paper; 9 px mono row/column labels.
 - **Drop targets**: on drag-over, the deck box (day) or bird (night) gains a
-  2 px dashed ink border — the only dashed rectangle in the app.
+  2 px dashed ink border — the only dashed rectangle in the app. One target is
+  marked at a time; every view that accepts the file marks the **body** it
+  belongs to, never itself (the night's filename label and wing socket light
+  the bird). Implementation note (2026-07-22): sclang receives no drag-*leave*
+  callback from Qt, only the `canReceiveDrag` predicate and the drop, so the
+  border is armed by the predicate and released by a watchdog every further
+  call re-arms, with the drop clearing it at once. Whatever Qt's polling turns
+  out to be, the border may never be left advertising a target the drag has
+  already left.
 
 ### 16.8 State table (normative)
 

@@ -267,6 +267,10 @@ CQGuiPanels {
 
 	// ---- private ----
 
+	// the Day half of §16.7's drop-target law; the night's bird wears the
+	// identical mark, from the same CQInk primitive
+	*dropTargetName { |which| ^("day_" ++ which).asSymbol }
+
 	// deck transport row (SPEC §6.2): load/next/prev/random, rate, loop, level;
 	// the whole box is the file-drop target, and the label shows the loaded file
 	*prDeck { |gui, which|
@@ -277,8 +281,14 @@ CQGuiPanels {
 			.font_(CQInk.font(\number)).align_(\left)
 			.stringColor_(c[\whisper]).fixedSize_(Size(144, 36));
 		var title = if(which == \deckA) { "deck a" } { "deck b" };
+		var dropName = this.dropTargetName(which);
 		var row = UserView().fixedHeight_(126).background_(c[\ground]);
-		row.drawFunc = { CQInk.drawToolBox(row.bounds.moveTo(0, 0), title, \day) };
+		row.drawFunc = {
+			var box = row.bounds.moveTo(0, 0);
+			CQInk.drawToolBox(box, title, \day);
+			// §16.7's dashed border, the same primitive the night's bird uses
+			if(gui.dropTargetIs(dropName)) { CQInk.drawDropTarget(box, \day) };
+		};
 		row.layout = VLayout(
 			View().fixedHeight_(16),
 			HLayout(
@@ -305,14 +315,21 @@ CQGuiPanels {
 		doDrop = {
 			var drag = View.currentDrag;
 			var path = if(drag.isString) { drag } { drag.first.asString };
+			gui.dropTargetClear;
 			deck.value.load(path);
 		};
 		// a drop lands on the deepest widget under the cursor, and QView's
 		// dragEnterEvent always accepts — so a child without handlers swallows
 		// the drag and then refuses it (defaultCanReceiveDrag ^false), leaving
 		// only the row's margin pixels droppable. Bind every descendant.
+		// Every one of them also arms the box's own §16.7 border, so hovering a
+		// knob inside the box marks the box rather than nothing.
 		bindDrop = { |view|
-			view.canReceiveDragHandler = canDrop;
+			view.canReceiveDragHandler = { |v|
+				var accepted = canDrop.value(v);
+				if(accepted) { gui.dropTargetHover(dropName, row) };
+				accepted
+			};
 			view.receiveDragHandler = doDrop;
 			view.children.do { |ch| bindDrop.value(ch) };
 		};

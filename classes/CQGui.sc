@@ -28,6 +28,9 @@ CQGui {
 	var <chargeValues, chargePainted, <chargeNames, chargeIndex;
 	var deckLabels, deckNames, deckCtls, skipButtons;
 	var noticeView, recBtn, recTimeView, recTask, hotTask;
+	// §16.7: which drop target a file drag is hovering, and the view that draws
+	// it. One at a time across both skins — they are never visible together.
+	var <dropTarget, dropTargetView, dropTargetSeq = 0;
 	var micLive = false, hotLive = false, cleaned = false;
 	var paramPending, paramFlushScheduled = false, lastParamFlush = 0;
 	// shake throw amplitude shared by the SHAKE button and the p key; GUI-local
@@ -147,6 +150,48 @@ CQGui {
 		var index = CQMatrix.srcIndex(name);
 		if(auraValues.isNil or: { index.isNil }) { ^nil };
 		^auraValues[index]
+	}
+
+	// §16.7 drop target. Qt hands sclang no drag-LEAVE callback — only the
+	// `canReceiveDrag` predicate and the drop itself — so the highlight is
+	// armed by the predicate and disarmed by a watchdog that every further
+	// call re-arms. A drop clears it at once. If Qt turns out to ask the
+	// predicate once per enter rather than per move, the border shows for
+	// `dropTargetHold` and then withdraws: visible either way, and never left
+	// advertising a target the drag has already walked away from. That is the
+	// whole reason for the hold — it is not a fade or a decoration (§16.9).
+	*dropTargetHold { ^0.4 }
+
+	dropTargetIs { |name| ^dropTarget == name }
+
+	dropTargetHover { |name, view|
+		var seq;
+		if(cleaned) { ^this };
+		if(dropTarget != name) {
+			var previous = dropTargetView;
+			dropTarget = name;
+			dropTargetView = view;
+			previous !? { |v| v.refresh };
+			view !? { |v| v.refresh };
+		};
+		dropTargetSeq = dropTargetSeq + 1;
+		seq = dropTargetSeq;
+		AppClock.sched(this.class.dropTargetHold, {
+			if(cleaned.not and: { seq == dropTargetSeq }) { this.dropTargetClear };
+			nil
+		});
+		^this
+	}
+
+	dropTargetClear {
+		var previous = dropTargetView;
+		dropTargetSeq = dropTargetSeq + 1;
+		if(dropTarget.notNil) {
+			dropTarget = nil;
+			dropTargetView = nil;
+			if(cleaned.not) { previous !? { |v| v.refresh } };
+		};
+		^this
 	}
 
 	// One gate/trig destination's live charge (post-weight, pre-Schmitt), or nil

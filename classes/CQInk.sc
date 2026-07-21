@@ -623,6 +623,21 @@ CQInk {
 			this.font(\label), palette[\line]);
 	}
 
+	// §16.7's only dashed rectangle in the whole app: a file drag is hovering a
+	// drop target. Both skins share the one mark — the Day deck box and the
+	// night's bird are the same law, so they must not drift apart. Pen's dash
+	// pattern is global state, so it is put back to solid here rather than
+	// trusting every call site to remember.
+	*drawDropTarget { |rect, skin = \day|
+		var palette = this.palette(skin);
+		Pen.strokeColor = palette[\line];
+		Pen.width = this.strokes[\strong];
+		Pen.lineDash = FloatArray[4, 3];
+		Pen.addRect(rect.insetBy(2, 2));
+		Pen.stroke;
+		Pen.lineDash = FloatArray[1, 0];
+	}
+
 	*drawBlob { |rect, skin = \day, seed = 0|
 		var palette = this.palette(skin);
 		var points = this.wobble([rect.leftTop, rect.rightTop, rect.rightBottom,

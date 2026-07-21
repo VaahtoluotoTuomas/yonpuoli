@@ -1300,11 +1300,34 @@ CQ.hold(1, 0); CQ.patchPreset(\empty);
 - [x] G2.9 lukupään havainnot ratkaistu ja hyväksytty (pvm: 2026-07-22, neljän
   kierroksen jälkeen: skipin paikallaan pysyvä merkki, reel notch, iskumerkki,
   nopeus painona ja tuike. Lohkot G2.9b kohdat 1–5c.)
-- [ ] **G2 valmis** — *avoinna vain kaksi rakentamatonta osaa*: deck-bird
-  drag-over-korostus (§16.7, puuttuu sekä Daysta että yöstä) ja Night toolbar
-  (§6). Kaikki rakennettu pinta on hyväksytty ja koko portti läpäisty
-  2026-07-22: `CQ_COMPILE_OK`, 4 947 unit-passia / 0 failurea,
-  `CQ_SAFETY_PASSED`, `CQ_HOLD_OK`, neljä GUI-smokea.
+- [ ] G2.10 drag-over-korostus (§16.7) — toteutettu 2026-07-22, tarkista lohko
+- [ ] **G2 valmis** — *avoinna enää Night toolbar* (§6). Kaikki muu on
+  rakennettu ja hyväksytty; portti läpäisty 2026-07-22.
+
+```supercollider
+// G2.10 — §16.7:n katkoviivakorostus SILMÄLLÄ. (Ctrl+Shift+L ensin.)
+// Tarvitset tiedostoselaimen, josta voi raahata äänitiedoston SC:n ikkunaan.
+CQ.boot;
+// 1. DAY: raahaa äänitiedosto deck a -laatikon PÄÄLLE mutta ÄLÄ pudota.
+//    Laatikon ympärille pitää ilmestyä 2 px katkoviivareuna — se on ainoa
+//    katkoviiva koko sovelluksessa. Liikuta vetoa laatikon sisällä myös
+//    nuppien ja nappien päälle: reunan pitää pysyä (se merkitsee laatikon,
+//    ei yksittäistä vimpainta).
+// 2. Siirrä veto deck b:n päälle: korostuksen pitää SIIRTYÄ, ei kahdentua.
+// 3. Vedä veto pois laatikoista ilman pudotusta. Reunan pitää sammua noin
+//    puolessa sekunnissa. TÄRKEÄ HAVAINTO: kerro kumpi tapahtuu —
+//    (a) reuna pysyy niin kauan kuin veto on laatikon päällä ja sammuu vasta
+//        kun poistut, vai
+//    (b) reuna sammuu jo ~0,4 s kuluttua vaikka veto on yhä laatikon päällä.
+//    Qt ei anna sclangille drag-leave-kutsua, joten kumpi maailma on
+//    kyseessä, selviää vain tästä. (b) on siedettävä mutta ei ihanteellinen.
+// 4. Pudota tiedosto: reunan pitää kadota heti ja tiedoston latautua.
+// 5. YÖ: Tab, ja toista kohdat 1–4 linnulla. Raahaa myös nimikyltin ja
+//    siiven alla olevan rate-kuun päälle: reunan pitää syttyä LINNUN
+//    ympärille, ei kyltin tai kuun.
+// 6. Raahaa jotain, mikä ei ole tiedosto (esim. valittua tekstiä SC:n
+//    editorista): mitään ei saa korostua.
+```
 
 **G2.9:n ratkaisut (2026-07-22).** Kolme päätöstä, kaikki nyt normatiivisia
 (`GUI_SPEC.md` §6.1 ja §16.6):

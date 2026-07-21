@@ -564,15 +564,23 @@ CQGuiNightMap {
 				or: { View.currentDrag.isKindOf(SequenceableCollection) }
 		};
 		#[deckA, deckB].do { |which, i|
+			var name = this.class.dropTargetName(which);
 			var doDrop = {
 				var drag = View.currentDrag;
 				var path = if(drag.isString) { drag } { drag.first.asString };
+				gui.dropTargetClear;
 				this.prDeckFor(which) !? { |deck| deck.load(path) };
 			};
+			// the label and the rate moon accept the file too, but the border
+			// is drawn on the bird — §16.7 marks the body, not its parts
 			[birdViews[i], labels[i],
 				endpoints[if(i == 0) { \deckA_rate } { \deckB_rate }][\view]]
 			.do { |view|
-				view.canReceiveDragHandler = canDrop;
+				view.canReceiveDragHandler = { |v|
+					var accepted = canDrop.value(v);
+					if(accepted) { gui.dropTargetHover(name, birdViews[i]) };
+					accepted
+				};
 				view.receiveDragHandler = doDrop;
 			};
 		};
@@ -732,11 +740,19 @@ CQGuiNightMap {
 			rimHover[i], \night);
 	}
 
+	// the night half of §16.7's drop-target law; the Day deck box wears the
+	// identical mark, from the same CQInk primitive
+	*dropTargetName { |which| ^("night_" ++ which).asSymbol }
+
 	prDrawBird { |i|
-		var bird;
+		var bird, which = if(i == 0) { \deckA } { \deckB };
 		if(geometry.isNil) { ^this };
 		bird = geometry[\birds][i];
 		CQInkNight.drawBird(bird, bird[\box].leftTop, \night);
+		// drawBird leaves the pen translated into stage space
+		if(gui.dropTargetIs(this.class.dropTargetName(which))) {
+			CQInk.drawDropTarget(bird[\box], \night)
+		};
 	}
 
 	prDrawDecoration { |name, spec, anchor|
