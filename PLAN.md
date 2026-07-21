@@ -118,8 +118,39 @@ sekä käyttäjän hyväksymä yhtenäinen hover-kielioppi. Portti: `CQ_COMPILE_
 3 411 unit-passia / 0 failurea, `CQ_GUI_SHELL_PASSED` ja `CQ_SAFETY_PASSED`;
 viimeinen DSP-portti säilyi `CQ_HOLD_OK` (A4 1.0, A5 0.0 dB).
 
-G1 ei silti ole valmis: Drawer Inspector/Spellbook/Memory, `/cq_aura` ja koko G1:n
-lopullinen skaalaus-, kuuntelu- ja resurssiportti puuttuvat.
+Drawerin käyttäytymistestit 1–5 hyväksyttiin 2026-07-20; tiheän patchin perusteella
+`cable opacity` -säädintä ei tarvita. Inspector jakaa saman audition-kirjanpidon,
+tekee release-vaiheessa yhden fine-edit-commitin/undon ja sisältää patch-preset-menun.
+Spellbook on read-only session patch journal, ei komentokonsoli: se diffaa kaikkien
+kerrosten committed `CQMatrix`-ilmoitukset kopioitavaksi `CQ.patch(...)`-kieleksi,
+jättää transientit pois ja näyttää pysyvästi valitun rivin sekä sen batch-kontekstin.
+Memoryssa ovat snapshot-save/recall ja A→B morph; niiden ympärille rakennettu seed bank
+näyttää live-patchin ja valitun snapshotin sormenjäljen, reittitilastot, erot nykyiseen
+matriisiin sekä todelliseen `CQSnapshots`-etenemään sidotun morph-mittarin.
+
+Ensimmäinen 184 px resizable bottom-Drawer katselmoitiin ja hylättiin tilamallina:
+se jätti soittimen puoliksi tavoittamattomaksi, resize nyki ja pieni Excel-mäinen matriisi
+ei kutsunut soittamaan. Käyttäjä hyväksyi 2026-07-20 uuden, `GUI_SPEC.md` §8:aan
+ei-normatiivisena kokeiluna kirjatun suunnan. Workbench + patch loom -ydin hyväksyttiin
+visuaalisesti 2026-07-20. Drawer avattuna korvaa vakaan keskialueen workbenchinä
+Day/Night-pinnan; Master pysyy toimivana eikä resizea, instrumenttiscrollia, click-awayta
+tai toista ikkunaa ole.
+
+Inspector-prototyyppi on täysleveä patch loom: tarkka 16×22-järjestys, 48×24 px solut
+ilman sisäscrollia, ryhmitellyt lyhyet diagonaaliotsikot, source-family-merkit,
+hiljaiset railit/risteykset, painoa ja polariteettia sekä värillä että geometrialla
+näyttävät solmut, hover-rivi+kolumni, pysyvä soluvalinta ja tarkka route-ribbon.
+`/cq_aura` jätettiin tarkoituksella pois tästä staattisesta katselmuksesta. Portti:
+`CQ_COMPILE_OK`, 3 462 unit-passia / 0 failurea, `CQ_GUI_SHELL_PASSED`,
+`CQ_GUI_DRAWER_PASSED`, `CQ_GUI_DRAWER_REENTRY_PASSED` ja `CQ_SAFETY_PASSED`.
+Serveritön visuaaliharness on
+`tests/gui_drawer_preview.scd`. Hyväksytyn ytimen jälkeinen viimeistelyprototyyppi siirtää
+aina `drawer`-nimisen tabin Nightin viereen, linjaa Inspectorin kaikki tiedot 1128 px
+loom-railiin, korjaa Spellbookin Qt-rivivärit ja korvaa tyhjän Memory-lomakkeen seed
+bankilla. Tämä viimeistelykierros odottaa vielä käyttäjän visuaalista katselmointia.
+
+G1 ei silti ole valmis: Drawerin viimeistelypalaute, soitettavuuskoe, `/cq_aura` ja lopullinen
+skaalaus-, kuuntelu- ja resurssiportti puuttuvat.
 
 - [x] Yksi Day/Night-ikkunakuori, pysyvä Master-strip ja Drawer vähintään 1280×720:ssa.
 - [x] Yhteinen Ink kit: normatiivinen paletti, viiva, glyphit ja session-seedattu
@@ -129,8 +160,9 @@ lopullinen skaalaus-, kuuntelu- ja resurssiportti puuttuvat.
   move, rip, harvest-lasso (§4.4), wheel, polarity, solo-light, Esc ja 32 operaation
   Ctrl+Z.
 - [ ] Drawer: Inspector, notification-streamiin perustuva Spellbook ja snapshot/morph
-  Memory. Valmiin Drawerin tiheystestissä arvioidaan §4.5:n optio `cable opacity`;
-  sitä ei lisätä sokkona ennen testiä.
+  Memory. Behavior/touch-testit 1–5 ovat hyväksyttyjä ja `cable opacity` on päätetty
+  jättää pois; workbench + patch loom -ydin on hyväksytty. Toolbar/linjaus/Spellbook/
+  seed-bank-viimeistelyn visuaalinen katselmointi ja myöhempi soitettavuuskoe puuttuvat.
 - [ ] `/cq_aura`: 16 kanonista source-magnitudea noin 15 Hz; ambient redraw enintään
   15 Hz ja GUI CPU noin enintään 3 %.
 - [ ] `GUI_SPEC.md` §13:n automaatio, kuuntelu ja käyttäjän visuaalinen hyväksyntä.
@@ -217,10 +249,14 @@ Night map ja Weather Machine — tehdään seuraavalla tavalla:
 1. Varmista `archipelago`-haara, puhdas työpuu ja lue `CLAUDE.md`, `PLAN.md` sekä
    `GUI_SPEC.md` kokonaan. F0–F2, hyväksytty Day/Ink-layout ja banana grammar +
    audition ovat valmiit; älä toista niitä.
-2. Jatka PLAN-järjestyksessä Drawer Inspector/Spellbook/Memory -sisältöihin. Presetin
-   GUI-apply liitetään samaan matrix-undo-rinkiin; Drawer-tiheystestissä arvioidaan
-   §4.5:n `cable opacity` -optio.
-3. Jatka Drawerin jälkeen `/cq_aura`-telemetriaan ja G1:n lopulliseen porttiin.
+2. Avaa `tests/gui_drawer_preview.scd` ja katselmoi hyväksytyn workbench + patch loom
+   -ytimen viimeistely: vakaa `drawer` Nightin vieressä, 1128 px Inspector-raili,
+   leikkaamaton footer, lähempänä loom-kenttää olevat ryhmäotsikot, luettava Spellbook
+   sekä Memory seed bankin live-patch-sormenjälki. Behavior 1–6 ja päätös
+   "ei `cable opacitya`" ovat jo hyväksyttyjä. Saved-seed recall/morph katselmoidaan
+   bootatun soittimen kanssa; aura ja varsinainen soitettavuuskoe eivät kuulu tähän
+   staattiseen katselmukseen.
+3. Jatka hyväksytyn Drawerin jälkeen `/cq_aura`-telemetriaan ja G1:n lopulliseen porttiin.
 4. Pysähdy jokaisen ensimmäisen ajettavan GUI-osan kohdalla yllä olevaan visuaaliseen
    välitarkastukseen. Älä aloita varsinaista G2 Night mapia ennen valmista G1-porttia.
 

@@ -240,6 +240,15 @@ CQBananaGrammar {
 		^this
 	}
 
+	// Inspector fine edits publish transient frame writes, then one committed
+	// release.  The gesture captured its own pre-drag matrix before those frames,
+	// so it hands that copy back here to join the same GUI-local undo ring.
+	rememberMatrix { |before|
+		if(before.notNil) { this.prRemember(before) };
+		this.changed(\gesture);
+		^this
+	}
+
 	undo {
 		var previous;
 		this.prDropHand;

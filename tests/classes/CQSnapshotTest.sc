@@ -174,8 +174,14 @@ CQSnapshotTest : UnitTest {
 		snaps.recall(\ma);
 		snaps.morph(\ma, \mb, 0.2);
 		this.assert(snaps.isMorphing, "morph routine is running");
+		this.assertEquals(snaps.morphFrom, \ma, "morph publishes its A seed");
+		this.assertEquals(snaps.morphTo, \mb, "morph publishes its B seed");
+		this.assert(snaps.morphProgress >= 0 and: { snaps.morphProgress < 1 },
+			"morph publishes a truthful in-flight progress value");
 		0.8.wait;
 		this.assert(snaps.isMorphing.not, "morph routine ended");
+		this.assertFloatEquals(snaps.morphProgress, 1.0,
+			"completed morph publishes arrival at the target");
 		this.assertFloatEquals(state.get(\coco1Fb), 1.1,
 			"continuous param lands exactly on the target");
 		this.assertEquals(state.get(\coco1Hold), 1, "toggle switched to the target");

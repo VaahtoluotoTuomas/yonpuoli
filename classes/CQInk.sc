@@ -36,7 +36,7 @@ CQInk {
 			palette[\warn] = palette[\danger];
 		};
 		glyphNames = #[wedge, flip, spark, wave, tickRing, pendulum,
-			hold, skip, spesal, panic, rec, drawer, day, night];
+			hold, skip, spesal, panic, rec, drawer, collapse, expand, day, night];
 	}
 
 	*palette { |skin = \day| ^palettes[skin] ?? { palettes[\day] } }
@@ -92,6 +92,8 @@ CQInk {
 			\panic, { [[4, 0], [4, 5], nil, [4, 7], [4, 8]] },
 			\rec, { [[4, 1], [6, 2], [7, 4], [6, 6], [4, 7], [2, 6], [1, 4], [2, 2], [4, 1]] },
 			\drawer, { [[1, 2], [7, 2], [7, 6], [1, 6], [1, 2], nil, [3, 4], [5, 4]] },
+			\collapse, { [[1, 3], [4, 6], [7, 3]] },
+			\expand, { [[1, 6], [4, 3], [7, 6]] },
 			\day, { [[4, 1], [4, 7], nil, [1, 4], [7, 4], nil, [2, 2], [6, 6], nil, [6, 2], [2, 6]] },
 			\night, { [[6, 1], [3, 1], [1, 3], [1, 5], [3, 7], [6, 7], [4, 6], [3, 4], [4, 2], [6, 1]] },
 			{ [] }

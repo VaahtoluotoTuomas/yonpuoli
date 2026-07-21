@@ -92,8 +92,22 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   112×34 hit areas. The accepted banana grammar now includes audition/WYHIWYG,
   plant/move/rip/harvest, polarity/wheel, solo-light, lifecycle revert, 32-op undo
   including GUI SHAKE, a 40 px capture radius, controls-first dense-patch priority and
-  reviewed hover feedback. Continue next with Drawer Inspector/Spellbook/Memory,
-  then `/cq_aura`; preset apply joins the undo ring when its Drawer GUI path exists.
+  reviewed hover feedback. Drawer behavior/touch tests 1–5 were accepted on 2026-07-20
+  and the dense-patch decision is no `cable opacity` control. The 184 px resizable
+  bottom-Drawer was then visually rejected because it obscured context, jittered and
+  left the matrix too administrative. The replacement is explicitly recorded as a
+  §8 experiment: one toolbar `drawer` tab beside Night swaps the central Day/Night stage
+  for a stable full workbench; there is no resize, instrument scroll or second window.
+  Inspector is now a static 48×24 px-cell patch loom with grouped short diagonal labels,
+  family rows, weighted/polarity-shaped knots, hover axes, persistent selection and an
+  exact route ribbon. This workbench/loom core and manual Drawer checks 1–6 were visually
+  accepted on 2026-07-20. The follow-up prototype keeps Inspector content on one exact
+  1128 px rail, fixes Spellbook's Qt row-background bug, and presents Memory as a live/
+  saved patch-fingerprint seed bank with truthful morph progress. It passes 3,462 unit
+  checks plus `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+  `CQ_GUI_DRAWER_REENTRY_PASSED` and `CQ_SAFETY_PASSED`. Visual review of this polish,
+  then a later playability/listening gate, remain; `/cq_aura` is deliberately not part
+  of this prototype. Do not start it before this checkpoint.
 - The four former `GUI_SPEC.md` seams were resolved by the user on 2026-07-19 and are
   recorded in the spec and `PLAN.md`: nine charge channels, the G1 harvest lasso,
   display-only mic sprout and static REC transition/error states. Do not reopen or

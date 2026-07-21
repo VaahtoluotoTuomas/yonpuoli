@@ -41,8 +41,11 @@ cocoquantus-sc/
 │   ├── CQState.sc              // value store, clamped setters, dependant notify
 │   ├── CQMatrix.sc             // routing matrix: name↔index, weights, presets, shake
 │   ├── CQAudition.sc           // transient matrix-preview bookkeeping
+│   ├── CQInspector.sc          // Drawer grid touch/listen + fine-edit transaction
+│   ├── CQSpellbook.sc          // committed matrix notification log + code export
 │   ├── CQMidi16n.sc            // 16n binding, smoothing, takeover
 │   ├── CQGui.sc                // panel window (view-only client of CQState)
+│   ├── CQGuiDrawer.sc          // Inspector / Spellbook / Memory composition
 │   ├── CQSnapshots.sc          // save/recall/morph
 │   ├── CQRecorder.sc           // disk recording (master + stems)
 │   ├── CQDeck.sc               // transactional file player control
@@ -269,8 +272,11 @@ Language side on `\cq_hot`: engage −6 dB trim (a lagged synth arg), GUI notice
 | `CQState` | value store + funnel | `set(name, val)` → clamp → `synth.set` / bus write → `changed(\param, name, val)`. `get`, `asEvent` (for snapshots), `load(event)`. Enum params travel to the server as indices into the CQSpec value list; every other layer writes symbols through the funnel |
 | `CQMatrix` | routing weights | name↔index maps (source 16, dest 22 — canonical orders §3.2/3.3), metadata-bearing single-cell writes plus deep `fullMatrix`/clamped `writeMatrix` batch transactions, weight cache mirrored to `wDest` buses, existing triple `asArray/load`, presets and shake |
 | `CQAudition` | transient patch preview | Serverless one-candidate `{src,dest,prevW,audibleW}` state machine; candidate switches and every §4.1 cancellation path restore through `CQMatrix.patch(... committed:false)`, while plant commits exactly the audible weight |
+| `CQInspector` | Drawer precision gesture state | Shares `CQAudition`; press previews ±0.3, vertical frames are transient, and release publishes one committed fine-edit plus one shared GUI-undo entry; lifecycle cancellation restores the pre-gesture cell |
+| `CQGuiMatrix` | experimental Inspector patch loom | Exact canonical 16×22 single-`UserView` field with 48×24 px hit cells, grouped destination islands, family-marked rows, weighted/polarity-shaped knots, persistent route selection and hover row/column focus; no inner scroll or new state funnel |
+| `CQSpellbook` | read-only committed patch journal | Hooks `CQMatrix` notifications below every client, diffs against the last committed full matrix, excludes `committed:false` frames, exposes row→batch metadata for persistent GUI selection, and exports copyable `CQ.patch(...)` lines or preset data; it does not execute or edit code |
 | `CQMidi16n` | controller layer | `MIDIdef.cc` per fader from config map, 0–127 → spec map, optional `\pickup` takeover, hot-plug via `MIDIClient` device watch; all writes via `CQState` |
-| `CQGui` | panel | pure view: renders from `CQState`/`CQMatrix` dependant notifications, sends via funnel; meters/LEDs from `OSCdef(\cq_meters, \cq_spesal, \cq_hot)`; everything UI inside `{ }.defer`; closes cleanly on `*free` |
+| `CQGui` | panel | pure view: renders from `CQState`/`CQMatrix` dependant notifications, sends via funnel; composes the Day/Night shell and `CQGuiDrawer`; meters/LEDs come from namespaced OSCdefs; everything UI inside `{ }.defer`; closes cleanly on `*free` |
 | `CQSnapshots` | memory | `save(name)` → `(version: 1, params: state.asEvent, matrix: matrix.asArray, spesal: [..], meta: (...))` `.asCompileString` → `presets/name.cqsnap.scd`; `recall` clamps everything on load; `morph(a, b, dur)` = Routine at 30 Hz interpolating continuous params + weights, discrete switch at midpoint; mic gain never auto-recalled above 0 (SPEC §7) |
 | `CQRecorder` | disk | Explicit `idle/starting/recording/stopping/error` state machine; attempt-local path/buffer/synth ownership; master 2ch 24-bit wav timestamped or optional 4ch master+stems; never overwrite; `DiskOut` synth in `gMaster` tail |
 | `CQDeck` | file players | Cancellable last-request-wins buffer transaction, folder scan/next/prev/random and peak-normalize on load; stale/error paths always release their local buffer |

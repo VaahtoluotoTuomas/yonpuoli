@@ -8,7 +8,7 @@
 
 CQGui {
 	var state, matrix, config;
-	var <window, <widgets, updaters, <shellState, <shell;
+	var <window, <widgets, updaters, <shellState, <shell, <drawer;
 	var stateCtl, gridPanel, meterFuncs, <audition;
 	var <bananaGrammar, <bananaController, <bananaBodies;
 	var <endpoints, <cableOverlay;
@@ -37,9 +37,13 @@ CQGui {
 		{ window !? { if(window.isClosed.not) { window.close } } }.defer;
 	}
 
-	cancelAudition { bananaGrammar !? { bananaGrammar.panic } }
+	cancelAudition {
+		if(drawer.notNil) { drawer.panic } { bananaGrammar !? { bananaGrammar.panic } }
+	}
 	shake {
-		bananaGrammar.performUndoable({ Cocoquantus.shake(shakeAmount) });
+		bananaGrammar.performUndoable({
+			Cocoquantus.shake(shakeAmount, origin: \gui)
+		});
 		^this
 	}
 
@@ -128,7 +132,6 @@ CQGui {
 		var dayContent, dayView, nightView, masterView;
 		var inspectorView, spellbookView, memoryView;
 		var night = CQInk.palette(\night), minimum = shellState.minSize;
-		gridPanel = CQGuiMatrix(matrix);
 		dayContent = View().background_(CQInk.palette(\day)[\ground]).layout_(
 			HLayout(
 				CQGuiPanels.sources(this),
@@ -154,9 +157,12 @@ CQGui {
 				CQInk.font(\label), night[\whisper]);
 		};
 		masterView = CQGuiPanels.master(this);
-		inspectorView = View().layout_(HLayout(gridPanel.view, nil).margins_(4));
-		spellbookView = this.prDrawerPlaceholder("spellbook · G1.4");
-		memoryView = CQGuiPanels.memory(this);
+		drawer = CQGuiDrawer(this, state, matrix, audition, bananaGrammar);
+		shellState.audition = drawer;
+		gridPanel = drawer.grid;
+		inspectorView = drawer.inspectorView;
+		spellbookView = drawer.spellbookView;
+		memoryView = drawer.memoryView;
 		shell = CQGuiShell(shellState, dayView, nightView, masterView,
 			inspectorView, spellbookView, memoryView,
 			{ |skin| this.prApplySkin(skin) });
@@ -295,7 +301,7 @@ CQGui {
 			^this
 		};
 		if(char.notNil and: { char.ascii == 27 }) {
-			bananaGrammar.escape;
+			drawer.escape;
 			^this
 		};
 		if(char.notNil and: { char.ascii == 9 }) {
@@ -368,6 +374,7 @@ CQGui {
 		var palette = CQInk.palette(skin);
 		inkControls.do { |control| control.skin = skin };
 		cableOverlay !? { cableOverlay.skin = skin };
+		drawer !? { drawer.applySkin(skin) };
 		noticeView !? { noticeView.stringColor = palette[\whisper] };
 		recTimeView !? { recTimeView.stringColor = palette[\danger] };
 		shell !? {
@@ -398,7 +405,9 @@ CQGui {
 		stateCtl = nil;
 		deckCtls.do { |c| c.remove };
 		deckCtls = nil;
-		gridPanel !? { gridPanel.free };
+		drawer !? { drawer.free };
+		drawer = nil;
+		gridPanel = nil;
 		bananaController !? { bananaController.free };
 		bananaController = nil;
 		cableOverlay !? { cableOverlay.free };

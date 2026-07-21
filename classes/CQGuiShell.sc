@@ -1,12 +1,13 @@
-// CQGuiShell — Qt composition for GUI_SPEC §2. The serverless CQGuiShellState
-// owns behavior; this class only applies that state to Day/Night, Drawer and the
-// persistent Master region. It never touches CQState, CQMatrix or the server.
+// CQGuiShell — Qt composition for GUI_SPEC §2 and the §8 workbench experiment.
+// Day/Night and Drawer share one central stage; the toolbar and Master remain
+// persistent. The shell never touches CQState, CQMatrix or the server.
 
 CQGuiShell {
 	var state;
 	var <view, <dayView, <nightView, <masterView, <drawerView;
+	var <workspaceStack, <drawerButton;
 	var contentStack, drawerStack, drawerPages, toolbarView, toolbarTitle;
-	var modeButton, drawerButton, tabButtons, skinAction;
+	var modeButton, tabButtons, skinAction;
 
 	*new { |state, dayView, nightView, masterView, inspectorView, spellbookView,
 		memoryView, skinAction|
@@ -16,7 +17,7 @@ CQGuiShell {
 
 	prInit { |shellState, dayContent, nightContent, masterContent,
 		inspectorView, spellbookView, memoryView, applySkin|
-		var day = CQInk.palette(\day), tabRow;
+		var day = CQInk.palette(\day), tabRow, instrumentView;
 		state = shellState;
 		skinAction = applySkin;
 		dayView = dayContent;
@@ -24,7 +25,8 @@ CQGuiShell {
 		masterView = masterContent;
 		modeButton = CQInkControl.button("night", 66).surface_(\recess)
 			.action_({ this.toggleView(false) });
-		drawerButton = CQInkControl.button("drawer", 82).surface_(\recess)
+		drawerButton = CQInkControl.button("drawer", 92, \day, false,
+			false, \line, \collapse).surface_(\recess)
 			.action_({ this.toggleDrawer });
 		toolbarTitle = StaticText().string_("cocoquantus · archipelago")
 			.font_(CQInk.font(\label)).stringColor_(day[\line])
@@ -37,10 +39,11 @@ CQGuiShell {
 			Pen.line(Point(8, 31), Point(toolbarView.bounds.width - 8, 31));
 			Pen.stroke;
 		};
-		toolbarView.layout = HLayout(
-			toolbarTitle, nil, modeButton.view, drawerButton.view
-		).margins_(8).spacing_(6);
+		toolbarView.layout = HLayout(toolbarTitle, nil, modeButton.view, drawerButton.view)
+			.margins_(8).spacing_(6);
+
 		contentStack = StackLayout(dayView, nightView).mode_(\stackOne);
+		instrumentView = View().layout_(contentStack);
 		tabButtons = IdentityDictionary.new;
 		#[inspector, spellbook, memory].do { |tab|
 			tabButtons[tab] = CQInkControl.button(tab.asString, 86, \day, true)
@@ -49,20 +52,14 @@ CQGuiShell {
 		tabRow = HLayout(tabButtons[\inspector].view, tabButtons[\spellbook].view,
 			tabButtons[\memory].view, nil).margins_(4).spacing_(4);
 		drawerPages = [inspectorView, spellbookView, memoryView];
-		drawerStack = StackLayout(*drawerPages)
-			.mode_(\stackOne);
-		drawerView = UserView().fixedHeight_(250).background_(day[\recess]);
-		drawerView.drawFunc = {
-			var palette = CQInk.palette(state.viewMode);
-			Pen.strokeColor = palette[\line].copy.alpha_(0.35);
-			Pen.width = CQInk.strokes[\hairline];
-			Pen.line(Point(0, 1), Point(drawerView.bounds.width, 1));
-			Pen.stroke;
-		};
-		drawerView.layout = VLayout(tabRow, drawerStack).margins_(6).spacing_(4);
+		drawerStack = StackLayout(*drawerPages).mode_(\stackOne);
+		drawerView = UserView().background_(day[\recess]);
+		drawerView.layout = VLayout(tabRow, drawerStack).margins_(4).spacing_(4);
+		workspaceStack = StackLayout(instrumentView, drawerView).mode_(\stackOne);
+
 		view = View().background_(day[\ground]);
-		view.layout = VLayout(toolbarView, View().layout_(contentStack), drawerView,
-			masterView).margins_(0).spacing_(0);
+		view.layout = VLayout(toolbarView, View().layout_(workspaceStack), masterView)
+			.margins_(0).spacing_(0);
 		this.applyState;
 		^this
 	}
@@ -85,7 +82,7 @@ CQGuiShell {
 	applyState {
 		var skin = state.viewMode, palette = CQInk.palette(skin), tabIndex;
 		contentStack.index = if(skin == \day) { 0 } { 1 };
-		drawerView.visible = state.drawerOpen;
+		workspaceStack.index = if(state.drawerOpen) { 1 } { 0 };
 		tabIndex = #[inspector, spellbook, memory].indexOf(state.drawerTab) ? 0;
 		drawerStack.index = tabIndex;
 		view.background = palette[\ground];
@@ -97,7 +94,11 @@ CQGuiShell {
 		modeButton.skin = skin;
 		modeButton.label = if(skin == \day) { "night" } { "day" };
 		drawerButton.skin = skin;
-		drawerButton.label = if(state.drawerOpen) { "close drawer" } { "drawer" };
+		// The global destination keeps one name; the inner page tabs carry the
+		// Inspector/Spellbook/Memory labels. Down opens, up returns.
+		drawerButton.label = "drawer";
+		drawerButton.glyph = if(state.drawerOpen) { \expand } { \collapse };
+		drawerButton.value = state.drawerOpen.binaryValue;
 		tabButtons.keysValuesDo { |tab, button|
 			button.skin = skin;
 			button.value = (tab == state.drawerTab).binaryValue;

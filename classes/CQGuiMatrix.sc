@@ -1,107 +1,327 @@
-// CQGuiMatrix — the banana-bay grid view (SPEC §6.2): 16 sources x 22
-// destinations in one UserView (352 child views would crawl). Cell color =
-// signed weight (orange verso, blue inverso, like the banana polarity code);
-// drag vertically on a cell to set its weight, right-click to unpatch.
-// Pure view: every write goes through matrix.patch (clamped there), every
-// repaint comes from the matrix's dependant notifications.
+// CQGuiMatrix — the 16×22 precision matrix as the §8 patch-loom experiment.
+// Quiet rails preserve exact coordinates; planted cells become weighted knots.
+// Header, loom and route ribbon are separate fixed regions in the workbench.
 
 CQGuiMatrix {
-	classvar cellW = 26, cellH = 13, labW = 46, labH = 56;
+	classvar cellW = 48, cellH = 24, labW = 72, headerH = 64;
 
-	var matrix, <view, grid, status, ctl;
-	var dragSi, dragDi, dragW, dragY;
+	var matrix, inspector, <view, <grid, <header, <status, ctl;
+	var <selectedSrc, <selectedDest, hoverSi, hoverDi;
+	var skin = \day;
 
-	*new { |matrix| ^super.newCopyArgs(matrix).prBuild }
+	*new { |matrix, inspector| ^super.newCopyArgs(matrix, inspector).prBuild }
+	*cellSize { ^[cellW, cellH] }
+	*loomSize {
+		^Size(labW + (CQMatrix.destNames.size * cellW),
+			CQMatrix.sourceNames.size * cellH)
+	}
 
-	free { ctl !? { ctl.remove }; ctl = nil }
+	free {
+		inspector !? { inspector.cancel };
+		ctl !? { ctl.remove };
+		ctl = nil;
+	}
+
+	skin_ { |next|
+		var palette;
+		skin = next;
+		palette = CQInk.palette(skin);
+		grid.background = palette[\recess];
+		header.background = palette[\recess];
+		status.stringColor = palette[\line];
+		grid.refresh;
+		header.refresh;
+		^this
+	}
 
 	// ---- private ----
 
 	prBuild {
 		var srcs = CQMatrix.sourceNames, dests = CQMatrix.destNames;
-		var palette = CQInk.palette(\day);
-		var w = labW + (dests.size * cellW);
-		var h = labH + (srcs.size * cellH);
-		grid = UserView().fixedSize_(Size(w, h)).background_(palette[\recess]);
-		grid.drawFunc = { this.prDraw(srcs, dests) };
-		grid.mouseDownAction = { |v, x, y, mod, btn|
-			this.prMouseDown(x, y, btn, srcs, dests)
+		var palette = CQInk.palette(\day), size = this.class.loomSize;
+		header = UserView().fixedSize_(Size(size.width, headerH))
+			.background_(palette[\recess]);
+		header.drawFunc = {
+			try { this.prDrawHeader(dests) } { |error| CQInkControl.noteDrawError(error) }
 		};
-		grid.mouseMoveAction = { |v, x, y| this.prMouseMove(y, srcs, dests) };
-		grid.mouseUpAction = { dragSi = nil };
-		status = StaticText().string_("banana bay — drag a cell, right-click clears")
-			.font_(CQInk.font(\label)).stringColor_(palette[\whisper]);
-		view = View().layout_(
-			VLayout(grid, status).spacing_(1).margins_(0));
-		ctl = SimpleController(matrix);
-		ctl.put(\patch, { |obj, what, src, dest, wght|
-			{ grid.refresh; this.prShow(src, dest, wght) }.defer
-		});
-		ctl.put(\clear, { { grid.refresh }.defer });
-	}
-
-	prDraw { |srcs, dests|
-		var colors = CQGuiWidgets.colors;
-		Pen.font = CQInk.font(\range);
-		dests.do { |dest, di|                       // rotated column headers
-			Pen.use {
-				Pen.translate(labW + (di * cellW) + (cellW / 2) + 3, labH - 4);
-				Pen.rotate(-0.5pi);
-				Pen.stringAtPoint(dest.asString, 0@0, CQInk.font(\range),
-					colors[\whisper]);
+		grid = UserView().fixedSize_(size).background_(palette[\recess]);
+		grid.drawFunc = {
+			try { this.prDrawGrid(srcs, dests) } { |error| CQInkControl.noteDrawError(error) }
+		};
+		grid.mouseDownAction = { |v, x, y, mod, btn, clickCount|
+			this.prMouseDown(x, y, btn, clickCount ? 1, srcs, dests)
+		};
+		grid.mouseMoveAction = { |v, x, y| this.prMouseMove(x, y, srcs, dests) };
+		grid.mouseUpAction = { |v, x, y, mod, btn|
+			this.prMouseUp(btn, srcs, dests)
+		};
+		grid.mouseLeaveAction = {
+			if(inspector.isActive.not) {
+				hoverSi = nil;
+				hoverDi = nil;
+				grid.refresh;
+				header.refresh;
 			};
 		};
-		srcs.do { |src, si|                         // row labels
-			Pen.stringAtPoint(src.asString, 2@(labH + (si * cellH) + 2),
-				CQInk.font(\range), colors[\whisper]);
+		status = StaticText().string_("select a knot · exact route and weight appear here")
+			.font_(CQInk.font(\notice)).stringColor_(palette[\line])
+			.align_(\left).fixedHeight_(24);
+		view = grid;
+		ctl = SimpleController(matrix);
+		ctl.put(\patch, { |obj, what, src, dest, wght|
+			{
+				grid.refresh;
+				if(src == selectedSrc and: { dest == selectedDest }) {
+					this.prShow(src, dest, wght)
+				};
+			}.defer
+		});
+		ctl.put(\matrix, { { grid.refresh; this.prRefreshSelection }.defer });
+		ctl.put(\clear, { { grid.refresh; this.prRefreshSelection }.defer });
+	}
+
+	prDrawHeader { |dests|
+		var colors = CQInk.palette(skin), focusDi = hoverDi;
+		var groups = this.prDestGroups;
+		focusDi = focusDi ? CQMatrix.destIndex(selectedDest);
+		groups.do { |group|
+			var left = labW + (group[\start] * cellW);
+			var width = group[\count] * cellW;
+			Pen.stringCenteredIn(group[\title], Rect(left, 2, width, 12),
+				CQInk.font(\label), colors[\whisper]);
+			Pen.strokeColor = colors[\whisper].copy.alpha_(0.45);
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.line(Point(left + 5, 18), Point(left + width - 5, 18));
+			Pen.stroke;
 		};
+		dests.do { |dest, di|
+			var color = this.prDestColor(dest, colors);
+			if(di != focusDi) { color = color.copy.alpha_(0.72) };
+			Pen.use {
+				Pen.translate(labW + (di * cellW) + 10, headerH - 7);
+				Pen.rotate(-0.25pi);
+				Pen.stringAtPoint(this.prDestLabel(dest), 0@0, CQInk.font(\range), color);
+			};
+		};
+	}
+
+	prDrawGrid { |srcs, dests|
+		var colors = CQInk.palette(skin), size = this.class.loomSize;
+		var focusSi = hoverSi ? CQMatrix.srcIndex(selectedSrc);
+		var focusDi = hoverDi ? CQMatrix.destIndex(selectedDest);
+		var selectedSi = CQMatrix.srcIndex(selectedSrc);
+		var selectedDi = CQMatrix.destIndex(selectedDest);
+
+		focusSi !? {
+			Pen.fillColor = colors[\line].copy.alpha_(0.035);
+			Pen.fillRect(Rect(labW, focusSi * cellH, size.width - labW, cellH));
+		};
+		focusDi !? {
+			Pen.fillColor = colors[\line].copy.alpha_(0.035);
+			Pen.fillRect(Rect(labW + (focusDi * cellW), 0, cellW, size.height));
+		};
+
+		Pen.strokeColor = colors[\whisper].copy.alpha_(0.18);
+		Pen.width = CQInk.strokes[\hairline];
+		srcs.do { |src, si|
+			var y = (si * cellH) + (cellH / 2);
+			Pen.line(Point(labW, y), Point(size.width, y));
+		};
+		dests.do { |dest, di|
+			var x = labW + (di * cellW) + (cellW / 2);
+			Pen.line(Point(x, 0), Point(x, size.height));
+		};
+		Pen.stroke;
+
+		// Canonical groups stay exact; stronger seams make the flat ledger legible.
+		Pen.strokeColor = colors[\whisper].copy.alpha_(0.48);
+		#[5, 10, 12, 14].do { |row|
+			Pen.line(Point(0, row * cellH), Point(size.width, row * cellH));
+		};
+		#[5, 10, 15, 20].do { |column|
+			Pen.line(Point(labW + (column * cellW), 0),
+				Point(labW + (column * cellW), size.height));
+		};
+		Pen.stroke;
+
+		srcs.do { |src, si|
+			var y = (si * cellH) + (cellH / 2), familyColor;
+			var labelColor = if(si == focusSi) { colors[\line] } { colors[\whisper] };
+			familyColor = colors[this.prSourceFamily(src)];
+			Pen.stringAtPoint(this.prSourceLabel(src), 2@(y - 5),
+				CQInk.font(\label), labelColor);
+			Pen.fillColor = familyColor;
+			Pen.fillOval(Rect(labW - 15, y - 3, 6, 6));
+		};
+
 		dests.do { |dest, di|
 			srcs.do { |src, si|
 				var wght = matrix.getPatch(src, dest);
-				var r = Rect(labW + (di * cellW), labH + (si * cellH),
-					cellW - 1, cellH - 1);
-				Pen.fillColor = case
-					{ wght > 0 } { colors[\verso].copy.alpha_(wght.abs.max(0.15)) }
-					{ wght < 0 } { colors[\inverso].copy.alpha_(wght.abs.max(0.15)) }
-					{ colors[\ground] };
-				Pen.fillRect(r);
+				var cx = labW + (di * cellW) + (cellW / 2);
+				var cy = (si * cellH) + (cellH / 2);
+				var selected = (si == selectedSi) and: { di == selectedDi };
+				var hovered = (si == hoverSi) and: { di == hoverDi };
+				var auditioning = inspector.isActive
+					and: { inspector.src == src } and: { inspector.dest == dest };
+				this.prDrawKnot(cx, cy, wght, selected, hovered, auditioning, colors);
 			};
+		};
+	}
+
+	prDrawKnot { |cx, cy, weight, selected, hovered, auditioning, colors|
+		var radius, knotY = cy, color, rect;
+		if(weight == 0) {
+			Pen.fillColor = colors[\whisper].copy.alpha_(0.26);
+			Pen.fillOval(Rect(cx - 1.25, cy - 1.25, 2.5, 2.5));
+		} {
+			radius = 3 + (weight.abs * 6);
+			if(auditioning) { knotY = knotY - 2 };
+			color = if(weight > 0) { colors[\verso] } { colors[\inverso] };
+			color = color.copy.alpha_(0.48 + (weight.abs * 0.52));
+			rect = Rect(cx - radius, knotY - radius, radius * 2, radius * 2);
+			Pen.fillColor = color;
+			Pen.fillOval(rect);
+			Pen.strokeColor = colors[\line].copy.alpha_(0.72);
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.strokeOval(rect);
+			if(weight > 0) {
+				Pen.line(Point(cx, knotY - radius - 4), Point(cx, knotY - radius));
+			} {
+				Pen.line(Point(cx, knotY + radius), Point(cx, knotY + radius + 4));
+				Pen.line(Point(cx - 4, knotY + radius + 1),
+					Point(cx + 4, knotY + radius + 4));
+			};
+			Pen.stroke;
+		};
+		if(selected or: { hovered }) {
+			Pen.strokeColor = colors[\line].copy.alpha_(if(selected) { 0.9 } { 0.48 });
+			Pen.width = if(selected) { CQInk.strokes[\strong] } { CQInk.strokes[\hairline] };
+			Pen.addRoundedRect(Rect(cx - (cellW / 2) + 4, cy - (cellH / 2) + 3,
+				cellW - 8, cellH - 6), 3, 3);
+			Pen.stroke;
 		};
 	}
 
 	prCellAt { |x, y, srcs, dests|
 		var di = ((x - labW) / cellW).floor.asInteger;
-		var si = ((y - labH) / cellH).floor.asInteger;
+		var si = (y / cellH).floor.asInteger;
 		if(di < 0 or: { di >= dests.size } or: { si < 0 } or: { si >= srcs.size }) {
 			^nil
 		};
 		^[si, di]
 	}
 
-	prMouseDown { |x, y, btn, srcs, dests|
+	prMouseDown { |x, y, btn, clickCount, srcs, dests|
 		var cell = this.prCellAt(x, y, srcs, dests);
 		if(cell.isNil) { ^this };
-		if(btn == 1) {                              // right-click = pull the banana
-			matrix.unpatch(srcs[cell[0]], dests[cell[1]]);
-			dragSi = nil;
-			^this
-		};
-		dragSi = cell[0];
-		dragDi = cell[1];
-		dragW = matrix.getPatch(srcs[dragSi], dests[dragDi]);
-		dragY = y;
-		this.prShow(srcs[dragSi], dests[dragDi], dragW);
+		selectedSrc = srcs[cell[0]];
+		selectedDest = dests[cell[1]];
+		inspector.press(selectedSrc, selectedDest, btn, clickCount, y);
+		this.prShow(selectedSrc, selectedDest,
+			matrix.getPatch(selectedSrc, selectedDest));
+		grid.refresh;
+		header.refresh;
 	}
 
-	// drag up = verso, down = inverso; 100 px covers the full -1..1 throw
-	prMouseMove { |y, srcs, dests|
-		if(dragSi.isNil) { ^this };
-		matrix.patch(srcs[dragSi], dests[dragDi],
-			dragW + ((dragY - y) * 0.02));
+	prMouseMove { |x, y, srcs, dests|
+		var cell;
+		if(inspector.isActive) {
+			inspector.drag(y);
+			this.prShow(inspector.src, inspector.dest,
+				matrix.getPatch(inspector.src, inspector.dest));
+			grid.refresh;
+			^this
+		};
+		cell = this.prCellAt(x, y, srcs, dests);
+		if(cell.isNil) {
+			if(hoverSi.notNil or: { hoverDi.notNil }) {
+				hoverSi = nil;
+				hoverDi = nil;
+				grid.refresh;
+				header.refresh;
+			};
+		} {
+			if(cell[0] != hoverSi or: { cell[1] != hoverDi }) {
+				hoverSi = cell[0];
+				hoverDi = cell[1];
+				grid.refresh;
+				header.refresh;
+			};
+		};
+	}
+
+	prMouseUp { |btn, srcs, dests|
+		var activeSrc = inspector.src, activeDest = inspector.dest;
+		if(inspector.isActive.not) { ^this };
+		inspector.release(btn);
+		this.prShow(activeSrc, activeDest, matrix.getPatch(activeSrc, activeDest));
+		grid.refresh;
+	}
+
+	prRefreshSelection {
+		if(selectedSrc.notNil and: { selectedDest.notNil }) {
+			this.prShow(selectedSrc, selectedDest,
+				matrix.getPatch(selectedSrc, selectedDest))
+		};
+		^this
 	}
 
 	prShow { |src, dest, wght|
-		status.string = "% -> %   %".format(src, dest,
-			if(wght >= 0) { "+" ++ wght.round(0.01) } { wght.round(0.01) });
+		var amount = wght.round(0.01);
+		var signed = if(wght > 0) { "+" ++ amount } { amount.asString };
+		var polarity = case
+			{ wght > 0 } { "verso" }
+			{ wght < 0 } { "inverso" }
+			{ "unpatched" };
+		status.string = "%  →  %     % · %".format(src, dest, signed, polarity);
+	}
+
+	prDestGroups {
+		^[(start: 0, count: 5, title: "coco 1"),
+			(start: 5, count: 5, title: "coco 2"),
+			(start: 10, count: 5, title: "castle · fm"),
+			(start: 15, count: 5, title: "castle · spesal"),
+			(start: 20, count: 2, title: "decks")]
+	}
+
+	prDestLabel { |dest|
+		^switch(dest,
+			\coco1_spaf, { "spaf" }, \coco1_inVca, { "in" },
+			\coco1_fbVca, { "fb" }, \coco1_flip, { "flip" },
+			\coco1_skip, { "skip" }, \coco2_spaf, { "spaf" },
+			\coco2_inVca, { "in" }, \coco2_fbVca, { "fb" },
+			\coco2_flip, { "flip" }, \coco2_skip, { "skip" },
+			\castle1_fm, { "1" }, \castle2_fm, { "2" },
+			\castle3_fm, { "3" }, \castle4_fm, { "4" }, \castle5_fm, { "5" },
+			\castle1_spesal, { "1" }, \castle2_spesal, { "2" },
+			\castle3_spesal, { "3" }, \castle4_spesal, { "4" },
+			\castle5_spesal, { "5" }, \deckA_rate, { "a · rate" },
+			\deckB_rate, { "b · rate" }, { dest.asString })
+	}
+
+	prDestColor { |dest, colors|
+		var name = dest.asString;
+		^case
+			{ name.find("spaf").notNil } { colors[\spaf] }
+			{ name.find("_fm").notNil } { colors[\fm] }
+			{ name.find("spesal").notNil } { colors[\input] }
+			{ colors[\whisper] }
+	}
+
+	prSourceLabel { |src|
+		^switch(src,
+			\envA, { "env a" }, \envB, { "env b" },
+			\coco1, { "coco 1" }, \coco2, { "coco 2" },
+			\org1, { "org 1" }, \org2, { "org 2" },
+			{ src.asString })
+	}
+
+	prSourceFamily { |src|
+		var name = src.asString;
+		^case
+			{ name.beginsWith("tri") } { \tri }
+			{ name.beginsWith("env") } { \input }
+			{ name.beginsWith("org") } { \organ }
+			{ \cas }
 	}
 }

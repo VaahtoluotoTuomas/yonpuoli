@@ -695,3 +695,51 @@ CQ.panic; CQ.resume;                              // panic aina tavoitettavissa
 - [x] 7.6 Suorituskyky ok (avgCPU ~20–23 %, peak ~23 % ≤ 25 %) (2026-07-19, laptop)
 - [x] 7.7 M7 abuse ok (mikään ei satu ääriasetuksilla, ilman watchdogia) (2026-07-19)
 - [ ] KUUNTELU 7 hyväksytty (pvm: ____) → **v1.0-tag** (stemit jäävät live-todennukseen)
+
+## G1 DRAWER — visuaalinen ja touch-and-listen-välitarkastus
+
+```supercollider
+// Luokkamuutosten jälkeen ensin Ctrl+Shift+L. Käynnistä sitten täsmälleen tämä tila:
+CQ.boot;
+CQ.deckA.load("123681__aidenfry__cricket-and-bird-field-recording.wav");
+CQ.patchPreset(\empty);
+CQ.set(\coco1SlotDeck, 1); CQ.hold(1, 0);
+CQ.set(\coco1Spaf, 0.35); CQ.set(\coco1Level, 0.8);
+
+// 1. Avaa Drawer -> Inspector. Paina (älä vielä tuplaklikkaa) solua
+//    tri3 -> coco1_spaf: painalluksen aikana pitää kuulua +0.3-modulaation swell,
+//    vapautuksessa äänen ja solun pitää palata täsmälleen lähtöön.
+// 2. Tuplaklikkaa sama solu: +0.3 jää soimaan. Ctrl+Z irrottaa sen yhdellä kertaa.
+//    Vedä solua pystysuunnassa: paino muuttuu hienosti; yksi Ctrl+Z palauttaa koko vedon.
+// 3. Avaa Spellbook ja aja seuraava koodikerroksesta. Rivin pitää ilmestyä muodossa
+//    CQ.patch(\envA, \coco1_inVca, -0.4), ja copy line -napin liittää sama teksti.
+CQ.patch(\envA, \coco1_inVca, -0.4);
+
+// 4. Inspector-headerista apply preset -> classic: yksi // preset -blokki ilmestyy
+//    Spellbookiin ja yksi Ctrl+Z palauttaa koko aiemman matriisin. Memory-välilehdellä
+//    pitää näkyä snapshot save/recall sekä A -> B morph ennallaan.
+// 5. Tiheystesti: apply preset -> mayhem. Kokeile Day-säätimiä kaapelien alta sekä
+//    endpointteja. Tämä hyväksyttiin 2026-07-20: controls-first + endpointit riittävät,
+//    eikä cable opacity -säädintä lisätä.
+// 6. Workbench + patch loom -kokeilu: sama tab avaa koko keskialueen workbenchin ja sulkee
+//    sen takaisin Day/Night-soittimeen; Master pysyy näkyvänä, resizea tai
+//    instrumenttiscrollia ei ole.
+//    Inspectorin koko 16x22-kentän pitää näkyä ilman sisäscrollia noin 48x24 px soluina.
+//    Kolumnit ryhmittyvät coco 1 / coco 2 / castle fm / castle spesal / decks -saariin,
+//    child-labelit pysyvät diagonaalisina. Tyhjät risteykset ovat hiljaisia pisteitä ja
+//    patchit painon/polariteetin näyttäviä solmuja. Hover korostaa yhden rivin+kolumnin;
+//    klikattu solu jää rajatuksi ja tarkka reitti näkyy kiinteässä yläpalkissa.
+//    Tarkista myös Spellbookin pysyvä rivivalinta ja Memoryn snapshot/morph-jako.
+// 7. Viimeistelykierros: `drawer` pysyy aina samalla nimellä Nightin vieressä; nuoli alas
+//    avaa ja nuoli ylös sulkee. Day/Night-valinta palauttaa soittimeen. Inspectorin route-
+//    tieto, presetit, matriisi ja leikkaamaton gesture-footer ovat samalla 1128 px raililla,
+//    ja ryhmäotsikot tuntuvat kuuluvan diagonaalilabeleihin. Spellbookin kaikki rivit ovat
+//    luettavia myös ilman valintaa. Memory näyttää live patch -sormenjäljen, saved seed
+//    -vertailun ja A→B morph bridgen; snapshotin valinta ei vielä recallaa sitä.
+CQ.patchPreset(\empty);   // lopuksi turvallinen, selkeä lähtötila
+```
+
+- [x] G1 Drawer behavior/touch 1–5 hyväksytty (2026-07-20; `cable opacity`: ei tarvita)
+- [x] G1 Drawer workbench + patch loom -kokeilu 6 hyväksytty (2026-07-20)
+- [ ] G1 Drawer toolbar/alignment/Spellbook/seed-bank-viimeistely 7 hyväksytty (pvm: ____)
+- [ ] G1 Drawer myöhempi soitettavuus- ja kuunteluportti hyväksytty (pvm: ____)

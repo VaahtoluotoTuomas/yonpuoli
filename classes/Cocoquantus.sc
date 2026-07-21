@@ -207,7 +207,7 @@ Cocoquantus {
 	// a preset is weights + knob positions (see CQMatrix preset data): the
 	// matrix part goes through CQMatrix's funnel, the params part through
 	// CQState's — both clamped, both notify dependants
-	*patchPreset { |name|
+	*patchPreset { |name, origin = \code|
 		var data;
 		if(matrix.isNil) { "Cocoquantus: not booted.".warn; ^this };
 		data = CQMatrix.presets[name];
@@ -215,7 +215,7 @@ Cocoquantus {
 			"Cocoquantus: unknown preset '%' ignored.".format(name).warn;
 			^this
 		};
-		matrix.preset(name);
+		matrix.preset(name, origin: origin, committed: true, operation: \preset);
 		data[\params].keysValuesDo { |k, v| state.set(k, v) };
 	}
 
@@ -245,10 +245,11 @@ Cocoquantus {
 	// SPEC §5.5 shake: randomize matrix weights (±amount, sparse) + spesal
 	// states — never levels/feedback (safety+musicality rule; CQMatrix.shake
 	// only reaches weights by construction). seed makes the throw reproducible
-	*shake { |amount = 0.3, seed|
+	*shake { |amount = 0.3, seed, origin = \code|
 		var spesal;
 		if(matrix.isNil) { "Cocoquantus: not booted.".warn; ^this };
-		spesal = matrix.shake(amount, seed);
+		spesal = matrix.shake(amount, seed, origin: origin,
+			committed: true, operation: \shake);
 		spesal.do { |v, i| this.spesalSet(i + 1, v) };
 	}
 

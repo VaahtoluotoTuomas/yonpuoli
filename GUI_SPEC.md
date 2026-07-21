@@ -317,6 +317,35 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
 
 ## 8. Drawer — inspector, spellbook, memory
 
+> **G1 feedback experiment, 2026-07-20 — core direction visually accepted;
+> the navigation/Memory polish below remains provisional until review.**
+> Prototype the Drawer as a stable **workbench**, not a resizable bottom dock.
+> A compact, always-labelled `drawer` tab sits beside the Day/Night control in the
+> persistent top toolbar: its down chevron opens the workbench into the central
+> area and its up chevron returns to the instrument. Inspector/Spellbook/Memory
+> remain page names only inside the workbench. Choosing Day/Night while the Drawer
+> is open also returns to that instrument destination. Master remains visible and
+> live; there is no Drawer resize, whole-instrument scroll, click-away close or
+> second window. The selected Drawer page persists across close/reopen.
+>
+> In that workbench, prototype Inspector as a full-width **patch loom** while
+> preserving the exact canonical 16×22 matrix and every gesture below. Target cell
+> size is approximately 48–52×24 px at the 1280×720 minimum. Destination symbols
+> are grouped into meaningful islands (`coco 1`, `coco 2`, `castle · fm`,
+> `castle · spesal`, `decks`) with short diagonal child labels; source rows retain
+> canonical order but expose their signal families. Replace the spreadsheet field
+> of filled rectangles with quiet rails/intersections: an occupied cell becomes a
+> seated knot/plug whose size shows `|weight|`, while polarity uses both the normal
+> amber/blue law and distinct geometry. Hover emphasizes one source row and one
+> destination column; selection persists as an outlined cell plus a fixed exact
+> route ribbon. The route ribbon, preset controls, header, grid and gesture footer
+> share the same exact loom-width content rail; the footer cannot clip and the
+> grouped column headers sit close to their diagonal child labels. Presets live in
+> the Inspector header. Informational `/cq_aura` and
+> charge animation may inhabit these marks later, but are deliberately excluded
+> from the first static prototype. Chaos belongs to the planted pattern, never to
+> unstable coordinates or decorative motion.
+
 - **Inspector** = the existing 16×22 grid, demoted but upgraded with
   **touch-and-listen**: press a cell = audition ± 0.3 (mouse button = sign)
   until release, same bookkeeping and revert law as §4.1; double-click =
@@ -331,9 +360,16 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
   `// tool` comment line followed by the diffed cell lines — a harvest reads
   as `// harvest` plus its `CQ.patch(\src, \dest, 0)` lines. Buttons:
   copy line · **copy all as preset data** (`(matrix: [[src, dest, w], ...])`
-  to clipboard). The GUI teaches the language instead of competing with it.
-- **Memory**: snapshot save/recall list + A→B morph controls (relocated from
-  the main window; behavior unchanged, SPEC §7 laws untouched).
+  to clipboard). The journal is read-only, uses one Ink paper/text pair instead
+  of native per-row background colors, and keeps the clicked line visibly selected.
+  The GUI teaches the language instead of competing with it.
+- **Memory**: a **seed bank** around the unchanged snapshot laws. The live patch is
+  always the first truthful seed; saved names remain explicit save/recall targets.
+  Selecting a seed previews a read-only mini patch fingerprint, route/polarity
+  counts and outlines every knot that differs from the live matrix. A and B remain
+  explicit saved seeds joined by the duration-controlled morph bridge; its meter
+  follows real `CQSnapshots` progress. Selection never recalls by itself, and this
+  experiment adds no delete control or implicit write/recall gesture.
 
 ---
 

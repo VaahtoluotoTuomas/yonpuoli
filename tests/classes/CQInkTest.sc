@@ -68,7 +68,7 @@ CQInkTest : UnitTest {
 		this.assertEquals(inkClass.strokes, (hairline: 1.0, normal: 1.5,
 			strong: 2.0, state: 3.0), "fixed 1/1.5/2/3 px hierarchy");
 		#[wedge, flip, spark, wave, tickRing, pendulum, hold, panic, rec,
-			drawer, day, night].do { |name|
+			drawer, collapse, expand, day, night].do { |name|
 			this.assert(inkClass.glyphNames.includes(name),
 				"8x8 Pen glyph inventory includes %".format(name));
 		};

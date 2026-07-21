@@ -3,7 +3,7 @@
 // tells CQGui which already-derived view to show.
 
 CQGuiShellState {
-	var audition;
+	var <>audition;
 	var <lifecycleState = \building, <viewMode = \day;
 	var <drawerOpen = false, <drawerTab = \inspector;
 
@@ -41,6 +41,12 @@ CQGuiShellState {
 	toggleView { |textHasFocus = false|
 		if(textHasFocus or: { lifecycleState == \closed }) { ^this };
 		audition !? { audition.viewToggle };
+		// Day and Night are peer instrument destinations. Choosing either while
+		// the workbench is visible returns to the instrument in the same action.
+		if(drawerOpen) {
+			drawerOpen = false;
+			this.changed(\drawer, drawerOpen, drawerTab);
+		};
 		viewMode = if(viewMode == \day) { \night } { \day };
 		this.changed(\view, viewMode);
 		^this

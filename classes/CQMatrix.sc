@@ -62,12 +62,14 @@ CQMatrix {
 			origin, committed, operation);
 	}
 
-	unpatch { |src, dest| this.patch(src, dest, 0.0) }
+	unpatch { |src, dest, origin = \code, committed = true, operation = \rip|
+		this.patch(src, dest, 0.0, origin, committed, operation)
+	}
 
-	clearPatch {
+	clearPatch { |origin = \code, committed = true, operation = \clear|
 		this.prInit;
 		this.prPushAll;
-		this.changed(\clear);
+		this.changed(\clear, origin, committed, operation);
 	}
 
 	getPatch { |src, dest|
@@ -116,7 +118,7 @@ CQMatrix {
 		^out.asArray
 	}
 
-	load { |triples|
+	load { |triples, origin = \code, committed = true, operation = \load|
 		this.prInit;
 		triples.do { |t|
 			var si = sourceNames.indexOf(t[0]), di = destNames.indexOf(t[1]);
@@ -127,19 +129,20 @@ CQMatrix {
 			};
 		};
 		this.prPushAll;
-		this.changed(\clear);   // one bulk notification instead of one per cell
+		this.changed(\clear, origin, committed, operation);
+		// one bulk notification instead of one per cell
 	}
 
 	// applies the preset's MATRIX part only; the params part goes through the
 	// CQState funnel and is applied by Cocoquantus.patchPreset (CQMatrix must
 	// not know about CQState — ARCH §5 separation)
-	preset { |name|
+	preset { |name, origin = \code, committed = true, operation = \preset|
 		var data = this.class.presets[name];
 		if(data.isNil) {
 			this.class.prWarn("unknown preset '" ++ name ++ "'");
 			^this
 		};
-		this.load(data[\matrix]);
+		this.load(data[\matrix], origin, committed, operation);
 	}
 
 	// SPEC §5.5 shake: throw a fresh handful of bananas on the bay — a sparse
@@ -149,7 +152,8 @@ CQMatrix {
 	// levels/feedback by construction: only weights live here. A seed makes the
 	// throw reproducible (SPEC: shake(0.4, seed: 1234)); the language-side rand
 	// stream is restored afterwards so a seeded shake has no side effects.
-	shake { |amount = 0.3, seed|
+	shake { |amount = 0.3, seed, origin = \code, committed = true,
+		operation = \shake|
 		var amt = this.class.clampWeight(amount).abs;
 		var saved = thisThread.randData;
 		var spesal;
@@ -163,7 +167,8 @@ CQMatrix {
 		spesal = 5.collect { 8.rand };
 		seed !? { thisThread.randData = saved };
 		this.prPushAll;
-		this.changed(\clear);   // bulk notification: dependants re-read everything
+		this.changed(\clear, origin, committed, operation);
+		// bulk notification: dependants re-read everything
 		^spesal
 	}
 

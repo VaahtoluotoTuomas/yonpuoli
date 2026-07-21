@@ -27,6 +27,25 @@ CQGuiVisualContractTest : UnitTest {
 		};
 	}
 
+	test_drawerPublishesTheThreeNormativePages {
+		this.assertEquals(CQGuiDrawer.tabs, #[inspector, spellbook, memory],
+			"Drawer exposes Inspector, Spellbook and Memory in normative order");
+	}
+
+	test_inspectorPrototypeUsesPlayablePatchLoomCells {
+		this.assertEquals(CQGuiMatrix.cellSize, [48, 24],
+			"workbench prototype replaces the tiny ledger targets with playable knots");
+		this.assertEquals(CQGuiMatrix.loomSize, Size(1128, 384),
+			"the exact 16x22 loom fits the 1280x720 central workspace without scrolling");
+	}
+
+	test_memoryPrototypeUsesTheLoomContentRail {
+		this.assertEquals(CQGuiMemory.contentWidth, CQGuiMatrix.loomSize.width,
+			"Memory seed bank aligns with the Inspector patch-loom rail");
+		this.assertEquals(CQGuiMemory.fingerprintSize, Size(840, 300),
+			"Memory gives the selected seed a substantial patch fingerprint");
+	}
+
 	test_dayEndpointInventoryMatchesTheMatrixExactly {
 		if(CQGuiPanels.respondsTo(\sourceEndpointNames).not
 			or: { CQGuiPanels.respondsTo(\destEndpointNames).not }) {

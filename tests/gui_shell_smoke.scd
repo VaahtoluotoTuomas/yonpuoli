@@ -212,8 +212,9 @@ abort = { |error|
 						check.value(CQInkControl.drawErrors == 0,
 							"Ink controls paint without callback errors");
 						check.value(gui.shellState.drawerOpen
-							and: { gui.shell.drawerView.visible },
-							"click action opens Drawer above Master");
+							and: { gui.shell.workspaceStack.index == 1 }
+							and: { gui.shell.drawerButton.label == "drawer" },
+							"toolbar Drawer tab opens the central workbench with a stable name");
 						gui.free;
 						AppClock.sched(0.25, {
 							try {

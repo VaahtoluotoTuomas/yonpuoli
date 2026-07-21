@@ -256,49 +256,6 @@ CQGuiPanels {
 		^panel
 	}
 
-	*memory { |gui|
-		var c = CQGuiWidgets.colors;
-		var nameField = TextField().string_("snapshot").font_(CQInk.font(\number))
-			.stringColor_(c[\line]).background_(c[\ground]).fixedSize_(Size(120, 22))
-			.action_({ |tf| tf.focus(false) });
-		var snapMenus = [PopUpMenu(), PopUpMenu()];
-		var durBox = NumberBox().value_(10).clipLo_(0.1).clipHi_(600)
-			.font_(CQInk.font(\number)).stringColor_(c[\line]).background_(c[\ground])
-			.fixedSize_(Size(48, 22)).action_({ |b| b.focus(false) });
-		var refresh, save, recall, morph;
-		snapMenus.do { |menu|
-			menu.font = CQInk.font(\number);
-			menu.stringColor = c[\line];
-			menu.background = c[\ground];
-			menu.fixedSize = Size(142, 22);
-		};
-		refresh = {
-			var items = (Cocoquantus.snapshots !? { Cocoquantus.snapshots.list }) ? [];
-			snapMenus.do { |m| m.items = items };
-		};
-		save = this.prActionButton(gui, "save", 54, \line, {
-			Cocoquantus.snap(nameField.string);
-			refresh.value;
-		});
-		recall = this.prActionButton(gui, "recall", 60, \line, {
-			snapMenus[0].item !? { |i| Cocoquantus.recall(i.asSymbol) };
-		});
-		morph = this.prActionButton(gui, "morph", 58, \spaf, {
-			if(snapMenus[0].item.notNil and: { snapMenus[1].item.notNil }) {
-				Cocoquantus.morph(snapMenus[0].item.asSymbol,
-					snapMenus[1].item.asSymbol, durBox.value);
-			};
-		});
-		refresh.value;
-		^View().background_(c[\recess]).layout_(VLayout(
-			this.prLabel("memory · snapshots and morph", \whisper),
-			HLayout(nameField, save, nil).spacing_(6),
-			HLayout(snapMenus[0], this.prLabel("to"), snapMenus[1], nil).spacing_(6),
-			HLayout(recall, morph, durBox, this.prLabel("seconds"), nil).spacing_(6),
-			nil
-		).margins_(8).spacing_(6))
-	}
-
 	// -60..0 dBFS onto 0..1 for the LevelIndicators
 	*ampMeter { |amp|
 		^(((amp ? 0).max(1e-5).ampdb + 60) / 60).clip(0, 1)

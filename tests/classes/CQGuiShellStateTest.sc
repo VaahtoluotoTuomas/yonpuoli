@@ -1,5 +1,5 @@
 // G1.1 serverless window-shell contract. It locks behavior, not Qt widget count:
-// cancellable lifecycle, Day/Night hard cut, persistent Master and click-only Drawer.
+// cancellable lifecycle, Day/Night hard cut, persistent Master and stable workbench.
 
 CQGuiShellStateTest : UnitTest {
 	var shellClass, matrix, audition, shell;
@@ -52,6 +52,25 @@ CQGuiShellStateTest : UnitTest {
 		this.assert(shell.masterVisible, "open Drawer never covers Master");
 		shell.selectDrawer(\bogus);
 		this.assertEquals(shell.drawerTab, \spellbook, "unknown Drawer tab is ignored");
+	}
+
+	test_drawerWorkbenchPersistsItsPageAcrossClose {
+		if(this.prRequireShell.not) { ^this };
+		shell.selectDrawer(\memory);
+		shell.toggleDrawer;
+		shell.toggleDrawer;
+		this.assertEquals(shell.drawerTab, \memory,
+			"collapsed tab reopens the last stable workbench page");
+	}
+
+	test_viewDestinationClosesTheWorkbench {
+		if(this.prRequireShell.not) { ^this };
+		shell.toggleDrawer;
+		this.assert(shell.drawerOpen, "workbench begins open for destination switch");
+		shell.toggleView(false);
+		this.assertEquals(shell.viewMode, \night, "view destination reaches Night");
+		this.assert(shell.drawerOpen.not,
+			"choosing Day/Night returns from the workbench to the instrument");
 	}
 
 	test_buildLifecycleCanCancelBeforeOpen {
