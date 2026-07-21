@@ -174,23 +174,49 @@ CQNightGeometryTest : UnitTest {
 					>= (2 * (castle[\bodyRy] + CQNightGeometry.bodyMargin)) },
 				"castle %'s hover echo fits inside its own layer".format(k + 1));
 		};
+		// each body is taken by its own drawn outline (§16.6) — the cue and the
+		// action share one geometry on all three
+		this.assert(CQNightGeometry.shellRimHit(coco,
+			coco[\center] + Point(coco[\outerR], 0)),
+			"the shell's rim is its body handle");
+		this.assert(CQNightGeometry.shellRimHit(coco,
+			coco[\center] + Point(coco[\outerR] * 0.5, 0)).not,
+			"the shell's inside is winding surface and paper, not the rim");
+		this.assert(CQNightGeometry.shellRimHit(coco,
+			coco[\shellBox].leftTop + Point(2, 2)).not,
+			"the shell box's corner is open water");
+		this.assert(CQNightGeometry.ringBodyHit(geo, geo[\ringSamples][7]),
+			"a point on the river is the ring's body handle");
+		this.assert(CQNightGeometry.ringBodyHit(geo, geo[\eye]).not,
+			"the water inside the ring is not the ring's line");
+		this.assert(CQNightGeometry.ringDistance(geo, geo[\eye]) == inf,
+			"the radial reject spares the language a polyline scan mid-water");
 		// the bird filename needs a line box a 10 px mono face fits into
 		geo[\birds].do { |bird, i|
 			this.assert(bird[\labelRect].height >= 18,
 				"bird %'s filename has room for its ascenders".format(i + 1));
-			this.assert(bird[\labelRect].top
-				> (bird[\rateSocket].y + 10),
-				"the filename clears the rate socket's own view".format(i + 1));
+			this.assert(bird[\labelRect].width >= 200,
+				"bird %'s filename box holds a normal name whole".format(i + 1));
+			this.assert(bird[\labelRect].top > (bird[\rateSocket].y + 10),
+				"bird %'s filename clears the rate socket's own view".format(i + 1));
 		};
 		// the root arrives on a unit vector, so its tip jack can redraw the
-		// passage that its opaque view would otherwise swallow
+		// passage that its opaque view would otherwise swallow — and the side
+		// twig must not disappear under that same box
 		geo[\roots].do { |root, i|
 			var arrival = root[\arrival];
+			var tipBox = Rect.aboutPoint(root[\points].last, 13, 13);
 			this.assertFloatEquals(
 				sqrt(arrival.x.squared + arrival.y.squared), 1.0,
 				"root %'s arrival is a unit direction".format(i + 1), 0.0001);
 			this.assert(arrival.y < 0,
 				"root % arrives climbing toward its tip".format(i + 1));
+			this.assert(tipBox.containsPoint(root[\branch][0]).not
+				and: { tipBox.containsPoint(root[\branch][1]).not }
+				and: { (root[\branch][0].y > tipBox.bottom)
+					and: { root[\branch][1].y > tipBox.bottom } },
+				"root %'s twig stays clear of its tip jack's opaque box"
+					.format(i + 1));
 		};
 		this.assertEquals(geo[\eye], geo[\ringCenter],
 			"the ring's eye sits at the ring's center");

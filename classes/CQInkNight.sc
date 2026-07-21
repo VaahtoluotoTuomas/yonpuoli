@@ -87,10 +87,13 @@ CQInkNight {
 	// fireflies that carry the loop's direction (k → k+1). Phase advances only
 	// when telemetry moves — a still bay keeps a still river. The eye lives on
 	// its own opaque layer (drawEye) so a storm repaint never re-inks the ring.
-	*drawRing { |geometry, phase = 0, skin = \night|
+	*drawRing { |geometry, phase = 0, hover = false, skin = \night|
 		var palette = CQInk.palette(skin), origin = geometry[\ringBox].leftTop;
 		Pen.translate(origin.x.neg, origin.y.neg);
-		Pen.strokeColor = palette[\whisper].copy.alpha_(0.7);
+		// the river's own line is the §6 body handle: hovering it brightens it,
+		// exactly as hovering the spiral brightens the winding surface (§4.5)
+		Pen.strokeColor = palette[\whisper].copy
+			.alpha_(if(hover) { 1.0 } { 0.7 });
 		Pen.width = CQInk.strokes[\hairline];
 		this.strokeSegments(geometry[\ringSegments]);
 		Pen.fillColor = palette[\spark];
@@ -114,9 +117,19 @@ CQInkNight {
 	// "no meaning by hue alone"). Tapping the head is skip's night home.
 	*drawShell { |coco, origin, holdOn = false, flipMode = \forward,
 		speedNorm = 0.5, hover = false, sparkNorm, sparkDir = 1,
-		sparkHover = false, skin = \night|
+		sparkHover = false, rimHover = false, skin = \night|
 		var palette = CQInk.palette(skin), pearl, spark, tail;
 		Pen.translate(origin.x.neg, origin.y.neg);
+		// the shell's rim is its §6 body handle: hovering it draws the outline
+		// the double-click acts on, in whisper hairline so the danger-red hold
+		// seal on the very same circle can never be mistaken for it
+		if(rimHover) {
+			Pen.strokeColor = palette[\whisper].copy.alpha_(0.55);
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.addOval(Rect.aboutPoint(coco[\center],
+				coco[\outerR], coco[\outerR]));
+			Pen.stroke;
+		};
 		Pen.strokeColor = palette[\line].copy
 			.alpha_(if(hover) { 1.0 } { 0.8 });
 		Pen.width = CQInk.strokes[\normal];

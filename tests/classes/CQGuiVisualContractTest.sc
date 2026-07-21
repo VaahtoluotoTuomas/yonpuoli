@@ -113,6 +113,27 @@ CQGuiVisualContractTest : UnitTest {
 			}
 	}
 
+	// A deck filename is centered under its bird, so an overflow would eat both
+	// ends. §16.4 fixes the type size — the string gives way, from its tail only.
+	test_deckFilenameTrimsFromItsTailOnly {
+		var measure = { |string| string.size * 6 };
+		var short = "amen.wav";
+		var long = "a_very_long_field_recording_name_take_seventeen_final.wav";
+		var fitted = CQGui.fitLabel(long, 200, measure);
+		this.assertEquals(CQGui.fitLabel(short, 200, measure), short,
+			"a name that fits is never touched");
+		this.assert(fitted.size < long.size,
+			"an overlong name is cut");
+		this.assert(long.beginsWith(fitted.drop(-3)),
+			"what remains is the name's own head — the cut is at the tail");
+		this.assert(measure.value(fitted) <= (200 - 6),
+			"the cut name fits its box");
+		this.assert(measure.value(long.keep(fitted.size - 2) ++ "…") > (200 - 6),
+			"the cut keeps as much of the name as the box can hold");
+		this.assertEquals(CQGui.fitLabel(long, 0, measure), long,
+			"before layout the box has no width and nothing is cut away");
+	}
+
 	test_cableAlphaPulsesWithSourceAuraOnly {
 		this.assertEquals(CQGuiCableOverlay.plantedAlpha(nil), 0.88,
 			"no telemetry leaves the planted cable at its reviewed static alpha");

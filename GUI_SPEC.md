@@ -276,14 +276,23 @@ eye but must keep the topology truths):
   their source's aura. Solo-light on a body lights everything touching it.
   The night's bodies (landed 2026-07-21): each **castle** (its two buds, its
   fm and spesal moons), each **shell** (mouth, fruit and its five moons) and
-  the **ring's water** — the last two under the Day panel's own body names
+  the **ring** — the last three under the Day panel's own body names
   `coco1` / `coco2` / `quantussy`, so one shared grammar never holds two
   solos for one organ, while the castles are the night's finer bodies. Roots
   and birds get no body: each carries a single endpoint whose own jack/socket
-  solo already lights the very same cables. Controls-first (§4.5) binds at
-  every click count — a fast second tap on the inner clock, the heart, the
-  chevron, the read head or the eye belongs to that touch point, never to the
-  body behind it, so the body solo is taken on the organism's bare paper.
+  solo already lights the very same cables.
+
+  **A body is taken by its own drawn outline** (decided 2026-07-21): the
+  castle's blob, the shell's outer rim, the ring's line — each a mark the eye
+  already reads as *the whole organism*, each narrow enough to leave the water
+  around it free for the harvest lasso, and each its own hover cue (§4.5:
+  the castle wears the quiet outer ring, the shell draws its rim, the river
+  brightens). Cue and action always share one geometry; a cue that covers more
+  or less ground than its action is a cue that lies. Controls-first still binds
+  at every click count — a fast second tap on the inner clock, the heart, the
+  chevron, the read head or the eye belongs to that touch point, and where the
+  winding surface runs close to the shell's rim it is the wind that answers,
+  with the wind's own cue.
 - **Night toolbar** (small, lowercase): patch-preset menu · shake · grow ·
   wither · breed · amount mini-knob · the compass pad (§7).
 
@@ -824,7 +833,11 @@ glow ∝ follower aura. The tip jack's opaque view **redraws the root's last
 stretch under its own box**, exactly as a castle redraws the river's passage
 (fixed 2026-07-21: without it the root visibly stopped a jack-radius short of
 its own tip). Any opaque endpoint view laid over a drawn line owes that line
-the same courtesy. Beside them grows a small **mic sprout** — display
+the same courtesy — or the line must be routed clear of the box, which is what
+the **side twig** now does: it leaves low on the stem and grows *away* from
+the tip. Aimed the other way it ran the length of the tip jack's box and all
+but vanished, which is how the left root came to look broken while the right
+one did not (fixed 2026-07-21). Beside them grows a small **mic sprout** — display
 only, never a jack: the mic is not one of the 16 sources but an optional
 input feeding the preamps, so nothing on the sprout can be grabbed or
 patched. Three states: not drawn at all when no mic is configured; a dormant
@@ -835,8 +848,11 @@ warning-color law unchanged.
 
 **Birds (decks).** Three strokes each — two wing béziers + a body dot,
 span ≈ 30 px; filename in 10 px mono whisper beneath, in a line box of at
-least 20 px (fixed 2026-07-21: 14 px clipped the ascenders and descenders —
-§16.4 fixes the type size, so the box gives way, never the type); the rate socket under
+least 200 × 20 px (fixed 2026-07-21: 14 px clipped the ascenders and
+descenders, and a 160 px box ate both ends of a long name — §16.4 fixes the
+type size, so the box gives way first). A name too long for even that box is
+trimmed **from its tail only** and marked with an ellipsis: it is centered, so
+an untrimmed overflow would lose the head and the extension both; the rate socket under
 the wing, and beside it the deck-level tide crescent (§6.1). Dropping an
 audio file on the bird loads its deck (§6.1). Flutter = 1 px wing bob at
 ambient rate while the deck's level > 0.05 (client-side state, no polling).

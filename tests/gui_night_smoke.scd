@@ -449,22 +449,59 @@ abort = { |error|
 															check.value(map.bodyHover[1].not
 																and: { map.dialHover[1].not },
 																"leaving the castle rests both cues");
+															// the shell is taken by its rim, and the rim
+															// says so under the pointer (§16.6)
 															shell.mouseDownAction.value(shell, 3, 3, 0, 0, 2);
+															check.value(gui.bananaGrammar.soloTarget.isNil,
+																"the shell box's corner is open water: no solo, no cue");
+															// opposite the mouth, where the outermost
+															// turn sits well inside the rim: nearer the
+															// mouth the winding surface rightly wins (§4.5)
+															sparkPoint = CQNightGeometry.polar(coco[\center],
+																coco[\outerR], pi);
+															check.value(map.overlay.patchAt(sparkPoint).isNil
+																and: { CQNightGeometry.spiralDistance(coco,
+																	sparkPoint) > 8 },
+																"precondition: the far rim is neither cable nor winding surface");
+															local = sparkPoint - coco[\shellBox].leftTop;
+															shell.mouseOverAction.value(shell,
+																local.x, local.y);
+															check.value(map.rimHover[0]
+																and: { map.shellHover[0].not },
+																"hovering the shell's rim draws the outline the press acts on");
+															shell.mouseDownAction.value(shell,
+																local.x, local.y, 0, 0, 2);
 															check.value(
 																gui.bananaGrammar.soloTarget.notNil
 																and: { gui.bananaGrammar.soloTarget[\name]
 																	== \coco1 },
-																"shell paper carries the coco body solo");
+																"a double-click on the rim solos the whole shell");
 															gui.bananaGrammar.escape;
-															local = map.geometry[\ringBox].leftTop;
+															shell.mouseLeaveAction.value(shell);
+															check.value(map.rimHover[0].not,
+																"leaving rests the rim cue");
+															// the ring is taken by its own line
+															local = map.geometry[\ringSamples][7]
+																- map.geometry[\ringBox].leftTop;
 															map.ringView.mouseDownAction.value(
 																map.ringView, 6, 6, 0, 0, 2);
+															check.value(gui.bananaGrammar.soloTarget.isNil,
+																"still water inside the ring is not the ring's body");
+															map.ringView.mouseOverAction.value(
+																map.ringView, local.x, local.y);
+															check.value(map.ringHover,
+																"hovering the river brightens the line you can take");
+															map.ringView.mouseDownAction.value(
+																map.ringView, local.x, local.y, 0, 0, 2);
 															check.value(
 																gui.bananaGrammar.soloTarget.notNil
 																and: { gui.bananaGrammar.soloTarget[\name]
 																	== \quantussy },
-																"the ring's water solos the whole Quantussy body");
+																"a double-click on the river solos the whole Quantussy body");
 															gui.bananaGrammar.escape;
+															map.ringView.mouseLeaveAction.value(map.ringView);
+															check.value(map.ringHover.not,
+																"leaving rests the river's cue");
 															touchDone.value;
 														};
 														check.value(CQInkControl.drawErrors == 0,

@@ -15,7 +15,7 @@ CQGuiNightMap {
 	var <crescentViews, crescentNorms, activeCrescents, hoverCrescents, labels;
 	var <geometry, <eyeActive = false;
 	var <eyeFreqNorm = 0.5, <eyeChaosNorm = 0.15;
-	var <speedNorms, <shellHover, <dialHover, <bodyHover;
+	var <speedNorms, <shellHover, <dialHover, <bodyHover, <rimHover, <ringHover = false;
 	var <sparkDirs, <sparkHover, sparkPainted, flipPainted;
 	var <fireflyPhase = 0.0, lastFireflyTime, castlePainted;
 	var <holdStates, <flipStates, <rangeLetters, <sproutState;
@@ -225,6 +225,7 @@ CQGuiNightMap {
 		flipStates = [false, false];
 		speedNorms = [0.5, 0.5];
 		shellHover = [false, false];
+		rimHover = [false, false];
 		dialHover = Array.fill(5, false);
 		bodyHover = Array.fill(5, false);
 		sparkDirs = [1, 1];
@@ -412,6 +413,11 @@ CQGuiNightMap {
 			view.mouseOverAction = { |v, x, y| this.prHoverCastle(k, v, x, y) };
 			view.mouseLeaveAction = { this.prHoverCastle(k, nil, nil, nil) };
 		};
+		[ringView, eyeView].do { |view|
+			view.acceptsMouseOver = true;
+			view.mouseOverAction = { |v, x, y| this.prHoverRing(v, x, y) };
+			view.mouseLeaveAction = { this.prHoverRing(nil, nil, nil) };
+		};
 	}
 
 	prStagePoint { |view, x, y|
@@ -419,20 +425,43 @@ CQGuiNightMap {
 	}
 
 	prHoverShell { |i, view, x, y|
-		var near = false, headNear = false, point, spark;
+		var near = false, headNear = false, rim = false, point, spark, free = true;
 		if(geometry.notNil and: { view.notNil }) {
 			point = this.prStagePoint(view, x, y);
+			free = overlay.patchAt(point).isNil;
 			near = (CQNightGeometry.spiralDistance(geometry[\cocos][i], point)
-				<= 8) and: { overlay.patchAt(point).isNil };
+				<= 8) and: { free };
 			spark = this.sparkPoint(i);
 			headNear = near and: { spark.notNil } and: {
 				CQNightGeometry.distance(point, spark)
 					<= CQGuiNightTouch.sparkRadius };
+			// the winding surface is consulted first, so the rim cue never
+			// advertises a body solo where the next press would wind instead
+			rim = free and: { near.not }
+				and: { CQNightGeometry.shellRimHit(geometry[\cocos][i], point) };
 		};
-		if((near != shellHover[i]) or: { headNear != sparkHover[i] }) {
+		if((near != shellHover[i]) or: { headNear != sparkHover[i] }
+			or: { rim != rimHover[i] }) {
 			shellHover[i] = near;
 			sparkHover[i] = headNear;
+			rimHover[i] = rim;
 			if(freed.not) { shellViews[i].refresh };
+		};
+	}
+
+	// the ring's own line, hovered from either of the two views that speak the
+	// ring's grammar (the eye keeps its own opaque layer, §10)
+	prHoverRing { |view, x, y|
+		var near = false, point;
+		if(geometry.notNil and: { view.notNil }) {
+			point = this.prStagePoint(view, x, y);
+			near = CQNightGeometry.ringBodyHit(geometry, point)
+				and: { CQNightGeometry.distance(point, geometry[\eye]) > 12 }
+				and: { overlay.patchAt(point).isNil };
+		};
+		if(near != ringHover) {
+			ringHover = near;
+			if(freed.not) { ringView.refresh };
 		};
 	}
 
@@ -511,6 +540,7 @@ CQGuiNightMap {
 			this.prPlaceCrescent(name, geometry[\birds][i][\levelCrescent])
 		};
 		labels.do { |label, i| label.bounds = geometry[\birds][i][\labelRect] };
+		gui.refreshDeckLabels;   // the boxes just changed: re-fit the names
 		container.refresh;
 	}
 
@@ -575,7 +605,7 @@ CQGuiNightMap {
 
 	prDrawRing {
 		if(geometry.isNil) { ^this };
-		CQInkNight.drawRing(geometry, fireflyPhase, \night);
+		CQInkNight.drawRing(geometry, fireflyPhase, ringHover, \night);
 	}
 
 	prDrawEye {
@@ -626,7 +656,7 @@ CQGuiNightMap {
 		coco = geometry[\cocos][i];
 		CQInkNight.drawShell(coco, coco[\shellBox].leftTop,
 			holdStates[i], this.flipMode(i), speedNorms[i], shellHover[i],
-			gui.phaseNorms[i], sparkDirs[i], sparkHover[i], \night);
+			gui.phaseNorms[i], sparkDirs[i], sparkHover[i], rimHover[i], \night);
 	}
 
 	prDrawBird { |i|

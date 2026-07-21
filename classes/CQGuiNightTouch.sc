@@ -69,7 +69,9 @@ CQGuiNightTouch {
 				angle: this.class.angleAt(coco[\center], point));
 			^this
 		};
-		^this.forwardDown(view, x, y, modifiers, button, clicks, body)
+		// the body solo answers on the rim the hover cue drew, nowhere else
+		^this.forwardDown(view, x, y, modifiers, button, clicks,
+			if(CQNightGeometry.shellRimHit(coco, point)) { body })
 	}
 
 	shellMove { |index, view, x, y, modifiers = 0|
@@ -124,7 +126,8 @@ CQGuiNightTouch {
 			map.eyeActive = true;
 			^this
 		};
-		^this.forwardDown(view, x, y, modifiers, button, clicks, \quantussy)
+		^this.forwardDown(view, x, y, modifiers, button, clicks,
+			if(CQNightGeometry.ringBodyHit(geo, point)) { \quantussy })
 	}
 
 	ringMove { |view, x, y, modifiers = 0|

@@ -152,6 +152,39 @@ CQNightGeometry {
 		^(dx.squared + dy.squared) <= 1
 	}
 
+	// One law for all three night bodies (decided 2026-07-21): **a body is
+	// taken by its own drawn outline**, and hovering that outline is the cue.
+	// The castle offers its blob, the shell its outer rim, the ring its line —
+	// each a mark the eye already reads as "the whole organism", each narrow
+	// enough that the water around it stays free for the harvest lasso.
+
+	// the shell's rim: a band on the circle the hold seal draws. The spiral
+	// itself never reaches past outerR except at the mouth, and the winding
+	// surface is consulted first, so the two can never fight over a press.
+	*rimMargin { ^10 }
+
+	*shellRimHit { |coco, point, margin|
+		^(this.distance(point, coco[\center]) - coco[\outerR]).abs
+			<= (margin ? this.rimMargin)
+	}
+
+	// distance from a point to the ring's drawn line (the river itself)
+	*ringDistance { |geometry, point|
+		var samples = geometry[\ringSamples], best = inf;
+		// cheap radial reject first: most of the stage is nowhere near the river
+		if((this.distance(point, geometry[\ringCenter]) - geometry[\ringR]).abs
+			> (geometry[\ringR] * 0.45)) { ^inf };
+		samples.doAdjacentPairs { |a, b|
+			best = min(best, this.prPointSegmentDistance(point, a, b));
+		};
+		// the river is a closed loop: its last sample joins its first
+		^min(best, this.prPointSegmentDistance(point, samples.last, samples.first))
+	}
+
+	*ringBodyHit { |geometry, point, margin|
+		^this.ringDistance(geometry, point) <= (margin ? this.rimMargin + 2)
+	}
+
 	// ---- the whole archipelago from one stage size ----
 	// Bodies scale with the window (§16.10); stroke widths and text stay in px
 	// at the draw sites. The minimum stage (1280x570 under the toolbar and the
@@ -283,13 +316,17 @@ CQNightGeometry {
 				var mid2 = Point(base.x + ((tip.x - base.x) * 0.7) + 6.0.rand2,
 					base.y + ((tip.y - base.y) * 0.75) + 4.0.rand2);
 				var reach = max(0.001, this.distance(mid2, tip));
+				// the side twig grows AWAY from the tip and leaves low on the
+				// stem. Aimed the other way it ran the length of the tip jack's
+				// opaque box and all but vanished — visibly so on the left root,
+				// whose twig lay almost exactly along the box (fixed 2026-07-21)
 				(points: [base, mid1, mid2, tip],
 					// the unit vector the root arrives on: the tip jack's opaque
 					// view redraws this short passage under its own box, exactly
 					// as a castle redraws the river's (§16.6) — otherwise the
 					// root visibly stops a jack-radius short of its own tip
 					arrival: (tip - mid2) / reach,
-					branch: [mid2, mid2 + Point(side.neg * 20 * scale,
+					branch: [mid1, mid1 + Point(side * 20 * scale,
 						(14 * scale).neg + 3.0.rand2)])
 			}
 		});
@@ -309,7 +346,10 @@ CQNightGeometry {
 				// 20 px of line box for a 10 px mono face: the earlier 14 px
 				// clipped the filename's ascenders and descenders (§16.4 fixes
 				// the font size, so the box has to give way, not the type)
-				labelRect: Rect(center.x - 80, center.y + (33 * scale), 160, 20))
+				// 200 x 20 px, fixed in px so a resize never re-cuts a name that
+				// already fits; the line box holds a 10 px mono face whole, and
+				// CQGui trims an overlong name from its tail only (§16.4)
+				labelRect: Rect(center.x - 100, center.y + (33 * scale), 200, 20))
 		};
 		endpoints[\deckA_rate] = birds[0][\rateSocket];
 		endpoints[\deckB_rate] = birds[1][\rateSocket];

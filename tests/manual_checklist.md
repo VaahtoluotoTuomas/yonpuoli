@@ -1135,10 +1135,12 @@ CQ.patchPreset(\empty);
   §4.5:n hiljaisen ulkokehän — sama kieli kuin nupeilla ja sisäkellolla.
   Kello ja runko eivät koskaan sytytä vihjettään yhtä aikaa.
 
-**Avoin kysymys:** kuoren paperi ja ringin vesi ovat myös solo-runkoja, mutta
-niillä ei vielä ole hover-vihjettä (kuoren ainoa "runko" on spiraaliviiva,
-jonka kirkastus tarkoittaa jo kelausta, ja ringin kehän korostus olisi iso
-visuaalinen ele). Päätetään yhdessä.
+**Ratkaistu 2026-07-21 (käyttäjän valinta: vaihtoehto 2).** Runko otetaan
+kiinni **sen omasta piirretystä ääriviivasta**, ja juuri se viiva on myös
+vihje: linnakkeella kehä rungon ympärillä, kuorella spiraalin ulkokehä,
+ringillä joen viiva. Kuoren nurkat ja ringin sisävesi eivät enää tee mitään —
+ne jäävät lassolle. Kelaus voittaa yhä siellä missä spiraaliviiva kulkee
+lähellä ulkokehää (§4.5), jolloin näkyy kelausvihje.
 
 **G2.5-kierros 2 (2026-07-21) — korjattu, tarkista nämä:**
 
@@ -1164,4 +1166,25 @@ CQ.patch(\tri3, \coco1_flip, 0);
 // - LINTUJEN NIMET: pudota tiedosto lintuun. Nimi näkyy kokonaan, ei
 //   leikkaannu ylhäältä eikä alhaalta.
 CQ.patchPreset(\empty);
+```
+
+**G2.5-kierros 3 (2026-07-21):**
+
+```supercollider
+// G2.5c — kierroksen 3 korjaukset SILMÄLLÄ. (Ctrl+Shift+L ensin.)
+CQ.boot;
+// - NIMET: pudota lintuun tiedosto, jolla on PITKÄ nimi. Nimi ei leikkaannu
+//   vasemmalta eikä oikealta; jos se ei mahdu, vain LOPPU lyhenee ja tilalle
+//   tulee "…". Lyhyt nimi näkyy sellaisenaan keskitettynä.
+// - VASEN JUURI: alavasemmalla juuri piirtyy nyt kokonaan, sivuhaara mukaan
+//   lukien. (Vika oli sivuhaarassa: se kulki lähes koko matkan kärkijakin
+//   läpinäkymättömän laatikon alla, ja ulos jäi vain sen nokka. Nyt haara
+//   lähtee alempaa ja kasvaa kärjestä POISPÄIN.) Vertaa oikeaan juureen.
+// - KUOREN KEHÄ: vie osoitin spiraalin ULKOKEHÄLLE (siihen ympyrään, jonka
+//   hold piirtää punaisena) — ohut kehä syttyy. Kaksoisnapautus siinä =
+//   koko kuoren solo. Suun puolella, missä spiraaliviiva on lähellä kehää,
+//   syttyy sen sijaan KELAUSVIHJE ja veto kelaa — se on tarkoitus.
+// - JOEN VIIVA: vie osoitin linnakkeiden väliselle rengasviivalle — viiva
+//   kirkastuu. Kaksoisnapautus = koko Quantussyn solo. Renkaan sisävesi ja
+//   kuoren nurkat eivät enää tee mitään (ne kuuluvat lassolle).
 ```

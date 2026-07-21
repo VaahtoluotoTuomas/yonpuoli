@@ -26,7 +26,7 @@ CQGui {
 	// two cocos and the castle row report their own). Same law as the aura —
 	// a slot stays nil until its synth has spoken.
 	var <chargeValues, chargePainted, <chargeNames, chargeIndex;
-	var deckLabels, deckCtls, skipButtons;
+	var deckLabels, deckNames, deckCtls, skipButtons;
 	var noticeView, recBtn, recTimeView, recTask, hotTask;
 	var micLive = false, hotLive = false, cleaned = false;
 	var paramPending, paramFlushScheduled = false, lastParamFlush = 0;
@@ -173,6 +173,7 @@ CQGui {
 		updaters = IdentityDictionary.new;
 		meterFuncs = IdentityDictionary.new;
 		deckLabels = IdentityDictionary.new;
+		deckNames = IdentityDictionary.new;
 		skipButtons = IdentityDictionary.new;
 		spesalStates = Cocoquantus.spesalStates;
 		castleValues = [0, 0, 0, 0, 0];
@@ -458,10 +459,48 @@ CQGui {
 		^if(which == \deckA) { Cocoquantus.deckA } { Cocoquantus.deckB }
 	}
 
+	// A filename is centered under its bird (§16.6), so an overflow eats BOTH
+	// ends and leaves neither the name nor the extension readable. §16.4 fixes
+	// the type size, so the string gives way instead — trimmed from its tail
+	// only, which is the expendable end, and marked with an ellipsis.
+	*fitLabel { |string, width, measure|
+		var text = string.asString, limit = width - 6, low, high, best;
+		// before layout the box has no useful width yet: never trim to nothing
+		if(width < 40 or: { measure.value(text) <= limit }) { ^text };
+		low = 0;
+		high = text.size;
+		best = 0;
+		while { low <= high } {
+			var mid = (low + high) div: 2;
+			if(measure.value(text.keep(mid) ++ "…") <= limit) {
+				best = mid;
+				low = mid + 1;
+			} {
+				high = mid - 1;
+			};
+		};
+		^text.keep(best) ++ "…"
+	}
+
+	*prTextWidth { |string, font|
+		^try { string.bounds(font).width } { string.size * font.size * 0.62 }
+	}
+
+	// re-fits every deck label from the raw name it was last given: a re-layout
+	// can widen or narrow the box, and a name cut for the old one would stay cut
+	refreshDeckLabels {
+		deckNames.keysValuesDo { |which, name| this.prPaintDeckLabel(which, name) };
+	}
+
 	prPaintDeckLabel { |which, path|
+		var name = path.asString.basename;
+		var font = CQInk.font(\number);
+		deckNames[which] = name;
 		deckLabels[which].do { |record|
-			record[\view].string = path.asString.basename;
-			record[\view].stringColor = record[\ink];
+			var view = record[\view];
+			view.string = this.class.fitLabel(name, view.bounds.width,
+				{ |candidate| this.class.prTextWidth(candidate, font) });
+			view.stringColor = record[\ink];
 		};
 	}
 
