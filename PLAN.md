@@ -4,10 +4,9 @@ Päivitetty 2026-07-21. Tämä tiedosto kertoo, mitä tehdään seuraavaksi. Val
 toteutuksen yksityiskohtainen työpäiväkirja ja alkuperäiset checkboxit on jäädytetty
 tiedostoon [`docs/history/PLAN_v1.0.md`](docs/history/PLAN_v1.0.md).
 
-**Tilanne yhdellä rivillä:** foundation F0–F2 ja kaikki G1:n rakennuspalikat (Day skin,
-Ink kit, jackit/socketit, banana grammar + audition, Drawer, `/cq_aura`) ovat valmiita
-ja käyttäjän visuaalisesti hyväksymiä; jäljellä on G1:n §13-loppuportti (kuuntelu,
-skaalaus, resurssit), sitten G2 Night map ja G3 Weather machine.
+**Tilanne yhdellä rivillä:** foundation F0–F2 ja **koko G1 ovat valmiita ja käyttäjän
+hyväksymiä**, §13:n loppuportti mukaan lukien (hyväksytty 2026-07-21, commit `295d14d`);
+seuraavaksi G2 Night map, sitten G3 Weather machine.
 
 **Aktiivinen työhaara:** `archipelago`. GUI_SPECin neljä aiempaa määrittelysaumaa
 ratkaistiin käyttäjän päätöksellä 2026-07-19; avoimia GUI-käyttäytymispäätöksiä ei ole.
@@ -340,25 +339,30 @@ Night map ja Weather Machine — tehdään seuraavalla tavalla:
 
 ## Seuraavan toteutussession ensimmäiset askeleet
 
-**Seuraava vaihe on G1:n loppuportti, ei uutta pintaa.**
+**Seuraava vaihe on G2 Night map. G1 on suljettu 2026-07-21 eikä sitä avata uudelleen.**
 
-1. Varmista `archipelago`-haara, puhdas työpuu ja lue `CLAUDE.md`, `PLAN.md` sekä
-   `GUI_SPEC.md` kokonaan. F0–F2, Day/Ink-layout, banana grammar + audition, koko
-   Drawer ja `/cq_aura` ovat valmiita ja katselmoituja; älä rakenna niitä uusiksi
-   äläkä "paranna" niitä oma-aloitteisesti.
-2. Aja automaatio ensin: neljä markkeria (`compile_check`, `run_all`, `nrt_safety`,
-   `nrt_hold_integrity`) ja kolme GUI-smokea (`gui_shell_smoke`, `gui_drawer_smoke`,
-   `gui_drawer_preview_reentry_smoke`). **Huom:** GUI-smoket ajetaan omana
-   prosessinaan; jos ne jumittuvat, tarkista ensin hiiren osoittimen sijainti (ks.
-   Qt-jäätymiskorjaus yllä) eikä koodia.
-3. Anna käyttäjälle `tests/manual_checklist.md`:n valmis **G1 LOPPUPORTTI** -osio
-   (G1.1 kuuntelugate, G1.2 skaalaus 100/125/150 %, G1.3 CPU/resurssisoak) ja pyydä
-   tulokset yksi lohko kerrallaan. Lohkot on jo kirjoitettu; älä kirjoita niitä uusiksi.
-4. Korjaa vain sen mitä portti paljastaa, olemassa olevaan pintaan. Kun portti on
-   käyttäjän hyväksymä, merkitse G1 valmiiksi, commitoi ja pushaa — ja vasta sitten
-   aloita G2 Night map §16.6:n anatomialla.
+1. Varmista `archipelago`-haara ja puhdas työpuu, ja lue `CLAUDE.md`, `PLAN.md` sekä
+   `GUI_SPEC.md` kokonaan — erityisesti §16.6 (Night-anatomia) ja §10 (piirtobudjetti).
+   Koko G1 on valmis ja katselmoitu: älä rakenna sitä uusiksi äläkä "paranna" sitä
+   oma-aloitteisesti. Dayn muistipolun koko ja kaapelikerroksen offscreen-välimuisti
+   ovat kirjattuja, tietoisesti siirrettyjä kysymyksiä — ne eivät ole G2:n scopea.
+2. Aja automaatio ensin ja raportoi markerit: neljä markkeria (`compile_check`,
+   `run_all`, `nrt_safety`, `nrt_hold_integrity`) ja kolme GUI-smokea
+   (`gui_shell_smoke`, `gui_drawer_smoke`, `gui_drawer_preview_reentry_smoke`).
+   Lähtötaso 2026-07-21: `CQ_COMPILE_OK`, 3 467 passia / 0 failurea,
+   `CQ_SAFETY_PASSED`, `CQ_HOLD_OK` ja kaikki kolme GUI-markkeria.
+   **Huom:** GUI-smoket ajetaan omana prosessinaan; jos ne jumittuvat, tarkista ensin
+   hiiren osoittimen sijainti (ks. Qt-jäätymiskorjaus yllä) eikä koodia.
+3. Rakenna Night map §16.6:n anatomialla pienimpänä ajettavana ensimmäisenä versiona:
+   viiden castlen oikeansuuntainen ring, vasen/oikea Coco-spiraali, roots below ja
+   birds above. Pysähdy käyttäjän visuaaliseen katselmointiin ennen syvempää
+   viimeistelyä — sama välitarkastusmalli kuin koko G1:ssä.
+4. Muista G1:n opetus piirtobudjetista: `GUI_SPEC.md` §10 sitoo myös Nightin. Ambient
+   enintään 15 Hz, ilmoitusvirrat tahdistetaan etureunalla, eikä kustannusta arvata —
+   se mitataan Qt:n paint-eventin sisältä. Kielen ja Qt:n rajapinnan `Pen`-kutsu
+   maksaa noin 53 µs, joten piirron hinta on kutsujen määrä, ei matematiikka.
 
-Night-organismeja tai Weather Machinea ei piirretä ennen G1:n behavior foundationia.
+Weather Machinea ei piirretä ennen G2:n hyväksyntää.
 
 ## Myöhemmin, ei tämän vaiheen scopea
 

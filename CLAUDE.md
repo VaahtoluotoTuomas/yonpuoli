@@ -83,11 +83,27 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   `/cq_castle` activity. Do not call that instantaneous sample a waveform.
 - The Madrona/Sumu reference contributed only the principle that a visualization must
   expose actual sound/state structure. Do not add decorative filler or animation.
-- **Every G1 building block is built and visually accepted (last: `/cq_aura`,
-  2026-07-21). The only open G1 item is the `GUI_SPEC.md` §13 end gate: listening,
-  100/125/150 % scaling and the CPU/resource soak. Do not build new G1 surface, and
-  do not "improve" accepted surface on your own initiative** — fix only what the gate
-  exposes. `PLAN.md` holds the detail and the exact next steps.
+- **G1 is complete and accepted, §13 end gate included (2026-07-21, `295d14d`). The
+  next phase is G2 Night map (`GUI_SPEC.md` §16.6). Do not rebuild or "improve" G1
+  surface on your own initiative.** `PLAN.md` holds the detail and the exact next
+  steps. The gate exposed three real defects, all fixed in existing surface: Day's
+  two min-sized diagrams absorbed all vertical slack on maximize (now anchored at
+  150/176 px with the slack collecting as paper), the cable layer rebuilt bezier
+  geometry every frame and paid ~30 `Pen.stroke` calls per inverso cable, and a
+  snapshot morph drove the GUI at 30 Hz — twice §10's ambient ceiling.
+- GUI redraw law learned the hard way in G1.3, now normative in `GUI_SPEC.md` §10:
+  a `Pen` call costs ~53 µs across the language/Qt boundary, so a drawing's price is
+  its **call count**, not its math. Notification streams are paced to 15 Hz with a
+  leading edge (single acts stay instant, streams thin, the last value is never
+  dropped), and past `CQGuiCableOverlay.auraCableLimit` (48) cables stop pulsing and
+  keep §16.8's static ink. Never assume where a repaint costs — measure inside the
+  real Qt paint event. Two plausible language-side hypotheses were wrong before that.
+- Known and deliberately deferred, not bugs to fix on sight: the transparent cable
+  overlay re-strokes every cable whenever any control beneath it repaints (Qt damage
+  + no clip info in `drawFunc`), which is why a morph costs ~5–6 % against a ~3 %
+  resting figure; an offscreen buffer is the real fix and waits until after G2. The
+  static Day memory-path map's visual weight versus its information value is parked
+  in the same place. Both are recorded in `PLAN.md` "Myöhemmin".
 - Accepted G1 decisions that stay binding: the banana grammar (audition/WYHIWYG,
   plant/move/rip/harvest, polarity/wheel, solo-light, 32-op undo including GUI SHAKE,
   40 px capture radius, controls-first hit priority, static hover); no `cable opacity`
@@ -105,9 +121,11 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 - `/cq_aura` law: no telemetry is not the same as zero. `CQGui.auraFor` returns `nil`
   until the server reports, and every drawing surface must keep its static reviewed
   look in that case. Focus, solo-dim and hover never pulse (`GUI_SPEC.md` §4.5).
-- Latest full gate on `archipelago`: 3,467 unit passes / 0 failures, `CQ_COMPILE_OK`,
-  `CQ_SAFETY_PASSED`, `CQ_HOLD_OK`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
-  `CQ_GUI_DRAWER_REENTRY_PASSED`.
+- Latest full gate on `archipelago` (2026-07-21, `295d14d`): 3,467 unit passes / 0
+  failures, `CQ_COMPILE_OK`, `CQ_SAFETY_PASSED`, `CQ_HOLD_OK`, `CQ_GUI_SHELL_PASSED`,
+  `CQ_GUI_DRAWER_PASSED`, `CQ_GUI_DRAWER_REENTRY_PASSED`. Measured on the user's
+  machine: server 19.8–21.5 % against SPEC §9's 25 % ceiling, GUI 2.8–3.8 % at rest
+  with 20 planted cables.
 - The four former `GUI_SPEC.md` seams were resolved by the user on 2026-07-19 and are
   recorded in the spec and `PLAN.md`: nine charge channels, the G1 harvest lasso,
   display-only mic sprout and static REC transition/error states. Do not reopen or
