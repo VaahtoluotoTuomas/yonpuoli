@@ -1020,4 +1020,4 @@ CQ.boot; CQ.patchPreset(\classic);
 CQ.patchPreset(\empty);
 ```
 
-- [ ] G2.3b night touch -visuaalit hyväksytty (pvm: ______)
+- [x] G2.3b night touch -visuaalit hyväksytty (pvm: 2026-07-21)

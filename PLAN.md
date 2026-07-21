@@ -6,8 +6,10 @@ tiedostoon [`docs/history/PLAN_v1.0.md`](docs/history/PLAN_v1.0.md).
 
 **Tilanne yhdellä rivillä:** foundation F0–F2 ja **koko G1 ovat valmiita ja käyttäjän
 hyväksymiä**, §13:n loppuportti mukaan lukien (hyväksytty 2026-07-21, commit `295d14d`);
-G2 Night mapin ensimmäinen ajettava versio on rakennettu 2026-07-21 ja **odottaa
-visuaalista katselmointia**; sen jälkeen G2:n loput osat, sitten G3 Weather machine.
+G2 Night mapista anatomia (G2.1–G2.2) ja **koko night touch grammar visuaalisine
+palautteineen (G2.3–G2.3b) on hyväksytty 2026-07-21**; seuraavaksi G2:n loput osat
+pieninä katselmoitavina lisäyksinä (ensin loop-phase/read-head spark), sitten G2:n
+§13-portti ja vasta sen jälkeen G3 Weather machine.
 
 **Aktiivinen työhaara:** `archipelago`. GUI_SPECin neljä aiempaa määrittelysaumaa
 ratkaistiin käyttäjän päätöksellä 2026-07-19; avoimia GUI-käyttäytymispäätöksiä ei ole.
@@ -301,9 +303,11 @@ coco-ulostulosta ja lintujen flutter.
 - [x] Topology-true Archipelago: viiden castlen oikeansuuntainen ring, vasen/oikea
   Coco-spiraali, roots below ja birds above `GUI_SPEC.md` §16.6:n anatomialla.
   *(Hyväksytty visuaalisesti 2026-07-21, manuaalitestit G2.1–G2.2.)*
-- [ ] Night touch grammar (`GUI_SPEC.md` §6.1): toteutettu ja savutestattu
+- [x] Night touch grammar (`GUI_SPEC.md` §6.1): toteutettu ja savutestattu
   2026-07-21; G2.3-kuuntelukierros 1 käyty samana päivänä (kaikki eleet
-  toimivat, palaute alla korjattu), odottaa uusintakatselmointia (G2.3b).
+  toimivat, palaute alla korjattu) ja **uusintakatselmointi G2.3b hyväksytty
+  2026-07-21** (chevron, sisäkello, reel pearl, myrsky-iiris ja hoverit
+  silmällä ja korvalla; manuaalitesti G2.3b).
 - [ ] Loop phase/read-head spark ja käyttäjän vahvistaman payloadin `/cq_charge`.
 - [ ] Solo-light (body), deck-bird drag-over-korostus ja täsmällinen Night
   toolbar. *(Endpoint- ja kaapelisolo sekä bird-drop toimivat jo.)*
@@ -414,9 +418,11 @@ Night map ja Weather Machine — tehdään seuraavalla tavalla:
 
 ## Seuraavan toteutussession ensimmäiset askeleet
 
-**G2:n anatomia on hyväksytty ja §6.1:n night touch grammar toteutettu
-2026-07-21; touch grammar odottaa kuuntelukatselmointia (manuaalitesti G2.3).
-G1 on suljettu eikä sitä avata uudelleen.**
+**G2:n anatomia (G2.1–G2.2) ja koko night touch grammar visuaalisine
+palautteineen (G2.3–G2.3b) on hyväksytty 2026-07-21. G1 on suljettu eikä sitä
+avata uudelleen. G2:n loput osat tehdään pieninä, erikseen katselmoitavina
+lisäyksinä — yksi näkyvä kokonaisuus kerrallaan, pysähdys palautteeseen
+jokaisen jälkeen.**
 
 1. Varmista `archipelago`-haara ja puhdas työpuu, ja lue `CLAUDE.md`, `PLAN.md` sekä
    `GUI_SPEC.md` kokonaan — erityisesti §16.6 (Night-anatomia) ja §10 (piirtobudjetti).
@@ -429,12 +435,17 @@ G1 on suljettu eikä sitä avata uudelleen.**
    0 failurea, `CQ_SAFETY_PASSED`, `CQ_HOLD_OK` ja kaikki neljä GUI-markkeria.
    **Huom:** GUI-smoket ajetaan omana prosessinaan; jos ne jumittuvat, tarkista ensin
    hiiren osoittimen sijainti (ks. Qt-jäätymiskorjaus yllä) eikä koodia.
-3. G2.3-kierros 1 on käyty ja korjattu (chevron, sisäkello, reel pearl,
-   myrsky-iiris, hoverit — ks. G2-osio). Odota käyttäjän uusintakatselmointi
-   (manuaalitesti G2.3b) ja tee viimeistely sen pohjalta. Vasta palautteen
-   jälkeen jatka G2:n seuraaviin osiin: loop-phase/read-head spark (tuo
-   samalla skipin yökodin, §6.1), `/cq_charge`-lamput, body-solo,
-   drag-over-korostus ja Night toolbar.
+3. G2:n jäljellä olevat osat toteutetaan tässä järjestyksessä, kukin omana
+   pienenä lisäyksenään omalla katselmointipysähdyksellään:
+   1. **Loop-phase/read-head spark** — luunvaalea kipinä spiraalilla loopin
+      todellisessa lukukohdassa (uusi ≤ 15 Hz telemetria serveriltä; ei
+      seinäkelloanimaatiota) ja sen napautus = skip, eli §6.1:n viimeinen
+      yökoti. Spark-värinen reel pearl ja luunvaalea kipinä eivät saa
+      sekoittua (§16.6). *(Aloitettu 2026-07-21.)*
+   2. `/cq_charge`-lamput (9 kanavaa, GUI_SPEC §9) ja body-solo-light.
+   3. Deck-bird drag-over-korostus (§16.7) ja täsmällinen Night toolbar.
+   4. G2:n §13-portti: automaatio, kuuntelugate, 100/125/150 % skaalaus,
+      CPU/resurssisoak ja käyttäjän visuaalinen hyväksyntä.
 4. Muista G1:n opetus piirtobudjetista: `GUI_SPEC.md` §10 sitoo myös Nightin. Ambient
    enintään 15 Hz, ilmoitusvirrat tahdistetaan etureunalla, eikä kustannusta arvata —
    se mitataan Qt:n paint-eventin sisältä. Kielen ja Qt:n rajapinnan `Pen`-kutsu
