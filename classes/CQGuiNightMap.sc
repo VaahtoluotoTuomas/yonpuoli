@@ -1,16 +1,18 @@
 // CQGuiNightMap — the Night stage (GUI_SPEC §6, §16.6): a topology-true
 // archipelago carrying the same 16 jacks, 22 sockets, cable overlay and banana
-// grammar as Day. Pure view: geometry from CQNightGeometry, pixels from
-// CQInk/CQInkNight, every write through the shared grammar and funnels. The
-// layers are opaque-backed (ground → ring → castles → endpoints → labels, the
-// hit-transparent overlay on top) so an ambient repaint touches only the views
-// whose information actually moved (§10 — a drawing's price is its call count).
+// grammar as Day, plus the §6.1 night touch grammar (CQGuiNightTouch). Pure
+// view: geometry from CQNightGeometry, pixels from CQInk/CQInkNight, every
+// write through the shared grammar and funnels. The layers are opaque-backed
+// (ground → ring → castles → shells → birds → endpoints → crescents → labels,
+// the hit-transparent overlay on top) so an ambient repaint touches only the
+// views whose information actually moved (§10).
 
 CQGuiNightMap {
 	var gui, state, matrix, config;
-	var <stageView, <container, <overlay, <controller, <endpoints;
-	var <groundView, ringView, <castleViews, labels;
-	var <geometry;
+	var <stageView, <container, <overlay, <controller, <touch, <endpoints;
+	var <groundView, <ringView, <castleViews, <shellViews, <birdViews;
+	var <crescentViews, crescentNorms, activeCrescents, hoverCrescents, labels;
+	var <geometry, <eyeActive = false;
 	var <fireflyPhase = 0.0, lastFireflyTime, castlePainted;
 	var <holdStates, <flipStates, <rangeLetters, <sproutState;
 	var freed = false;
@@ -20,16 +22,15 @@ CQGuiNightMap {
 	}
 
 	// same families, glyphs and lamps as the Day skin — one learned shape
-	// (§16.7); decorations are the night homes of §3.1 (leaf, crown, mouth,
-	// fruit stem). Pure lookup, unit-testable without Qt.
+	// (§16.7); decorations are the night homes of §3.1 (leaf, crown, fruit
+	// stem — the mouth chevron lives on the shell as a §6.1 touch).
 	*endpointSpec { |name|
 		var string = name.asString, prefix = string.keep(3).asSymbol;
 		if(CQMatrix.srcIndex(name).notNil) {
 			^(kind: \jack,
 				family: (tri: \tri, cas: \cas, env: \input,
 					coc: \cas, org: \organ)[prefix] ? \line,
-				decoration: (tri: \leaf, cas: \crown, coc: \mouth,
-					org: \stem)[prefix])
+				decoration: (tri: \leaf, cas: \crown, org: \stem)[prefix])
 		};
 		if(CQMatrix.destIndex(name).isNil) { ^nil };
 		if(string.endsWith("_spaf")) { ^(kind: \socket, family: \spaf) };
@@ -47,6 +48,16 @@ CQGuiNightMap {
 		^(kind: \socket, family: \line, glyph: \pendulum)
 	}
 
+	// §6.1 crescent inventory: three continuous coco moons per shell plus one
+	// deck level under each wing. Pure lookup, unit-testable without Qt.
+	*crescentNames { |cocoIndex|
+		^switch(cocoIndex,
+			0, { #[coco1Spaf, coco1In, coco1Fb] },
+			1, { #[coco2Spaf, coco2In, coco2Fb] },
+			{ #[deckALevel, deckBLevel] }
+		)
+	}
+
 	free {
 		if(freed) { ^this };
 		freed = true;
@@ -60,11 +71,21 @@ CQGuiNightMap {
 		castleViews.do { |view| view.refresh };
 	}
 
+	eyeActive_ { |flag|
+		eyeActive = flag == true;
+		if(freed.not) { ringView.refresh };
+	}
+
+	crescentActive { |name, flag|
+		if(flag == true) { activeCrescents.add(name) } {
+			activeCrescents.remove(name)
+		};
+		if(freed.not) { crescentViews[name] !? { |view| view.refresh } };
+	}
+
 	// One /cq_aura frame that actually moved (CQGui gates the stream and the
-	// visible view). Fireflies ride exactly these frames: continuous flow under
-	// the transparent cable layer would cost O(cables) per frame at rest, so a
-	// truly still instrument keeps a still river until the offscreen cable
-	// cache lands after G2 (see PLAN "Myöhemmin").
+	// visible view). Fireflies ride exactly these frames — §16.6 stillness
+	// law: the river flows while the island sounds.
 	auraFrame { |auraValues|
 		var now;
 		if(freed or: { geometry.isNil } or: { auraValues.isNil }) { ^this };
@@ -92,28 +113,43 @@ CQGuiNightMap {
 	// ---- private ----
 
 	prBuild {
-		var night = CQInk.palette(\night);
+		var night = CQInk.palette(\night), crescentControls;
 		endpoints = IdentityDictionary.new;
+		crescentViews = IdentityDictionary.new;
+		crescentNorms = IdentityDictionary.new;
+		activeCrescents = IdentitySet.new;
+		hoverCrescents = IdentitySet.new;
 		castlePainted = Array.newClear(5);
 		holdStates = [false, false];
 		flipStates = [false, false];
 		rangeLetters = ["", "", "", "", ""];
 		sproutState = CQNightGeometry.sproutState(config[\micChan].notNil, 0);
 		container = View().background_(night[\ground]);
-		groundView = UserView(container, Rect(0, 0, 4, 4))
-			.background_(night[\ground]);
+		groundView = this.prLayer;
 		groundView.drawFunc = { this.prSafeDraw { this.prDrawGround } };
-		ringView = UserView(container, Rect(0, 0, 4, 4))
-			.background_(night[\ground]);
+		ringView = this.prLayer;
 		ringView.drawFunc = { this.prSafeDraw { this.prDrawRing } };
 		castleViews = 5.collect { |k|
-			var view = UserView(container, Rect(0, 0, 4, 4))
-				.background_(night[\ground]);
+			var view = this.prLayer;
 			view.drawFunc = { this.prSafeDraw { this.prDrawCastle(k) } };
+			view
+		};
+		shellViews = 2.collect { |i|
+			var view = this.prLayer;
+			view.drawFunc = { this.prSafeDraw { this.prDrawShell(i) } };
+			view
+		};
+		birdViews = 2.collect { |i|
+			var view = this.prLayer;
+			view.drawFunc = { this.prSafeDraw { this.prDrawBird(i) } };
 			view
 		};
 		(CQMatrix.sourceNames ++ CQMatrix.destNames).do { |name|
 			this.prMakeEndpoint(name)
+		};
+		(this.class.crescentNames(0) ++ this.class.crescentNames(1)
+			++ this.class.crescentNames(nil)).do { |name|
+			this.prMakeCrescent(name)
 		};
 		labels = #[deckA, deckB].collect { |which|
 			var label = StaticText(container, Rect(0, 0, 160, 14))
@@ -124,15 +160,26 @@ CQGuiNightMap {
 		};
 		overlay = CQGuiCableOverlay(matrix, endpoints, gui.bananaGrammar,
 			{ |src| gui.auraFor(src) }).skin_(\night);
+		touch = CQGuiNightTouch(this, state, overlay);
+		this.prBindTouch;
+		crescentControls = List.new;
+		crescentViews.values.do { |view| crescentControls.add((view: view)) };
 		controller = CQGuiBananaController(gui.bananaGrammar, endpoints,
-			IdentityDictionary.new, overlay, List.new);
+			IdentityDictionary.new, overlay, crescentControls);
 		controller.bindGround(container);
+		touch.controller = controller;
+		this.prBindDrops;
 		stageView = View().background_(night[\ground]).layout_(
 			StackLayout(overlay.view, container).mode_(\stackAll));
 		container.onResize = { this.prLayout };
 		this.prRegisterUpdaters;
 		{ this.prLayout }.defer;
 		^this
+	}
+
+	prLayer {
+		^UserView(container, Rect(0, 0, 4, 4))
+			.background_(CQInk.palette(\night)[\ground])
 	}
 
 	prMakeEndpoint { |name|
@@ -145,13 +192,118 @@ CQGuiNightMap {
 			.background_(CQInk.palette(\night)[\ground]);
 		view.drawFunc = {
 			this.prSafeDraw {
-				spec[\decoration] !? { this.prDrawDecoration(name, spec, anchor) };
+				spec[\decoration] !? { this.prDrawDecoration(spec, anchor) };
 				gui.drawEndpoint(name, spec[\kind], anchor, spec[\family],
 					spec[\glyph], spec[\lamp] == true, \night);
 			}
 		};
 		endpoints[name] = (name: name, kind: spec[\kind], view: view,
 			anchor: anchor, extent: Size(width, height));
+	}
+
+	prMakeCrescent { |name|
+		var view = UserView(container, Rect(0, 0, 24, 24))
+			.background_(CQInk.palette(\night)[\ground]);
+		var family = if(name.asString.endsWith("Spaf")) { \spaf } { nil };
+		view.drawFunc = {
+			this.prSafeDraw {
+				CQInkNight.drawCrescent(Point(12, 12), crescentNorms[name] ? 0,
+					family, activeCrescents.includes(name)
+						or: { hoverCrescents.includes(name) }, \night);
+			}
+		};
+		view.mouseEnterAction = {
+			hoverCrescents.add(name);
+			view.refresh;
+		};
+		view.mouseLeaveAction = {
+			hoverCrescents.remove(name);
+			view.refresh;
+		};
+		crescentViews[name] = view;
+	}
+
+	// the §6.1 gesture pass sits on the touch bodies before the controller
+	// binds the remaining paper; everything unclaimed falls through
+	prBindTouch {
+		shellViews.do { |view, i|
+			view.mouseDownAction = { |v, x, y, mods, button, clicks|
+				touch.shellDown(i, v, x, y, mods ? 0, button ? 0, clicks ? 1)
+			};
+			view.mouseMoveAction = { |v, x, y, mods|
+				touch.shellMove(i, v, x, y, mods ? 0)
+			};
+			view.mouseUpAction = { |v, x, y, mods, button|
+				touch.shellUp(i, v, x, y, mods ? 0, button ? 0)
+			};
+			view.mouseWheelAction = { |v, x, y, mods, xd, yd|
+				touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
+			};
+		};
+		ringView.mouseDownAction = { |v, x, y, mods, button, clicks|
+			touch.ringDown(v, x, y, mods ? 0, button ? 0, clicks ? 1)
+		};
+		ringView.mouseMoveAction = { |v, x, y, mods|
+			touch.ringMove(v, x, y, mods ? 0)
+		};
+		ringView.mouseUpAction = { |v, x, y, mods, button|
+			touch.ringUp(v, x, y, mods ? 0, button ? 0)
+		};
+		ringView.mouseWheelAction = { |v, x, y, mods, xd, yd|
+			touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
+		};
+		castleViews.do { |view, k|
+			view.mouseDownAction = { |v, x, y, mods, button, clicks|
+				touch.castleDown(k, v, x, y, mods ? 0, button ? 0, clicks ? 1)
+			};
+			view.mouseMoveAction = { |v, x, y, mods|
+				touch.forwardMove(v, x, y, mods ? 0)
+			};
+			view.mouseUpAction = { |v, x, y, mods, button|
+				touch.forwardUp(v, x, y, mods ? 0, button ? 0)
+			};
+			view.mouseWheelAction = { |v, x, y, mods, xd, yd|
+				touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
+			};
+		};
+		crescentViews.keysValuesDo { |name, view|
+			view.mouseDownAction = { |v, x, y, mods, button, clicks|
+				touch.crescentDown(name, v, x, y, mods ? 0, button ? 0, clicks ? 1)
+			};
+			view.mouseMoveAction = { |v, x, y, mods|
+				touch.crescentMove(name, v, x, y, mods ? 0)
+			};
+			view.mouseUpAction = { |v, x, y, mods, button|
+				touch.crescentUp(name, v, x, y, mods ? 0, button ? 0)
+			};
+		};
+	}
+
+	// §6.1 bird drop: same plumbing as the Day deck box — every view of the
+	// bird accepts the file, and the deck guards its own unbooted state
+	prBindDrops {
+		var canDrop = {
+			View.currentDrag.isString
+				or: { View.currentDrag.isKindOf(SequenceableCollection) }
+		};
+		#[deckA, deckB].do { |which, i|
+			var doDrop = {
+				var drag = View.currentDrag;
+				var path = if(drag.isString) { drag } { drag.first.asString };
+				this.prDeckFor(which) !? { |deck| deck.load(path) };
+			};
+			[birdViews[i], labels[i],
+				endpoints[if(i == 0) { \deckA_rate } { \deckB_rate }][\view]]
+			.do { |view|
+				view.canReceiveDragHandler = canDrop;
+				view.receiveDragHandler = doDrop;
+			};
+		};
+	}
+
+	prDeckFor { |which|
+		if(Cocoquantus.graph.isNil) { ^nil };
+		^if(which == \deckA) { Cocoquantus.deckA } { Cocoquantus.deckB }
 	}
 
 	prLayout {
@@ -163,34 +315,54 @@ CQGuiNightMap {
 		groundView.bounds = Rect(0, 0, bounds.width, bounds.height);
 		ringView.bounds = geometry[\ringBox];
 		castleViews.do { |view, k| view.bounds = geometry[\castles][k][\box] };
+		shellViews.do { |view, i|
+			view.bounds = geometry[\cocos][i][\shellBox] };
+		birdViews.do { |view, i| view.bounds = geometry[\birds][i][\box] };
 		endpoints.keysValuesDo { |name, endpoint|
 			var center = geometry[\endpoints][name];
 			endpoint[\view].bounds = Rect(center.x - endpoint[\anchor].x,
 				center.y - endpoint[\anchor].y,
 				endpoint[\extent].width, endpoint[\extent].height);
 		};
+		2.do { |i|
+			this.class.crescentNames(i).do { |name, m|
+				this.prPlaceCrescent(name, geometry[\cocos][i][\crescents][m])
+			};
+		};
+		this.class.crescentNames(nil).do { |name, i|
+			this.prPlaceCrescent(name, geometry[\birds][i][\levelCrescent])
+		};
 		labels.do { |label, i| label.bounds = geometry[\birds][i][\labelRect] };
 		container.refresh;
+	}
+
+	prPlaceCrescent { |name, center|
+		crescentViews[name].bounds =
+			Rect(center.x - 12, center.y - 12, 24, 24);
 	}
 
 	prRegisterUpdaters {
 		5.do { |k|
 			gui.widgets.register(("c" ++ (k + 1) ++ "Range").asSymbol, { |value|
 				rangeLetters[k] = CQNightGeometry.rangeLetter(value);
-				this.prRefreshCastle(k);
+				if(freed.not) { castleViews[k].refresh };
 			});
 		};
 		2.do { |i|
 			var n = i + 1;
 			gui.widgets.register(("coco" ++ n ++ "Hold").asSymbol, { |value|
 				holdStates[i] = (value ? 0) > 0.5;
-				if(freed.not) { groundView.refresh };
+				if(freed.not) { shellViews[i].refresh };
 			});
 			gui.widgets.register(("coco" ++ n ++ "Flip").asSymbol, { |value|
 				flipStates[i] = (value ? 0) > 0.5;
-				if(freed.not) {
-					endpoints[("coco" ++ n).asSymbol][\view].refresh;
-				};
+				if(freed.not) { shellViews[i].refresh };
+			});
+		};
+		crescentViews.keysValuesDo { |name, view|
+			gui.widgets.register(name, { |value|
+				crescentNorms[name] = CQSpec.unmap(name, value);
+				if(freed.not) { view.refresh };
 			});
 		};
 		gui.widgets.register(\micGain, { |value|
@@ -200,27 +372,19 @@ CQGuiNightMap {
 		});
 	}
 
-	prRefreshCastle { |k|
-		if(freed.not) { castleViews[k].refresh };
-	}
-
 	prSafeDraw { |func|
 		try { func.value } { |error| CQInkControl.noteDrawError(error) }
 	}
 
 	prDrawGround {
 		if(geometry.isNil) { ^this };
-		geometry[\cocos].do { |coco, i|
-			CQInkNight.drawSpiral(coco, holdStates[i], \night)
-		};
 		geometry[\roots].do { |root| CQInkNight.drawRoot(root, \night) };
 		CQInkNight.drawSprout(geometry[\sprout], sproutState, \night);
-		geometry[\birds].do { |bird| CQInkNight.drawBird(bird, \night) };
 	}
 
 	prDrawRing {
 		if(geometry.isNil) { ^this };
-		CQInkNight.drawRing(geometry, fireflyPhase, \night);
+		CQInkNight.drawRing(geometry, fireflyPhase, eyeActive, \night);
 	}
 
 	prDrawCastle { |k|
@@ -232,15 +396,26 @@ CQGuiNightMap {
 			(gui.spesalStates[k] ? 0).asInteger, rangeLetters[k], \night);
 	}
 
-	prDrawDecoration { |name, spec, anchor|
+	prDrawShell { |i|
+		var coco;
+		if(geometry.isNil) { ^this };
+		coco = geometry[\cocos][i];
+		CQInkNight.drawShell(coco, coco[\shellBox].leftTop,
+			holdStates[i], flipStates[i], \night);
+	}
+
+	prDrawBird { |i|
+		var bird;
+		if(geometry.isNil) { ^this };
+		bird = geometry[\birds][i];
+		CQInkNight.drawBird(bird, bird[\box].leftTop, \night);
+	}
+
+	prDrawDecoration { |spec, anchor|
 		switch(spec[\decoration],
 			\leaf, { CQInkNight.drawLeaf(anchor, \night) },
 			\crown, { CQInkNight.drawCrown(anchor, \night) },
-			\stem, { CQInkNight.drawStemStub(anchor, \night) },
-			\mouth, {
-				CQInkNight.drawMouthChevron(anchor,
-					flipStates[if(name == \coco1) { 0 } { 1 }], \night)
-			}
+			\stem, { CQInkNight.drawStemStub(anchor, \night) }
 		);
 	}
 }

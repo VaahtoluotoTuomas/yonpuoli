@@ -99,6 +99,43 @@ CQNightGeometryTest : UnitTest {
 			"coco 2 mirrors coco 1's winding");
 	}
 
+	test_touchHomes {
+		var geo = CQNightGeometry.compute(1280, 570);
+		var coco = geo[\cocos][0];
+		var onSpiral = coco[\spiralSamples][30];
+		[0, 1].do { |i|
+			var shell = geo[\cocos][i];
+			this.assert(shell[\shellBox].containsPoint(shell[\center])
+				and: { shell[\shellBox].containsPoint(shell[\mouth]) }
+				and: { shell[\shellBox].containsPoint(shell[\chevron]) },
+				"coco % shell box holds its heart, mouth and chevron".format(i + 1));
+			shell[\crescents].do { |crescent, m|
+				this.assert(CQNightGeometry.distance(crescent,
+					shell[\moons][m]) >= 24,
+					"coco % crescent % keeps hit spacing from its moon"
+						.format(i + 1, m));
+			};
+		};
+		this.assert(CQNightGeometry.spiralDistance(coco, onSpiral) < 1,
+			"a spiral sample lies on the winding surface");
+		this.assert(CQNightGeometry.spiralDistance(coco,
+			coco[\center] + Point(0, 4)) > 8,
+			"the heart region is not the winding surface");
+		this.assert(CQNightGeometry.dialHit(geo[\castles][2],
+			CQNightGeometry.polar(geo[\castles][2][\center],
+				geo[\castles][2][\dialR], 0.3)),
+			"a tap on the dial radius hits the dial");
+		this.assert(CQNightGeometry.dialHit(geo[\castles][2],
+			geo[\castles][2][\center]).not,
+			"the castle's center is not the dial");
+		this.assertEquals(geo[\eye], geo[\ringCenter],
+			"the ring's eye sits at the ring's center");
+		this.assert(geo[\birds][0][\box].containsPoint(geo[\birds][0][\center])
+			and: { CQNightGeometry.distance(geo[\birds][0][\levelCrescent],
+				geo[\endpoints][\deckA_rate]) >= 24 },
+			"the bird box holds the bird; its crescent clears the rate moon");
+	}
+
 	test_rangeLetter {
 		this.assertEquals(CQNightGeometry.rangeLetter(\infra), "i", "infra = i");
 		this.assertEquals(CQNightGeometry.rangeLetter(\balcium), "b", "balcium = b");

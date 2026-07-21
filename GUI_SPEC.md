@@ -240,8 +240,16 @@ body. What changes:
 
 ## 6. Night map — the archipelago
 
-Tab flips the same window to night: a patch-first landscape. No knobs, no
-numbers — only bodies, jacks, bananas, weather. The master strip stays below.
+Tab flips the same window to night: a patch-first landscape. No transplanted
+panel widgets and no numbers — only bodies, jacks, bananas, weather, and the
+bodies' own touch points (§6.1). The master strip stays below.
+
+> Amended 2026-07-21 at the user's direction: the night must stand alone as an
+> instrument. On the wooden box there is no day mode — the knobs are always
+> under your fingers — so the night bodies grow their own touch points instead
+> of borrowing the day panel's widgets. The original "no knobs" line survives
+> as "no transplanted widgets": nothing on the night map looks like a knob,
+> but everything essential can be played.
 
 Topology-true layout (coordinates are a starting sketch; implementers tune by
 eye but must keep the topology truths):
@@ -268,6 +276,31 @@ eye but must keep the topology truths):
   their source's aura. Solo-light on a body lights everything touching it.
 - **Night toolbar** (small, lowercase): patch-preset menu · shake · grow ·
   wither · breed · amount mini-knob · the compass pad (§7).
+
+### 6.1 Night touch grammar (normative, decided 2026-07-21)
+
+The essential playing controls live on the bodies, in each body's own logic.
+All writes go through the normal funnels; parameter gestures have no undo
+(§14); gesture redraw ≤ 60 Hz only during the drag (§10). On every press the
+cable layer is consulted first: a cable inside its narrow hit target is
+grabbed, never wound or tapped through (§4.5 — the overlay may never advertise
+an action the next gesture will not receive).
+
+| touch | gesture | writes |
+|---|---|---|
+| **wind the shell** | left-drag along the spiral's drawn line (≤ 8 px); turning toward the mouth winds faster, against it slower — the two shells mirror like their spirals | `cocoN speed` (relative, ~2 turns = full range) |
+| **the shell's heart** | press the small mark at the spiral's innermost eye: seal / crack the loop; red while sealed (one law with the outer seal and HOLD) | `cocoN hold` toggle |
+| **the mouth chevron** | press the read-direction chevron at the mouth | `cocoN flip` toggle |
+| **tide crescents** | a small crescent below each spaf / inVca / fbVca moon, luminous fill = value; vertical drag pours more or less. Socket beside its control — §1's proximity law, reborn at night. spaf wears purple | `cocoN spaf / in / fb` |
+| **the ring's eye** | a small bone pupil at the ring's center; grab and drag — vertical = pitch, horizontal = chaos. The weather of five castles from one fingertip | `qFreq` (y) + `qChaos` (x), relative |
+| **dial tap** | press a castle's spesal dial: one step (same act as the day step button and keys 3..7) | `spesal(k)` step |
+| **bird drop + wing crescent** | dropping an audio file on a bird loads that deck (pulled forward from the G2 toolbar step — loading is core); the crescent under the wing is the deck's level | deck load · `deckN level` |
+
+Skip stays on the `a/s` keys until the read-head spark lands; its intended
+night home is tapping the spark itself. The loop's finer diet — slots, dolby,
+bits, interpolation, ranges — remains day work: the slot defaults (pre 1,
+deck 1) make a dropped file audible at night with `in` up. Body solo-light
+and the night toolbar arrive with the later G2 steps as planned.
 
 ---
 
@@ -697,17 +730,28 @@ current state's tick lit. Range letter i/b/a in whisper at 6 o'clock below.
 **The ring.** Irregular circle R ≈ 150 px through the five castles, 1 px
 hairline. Flow k → k+1 shown by two **firefly dots** per arc segment
 (Ø 2 px bone, ≈ 2 s per segment) — permitted ambient motion, because it
-depicts the always-running LocalIn loop: it *is* information.
+depicts the always-running LocalIn loop: it *is* information. **Stillness law
+(decided 2026-07-21):** the fireflies advance only on telemetry frames that
+already repaint — *the river flows while the island sounds; a silent
+instrument keeps still water.* On the wood, lights move with signal, not with
+the wall clock; this is the permanent behavior, not a budget stopgap, and it
+stays even after the post-G2 offscreen cable cache. At the ring's center sits
+its **eye**: a small bone pupil (Ø ≈ 10), the §6.1 handle for qFreq/qChaos;
+it brightens while held and never displays a value.
 
 **Coco (×2).** Spiral = Archimedean, 2.5 turns, outer R ≈ 85 px, 1.5 px
 stroke; the mouth at the outer end carries the gray coco-voice source dot and
-a 6 px direction chevron. **Read-head spark** = Ø 4 px bone dot traveling the
-spiral (loop-phase telemetry, §9); flip reverses spark and chevron. **Hold**:
-the outermost turn closes into a full circle and tints danger-red at 60 % —
-the loop is sealed. Org fruit = yellow Ø 7 dot on a 6 px stem from the second
-turn. Moons spaf / inVca / fbVca / flip / skip sit on an arc under the
-spiral, glyphs per §16.5, lamps on flip/skip. The spiral's stroke alpha
-breathes 0.55 → 1.0 with the coco's out level.
+a 6 px direction chevron (a §6.1 touch: press = flip). **Read-head spark** =
+Ø 4 px bone dot traveling the spiral (loop-phase telemetry, §9); flip
+reverses spark and chevron. **Hold**: the outermost turn closes into a full
+circle and tints danger-red at 60 % — the loop is sealed; the **heart** at
+the spiral's innermost eye (small Ø ≈ 5 mark, red while sealed) is the §6.1
+hold touch. The spiral's line is the §6.1 winding surface. Org fruit =
+yellow Ø 7 dot on a 6 px stem from the second turn. Moons spaf / inVca /
+fbVca / flip / skip sit on an arc under the spiral, glyphs per §16.5, lamps
+on flip/skip; below the three continuous moons hang their **tide crescents**
+(§6.1): open arcs ~Ø 18, luminous fill = value, family-colored, no numbers.
+The spiral's stroke alpha breathes 0.55 → 1.0 with the coco's out level.
 
 **Roots (inputs).** Two branching wobbled polylines (3 segments) growing from
 the bottom edge, envA left, envB right; tips = green Ø 7 dots with radial
@@ -722,9 +766,10 @@ warning-color law unchanged.
 
 **Birds (decks).** Three strokes each — two wing béziers + a body dot,
 span ≈ 30 px; filename in 10 px mono whisper beneath; the rate socket under
-the wing. Flutter = 1 px wing bob at ambient rate while the deck's level
-> 0.05 (client-side state, no polling). On file-drag hover the bird
-brightens (drop target law, §16.7).
+the wing, and beside it the deck-level tide crescent (§6.1). Dropping an
+audio file on the bird loads its deck (§6.1). Flutter = 1 px wing bob at
+ambient rate while the deck's level > 0.05 (client-side state, no polling).
+On file-drag hover the bird brightens (drop target law, §16.7).
 
 **Weather corner.** Compass pad = 140 px round-cornered square, hairline
 border, stamp dots in the corners, small cross cursor; while dragging, four

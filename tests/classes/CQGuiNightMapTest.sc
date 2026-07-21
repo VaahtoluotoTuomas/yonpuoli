@@ -56,11 +56,28 @@ CQGuiNightMapTest : UnitTest {
 			"tri jacks grow the leaf");
 		this.assertEquals(CQGuiNightMap.endpointSpec(\cas5)[\decoration], \crown,
 			"cas jacks wear the crown teeth");
-		this.assertEquals(CQGuiNightMap.endpointSpec(\coco1)[\decoration], \mouth,
-			"coco jacks carry the direction chevron");
+		this.assert(CQGuiNightMap.endpointSpec(\coco1)[\decoration].isNil,
+			"coco jacks stay bare — the chevron is the shell's flip touch");
 		this.assertEquals(CQGuiNightMap.endpointSpec(\org1)[\decoration], \stem,
 			"org jacks keep their stem tip");
 		this.assert(CQGuiNightMap.endpointSpec(\envA)[\decoration].isNil,
 			"root tips are bare green dots");
+	}
+
+	test_crescentInventory {
+		this.assertEquals(CQGuiNightMap.crescentNames(0),
+			[\coco1Spaf, \coco1In, \coco1Fb],
+			"coco 1 hangs spaf/in/fb tide crescents under its moons");
+		this.assertEquals(CQGuiNightMap.crescentNames(1),
+			[\coco2Spaf, \coco2In, \coco2Fb],
+			"coco 2 mirrors the same three crescents");
+		this.assertEquals(CQGuiNightMap.crescentNames(nil),
+			[\deckALevel, \deckBLevel],
+			"each bird carries its deck-level crescent");
+		(CQGuiNightMap.crescentNames(0) ++ CQGuiNightMap.crescentNames(1)
+			++ CQGuiNightMap.crescentNames(nil)).do { |name|
+			this.assert(CQSpec.at(name).notNil,
+				"crescent % maps a real CQSpec parameter".format(name));
+		};
 	}
 }

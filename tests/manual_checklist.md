@@ -940,8 +940,9 @@ CQ.boot; CQ.patchPreset(\empty); CQ.set(\coco1Spaf, 1);
 //   ja WYHIWYG kuin päivällä; kaapeli kaartuu kappaleiden yli.
 // - Kun serveri soi, castlet hehkuvat aurastaan ja ringin tulikärpäset
 //   kiertävät suuntaan 1 -> 2 -> 3 -> 4 -> 5 (sama kuin \classic-FM-rinki).
-//   Huomaa: joki virtaa kun lahti elää — täysin hiljaisessa soittimessa
-//   se lepää (tietoinen §10-budjettivalinta, kysytään katselmoinnissa).
+//   Hiljaisuuden laki (GUI_SPEC §16.6, päätetty 2026-07-21): joki virtaa kun
+//   saari soi — täysin hiljaisessa soittimessa se lepää. Pysyvä käytös:
+//   puulaatikossa valot liikkuvat signaalista, eivät seinäkellosta.
 // - CQ.hold(1, 1): coco 1:n uloin kierros sulkeutuu punaiseksi sinetiksi.
 //   CQ.hold(1, 0) avaa sen. CQ.flip(1): suun chevron kääntyy.
 // - Tuplaklikkaa jack/socket: solo-light himmentää muut kaapelit; Esc vapauttaa.
@@ -950,4 +951,40 @@ CQ.boot; CQ.patchPreset(\empty); CQ.set(\coco1Spaf, 1);
 CQ.patchPreset(\empty);
 ```
 
-- [ ] G2 ensimmäinen Night-katselmointi hyväksytty (pvm: ______)
+- [x] G2 ensimmäinen Night-katselmointi (anatomia + yön kielioppi) hyväksytty
+  (pvm: 2026-07-21 — suunta oikea; käyttäjä pyysi yöstä itsenäisen soittimen,
+  ratkaistu §6.1:n night touch grammarilla, ks. G2.3)
+
+## G2.3 NIGHT TOUCH — yö itsenäisenä soittimena (GUI_SPEC §6.1)
+
+Kehot kasvattivat kosketuspisteensä: ei siirrettyjä paneeliwidgettejä, ei
+numeroita. Kaikki kirjoitukset kulkevat samoista suppiloista kuin Dayn nupit,
+joten Day, 16n ja koodi pysyvät synkassa. Parametrieleillä ei ole undoa (§14).
+
+```supercollider
+// G2.3a — kosketuspisteet KORVALLA. (Ctrl+Shift+L ensin.)
+CQ.boot; CQ.patchPreset(\classic);
+// - KELAA KUORTA: vedä hiirellä pitkin coco 1:n spiraaliviivaa kiertäen —
+//   suuta kohti kelaus nopeuttaa nauhaa (speed), vastakarvaan hidastaa.
+//   Molemmat kuoret peilaavat kelaussuuntansa kuten spiraalinsa.
+//   Kaksi täyttä kierrosta = koko alue. Kuuntele glissando.
+// - SYDÄN: paina spiraalin sisimmässä silmässä olevaa pientä merkkiä:
+//   loop sinetöityy (hold, punainen sydän + ulkokierroksen sinetti).
+//   Paina uudelleen: äänitys aukeaa. Sama kuin näppäimet 1/2.
+// - CHEVRON: paina suun nuolenkärkeä — lukusuunta kääntyy (flip), chevron
+//   ja myöhemmin read-head-kipinä kääntyvät mukana.
+// - VUOROVESISIRPIT: kolmen jatkuvan kuun (spaf / inVca / fbVca) alla
+//   roikkuu pieni kaarisirppi, jonka hehkuva täyttö = arvo. Vedä pystyyn:
+//   spaf-sirppi (violetti) syventää viremodulaation kuultavasti.
+// - RINGIN SILMÄ: tartu ringin keskellä olevaan luunvaaleaan pupilliin ja
+//   vedä — pysty = q freq, vaaka = chaos. Viisi castlea yhdestä sormesta.
+// - KELLOTAULU: napauta castlen spesal-kellotaulua — yksi askel (sama kuin
+//   Day-step ja näppäimet 3..7); valopykälä siirtyy.
+// - LINTU: pudota äänitiedosto linnun päälle — deck latautuu, tiedostonimi
+//   ilmestyy linnun alle. Siiven sirppi = deckin level.
+// - Tarkista §4.5: johto joka ylittää spiraalin tarttuu yhä hiireen
+//   (johto voittaa kelauksen); kelaus onnistuu paljaalta spiraaliviivalta.
+CQ.patchPreset(\empty);
+```
+
+- [ ] G2.3 night touch grammar hyväksytty (pvm: ______)

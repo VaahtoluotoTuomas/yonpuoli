@@ -61,7 +61,7 @@ CQInkNight {
 	// the irregular hairline circle through the five castles, with the
 	// fireflies that carry the loop's direction (k → k+1). Phase advances only
 	// when telemetry moves — a still bay keeps a still river.
-	*drawRing { |geometry, phase = 0, skin = \night|
+	*drawRing { |geometry, phase = 0, eyeActive = false, skin = \night|
 		var palette = CQInk.palette(skin), origin = geometry[\ringBox].leftTop;
 		Pen.translate(origin.x.neg, origin.y.neg);
 		Pen.strokeColor = palette[\whisper].copy.alpha_(0.7);
@@ -73,12 +73,15 @@ CQInkNight {
 				CQNightGeometry.fireflyPoint(geometry, phase + (i / 10)), 1.2, 1.2));
 		};
 		Pen.fill;
+		this.drawEye(geometry[\eye], eyeActive, skin);
 	}
 
-	// the delay RAM as a coconut cross-section; hold seals the outermost turn
-	// into a danger-red circle (§16.6 — the loop is closed)
-	*drawSpiral { |coco, holdOn = false, skin = \night|
+	// the delay RAM as a coconut cross-section, drawn by the shell's own opaque
+	// layer: spiral (the §6.1 winding surface), hold seal, the hold heart at
+	// the innermost eye, the press-to-flip mouth chevron and the org stem
+	*drawShell { |coco, origin, holdOn = false, flipped = false, skin = \night|
 		var palette = CQInk.palette(skin);
+		Pen.translate(origin.x.neg, origin.y.neg);
 		Pen.strokeColor = palette[\line].copy.alpha_(0.8);
 		Pen.width = CQInk.strokes[\normal];
 		this.strokeSegments(coco[\segments]);
@@ -88,10 +91,58 @@ CQInkNight {
 			Pen.addOval(Rect.aboutPoint(coco[\center], coco[\outerR], coco[\outerR]));
 			Pen.stroke;
 		};
+		// the heart: hollow whisper eye while open, danger-red while sealed
+		if(holdOn) {
+			Pen.fillColor = palette[\danger];
+			Pen.addOval(Rect.aboutPoint(coco[\center], 2.5, 2.5));
+			Pen.fill;
+			Pen.strokeColor = palette[\danger].copy.alpha_(0.4);
+			Pen.addOval(Rect.aboutPoint(coco[\center], 5.5, 5.5));
+			Pen.stroke;
+		} {
+			Pen.strokeColor = palette[\whisper];
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.addOval(Rect.aboutPoint(coco[\center], 2.5, 2.5));
+			Pen.stroke;
+		};
+		this.drawMouthChevron(coco[\chevron], flipped, skin);
 		// org stem from the second turn out to the hanging fruit jack
 		Pen.strokeColor = palette[\organ].copy.alpha_(0.8);
 		Pen.width = CQInk.strokes[\hairline];
 		Pen.line(coco[\orgSpiralPoint], coco[\orgCenter]);
+		Pen.stroke;
+	}
+
+	// §6.1 tide crescent: an open arc whose luminous fill is the value —
+	// the night's only continuous hand, never a knob, never a number
+	*drawCrescent { |center, norm = 0, family = \line, active = false,
+		skin = \night|
+		var palette = CQInk.palette(skin);
+		var accent = palette[family] ?? { palette[\whisper] };
+		var start = 0.75pi, sweep = 1.5pi;
+		Pen.strokeColor = palette[\whisper].copy
+			.alpha_(if(active) { 0.9 } { 0.55 });
+		Pen.width = CQInk.strokes[\hairline];
+		Pen.addArc(center, 9, start, sweep);
+		Pen.stroke;
+		if(norm > 0.001) {
+			Pen.strokeColor = accent.copy.alpha_(if(active) { 1.0 } { 0.85 });
+			Pen.width = CQInk.strokes[\strong];
+			Pen.addArc(center, 9, start, sweep * norm.clip(0, 1));
+			Pen.stroke;
+		};
+	}
+
+	// §6.1 the ring's eye: the qFreq/qChaos pupil at the ring's center
+	*drawEye { |center, active = false, skin = \night|
+		var palette = CQInk.palette(skin);
+		Pen.fillColor = palette[\spark].copy.alpha_(if(active) { 0.55 } { 0.25 });
+		Pen.addOval(Rect.aboutPoint(center, 4, 4));
+		Pen.fill;
+		Pen.strokeColor = palette[\spark].copy.alpha_(if(active) { 1.0 } { 0.7 });
+		Pen.width = CQInk.strokes[\hairline];
+		Pen.addOval(Rect.aboutPoint(center, if(active) { 6 } { 5 },
+			if(active) { 6 } { 5 }));
 		Pen.stroke;
 	}
 
@@ -131,9 +182,11 @@ CQInkNight {
 		};
 	}
 
-	// deck bird: two wing béziers and a body dot (§16.6), span ≈ 30 px
-	*drawBird { |bird, skin = \night|
+	// deck bird: two wing béziers and a body dot (§16.6), span ≈ 30 px,
+	// drawn by the bird's own opaque layer (origin = its box corner)
+	*drawBird { |bird, origin, skin = \night|
 		var palette = CQInk.palette(skin), c = bird[\center], span = bird[\span];
+		origin !? { Pen.translate(origin.x.neg, origin.y.neg) };
 		Pen.strokeColor = palette[\line];
 		Pen.width = CQInk.strokes[\normal];
 		Pen.moveTo(Point(c.x - (span * 0.5), c.y - (span * 0.12)));

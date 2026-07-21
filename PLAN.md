@@ -263,40 +263,57 @@ hidastumista ~20 min ajossa, inverso-johdot ja koko pinta visuaalisesti ennallaa
 
 ### G2 — Night map
 
-**Nykytila 2026-07-21: ensimmäinen ajettava Night map on rakennettu ja odottaa
-käyttäjän visuaalista katselmointia** (manual_checklist "G2 NIGHT" -lohkot).
-Toteutus: `CQNightGeometry` (puhdas layout-matematiikka — §15:n topologiatotuudet
-yksikkötestattuja ilman ikkunaa), `CQInkNight` (Ink-kitin yökappaleet) ja
-`CQGuiNightMap` (Qt-kompositio). Yö kantaa samat 16 jackia / 22 socketia, jaetun
-`CQBananaGrammar`in, oman night-skin `CQGuiCableOverlay`n ja oman controllerin;
-§4.1:n view-flip-revert, WYHIWYG-istutus, harvest ja undo on savutestattu yöllä
+**Nykytila 2026-07-21: anatomia (G2.1) ja yön kielioppi (G2.2) on katselmoitu ja
+hyväksytty; suunta todettiin oikeaksi.** Toteutus: `CQNightGeometry` (puhdas
+layout-matematiikka — §15:n topologiatotuudet yksikkötestattuja ilman ikkunaa),
+`CQInkNight` (Ink-kitin yökappaleet) ja `CQGuiNightMap` (Qt-kompositio). Yö
+kantaa samat 16 jackia / 22 socketia, jaetun `CQBananaGrammar`in, oman
+night-skin `CQGuiCableOverlay`n ja oman controllerin; §4.1:n view-flip-revert,
+WYHIWYG-istutus, harvest ja undo on savutestattu yöllä
 (`tests/gui_night_smoke.scd` → `CQ_GUI_NIGHT_PASSED`). Kerrokset ovat
-opaakkitaustaisia (ground → ring → castlet → endpointit → overlay), joten
-ambient-kehys piirtää vain liikkuneen informaation; castle-hehku on delta-
-portitettu (0.04) ja piilotettu stage ohittaa gesture-refreshit
-(`CQGuiBananaController.refreshGate`). **Tietoinen §10-budjettivalinta, kysyttävä
-katselmoinnissa:** ringin tulikärpäset etenevät vain niillä telemetriakehyksillä,
-jotka lahti jo muutenkin piirtää — jatkuva 15 Hz -virtaus läpinäkyvän
-kaapelikerroksen alla maksaisi O(johdot)/kehys myös levossa, kunnes offscreen-
-välimuisti tehdään G2:n jälkeen. Ensimmäisestä versiosta lykätty tietoisesti:
-spiraalin alfa-hengitys coco-ulostulosta, lintujen flutter ja se, että Dayn
-deck-boxin file-drop on yhä ainoa drop-polku.
+opaakkitaustaisia, joten ambient-kehys piirtää vain liikkuneen informaation;
+castle-hehku on delta-portitettu (0.04) ja piilotettu stage ohittaa
+gesture-refreshit (`CQGuiBananaController.refreshGate`).
 
-- [ ] Topology-true Archipelago: viiden castlen oikeansuuntainen ring, vasen/oikea
+Katselmoinnissa käyttäjä pyysi yöstä itsenäisen soittimen: olennaiset
+core-toiminnot on voitava tehdä yöllä, ilman että yö clutteroituu Dayn
+kopioksi. Ratkaistu Blasserin hengessä **night touch grammarilla** (normatiivinen
+`GUI_SPEC.md` §6.1, päätetty 2026-07-21): kehot kasvattavat kosketuspisteensä —
+kuorta kelataan (speed), spiraalin sydän sinetöi loopin (hold), suun chevron
+kääntää lukusuunnan (flip), vuorovesisirpit kuiden alla kaatavat spaf/in/fb:n
+ja deck-levelit, ringin silmä vetää qFreq+qChaosia 2D-eleenä, kellotaulun
+napautus askeltaa spesalia, ja tiedoston pudotus lintuun lataa deckin
+(aikaistettu askeleesta 3, koska lataus on core). Toteutus: `CQGuiNightTouch`
+(elekone + puhdas kulmamatematiikka), julkiset ground-delegaatit
+`CQGuiBananaController`iin (kaapeli voittaa jokaisen painalluksen — §4.5).
+Loput yöltä tavoitettavat: pyhä näppäinkartta (hold/flip/skip/spesal/rec/shake)
+ja pysyvä Master-strip. Skip odottaa read-head-kipinää (§6.1:n kirjaus);
+slotit/dolby/bitit/ranget jäävät Dayn ääniverstaaksi (slot-oletukset tekevät
+pudotetusta tiedostosta kuuluvan).
+
+**Tulikärpästen hiljaisuuden laki ratkaistu samassa hengessä** (`GUI_SPEC.md`
+§16.6, pysyvä): joki virtaa kun saari soi; täysin hiljainen soitin pitää tyynen
+veden. Puulaatikossa valot liikkuvat signaalista, eivät seinäkellosta — tämä ei
+ole budjettihätäratkaisu vaan lopullinen käytös, myös offscreen-välimuistin
+jälkeen. Ensimmäisestä versiosta yhä lykätty: spiraalin alfa-hengitys
+coco-ulostulosta ja lintujen flutter.
+
+- [x] Topology-true Archipelago: viiden castlen oikeansuuntainen ring, vasen/oikea
   Coco-spiraali, roots below ja birds above `GUI_SPEC.md` §16.6:n anatomialla.
-  *(Toteutettu 2026-07-21, odottaa visuaalista katselmointia — ei merkitä ennen
-  käyttäjän hyväksyntää.)*
+  *(Hyväksytty visuaalisesti 2026-07-21, manuaalitestit G2.1–G2.2.)*
+- [ ] Night touch grammar (`GUI_SPEC.md` §6.1): toteutettu ja savutestattu
+  2026-07-21, odottaa käyttäjän kuuntelukatselmointia (manuaalitesti G2.3).
 - [ ] Loop phase/read-head spark ja käyttäjän vahvistaman payloadin `/cq_charge`.
-- [ ] Solo-light, deck-bird recursive drop ja täsmällinen Night toolbar.
-  *(Endpoint- ja kaapelisolo toimivat jo jaetun kieliopin kautta; body-solo,
-  bird-drop ja toolbar puuttuvat.)*
+- [ ] Solo-light (body), deck-bird drag-over-korostus ja täsmällinen Night
+  toolbar. *(Endpoint- ja kaapelisolo sekä bird-drop toimivat jo.)*
 - [ ] Ei numeroita, Space-bodya tai dekoratiivista motionia; Master pysyy näkyvänä.
 - [ ] `GUI_SPEC.md` §13:n automaatio, kuuntelu ja käyttäjän visuaalinen hyväksyntä.
 
-Portti 2026-07-21 (ensimmäinen versio): `CQ_COMPILE_OK`, 4 339 unit-passia /
+Portti 2026-07-21 (touch grammar): `CQ_COMPILE_OK`, 4 373 unit-passia /
 0 failurea, `CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
-`CQ_GUI_DRAWER_REENTRY_PASSED` ja uusi `CQ_GUI_NIGHT_PASSED`. (`CQ_HOLD_OK`
-ajettiin session alussa; DSP-koodia ei muutettu.)
+`CQ_GUI_DRAWER_REENTRY_PASSED` ja `CQ_GUI_NIGHT_PASSED` (sis. §6.1-eleet ja
+§4.5:n kaapeli-ensin-tarkistuksen). (`CQ_HOLD_OK` ajettiin session alussa;
+DSP-koodia ei muutettu.)
 
 ### G3 — Weather machine
 
@@ -368,8 +385,9 @@ Night map ja Weather Machine — tehdään seuraavalla tavalla:
 
 ## Seuraavan toteutussession ensimmäiset askeleet
 
-**G2 Night mapin ensimmäinen ajettava versio on rakennettu 2026-07-21 ja odottaa
-käyttäjän visuaalista katselmointia. G1 on suljettu eikä sitä avata uudelleen.**
+**G2:n anatomia on hyväksytty ja §6.1:n night touch grammar toteutettu
+2026-07-21; touch grammar odottaa kuuntelukatselmointia (manuaalitesti G2.3).
+G1 on suljettu eikä sitä avata uudelleen.**
 
 1. Varmista `archipelago`-haara ja puhdas työpuu, ja lue `CLAUDE.md`, `PLAN.md` sekä
    `GUI_SPEC.md` kokonaan — erityisesti §16.6 (Night-anatomia) ja §10 (piirtobudjetti).
@@ -378,15 +396,14 @@ käyttäjän visuaalista katselmointia. G1 on suljettu eikä sitä avata uudelle
 2. Aja automaatio ensin ja raportoi markerit: neljä markkeria (`compile_check`,
    `run_all`, `nrt_safety`, `nrt_hold_integrity`) ja **neljä** GUI-smokea
    (`gui_shell_smoke`, `gui_drawer_smoke`, `gui_drawer_preview_reentry_smoke`,
-   `gui_night_smoke`). Lähtötaso 2026-07-21: `CQ_COMPILE_OK`, 4 339 passia /
+   `gui_night_smoke`). Lähtötaso 2026-07-21: `CQ_COMPILE_OK`, 4 373 passia /
    0 failurea, `CQ_SAFETY_PASSED`, `CQ_HOLD_OK` ja kaikki neljä GUI-markkeria.
    **Huom:** GUI-smoket ajetaan omana prosessinaan; jos ne jumittuvat, tarkista ensin
    hiiren osoittimen sijainti (ks. Qt-jäätymiskorjaus yllä) eikä koodia.
-3. Odota käyttäjän visuaalinen palaute ensimmäisestä Night-versiosta
-   (manual_checklist "G2 NIGHT") ja tee viimeistely sen pohjalta. Kysy samalla
-   tulikärpästen jatkuvan virtauksen CPU-hinnasta (ks. G2-osio yllä). Vasta
-   palautteen jälkeen jatka G2:n seuraaviin osiin: loop-phase/read-head spark,
-   `/cq_charge`-lamput, body-solo, deck-bird drop ja Night toolbar.
+3. Odota käyttäjän kuuntelupalaute night touch grammarista (manuaalitesti
+   G2.3) ja tee viimeistely sen pohjalta. Vasta palautteen jälkeen jatka G2:n
+   seuraaviin osiin: loop-phase/read-head spark (tuo samalla skipin yökodin,
+   §6.1), `/cq_charge`-lamput, body-solo, drag-over-korostus ja Night toolbar.
 4. Muista G1:n opetus piirtobudjetista: `GUI_SPEC.md` §10 sitoo myös Nightin. Ambient
    enintään 15 Hz, ilmoitusvirrat tahdistetaan etureunalla, eikä kustannusta arvata —
    se mitataan Qt:n paint-eventin sisältä. Kielen ja Qt:n rajapinnan `Pen`-kutsu

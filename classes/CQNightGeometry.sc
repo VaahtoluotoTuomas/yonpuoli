@@ -94,8 +94,36 @@ CQNightGeometry {
 		^result
 	}
 
-	*prDistance { |a, b|
+	*distance { |a, b|
 		^sqrt((b.x - a.x).squared + (b.y - a.y).squared)
+	}
+
+	*prPointSegmentDistance { |point, a, b|
+		var dx, dy, lengthSq, t, projection;
+		dx = b.x - a.x;
+		dy = b.y - a.y;
+		lengthSq = dx.squared + dy.squared;
+		if(lengthSq <= 0.0001) { ^this.distance(point, a) };
+		t = ((((point.x - a.x) * dx) + ((point.y - a.y) * dy)) / lengthSq)
+			.clip(0, 1);
+		projection = Point(a.x + (t * dx), a.y + (t * dy));
+		^this.distance(point, projection)
+	}
+
+	// ---- §6.1 touch hit tests (pure) ----
+
+	// distance from a point to the spiral's drawn line (the winding surface)
+	*spiralDistance { |coco, point|
+		var samples = coco[\spiralSamples], best = inf;
+		samples.doAdjacentPairs { |a, b|
+			best = min(best, this.prPointSegmentDistance(point, a, b));
+		};
+		^best
+	}
+
+	// the spesal dial annulus around a castle (a tap = one step)
+	*dialHit { |castle, point|
+		^(this.distance(point, castle[\center]) - castle[\dialR]).abs <= 8
 	}
 
 	// ---- the whole archipelago from one stage size ----
@@ -136,7 +164,7 @@ CQNightGeometry {
 			castle[\stubs] = [castles.wrapAt(k - 1), castles.wrapAt(k + 1)]
 				.collect { |other|
 					var delta = other[\center] - castle[\center];
-					var length = max(0.001, this.prDistance(castle[\center], other[\center]));
+					var length = max(0.001, this.distance(castle[\center], other[\center]));
 					var unit = delta / length;
 					var rim = max(castle[\bodyRx], castle[\bodyRy]) + 2;
 					[castle[\center] + (unit * rim),
@@ -161,12 +189,25 @@ CQNightGeometry {
 			var outerR = 85 * scale;
 			var segments = this.spiralSegments(center, 10 * scale, outerR,
 				mouthAngle, winding);
+			var mouth = segments.last[3];
 			var orgSpiralPoint = segments[5][0];
 			var orgDelta = orgSpiralPoint - center;
-			var orgLength = max(0.001, this.prDistance(center, orgSpiralPoint));
+			var orgLength = max(0.001, this.distance(center, orgSpiralPoint));
 			(center: center, outerR: outerR, winding: winding,
 				mouthAngle: mouthAngle, segments: segments,
-				mouth: segments.last[3],
+				mouth: mouth,
+				spiralSamples: this.sampleSegments(segments, 6),
+				// §6.1 touch homes: press-to-flip chevron past the mouth, the
+				// hold heart at the spiral's innermost eye, the shell's own
+				// opaque layer box, and the tide crescents under the three
+				// continuous moons (spaf / inVca / fbVca)
+				chevron: mouth + Point(cos(mouthAngle) * 20 * scale, 0),
+				heartRadius: 14,
+				shellBox: Rect.aboutPoint(center,
+					outerR + (30 * scale), outerR + (30 * scale)),
+				crescents: [126, 108, 90].collect { |degrees|
+					this.polar(center, 130 * scale, degrees.degrad)
+				},
 				orgSpiralPoint: orgSpiralPoint,
 				orgCenter: orgSpiralPoint + ((orgDelta / orgLength) * (10 * scale)),
 				moons: [126, 108, 90, 72, 54].collect { |degrees|
@@ -214,12 +255,14 @@ CQNightGeometry {
 		sprout = (base: Point((width * 0.17) + (46 * scale), height + 2),
 			tip: Point((width * 0.17) + (54 * scale), height - (36 * scale)));
 
-		// decks as birds at the top; the rate moon under the wing, filename
-		// (10 px mono whisper) beneath
+		// decks as birds at the top; the rate moon under the wing with the
+		// deck-level tide crescent beside it, filename (10 px mono) beneath
 		birds = [0.24, 0.76].collect { |fraction|
 			var center = Point(width * fraction, 40 * scale);
 			(center: center, span: 30 * scale,
+				box: Rect.aboutPoint(center, 22 * scale, 16 * scale),
 				rateSocket: center + Point(11 * scale, 19 * scale),
+				levelCrescent: center + Point(-18 * scale, 16 * scale),
 				labelRect: Rect(center.x - 80, center.y + (32 * scale), 160, 14))
 		};
 		endpoints[\deckA_rate] = birds[0][\rateSocket];
@@ -227,6 +270,7 @@ CQNightGeometry {
 
 		^(scale: scale, width: width, height: height,
 			ringCenter: ringCenter, ringR: ringR,
+			eye: ringCenter,           // §6.1: the ring's qFreq/qChaos pupil
 			castles: castles, ringSegments: ringSegments,
 			ringSamples: ringSamples, ringBox: ringBox,
 			cocos: cocos, roots: roots, sprout: sprout, birds: birds,

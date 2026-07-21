@@ -168,6 +168,93 @@ abort = { |error|
 														check.value(matrix.fullMatrix
 															.asCompileString == beforeHarvest,
 															"Ctrl+Z restores the whole night harvest");
+														// ---- §6.1 night touch grammar ----
+														block { |touchDone|
+															var shell, coco, local, crescent;
+															var speedBefore, freqBefore, chaosBefore;
+															var samples, cablePoint, cableRecord;
+															shell = map.shellViews[0];
+															coco = map.geometry[\cocos][0];
+															crescent = map.crescentViews[\coco1Spaf];
+															crescent.mouseDownAction.value(
+																crescent, 12, 12, 0, 0, 1);
+															crescent.mouseMoveAction.value(
+																crescent, 12, -18, 0);
+															crescent.mouseUpAction.value(
+																crescent, 12, -18, 0, 0);
+															check.value(
+																(state.get(\coco1Spaf) - 2.0).abs < 0.02,
+																"a tide-crescent pull pours spaf through the funnel");
+															local = coco[\center]
+																- coco[\shellBox].leftTop;
+															shell.mouseDownAction.value(shell,
+																local.x, local.y, 0, 0, 1);
+															shell.mouseUpAction.value(shell,
+																local.x, local.y, 0, 0);
+															check.value(state.get(\coco1Hold) == 1,
+																"pressing the shell's heart seals the loop (hold)");
+															local = coco[\chevron]
+																- coco[\shellBox].leftTop;
+															shell.mouseDownAction.value(shell,
+																local.x, local.y, 0, 0, 1);
+															shell.mouseUpAction.value(shell,
+																local.x, local.y, 0, 0);
+															check.value(state.get(\coco1Flip) == 1,
+																"pressing the mouth chevron flips the read direction");
+															speedBefore = state.get(\coco1Speed);
+															samples = coco[\spiralSamples];
+															local = coco[\shellBox].leftTop;
+															shell.mouseDownAction.value(shell,
+																samples[30].x - local.x,
+																samples[30].y - local.y, 0, 0, 1);
+															shell.mouseMoveAction.value(shell,
+																samples[32].x - local.x,
+																samples[32].y - local.y, 0);
+															shell.mouseMoveAction.value(shell,
+																samples[34].x - local.x,
+																samples[34].y - local.y, 0);
+															shell.mouseUpAction.value(shell,
+																samples[34].x - local.x,
+																samples[34].y - local.y, 0, 0);
+															check.value(
+																state.get(\coco1Speed) > speedBefore,
+																"winding toward the mouth speeds the reel");
+															freqBefore = state.get(\qFreq);
+															chaosBefore = state.get(\qChaos);
+															local = map.geometry[\eye]
+																- map.geometry[\ringBox].leftTop;
+															map.ringView.mouseDownAction.value(
+																map.ringView, local.x, local.y, 0, 0, 1);
+															map.ringView.mouseMoveAction.value(
+																map.ringView, local.x + 30, local.y - 30, 0);
+															map.ringView.mouseUpAction.value(
+																map.ringView, local.x + 30, local.y - 30, 0, 0);
+															check.value(
+																state.get(\qFreq) > freqBefore
+																and: { state.get(\qChaos) > chaosBefore },
+																"the ring's eye drags pitch and chaos together");
+															cableRecord = map.overlay.cableRecords
+																.detect { |record|
+																record[\dest] == \coco1_spaf
+															};
+															cablePoint = cableRecord[\points]
+																.detect { |point|
+																coco[\shellBox].containsPoint(point)
+															};
+															speedBefore = state.get(\coco1Speed);
+															local = cablePoint - coco[\shellBox].leftTop;
+															shell.mouseDownAction.value(shell,
+																local.x, local.y, 0, 0, 1);
+															check.value(gui.bananaGrammar.isInHand
+																and: { state.get(\coco1Speed)
+																	== speedBefore },
+																"a cable crossing the shell wins the press (4.5)");
+															gui.bananaGrammar.escape;
+															check.value(map.birdViews.every { |bird|
+																bird.canReceiveDragHandler.notNil
+															}, "both birds accept the file drop");
+															touchDone.value;
+														};
 														check.value(CQInkControl.drawErrors == 0,
 															"night surfaces paint without callback errors");
 														gui.free;

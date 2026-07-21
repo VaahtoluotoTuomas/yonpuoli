@@ -31,6 +31,21 @@ CQGuiBananaController {
 		^this
 	}
 
+	// Public ground delegates for views that own their first gesture pass (the
+	// §6.1 night touch bodies): whatever the touch grammar does not claim falls
+	// through here, so cables, harvest, solo and hover behave identically on
+	// every kind of paper.
+	groundDown { |view, x, y, modifiers = 0, button = 0, clicks = 1, bodyName|
+		^this.prGroundDown(view, x, y, modifiers, button, clicks, bodyName)
+	}
+	groundMove { |view, x, y, modifiers = 0| ^this.prMove(view, x, y, modifiers) }
+	groundUp { |view, x, y, modifiers = 0, button = 0|
+		^this.prUp(view, x, y, modifiers, button)
+	}
+	groundWheel { |view, x, y, modifiers = 0, delta = 0|
+		^this.prGroundWheel(view, x, y, modifiers, delta)
+	}
+
 	prInit {
 		controlViews = IdentitySet.new;
 		controls.do { |control| controlViews.add(control.view) };
