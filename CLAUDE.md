@@ -88,8 +88,9 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   G2 itself is NOT signed off**: §13's G2 scope still contains one unbuilt part, the
   **Night toolbar** (§6). That is the next step. **Do not rebuild or "improve"
   accepted G1 or G2 surface on your own initiative.** `PLAN.md` holds the detail.
-  - §16.7's dashed drop-target border landed 2026-07-22 for both skins from one
-    `CQInk.drawDropTarget`. Qt hands sclang **no drag-leave callback**, and
+  - §16.7's dashed drop-target border is done and accepted (2026-07-22, checklist
+    G2.10), both skins from one `CQInk.drawDropTarget`. Qt hands sclang **no
+    drag-leave callback**, and
     **`canReceiveDrag` is asked once per dragEnter, never per move** (measured on a
     real file drag) — so the predicate can arm the border but can never release it.
     A timed release was tried first and failed in the user's hands: the border went
@@ -149,7 +150,7 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 - `/cq_aura` law: no telemetry is not the same as zero. `CQGui.auraFor` returns `nil`
   until the server reports, and every drawing surface must keep its static reviewed
   look in that case. Focus, solo-dim and hover never pulse (`GUI_SPEC.md` §4.5).
-- Latest full gate on `archipelago` (2026-07-22): 4,947 unit passes / 0 failures,
+- Latest full gate on `archipelago` (2026-07-22): 4,959 unit passes / 0 failures,
   `CQ_COMPILE_OK`, `CQ_SAFETY_PASSED`, `CQ_HOLD_OK`, `CQ_GUI_SHELL_PASSED`,
   `CQ_GUI_DRAWER_PASSED`, `CQ_GUI_DRAWER_REENTRY_PASSED`, `CQ_GUI_NIGHT_PASSED`.
   Measured on the user's machine: server 19.8–21.5 % against SPEC §9's 25 % ceiling,

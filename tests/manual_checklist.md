@@ -1300,7 +1300,9 @@ CQ.hold(1, 0); CQ.patchPreset(\empty);
 - [x] G2.9 lukupään havainnot ratkaistu ja hyväksytty (pvm: 2026-07-22, neljän
   kierroksen jälkeen: skipin paikallaan pysyvä merkki, reel notch, iskumerkki,
   nopeus painona ja tuike. Lohkot G2.9b kohdat 1–5c.)
-- [ ] G2.10 drag-over-korostus (§16.7) — toteutettu 2026-07-22, tarkista lohko
+- [x] G2.10 drag-over-korostus (§16.7) hyväksytty (pvm: 2026-07-22, kahden
+  kierroksen jälkeen: reunaa pitää yllä kursorin sijainti eikä ajastin, ja yön
+  kohde kiertää linnun JA sen nimen)
 - [ ] **G2 valmis** — *avoinna enää Night toolbar* (§6). Kaikki muu on
   rakennettu ja hyväksytty; portti läpäisty 2026-07-22.
 

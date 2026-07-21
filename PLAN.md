@@ -7,15 +7,15 @@ tiedostoon [`docs/history/PLAN_v1.0.md`](docs/history/PLAN_v1.0.md).
 **Tilanne yhdellä rivillä:** foundation F0–F2 ja **koko G1 ovat valmiita ja käyttäjän
 hyväksymiä** §13:n loppuportteineen (2026-07-21, commit `295d14d`); **G2:n koko
 rakennettu yöpinta on hyväksytty ja §13:n loppuportti läpäisty 2026-07-22**
-(G2.1–G2.5 rakennuspalikat, loppuportti G2.6–G2.9) — mutta **G2 ei ole kuitattu**,
-koska §13:n scopesta puuttuu vielä kaksi rakentamatonta osaa: deck-bird
-drag-over-korostus ja Night toolbar. Ne ovat seuraavat askeleet, ja vasta niiden
-jälkeen G3 Weather machine.
+(G2.1–G2.5 rakennuspalikat, loppuportti G2.6–G2.10) — mutta **G2 ei ole kuitattu**,
+koska §13:n scopesta puuttuu vielä yksi rakentamaton osa: **Night toolbar**. Se on
+seuraava askel, ja vasta sen jälkeen G3 Weather machine.
 
-**Seuraava askel konkreettisesti:** Night toolbar. Se on käyttäjän päätöksellä
-2026-07-22 jätetty hautumaan: sen sijoittelusta ja ulkoasusta on käyty
-keskustelu, jota **ei ole tarkoituksella kirjattu** — se päätetään uudelleen
-kun toolbar aloitetaan. Sitä ennen käyttäjän silmä lohkoon G2.10.
+**Seuraava askel konkreettisesti:** Night toolbar — G2:n viimeinen
+rakentamaton osa. Se on käyttäjän päätöksellä 2026-07-22 jätetty hautumaan:
+sen sijoittelusta ja ulkoasusta on käyty keskustelu, jota **ei ole
+tarkoituksella kirjattu** — se päätetään uudelleen kun toolbar aloitetaan.
+Sen jälkeen G2 voidaan kuitata ja siirtyä G3 Weather machineen.
 
 **Aktiivinen työhaara:** `archipelago`. GUI_SPECin neljä aiempaa määrittelysaumaa
 ratkaistiin käyttäjän päätöksellä 2026-07-19; avoimia GUI-käyttäytymispäätöksiä ei ole.
@@ -348,7 +348,8 @@ coco-ulostulosta ja lintujen flutter.
   chevronilla, lukupäässä tai silmässä kuuluu sille säätimelle, ja siellä
   missä kelauspinta kulkee lähellä kuoren kehää, kelaus voittaa omalla
   vihjeellään.
-- [x] **Deck-bird drag-over-korostus (§16.7)** — toteutettu 2026-07-22
+- [x] **Deck-bird drag-over-korostus (§16.7)** — **hyväksytty 2026-07-22
+  (manuaalitesti G2.10, kahden kierroksen jälkeen).** Toteutettu
   molemmille nahoille yhdestä `CQInk.drawDropTarget`-primitiivistä (koko appin
   ainoa katkoviivasuorakaide). Merkki on Dayssa deck-laatikossa ja yöllä
   linnussa; myös nimikyltti ja siipisoketti sytyttävät *linnun* reunan, koska
@@ -448,12 +449,12 @@ coco-ulostulosta ja lintujen flutter.
 **G2:n tila 2026-07-22: kaikki muu on rakennettu ja hyväksytty paitsi Night
 toolbar.** §13:n G2-scope on "archipelago bodies + spiral read-head + charge
 lamps + solo-light + **toolbar presets/shake** + **deck-bird file drop**".
-Deck-bird drop ja sen §16.7-korostus ovat nyt valmiit (korostus odottaa vielä
-käyttäjän silmää, lohko G2.10). Avoinna on siis enää **Night toolbar**, joka
+Deck-bird drop ja sen §16.7-korostus ovat valmiit ja hyväksytyt (G2.10).
+Avoinna on siis enää **Night toolbar**, joka
 on jätetty käyttäjän päätöksellä hautumaan 2026-07-22: sen sijoittelusta ja
 ulkoasusta on käyty keskustelu, jota **EI ole kirjattu** — se tehdään vasta
 kun toolbar aloitetaan. Kaikki muu G2:ssa on hyväksytty: G2.1–G2.5
-rakennuspalikat sekä loppuportti G2.6–G2.9.
+rakennuspalikat sekä loppuportti G2.6–G2.10.
 
 **G2.3-kuuntelukierros 1 (2026-07-21):** kaikki seitsemän kosketuspistettä
 toimivat korvalla; palaute käsitelty samana päivänä (`GUI_SPEC.md` §6.1 ja
@@ -579,18 +580,20 @@ jokaisen jälkeen.**
 3. G2:n jäljellä olevat osat toteutetaan tässä järjestyksessä, kukin omana
    pienenä lisäyksenään omalla katselmointipysähdyksellään:
    1. **Loop-phase/read-head spark** — luunvaalea komeetta spiraalilla loopin
-      todellisessa lukukohdassa (`/cq_phase` 5 Hz; ei seinäkelloanimaatiota)
-      ja sen napautus = skip, eli §6.1:n viimeinen yökoti. Helmi ja komeetta
-      erotetaan muodolla, ei sävyllä (§16.2/§16.6). *(Hyväksytty 2026-07-21,
-      manuaalitesti G2.4.)*
+      todellisessa lukukohdassa (`/cq_phase` 5 Hz; ei seinäkelloanimaatiota).
+      *(Hyväksytty 2026-07-21, manuaalitesti G2.4; komeetan napautus = skip
+      poistettiin 2026-07-22, ks. G2.9 — liikkuva kohde ei ole säädin.)*
    2. `/cq_charge`-lamput (9 kanavaa, GUI_SPEC §9) ja body-solo-light.
-      *(Toteutettu 2026-07-21; manuaalitesti G2.5 odottaa käyttäjän
-      katselmointia.)*
-   3. Deck-bird drag-over-korostus (§16.7) ja täsmällinen Night toolbar.
-      **Ennen tätä askelta pidetään käyttäjän kanssa tarkistus** (päätös
-      2026-07-21): Night toolbaria ei aloiteta ilman sitä.
-   4. G2:n §13-portti: automaatio, kuuntelugate, 100/125/150 % skaalaus,
-      CPU/resurssisoak ja käyttäjän visuaalinen hyväksyntä.
+      *(Hyväksytty 2026-07-21, manuaalitesti G2.5.)*
+   3. Deck-bird drag-over-korostus (§16.7). *(Hyväksytty 2026-07-22,
+      manuaalitesti G2.10.)*
+   4. **Täsmällinen Night toolbar — ainoa jäljellä oleva.** Käyttäjän kanssa
+      pidettiin tarkistus 2026-07-22 (päätös 2026-07-21), ja hän jätti toolbarin
+      hautumaan: sijoittelusta ja ulkoasusta käyty keskustelu on **tarkoituksella
+      kirjaamatta** ja päätetään uudelleen kun toolbar aloitetaan.
+   5. G2:n §13-portti: automaatio, kuuntelugate, 100/125/150 % skaalaus,
+      CPU/resurssisoak ja käyttäjän visuaalinen hyväksyntä. *(Läpäisty
+      2026-07-22 kaiken rakennetun osalta, lohkot G2.6–G2.10.)*
 4. Muista G1:n opetus piirtobudjetista: `GUI_SPEC.md` §10 sitoo myös Nightin. Ambient
    enintään 15 Hz, ilmoitusvirrat tahdistetaan etureunalla, eikä kustannusta arvata —
    se mitataan Qt:n paint-eventin sisältä. Kielen ja Qt:n rajapinnan `Pen`-kutsu
