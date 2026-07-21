@@ -1,12 +1,13 @@
 # CocoquantusSC — ajantasainen kehityssuunnitelma
 
-Päivitetty 2026-07-20. Tämä tiedosto kertoo, mitä tehdään seuraavaksi. Valmiin v1.0-
+Päivitetty 2026-07-21. Tämä tiedosto kertoo, mitä tehdään seuraavaksi. Valmiin v1.0-
 toteutuksen yksityiskohtainen työpäiväkirja ja alkuperäiset checkboxit on jäädytetty
 tiedostoon [`docs/history/PLAN_v1.0.md`](docs/history/PLAN_v1.0.md).
 
-Nykyinen runtime on toimiva v1.0-pohja, mutta riippumaton auditointi varmisti yhden
-P0-julkaisun estäjän ja kolme P1-vakausvikaa. Seuraava kehitysvaihe on Archipelago-GUI;
-sitä ei nimetä vakaaksi releaseksi ennen alla olevia foundation-portteja.
+**Tilanne yhdellä rivillä:** foundation F0–F2 ja kaikki G1:n rakennuspalikat (Day skin,
+Ink kit, jackit/socketit, banana grammar + audition, Drawer, `/cq_aura`) ovat valmiita
+ja käyttäjän visuaalisesti hyväksymiä; jäljellä on G1:n §13-loppuportti (kuuntelu,
+skaalaus, resurssit), sitten G2 Night map ja G3 Weather machine.
 
 **Aktiivinen työhaara:** `archipelago`. GUI_SPECin neljä aiempaa määrittelysaumaa
 ratkaistiin käyttäjän päätöksellä 2026-07-19; avoimia GUI-käyttäytymispäätöksiä ei ole.
@@ -162,9 +163,13 @@ todennettiin manuaalitestillä 9 sekä ajamalla GUI-smoket osoitin ikkunan pää
 juuri se tila, joka ennen jumitti joka kerta.
 
 Drawerin rakennustyö on tämän jälkeen valmis: Inspector, Spellbook ja Memory ovat
-visuaalisesti hyväksyttyjä eikä avoimia Drawer-suunnittelupäätöksiä ole. G1 ei silti
-ole valmis: `/cq_aura`, koko G1:n soitettavuus- ja kuunteluportti sekä
-100/125/150 % skaalaus- ja resurssitarkastus puuttuvat.
+visuaalisesti hyväksyttyjä eikä avoimia Drawer-suunnittelupäätöksiä ole.
+
+`/cq_aura` hyväksyttiin visuaalisesti 2026-07-21 sellaisenaan. **Kaikki G1:n
+rakennuspalikat ovat siis tehty ja katselmoitu.** Jäljellä on vain §13:n
+loppuportti: kuuntelugate, 100/125/150 % skaalaustarkastus ja CPU/resurssisoak.
+Uutta G1-pintaa ei enää rakenneta — jos loppuportti paljastaa puutteita, ne
+korjataan olemassa olevaan pintaan, ei uusina osina.
 
 - [x] Yksi Day/Night-ikkunakuori, pysyvä Master-strip ja Drawer vähintään 1280×720:ssa.
 - [x] Yhteinen Ink kit: normatiivinen paletti, viiva, glyphit ja session-seedattu
@@ -177,9 +182,25 @@ ole valmis: `/cq_aura`, koko G1:n soitettavuus- ja kuunteluportti sekä
   Memory. Manuaalitestit 1–7 ja 9 hyväksytty (2026-07-21); `cable opacity` päätetty
   jättää pois. Drawerin oma soitettavuus- ja kuuntelukoe ajetaan osana alla olevaa
   G1:n yhteistä §13-porttia, ei erillisenä Drawer-gattina.
-- [ ] `/cq_aura`: 16 kanonista source-magnitudea noin 15 Hz; ambient redraw enintään
-  15 Hz ja GUI CPU noin enintään 3 %.
+- [x] `/cq_aura`: 16 kanonista source-magnitudea noin 15 Hz; ambient redraw enintään
+  15 Hz. Hyväksytty visuaalisesti 2026-07-21 sellaisenaan (hehkun voimakkuus ja
+  kaapelin sykkeen syvyys). Tarkka GUI CPU ≤ 3 % mitataan G1:n loppuportissa.
+  Toteutus: oma `\cqAura`-telemetriadef gMasterissa lukee valmiin modSrc-väylän,
+  tasasuuntaa ja lagittaa audio-rate-tasolla ennen `A2K`:ta (audio-alueen castle ei
+  siis alias oidu välkynnäksi) ja lähettää 15 Hz. GUI lukee sen `\cq_gui_aura`-
+  OSCdefillä; viestin oma taajuus on ambient-katto, eikä ajastimia lisätty.
+  Piirto koskee vain 16:ta pientä jack-näkymää ja kaapelikerrosta, ja se ohitetaan
+  kokonaan jos mikään lähde ei liikkunut. Hiljaisuus lähteestä (headless,
+  serveritön preview) ei ole sama kuin nolla: ilman telemetriaa kaapeli säilyttää
+  hyväksytyn staattisen musteen. Hover/fokus ei sytytä auraa (§4.5).
 - [ ] `GUI_SPEC.md` §13:n automaatio, kuuntelu ja käyttäjän visuaalinen hyväksyntä.
+  **Tämä on G1:n ainoa avoin kohta.** Sisältö: (1) neljä markkeria + kolme
+  GUI-smokea, (2) §13:n kuuntelugate — istuta `tri3 → coco1_spaf` korvalla niin
+  että swell kuuluu ennen commitia, siirrä banaani, rippaa nykäisemällä,
+  wheel-trimmaa, lasso-harvestaa muutama ja peru koko saalis, ja tarkista että
+  Spellbookin rivit vastaavat tekoja, (3) ikkuna 100/125/150 % Windows-skaalauksilla
+  1280×720:stä ylöspäin, (4) CPU/resurssisoak GUI auki: SPEC §9:n 25 % kokonaiskatto
+  pitää ja GUI:n oma osuus on noin ≤ 3 %, (5) sinun visuaalinen hyväksyntäsi.
 
 ### G2 — Night map
 
@@ -260,19 +281,23 @@ Night map ja Weather Machine — tehdään seuraavalla tavalla:
 
 ## Seuraavan toteutussession ensimmäiset askeleet
 
+**Seuraava vaihe on G1:n loppuportti, ei uutta pintaa.**
+
 1. Varmista `archipelago`-haara, puhdas työpuu ja lue `CLAUDE.md`, `PLAN.md` sekä
-   `GUI_SPEC.md` kokonaan. F0–F2, hyväksytty Day/Ink-layout, banana grammar +
-   audition ja koko Drawer ovat valmiit; älä toista niitä.
-2. Toteuta `/cq_aura` (GUI_SPEC §9): 16 kanonista source-magnitudia noin 15 Hz
-   yhtenä ehdottomana control-rate SendReplynä, kuten olemassa olevat meterit.
-   Kieli lukee sen namespacoidulla OSCdefillä; ambient redraw ≤ 15 Hz ja GUI CPU
-   ≈ ≤ 3 % (§10/§11). Aura ruokkii jack glow'n, kaapelipulssin ja body glow'n —
-   ei mitään muuta liikettä. NRT-turvakynnykset eivät muutu.
-3. Aja G1:n lopullinen §13-portti: neljä markkeria, GUI-smoket, kuuntelugate
-   (istuta `tri3 → coco1_spaf` korvalla, siirrä, rippaa, wheel-trimmaa,
-   lasso-harvestaa ja peru), 100/125/150 % skaalaustarkastus ja CPU/resurssisoak.
-4. Pysähdy jokaisen ensimmäisen ajettavan GUI-osan kohdalla yllä olevaan visuaaliseen
-   välitarkastukseen. Älä aloita varsinaista G2 Night mapia ennen valmista G1-porttia.
+   `GUI_SPEC.md` kokonaan. F0–F2, Day/Ink-layout, banana grammar + audition, koko
+   Drawer ja `/cq_aura` ovat valmiita ja katselmoituja; älä rakenna niitä uusiksi
+   äläkä "paranna" niitä oma-aloitteisesti.
+2. Aja automaatio ensin: neljä markkeria (`compile_check`, `run_all`, `nrt_safety`,
+   `nrt_hold_integrity`) ja kolme GUI-smokea (`gui_shell_smoke`, `gui_drawer_smoke`,
+   `gui_drawer_preview_reentry_smoke`). **Huom:** GUI-smoket ajetaan omana
+   prosessinaan; jos ne jumittuvat, tarkista ensin hiiren osoittimen sijainti (ks.
+   Qt-jäätymiskorjaus yllä) eikä koodia.
+3. Anna käyttäjälle `tests/manual_checklist.md`:n valmis **G1 LOPPUPORTTI** -osio
+   (G1.1 kuuntelugate, G1.2 skaalaus 100/125/150 %, G1.3 CPU/resurssisoak) ja pyydä
+   tulokset yksi lohko kerrallaan. Lohkot on jo kirjoitettu; älä kirjoita niitä uusiksi.
+4. Korjaa vain sen mitä portti paljastaa, olemassa olevaan pintaan. Kun portti on
+   käyttäjän hyväksymä, merkitse G1 valmiiksi, commitoi ja pushaa — ja vasta sitten
+   aloita G2 Night map §16.6:n anatomialla.
 
 Night-organismeja tai Weather Machinea ei piirretä ennen G1:n behavior foundationia.
 

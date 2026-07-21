@@ -9,7 +9,7 @@ CQSynthDefs {
 	*all { |config|
 		^[this.input(config), this.deck(config), this.quantussy(config),
 			this.coco(config), this.space(config), this.master(config),
-			this.record(config), this.recordStems(config)]
+			this.aura, this.record(config), this.recordStems(config)]
 	}
 
 	*send { |config, server|
@@ -358,6 +358,23 @@ CQSynthDefs {
 				Out.ar(outs[0], stem1);
 				Out.ar(outs[1] ? outs[0], stem2);
 			};
+		})
+	}
+
+	// GUI_SPEC §9 `/cq_aura` — the whole spec's only server-side addition, and
+	// telemetry alone: it reads the finished mod-source bus and writes no audio
+	// anywhere, so no safety invariant is in its path. Spawned in gMaster, i.e.
+	// after every aModSrc writer, so plain In.ar sees this block's values (the
+	// InFeedback convention above applies only to readers that run first).
+	// Rectify and smooth at AUDIO rate before A2K: an audio-rate castle would
+	// otherwise alias into the control stream and glow as random flicker. One
+	// lag serves both regimes — an audio source settles at its mean magnitude,
+	// an infra one keeps breathing its own shape well below the 2 Hz corner.
+	*aura {
+		^SynthDef(\cqAura, {
+			var sources = In.ar(\modSrcBus.ir(0), 16);
+			SendReply.kr(Impulse.kr(15), '/cq_aura',
+				A2K.kr(Lag.ar(sources.abs, 0.05)));
 		})
 	}
 

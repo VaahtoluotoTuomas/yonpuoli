@@ -83,31 +83,31 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   `/cq_castle` activity. Do not call that instantaneous sample a waveform.
 - The Madrona/Sumu reference contributed only the principle that a visualization must
   expose actual sound/state structure. Do not add decorative filler or animation.
-- The accepted foundation markers and current G1 detail are recorded in `PLAN.md`.
-  The Day/banana checkpoint accepted on 2026-07-20 has 3,411 unit passes / 0 failures,
-  `CQ_GUI_SHELL_PASSED`, `CQ_SAFETY_PASSED` and the unchanged `CQ_HOLD_OK`; G1 as a
-  whole is not complete. The follow-up alignment pass was also accepted: Quantussy
-  range 1 and the Coco slot rails share the exact global Y coordinate, the topology is spread wider,
-  Coco path labels clear their strokes, bits/wrap align, and REC/PANIC use 88×34 /
-  112×34 hit areas. The accepted banana grammar now includes audition/WYHIWYG,
-  plant/move/rip/harvest, polarity/wheel, solo-light, lifecycle revert, 32-op undo
-  including GUI SHAKE, a 40 px capture radius, controls-first dense-patch priority and
-  reviewed hover feedback. Drawer behavior/touch tests 1–5 were accepted on 2026-07-20
-  and the dense-patch decision is no `cable opacity` control. The 184 px resizable
-  bottom-Drawer was then visually rejected because it obscured context, jittered and
-  left the matrix too administrative. The replacement is explicitly recorded as a
-  §8 experiment: one toolbar `drawer` tab beside Night swaps the central Day/Night stage
-  for a stable full workbench; there is no resize, instrument scroll or second window.
-  Inspector is now a static 48×24 px-cell patch loom with grouped short diagonal labels,
-  family rows, weighted/polarity-shaped knots, hover axes, persistent selection and an
-  exact route ribbon. This workbench/loom core and manual Drawer checks 1–6 were visually
-  accepted on 2026-07-20. The follow-up prototype keeps Inspector content on one exact
-  1128 px rail, fixes Spellbook's Qt row-background bug, and presents Memory as a live/
-  saved patch-fingerprint seed bank with truthful morph progress. It passes 3,462 unit
-  checks plus `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
-  `CQ_GUI_DRAWER_REENTRY_PASSED` and `CQ_SAFETY_PASSED`. Visual review of this polish,
-  then a later playability/listening gate, remain; `/cq_aura` is deliberately not part
-  of this prototype. Do not start it before this checkpoint.
+- **Every G1 building block is built and visually accepted (last: `/cq_aura`,
+  2026-07-21). The only open G1 item is the `GUI_SPEC.md` §13 end gate: listening,
+  100/125/150 % scaling and the CPU/resource soak. Do not build new G1 surface, and
+  do not "improve" accepted surface on your own initiative** — fix only what the gate
+  exposes. `PLAN.md` holds the detail and the exact next steps.
+- Accepted G1 decisions that stay binding: the banana grammar (audition/WYHIWYG,
+  plant/move/rip/harvest, polarity/wheel, solo-light, 32-op undo including GUI SHAKE,
+  40 px capture radius, controls-first hit priority, static hover); no `cable opacity`
+  control; the 184 px resizable bottom-Drawer was visually **rejected** — the accepted
+  replacement is the toolbar `drawer` tab that swaps the central Day/Night stage for a
+  stable workbench, with no resize, instrument scroll or second window; Inspector is a
+  48×24 px-cell patch loom whose header, route ribbon, grid and footer share one
+  1128 px rail; Spellbook is a read-only journal using Ink paper rows; Memory is the
+  snapshot bank with truthful `CQSnapshots` morph progress. Day keeps compact islands,
+  26/34/44 px knobs, the static Coco memory-path map and the live spesal constellation.
+- Two memory words, no third (decided 2026-07-21, `GUI_SPEC.md` §8): a **preset** is a
+  patch recipe in code, a **snapshot** is saved instrument state on disk. "Seed bank"
+  survives only as the Memory page's header metaphor. Splitting snapshots out of
+  `presets/` into their own folder is recorded in `PLAN.md` as later work.
+- `/cq_aura` law: no telemetry is not the same as zero. `CQGui.auraFor` returns `nil`
+  until the server reports, and every drawing surface must keep its static reviewed
+  look in that case. Focus, solo-dim and hover never pulse (`GUI_SPEC.md` §4.5).
+- Latest full gate on `archipelago`: 3,467 unit passes / 0 failures, `CQ_COMPILE_OK`,
+  `CQ_SAFETY_PASSED`, `CQ_HOLD_OK`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+  `CQ_GUI_DRAWER_REENTRY_PASSED`.
 - The four former `GUI_SPEC.md` seams were resolved by the user on 2026-07-19 and are
   recorded in the spec and `PLAN.md`: nine charge channels, the G1 harvest lasso,
   display-only mic sprout and static REC transition/error states. Do not reopen or
@@ -156,3 +156,11 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   file tools or an editor.
 - `config.scd` must stay a pure data expression (the parenthesized Event) — no
   trailing code; `CQConfig` uses the file's return value, and boot lives in `boot.scd`.
+- Qt deadlock: hiding a view under the mouse pointer with a *direct* property write
+  freezes the whole window — Qt delivers the hidden child's enter/leave back into the
+  language while the language thread is still blocked inside that same write. Swap
+  views with queued writes only (`setProperty(\currentIndex, i, false)`, see
+  `CQGuiShell.prSwapStage`), after every blocking write, and read the native index
+  only on a later GUI tick; `CQGuiShellState` is the synchronous truth. The same law
+  binds the coming Night map and Compass. If a GUI smoke hangs, check where the
+  physical cursor is before you suspect the code.

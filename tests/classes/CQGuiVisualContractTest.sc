@@ -46,6 +46,27 @@ CQGuiVisualContractTest : UnitTest {
 			"Memory gives the selected seed a substantial patch fingerprint");
 	}
 
+	// GUI_SPEC §9: the aura is the spec's only server-side addition, and §16.8
+	// binds it to cable alpha. Silence about a source is not the same as a
+	// source at zero — the first keeps the reviewed ink, the second reads quiet.
+	test_auraTelemetryShipsAsItsOwnTelemetryDef {
+		var names = CQSynthDefs.all(CQConfig.validate(())).collect { |def| def.name };
+		this.assert(names.includes('cqAura'),
+			"the graph ships a dedicated /cq_aura telemetry def");
+	}
+
+	test_cableAlphaPulsesWithSourceAuraOnly {
+		this.assertEquals(CQGuiCableOverlay.plantedAlpha(nil), 0.88,
+			"no telemetry leaves the planted cable at its reviewed static alpha");
+		this.assertFloatEquals(CQGuiCableOverlay.plantedAlpha(0), 0.62,
+			"a silent source reads quieter than a reported one");
+		this.assertFloatEquals(CQGuiCableOverlay.plantedAlpha(1), 0.92,
+			"a hot source lifts its cable toward full ink");
+		this.assertFloatEquals(CQGuiCableOverlay.plantedAlpha(4.2),
+			CQGuiCableOverlay.plantedAlpha(1),
+			"an out-of-range magnitude clamps instead of overdriving alpha");
+	}
+
 	test_dayEndpointInventoryMatchesTheMatrixExactly {
 		if(CQGuiPanels.respondsTo(\sourceEndpointNames).not
 			or: { CQGuiPanels.respondsTo(\destEndpointNames).not }) {

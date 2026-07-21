@@ -3,11 +3,19 @@
 // matrix reads and redraw notifications stay on CQMatrix's public contracts.
 
 CQGuiCableOverlay {
-	var matrix, endpoints, grammar, ctl, gestureCtl;
+	var matrix, endpoints, grammar, auraFunc, ctl, gestureCtl;
 	var <view, <skin = \day;
 
-	*new { |matrix, endpoints, grammar|
-		^super.newCopyArgs(matrix, endpoints, grammar).prBuild
+	*new { |matrix, endpoints, grammar, auraFunc|
+		^super.newCopyArgs(matrix, endpoints, grammar, auraFunc).prBuild
+	}
+
+	// GUI_SPEC §16.8: a planted cable's alpha pulses with its source's aura.
+	// nil = the server has said nothing about that source, so the cable keeps the
+	// reviewed static ink instead of pretending to be silent. Focus and solo-dim
+	// never pulse — §4.5 keeps telemetry out of hover semantics.
+	*plantedAlpha { |aura|
+		^aura !? { 0.62 + (aura.clip(0, 1) * 0.3) } ?? 0.88
 	}
 
 	skin_ { |newSkin|
@@ -140,7 +148,10 @@ CQGuiCableOverlay {
 				focused = grammar.isCableHovered(record[\src], record[\dest]);
 				alpha = if(focused) { 1.0 } {
 					if(grammar.isCableDim(record[\src], record[\dest])) { 0.22 } {
-						if(hasFocus) { 0.46 } { 0.88 }
+						if(hasFocus) { 0.46 } {
+							this.class.plantedAlpha(
+								auraFunc !? { auraFunc.value(record[\src]) })
+						}
 					}
 				};
 				lifted = if(grammar.isHarvested(record[\src], record[\dest])) { 2 } {

@@ -14,6 +14,10 @@ CQGui {
 	var <endpoints, <cableOverlay;
 	var <inkControls;
 	var castleLeds, spesalView, <spesalStates, <castleValues;
+	// GUI_SPEC §9: 16 source magnitudes, nil until the server has actually
+	// reported. No telemetry = no pulse, so serverless and headless surfaces
+	// keep exactly the reviewed static Day look.
+	var <auraValues, auraPainted;
 	var deckLabels, deckCtls, skipButtons;
 	var noticeView, recBtn, recTimeView, recTask, hotTask;
 	var micLive = false, hotLive = false, cleaned = false;
@@ -85,7 +89,7 @@ CQGui {
 			}
 		};
 		if(kind == \jack) {
-			CQInk.drawJack(center, family, \day, endpointState)
+			CQInk.drawJack(center, family, \day, endpointState, this.auraFor(name) ? 0)
 		} {
 			CQInk.drawSocket(center, family, \day, endpointState,
 				bananaGrammar.handWeight);
@@ -95,6 +99,15 @@ CQGui {
 		^this
 	}
 	currentSkin { ^shellState.viewMode }
+
+	// One source's live magnitude, or nil while the instrument is silent about
+	// it (headless, serverless preview, unbooted). Callers decide what "no
+	// information" looks like; they must never invent a value for it.
+	auraFor { |name|
+		var index = CQMatrix.srcIndex(name);
+		if(auraValues.isNil or: { index.isNil }) { ^nil };
+		^auraValues[index]
+	}
 
 	// SPEC §7: persistent warning color while the mic is live (M2 GUI part)
 	micNotice { |live|
@@ -139,7 +152,8 @@ CQGui {
 				CQGuiPanels.quantussy(this),
 				CQGuiPanels.coco(this, 2)
 			).margins_(8).spacing_(8));
-		cableOverlay = CQGuiCableOverlay(matrix, endpoints, bananaGrammar);
+		cableOverlay = CQGuiCableOverlay(matrix, endpoints, bananaGrammar,
+			{ |src| this.auraFor(src) });
 		bananaController = CQGuiBananaController(
 			bananaGrammar, endpoints, bananaBodies, cableOverlay, inkControls);
 		bananaController.bindGround(dayContent);
@@ -237,6 +251,17 @@ CQGui {
 				spesalView !? { spesalView.refresh };
 			}.defer;
 		}, '/cq_castle');
+		// GUI_SPEC §9 `/cq_aura`: the server's own 15 Hz rate IS the §10 ambient
+		// ceiling — no extra timer, no polling. The repaint touches only the 16
+		// small jack views and the cable layer, never the whole window.
+		OSCdef(\cq_gui_aura, { |msg|
+			{
+				auraValues = msg.copyRange(3, 18).collect { |value|
+					(value ? 0).clip(0, 1)
+				};
+				this.prPaintAura;
+			}.defer;
+		}, '/cq_aura');
 		OSCdef(\cq_gui_spesal, { |msg|
 			{
 				spesalStates = msg.copyRange(3, 7).collect { |v| v.asInteger };
@@ -256,6 +281,23 @@ CQGui {
 				});
 				deckCtls = deckCtls.add(ctl);
 			};
+		};
+	}
+
+	// A still instrument must not cost redraws: repaint only when some source
+	// actually moved (GUI_SPEC §16.9 — ambient motion is information, and there
+	// is none in silence). Cables repaint only when there are cables to pulse.
+	prPaintAura {
+		if(cleaned) { ^this };
+		if(auraPainted.notNil and: {
+			auraValues.every { |value, i| (value - auraPainted[i]).abs < 0.01 }
+		}) { ^this };
+		auraPainted = auraValues;
+		CQMatrix.sourceNames.do { |src|
+			endpoints[src] !? { |endpoint| endpoint[\view].refresh };
+		};
+		cableOverlay !? { |overlay|
+			if(overlay.cableCount > 0) { overlay.view.refresh };
 		};
 	}
 
@@ -417,6 +459,8 @@ CQGui {
 		hotTask !? { hotTask.stop };
 		hotTask = nil;
 		#[cq_gui_meters, cq_gui_gr, cq_gui_coco, cq_gui_castle,
-			cq_gui_spesal, cq_gui_hot].do { |k| OSCdef.all[k] !? { |d| d.free } };
+			cq_gui_spesal, cq_gui_hot, cq_gui_aura].do { |k|
+			OSCdef.all[k] !? { |d| d.free }
+		};
 	}
 }

@@ -757,12 +757,114 @@ CQ.boot;
 //    responsiivisena ja lopputila vastaa viimeistä painallusta.
 ```
 
+## G1 `/cq_aura` — elävä paneeli
+
+```supercollider
+// /cq_aura: 16 lähteen magnitudi ~15 Hz. Luokat muuttuivat -> Ctrl+Shift+L ensin.
+CQ.boot;
+CQ.patchPreset(\empty);
+CQ.set(\coco2Level, 0);
+// 1. Älä koske mihinkään. Katso Quantussyn oransseja tri-jackeja: infra-castlet
+//    hengittävät hitaasti (hehku kasvaa ja hiipuu kolmioaallon mukana), C3
+//    (balcium) selvästi nopeammin. Harmaat cas-jackit askeltavat, eivät liu'u.
+//    org1/org2 hehkuvat vaikka organ-taso on 0 — urkulähde on aina olemassa
+//    patchattavaksi, kuten hardwaressa; se ei ole bugi.
+CQ.set(\qFreq, 0.5);           // 2. hitaampi verkko -> hengitys pitenee
+CQ.set(\qFreq, 40);            //    audioalue -> hehku ASETTUU vakaaksi eikä
+                               //    väliky satunnaisesti (magnitudi lasketaan
+                               //    audio-rate-tasolla, ei näytteistetä ohi)
+CQ.set(\qFreq, 4);
+// 3. Kaapelin syke: istuta banaani ja katso viivaa, älä jackia.
+CQ.set(\coco1Spaf, 1); CQ.patch(\tri1, \coco1_spaf, 0.5);
+//    -> kaapelin mustepeitto elää lähteensä mukana. Vaihda hiljaiseen lähteeseen:
+CQ.patch(\tri1, \coco1_spaf, 0); CQ.patch(\envA, \coco1_spaf, 0.5);
+//    -> envA on hiljaa: sama kaapeli lukee vaimeampana, kunnes syötät ääntä.
+CQ.set(\preADrive, 6);         //    puhu/soita -> hehku ja kaapeli seuraavat
+                               //    verhokäyrää välittömästi
+// 4. Hover-laki (§4.5): vie osoitin kaapelin päälle — fokus on yhä STAATTINEN
+//    korostus, ei syke; säätimen päällä kaapelifokus katoaa kuten ennenkin.
+// 5. Hiljaisuus: CQ.set(\qFreq, 0.05) ja odota ~20 s -> hehkut vaimenevat
+//    lähes olemattomiin eivätkä jää palamaan. Paneeli ei saa värähdellä.
+// 6. Kuormitus: seuraa sclangin CPU:ta hetki (Task Manager) — paneelin pitää
+//    tuntua kevyeltä; tarkka ≤ 3 % mitataan vasta G1:n loppuportissa.
+CQ.patchPreset(\empty);
+```
+
+- [x] G1 `/cq_aura` visuaalinen katselmus hyväksytty (2026-07-21; hehkun voimakkuus
+      ja kaapelin sykkeen syvyys hyväksyttiin sellaisenaan)
+
+---
+
 - [x] G1 Drawer behavior/touch 1–5 hyväksytty (2026-07-20; `cable opacity`: ei tarvita)
 - [x] G1 Drawer workbench + patch loom -kokeilu 6 hyväksytty (2026-07-20)
 - [x] G1 Drawer toolbar/alignment/Spellbook/seed-bank-viimeistely 7 hyväksytty
       (2026-07-21)
-- [ ] G1 muistisanasto 8 tarkistettu (pvm: ____ — sanat vaihtuivat päätöksen
-      jälkeen; silmäile Memory-sivu seuraavalla käynnistyksellä)
+- [x] G1 muistisanasto 8 tarkistettu (2026-07-21; GUI puhuu vain preseteistä ja
+      snapshoteista, "seed" vain sivun otsikkometaforassa)
 - [x] G1 Qt-jäätymisregressio 9 tarkistettu (2026-07-21; Tab hiiri Coco 1:n
       päällä ei enää jäädytä ikkunaa)
-- [ ] G1 Drawer myöhempi soitettavuus- ja kuunteluportti hyväksytty (pvm: ____)
+- [ ] G1 Drawer soitettavuus ja kuuntelu — ei erillistä gattia, kuuluu alla olevaan
+      G1-loppuporttiin
+
+---
+
+## G1 LOPPUPORTTI — kuuntelu, skaalaus, resurssit (GUI_SPEC §13)
+
+Viimeinen G1-gate. Kaikki rakennuspalikat on jo hyväksytty; tämä portti ei rakenna
+uutta pintaa vaan toteaa, kestääkö olemassa oleva soittamisen. Aja ensin automaatio:
+neljä markkeria + kolme GUI-smokea vihreinä.
+
+```supercollider
+// G1.1 — kuuntelugate: koko banana grammar KORVALLA. (Ctrl+Shift+L ensin.)
+CQ.boot;
+CQ.deckA.load("123681__aidenfry__cricket-and-bird-field-recording.wav");
+CQ.patchPreset(\empty); CQ.set(\coco2Level, 0);
+CQ.set(\coco1SlotDeck, 1); CQ.hold(1, 0); CQ.set(\coco1Spaf, 1);
+// 1. Paina Quantussyn tri3-jackia ja vedä HITAASTI kohti coco 1:n spaf-socketia.
+//    Viremodulaation pitää kuulua ja paisua jo ennen vapautusta; vapautettu paino
+//    on täsmälleen se, jonka kuulit (WYHIWYG) — ei hyppyä commitissa.
+// 2. Tartu istutettuun plugiin ja siirrä se coco 2:n spafiin: ääni seuraa siirtoa.
+// 3. Rippaa se nykäisemällä tyhjälle paperille (äänen pitää kadota heti) ja
+//    wheel-trimmaa jokin toinen banaani ±0.05 — muutoksen pitää olla kuultava.
+// 4. Istuta 4–5 banaania, kierrä ne yhdellä lassolla ja peru Ctrl+Z:llä:
+//    koko saaliin pitää palata kerralla myös kuultavasti.
+// 5. Avaa Drawer → Spellbook: rivien pitää vastata tekemiäsi eleitä oikeassa
+//    järjestyksessä, harvest yhtenä `// harvest` -blokkina.
+// 6. Soita ~10 min pelkällä paneelilla (myös Inspectorin loomista): mikään ele
+//    ei saa tuottaa tasohyppyä, klikkiä eikä jumia, ja space/PANIC toimii aina.
+CQ.patchPreset(\empty);
+```
+
+```supercollider
+// G1.2 — skaalaus 100 / 125 / 150 %. Windows: Asetukset > Näyttö > Skaalaus.
+// Qt lukee arvon käynnistyessään, joten vaihda skaalaus, käynnistä SC uudelleen
+// ja aja tämä jokaisella kolmella arvolla.
+CQ.boot;
+// - Ikkuna mahtuu 1280x720:een: ei leikkautuvia reunoja, ei ilmestyvää scrollia.
+// - Typografia pysyy luettavana (10 px labelit / 11 px notice / 9 px range) eivätkä
+//   viivat paksune — muste ei kasva paperin mukana (GUI_SPEC §16.10).
+// - Avaa Drawer: koko 16x22 loom näkyy ilman sisäscrollia ja footer ei leikkaudu.
+// - Master-strip pysyy näkyvissä ja PANIC osuma-alueineen tavoitettavissa.
+// - Vaihda Day/Night ja takaisin: mitään ei jää väärään kokoon.
+```
+
+```supercollider
+// G1.3 — CPU / resurssisoak, GUI auki koko ajan.
+CQ.boot; CQ.patchPreset(\mayhem);
+CQ.set(\coco1SlotQ, 1); CQ.set(\coco2SlotQ, 1);
+CQ.set(\coco1Send, 0.5); CQ.set(\coco2Send, 0.5); CQ.set(\spaceMix, 0.4);
+CQ.server.avgCPU.round(0.1);   // aja pari kertaa: SPEC §9:n katto on 25 %
+CQ.server.peakCPU.round(0.1);
+// - Katso sclangin CPU:ta Task Managerista ~1 min: paneelin oma osuus ~<= 3 %.
+//   Vertaa sulkemalla ikkuna ja avaamalla se uudelleen (CQ.gui) — eron pitää olla
+//   pieni ja palautua.
+// - Istuta ~10 banaania ja liikuta hiirtä paneelin yli: gesture-piirto saa nousta,
+//   mutta paluun lepotasolle pitää olla välitön.
+// - Anna soida 15 min: ei muistin kasvua, ei hidastumista, ei virheryöppyä posiin.
+CQ.patchPreset(\empty);
+```
+
+- [ ] G1.1 kuuntelugate hyväksytty (pvm: ____)
+- [ ] G1.2 skaalaus 100/125/150 % hyväksytty (pvm: ____)
+- [ ] G1.3 CPU/resurssisoak hyväksytty (pvm: ____)
+- [ ] **G1 valmis** (pvm: ____) → seuraava vaihe on G2 Night map

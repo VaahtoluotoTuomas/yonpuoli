@@ -78,8 +78,15 @@ RootNode
      ├─ gQuantussy  // \cqQuantussy (single synth: 5 castles + spesal + qMix)
      ├─ gCocos      // \cqCoco ×2
      ├─ gFx         // \cqSpace
-     └─ gMaster     // \cqMaster (mix, safety, meters, stems), \cqRecorder when active
+     └─ gMaster     // \cqMaster (mix, safety, meters, stems), \cqAura (telemetry),
+                    // \cqRecorder when active
 ```
+
+`\cqAura` (GUI_SPEC §9) sits here purely because gMaster runs last: it reads the
+finished `aModSrc` bus with plain `In.ar` — no InFeedback needed — rectifies and
+lags at audio rate so audio-range castles cannot alias into the control stream,
+and reports 16 magnitudes at 15 Hz. It writes to no bus and no output, so it is
+outside every safety path; a headless session simply has no listener.
 
 Rationale: modulation sources are computed before their consumers within the same
 block; the only intentional one-block delays are Coco↔Coco cross-signals (InFeedback)
@@ -276,7 +283,7 @@ Language side on `\cq_hot`: engage −6 dB trim (a lagged synth arg), GUI notice
 | `CQGuiMatrix` | experimental Inspector patch loom | Exact canonical 16×22 single-`UserView` field with 48×24 px hit cells, grouped destination islands, family-marked rows, weighted/polarity-shaped knots, persistent route selection and hover row/column focus; no inner scroll or new state funnel |
 | `CQSpellbook` | read-only committed patch journal | Hooks `CQMatrix` notifications below every client, diffs against the last committed full matrix, excludes `committed:false` frames, exposes row→batch metadata for persistent GUI selection, and exports copyable `CQ.patch(...)` lines or preset data; it does not execute or edit code |
 | `CQMidi16n` | controller layer | `MIDIdef.cc` per fader from config map, 0–127 → spec map, optional `\pickup` takeover, hot-plug via `MIDIClient` device watch; all writes via `CQState` |
-| `CQGui` | panel | pure view: renders from `CQState`/`CQMatrix` dependant notifications, sends via funnel; composes the Day/Night shell and `CQGuiDrawer`; meters/LEDs come from namespaced OSCdefs; everything UI inside `{ }.defer`; closes cleanly on `*free` |
+| `CQGui` | panel | pure view: renders from `CQState`/`CQMatrix` dependant notifications, sends via funnel; composes the Day/Night shell and `CQGuiDrawer`; meters/LEDs come from namespaced OSCdefs; `/cq_aura` magnitudes stay `nil` until the server reports, repaint only the jack views and cable layer, and are skipped entirely when nothing moved; everything UI inside `{ }.defer`; closes cleanly on `*free` |
 | `CQSnapshots` | memory | `save(name)` → `(version: 1, params: state.asEvent, matrix: matrix.asArray, spesal: [..], meta: (...))` `.asCompileString` → `presets/name.cqsnap.scd`; `recall` clamps everything on load; `morph(a, b, dur)` = Routine at 30 Hz interpolating continuous params + weights, discrete switch at midpoint; mic gain never auto-recalled above 0 (SPEC §7) |
 | `CQRecorder` | disk | Explicit `idle/starting/recording/stopping/error` state machine; attempt-local path/buffer/synth ownership; master 2ch 24-bit wav timestamped or optional 4ch master+stems; never overwrite; `DiskOut` synth in `gMaster` tail |
 | `CQDeck` | file players | Cancellable last-request-wins buffer transaction, folder scan/next/prev/random and peak-normalize on load; stale/error paths always release their local buffer |

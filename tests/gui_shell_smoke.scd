@@ -35,7 +35,7 @@ abort = { |error|
 				var sourceView, destView, destPoint, sourceOrigin, dragPoint, cableHit;
 				var groundView, harvestRecord, harvestCenter, harvestPoints, localPoints;
 				var beforeHarvest, afterHarvest, hoverPoint, fileLabel, loopControl;
-				var trackedView, trackedControl;
+				var trackedView, trackedControl, beforeAuraAlpha;
 				check.value(gui.window.notNil and: { gui.window.isClosed.not },
 					"real Qt window constructed");
 				check.value(gui.window.acceptsMouseOver,
@@ -195,9 +195,15 @@ abort = { |error|
 					"Day/Night hard cut reached Night");
 				check.value(gui.shell.masterView === master,
 					"the same Master view persists across the hard cut");
+				check.value(gui.auraValues.isNil and: { gui.auraFor(\tri1).isNil },
+					"an unreported source has no invented aura value");
+				beforeAuraAlpha = CQGuiCableOverlay.plantedAlpha(gui.auraFor(\tri1));
 				NetAddr.localAddr.sendMsg('/cq_spesal', 0, 0, 0, 1, 4, 6, 7);
 				NetAddr.localAddr.sendMsg('/cq_castle', 0, 0,
 					-0.8, -0.25, 0.35, 0.9, 0.1);
+				// 16 canonical magnitudes, two of them deliberately out of range
+				NetAddr.localAddr.sendMsg('/cq_aura', 0, 0,
+					1.4, 0.5, 0.25, 0, 0, -0.3, 0, 0, 0, 0, 0.8, 0, 0.6, 0, 0, 0);
 				gui.shell.toggleDrawer;
 				// QView.visible_ crosses the Qt event queue; observe it on the
 				// next GUI tick rather than reading the stale native property.
@@ -209,6 +215,19 @@ abort = { |error|
 							(value - [-0.8, -0.25, 0.35, 0.9, 0.1][i]).abs < 0.001
 						}.every { |value| value },
 							"castle OSC drives the five constellation activity marks");
+						// OSC carries 32-bit floats, so compare with a tolerance
+						check.value(gui.auraValues.size == 16
+							and: { gui.auraFor(\tri1) == 1.0 }
+							and: { gui.auraFor(\cas1) == 0.0 }
+							and: { (gui.auraFor(\envA) - 0.8).abs < 0.001 }
+							and: { (gui.auraFor(\coco1) - 0.6).abs < 0.001 },
+							"aura OSC clamps and lands on the canonical source order");
+						check.value(
+							CQGuiCableOverlay.plantedAlpha(gui.auraFor(\tri1))
+								> CQGuiCableOverlay.plantedAlpha(gui.auraFor(\cas1)),
+							"a hot source's cable reads stronger than a silent one's");
+						check.value(beforeAuraAlpha == 0.88,
+							"without telemetry the cable keeps the reviewed static ink");
 						check.value(CQInkControl.drawErrors == 0,
 							"Ink controls paint without callback errors");
 						check.value(gui.shellState.drawerOpen
@@ -221,7 +240,7 @@ abort = { |error|
 								check.value(gui.shellState.lifecycleState == \closed,
 									"GUI free reaches closed");
 								#[cq_gui_meters, cq_gui_gr, cq_gui_coco, cq_gui_castle,
-									cq_gui_spesal, cq_gui_hot].do { |key|
+									cq_gui_spesal, cq_gui_hot, cq_gui_aura].do { |key|
 									check.value(OSCdef.all[key].isNil,
 										"cleanup removed %".format(key));
 								};
