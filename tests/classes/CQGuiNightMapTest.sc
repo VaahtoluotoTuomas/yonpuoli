@@ -60,8 +60,8 @@ CQGuiNightMapTest : UnitTest {
 			"coco jacks stay bare — the chevron is the shell's flip touch");
 		this.assertEquals(CQGuiNightMap.endpointSpec(\org1)[\decoration], \stem,
 			"org jacks keep their stem tip");
-		this.assert(CQGuiNightMap.endpointSpec(\envA)[\decoration].isNil,
-			"root tips are bare green dots");
+		this.assertEquals(CQGuiNightMap.endpointSpec(\envA)[\decoration], \root,
+			"a root tip redraws its own arrival under its opaque view");
 	}
 
 	test_crescentInventory {

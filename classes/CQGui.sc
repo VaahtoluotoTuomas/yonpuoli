@@ -13,7 +13,11 @@ CQGui {
 	var <bananaGrammar, <bananaController, <bananaBodies;
 	var <endpoints, <cableOverlay, <nightMap;
 	var <inkControls;
-	var castleLeds, spesalView, <spesalStates, <castleValues, <phaseNorms;
+	var castleLeds, spesalView, <spesalStates, <castleValues;
+	// `/cq_phase`: the read head's address and, beside it, the read direction as
+	// an audio-rate mean (§9) — ±1 settled, near 0 shuttling. Both nil until the
+	// server reports.
+	var <phaseNorms, <phaseDirs;
 	// GUI_SPEC §9: 16 source magnitudes, nil until the server has actually
 	// reported. No telemetry = no pulse, so serverless and headless surfaces
 	// keep exactly the reviewed static Day look.
@@ -173,6 +177,7 @@ CQGui {
 		spesalStates = Cocoquantus.spesalStates;
 		castleValues = [0, 0, 0, 0, 0];
 		phaseNorms = [nil, nil];   // nil until '/cq_phase' reports (§9: no telemetry ≠ 0)
+		phaseDirs = [nil, nil];
 		chargeNames = this.class.chargeNames;
 		chargeIndex = IdentityDictionary.new;
 		chargeNames.do { |name, i| chargeIndex[name] = i };
@@ -323,7 +328,7 @@ CQGui {
 		// GUI_SPEC §9 loop phase: the read head's own message; its 5 Hz send
 		// rate IS the night shells' repaint ceiling (§10) — no timer added
 		OSCdef(\cq_gui_phase, { |msg|
-			{ this.prPhaseFrame(msg[2], msg[3]) }.defer;
+			{ this.prPhaseFrame(msg[2], msg[3], msg[4]) }.defer;
 		}, '/cq_phase');
 		// watchdog notice (SPEC §5.6): same '/cq_hot' the facade acts on
 		OSCdef(\cq_gui_hot, { { this.prHotNotice }.defer }, '/cq_hot');
@@ -436,11 +441,13 @@ CQGui {
 	// one '/cq_phase' frame: cache the clamped truth, and only the visible
 	// night stage spends a repaint (the hidden twin repaints in full at the
 	// hard cut). The night map's own delta gate thins a near-still reel.
-	prPhaseFrame { |n, value|
+	prPhaseFrame { |n, value, dir|
 		var i;
 		if(cleaned) { ^this };
 		i = (n ? 1).asInteger.clip(1, 2) - 1;
 		phaseNorms[i] = (value ? 0).asFloat.clip(0, 1);
+		// an older frame without the direction value leaves the last one alone
+		dir !? { phaseDirs[i] = dir.asFloat.clip(-1, 1) };
 		if(shellState.viewMode == \night) {
 			nightMap !? { nightMap.paintPhase(i) };
 		};

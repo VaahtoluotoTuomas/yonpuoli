@@ -16,7 +16,7 @@ CQGuiNightMap {
 	var <geometry, <eyeActive = false;
 	var <eyeFreqNorm = 0.5, <eyeChaosNorm = 0.15;
 	var <speedNorms, <shellHover, <dialHover, <bodyHover;
-	var <sparkDirs, <sparkHover, sparkPainted;
+	var <sparkDirs, <sparkHover, sparkPainted, flipPainted;
 	var <fireflyPhase = 0.0, lastFireflyTime, castlePainted;
 	var <holdStates, <flipStates, <rangeLetters, <sproutState;
 	var freed = false;
@@ -34,7 +34,8 @@ CQGuiNightMap {
 			^(kind: \jack,
 				family: (tri: \tri, cas: \cas, env: \input,
 					coc: \cas, org: \organ)[prefix] ? \line,
-				decoration: (tri: \leaf, cas: \crown, org: \stem)[prefix])
+				decoration: (tri: \leaf, cas: \crown, org: \stem,
+					env: \root)[prefix])
 		};
 		if(CQMatrix.destIndex(name).isNil) { ^nil };
 		if(string.endsWith("_spaf")) { ^(kind: \socket, family: \spaf) };
@@ -133,18 +134,33 @@ CQGuiNightMap {
 	// flip shows truthfully even when the chevron's param says otherwise.
 	// A move under ~1.5 px along the line keeps the frame.
 	paintPhase { |i|
-		var norm = gui.phaseNorms[i], delta;
-		if(freed or: { norm.isNil }) { ^this };
-		if(sparkPainted[i].isNil) {
-			sparkPainted[i] = norm;
-			^shellViews[i].refresh
+		var norm = gui.phaseNorms[i], mean = gui.phaseDirs[i];
+		var delta, mode, repaint = false;
+		if(freed) { ^this };
+		// the chevron's regime can change while the address barely moves — a
+		// shuttled loop goes nowhere — so it gets its own gate
+		mode = this.flipMode(i);
+		if(mode != flipPainted[i]) { flipPainted[i] = mode; repaint = true };
+		// the tail shares the chevron's one truth wherever the server reports a
+		// settled direction; the wrap-aware travel stays the fallback
+		if(mean.notNil and: { mean.abs > this.class.shuttleFloor }) {
+			sparkDirs[i] = mean.sign
 		};
-		delta = norm - sparkPainted[i];
-		if(delta.abs > 0.5) { delta = delta - delta.sign };  // crossed the mouth seam
-		if(delta.abs < 0.002) { ^this };
-		if(delta != 0) { sparkDirs[i] = delta.sign };
-		sparkPainted[i] = norm;
-		shellViews[i].refresh;
+		if(norm.notNil) {
+			if(sparkPainted[i].isNil) {
+				sparkPainted[i] = norm;
+				repaint = true;
+			} {
+				delta = norm - sparkPainted[i];
+				if(delta.abs > 0.5) { delta = delta - delta.sign };  // the mouth seam
+				if(delta.abs >= 0.002) {
+					if(mean.isNil and: { delta != 0 }) { sparkDirs[i] = delta.sign };
+					sparkPainted[i] = norm;
+					repaint = true;
+				};
+			};
+		};
+		if(repaint) { shellViews[i].refresh };
 	}
 
 	// the read head's stage-space home — nil until the server has reported
@@ -214,6 +230,7 @@ CQGuiNightMap {
 		sparkDirs = [1, 1];
 		sparkHover = [false, false];
 		sparkPainted = Array.newClear(2);
+		flipPainted = Array.newClear(2);
 		rangeLetters = ["", "", "", "", ""];
 		sproutState = CQNightGeometry.sproutState(config[\micChan].notNil, 0);
 		container = View().background_(night[\ground]);
@@ -293,7 +310,7 @@ CQGuiNightMap {
 			.background_(CQInk.palette(\night)[\ground]);
 		view.drawFunc = {
 			this.prSafeDraw {
-				spec[\decoration] !? { this.prDrawDecoration(spec, anchor) };
+				spec[\decoration] !? { this.prDrawDecoration(name, spec, anchor) };
 				gui.drawEndpoint(name, spec[\kind], anchor, spec[\family],
 					spec[\glyph], spec[\lamp] == true, \night);
 			}
@@ -582,15 +599,25 @@ CQGuiNightMap {
 
 	// The read direction is what the loop is actually doing, and the FLIP param
 	// is only one of its two causes: `\cqCoco` takes `max(param, matrix gate)`,
-	// so a patched flip banana reverses the loop without touching the param.
-	// The chevron therefore reads the same truth the comet's tail reads — the
-	// phase's real travel — OR-ed with the param, exactly like the DSP. §16.6
-	// binds chevron and comet to one direction; before telemetry the param is
-	// the only truth there is.
-	flippedNow { |i|
-		^flipStates[i] or: {
-			gui.phaseNorms[i].notNil and: { sparkDirs[i] < 0 }
-		}
+	// so a flip banana reverses the loop without ever touching the param.
+	//
+	// Three readings, because two would have to lie (§16.6, amended after the
+	// G2.5 review). The param is instant and exact, so it decides on its own.
+	// Otherwise the direction comes from `/cq_phase`'s audio-rate mean — never
+	// from client-side guessing, which aliased badly once the gate fired faster
+	// than the 5 Hz frame: a settled loop reads ±1, and a loop being shuttled
+	// faster than an arrow can be read collapses toward 0, where the honest
+	// mark is the opposed chevron rather than a frozen or lying arrowhead.
+	*shuttleFloor { ^0.5 }
+
+	flipMode { |i|
+		var mean;
+		if(flipStates[i]) { ^\flipped };
+		mean = gui.phaseDirs[i];
+		if(mean.isNil) { ^\forward };   // no telemetry: the param is all we know
+		if(mean > this.class.shuttleFloor) { ^\forward };
+		if(mean < this.class.shuttleFloor.neg) { ^\flipped };
+		^\shuttle
 	}
 
 	prDrawShell { |i|
@@ -598,7 +625,7 @@ CQGuiNightMap {
 		if(geometry.isNil) { ^this };
 		coco = geometry[\cocos][i];
 		CQInkNight.drawShell(coco, coco[\shellBox].leftTop,
-			holdStates[i], this.flippedNow(i), speedNorms[i], shellHover[i],
+			holdStates[i], this.flipMode(i), speedNorms[i], shellHover[i],
 			gui.phaseNorms[i], sparkDirs[i], sparkHover[i], \night);
 	}
 
@@ -609,11 +636,17 @@ CQGuiNightMap {
 		CQInkNight.drawBird(bird, bird[\box].leftTop, \night);
 	}
 
-	prDrawDecoration { |spec, anchor|
+	prDrawDecoration { |name, spec, anchor|
 		switch(spec[\decoration],
 			\leaf, { CQInkNight.drawLeaf(anchor, \night) },
 			\crown, { CQInkNight.drawCrown(anchor, \night) },
-			\stem, { CQInkNight.drawStemStub(anchor, \night) }
+			\stem, { CQInkNight.drawStemStub(anchor, \night) },
+			\root, {
+				geometry !? { |geo|
+					CQInkNight.drawRootStub(anchor,
+						geo[\roots][if(name == \envA) { 0 } { 1 }][\arrival], \night)
+				}
+			}
 		);
 	}
 }

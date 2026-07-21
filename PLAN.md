@@ -338,13 +338,15 @@ coco-ulostulosta ja lintujen flutter.
   §4.5 sitoo joka klikkausmäärällä — nopea toinen napautus sisäkellolla,
   sydämellä, chevronilla, lukupäässä tai silmässä kuuluu sille säätimelle,
   ei takana olevalle rungolle.)*
-- [ ] **Kaksi aiemmista vaiheista löytynyttä piirtovikaa** (käyttäjä 2026-07-21,
-  G2.5-kierros; kumpikaan ei ole G2.5:n scopea, korjataan omana pienenä
-  lisäyksenään): (1) **juuret leikkaantuvat yläpäästä** — ruudun alareunan
-  envelope-viivat jäävät ilmeisesti juuren kärkijakin läpinäkymättömän näkymän
-  alle eivätkä piirry kokonaan; epäilty syy on piirtojärjestys/kerrosraja, ei
-  geometria. (2) **Lintujen tiedostonimet leikkaantuvat sekä ylhäältä että
-  alhaalta** — `labelRect` on liian matala 10 px monolle.
+- [x] **Kaksi aiemmista vaiheista löytynyttä piirtovikaa korjattu** (käyttäjä
+  2026-07-21, G2.5-kierros 2): (1) **juuret leikkaantuivat yläpäästä** — syy
+  oli juuri se epäilty: juuren viimeinen pätkä jäi kärkijakin läpinäkymättömän
+  26 px näkymän alle. Korjaus on sama kuvio, jonka linnake jo käyttää joelle:
+  kärkijakki piirtää oman laatikkonsa alta kulkevan pätkän itse
+  (`roots[i][\arrival]` = saapumissuunnan yksikkövektori). Yleistetty
+  `GUI_SPEC.md` §16.6:een: läpinäkymätön endpoint-näkymä on velkaa saman
+  kohteliaisuuden jokaiselle viivalle, jonka päälle se asetetaan.
+  (2) **Lintujen tiedostonimet leikkaantuivat** — `labelRect` 14 → 20 px.
 - [ ] Ei numeroita, Space-bodya tai dekoratiivista motionia; Master pysyy näkyvänä.
 - [ ] `GUI_SPEC.md` §13:n automaatio, kuuntelu ja käyttäjän visuaalinen hyväksyntä.
   **Loppuportissa palataan kolmeen G2.4:n avoimeen havaintoon** (käyttäjä

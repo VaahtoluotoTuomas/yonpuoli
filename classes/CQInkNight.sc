@@ -46,7 +46,8 @@ CQInkNight {
 			Pen.strokeColor = palette[\whisper].copy.alpha_(0.55);
 			Pen.width = CQInk.strokes[\hairline];
 			Pen.addOval(Rect.aboutPoint(center,
-				castle[\bodyRx] + 5, castle[\bodyRy] + 5));
+				castle[\bodyRx] + CQNightGeometry.bodyMargin,
+				castle[\bodyRy] + CQNightGeometry.bodyMargin));
 			Pen.stroke;
 		};
 		Pen.strokeColor = palette[\line];
@@ -111,7 +112,7 @@ CQInkNight {
 	// zero, §9) with a short tail trailing where it came from, so the pearl
 	// (a plain bead) and the head (a comet) never blur by form (§16.2's
 	// "no meaning by hue alone"). Tapping the head is skip's night home.
-	*drawShell { |coco, origin, holdOn = false, flipped = false,
+	*drawShell { |coco, origin, holdOn = false, flipMode = \forward,
 		speedNorm = 0.5, hover = false, sparkNorm, sparkDir = 1,
 		sparkHover = false, skin = \night|
 		var palette = CQInk.palette(skin), pearl, spark, tail;
@@ -140,7 +141,7 @@ CQInkNight {
 			Pen.addOval(Rect.aboutPoint(coco[\center], 2.5, 2.5));
 			Pen.stroke;
 		};
-		this.drawMouthChevron(coco[\chevron], flipped, skin);
+		this.drawMouthChevron(coco[\chevron], flipMode, skin);
 		// org stem from the second turn out to the hanging fruit jack
 		Pen.strokeColor = palette[\organ].copy.alpha_(0.8);
 		Pen.width = CQInk.strokes[\hairline];
@@ -321,12 +322,34 @@ CQInkNight {
 	// reversed by flip (down = forward, up = flipped — mirrored the same on
 	// both cocos). Centered on its anchor so neither the shell box edge nor
 	// the mouth jack's opaque view ever swallows it.
-	*drawMouthChevron { |anchor, flipped = false, skin = \night|
-		var palette = CQInk.palette(skin), dy = if(flipped) { -3.5 } { 3.5 };
+	// Three modes, not two (amended 2026-07-21 after the G2.5 review): once a
+	// flip banana drives the gate faster than an arrow can be read, a single
+	// arrowhead can only freeze or lie, so the mark becomes §16.5's opposed
+	// chevrons — *shuttling*, the regime instead of the value. Which regime is
+	// decided on the server, at audio rate (§9), never by guessing here.
+	*drawMouthChevron { |anchor, mode = \forward, skin = \night|
+		var palette = CQInk.palette(skin);
+		var head = { |dy|
+			Pen.line(anchor + Point(-5, dy.neg), anchor + Point(0, dy));
+			Pen.line(anchor + Point(0, dy), anchor + Point(5, dy.neg));
+		};
 		Pen.strokeColor = palette[\cas];
 		Pen.width = CQInk.strokes[\hairline];
-		Pen.line(anchor + Point(-5, dy.neg), anchor + Point(0, dy));
-		Pen.line(anchor + Point(0, dy), anchor + Point(5, dy.neg));
+		switch(mode,
+			\shuttle, { head.value(4.5); head.value(-4.5) },
+			\flipped, { head.value(-3.5) },
+			{ head.value(3.5) }
+		);
+		Pen.stroke;
+	}
+
+	// the root's last stretch, redrawn inside the tip jack's own opaque view so
+	// the line reaches its dot instead of vanishing under the box (§16.6)
+	*drawRootStub { |anchor, arrival, skin = \night|
+		var palette = CQInk.palette(skin), direction = arrival ? Point(0, -1);
+		Pen.strokeColor = palette[\line].copy.alpha_(0.75);
+		Pen.width = CQInk.strokes[\normal];
+		Pen.line(anchor - (direction * 20), anchor);
 		Pen.stroke;
 	}
 

@@ -145,17 +145,53 @@ CQNightGeometryTest : UnitTest {
 		this.assert(CQNightGeometry.dialHit(geo[\castles][2],
 			geo[\castles][2][\center]).not,
 			"the castle's center is not the dial");
-		// the body is the §6 solo target and wears the §4.5 hover echo
+		// the body is the §6 solo target and wears the §4.5 hover echo — one
+		// geometry for both, reaching `bodyMargin` px outside the drawn blob so
+		// it answers the approaching hand
 		this.assert(CQNightGeometry.bodyHit(geo[\castles][2],
 			geo[\castles][2][\center]),
 			"the castle's center is inside its own body");
 		this.assert(CQNightGeometry.bodyHit(geo[\castles][2],
 			geo[\castles][2][\center]
-				+ Point(geo[\castles][2][\bodyRx] + 6, 0)).not,
-			"a point outside the blob's ellipse is not the body");
+				+ Point(geo[\castles][2][\bodyRx] + 4, 0)),
+			"the body answers just outside the drawn blob (the margin)");
+		this.assert(CQNightGeometry.bodyHit(geo[\castles][2],
+			geo[\castles][2][\center] + Point(geo[\castles][2][\bodyRx]
+				+ CQNightGeometry.bodyMargin + 4, 0)).not,
+			"past the margin it is water again");
+		this.assert(CQNightGeometry.bodyHit(geo[\castles][2],
+			geo[\castles][2][\center], 0),
+			"an explicit zero margin still finds the flesh");
 		this.assert(CQNightGeometry.bodyHit(geo[\castles][2],
 			geo[\castles][2][\box].leftTop + Point(2, 2)).not,
 			"the layer box's corner is water, not flesh");
+		geo[\castles].do { |castle, k|
+			// the hover echo is drawn on that same boundary — it must fit inside
+			// the castle's own opaque layer or it would be clipped
+			this.assert(castle[\box].width
+				>= (2 * (castle[\bodyRx] + CQNightGeometry.bodyMargin))
+				and: { castle[\box].height
+					>= (2 * (castle[\bodyRy] + CQNightGeometry.bodyMargin)) },
+				"castle %'s hover echo fits inside its own layer".format(k + 1));
+		};
+		// the bird filename needs a line box a 10 px mono face fits into
+		geo[\birds].do { |bird, i|
+			this.assert(bird[\labelRect].height >= 18,
+				"bird %'s filename has room for its ascenders".format(i + 1));
+			this.assert(bird[\labelRect].top
+				> (bird[\rateSocket].y + 10),
+				"the filename clears the rate socket's own view".format(i + 1));
+		};
+		// the root arrives on a unit vector, so its tip jack can redraw the
+		// passage that its opaque view would otherwise swallow
+		geo[\roots].do { |root, i|
+			var arrival = root[\arrival];
+			this.assertFloatEquals(
+				sqrt(arrival.x.squared + arrival.y.squared), 1.0,
+				"root %'s arrival is a unit direction".format(i + 1), 0.0001);
+			this.assert(arrival.y < 0,
+				"root % arrives climbing toward its tip".format(i + 1));
+		};
 		this.assertEquals(geo[\eye], geo[\ringCenter],
 			"the ring's eye sits at the ring's center");
 		this.assert(geo[\birds][0][\box].containsPoint(geo[\birds][0][\center])

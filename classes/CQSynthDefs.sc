@@ -277,8 +277,17 @@ CQSynthDefs {
 			// at 5 Hz on purpose, not the meters' 15: the send rate IS the two
 			// shells' repaint ceiling (§10), and one shell repaint costs ~30 Pen
 			// calls (~1.6 ms), so 15 Hz would spend the GUI budget on two dots.
+			// ...plus the read DIRECTION as an audio-rate mean, not a sample.
+			// `dir` is what the chevron and the comet's tail must agree on, and
+			// it is driven by max(flip param, matrix gate) — so a flip banana can
+			// reverse it far faster than 5 Hz can sample. Averaging at audio rate
+			// before A2K (the same law as \cqAura's lag and the charge peak-hold)
+			// makes the value alias-free and gives the GUI a third, honest
+			// reading: near ±1 = settled forward/flipped, near 0 = shuttling too
+			// fast to draw as an arrow (GUI_SPEC §16.6).
 			SendReply.kr(Impulse.kr(5), '/cq_phase',
-				A2K.kr(phase / frames), \meterId.ir(0));
+				[A2K.kr(phase / frames), A2K.kr(Lag.ar(dir, 0.15))],
+				\meterId.ir(0));
 			// GUI_SPEC §9 `/cq_charge` — this coco's two gate/trig sums exactly as
 			// the Schmitt above sees them (post-weight, pre-threshold), so the lamp
 			// cannot disagree with the DSP. Peak-held at audio rate before A2K

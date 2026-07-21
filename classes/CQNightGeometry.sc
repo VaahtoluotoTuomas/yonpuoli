@@ -138,12 +138,17 @@ CQNightGeometry {
 		^(this.distance(point, castle[\center]) - castle[\dialR]).abs <= 8
 	}
 
-	// the castle's own flesh: the ellipse the blob is drawn around (§16.6). This
-	// is the §6 body-solo target and, with dialHit excluded, the area that wears
-	// the hover echo telling the hand the body is pressable (§4.5).
-	*bodyHit { |castle, point|
-		var dx = (point.x - castle[\center].x) / max(0.001, castle[\bodyRx]);
-		var dy = (point.y - castle[\center].y) / max(0.001, castle[\bodyRy]);
+	// the castle's own flesh: the ellipse the blob is drawn around (§16.6), grown
+	// by `margin` so the body answers the hand slightly before it arrives. This
+	// is the §6 body-solo target AND, with dialHit excluded, the area that wears
+	// the hover echo (§4.5) — one geometry for both, because a cue that covers
+	// more or less than its action is a cue that lies.
+	*bodyMargin { ^10 }
+
+	*bodyHit { |castle, point, margin|
+		var m = margin ? this.bodyMargin;
+		var dx = (point.x - castle[\center].x) / max(0.001, castle[\bodyRx] + m);
+		var dy = (point.y - castle[\center].y) / max(0.001, castle[\bodyRy] + m);
 		^(dx.squared + dy.squared) <= 1
 	}
 
@@ -277,7 +282,13 @@ CQNightGeometry {
 					base.y + ((tip.y - base.y) * 0.4) + 4.0.rand2);
 				var mid2 = Point(base.x + ((tip.x - base.x) * 0.7) + 6.0.rand2,
 					base.y + ((tip.y - base.y) * 0.75) + 4.0.rand2);
+				var reach = max(0.001, this.distance(mid2, tip));
 				(points: [base, mid1, mid2, tip],
+					// the unit vector the root arrives on: the tip jack's opaque
+					// view redraws this short passage under its own box, exactly
+					// as a castle redraws the river's (§16.6) — otherwise the
+					// root visibly stops a jack-radius short of its own tip
+					arrival: (tip - mid2) / reach,
 					branch: [mid2, mid2 + Point(side.neg * 20 * scale,
 						(14 * scale).neg + 3.0.rand2)])
 			}
@@ -295,7 +306,10 @@ CQNightGeometry {
 				box: Rect.aboutPoint(center, 22 * scale, 16 * scale),
 				rateSocket: center + Point(11 * scale, 19 * scale),
 				levelCrescent: center + Point(-18 * scale, 16 * scale),
-				labelRect: Rect(center.x - 80, center.y + (32 * scale), 160, 14))
+				// 20 px of line box for a 10 px mono face: the earlier 14 px
+				// clipped the filename's ascenders and descenders (§16.4 fixes
+				// the font size, so the box has to give way, not the type)
+				labelRect: Rect(center.x - 80, center.y + (33 * scale), 160, 20))
 		};
 		endpoints[\deckA_rate] = birds[0][\rateSocket];
 		endpoints[\deckB_rate] = birds[1][\rateSocket];

@@ -434,7 +434,7 @@ meters:
 | phase | message | payload | drives |
 |---|---|---|---|
 | G1 | `/cq_aura` | 16 source magnitudes (lagged \|amp\|, canonical source order) | jack glow, cable pulse, root/castle/body glow |
-| G2 | `/cq_phase` | coco read-head position 0..1, replyID 1/2 (landed 2026-07-21 as its own message at **5 Hz** on purpose: the send rate is the two shells' repaint ceiling — §10, one shell repaint ≈ 30 Pen calls, so 15 Hz would spend the whole ~3 % GUI budget on two dots) | the spiral spark |
+| G2 | `/cq_phase` | coco read-head position 0..1 **and the read direction as an audio-rate mean** (`Lag.ar(dir, 0.15)`), replyID 1/2 (landed 2026-07-21 as its own message at **5 Hz** on purpose: the send rate is the two shells' repaint ceiling — §10, one shell repaint ≈ 30 Pen calls, so 15 Hz would spend the whole ~3 % GUI budget on two dots). The direction is a *mean*, not a sample, because a flip banana can reverse the loop far faster than 5 Hz can sample it: ±1 = settled, near 0 = shuttling. Deriving direction client-side from consecutive positions aliased and was replaced | the spiral spark, the comet's tail and the mouth chevron |
 | G2 | `/cq_charge` | the 9 gate/trig destination sums (post-weight, pre-Schmitt); landed 2026-07-21 as **three 15 Hz blocks** sent by the synths that already compute those sums — coco 1 (replyID 1) and coco 2 (replyID 2) report their own flip/skip pair, the quantussy (replyID 3) all five spesal sums. Each sum is **peak-held at audio rate** (instant rise, 0.15 s fall) before `A2K`, because a trigger crossing can last a single sample and a plain control-rate sample would miss it; the fall is also §16.8's fired bloom. No second copy of the sums exists in the graph, so a lamp can never disagree with its Schmitt | charge lamps — the answer to "why is my flip banana silent" |
 
 `/cq_charge` canonical channel order = the matrix destination order filtered
@@ -754,7 +754,10 @@ halo; a static hover brightens the face so it reads as pressable (§4.5).
 The **flesh around the clock is the body's own §6 solo target**, and hovering
 it lights the quiet outer ring §4.5 gives every pressable control (added
 2026-07-21: a double-click affordance the hand could not otherwise guess).
-The two cues are exclusive — clock or body, never both.
+The two cues are exclusive — clock or body, never both. Cue and action share
+one geometry: the drawn blob grown by `bodyMargin` (10 px, so the body answers
+the approaching hand), and the echo is stroked exactly on that boundary. A cue
+that covers more or less ground than its action is a cue that lies.
 Range letter i/b/a in whisper at 6 o'clock below (r ≈ 33, its own anchor).
 
 **The ring.** Irregular circle R ≈ 150 px through the five castles, 1 px
@@ -779,6 +782,13 @@ the direction chevron (a §6.1 touch: press = flip) hangs ≈ 24 px below the
 mouth, centered on its anchor — clear of the mouth jack's opaque view and the
 shell box edge at every scale (down = forward, up = flipped; amended
 2026-07-21 after the G2.3 review found the outward home clipped).
+**The chevron has three states, not two** (amended 2026-07-21 after the G2.5
+review): forward, flipped, and — when the flip gate is driven faster than an
+arrow can be read — §16.5's **opposed chevrons**, meaning *shuttling*. The
+FLIP param decides on its own when it is on (instant and exact); otherwise the
+state comes from `/cq_phase`'s audio-rate direction mean, settled past ±0.5.
+This is the general law for any mark whose value outruns the eye: **show the
+regime, not the value.** A frozen arrow and a guessed arrow are both lies.
 **Read-head spark** = Ø 4 px bone **comet** at the loop's true address
 (`/cq_phase`, §9 — 5 Hz tick; not drawn until the server has reported — no
 telemetry is not zero): a dot with a short tail trailing where it came from, the
@@ -810,7 +820,11 @@ The spiral's stroke alpha breathes 0.55 → 1.0 with the coco's out level.
 
 **Roots (inputs).** Two branching wobbled polylines (3 segments) growing from
 the bottom edge, envA left, envB right; tips = green Ø 7 dots with radial
-glow ∝ follower aura. Beside them grows a small **mic sprout** — display
+glow ∝ follower aura. The tip jack's opaque view **redraws the root's last
+stretch under its own box**, exactly as a castle redraws the river's passage
+(fixed 2026-07-21: without it the root visibly stopped a jack-radius short of
+its own tip). Any opaque endpoint view laid over a drawn line owes that line
+the same courtesy. Beside them grows a small **mic sprout** — display
 only, never a jack: the mic is not one of the 16 sources but an optional
 input feeding the preamps, so nothing on the sprout can be grabbed or
 patched. Three states: not drawn at all when no mic is configured; a dormant
@@ -820,7 +834,9 @@ existing warning made flesh. The day panel's mic control keeps its own
 warning-color law unchanged.
 
 **Birds (decks).** Three strokes each — two wing béziers + a body dot,
-span ≈ 30 px; filename in 10 px mono whisper beneath; the rate socket under
+span ≈ 30 px; filename in 10 px mono whisper beneath, in a line box of at
+least 20 px (fixed 2026-07-21: 14 px clipped the ascenders and descenders —
+§16.4 fixes the type size, so the box gives way, never the type); the rate socket under
 the wing, and beside it the deck-level tide crescent (§6.1). Dropping an
 audio file on the bird loads its deck (§6.1). Flutter = 1 px wing bob at
 ambient rate while the deck's level > 0.05 (client-side state, no polling).

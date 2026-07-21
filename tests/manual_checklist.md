@@ -1135,7 +1135,33 @@ CQ.patchPreset(\empty);
   §4.5:n hiljaisen ulkokehän — sama kieli kuin nupeilla ja sisäkellolla.
   Kello ja runko eivät koskaan sytytä vihjettään yhtä aikaa.
 
-**Avoin kysymys tälle kierrokselle:** kuoren paperi ja ringin vesi ovat myös
-solo-runkoja, mutta niillä ei vielä ole hover-vihjettä (kuoren ainoa "runko"
-on spiraaliviiva, jonka kirkastus tarkoittaa jo kelausta, ja ringin kehän
-korostus olisi iso visuaalinen ele). Päätetään yhdessä.
+**Avoin kysymys:** kuoren paperi ja ringin vesi ovat myös solo-runkoja, mutta
+niillä ei vielä ole hover-vihjettä (kuoren ainoa "runko" on spiraaliviiva,
+jonka kirkastus tarkoittaa jo kelausta, ja ringin kehän korostus olisi iso
+visuaalinen ele). Päätetään yhdessä.
+
+**G2.5-kierros 2 (2026-07-21) — korjattu, tarkista nämä:**
+
+```supercollider
+// G2.5b — kierroksen 2 korjaukset SILMÄLLÄ. (Ctrl+Shift+L ensin.)
+CQ.boot; CQ.patchPreset(\classic);
+CQ.patch(\tri3, \coco1_flip, 0.9);
+// - KOLMAS TILA: coco 1:n chevron ei enää jähmety nopeutuvassa flipissä.
+//   Nosta q freq -nuppia (tai vedä ringin silmää pystyyn) niin että tri3
+//   kiihtyy: hitaalla vauhdilla kärki kääntyy ylös/alas kuten ennen, mutta
+//   kun flip käy nopeammin kuin nuolta ehtii lukea, merkki vaihtuu
+//   VASTAKKAISIKSI KÄRJIKSI (ylös JA alas) = "loop sukkuloi". Hidasta
+//   takaisin: yksittäinen kärki palaa. Suunnan päättää nyt serveri
+//   audio-tasolla, joten se ei enää aliasoi.
+// - PARAMETRI ON YHÄ VÄLITÖN: paina q — kärki kääntyy heti, ei viivettä.
+CQ.patch(\tri3, \coco1_flip, 0);
+// - RUNGON HOVER: vie osoitin linnakkeen rungon lähelle ULKOAPÄIN — kehä
+//   syttyy jo hieman ennen kuin osoitin on rungon päällä (10 px marginaali).
+//   Kaksoisnapautus toimii täsmälleen siellä, missä kehä lupasi: rungon
+//   ulkopuolella (esim. laatikon nurkassa) EI enää tule soloa.
+// - JUURET: ruudun alareunan envelope-viivat kulkevat nyt yhtenäisinä
+//   vihreään kärkipalloon asti — ei katkosta pallon edessä.
+// - LINTUJEN NIMET: pudota tiedosto lintuun. Nimi näkyy kokonaan, ei
+//   leikkaannu ylhäältä eikä alhaalta.
+CQ.patchPreset(\empty);
+```

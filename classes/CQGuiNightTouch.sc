@@ -164,8 +164,12 @@ CQGuiNightTouch {
 			Cocoquantus.spesal(k + 1);
 			^this
 		};
+		// the body solo answers exactly where the hover echo promised it would
+		// (§4.5): the flesh plus its margin, not the whole layer box
 		^this.forwardDown(view, x, y, modifiers, button, clicks,
-			("castle" ++ (k + 1)).asSymbol)
+			if(CQNightGeometry.bodyHit(geo[\castles][k], point)) {
+				("castle" ++ (k + 1)).asSymbol
+			})
 	}
 
 	// ---- crescents: dedicated small controls, vertical drag = value ----

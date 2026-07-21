@@ -372,29 +372,43 @@ abort = { |error|
 															gui.prFlushParams;
 															check.value(map.flipStates[0].not,
 																"precondition: the FLIP param is released");
-															gui.prPhaseFrame(1, 0.5);
-															gui.prPhaseFrame(1, 0.56);
-															check.value(map.flippedNow(0).not,
-																"forward travel with a released param reads forward");
-															gui.prPhaseFrame(1, 0.5);
-															check.value(map.sparkDirs[0] == -1
-																and: { map.flippedNow(0) },
+															gui.prPhaseFrame(1, 0.5, 1.0);
+															gui.prPhaseFrame(1, 0.56, 1.0);
+															check.value(map.flipMode(0) == \forward
+																and: { map.sparkDirs[0] == 1 },
+																"a settled forward loop reads forward");
+															gui.prPhaseFrame(1, 0.5, -1.0);
+															check.value(map.flipMode(0) == \flipped
+																and: { map.sparkDirs[0] == -1 },
 																"a matrix flip gate turns the chevron though the param never moved");
+															// the answer to a gate too fast to draw as an
+															// arrow: show the regime, not the value
+															gui.prPhaseFrame(1, 0.5, 0.1);
+															check.value(map.flipMode(0) == \shuttle,
+																"a shuttled loop reads as the opposed chevron, never a frozen arrow");
+															gui.prPhaseFrame(1, 0.5, -0.2);
+															check.value(map.flipMode(0) == \shuttle
+																and: { map.sparkDirs[0] == -1 },
+																"the tail keeps its last settled direction while shuttling");
 															state.set(\coco1Flip, 1);
 															gui.prFlushParams;
-															gui.prPhaseFrame(1, 0.56);
-															gui.prPhaseFrame(1, 0.62);
-															check.value(map.sparkDirs[0] == 1
-																and: { map.flippedNow(0) },
+															gui.prPhaseFrame(1, 0.56, 0.0);
+															check.value(map.flipMode(0) == \flipped,
 																"the param alone still turns the chevron (max, like the DSP)");
 															// ---- §6 body solo-light ----
 															castleView = map.castleViews[1];
 															castleTwo = map.geometry[\castles][1];
+															local = castleTwo[\center]
+																- castleTwo[\box].leftTop;
 															check.value(map.overlay.patchAt(
-																castleTwo[\box].leftTop + (4@4)).isNil,
-																"precondition: no cable crosses the castle's corner");
+																castleTwo[\center]).isNil,
+																"precondition: no cable crosses the castle's flesh");
 															castleView.mouseDownAction.value(castleView,
 																4, 4, 0, 0, 2);
+															check.value(gui.bananaGrammar.soloTarget.isNil,
+																"the layer box's corner is water: no solo where no cue promised one");
+															castleView.mouseDownAction.value(castleView,
+																local.x, local.y, 0, 0, 2);
 															check.value(
 																gui.bananaGrammar.soloTarget.notNil
 																and: { gui.bananaGrammar.soloTarget[\kind]
@@ -406,7 +420,7 @@ abort = { |error|
 																.isCableDim(\envB, \castle3_fm),
 																"an unrelated cable dims under the body solo");
 															castleView.mouseDownAction.value(castleView,
-																4, 4, 0, 0, 2);
+																local.x, local.y, 0, 0, 2);
 															check.value(gui.bananaGrammar.soloTarget.isNil,
 																"pressing the same body again releases the light");
 															// the dial owns its area at every click count (§4.5)
