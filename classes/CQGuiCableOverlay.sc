@@ -5,6 +5,8 @@
 CQGuiCableOverlay {
 	var matrix, endpoints, grammar, auraFunc, ctl, gestureCtl;
 	var <view, <skin = \day;
+	var recordCache, cacheExtent, cacheHover;
+	var refreshScheduled = false, lastRefresh = 0;
 
 	*new { |matrix, endpoints, grammar, auraFunc|
 		^super.newCopyArgs(matrix, endpoints, grammar, auraFunc).prBuild
@@ -18,6 +20,17 @@ CQGuiCableOverlay {
 		^aura !? { 0.62 + (aura.clip(0, 1) * 0.3) } ?? 0.88
 	}
 
+	// Each cable costs ~11 language-to-Qt Pen calls, so past this many planted
+	// cables one ambient repaint no longer fits the §10 frame budget — and a pulse
+	// nobody can attribute to a single cable carries no information anyway. Denser
+	// patches therefore keep the reviewed static ink, which is exactly the look
+	// §16.8 already defines for "no telemetry", while the 16 source jacks go on
+	// pulsing (all sixteen together cost about one cable). No hand-built patch
+	// comes near the limit; `\mayhem` patches all 352 cells and does.
+	*auraCableLimit { ^48 }
+
+	auraPulses { ^this.cableCount <= this.class.auraCableLimit }
+
 	skin_ { |newSkin|
 		skin = newSkin;
 		view.background = CQInk.palette(skin)[\clear];
@@ -30,6 +43,8 @@ CQGuiCableOverlay {
 		gestureCtl !? { gestureCtl.remove };
 		ctl = nil;
 		gestureCtl = nil;
+		refreshScheduled = false;
+		this.invalidate;
 	}
 
 	cableCount { ^matrix.asArray.size }
@@ -47,11 +62,56 @@ CQGuiCableOverlay {
 		^globalCenter - overlayOrigin
 	}
 
+	// An /cq_aura frame changes only each cable's alpha, never its geometry, yet a
+	// rebuild costs ~3.3 ms with a 12-cable patch (bezier polylines dominate). At the
+	// §10 ambient 15 Hz that alone burned ~5 % of a core, and every hover hit test
+	// paid it again. Geometry is therefore cached and rebuilt only when something
+	// that can actually move a cable changed: the patch set (invalidate, driven by
+	// CQMatrix's own notifications), the overlay's size, or the hovered endpoint
+	// whose fan-out spreads the plugs. Callers only read records (see prCaught).
+	invalidate { recordCache = nil; ^this }
+
+	// Matrix notifications carry no rate limit: a snapshot morph writes every changed
+	// cell 30 times a second, i.e. twice the §10 ambient ceiling, and each of those
+	// asked for a full re-stroke of the cable layer. Plant, rip and harvest are single
+	// acts and still repaint at once — only a stream is paced down to the ceiling, and
+	// the trailing repaint guarantees the last state is the one left on paper.
+	prRefresh {
+		var wait;
+		if(refreshScheduled) { ^this };
+		wait = CQGui.paramFlushPeriod - (Main.elapsedTime - lastRefresh);
+		if(wait <= 0) {
+			lastRefresh = Main.elapsedTime;
+			view.refresh;
+			^this
+		};
+		refreshScheduled = true;
+		AppClock.sched(wait, {
+			refreshScheduled = false;
+			lastRefresh = Main.elapsedTime;
+			if(view.isClosed.not) { view.refresh };
+			nil
+		});
+	}
+
 	cableRecords {
+		var extent = view.bounds.extent, hover = grammar.hoverEndpoint;
+		if(recordCache.isNil
+			or: { cacheExtent != extent }
+			or: { cacheHover != hover }) {
+			cacheExtent = extent;
+			cacheHover = hover;
+			recordCache = this.prBuildRecords;
+		};
+		^recordCache
+	}
+
+	prBuildRecords {
 		var patches;
 		patches = matrix.asArray;
 		^patches.collect { |patch|
 			var sameDest, index, count, spread, start, finish, distance, segments;
+			var points;
 			sameDest = patches.select { |other| other[1] == patch[1] };
 			index = sameDest.indexOf(patch) ? 0;
 			count = sameDest.size;
@@ -63,9 +123,18 @@ CQGuiCableOverlay {
 			};
 			distance = this.prDistance(start, finish);
 			segments = max(8, (distance / 12).ceil.asInteger);
+			points = CQInk.cablePoints(start, finish, segments);
 			(src: patch[0], dest: patch[1], weight: patch[2], start: start,
-				finish: finish, points: CQInk.cablePoints(start, finish, segments))
+				finish: finish, points: points, bounds: this.prBoundsOf(points))
 		}
+	}
+
+	// Hover runs a hit test on every mouse move, and a cable that the pointer is
+	// nowhere near should not cost one segment projection per bezier step.
+	prBoundsOf { |points|
+		var xs = points.collect { |p| p.x }, ys = points.collect { |p| p.y };
+		^Rect(xs.minItem, ys.minItem,
+			xs.maxItem - xs.minItem, ys.maxItem - ys.minItem)
 	}
 
 	nearestDestination { |point|
@@ -97,12 +166,17 @@ CQGuiCableOverlay {
 		var best, bestDistance;
 		bestDistance = threshold;
 		this.cableRecords.do { |record|
-			record[\points].doAdjacentPairs { |a, b|
-				var distance;
-				distance = this.prSegmentDistance(point, a, b);
-				if(distance <= bestDistance) {
-					bestDistance = distance;
-					best = record;
+			// cheap reject first: the pointer cannot be within `threshold` of this
+			// cable if it is outside the cable's own box grown by that much
+			if(record[\bounds].insetBy(threshold.neg, threshold.neg)
+				.containsPoint(point)) {
+				record[\points].doAdjacentPairs { |a, b|
+					var distance;
+					distance = this.prSegmentDistance(point, a, b);
+					if(distance <= bestDistance) {
+						bestDistance = distance;
+						best = record;
+					};
 				};
 			};
 		};
@@ -131,17 +205,20 @@ CQGuiCableOverlay {
 			try { this.prDraw } { |error| CQInkControl.noteDrawError(error) }
 		};
 		ctl = SimpleController(matrix);
-		ctl.put(\patch, { { view.refresh }.defer });
-		ctl.put(\clear, { { view.refresh }.defer });
-		ctl.put(\matrix, { { view.refresh }.defer });
+		ctl.put(\patch, { { this.invalidate; this.prRefresh }.defer });
+		ctl.put(\clear, { { this.invalidate; this.prRefresh }.defer });
+		ctl.put(\matrix, { { this.invalidate; this.prRefresh }.defer });
+		// a live gesture may repaint at 60 Hz (GUI_SPEC §10); only the matrix
+		// stream behind it is paced
 		gestureCtl = SimpleController(grammar);
 		gestureCtl.put(\gesture, { { view.refresh }.defer });
 		^this
 	}
 
 	prDraw {
-		var start, finish, weight, alpha, lifted, focused, hasFocus;
+		var start, finish, weight, alpha, lifted, focused, hasFocus, pulses;
 		hasFocus = grammar.hoverCable.notNil;
+		pulses = this.auraPulses;
 		this.cableRecords.do { |record|
 			if(grammar.isGrabbed(record[\src], record[\dest]).not
 				and: { grammar.isTransient(record[\src], record[\dest]).not }) {
@@ -150,7 +227,9 @@ CQGuiCableOverlay {
 					if(grammar.isCableDim(record[\src], record[\dest])) { 0.22 } {
 						if(hasFocus) { 0.46 } {
 							this.class.plantedAlpha(
-								auraFunc !? { auraFunc.value(record[\src]) })
+								if(pulses) {
+									auraFunc !? { auraFunc.value(record[\src]) }
+								})
 						}
 					}
 				};
@@ -164,7 +243,8 @@ CQGuiCableOverlay {
 						CQInk.drawCableFocus(record[\start], record[\finish], skin)
 					}
 				};
-				CQInk.drawCable(record[\start], record[\finish], record[\weight], skin, alpha);
+				CQInk.drawCable(record[\start], record[\finish], record[\weight], skin,
+					alpha, record[\points]);
 				CQInk.drawPlug(record[\start], record[\weight], skin);
 				CQInk.drawPlug(record[\finish], record[\weight], skin, lifted);
 			};

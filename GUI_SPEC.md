@@ -446,6 +446,22 @@ sub-event in `config.scd`, clamped on load.
 - **Redraw discipline**: ambient animation at telemetry rate (≤ 15 Hz); 60 Hz
   only during an active drag; avoid whole-window repaints; GUI CPU ≤ ~3 % on
   the reference laptop — SPEC §9's 25 % envelope must hold with the GUI open.
+- **Paced notification streams**: the ambient ceiling binds *every* repaint source,
+  not just telemetry. A snapshot morph re-sets all 57 continuous parameters and
+  rewrites its changed cells 30 times a second, i.e. twice the ceiling. Both the
+  parameter fan-out (`CQGui.paramFlushPeriod`) and the cable layer's matrix-driven
+  repaint are therefore paced to 15 Hz with a leading edge: the first change after a
+  quiet moment lands at once, so a knob turn, a 16n fader, a code `set`, a plant and
+  a rip stay instant, and only a continuous stream is thinned. Pacing may drop
+  intermediate frames but never the last value.
+- **Cable pulse density limit**: a planted cable costs about eleven language-to-Qt
+  Pen calls, so the cable layer's ambient repaint is O(cables). Past
+  `CQGuiCableOverlay.auraCableLimit` (48) planted cables the cables stop pulsing
+  and keep the static reviewed ink of §16.8's no-telemetry case, while the 16
+  source jacks go on pulsing; below the limit nothing changes. A pulse that cannot
+  be attributed to one cable is not information, and a late pulse is worse than
+  none. `\mayhem` patches all 352 cells and is the case this exists for
+  (measured 2026-07-21: 164 ms per repaint at 352 cables, 1.4 ms for all 16 jacks).
 - **Overlay hit-testing**: the cable layer must not steal knob/button
   interactions; only jacks/sockets/cables are targets (≥ 12 px, magnetic
   candidate halo). The one exception is the harvest lasso's right-drag

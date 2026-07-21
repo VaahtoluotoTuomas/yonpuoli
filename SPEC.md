@@ -522,6 +522,13 @@ an optional comfort feature (sustained-loud notice; opt-in −6 dB auto-ease via
 
 - CPU: full instrument (2 Cocos, Quantussy, decks, space, GUI meters) ≤ 25% of one
   core on a mid-range 2020s laptop at 48 kHz / block 64.
+- GUI CPU (language side) ≤ ~3% at rest with a played-sized patch. Measured
+  2026-07-21 on the reference laptop: ~2.8–3.8% with 20 planted cables, rising a
+  couple of points while the pointer crosses cables and falling back at once. A
+  snapshot morph is a deliberate, temporary exception at ~5–6%: it drives the whole
+  parameter set continuously, and the transparent cable layer re-strokes every cable
+  whenever any control beneath it repaints. See `GUI_SPEC.md` §10 for the pacing and
+  density rules that keep the resting figure.
 - Control latency: 16n fader → audible ≤ 20 ms perceived (smoothing included).
 - Live throughput latency: bounded by `hardwareBufferSize`; no added latency in the
   dry-to-coco path beyond one block.

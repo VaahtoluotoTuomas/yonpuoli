@@ -36,6 +36,7 @@ abort = { |error|
 				var groundView, harvestRecord, harvestCenter, harvestPoints, localPoints;
 				var beforeHarvest, afterHarvest, hoverPoint, fileLabel, loopControl;
 				var trackedView, trackedControl, beforeAuraAlpha;
+				var cachedRecords, weightBefore, weightAfter, weightOf;
 				check.value(gui.window.notNil and: { gui.window.isClosed.not },
 					"real Qt window constructed");
 				check.value(gui.window.acceptsMouseOver,
@@ -66,6 +67,31 @@ abort = { |error|
 				check.value(cableHit.notNil and: { cableHit[\src] == \tri1 }
 					and: { cableHit[\dest] == \coco1_spaf },
 					"drawn cable path exposes its narrow semantic hit target");
+				// Cable geometry is cached so an ambient /cq_aura frame repaints
+				// without rebuilding bezier paths, but the cache must never outlive
+				// a real change: it is the difference between a live patch bay and
+				// cables drawn where they used to be.
+				weightOf = { |src, dest|
+					gui.cableOverlay.cableRecords.detect { |record|
+						record[\src] == src and: { record[\dest] == dest }
+					} !? { |record| record[\weight] }
+				};
+				cachedRecords = gui.cableOverlay.cableRecords;
+				check.value(gui.cableOverlay.cableRecords === cachedRecords,
+					"a still instrument reuses one cached geometry set (no rebuild)");
+				matrix.patch(\tri2, \coco2_spaf, 0.4);
+				check.value(weightOf.value(\tri2, \coco2_spaf) == 0.4,
+					"a new patch invalidates the geometry cache at once");
+				matrix.unpatch(\tri2, \coco2_spaf);
+				check.value(weightOf.value(\tri2, \coco2_spaf).isNil
+					and: { gui.cableOverlay.cableCount == 2 },
+					"a ripped cable leaves the geometry cache at once");
+				weightBefore = weightOf.value(\tri1, \coco1_spaf);
+				matrix.patch(\tri1, \coco1_spaf, 0.91);
+				weightAfter = weightOf.value(\tri1, \coco1_spaf);
+				check.value(weightBefore != weightAfter and: { weightAfter == 0.91 },
+					"a weight change reaches the drawn cable");
+				matrix.patch(\tri1, \coco1_spaf, 0.55);
 				groundView = gui.bananaBodies[\sources][\view];
 				trackedControl = gui.inkControls.detect { |control| control.isInteractive };
 				trackedView = trackedControl.view;
@@ -228,6 +254,21 @@ abort = { |error|
 							"a hot source's cable reads stronger than a silent one's");
 						check.value(beforeAuraAlpha == 0.88,
 							"without telemetry the cable keeps the reviewed static ink");
+						// A patch too dense to repaint inside the frame budget falls
+						// back to that same static ink instead of pulsing late.
+						check.value(gui.cableOverlay.auraPulses,
+							"a hand-sized patch keeps the reviewed aura pulse");
+						matrix.load(CQMatrix.presets[\mayhem][\matrix]);
+						check.value(gui.cableOverlay.cableCount
+							> CQGuiCableOverlay.auraCableLimit
+							and: { gui.cableOverlay.auraPulses.not },
+							"a patch past the cable limit stops pulsing (% cables)"
+								.format(gui.cableOverlay.cableCount));
+						matrix.clearPatch;
+						matrix.patch(\tri1, \coco1_spaf, 0.55);
+						matrix.patch(\envB, \castle3_fm, -0.45);
+						check.value(gui.cableOverlay.auraPulses,
+							"thinning the patch restores the pulse");
 						check.value(CQInkControl.drawErrors == 0,
 							"Ink controls paint without callback errors");
 						check.value(gui.shellState.drawerOpen

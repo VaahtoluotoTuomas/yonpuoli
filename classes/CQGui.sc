@@ -21,6 +21,7 @@ CQGui {
 	var deckLabels, deckCtls, skipButtons;
 	var noticeView, recBtn, recTimeView, recTask, hotTask;
 	var micLive = false, hotLive = false, cleaned = false;
+	var paramPending, paramFlushScheduled = false, lastParamFlush = 0;
 	// shake throw amplitude shared by the SHAKE button and the p key; GUI-local
 	// because shake is an action argument, not a CQSpec param (SPEC §5.5 —
 	// the weight clamp lives in CQMatrix.shake). 0.3 = the facade default.
@@ -222,7 +223,7 @@ CQGui {
 	prListen {
 		stateCtl = SimpleController(state);
 		stateCtl.put(\param, { |obj, what, name, val|
-			{ updaters[name].do { |f| f.value(val) } }.defer;
+			{ this.prQueueParam(name, val) }.defer;
 		});
 		// momentary actions with no persistent state: skip fires a brief button flash
 		stateCtl.put(\action, { |obj, what, action, n|
@@ -284,6 +285,38 @@ CQGui {
 		};
 	}
 
+	// GUI_SPEC §10 caps ambient redraw at 15 Hz, but a state stream carries no rate
+	// limit of its own: a snapshot morph re-sets all 57 continuous parameters 30
+	// times a second (CQSnapshots), repainting every bound control twice per allowed
+	// frame. Paced here rather than at the source, because the morph's audio rate is
+	// none of the GUI's business. The first change after a quiet moment still lands
+	// at once, so a knob turn, a 16n fader and a code set stay instant; only a
+	// continuous stream is paced, and it is paced by dropping intermediate frames,
+	// never by dropping the last value.
+	*paramFlushPeriod { ^1/15 }
+
+	prQueueParam { |name, val|
+		var wait;
+		paramPending ?? { paramPending = IdentityDictionary.new };
+		paramPending[name] = val;
+		if(paramFlushScheduled) { ^this };
+		wait = this.class.paramFlushPeriod - (Main.elapsedTime - lastParamFlush);
+		if(wait <= 0) { ^this.prFlushParams };
+		paramFlushScheduled = true;
+		AppClock.sched(wait, { this.prFlushParams; nil });
+	}
+
+	prFlushParams {
+		var pending = paramPending;
+		paramFlushScheduled = false;
+		lastParamFlush = Main.elapsedTime;
+		paramPending = nil;
+		if(cleaned or: { pending.isNil }) { ^this };
+		pending.keysValuesDo { |name, val|
+			updaters[name].do { |f| f.value(val) };
+		};
+	}
+
 	// A still instrument must not cost redraws: repaint only when some source
 	// actually moved (GUI_SPEC §16.9 — ambient motion is information, and there
 	// is none in silence). Cables repaint only when there are cables to pulse.
@@ -297,7 +330,11 @@ CQGui {
 			endpoints[src] !? { |endpoint| endpoint[\view].refresh };
 		};
 		cableOverlay !? { |overlay|
-			if(overlay.cableCount > 0) { overlay.view.refresh };
+			// a patch too dense to pulse inside the frame budget draws static ink,
+			// so an ambient frame must not repaint it either (auraCableLimit)
+			if(overlay.cableCount > 0 and: { overlay.auraPulses }) {
+				overlay.view.refresh
+			};
 		};
 	}
 

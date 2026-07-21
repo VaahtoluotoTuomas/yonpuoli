@@ -190,7 +190,12 @@ CQInk {
 		Pen.stroke;
 	}
 
-	*drawCable { |start, end, weight, skin = \day, alpha = 1|
+	// `cached` takes the polyline already computed for this exact cable (the overlay
+	// keeps one per planted cable), so an ambient repaint re-strokes ink instead of
+	// re-deriving bezier geometry. The inverso ticks all share one colour and width,
+	// so they are built as one path and stroked once: identical pixels, but one Qt
+	// call instead of one per tick — at ~30 ticks per cable that dominated the frame.
+	*drawCable { |start, end, weight, skin = \day, alpha = 1, cached|
 		var palette = this.palette(skin), controls = this.cableControls(start, end);
 		var color = if(weight < 0) { palette[\inverso] } { palette[\verso] };
 		var points, distance, stepCount;
@@ -200,9 +205,13 @@ CQInk {
 		Pen.curveTo(end, controls[0], controls[1]);
 		Pen.stroke;
 		if(weight < 0) {
-			distance = sqrt(((end.x - start.x).squared) + ((end.y - start.y).squared));
-			stepCount = max(8, (distance / 12).ceil.asInteger);
-			points = this.cablePoints(start, end, stepCount);
+			points = cached ?? {
+				distance = sqrt(((end.x - start.x).squared) + ((end.y - start.y).squared));
+				stepCount = max(8, (distance / 12).ceil.asInteger);
+				this.cablePoints(start, end, stepCount)
+			};
+			Pen.strokeColor = color.copy.alpha_(alpha.clip(0, 1));
+			Pen.width = this.strokes[\hairline];
 			points.do { |point, i|
 				var tangent, magnitude, normal;
 				if(i.odd and: { i > 0 } and: { i < (points.size - 1) }) {
@@ -210,12 +219,10 @@ CQInk {
 					magnitude = sqrt(tangent.x.squared + tangent.y.squared).max(0.001);
 					normal = Point(tangent.y.neg / magnitude,
 						tangent.x / magnitude) * 3;
-					Pen.strokeColor = color.copy.alpha_(alpha.clip(0, 1));
-					Pen.width = this.strokes[\hairline];
 					Pen.line(point - normal, point + normal);
-					Pen.stroke;
 				};
 			};
+			Pen.stroke;
 		};
 	}
 
