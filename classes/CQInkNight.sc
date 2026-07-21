@@ -15,13 +15,16 @@ CQInkNight {
 	}
 
 	// castle body: seeded hollow blob with the aura as a quiet radial gradient
-	// inside (§16.6); dial ticks sit rotated 22.5° so no tick hides exactly
-	// under the tri leaf or cas crown grown on the rim. Origin = the castle
+	// inside (§16.6). The spesal dial is the castle's inner clock: a whisper
+	// face inside the body — where no opaque endpoint view can cover it —
+	// with the current state as a lit spark bead, and a static hover
+	// brightening (§4.5) so the face reads as pressable. Origin = the castle
 	// layer's own box corner: the layer is opaque, so an ambient glow repaint
 	// never re-runs the whole landscape underneath.
 	*drawCastle { |castle, origin, aura, spesalState = 0, rangeLetter = "",
-		skin = \night|
-		var palette = CQInk.palette(skin), center = castle[\center], tickAngle;
+		dialHover = false, skin = \night|
+		var palette = CQInk.palette(skin), center = castle[\center];
+		var tickAngle, bead;
 		Pen.translate(origin.x.neg, origin.y.neg);
 		// the river's short passage under the body
 		Pen.strokeColor = palette[\whisper].copy.alpha_(0.55);
@@ -38,30 +41,41 @@ CQInkNight {
 		Pen.strokeColor = palette[\line];
 		Pen.width = CQInk.strokes[\normal];
 		this.strokeSegments(castle[\blobSegments]);
-		Pen.strokeColor = palette[\whisper];
+		// the inner clock's face — the tap affordance
+		Pen.strokeColor = palette[\whisper].copy
+			.alpha_(if(dialHover) { 0.85 } { 0.4 });
 		Pen.width = CQInk.strokes[\hairline];
+		Pen.addOval(Rect.aboutPoint(center, castle[\dialR], castle[\dialR]));
+		Pen.stroke;
+		Pen.strokeColor = palette[\whisper];
 		8.do { |i|
 			var angle = (22.5 + (i * 45)).degrad;
-			Pen.line(CQNightGeometry.polar(center, castle[\dialR] - 3, angle),
-				CQNightGeometry.polar(center, castle[\dialR] + 3, angle));
+			Pen.line(CQNightGeometry.polar(center, castle[\dialR] - 2.5, angle),
+				CQNightGeometry.polar(center, castle[\dialR] + 2.5, angle));
 		};
 		Pen.stroke;
-		// current spesal state lit — a mark, never a number (§16.4)
+		// current spesal state lit as the clock's spark hand — a mark, never
+		// a number (§16.4); bead + halo stay inside the endpoint clearance
 		tickAngle = (22.5 + ((spesalState.asInteger.clip(0, 7)) * 45)).degrad;
-		Pen.strokeColor = palette[\spark];
-		Pen.width = CQInk.strokes[\strong];
-		Pen.line(CQNightGeometry.polar(center, castle[\dialR] - 4, tickAngle),
-			CQNightGeometry.polar(center, castle[\dialR] + 4, tickAngle));
+		bead = CQNightGeometry.polar(center, castle[\dialR], tickAngle);
+		Pen.fillColor = palette[\spark];
+		Pen.addOval(Rect.aboutPoint(bead, 2.4, 2.4));
+		Pen.fill;
+		Pen.strokeColor = palette[\spark]
+			.copy.alpha_(if(dialHover) { 0.8 } { 0.5 });
+		Pen.width = CQInk.strokes[\hairline];
+		Pen.addOval(Rect.aboutPoint(bead, 3.5, 3.5));
 		Pen.stroke;
 		Pen.stringCenteredIn(rangeLetter.asString,
-			Rect.aboutPoint(Point(center.x, center.y + castle[\dialR] + 7), 7, 6),
+			Rect.aboutPoint(castle[\letterAnchor], 7, 6),
 			CQInk.font(\range), palette[\whisper]);
 	}
 
 	// the irregular hairline circle through the five castles, with the
 	// fireflies that carry the loop's direction (k → k+1). Phase advances only
-	// when telemetry moves — a still bay keeps a still river.
-	*drawRing { |geometry, phase = 0, eyeActive = false, skin = \night|
+	// when telemetry moves — a still bay keeps a still river. The eye lives on
+	// its own opaque layer (drawEye) so a storm repaint never re-inks the ring.
+	*drawRing { |geometry, phase = 0, skin = \night|
 		var palette = CQInk.palette(skin), origin = geometry[\ringBox].leftTop;
 		Pen.translate(origin.x.neg, origin.y.neg);
 		Pen.strokeColor = palette[\whisper].copy.alpha_(0.7);
@@ -73,16 +87,20 @@ CQInkNight {
 				CQNightGeometry.fireflyPoint(geometry, phase + (i / 10)), 1.2, 1.2));
 		};
 		Pen.fill;
-		this.drawEye(geometry[\eye], eyeActive, skin);
 	}
 
 	// the delay RAM as a coconut cross-section, drawn by the shell's own opaque
 	// layer: spiral (the §6.1 winding surface), hold seal, the hold heart at
-	// the innermost eye, the press-to-flip mouth chevron and the org stem
-	*drawShell { |coco, origin, holdOn = false, flipped = false, skin = \night|
-		var palette = CQInk.palette(skin);
+	// the innermost eye, the press-to-flip mouth chevron, the org stem and the
+	// reel pearl — a spark bead riding the line at the speed's norm (inner eye
+	// = slowest, mouth = fastest), the winding gesture's live hand. A static
+	// hover (§4.5) brightens the line and halos the pearl: the grab cue.
+	*drawShell { |coco, origin, holdOn = false, flipped = false,
+		speedNorm = 0.5, hover = false, skin = \night|
+		var palette = CQInk.palette(skin), pearl;
 		Pen.translate(origin.x.neg, origin.y.neg);
-		Pen.strokeColor = palette[\line].copy.alpha_(0.8);
+		Pen.strokeColor = palette[\line].copy
+			.alpha_(if(hover) { 1.0 } { 0.8 });
 		Pen.width = CQInk.strokes[\normal];
 		this.strokeSegments(coco[\segments]);
 		if(holdOn) {
@@ -111,6 +129,18 @@ CQInkNight {
 		Pen.width = CQInk.strokes[\hairline];
 		Pen.line(coco[\orgSpiralPoint], coco[\orgCenter]);
 		Pen.stroke;
+		// the reel pearl (spark, like the clock hands — the coming read-head
+		// spark stays bone so the two never blur)
+		pearl = CQNightGeometry.spiralPoint(coco, speedNorm ? 0.5);
+		Pen.fillColor = palette[\spark];
+		Pen.addOval(Rect.aboutPoint(pearl, 2.2, 2.2));
+		Pen.fill;
+		if(hover) {
+			Pen.strokeColor = palette[\spark].copy.alpha_(0.5);
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.addOval(Rect.aboutPoint(pearl, 5, 5));
+			Pen.stroke;
+		};
 	}
 
 	// §6.1 tide crescent: an open arc whose luminous fill is the value —
@@ -133,16 +163,37 @@ CQInkNight {
 		};
 	}
 
-	// §6.1 the ring's eye: the qFreq/qChaos pupil at the ring's center
-	*drawEye { |center, active = false, skin = \night|
-		var palette = CQInk.palette(skin);
+	// fixed ray scatter for the storm iris — seeded once by hand, never
+	// randomized at draw time, so a still storm keeps a still eye (§16.11)
+	*irisJitters {
+		^#[0.34, -0.62, 0.11, 0.83, -0.27, 0.55,
+			-0.91, 0.07, -0.44, 0.68, -0.15, 0.39]
+	}
+
+	// §6.1 the ring's eye — the storm iris. Its ink is the actual weather:
+	// the pupil's aperture is qFreq, and the twelve rays scatter and reach
+	// with qChaos (even, short corona = calm; ragged reach = storm). Drawn by
+	// its own opaque layer so a storm repaint never re-inks the ring (§10).
+	*drawEye { |center, active = false, freqNorm = 0.5, chaosNorm = 0.15,
+		skin = \night|
+		var palette = CQInk.palette(skin), jitters = this.irisJitters;
+		var pupil = 2.5 + (freqNorm.clip(0, 1) * 4.5);
+		var chaos = chaosNorm.clip(0, 1);
 		Pen.fillColor = palette[\spark].copy.alpha_(if(active) { 0.55 } { 0.25 });
-		Pen.addOval(Rect.aboutPoint(center, 4, 4));
+		Pen.addOval(Rect.aboutPoint(center, pupil, pupil));
 		Pen.fill;
 		Pen.strokeColor = palette[\spark].copy.alpha_(if(active) { 1.0 } { 0.7 });
 		Pen.width = CQInk.strokes[\hairline];
-		Pen.addOval(Rect.aboutPoint(center, if(active) { 6 } { 5 },
-			if(active) { 6 } { 5 }));
+		Pen.addOval(Rect.aboutPoint(center, pupil + 1.5, pupil + 1.5));
+		Pen.stroke;
+		Pen.strokeColor = palette[\spark].copy.alpha_(if(active) { 0.8 } { 0.5 });
+		12.do { |i|
+			var angle = (i / 12 * 2pi) + (jitters[i] * chaos * 0.45);
+			var innerR = pupil + 3;
+			var length = 2.5 + (chaos * (3 + (jitters.wrapAt(i + 5).abs * 4)));
+			Pen.line(CQNightGeometry.polar(center, innerR, angle),
+				CQNightGeometry.polar(center, innerR + length, angle));
+		};
 		Pen.stroke;
 	}
 
@@ -230,14 +281,16 @@ CQInkNight {
 		Pen.stroke;
 	}
 
-	// the coco mouth chevron: read direction at the spiral's mouth, reversed
-	// by flip (down = forward, up = flipped — mirrored the same on both cocos)
+	// the coco mouth chevron: read direction below the spiral's mouth,
+	// reversed by flip (down = forward, up = flipped — mirrored the same on
+	// both cocos). Centered on its anchor so neither the shell box edge nor
+	// the mouth jack's opaque view ever swallows it.
 	*drawMouthChevron { |anchor, flipped = false, skin = \night|
-		var palette = CQInk.palette(skin), dy = if(flipped) { -3 } { 3 };
+		var palette = CQInk.palette(skin), dy = if(flipped) { -3.5 } { 3.5 };
 		Pen.strokeColor = palette[\cas];
 		Pen.width = CQInk.strokes[\hairline];
-		Pen.line(anchor + Point(8, dy.neg), anchor + Point(11, dy));
-		Pen.line(anchor + Point(11, dy), anchor + Point(14, dy.neg));
+		Pen.line(anchor + Point(-5, dy.neg), anchor + Point(0, dy));
+		Pen.line(anchor + Point(0, dy), anchor + Point(5, dy.neg));
 		Pen.stroke;
 	}
 

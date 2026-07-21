@@ -288,12 +288,12 @@ an action the next gesture will not receive).
 
 | touch | gesture | writes |
 |---|---|---|
-| **wind the shell** | left-drag along the spiral's drawn line (≤ 8 px); turning toward the mouth winds faster, against it slower — the two shells mirror like their spirals | `cocoN speed` (relative, ~2 turns = full range) |
+| **wind the shell** | left-drag along the spiral's drawn line (≤ 8 px); turning toward the mouth winds faster, against it slower — the two shells mirror like their spirals. The reel pearl rides the line as the live hand, and hover brightens the grab (§16.6) | `cocoN speed` (relative, ~2 turns = full range) |
 | **the shell's heart** | press the small mark at the spiral's innermost eye: seal / crack the loop; red while sealed (one law with the outer seal and HOLD) | `cocoN hold` toggle |
 | **the mouth chevron** | press the read-direction chevron at the mouth | `cocoN flip` toggle |
 | **tide crescents** | a small crescent below each spaf / inVca / fbVca moon, luminous fill = value; vertical drag pours more or less. Socket beside its control — §1's proximity law, reborn at night. spaf wears purple | `cocoN spaf / in / fb` |
-| **the ring's eye** | a small bone pupil at the ring's center; grab and drag — vertical = pitch, horizontal = chaos. The weather of five castles from one fingertip | `qFreq` (y) + `qChaos` (x), relative |
-| **dial tap** | press a castle's spesal dial: one step (same act as the day step button and keys 3..7) | `spesal(k)` step |
+| **the ring's eye** | the storm iris at the ring's center (§16.6); grab and drag — vertical = pitch, horizontal = chaos, and the iris itself answers on both axes. The weather of five castles from one fingertip | `qFreq` (y) + `qChaos` (x), relative |
+| **dial tap** | press a castle's inner clock — the dial face inside the body (§16.6): one step (same act as the day step button and keys 3..7) | `spesal(k)` step |
 | **bird drop + wing crescent** | dropping an audio file on a bird loads that deck (pulled forward from the G2 toolbar step — loading is core); the crescent under the wing is the deck's level | deck load · `deckN level` |
 
 Skip stays on the `a/s` keys until the read-head spark lands; its intended
@@ -724,8 +724,13 @@ intensity from `/cq_aura`. At 10–11 o'clock, a crown of three 4 px square
 teeth — this *is* the cas source (gray dot at its base). At 1–2 o'clock, an
 8 px triangular leaf on a 6 px stem — the tri source (orange dot). fm moon =
 blue ring Ø 12 orbiting at 4 o'clock, r ≈ 28; spesal moon = green ring +
-lamp at 8 o'clock, r ≈ 34. Spesal dial = 8 ticks at r ≈ 26 full circle,
-current state's tick lit. Range letter i/b/a in whisper at 6 o'clock below.
+lamp at 8 o'clock, r ≈ 40 (moved out from 34 on 2026-07-21: the lamped view
+is 34 px wide and its opaque box must clear the inner clock). Spesal dial =
+the castle's **inner clock** (amended 2026-07-21 after the G2.3 review): a
+whisper face at r ≈ 10 *inside* the body — where no opaque endpoint view can
+ever cover it — with 8 ticks and the current state as a lit spark bead with a
+halo; a static hover brightens the face so it reads as pressable (§4.5).
+Range letter i/b/a in whisper at 6 o'clock below (r ≈ 33, its own anchor).
 
 **The ring.** Irregular circle R ≈ 150 px through the five castles, 1 px
 hairline. Flow k → k+1 shown by two **firefly dots** per arc segment
@@ -736,17 +741,29 @@ already repaint — *the river flows while the island sounds; a silent
 instrument keeps still water.* On the wood, lights move with signal, not with
 the wall clock; this is the permanent behavior, not a budget stopgap, and it
 stays even after the post-G2 offscreen cable cache. At the ring's center sits
-its **eye**: a small bone pupil (Ø ≈ 10), the §6.1 handle for qFreq/qChaos;
-it brightens while held and never displays a value.
+its **eye**, the §6.1 handle for qFreq/qChaos, drawn as the **storm iris**
+(amended 2026-07-21): the pupil's aperture is qFreq (Ø ≈ 5..14) and twelve
+rays scatter and reach with qChaos — an even, short corona is calm weather, a
+ragged reach is storm. The ink is the actual state, never decoration. The eye
+lives on its own opaque layer so a storm repaint never re-inks the ring
+(§10); it brightens while held and never displays a value.
 
 **Coco (×2).** Spiral = Archimedean, 2.5 turns, outer R ≈ 85 px, 1.5 px
-stroke; the mouth at the outer end carries the gray coco-voice source dot and
-a 6 px direction chevron (a §6.1 touch: press = flip). **Read-head spark** =
-Ø 4 px bone dot traveling the spiral (loop-phase telemetry, §9); flip
-reverses spark and chevron. **Hold**: the outermost turn closes into a full
-circle and tints danger-red at 60 % — the loop is sealed; the **heart** at
-the spiral's innermost eye (small Ø ≈ 5 mark, red while sealed) is the §6.1
-hold touch. The spiral's line is the §6.1 winding surface. Org fruit =
+stroke; the mouth at the outer end carries the gray coco-voice source dot;
+the direction chevron (a §6.1 touch: press = flip) hangs ≈ 24 px below the
+mouth, centered on its anchor — clear of the mouth jack's opaque view and the
+shell box edge at every scale (down = forward, up = flipped; amended
+2026-07-21 after the G2.3 review found the outward home clipped).
+**Read-head spark** = Ø 4 px bone dot traveling the spiral (loop-phase
+telemetry, §9); flip reverses spark and chevron. **Hold**: the outermost turn
+closes into a full circle and tints danger-red at 60 % — the loop is sealed;
+the **heart** at the spiral's innermost eye (small Ø ≈ 5 mark, red while
+sealed) is the §6.1 hold touch. The spiral's line is the §6.1 winding
+surface; the **reel pearl** (amended 2026-07-21) rides it at the speed's
+normalized position — inner eye = slowest, mouth = fastest — as the winding
+gesture's live hand and the resting speed display, spark-colored so the
+coming bone read-head spark never blurs with it. On spiral hover the line
+brightens and the pearl gains a halo (static ink, §4.5). Org fruit =
 yellow Ø 7 dot on a 6 px stem from the second turn. Moons spaf / inVca /
 fbVca / flip / skip sit on an arc under the spiral, glyphs per §16.5, lamps
 on flip/skip; below the three continuous moons hang their **tide crescents**

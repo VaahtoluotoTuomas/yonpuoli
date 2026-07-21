@@ -302,18 +302,47 @@ coco-ulostulosta ja lintujen flutter.
   Coco-spiraali, roots below ja birds above `GUI_SPEC.md` §16.6:n anatomialla.
   *(Hyväksytty visuaalisesti 2026-07-21, manuaalitestit G2.1–G2.2.)*
 - [ ] Night touch grammar (`GUI_SPEC.md` §6.1): toteutettu ja savutestattu
-  2026-07-21, odottaa käyttäjän kuuntelukatselmointia (manuaalitesti G2.3).
+  2026-07-21; G2.3-kuuntelukierros 1 käyty samana päivänä (kaikki eleet
+  toimivat, palaute alla korjattu), odottaa uusintakatselmointia (G2.3b).
 - [ ] Loop phase/read-head spark ja käyttäjän vahvistaman payloadin `/cq_charge`.
 - [ ] Solo-light (body), deck-bird drag-over-korostus ja täsmällinen Night
   toolbar. *(Endpoint- ja kaapelisolo sekä bird-drop toimivat jo.)*
 - [ ] Ei numeroita, Space-bodya tai dekoratiivista motionia; Master pysyy näkyvänä.
 - [ ] `GUI_SPEC.md` §13:n automaatio, kuuntelu ja käyttäjän visuaalinen hyväksyntä.
 
-Portti 2026-07-21 (touch grammar): `CQ_COMPILE_OK`, 4 373 unit-passia /
-0 failurea, `CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
-`CQ_GUI_DRAWER_REENTRY_PASSED` ja `CQ_GUI_NIGHT_PASSED` (sis. §6.1-eleet ja
-§4.5:n kaapeli-ensin-tarkistuksen). (`CQ_HOLD_OK` ajettiin session alussa;
-DSP-koodia ei muutettu.)
+**G2.3-kuuntelukierros 1 (2026-07-21):** kaikki seitsemän kosketuspistettä
+toimivat korvalla; palaute käsitelty samana päivänä (`GUI_SPEC.md` §6.1 ja
+§16.6 päivitetty):
+
+- *Chevron-bugi:* vanha koti (suusta ulospäin + glyyfi ankkurista oikealle)
+  leikkaantui shell-laatikon reunaan vasemmalla ja jäi coco-jakin
+  läpinäkymättömän 26 px näkymän alle oikealla. Nyt suun alla (`mouth +
+  (0, 24·scale)`), glyyfi keskitetty ankkuriin; väljyys naulattu
+  `CQNightGeometryTest.test_inkClearances`iin.
+- *Kellotaulun z-glitch + affordanssi:* dial r 26·scale kulki endpoint-
+  näkymien (r 18–46) alta ja spesalin 34 px lamppulaatikko ylsi lähes
+  keskustaan. Nyt **sisäkello**: haalea kellotaulukehä r 10·scale rungon
+  sisällä, tila spark-helmenä + halona, staattinen hover kirkastaa; spesal-kuu
+  siirtyi r 34 → 40, jotta sen laatikko väistää kellon joka skaalalla
+  (testattu kaikilla 8 helmi-kodilla molemmilla lavakooilla).
+- *Kelauspalaute:* **reel pearl** — spark-helmi spiraaliviivalla paikassa
+  `unmap(cocoNSpeed)` (sisäsilmä = hidas, suu = nopea); liukuu eleessä
+  suppilon totuudesta maalattuna (`CQGuiNightMap.paintSpeed`), lepotilassa
+  näyttää arvon. Spiraalin hover kirkastaa viivan ja halottaa helmen.
+  Samalla korjautui aito aukko: `sampleSegments` päättyi t = 5/6:een eli
+  spiraalin viimeinen kuudennes ei kuulunut kelauspintaan — nyt suu päättää
+  näytejonon.
+- *Silmän palaute:* **myrsky-iiris** — pupillin aukko = qFreq, 12 säteen
+  hajonta ja pituus = qChaos (käsin kylvetty sirontataulukko, ei rand-kutsuja
+  piirrossa). Silmä sai oman läpinäkymättömän kerroksen (`eyeView`), joten
+  iiriksen piirto ei koskaan maalaa rinkiä uudelleen (§10).
+
+Portti 2026-07-21 (G2.3-korjausten jälkeen): `CQ_COMPILE_OK`, 4 747
+unit-passia / 0 failurea, `CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`,
+`CQ_GUI_DRAWER_PASSED`, `CQ_GUI_DRAWER_REENTRY_PASSED` ja
+`CQ_GUI_NIGHT_PASSED` (sis. §6.1-eleet, §4.5:n kaapeli-ensin-tarkistuksen,
+helmen/iiriksen suppilototuuden ja hover-vihjeet). (`CQ_HOLD_OK` ajettiin
+session alussa; DSP-koodia ei muutettu.)
 
 ### G3 — Weather machine
 
@@ -396,14 +425,16 @@ G1 on suljettu eikä sitä avata uudelleen.**
 2. Aja automaatio ensin ja raportoi markerit: neljä markkeria (`compile_check`,
    `run_all`, `nrt_safety`, `nrt_hold_integrity`) ja **neljä** GUI-smokea
    (`gui_shell_smoke`, `gui_drawer_smoke`, `gui_drawer_preview_reentry_smoke`,
-   `gui_night_smoke`). Lähtötaso 2026-07-21: `CQ_COMPILE_OK`, 4 373 passia /
+   `gui_night_smoke`). Lähtötaso 2026-07-21: `CQ_COMPILE_OK`, 4 747 passia /
    0 failurea, `CQ_SAFETY_PASSED`, `CQ_HOLD_OK` ja kaikki neljä GUI-markkeria.
    **Huom:** GUI-smoket ajetaan omana prosessinaan; jos ne jumittuvat, tarkista ensin
    hiiren osoittimen sijainti (ks. Qt-jäätymiskorjaus yllä) eikä koodia.
-3. Odota käyttäjän kuuntelupalaute night touch grammarista (manuaalitesti
-   G2.3) ja tee viimeistely sen pohjalta. Vasta palautteen jälkeen jatka G2:n
-   seuraaviin osiin: loop-phase/read-head spark (tuo samalla skipin yökodin,
-   §6.1), `/cq_charge`-lamput, body-solo, drag-over-korostus ja Night toolbar.
+3. G2.3-kierros 1 on käyty ja korjattu (chevron, sisäkello, reel pearl,
+   myrsky-iiris, hoverit — ks. G2-osio). Odota käyttäjän uusintakatselmointi
+   (manuaalitesti G2.3b) ja tee viimeistely sen pohjalta. Vasta palautteen
+   jälkeen jatka G2:n seuraaviin osiin: loop-phase/read-head spark (tuo
+   samalla skipin yökodin, §6.1), `/cq_charge`-lamput, body-solo,
+   drag-over-korostus ja Night toolbar.
 4. Muista G1:n opetus piirtobudjetista: `GUI_SPEC.md` §10 sitoo myös Nightin. Ambient
    enintään 15 Hz, ilmoitusvirrat tahdistetaan etureunalla, eikä kustannusta arvata —
    se mitataan Qt:n paint-eventin sisältä. Kielen ja Qt:n rajapinnan `Pen`-kutsu
@@ -435,6 +466,17 @@ Weather Machinea ei piirretä ennen G2:n hyväksyntää.
   korjattiin vain venyminen (ankkurointi); kysymys siitä, pitäisikö kaaviota madaltaa,
   hiljentää vai poistaa, ratkaistaan omana suunnittelupäätöksenään G2:n jälkeen.
   Sama arviointi koskee "spesal topology" -osiota, joka sen sijaan **on** elävä.
+- **Kosketusnäyttö-optimointi Night-modeen.** Käyttäjän havainto G2.3-kierroksella
+  (2026-07-21): kelaus ja muut §6.1:n eleet vetävät kättä läppärin kosketusnäytölle,
+  ja Nightia halutaan soittaa sormin. Oma työvaihe myöhemmin: kosketuskohteiden
+  koot, multi-touch (esim. kelaus + sirppi yhtä aikaa), ele-erottelu (Qt:n
+  touch-eventit vs. hiiriemulaatio) ja se, mitkä eleet hyötyvät kahdesta sormesta.
+  Ei aloiteta ennen G2:n hyväksyntää.
+- **Lintu-dropin vihje vai Night-infonappi.** Käyttäjän kysymys G2.3-kierroksella
+  (2026-07-21): pitäisikö linnulla olla visuaalinen vihje pudotettavuudesta, vai
+  pieni "i"-nappi, joka avaa Night-eleiden selitykset. Suunnittelupäätös tehdään
+  käyttäjän kanssa myöhemmin (drag-over-korostus §16.7:n drop target -lain mukaan
+  tulee joka tapauksessa G2:n loppuaskelissa).
 - Space-body ja Space-estetiikka odottavat erillistä konseptipäätöstä.
 - Norns + grid + 16n + crow -portti on v2-visio; alkuperäinen tekninen muistio on
   arkistoidun suunnitelman lopussa.

@@ -121,6 +121,18 @@ CQNightGeometry {
 		^best
 	}
 
+	// a point riding the spiral's line: norm 0 = the innermost eye (slowest),
+	// norm 1 = the mouth (fastest) — the reel pearl's home for a speed value
+	*spiralPoint { |coco, norm|
+		var samples = coco[\spiralSamples], scaled, index, frac, a, b;
+		scaled = norm.clip(0, 1) * (samples.size - 1);
+		index = scaled.floor.asInteger.min(samples.size - 2);
+		frac = scaled - index;
+		a = samples[index];
+		b = samples[index + 1];
+		^Point(a.x + ((b.x - a.x) * frac), a.y + ((b.y - a.y) * frac))
+	}
+
 	// the spesal dial annulus around a castle (a tap = one step)
 	*dialHit { |castle, point|
 		^(this.distance(point, castle[\center]) - castle[\dialR]).abs <= 8
@@ -152,9 +164,13 @@ CQNightGeometry {
 					Point(center.x + (cos(blobAngle) * bodyRx * jitter),
 						center.y + (sin(blobAngle) * bodyRy * jitter))
 				};
+				// the spesal dial is the castle's inner clock (r 10): it lives
+				// inside the body where the opaque endpoint views (r >= ~14.6
+				// to their nearest corner at scale 1) can never cover its hand
 				(center: center, bodyRx: bodyRx, bodyRy: bodyRy,
 					blobSegments: this.smoothClosedSegments(blobAnchors),
-					dialR: 26 * scale,
+					dialR: 10 * scale,
+					letterAnchor: Point(center.x, center.y + (33 * scale)),
 					box: Rect.aboutPoint(center, (36 * scale) + 4, (36 * scale) + 4))
 			}
 		});
@@ -196,12 +212,16 @@ CQNightGeometry {
 			(center: center, outerR: outerR, winding: winding,
 				mouthAngle: mouthAngle, segments: segments,
 				mouth: mouth,
-				spiralSamples: this.sampleSegments(segments, 6),
-				// §6.1 touch homes: press-to-flip chevron past the mouth, the
-				// hold heart at the spiral's innermost eye, the shell's own
-				// opaque layer box, and the tide crescents under the three
-				// continuous moons (spaf / inVca / fbVca)
-				chevron: mouth + Point(cos(mouthAngle) * 20 * scale, 0),
+				// sampleSegments stops at t = 5/6 of the last cubic (an open
+				// curve, unlike the ring) — the mouth closes the winding
+				// surface so the reel pearl and the grab reach the outer rim
+				spiralSamples: this.sampleSegments(segments, 6) ++ [mouth],
+				// §6.1 touch homes: the press-to-flip chevron hangs below the
+				// mouth — clear of the mouth jack's opaque 26 px view and
+				// inside the shell box at every scale — plus the hold heart at
+				// the spiral's innermost eye, the shell's own opaque layer box
+				// and the tide crescents under the three continuous moons
+				chevron: mouth + Point(0, max(24 * scale, 22)),
 				heartRadius: 14,
 				shellBox: Rect.aboutPoint(center,
 					outerR + (30 * scale), outerR + (30 * scale)),
@@ -230,8 +250,11 @@ CQNightGeometry {
 				this.polar(center, 33 * scale, this.clockAngle(10.5));
 			endpoints[("castle" ++ n ++ "_fm").asSymbol] =
 				this.polar(center, 28 * scale, this.clockAngle(4));
+			// r 40: the lamped spesal view is 34 px wide with the lamp
+			// reaching 25 px toward the body — r 40 keeps its opaque box off
+			// the inner clock at every scale (see CQNightGeometryTest)
 			endpoints[("castle" ++ n ++ "_spesal").asSymbol] =
-				this.polar(center, 34 * scale, this.clockAngle(8));
+				this.polar(center, 40 * scale, this.clockAngle(8));
 		};
 
 		// inputs as roots at the bottom, envA left, envB right; the mic sprout

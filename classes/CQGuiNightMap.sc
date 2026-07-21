@@ -3,16 +3,19 @@
 // grammar as Day, plus the §6.1 night touch grammar (CQGuiNightTouch). Pure
 // view: geometry from CQNightGeometry, pixels from CQInk/CQInkNight, every
 // write through the shared grammar and funnels. The layers are opaque-backed
-// (ground → ring → castles → shells → birds → endpoints → crescents → labels,
-// the hit-transparent overlay on top) so an ambient repaint touches only the
-// views whose information actually moved (§10).
+// (ground → ring → eye → castles → shells → birds → endpoints → crescents →
+// labels, the hit-transparent overlay on top) so an ambient repaint touches
+// only the views whose information actually moved (§10) — the storm iris in
+// particular repaints without re-inking the ring.
 
 CQGuiNightMap {
 	var gui, state, matrix, config;
 	var <stageView, <container, <overlay, <controller, <touch, <endpoints;
-	var <groundView, <ringView, <castleViews, <shellViews, <birdViews;
+	var <groundView, <ringView, <eyeView, <castleViews, <shellViews, <birdViews;
 	var <crescentViews, crescentNorms, activeCrescents, hoverCrescents, labels;
 	var <geometry, <eyeActive = false;
+	var <eyeFreqNorm = 0.5, <eyeChaosNorm = 0.15;
+	var <speedNorms, <shellHover, <dialHover;
 	var <fireflyPhase = 0.0, lastFireflyTime, castlePainted;
 	var <holdStates, <flipStates, <rangeLetters, <sproutState;
 	var freed = false;
@@ -73,7 +76,21 @@ CQGuiNightMap {
 
 	eyeActive_ { |flag|
 		eyeActive = flag == true;
-		if(freed.not) { ringView.refresh };
+		if(freed.not) { eyeView.refresh };
+	}
+
+	// gesture-time paint-cache pushes (§10: 60 Hz only during the drag): the
+	// touch machine reads the funnel truth back and paints it directly, ahead
+	// of the paced notification that confirms the same value at flush time
+	paintSpeed { |i, norm|
+		speedNorms[i] = norm;
+		if(freed.not) { shellViews[i].refresh };
+	}
+
+	paintEye { |freqNorm, chaosNorm|
+		eyeFreqNorm = freqNorm;
+		eyeChaosNorm = chaosNorm;
+		if(freed.not) { eyeView.refresh };
 	}
 
 	crescentActive { |name, flag|
@@ -122,6 +139,9 @@ CQGuiNightMap {
 		castlePainted = Array.newClear(5);
 		holdStates = [false, false];
 		flipStates = [false, false];
+		speedNorms = [0.5, 0.5];
+		shellHover = [false, false];
+		dialHover = Array.fill(5, false);
 		rangeLetters = ["", "", "", "", ""];
 		sproutState = CQNightGeometry.sproutState(config[\micChan].notNil, 0);
 		container = View().background_(night[\ground]);
@@ -129,6 +149,8 @@ CQGuiNightMap {
 		groundView.drawFunc = { this.prSafeDraw { this.prDrawGround } };
 		ringView = this.prLayer;
 		ringView.drawFunc = { this.prSafeDraw { this.prDrawRing } };
+		eyeView = this.prLayer;
+		eyeView.drawFunc = { this.prSafeDraw { this.prDrawEye } };
 		castleViews = 5.collect { |k|
 			var view = this.prLayer;
 			view.drawFunc = { this.prSafeDraw { this.prDrawCastle(k) } };
@@ -240,17 +262,21 @@ CQGuiNightMap {
 				touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
 			};
 		};
-		ringView.mouseDownAction = { |v, x, y, mods, button, clicks|
-			touch.ringDown(v, x, y, mods ? 0, button ? 0, clicks ? 1)
-		};
-		ringView.mouseMoveAction = { |v, x, y, mods|
-			touch.ringMove(v, x, y, mods ? 0)
-		};
-		ringView.mouseUpAction = { |v, x, y, mods, button|
-			touch.ringUp(v, x, y, mods ? 0, button ? 0)
-		};
-		ringView.mouseWheelAction = { |v, x, y, mods, xd, yd|
-			touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
+		// the eye's own opaque layer sits over the ring's center, so both
+		// views speak the same ring grammar (prPoint maps via the container)
+		[ringView, eyeView].do { |view|
+			view.mouseDownAction = { |v, x, y, mods, button, clicks|
+				touch.ringDown(v, x, y, mods ? 0, button ? 0, clicks ? 1)
+			};
+			view.mouseMoveAction = { |v, x, y, mods|
+				touch.ringMove(v, x, y, mods ? 0)
+			};
+			view.mouseUpAction = { |v, x, y, mods, button|
+				touch.ringUp(v, x, y, mods ? 0, button ? 0)
+			};
+			view.mouseWheelAction = { |v, x, y, mods, xd, yd|
+				touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
+			};
 		};
 		castleViews.do { |view, k|
 			view.mouseDownAction = { |v, x, y, mods, button, clicks|
@@ -276,6 +302,49 @@ CQGuiNightMap {
 			view.mouseUpAction = { |v, x, y, mods, button|
 				touch.crescentUp(name, v, x, y, mods ? 0, button ? 0)
 			};
+		};
+		// static hover cues (§4.5: hover never pulses — ink only, and never
+		// where a cable would win the press). Cheap test first, patchAt only
+		// on a candidate; a repaint only when the boolean flips.
+		shellViews.do { |view, i|
+			view.acceptsMouseOver = true;
+			view.mouseOverAction = { |v, x, y| this.prHoverShell(i, v, x, y) };
+			view.mouseLeaveAction = { this.prHoverShell(i, nil, nil, nil) };
+		};
+		castleViews.do { |view, k|
+			view.acceptsMouseOver = true;
+			view.mouseOverAction = { |v, x, y| this.prHoverCastle(k, v, x, y) };
+			view.mouseLeaveAction = { this.prHoverCastle(k, nil, nil, nil) };
+		};
+	}
+
+	prStagePoint { |view, x, y|
+		^view.mapToGlobal(Point(x, y)) - container.mapToGlobal(0@0)
+	}
+
+	prHoverShell { |i, view, x, y|
+		var near = false, point;
+		if(geometry.notNil and: { view.notNil }) {
+			point = this.prStagePoint(view, x, y);
+			near = (CQNightGeometry.spiralDistance(geometry[\cocos][i], point)
+				<= 8) and: { overlay.patchAt(point).isNil };
+		};
+		if(near != shellHover[i]) {
+			shellHover[i] = near;
+			if(freed.not) { shellViews[i].refresh };
+		};
+	}
+
+	prHoverCastle { |k, view, x, y|
+		var near = false, point;
+		if(geometry.notNil and: { view.notNil }) {
+			point = this.prStagePoint(view, x, y);
+			near = CQNightGeometry.dialHit(geometry[\castles][k], point)
+				and: { overlay.patchAt(point).isNil };
+		};
+		if(near != dialHover[k]) {
+			dialHover[k] = near;
+			if(freed.not) { castleViews[k].refresh };
 		};
 	}
 
@@ -314,6 +383,7 @@ CQGuiNightMap {
 		geometry = CQNightGeometry.compute(bounds.width, bounds.height);
 		groundView.bounds = Rect(0, 0, bounds.width, bounds.height);
 		ringView.bounds = geometry[\ringBox];
+		eyeView.bounds = Rect.aboutPoint(geometry[\eye], 22, 22);
 		castleViews.do { |view, k| view.bounds = geometry[\castles][k][\box] };
 		shellViews.do { |view, i|
 			view.bounds = geometry[\cocos][i][\shellBox] };
@@ -350,6 +420,7 @@ CQGuiNightMap {
 		};
 		2.do { |i|
 			var n = i + 1;
+			var speedName = ("coco" ++ n ++ "Speed").asSymbol;
 			gui.widgets.register(("coco" ++ n ++ "Hold").asSymbol, { |value|
 				holdStates[i] = (value ? 0) > 0.5;
 				if(freed.not) { shellViews[i].refresh };
@@ -358,7 +429,19 @@ CQGuiNightMap {
 				flipStates[i] = (value ? 0) > 0.5;
 				if(freed.not) { shellViews[i].refresh };
 			});
+			gui.widgets.register(speedName, { |value|
+				speedNorms[i] = CQSpec.unmap(speedName, value);
+				if(freed.not) { shellViews[i].refresh };
+			});
 		};
+		gui.widgets.register(\qFreq, { |value|
+			eyeFreqNorm = CQSpec.unmap(\qFreq, value);
+			if(freed.not) { eyeView.refresh };
+		});
+		gui.widgets.register(\qChaos, { |value|
+			eyeChaosNorm = CQSpec.unmap(\qChaos, value);
+			if(freed.not) { eyeView.refresh };
+		});
 		crescentViews.keysValuesDo { |name, view|
 			gui.widgets.register(name, { |value|
 				crescentNorms[name] = CQSpec.unmap(name, value);
@@ -384,7 +467,16 @@ CQGuiNightMap {
 
 	prDrawRing {
 		if(geometry.isNil) { ^this };
-		CQInkNight.drawRing(geometry, fireflyPhase, eyeActive, \night);
+		CQInkNight.drawRing(geometry, fireflyPhase, \night);
+	}
+
+	prDrawEye {
+		var origin;
+		if(geometry.isNil) { ^this };
+		origin = Rect.aboutPoint(geometry[\eye], 22, 22).leftTop;
+		Pen.translate(origin.x.neg, origin.y.neg);
+		CQInkNight.drawEye(geometry[\eye], eyeActive,
+			eyeFreqNorm, eyeChaosNorm, \night);
 	}
 
 	prDrawCastle { |k|
@@ -393,7 +485,8 @@ CQGuiNightMap {
 		castle = geometry[\castles][k];
 		CQInkNight.drawCastle(castle, castle[\box].leftTop,
 			gui.auraFor(("cas" ++ (k + 1)).asSymbol),
-			(gui.spesalStates[k] ? 0).asInteger, rangeLetters[k], \night);
+			(gui.spesalStates[k] ? 0).asInteger, rangeLetters[k],
+			dialHover[k], \night);
 	}
 
 	prDrawShell { |i|
@@ -401,7 +494,7 @@ CQGuiNightMap {
 		if(geometry.isNil) { ^this };
 		coco = geometry[\cocos][i];
 		CQInkNight.drawShell(coco, coco[\shellBox].leftTop,
-			holdStates[i], flipStates[i], \night);
+			holdStates[i], flipStates[i], speedNorms[i], shellHover[i], \night);
 	}
 
 	prDrawBird { |i|

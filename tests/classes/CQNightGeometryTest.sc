@@ -8,6 +8,23 @@ CQNightGeometryTest : UnitTest {
 		^sqrt((b.x - a.x).squared + (b.y - a.y).squared)
 	}
 
+	// mirrors CQGuiNightMap.prMakeEndpoint: jack 26x26 anchored (13,13),
+	// socket 20x20 anchored (9,10), a lamped socket widens to 34
+	prEndpointBox { |name, center|
+		var spec = CQGuiNightMap.endpointSpec(name);
+		var jack = spec[\kind] == \jack;
+		var width = if(spec[\lamp] == true) { 34 } { if(jack) { 26 } { 20 } };
+		var height = if(jack) { 26 } { 20 };
+		var anchor = if(jack) { Point(13, 13) } { Point(9, 10) };
+		^Rect(center.x - anchor.x, center.y - anchor.y, width, height)
+	}
+
+	prRectDistance { |point, rect|
+		var dx = max(max(rect.left - point.x, point.x - rect.right), 0);
+		var dy = max(max(rect.top - point.y, point.y - rect.bottom), 0);
+		^sqrt(dx.squared + dy.squared)
+	}
+
 	test_topologyTruths {
 		[[1280, 570], [1920, 855]].do { |size|
 			var geo = CQNightGeometry.compute(size[0], size[1]);
@@ -134,6 +151,66 @@ CQNightGeometryTest : UnitTest {
 			and: { CQNightGeometry.distance(geo[\birds][0][\levelCrescent],
 				geo[\endpoints][\deckA_rate]) >= 24 },
 			"the bird box holds the bird; its crescent clears the rate moon");
+	}
+
+	// the G2.3 clip fixes, pinned: no opaque endpoint view may cover the
+	// chevron glyph, the inner clock's face or any of its eight bead homes
+	test_inkClearances {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			geo[\cocos].do { |coco, i|
+				var glyph = Rect.aboutPoint(coco[\chevron], 6, 5);
+				var jack = Rect.aboutPoint(coco[\mouth], 13, 13);
+				this.assert((glyph.intersects(jack)).not,
+					"coco % chevron glyph clears the mouth jack's view (%x%)"
+						.format(i + 1, *size));
+				this.assert(coco[\shellBox].contains(
+					Rect.aboutPoint(coco[\chevron], 10, 10)),
+					"coco % chevron touch box stays inside the shell (%x%)"
+						.format(i + 1, *size));
+			};
+			geo[\castles].do { |castle, k|
+				var n = k + 1, center = castle[\center];
+				var names = [("tri" ++ n).asSymbol, ("cas" ++ n).asSymbol,
+					("castle" ++ n ++ "_fm").asSymbol,
+					("castle" ++ n ++ "_spesal").asSymbol];
+				names.do { |name|
+					var box = this.prEndpointBox(name, geo[\endpoints][name]);
+					this.assert(this.prRectDistance(center, box)
+						>= (castle[\dialR] + 1),
+						"castle % clock face clears the % view (%x%)"
+							.format(n, name, *size));
+					8.do { |i|
+						var bead = CQNightGeometry.polar(center,
+							castle[\dialR], (22.5 + (i * 45)).degrad);
+						this.assert(this.prRectDistance(bead, box) >= 4,
+							"castle % bead % + halo clears the % view (%x%)"
+								.format(n, i, name, *size));
+					};
+				};
+			};
+		};
+	}
+
+	test_reelPearl {
+		var geo = CQNightGeometry.compute(1280, 570);
+		[0, 1].do { |i|
+			var coco = geo[\cocos][i];
+			var monotonic = true;
+			var radii = [0, 0.25, 0.5, 0.75, 1].collect { |norm|
+				this.prDistance(CQNightGeometry.spiralPoint(coco, norm),
+					coco[\center])
+			};
+			radii.doAdjacentPairs { |a, b| if(a >= b) { monotonic = false } };
+			this.assert(CQNightGeometry.spiralPoint(coco, 0)
+				== coco[\spiralSamples].first,
+				"coco % pearl at norm 0 rests on the innermost eye".format(i + 1));
+			this.assert(this.prDistance(
+				CQNightGeometry.spiralPoint(coco, 1), coco[\mouth]) < 0.001,
+				"coco % pearl at norm 1 reaches the mouth".format(i + 1));
+			this.assert(monotonic,
+				"coco % pearl rides outward monotonically".format(i + 1));
+		};
 	}
 
 	test_rangeLetter {

@@ -987,4 +987,37 @@ CQ.boot; CQ.patchPreset(\classic);
 CQ.patchPreset(\empty);
 ```
 
-- [ ] G2.3 night touch grammar hyväksytty (pvm: ______)
+- [x] G2.3 kierros 1: kaikki eleet toimivat korvalla (pvm: 2026-07-21);
+  visuaalinen palaute (chevron-leikkaus, kellotaulun z-glitch + affordanssi,
+  kelaus- ja silmäpalaute, spiraalin hover) korjattu samana päivänä → G2.3b
+
+## G2.3b NIGHT TOUCH — visuaalisen palautteen uusintakatselmointi
+
+Kierroksen 1 korjaukset: chevron muutti suun alle keskitettynä, kellotaulusta
+tuli rungon sisäinen sisäkello, kelaus sai reel pearl -helmen, silmä
+myrsky-iiriksen ja spiraali + kello staattisen hover-vihjeen (GUI_SPEC §16.6).
+
+```supercollider
+// G2.3b — korjausten tarkistus SILMÄLLÄ ja KORVALLA. (Ctrl+Shift+L ensin.)
+CQ.boot; CQ.patchPreset(\classic);
+// - CHEVRON: PERUSIKKUNASSA (ei fullscreen) molempien cocojen suun ALLA
+//   näkyy nyt kokonainen nuolenkärki. Paina: flip toimii, kärki kääntyy
+//   ylös. Kokeile myös fullscreen — kärki pysyy ehjänä molemmissa.
+// - REEL PEARL: spiraaliviivalla istuu spark-helmi — sen paikka on speed
+//   (sisäsilmä = hidas, suu = nopea). Kelaa: helmi liukuu sormen alla ja
+//   glissando seuraa. Käännä 16n:n speed-faderia: helmi seuraa sitäkin.
+// - HOVER: vie osoitin spiraaliviivan päälle painamatta — viiva kirkastuu
+//   ja helmi saa halon (staattinen, ei sykettä). Poistu: lepotila palaa.
+// - SISÄKELLO: castlen rungon sisällä on nyt haalea kellotaulukehä ja
+//   kirkas spark-helmi = spesal-tila. Vie osoitin kehän päälle: kehä
+//   kirkastuu (vihje painettavuudesta). Napauta: helmi askeltaa EIKÄ jää
+//   minkään jakin/soketin alle millään kahdeksasta paikasta.
+// - MYRSKY-IIRIS: ringin silmässä on nyt iiris. Vedä pystyyn: pupilli
+//   aukeaa (q freq nousee — kuuntele). Vedä vaakaan: 12 sädettä hajoavat
+//   ja pitenevät (chaos — kuuntele rosoistuminen). Irrota ote: iiris jää
+//   näyttämään todellista tilaa. Hiljaisessa koneessa iiris ei liiku.
+// - Tarkista yhä §4.5: johto spiraalin päällä tarttuu hiireen, ei kelaudu.
+CQ.patchPreset(\empty);
+```
+
+- [ ] G2.3b night touch -visuaalit hyväksytty (pvm: ______)

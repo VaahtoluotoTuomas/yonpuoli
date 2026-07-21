@@ -173,6 +173,7 @@ abort = { |error|
 															var shell, coco, local, crescent;
 															var speedBefore, freqBefore, chaosBefore;
 															var samples, cablePoint, cableRecord;
+															var castleTwo, castleView, dialPoint;
 															shell = map.shellViews[0];
 															coco = map.geometry[\cocos][0];
 															crescent = map.crescentViews[\coco1Spaf];
@@ -193,6 +194,9 @@ abort = { |error|
 																local.x, local.y, 0, 0);
 															check.value(state.get(\coco1Hold) == 1,
 																"pressing the shell's heart seals the loop (hold)");
+															check.value(map.overlay
+																.patchAt(coco[\chevron]).isNil,
+																"precondition: no cable crosses the chevron home");
 															local = coco[\chevron]
 																- coco[\shellBox].leftTop;
 															shell.mouseDownAction.value(shell,
@@ -219,6 +223,31 @@ abort = { |error|
 															check.value(
 																state.get(\coco1Speed) > speedBefore,
 																"winding toward the mouth speeds the reel");
+															check.value((map.speedNorms[0]
+																- CQSpec.unmap(\coco1Speed,
+																	state.get(\coco1Speed))).abs < 1e-6,
+																"the reel pearl paints the funnel truth mid-wind");
+															// static hover cues (§4.5: ink, never a pulse)
+															shell.mouseOverAction.value(shell,
+																samples[30].x - local.x,
+																samples[30].y - local.y);
+															check.value(map.shellHover[0],
+																"hovering the spiral lights the wind cue");
+															shell.mouseLeaveAction.value(shell);
+															check.value(map.shellHover[0].not,
+																"leaving the shell rests the cue");
+															castleTwo = map.geometry[\castles][1];
+															castleView = map.castleViews[1];
+															dialPoint = CQNightGeometry.polar(
+																castleTwo[\center], castleTwo[\dialR],
+																0.25pi) - castleTwo[\box].leftTop;
+															castleView.mouseOverAction.value(castleView,
+																dialPoint.x, dialPoint.y);
+															check.value(map.dialHover[1],
+																"the inner clock lights under the pointer");
+															castleView.mouseLeaveAction.value(castleView);
+															check.value(map.dialHover[1].not,
+																"the clock rests when the pointer leaves");
 															freqBefore = state.get(\qFreq);
 															chaosBefore = state.get(\qChaos);
 															local = map.geometry[\eye]
@@ -233,6 +262,16 @@ abort = { |error|
 																state.get(\qFreq) > freqBefore
 																and: { state.get(\qChaos) > chaosBefore },
 																"the ring's eye drags pitch and chaos together");
+															check.value(map.eyeView.notNil
+																and: { map.eyeView.mouseDownAction.notNil },
+																"the eye keeps its own opaque storm layer");
+															check.value((map.eyeFreqNorm
+																- CQSpec.unmap(\qFreq,
+																	state.get(\qFreq))).abs < 1e-6
+																and: { (map.eyeChaosNorm
+																	- CQSpec.unmap(\qChaos,
+																		state.get(\qChaos))).abs < 1e-6 },
+																"the storm iris paints the funnel truth mid-drag");
 															cableRecord = map.overlay.cableRecords
 																.detect { |record|
 																record[\dest] == \coco1_spaf

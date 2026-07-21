@@ -64,6 +64,9 @@ CQGuiNightTouch {
 		wind[\angle] = angle;
 		name = ("coco" ++ (wind[\index] + 1) ++ "Speed").asSymbol;
 		this.prNudge(name, delta * coco[\winding] * this.class.windSensitivity);
+		// gesture-rate feedback — the reel pearl slides under the finger,
+		// painted from the funnel truth ahead of the paced notification
+		map.paintSpeed(wind[\index], this.prNorm(name));
 		^this
 	}
 
@@ -97,6 +100,9 @@ CQGuiNightTouch {
 			eyeDrag[\freq] + ((eyeDrag[\start].y - point.y) * sens));
 		this.prSet(\qChaos,
 			eyeDrag[\chaos] + ((point.x - eyeDrag[\start].x) * sens));
+		// gesture-rate feedback: the storm iris answers the hand directly,
+		// painted from the funnel truth ahead of the paced notification
+		map.paintEye(this.prNorm(\qFreq), this.prNorm(\qChaos));
 		^this
 	}
 
