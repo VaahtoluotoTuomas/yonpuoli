@@ -1,6 +1,11 @@
 // CQGuiMemory — the Drawer Memory page as a truthful seed bank. Saved snapshots
 // remain explicit recall/morph data; the live matrix and selected snapshot are
 // rendered as small patch fingerprints instead of an empty form (GUI_SPEC §8).
+//
+// Naming law (GUI_SPEC §8): "seed bank" names the page metaphor, but every item
+// in it is a *snapshot* — the instrument has exactly two memory words, presets
+// (patch recipes in code) and snapshots (saved instrument state on disk).
+// The seed* identifiers below are page-local, never user-visible vocabulary.
 
 CQGuiMemory {
 	classvar contentW = 1128, fingerprintW = 840, fingerprintH = 300;
@@ -82,14 +87,14 @@ CQGuiMemory {
 			.background_(palette[\ground]).fixedSize_(Size(266, 194));
 		seedList.action = { this.prSelectSeed };
 		seedList.selectionAction = { this.prSelectSeed };
-		saveButton = this.prButton("save seed", 78, \line, { this.prSave });
+		saveButton = this.prButton("save snapshot", 104, \line, { this.prSave });
 		recallButton = this.prButton("recall", 66, \line, { this.prRecall });
 		refreshButton = this.prButton("refresh", 66, \line, { this.refresh });
 
 		seedPanel = UserView().fixedSize_(Size(280, fingerprintH))
 			.background_(palette[\recess]);
 		seedPanel.drawFunc = {
-			CQInk.drawToolBox(seedPanel.bounds.moveTo(0, 0), "saved seeds", skin)
+			CQInk.drawToolBox(seedPanel.bounds.moveTo(0, 0), "saved snapshots", skin)
 		};
 		seedPanel.layout = VLayout(
 			View().fixedHeight_(18),
@@ -100,7 +105,7 @@ CQGuiMemory {
 
 		detailTitle = this.prLabel("live patch · now", \line, \notice);
 		detailHint = this.prLabel(
-			"select a saved seed to compare it with the live patch", \whisper, \label);
+			"select a saved snapshot to compare it with the live patch", \whisper, \label);
 		fingerprint = UserView().fixedSize_(Size(fingerprintW, fingerprintH))
 			.background_(palette[\ground]);
 		fingerprint.drawFunc = {
@@ -186,7 +191,7 @@ CQGuiMemory {
 			selectedName = nil;
 			selectedData = nil;
 			detailTitle.string = "live patch · now";
-			detailHint.string = "select a saved seed to compare it with the live patch";
+			detailHint.string = "select a saved snapshot to compare it with the live patch";
 		} {
 			selectedName = seedNames.at(index - 1);
 			selectedData = snapshots !? { snapshots.read(selectedName.asSymbol) };
@@ -199,7 +204,7 @@ CQGuiMemory {
 
 	prSave {
 		if(snapshots.isNil) {
-			detailHint.string = "start the instrument before saving a seed";
+			detailHint.string = "start the instrument before saving a snapshot";
 			^this
 		};
 		snapshots.save(nameField.string);
@@ -211,7 +216,7 @@ CQGuiMemory {
 		if(snapshots.notNil and: { selectedName.notNil }) {
 			snapshots.recall(selectedName.asSymbol)
 		} {
-			detailHint.string = "select a saved seed before recall";
+			detailHint.string = "select a saved snapshot before recall";
 		};
 		^this
 	}
@@ -220,7 +225,7 @@ CQGuiMemory {
 		if(snapshots.notNil and: { aMenu.item.notNil } and: { bMenu.item.notNil }) {
 			snapshots.morph(aMenu.item.asSymbol, bMenu.item.asSymbol, durationBox.value)
 		} {
-			detailHint.string = "choose two saved seeds before morph";
+			detailHint.string = "choose two saved snapshots before morph";
 		};
 		^this
 	}

@@ -81,10 +81,7 @@ CQGuiShell {
 
 	applyState {
 		var skin = state.viewMode, palette = CQInk.palette(skin), tabIndex;
-		contentStack.index = if(skin == \day) { 0 } { 1 };
-		workspaceStack.index = if(state.drawerOpen) { 1 } { 0 };
 		tabIndex = #[inspector, spellbook, memory].indexOf(state.drawerTab) ? 0;
-		drawerStack.index = tabIndex;
 		view.background = palette[\ground];
 		toolbarView.background = palette[\recess];
 		drawerView.background = palette[\recess];
@@ -107,6 +104,22 @@ CQGuiShell {
 		toolbarView.refresh;
 		drawerView.refresh;
 		masterView.refresh;
+		// last, and only after every blocking write above has returned
+		this.prSwapStage(if(skin == \day) { 0 } { 1 },
+			if(state.drawerOpen) { 1 } { 0 }, tabIndex);
 		^this
+	}
+
+	// QtCollider deadlock guard: hiding a view under the mouse pointer makes Qt
+	// deliver enter/leave back into the language, and a *direct* property write
+	// blocks the language thread inside the same Qt call — Tab with the pointer
+	// over the Day panel froze the whole window (found 2026-07-21). Queued
+	// writes (direct: false) return immediately, so the swap and its hover
+	// events happen while nothing is blocking. The stack index therefore
+	// settles one GUI tick later; CQGuiShellState stays the synchronous truth.
+	prSwapStage { |contentIndex, workspaceIndex, drawerIndex|
+		contentStack.setProperty(\currentIndex, contentIndex, false);
+		workspaceStack.setProperty(\currentIndex, workspaceIndex, false);
+		drawerStack.setProperty(\currentIndex, drawerIndex, false);
 	}
 }

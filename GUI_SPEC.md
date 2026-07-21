@@ -365,6 +365,11 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
   The GUI teaches the language instead of competing with it.
 - **Memory**: a **seed bank** around the unchanged snapshot laws. The live patch is
   always the first truthful seed; saved names remain explicit save/recall targets.
+  **Two memory words, no third.** A *preset* is a patch recipe that lives in code
+  (weights plus the few knobs without which those bananas are deaf); a *snapshot*
+  is saved instrument state on disk (every param, the matrix, spesal). "Seed bank"
+  may name this page's metaphor, but every item in it is called a snapshot, and
+  the Inspector's recipes are called presets. Decided 2026-07-21.
   Selecting a seed previews a read-only mini patch fingerprint, route/polarity
   counts and outlines every knot that differs from the live matrix. A and B remain
   explicit saved seeds joined by the duration-controlled morph bridge; its meter
@@ -432,6 +437,12 @@ sub-event in `config.scd`, clamped on load.
      change notification (compass, breed, undo need it — 352 per-cell
      notifications per frame would melt the redraw);
   2. a **full-matrix read** (undo copies, corner stamps, spellbook export).
+- **View swaps must never block the language thread.** Hiding a view under the
+  mouse pointer makes Qt deliver its enter/leave events back into the language;
+  if the language thread is at that moment blocked inside the same Qt write, both
+  threads wait forever (Tab over the Day panel froze the window, 2026-07-21).
+  Day/Night and Drawer stage swaps are therefore queued, not direct, and the
+  serverless shell state — not the native widget index — is the synchronous truth.
 - **Redraw discipline**: ambient animation at telemetry rate (≤ 15 Hz); 60 Hz
   only during an active drag; avoid whole-window repaints; GUI CPU ≤ ~3 % on
   the reference laptop — SPEC §9's 25 % envelope must hold with the GUI open.

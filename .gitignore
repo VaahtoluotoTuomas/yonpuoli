@@ -10,3 +10,9 @@ tests/tmp/
 
 # Archipelago GUI runtime state (not a user preset)
 /presets/compass.cqcompass.scd
+
+# Session snapshots: CQ.snap writes these while playing — personal state, not
+# repo material. Only the documented example is versioned. (They will move to
+# snapshots/ when the folders are split; see PLAN.md.)
+/presets/*.cqsnap.scd
+!/presets/example.cqsnap.scd

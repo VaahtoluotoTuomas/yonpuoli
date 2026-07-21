@@ -149,6 +149,16 @@ aina `drawer`-nimisen tabin Nightin viereen, linjaa Inspectorin kaikki tiedot 11
 loom-railiin, korjaa Spellbookin Qt-rivivärit ja korvaa tyhjän Memory-lomakkeen seed
 bankilla. Tämä viimeistelykierros odottaa vielä käyttäjän visuaalista katselmointia.
 
+Viimeistelykierros commitoitiin `7eadd6f`. Sen jälkeen käyttäjä hyväksyi 2026-07-21
+kaksi asiaa. **Muistisanasto:** soittimessa on täsmälleen kaksi muistisanaa —
+*preset* on koodissa elävä patch-resepti (painot + ne nupit, joita ilman banaanit ovat
+kuuroja) ja *snapshot* on levylle tallennettu soittimen tila. Memory-sivu saa käyttää
+"seed bank" -metaforaa otsikkonaan, mutta sen kohteet ovat snapshotteja; GUI:n
+kolmas sana poistettiin. **Qt-jäätymiskorjaus:** näkymän piilotus hiiren osoittimen
+alta lukitsi koko ikkunan (Tab Day-paneelin päällä), koska Qt kutsui kieltä samalla
+kun kielisäie odotti Qt:ta. Day/Night- ja Drawer-vaihdot menevät nyt jonoon
+(`CQGuiShell.prSwapStage`), ja shell state on synkroninen totuus.
+
 G1 ei silti ole valmis: Drawerin viimeistelypalaute, soitettavuuskoe, `/cq_aura` ja lopullinen
 skaalaus-, kuuntelu- ja resurssiportti puuttuvat.
 
@@ -264,6 +274,13 @@ Night-organismeja tai Weather Machinea ei piirretä ennen G1:n behavior foundati
 
 ## Myöhemmin, ei tämän vaiheen scopea
 
+- **Snapshotit omaan kansioonsa.** Snapshotit kirjoitetaan yhä `presets/`-kansioon
+  (`config.folders.presets`), mikä on suurin yksittäinen syy sekoittaa preset ja
+  snapshot keskenään. Päätös 2026-07-21: lajitellaan myöhemmin omiin kansioihinsa —
+  `snapshots/` käyttäjän `.cqsnap.scd`-tiedostoille, `presets/` koodin ja käsin
+  kirjoitettujen patch-reseptien kodiksi. Vaatii `config.folders`-lisäyksen,
+  SPEC §7 -päivityksen ja vanhan polun lukemisen taaksepäin yhteensopivasti.
+  Ei tehdä kesken G1:n GUI-työn.
 - Space-body ja Space-estetiikka odottavat erillistä konseptipäätöstä.
 - Norns + grid + 16n + crow -portti on v2-visio; alkuperäinen tekninen muistio on
   arkistoidun suunnitelman lopussa.

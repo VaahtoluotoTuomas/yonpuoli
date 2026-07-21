@@ -734,12 +734,32 @@ CQ.patch(\envA, \coco1_inVca, -0.4);
 //    avaa ja nuoli ylös sulkee. Day/Night-valinta palauttaa soittimeen. Inspectorin route-
 //    tieto, presetit, matriisi ja leikkaamaton gesture-footer ovat samalla 1128 px raililla,
 //    ja ryhmäotsikot tuntuvat kuuluvan diagonaalilabeleihin. Spellbookin kaikki rivit ovat
-//    luettavia myös ilman valintaa. Memory näyttää live patch -sormenjäljen, saved seed
-//    -vertailun ja A→B morph bridgen; snapshotin valinta ei vielä recallaa sitä.
+//    luettavia myös ilman valintaa. Memory näyttää live patch -sormenjäljen, tallennetun
+//    snapshotin vertailun ja A→B morph bridgen; snapshotin valinta ei vielä recallaa sitä.
+// 8. Muistisanasto (päätös 2026-07-21): GUI:ssa on vain kaksi muistisanaa. Inspectorin
+//    header puhuu preseteistä (koodin patch-reseptit), Memory snapshoteista
+//    ("save snapshot", "saved snapshots"); sana "seed" saa esiintyä enää sivun
+//    otsikkometaforassa "memory · seed bank", ei yhdenkään kohteen niminä.
 CQ.patchPreset(\empty);   // lopuksi turvallinen, selkeä lähtötila
+```
+
+```supercollider
+// 9. Qt-jäätymisregressio (korjattu 2026-07-21 — tämä testi vartioi sitä).
+//    Aiemmin näkymän piilotus hiiren osoittimen alta lukitsi koko ikkunan.
+CQ.boot;
+// a) Jätä hiiri paikalleen Coco 1:n paneelin päälle (älä liikuta) ja paina Tab.
+//    -> Night-näkymän pitää vaihtua heti; ikkuna EI saa jäätyä ("Not Responding").
+// b) Paina Tab uudelleen samasta kohdasta -> takaisin Dayhin, yhä responsiivinen.
+// c) Toista sama hiiri Inspectorin loom-kentän päällä: avaa Drawer toolbarista,
+//    jätä osoitin solujen päälle ja vaihda sivua inspector -> spellbook -> memory
+//    sekä Day/Night-napista. Mikään vaihto ei saa jäätyä eikä jäädä väärään sivuun.
+// d) Vaihda näkymää ~20 kertaa nopeasti hiiri paneelin päällä -> ikkuna pysyy
+//    responsiivisena ja lopputila vastaa viimeistä painallusta.
 ```
 
 - [x] G1 Drawer behavior/touch 1–5 hyväksytty (2026-07-20; `cable opacity`: ei tarvita)
 - [x] G1 Drawer workbench + patch loom -kokeilu 6 hyväksytty (2026-07-20)
 - [ ] G1 Drawer toolbar/alignment/Spellbook/seed-bank-viimeistely 7 hyväksytty (pvm: ____)
+- [ ] G1 muistisanasto 8 tarkistettu (pvm: ____)
+- [ ] G1 Qt-jäätymisregressio 9 tarkistettu (pvm: ____)
 - [ ] G1 Drawer myöhempi soitettavuus- ja kuunteluportti hyväksytty (pvm: ____)

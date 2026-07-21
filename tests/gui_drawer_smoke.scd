@@ -122,8 +122,7 @@ CQInkControl.resetDrawErrors;
 								"open workbench returns to the live Spellbook page");
 							gui.shell.drawerButton.view.mouseDownAction.value(
 								gui.shell.drawerButton.view, 4, 4);
-							check.value(gui.shellState.drawerOpen.not
-								and: { gui.shell.workspaceStack.index == 0 },
+							check.value(gui.shellState.drawerOpen.not,
 								"same toolbar tab collapses workbench back to the instrument");
 							gui.shell.drawerButton.view.mouseDownAction.value(
 								gui.shell.drawerButton.view, 4, 4);
@@ -132,14 +131,23 @@ CQInkControl.resetDrawErrors;
 							"CQ_DRAWER_AFTER_VIEW_TOGGLE".postln;
 							check.value(gui.shellState.viewMode == \night,
 								"open workbench re-inks across the Day/Night hard cut");
-							check.value(gui.shellState.drawerOpen.not
-								and: { gui.shell.workspaceStack.index == 0 },
+							check.value(gui.shellState.drawerOpen.not,
 								"Day/Night destination returns from Drawer to the instrument");
-							gui.free;
-							AppClock.sched(0.2, {
-								if(ok) { "CQ_GUI_DRAWER_PASSED".postln; 0.exit } {
-									"CQ_GUI_DRAWER_FAILED".postln; 1.exit
-								};
+							// The stage swap is queued so hiding a view under the
+							// mouse can never deadlock Qt (CQGuiShell.prSwapStage):
+							// read the native stack on the next GUI tick.
+							AppClock.sched(0.15, {
+								try {
+									check.value(gui.shell.workspaceStack.index == 0,
+										"queued stage swap settles back on the instrument");
+									gui.free;
+									AppClock.sched(0.2, {
+										if(ok) { "CQ_GUI_DRAWER_PASSED".postln; 0.exit } {
+											"CQ_GUI_DRAWER_FAILED".postln; 1.exit
+										};
+										nil
+									});
+								} { |error| abort.value(error) };
 								nil
 							});
 						} { |error| abort.value(error) };
