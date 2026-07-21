@@ -226,6 +226,50 @@ CQNightGeometryTest : UnitTest {
 			"the bird box holds the bird; its crescent clears the rate moon");
 	}
 
+	// The reel mark crosses the groove instead of riding it (G2 gate): against
+	// the read head's bead it read as the same object with two functions.
+	// A tick needs the line's own direction, which the shell's radius only
+	// matches a quarter turn at a time.
+	test_reelNotchStandsAcrossItsLine {
+		var geo = CQNightGeometry.compute(1280, 570);
+		var coco = geo[\cocos][0];
+		[0.1, 0.35, 0.6, 0.9].do { |norm|
+			var normal = CQNightGeometry.spiralNormal(coco, norm);
+			var point = CQNightGeometry.spiralPoint(coco, norm);
+			var probe = CQNightGeometry.normalProbe;
+			var ahead = CQNightGeometry.spiralPoint(coco, norm + probe);
+			var behind = CQNightGeometry.spiralPoint(coco, norm - probe);
+			var length = max(0.001, CQNightGeometry.distance(behind, ahead));
+			var radius = max(0.001,
+				CQNightGeometry.distance(point, coco[\center]));
+			var dot = (((ahead.x - behind.x) * normal.x)
+				+ ((ahead.y - behind.y) * normal.y)) / length;
+			var radial = (((point.x - coco[\center].x) * normal.x)
+				+ ((point.y - coco[\center].y) * normal.y)) / radius;
+			var tip = CQNightGeometry.spiralDistance(coco,
+				point + (normal * 6));
+			this.assert((sqrt(normal.x.squared + normal.y.squared) - 1).abs < 1e-6,
+				"the notch's normal is a unit vector at %".format(norm));
+			this.assert(dot.abs < 0.05,
+				"the notch stands across the line, not along it (at %)"
+					.format(norm));
+			// a groove climbing 30 px per turn leans ~8° off the circle at
+			// the inner turns, and a norm landing exactly on a polyline
+			// vertex (0.35 is one) can add half a segment's 15° — so the
+			// tick must read as nearly radial, the independent check that
+			// this is not the tangent by accident
+			this.assert(radial.abs > 0.95,
+				"the notch points out of the shell, not around it (at %)"
+					.format(norm));
+			// 2.5 turns across 75 px of radius = 30 px between grooves, so a
+			// hovered 6 px half-reach leaves its own line without touching
+			// the neighbouring one
+			this.assert(tip > 3 and: { tip < 15 },
+				"a hovered notch tip clears its line but not the next (at %)"
+					.format(norm));
+		};
+	}
+
 	// the G2.3 clip fixes, pinned: no opaque endpoint view may cover the
 	// chevron glyph, the inner clock's face or any of its eight bead homes
 	test_inkClearances {

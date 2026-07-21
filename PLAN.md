@@ -358,14 +358,38 @@ coco-ulostulosta ja lintujen flutter.
   `GUI_SPEC.md` §16.6:een: läpinäkymätön endpoint-näkymä on velkaa saman
   kohteliaisuuden jokaiselle viivalle, jonka päälle se asetetaan.
   (2) **Lintujen tiedostonimet leikkaantuivat** — `labelRect` 14 → 20 px.
+- [x] **Dokumenttivelka maksettu 2026-07-21:** `SPEC.md` §6.2 kuvasi yhä v1.0:n
+  neljää saraketta. Se on nyt kirjoitettu uusiksi osoittimeksi `GUI_SPEC.md`:hen
+  + luetteloksi siitä, mitä GUI on skinistä riippumatta velkaa SPECille (mitä
+  sen on näytettävä, mikä on saavutettava ilman koodia, mikropolitiikka, pyhä
+  näppäinkartta, PANICin pysyvä näkyvyys, headless-vaatimus). `GUI_SPEC.md` §1:n
+  maininta "edit deferred until adoption" päivitetty vastaavasti.
 - [ ] Ei numeroita, Space-bodya tai dekoratiivista motionia; Master pysyy näkyvänä.
-- [ ] `GUI_SPEC.md` §13:n automaatio, kuuntelu ja käyttäjän visuaalinen hyväksyntä.
-  **Loppuportissa palataan kolmeen G2.4:n avoimeen havaintoon** (käyttäjä
-  2026-07-21, kirjattu `tests/manual_checklist.md`:n G2.4-kohtaan): nopeilla
-  nopeuksilla komeettaa on lähes mahdotonta klikata (skip-napautus liikkuvaan
-  kohteeseen), komeetta näyttää liian samalta kuin nopeuden reel pearl, ja
-  komeetan nykivän liikkeen luettavuus arvioidaan vielä kerran. Komeetta on
-  hyväksytty toimivana; näitä ei korjata ennen §13-porttia.
+- [x] **Loppuportin G2.6–G2.8 hyväksytty** (käyttäjä 2026-07-21): kuuntelugate,
+  skaalaus 100/125/150 % ja CPU-soak. Soakissa sclang liikkui `mayhem`illa
+  3–6,8 %; se osuu dokumentoituun haarukkaan (SPEC §9:n ~3 % koskee *soitetun
+  kokoista* patchia, ja 352 johtoa on 7× `auraCableLimit`) eikä ole regressio.
+  Laukaisijaa ei ole mitattu Qt:n paint-eventistä — se tehdään offscreen-
+  puskurin yhteydessä, ei arvaamalla (G1.3:n oppi).
+- [x] **G2.9: lukupään neljä havaintoa ratkaistu** (käyttäjä 2026-07-22).
+  Kolme päätöstä, kaikki `GUI_SPEC.md` §6.1/§16.6:een normatiivisina:
+  1. **Skip sai paikallaan pysyvän kodin** suun chevronin alta (§16.5:n
+     spark-glyyfi, 10 px osumalaatikko, 120 ms mustevälähdys millä tahansa
+     skipillä). Komeetta on nyt pelkkä näyttö. Perustelu: *liikkuva kohde ei
+     ole säädin* — komeetta oli yön ainoa liikkuva kosketuspiste, ja siihen
+     ehti osua vain nopeusasteikon sisimmällä kierroksella. Ei suun
+     yläpuolelle, vaikka se näytti symmetriseltä: spiraali **päättyy** suuhun
+     ja saapuu sinne ylhäältä, joten se puoli on itse ura (testi nappasi tämän).
+  2. **Reel pearl → reel notch**: nopeus piirtyy nyt lovena uran poikki
+     line-musteella. Vanha helmi oli 0,2 px komeettaa isompi ja samanvärinen —
+     ei ero, jota käsi voi käyttää. Spark-muste varattiin tapahtumille.
+  3. **Komeetalle kolmas tila**: kun `cocoN_skip`-lataus on palanut kahdella
+     peräkkäisellä `/cq_phase`-kehyksellä, komeetta lakkaa teeskentelemästä
+     pistettä ja piirtää silmästä ulos sen kantaman, jonka se oikeasti ehtii.
+     Sama laki kuin chevronin sukkulointitilalla: näytä regime, älä arvoa.
+     Ei uutta telemetriaa eikä ajastinta — huippupidätetty lataus kertoo sen jo.
+- [ ] `GUI_SPEC.md` §13:n käyttäjän visuaalinen hyväksyntä G2.9:n korjauksille
+  (lohko G2.9b) ja sen jälkeen G2:n kokonaishyväksyntä.
 
 **G2.3-kuuntelukierros 1 (2026-07-21):** kaikki seitsemän kosketuspistettä
 toimivat korvalla; palaute käsitelty samana päivänä (`GUI_SPEC.md` §6.1 ja

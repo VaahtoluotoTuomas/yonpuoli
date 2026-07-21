@@ -45,6 +45,10 @@ CQInk {
 
 	*palette { |skin = \day| ^palettes[skin] ?? { palettes[\day] } }
 	*strokes { ^(hairline: 1.0, normal: 1.5, strong: 2.0, state: 3.0) }
+
+	// §16.7: a momentary control shows a 120 ms ink flash. One constant, so the
+	// Day button and the night's mouth mark can never drift out of step.
+	*momentaryFlash { ^0.12 }
 	*metrics {
 		^(grid: 8, labelSize: 10, numberSize: 10, noticeSize: 11,
 			rangeSize: 9, knobDiameter: 26, featuredKnobDiameter: 34,

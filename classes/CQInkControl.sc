@@ -103,7 +103,7 @@ CQInkControl {
 	flash {
 		value = 1;
 		view.refresh;
-		AppClock.sched(0.12, {
+		AppClock.sched(CQInk.momentaryFlash, {
 			value = 0;
 			view.refresh;
 			nil

@@ -16,7 +16,8 @@ CQGuiNightMap {
 	var <geometry, <eyeActive = false;
 	var <eyeFreqNorm = 0.5, <eyeChaosNorm = 0.15;
 	var <speedNorms, <shellHover, <dialHover, <bodyHover, <rimHover, <ringHover = false;
-	var <sparkDirs, <sparkHover, sparkPainted, flipPainted;
+	var <sparkDirs, <skipHover, <skipFlash, sparkPainted, flipPainted;
+	var scatterCount, <scatterOn;
 	var <fireflyPhase = 0.0, lastFireflyTime, castlePainted;
 	var <holdStates, <flipStates, <rangeLetters, <sproutState;
 	var freed = false;
@@ -135,12 +136,17 @@ CQGuiNightMap {
 	// A move under ~1.5 px along the line keeps the frame.
 	paintPhase { |i|
 		var norm = gui.phaseNorms[i], mean = gui.phaseDirs[i];
-		var delta, mode, repaint = false;
+		var delta, mode, scatter, repaint = false;
 		if(freed) { ^this };
 		// the chevron's regime can change while the address barely moves — a
 		// shuttled loop goes nowhere — so it gets its own gate
 		mode = this.flipMode(i);
 		if(mode != flipPainted[i]) { flipPainted[i] = mode; repaint = true };
+		// so does the comet's: a hammered loop never leaves the eye, and a
+		// bead crawling near zero would read as "almost stopped" — the exact
+		// opposite of the truth
+		scatter = this.prScatter(i);
+		if(scatter != scatterOn[i]) { scatterOn[i] = scatter; repaint = true };
 		// the tail shares the chevron's one truth wherever the server reports a
 		// settled direction; the wrap-aware travel stays the fallback
 		if(mean.notNil and: { mean.abs > this.class.shuttleFloor }) {
@@ -161,6 +167,37 @@ CQGuiNightMap {
 			};
 		};
 		if(repaint) { shellViews[i].refresh };
+	}
+
+	// skip's charge is peak-held 0.15 s on the server (§9), so if it is still
+	// lit when the next 5 Hz phase frame lands, the loop was restarted inside
+	// that window. Two frames running means the head is being thrown back
+	// faster than the eye can follow, and the comet switches to its scatter.
+	// No new telemetry and no client-side timer: the charge already says it.
+	*scatterFrames { ^2 }
+
+	prScatter { |i|
+		var charge = gui.chargeFor(("coco" ++ (i + 1) ++ "_skip").asSymbol);
+		if(charge.notNil and: { charge >= 0.5 }) {
+			scatterCount[i] = scatterCount[i] + 1;
+		} {
+			scatterCount[i] = 0;
+		};
+		^scatterCount[i] >= this.class.scatterFrames
+	}
+
+	// any skip flashes the mouth mark, exactly as it flashes the Day button —
+	// both hang off the one `\action` notice, so code and patterns show too
+	flashSkip { |n|
+		var i = n.asInteger - 1;
+		if(freed or: { i < 0 } or: { i > 1 }) { ^this };
+		skipFlash[i] = true;
+		shellViews[i].refresh;
+		AppClock.sched(CQInk.momentaryFlash, {
+			if(freed.not) { skipFlash[i] = false; shellViews[i].refresh };
+			nil
+		});
+		^this
 	}
 
 	// the read head's stage-space home — nil until the server has reported
@@ -229,7 +266,10 @@ CQGuiNightMap {
 		dialHover = Array.fill(5, false);
 		bodyHover = Array.fill(5, false);
 		sparkDirs = [1, 1];
-		sparkHover = [false, false];
+		skipHover = [false, false];
+		skipFlash = [false, false];
+		scatterCount = [0, 0];
+		scatterOn = [false, false];
 		sparkPainted = Array.newClear(2);
 		flipPainted = Array.newClear(2);
 		rangeLetters = ["", "", "", "", ""];
@@ -425,25 +465,26 @@ CQGuiNightMap {
 	}
 
 	prHoverShell { |i, view, x, y|
-		var near = false, headNear = false, rim = false, point, spark, free = true;
+		var near = false, mark = false, rim = false, point, free = true;
 		if(geometry.notNil and: { view.notNil }) {
 			point = this.prStagePoint(view, x, y);
 			free = overlay.patchAt(point).isNil;
 			near = (CQNightGeometry.spiralDistance(geometry[\cocos][i], point)
 				<= 8) and: { free };
-			spark = this.sparkPoint(i);
-			headNear = near and: { spark.notNil } and: {
-				CQNightGeometry.distance(point, spark)
-					<= CQGuiNightTouch.sparkRadius };
-			// the winding surface is consulted first, so the rim cue never
-			// advertises a body solo where the next press would wind instead
-			rim = free and: { near.not }
+			// the skip mark sits off the winding surface, above the mouth
+			// jack, so it answers the hand on its own account
+			mark = free and: {
+				CQNightGeometry.markHit(geometry[\cocos][i][\skipMark], point)
+			};
+			// the winding surface and the mark are consulted first, so the rim
+			// cue never advertises a body solo where the next press would wind
+			rim = free and: { near.not } and: { mark.not }
 				and: { CQNightGeometry.shellRimHit(geometry[\cocos][i], point) };
 		};
-		if((near != shellHover[i]) or: { headNear != sparkHover[i] }
+		if((near != shellHover[i]) or: { mark != skipHover[i] }
 			or: { rim != rimHover[i] }) {
 			shellHover[i] = near;
-			sparkHover[i] = headNear;
+			skipHover[i] = mark;
 			rimHover[i] = rim;
 			if(freed.not) { shellViews[i].refresh };
 		};
@@ -656,7 +697,8 @@ CQGuiNightMap {
 		coco = geometry[\cocos][i];
 		CQInkNight.drawShell(coco, coco[\shellBox].leftTop,
 			holdStates[i], this.flipMode(i), speedNorms[i], shellHover[i],
-			gui.phaseNorms[i], sparkDirs[i], sparkHover[i], rimHover[i], \night);
+			gui.phaseNorms[i], sparkDirs[i], skipHover[i], skipFlash[i],
+			scatterOn[i], rimHover[i], \night);
 	}
 
 	prDrawBird { |i|

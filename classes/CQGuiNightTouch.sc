@@ -1,5 +1,5 @@
 // CQGuiNightTouch — the §6.1 night touch grammar: winding the shells, the
-// hold hearts, the flip chevrons, the read-head skip taps, the tide
+// hold hearts, the mouth's flip chevron and skip mark, the tide
 // crescents, the ring's eye and the spesal dial taps. Owns only transient
 // gesture state; every write goes through the CQState funnel (params) or the
 // Cocoquantus facade (spesal step, skip), exactly like the Day widgets. On every press the cable layer is
@@ -27,15 +27,10 @@ CQGuiNightTouch {
 	// px of drag for the full range of a crescent / the eye's axes
 	*crescentSensitivity { ^1 / 120 }
 	*eyeSensitivity { ^1 / 220 }
-	// a press lands on the read head inside this radius of its drawn home;
-	// a drag past the slop stops being a tap and becomes a wind
-	*sparkRadius { ^9 }
-	*skipSlop { ^4 }
-
-	// ---- shell: wind (speed) · heart (hold) · chevron (flip) ----
+	// ---- shell: wind (speed) · heart (hold) · chevron (flip) · mark (skip) ----
 
 	shellDown { |index, view, x, y, modifiers = 0, button = 0, clicks = 1|
-		var point = this.prPoint(view, x, y), geo = map.geometry, coco, n, spark;
+		var point = this.prPoint(view, x, y), geo = map.geometry, coco, n;
 		var body = ("coco" ++ (index + 1)).asSymbol;
 		if(geo.isNil) { ^this };
 		// §4.5 controls first, at every click count: a fast second tap belongs to
@@ -51,18 +46,14 @@ CQGuiNightTouch {
 			<= coco[\heartRadius]) {
 			^this.prToggle(("coco" ++ n ++ "Hold").asSymbol)
 		};
-		if(Rect.aboutPoint(coco[\chevron], 10, 10).containsPoint(point)) {
+		if(CQNightGeometry.markHit(coco[\chevron], point)) {
 			^this.prToggle(("coco" ++ n ++ "Flip").asSymbol)
 		};
-		// a press on the read head arms a skip tap; the same press still
-		// becomes a wind the moment the hand truly moves (skipSlop)
-		spark = map.sparkPoint(index);
-		if(spark.notNil and: {
-			CQNightGeometry.distance(point, spark) <= this.class.sparkRadius
-		}) {
-			wind = (index: index, skipArm: point,
-				angle: this.class.angleAt(coco[\center], point));
-			^this
+		// skip's own stationary mark above the mouth jack. It replaced the tap
+		// on the read-head comet at the G2 gate: the comet is the only target
+		// in the night that moves, and past a crawl it cannot be hit at all.
+		if(CQNightGeometry.markHit(coco[\skipMark], point)) {
+			^Cocoquantus.skip(n)
 		};
 		if(CQNightGeometry.spiralDistance(coco, point) <= 8) {
 			wind = (index: index,
@@ -79,14 +70,6 @@ CQGuiNightTouch {
 		if(wind.isNil) { ^this.forwardMove(view, x, y, modifiers) };
 		point = this.prPoint(view, x, y);
 		coco = map.geometry[\cocos][wind[\index]];
-		if(wind[\skipArm].notNil) {
-			// still a tap inside the slop — a tap must never nudge the speed
-			if(CQNightGeometry.distance(point, wind[\skipArm])
-				<= this.class.skipSlop) { ^this };
-			wind[\skipArm] = nil;
-			wind[\angle] = this.class.angleAt(coco[\center], point);
-			^this
-		};
 		angle = this.class.angleAt(coco[\center], point);
 		delta = this.class.angleDelta(wind[\angle], angle);
 		wind[\angle] = angle;
@@ -100,10 +83,6 @@ CQGuiNightTouch {
 
 	shellUp { |index, view, x, y, modifiers = 0, button = 0|
 		if(wind.notNil) {
-			if(wind[\skipArm].notNil) {
-				// the tap on the read head — skip's night home (§6.1)
-				Cocoquantus.skip(wind[\index] + 1);
-			};
 			wind = nil;
 			^this
 		};

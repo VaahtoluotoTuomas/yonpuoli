@@ -273,7 +273,7 @@ abort = { |error|
 																	- CQSpec.unmap(\qChaos,
 																		state.get(\qChaos))).abs < 1e-6 },
 																"the storm iris paints the funnel truth mid-drag");
-															// ---- the read head: '/cq_phase' spark + skip tap ----
+															// ---- the read head: '/cq_phase' spark, display only ----
 															check.value(map.sparkPoint(0).isNil,
 																"before telemetry the shell keeps its reviewed ink (no spark)");
 															gui.prPhaseFrame(1, 0.62);
@@ -288,17 +288,16 @@ abort = { |error|
 															speedBefore = state.get(\coco1Speed);
 															holdBefore = state.get(\coco1Hold);
 															flipBefore = state.get(\coco1Flip);
+															// the comet stopped being a target at the G2 gate: pressing
+															// it must now fall through to the winding surface it rides
 															local = sparkPoint - coco[\shellBox].leftTop;
 															shell.mouseDownAction.value(shell,
 																local.x, local.y, 0, 0, 1);
-															shell.mouseMoveAction.value(shell,
-																local.x + 2, local.y, 0);
 															shell.mouseUpAction.value(shell,
-																local.x + 2, local.y, 0, 0);
-															check.value(state.get(\coco1Speed) == speedBefore
-																and: { state.get(\coco1Hold) == holdBefore }
+																local.x, local.y, 0, 0);
+															check.value(state.get(\coco1Hold) == holdBefore
 																and: { state.get(\coco1Flip) == flipBefore },
-																"a tap on the read head never winds nor toggles (skip's home)");
+																"a press on the read head toggles nothing — it is display only");
 															shell.mouseDownAction.value(shell,
 																local.x, local.y, 0, 0, 1);
 															local = CQNightGeometry.spiralPoint(coco, 0.66)
@@ -312,15 +311,32 @@ abort = { |error|
 															shell.mouseUpAction.value(shell,
 																local.x, local.y, 0, 0);
 															check.value(state.get(\coco1Speed) > speedBefore,
-																"a drag past the slop is a wind, never a skip");
-															local = sparkPoint - coco[\shellBox].leftTop;
+																"the comet's home is winding surface like any other");
+															// ---- skip's stationary mark above the mouth jack ----
+															local = coco[\skipMark] - coco[\shellBox].leftTop;
+															speedBefore = state.get(\coco1Speed);
 															shell.mouseOverAction.value(shell,
 																local.x, local.y);
-															check.value(map.sparkHover[0],
-																"hovering the read head halos the comet");
+															check.value(map.skipHover[0],
+																"hovering the skip mark lights it");
+															check.value(map.rimHover[0].not,
+																"the mark's cue wins over the rim it hangs beside");
+															shell.mouseDownAction.value(shell,
+																local.x, local.y, 0, 0, 1);
+															shell.mouseUpAction.value(shell,
+																local.x, local.y, 0, 0);
+															check.value(state.get(\coco1Speed) == speedBefore
+																and: { state.get(\coco1Hold) == holdBefore }
+																and: { state.get(\coco1Flip) == flipBefore },
+																"pressing skip winds nothing and toggles nothing");
+															map.flashSkip(1);
+															check.value(map.skipFlash[0],
+																"any skip flashes the mouth mark (§16.7 momentary)");
 															shell.mouseLeaveAction.value(shell);
-															check.value(map.sparkHover[0].not,
-																"leaving rests the comet's halo");
+															check.value(map.skipHover[0].not,
+																"leaving rests the mark");
+															check.value(map.scatterOn[0].not,
+																"a quiet skip leaves the comet a point");
 															gui.prPhaseFrame(1, 0.64);
 															check.value(map.sparkDirs[0] == 1,
 																"a forward frame turns the comet's tail forward");
@@ -363,6 +379,22 @@ abort = { |error|
 																"night charge blocks land on their own lamps");
 															check.value(gui.chargeFor(\coco2_flip).isNil,
 																"a block that never reported stays unreported");
+															// ---- the comet's regime: a hammered loop never
+															// leaves the eye, and a bead crawling near zero
+															// would read as "almost stopped" — the opposite
+															// of the truth. The peak-held skip charge says so
+															// already, so no new telemetry and no timer.
+															gui.prChargeFrame(1, [0.62, 1.0]);
+															gui.prPhaseFrame(1, 0.04);
+															check.value(map.scatterOn[0].not,
+																"one lit frame is a skip, not yet a regime");
+															gui.prPhaseFrame(1, 0.03);
+															check.value(map.scatterOn[0],
+																"two lit frames running scatter the comet");
+															gui.prChargeFrame(1, [0.62, 0]);
+															gui.prPhaseFrame(1, 0.5);
+															check.value(map.scatterOn[0].not,
+																"a released skip returns the comet to a point");
 															// ---- the chevron reads the real travel ----
 															// \cqCoco takes max(param, matrix gate), so a
 															// patched flip reverses the loop without ever

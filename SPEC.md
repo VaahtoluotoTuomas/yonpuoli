@@ -371,38 +371,40 @@ macros, sources, global. Takeover mode configurable: `\jump` (default) or `\pick
 
 ### 6.2 GUI panel
 
-> **Version note:** the panel below documents the shipped v1.0 GUI. The adopted
-> post-v1.0 Archipelago GUI behavior and visual language are normative in
-> [`GUI_SPEC.md`](GUI_SPEC.md); until its G1–G3 gates ship, this subsection remains the
-> description of the running implementation. This SPEC still wins for parameters,
-> DSP and all §8 safety invariants.
+> **Version note (edited 2026-07-21, during G2):** GUI **structure, interaction
+> grammar, visual language, motion and constants are normative in
+> [`GUI_SPEC.md`](GUI_SPEC.md)** — one window with a Day panel, a Night map, a
+> persistent Master strip and a Drawer (inspector · spellbook · memory). Its G1
+> gate (day skin) shipped on 2026-07-21; G2 (night map) is in progress and G3
+> (weather machine) has not started. This subsection no longer describes a
+> layout; it keeps only what the GUI owes *this* document whatever its skin.
+> Parameters, ranges, curves, DSP and all §8 safety invariants remain SPEC's,
+> and §8 wins any conflict. The retired v1.0 four-column panel is preserved in
+> this section as it stood at the `v1.0` tag; its build log is
+> [`docs/history/PLAN_v1.0.md`](docs/history/PLAN_v1.0.md).
 
-One window, four columns mirroring the hardware layout — [Sources+Preamps] [Coco1]
-[Quantussy] [Coco2] — plus a master strip. Uses the banana color code as accents:
-orange = triangle, gray = castle/delay out, blue = FM, green = inputs/spesal,
-purple = SP.AF, yellow = organ, white = preamp.
+Requirements on any GUI, independent of skin:
 
-- Coco strip: in/speed/spaf/fb knobs (mirroring 16n), slot-mixer mini-faders
-  (pre/deck/q/x — the input mix feeding the loop, §5.3), **HOLD** button with red
-  LED, FLIP toggle, SKIP momentary, dolby 3-state switches,
-  bits/wrap/interp/dust/organ small controls, level/pan/send, in+out meters.
-- Quantussy: qFreq & qChaos big knobs, per-castle range 3-state + activity LED +
-  Spesal step button, 15-dot Spesal display, "shake" button + amplitude mini-knob
-  (0–1, default 0.3; shared with the `p` key), castle send mini-faders.
-- Sources: preamp src selectors + drive, mic gain (with warning color when >0 and
-  builtin output active), deck transport (load/next/prev, rate, loop). The whole
-  deck box is a file-drop target and shows the loaded file's name (updates on
-  every load path: drop, load button, folder navigation, code).
-- Master: volume, dry, space, patchDepth ("depth" — the global matrix tamer),
-  limiter gain-reduction meter, notice line (mic warning;
-  watchdog in M3), REC with elapsed time, PANIC (= `monitorMute`), snapshot save/recall
-  + A→B morph controls (patch-preset menu lives in the matrix section).
-- Matrix: grid view (16×22) with signed weight cells, preset menu.
-- Keyboard: `1/2` hold Coco1/2 · `q/w` flip · `a/s` skip · `3..7` spesal castle 1–5 ·
-  `r` rec · `space` panic · `p` shake. Panel widgets never take keyboard focus
-  (mouse-only), so the key map — panic included — always works after any click;
-  only text/number entry takes focus, click-to-focus only (never at boot, no
-  tab chain), and releases it on Enter.
+- **It must show**: in/out meters, limiter gain reduction, HOLD state, Spesal
+  states and castle activity, loaded deck filenames (updating on *every* load
+  path: drop, load button, folder navigation, code), REC state + elapsed time,
+  and the notice line.
+- **It must make reachable without code**: hold, flip, skip, Spesal step, dolby
+  and range switches, every §5 `CQSpec` parameter, patch presets, snapshots +
+  A→B morph, the full 16×22 signed-weight matrix, and file loading including
+  drag-and-drop.
+- **Mic**: the preamp's mic control carries a warning color when `micGain` > 0
+  while a builtin output is active, and the GUI never grows a second `micGain`
+  path (§7, §8.5).
+- **Keyboard** (unchanged, global in every view): `1/2` hold Coco1/2 · `q/w`
+  flip · `a/s` skip · `3..7` spesal castle 1–5 · `r` rec · `space` panic ·
+  `p` shake. Widgets never take keyboard focus (mouse-only), so the key map —
+  panic included — always works after any click; only text/number entry takes
+  focus, click-to-focus only (never at boot, no tab chain), and releases it on
+  Enter.
+- **PANIC and the notice line are visible at all times** and may be covered by
+  nothing — no view, no drawer, no overlay (§8.3).
+- The instrument must stay fully playable with the GUI closed (§6 intro).
 
 ### 6.3 Live-coding API (facade `Cocoquantus`, singleton `CQ`)
 

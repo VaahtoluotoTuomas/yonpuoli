@@ -133,6 +133,26 @@ CQNightGeometry {
 		^Point(a.x + ((b.x - a.x) * frac), a.y + ((b.y - a.y) * frac))
 	}
 
+	// the unit normal of the spiral's drawn line at `norm`. The reel notch
+	// crosses the groove, so it needs the line's own direction — not the
+	// shell's radius, which only coincides with it a quarter turn at a time.
+	// The probe stays inside one polyline segment (60 of them span 2.5 turns,
+	// so a wider chord would straddle a vertex and lean the tick by up to 7°).
+	*normalProbe { ^0.002 }
+
+	*spiralNormal { |coco, norm|
+		var a = this.spiralPoint(coco, (norm - this.normalProbe).clip(0, 1));
+		var b = this.spiralPoint(coco, (norm + this.normalProbe).clip(0, 1));
+		var length = max(0.001, this.distance(a, b));
+		^Point((b.y - a.y).neg, b.x - a.x) / length
+	}
+
+	// the mouth's two stationary transport marks (skip above the jack, flip
+	// below it): one box for the cue and for the act, as everywhere in §4.5
+	*markHit { |anchor, point|
+		^Rect.aboutPoint(anchor, 10, 10).containsPoint(point)
+	}
+
 	// the spesal dial annulus around a castle (a tap = one step)
 	*dialHit { |castle, point|
 		^(this.distance(point, castle[\center]) - castle[\dialR]).abs <= 8
@@ -269,6 +289,17 @@ CQNightGeometry {
 				// the spiral's innermost eye, the shell's own opaque layer box
 				// and the tide crescents under the three continuous moons
 				chevron: mouth + Point(0, max(24 * scale, 22)),
+				// skip's night home, landed at the G2 gate: a stationary mark
+				// under the flip chevron — the Day panel's own FLIP/SKIP pair,
+				// hanging in the one direction that is empty. The read-head
+				// comet lost the gesture because a moving target is not a
+				// control: past a crawl it cannot be hit at all, and a 5 Hz
+				// frame draws it stale. Above the mouth looked symmetrical and
+				// is wrong: the spiral *ends* at the mouth and arrives there
+				// from above, so that side is the groove itself (caught by the
+				// winding-surface assert, CQGuiNightTouchTest).
+				skipMark: mouth + Point(0, max(24 * scale, 22)
+					+ max(22 * scale, 20)),
 				heartRadius: 14,
 				shellBox: Rect.aboutPoint(center,
 					outerR + (30 * scale), outerR + (30 * scale)),

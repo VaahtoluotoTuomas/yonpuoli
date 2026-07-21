@@ -601,6 +601,9 @@ CQGui {
 		var b = skipButtons[n];
 		if(cleaned) { ^this };
 		b !? { b.flash };
+		// the night's mouth mark is momentary too, and hangs off this same
+		// notice — so a skip from the keys, code or a pattern shows in both
+		nightMap !? { |map| map.flashSkip(n) };
 	}
 
 	// each stage's cable overlay keeps its own fixed skin (Day ink, Night

@@ -1052,7 +1052,7 @@ CQ.patchPreset(\empty);
 - [x] G2.4 lukupääkomeetta ja skip-napautus hyväksytty (pvm: 2026-07-21)
 
 **Palattava G2:n loppytestauksessa (käyttäjän havainnot 2026-07-21).** Komeetta
-hyväksyttiin toimivana, mutta kolme asiaa jäi auki eikä niitä korjata nyt vaan
+hyväksyttiin toimivana, mutta neljä asiaa jäi auki eikä niitä korjata nyt vaan
 katselmoidaan uudelleen §13-portissa:
 
 1. **Nopeilla nopeuksilla komeettaa on lähes mahdotonta klikata** — skip-napautus
@@ -1189,4 +1189,155 @@ CQ.boot;
 // - JOEN VIIVA: vie osoitin linnakkeiden väliselle rengasviivalle — viiva
 //   kirkastuu. Kaksoisnapautus = koko Quantussyn solo. Renkaan sisävesi ja
 //   kuoren nurkat eivät enää tee mitään (ne kuuluvat lassolle).
+```
+
+## G2 LOPPUPORTTI — kuuntelu, skaalaus, resurssit (GUI_SPEC §13)
+
+Sama portti kuin G1:llä, yön pinnalle. Ei rakenna uutta: toteaa, kestääkö
+arkkipelago soittamisen. Automaatio on ajettu 2026-07-21 ja se on vihreä:
+`CQ_COMPILE_OK` · 4 863 unit-passia / 0 failurea · `CQ_SAFETY_PASSED` ·
+`CQ_HOLD_OK` · `CQ_GUI_SHELL_PASSED` · `CQ_GUI_DRAWER_PASSED` ·
+`CQ_GUI_DRAWER_REENTRY_PASSED` · `CQ_GUI_NIGHT_PASSED`. Luokkiin ei ole
+koskettu tämän jälkeen, joten uudelleenkäännöstä ei tarvita ennen G2.6:tta.
+
+```supercollider
+// G2.6 — kuuntelugate: yö itsenäisenä soittimena, KORVALLA.
+CQ.boot; CQ.patchPreset(\empty);
+// Vaihda Tabilla yöhön ja pysy siellä koko lohkon ajan. Day on kielletty.
+// 1. Pudota äänitiedosto VASEMPAAN lintuun. Nimi ilmestyy sen alle. Nosta
+//    saman kuoren tide-kuuta (in) niin että tiedosto kuuluu loopissa —
+//    slot-oletukset (pre 1, deck 1) riittävät, mitään ei tarvitse säätää.
+// 2. Kelaa kuorta: vedä spiraaliviivaa suuta kohti = nopeutuu, sisäsilmää
+//    kohti = hidastuu. Repitch kuuluu portaattomasti, ei rasahduksia.
+// 3. Paina sisäsilmän sydäntä: loop sulkeutuu (kehä punaisena) ja jää
+//    soimaan. Paina uudestaan: aukeaa. Vertaa 1-näppäimeen — sama teko.
+// 4. Vedä ringin silmää: pysty = qFreq, vaaka = qChaos. Viiden linnakkeen
+//    sää yhdestä sormesta, ilman numeroita.
+CQ.patch(\tri3, \coco1_flip, 0.9);
+// 5. LAMPPU JA SCHMITT: coco 1:n flip-kuun lamppu latautuu tri3:n tahdissa
+//    ja syttyy kukintaan kun kynnys ylittyy — ja juuri silloin loopin suunta
+//    kääntyy kuuluvasti. Laske painoa 0.25:een: lamppu sykkii mutta ei syty,
+//    eikä suunta käänny. Näkyvä ja kuuluva kertovat saman.
+CQ.patch(\tri3, \coco1_flip, 0);
+CQ.patchPreset(\classic); CQ.set(\qFreq, 0.15);
+// 6. JOEN SUUNTA: hidasta ringi niin että kuulet yksittäiset kierrokset.
+//    Napauta castle 1:n sisäkelloa ja seuraa, mihin häiriö etenee: sen on
+//    kuuluttava seuraavaksi siinä linnakkeessa, jota nuoli osoittaa (1→2→3
+//    →4→5). Piirretyn renkaan suunnan pitää vastata \classic-FM-renkaan
+//    kuultavaa kiertoa. Jos ne ovat eri suuntiin, se on aito bugi.
+// 7. Soita ~10 min pelkällä yöllä: kaikki seitsemän kosketuspistettä, johtoja
+//    sisään ja ulos, lasso ja Ctrl+Z. Mikään ele ei saa tuottaa tasohyppyä,
+//    klikkiä eikä jumia. Master-strip pysyy näkyvissä ja space/PANIC toimii.
+CQ.patchPreset(\empty);
+```
+
+```supercollider
+// G2.7 — skaalaus 100 / 125 / 150 %, yön pinta. Windows: Asetukset > Näyttö >
+// Skaalaus. Qt lukee arvon käynnistyessään: vaihda, käynnistä SC uudelleen ja
+// aja tämä jokaisella kolmella arvolla.
+CQ.boot; CQ.patchPreset(\classic);
+// Tab yöhön.
+// - Kehot skaalautuvat ikkunan mukana, muste ei: viivat pysyvät ohuina ja
+//   teksti 10 px:ssä (§16.10). Yö ei saa muuttua sumeaksi eikä paksuksi.
+// - Lintujen tiedostonimet: eivät leikkaannu mistään suunnasta millään
+//   skaalalla. Pitkä nimi lyhenee vain lopusta.
+// - Juuret ulottuvat alareunaan asti ja kärkipallot pysyvät kiinni viivassa.
+// - Spesal-kuun laatikko ei peitä sisäkelloa millään skaalalla, ja chevron
+//   pysyy kuoren laatikon sisällä myös pienimmässä ikkunassa.
+// - Master-strip pysyy näkyvissä, PANIC tavoitettavissa, ei scrollipalkkeja.
+// - Maksimoi ja palauta: mikään keho ei jää väärään kokoon eikä siirry.
+CQ.patchPreset(\empty);
+```
+
+```supercollider
+// G2.8 — CPU / resurssisoak, YÖ auki koko ajan. Yö lisäsi kolme telemetria-
+// virtaa: aura, 9 latauskanavaa 15 Hz ja 2 vaihekanavaa 5 Hz.
+CQ.boot; CQ.patchPreset(\mayhem);
+CQ.set(\coco1SlotQ, 1); CQ.set(\coco2SlotQ, 1);
+CQ.set(\coco1Send, 0.5); CQ.set(\coco2Send, 0.5); CQ.set(\spaceMix, 0.4);
+CQ.server.avgCPU.round(0.1);   // SPEC §9:n katto on 25 %
+CQ.server.peakCPU.round(0.1);
+// - Pidä ikkuna AUKI yössä. sclangin CPU Task Managerista hiiri paikallaan:
+//   tavoite ~<= 3 %, sama kuin Dayssa. Vertaa vaihtamalla Day/yö: eron pitää
+//   olla pieni kumpaankin suuntaan.
+// - mayhem = 352 johtoa eli yli auraCableLimitin (48): johdot EIVÄT saa
+//   sykkiä, mutta 9 lamppua ja kaksi komeettaa elävät yhä.
+// - Liikuta hiirtä nopeasti yön yli ja kelaa kuorta: nousu on sallittu, mutta
+//   paluun lepotasolle pitää olla välitön.
+// - Anna soida 15 min: ei muistin kasvua, ei hidastumista, ei virheryöppyä.
+CQ.patchPreset(\empty);
+```
+
+```supercollider
+// G2.9 — lukupään neljä avointa havaintoa (G2.4). Tässä ei korjata mitään:
+// tämä lohko on päätöskohta. Aja ja kerro, mitkä niistä oikeasti haittaavat.
+CQ.boot; CQ.patchPreset(\empty);
+CQ.deckA.load("123681__aidenfry__cricket-and-bird-field-recording.wav");
+CQ.set(\coco1SlotDeck, 1); CQ.set(\coco1In, 0.7);
+// Anna loopin täyttyä muutama sekunti, sitten sulje se:
+CQ.hold(1, 1);
+// Tab yöhön, coco 1.
+// 1. KLIKATTAVUUS: nosta speediä asteittain ja yritä napauttaa komeettaa
+//    (= skip). Kerro, missä kohtaa se muuttuu käytännössä mahdottomaksi.
+//    Vaihtoehdot ratkaisuksi: osumasäde kasvaa nopeuden mukana · osuma
+//    viimeisimpään PIIRRETTYYN kotiin nykyisen sijaan · skipille toinen koti.
+// 2. SEKAANTUMINEN: katso komeettaa (luupin osoite) ja reel pearlia
+//    (nopeuden arvo) yhtä aikaa. Erottuvatko ne toisistaan liikkeessä?
+// 3. NYKIMINEN: 5 Hz on tietoinen piirtobudjettipäätös (§9/§10). Lue sitä
+//    liikkeenä hitaalla nopeudella — riittääkö se?
+// 4. GLITCH: nosta speed korkeaksi. Kun 5 Hz ohittaa kokonaisia kierroksia,
+//    osoite hyppii satunnaisen näköisesti. Kerro, näyttääkö se rikkinäiseltä
+//    vai hyväksyttävältä "nopealta". (Kohdat 3 ja 4 ovat sama juuri.)
+CQ.hold(1, 0); CQ.patchPreset(\empty);
+```
+
+- [x] G2.6 kuuntelugate hyväksytty (pvm: 2026-07-21)
+- [x] G2.7 skaalaus 100/125/150 % hyväksytty (pvm: 2026-07-21)
+- [x] G2.8 CPU/resurssisoak hyväksytty (pvm: 2026-07-21; sclang 3–6,8 %
+  `mayhem`illa = 352 johtoa, 7× `auraCableLimit`. SPEC §9:n ~3 % koskee
+  soitetun kokoista patchia, joten tämä ei ole regressio. Kaapelikerroksen
+  todellinen laukaisija mitataan vasta offscreen-puskurin yhteydessä.)
+- [ ] G2.9 lukupään havainnot ratkaistu (kolme päätöstä tehty ja toteutettu
+  2026-07-22 — tarkista lohko G2.9b)
+- [ ] **G2 valmis** (pvm: )
+
+**G2.9:n ratkaisut (2026-07-22).** Kolme päätöstä, kaikki nyt normatiivisia
+(`GUI_SPEC.md` §6.1 ja §16.6):
+
+1. **Skip sai oman paikallaan pysyvän merkin** suun chevronin alle. Komeetta on
+   pelkkä näyttö. *Liikkuva kohde ei ole säädin.*
+2. **Nopeuden helmi → lovi uran poikki.** Muoto erottaa, ei sävy: asetus
+   asteikolla vs. liikkuva kappale. Spark-muste on nyt varattu tapahtumille.
+3. **Komeetalle kolmas tila.** Kun skipiä hakataan nopeammin kuin 5 Hz näyttää,
+   komeetta piirtää silmästä ulos sen kantaman, jonka se ehtii — regime, ei arvo.
+
+```supercollider
+// G2.9b — kolmen ratkaisun tarkistus SILMÄLLÄ. (Ctrl+Shift+L ensin!)
+CQ.boot; CQ.patchPreset(\empty);
+CQ.deckA.load("123681__aidenfry__cricket-and-bird-field-recording.wav");
+CQ.set(\coco1SlotDeck, 1); CQ.set(\coco1In, 0.7);
+// Tab yöhön, coco 1 (vasen kuori).
+// 1. SKIP-MERKKI: suun alla on nyt kaksi merkkiä allekkain — chevron (flip) ja
+//    sen alla kipinämerkki (skip). Vie osoitin kipinän päälle: se kirkastuu.
+//    Napauta: loop hyppää alkuun (kuuluu) ja merkki välähtää 120 ms.
+// 2. VÄLÄHDYS JOKA REITILTÄ: paina `a`-näppäintä ja aja `CQ.skip(1)` — merkin
+//    pitää välähtää molemmista, aivan kuten Dayn SKIP-nappi. Vaihda Dayhin ja
+//    takaisin: molemmat välähtävät samalla tavalla.
+// 3. KOMEETTA EI OLE ENÄÄ KOHDE: nosta speed keskitasolle ja yritä painaa
+//    komeettaa. Sen pitää nyt KELATA (se on kelauspintaa kuten muukin
+//    spiraaliviiva) — ei skipata, ei jumittaa.
+CQ.set(\coco1Speed, 0.3);
+// 4. LOVI: nopeutta näyttävä merkki on nyt POIKKIVIIVA uran yli, ei pallo.
+//    Katso komeettaa ja lovea yhtä aikaa: erottuvatko ne nyt liikkeessä ja
+//    paikallaan? Vie osoitin spiraalille — viiva kirkastuu ja lovi pitenee.
+//    Kelaa vedolla: lovi liikkuu sormen mukana kuten ennenkin.
+CQ.patch(\tri5, \coco1_skip, 0.8);
+// 5. KOLMAS TILA: tri5 on audiotaajuinen, joten skip laukeaa satoja kertoja
+//    sekunnissa. Komeetan pitää nyt muuttua sumeaksi kaareksi, joka lähtee
+//    sisäsilmästä ja kertoo kuinka pitkälle luku ehtii — ei enää yksinäiseksi
+//    palloksi, joka näyttää melkein pysähtyneeltä. Vertaa: laske paino 0:aan,
+//    ja komeetan pitää palata pisteeksi seuraavan parin kehyksen sisällä.
+CQ.patch(\tri5, \coco1_skip, 0);
+// 6. Toista kohdat 1 ja 5 coco 2:lle (oikea kuori) — merkit ovat peilikuvia.
+CQ.patchPreset(\empty);
 ```

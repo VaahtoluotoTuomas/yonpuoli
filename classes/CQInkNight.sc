@@ -107,18 +107,24 @@ CQInkNight {
 	// the delay RAM as a coconut cross-section, drawn by the shell's own opaque
 	// layer: spiral (the §6.1 winding surface), hold seal, the hold heart at
 	// the innermost eye, the press-to-flip mouth chevron, the org stem and the
-	// reel pearl — a spark bead riding the line at the speed's norm (inner eye
-	// = slowest, mouth = fastest), the winding gesture's live hand. A static
-	// hover (§4.5) brightens the line and halos the pearl: the grab cue.
+	// reel notch — a tick ACROSS the line at the speed's norm (inner eye =
+	// slowest, mouth = fastest), the winding gesture's live hand; a static
+	// hover (§4.5) lengthens and thickens it: the grab cue. It was a bead
+	// until the G2 gate, and against the read head's bead it read as the same
+	// object with two functions — 0.2 px of radius is not a difference a hand
+	// can use. A speed is a *setting on a scale*, so it is drawn as a scale
+	// mark in line ink; the only travelling body on this shell is the read
+	// head, and bone spark ink now belongs to events alone (§16.2: the
+	// difference is form first).
 	// The read head is the comet: a bone dot at the loop's true address
 	// (sparkNorm, nil until '/cq_phase' has reported — no telemetry is not
-	// zero, §9) with a short tail trailing where it came from, so the pearl
-	// (a plain bead) and the head (a comet) never blur by form (§16.2's
-	// "no meaning by hue alone"). Tapping the head is skip's night home.
+	// zero, §9) with a short tail trailing where it came from. Display only
+	// since the G2 gate; the hand's skip lives on the mouth's own mark.
 	*drawShell { |coco, origin, holdOn = false, flipMode = \forward,
 		speedNorm = 0.5, hover = false, sparkNorm, sparkDir = 1,
-		sparkHover = false, rimHover = false, skin = \night|
-		var palette = CQInk.palette(skin), pearl, spark, tail;
+		skipHover = false, skipFlash = false, scatter = false,
+		rimHover = false, skin = \night|
+		var palette = CQInk.palette(skin), notch, normal, reach, spark, tail;
 		Pen.translate(origin.x.neg, origin.y.neg);
 		// the shell's rim is its §6 body handle: hovering it draws the outline
 		// the double-click acts on, in whisper hairline so the danger-red hold
@@ -160,36 +166,49 @@ CQInkNight {
 		Pen.width = CQInk.strokes[\hairline];
 		Pen.line(coco[\orgSpiralPoint], coco[\orgCenter]);
 		Pen.stroke;
-		// the reel pearl (spark, like the clock hands — the coming read-head
-		// spark stays bone so the two never blur)
-		pearl = CQNightGeometry.spiralPoint(coco, speedNorm ? 0.5);
-		Pen.fillColor = palette[\spark];
-		Pen.addOval(Rect.aboutPoint(pearl, 2.2, 2.2));
-		Pen.fill;
-		if(hover) {
-			Pen.strokeColor = palette[\spark].copy.alpha_(0.5);
-			Pen.width = CQInk.strokes[\hairline];
-			Pen.addOval(Rect.aboutPoint(pearl, 5, 5));
-			Pen.stroke;
-		};
-		// the read head, drawn last so the moving comet passes over the pearl
+		// skip's stationary home above the mouth jack, the chevron's mirror
+		// (§6.1). Momentary, so it carries §16.7's 120 ms ink flash — fired by
+		// ANY skip (mark, `a/s`, code, pattern, matrix gate), exactly like the
+		// Day button it mirrors, since both hang off the one `\action` notice.
+		CQInk.drawGlyph(\skip, Rect.aboutPoint(coco[\skipMark], 4.5, 4.5),
+			if(skipFlash) { palette[\spark] } {
+				palette[if(skipHover) { \line } { \whisper }]
+			});
+		// the reel notch: a tick across the groove, never a bead
+		notch = CQNightGeometry.spiralPoint(coco, speedNorm ? 0.5);
+		normal = CQNightGeometry.spiralNormal(coco, speedNorm ? 0.5);
+		reach = if(hover) { 6 } { 4 };
+		Pen.strokeColor = palette[\line];
+		Pen.width = CQInk.strokes[if(hover) { \strong } { \normal }];
+		Pen.line(notch - (normal * reach), notch + (normal * reach));
+		Pen.stroke;
+		// the read head, drawn last so the moving comet passes over the notch
 		sparkNorm !? {
 			spark = CQNightGeometry.spiralPoint(coco, sparkNorm);
-			tail = CQNightGeometry.spiralPoint(coco,
-				(sparkNorm - (sparkDir.sign * 0.01)).clip(0, 1));
-			Pen.strokeColor = palette[\spark].copy.alpha_(0.45);
-			Pen.width = CQInk.strokes[\hairline];
-			Pen.line(tail, spark);
-			Pen.stroke;
+			if(scatter) {
+				// re-triggered faster than 5 Hz can show: the comet stops
+				// pretending to be a point and draws the reach it actually
+				// manages out of the eye. Same law as the chevron's shuttle
+				// state — show the regime, not a value the frame cannot carry.
+				Pen.strokeColor = palette[\spark].copy.alpha_(0.4);
+				Pen.width = CQInk.strokes[\normal];
+				Pen.moveTo(CQNightGeometry.spiralPoint(coco, 0));
+				5.do { |step|
+					Pen.lineTo(CQNightGeometry.spiralPoint(coco,
+						sparkNorm * ((step + 1) / 5)))
+				};
+				Pen.stroke;
+			} {
+				tail = CQNightGeometry.spiralPoint(coco,
+					(sparkNorm - (sparkDir.sign * 0.01)).clip(0, 1));
+				Pen.strokeColor = palette[\spark].copy.alpha_(0.45);
+				Pen.width = CQInk.strokes[\hairline];
+				Pen.line(tail, spark);
+				Pen.stroke;
+			};
 			Pen.fillColor = palette[\spark];
 			Pen.addOval(Rect.aboutPoint(spark, 2, 2));
 			Pen.fill;
-			if(sparkHover) {
-				Pen.strokeColor = palette[\spark].copy.alpha_(0.5);
-				Pen.width = CQInk.strokes[\hairline];
-				Pen.addOval(Rect.aboutPoint(spark, 5.5, 5.5));
-				Pen.stroke;
-			};
 		};
 	}
 

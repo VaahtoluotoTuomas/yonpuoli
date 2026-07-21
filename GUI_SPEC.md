@@ -13,9 +13,11 @@ need is here.
 Relationship to the other documents:
 
 - **SPEC.md stays normative** for parameters, ranges, curves, and safety (§8
-  wins any conflict with this file). SPEC §6.2 describes the v1.0 panel; when
-  this spec ships, §6.2 gets a one-line pointer here (that edit is deferred
-  until adoption).
+  wins any conflict with this file). SPEC §6.2 was rewritten on 2026-07-21
+  (during G2): it points here for GUI structure and keeps only the
+  skin-independent obligations — what the GUI must show, what it must make
+  reachable without code, the mic policy, the sacred keyboard map, and PANIC's
+  permanent visibility. The v1.0 panel it used to describe is history.
 - **ARCHITECTURE.md stays normative** for code shape (pure-view GUI, funnels,
   ownership).
 - Nothing in this document changes DSP behavior. The only server-side changes
@@ -290,7 +292,7 @@ eye but must keep the topology truths):
   brightens). Cue and action always share one geometry; a cue that covers more
   or less ground than its action is a cue that lies. Controls-first still binds
   at every click count — a fast second tap on the inner clock, the heart, the
-  chevron, the read head or the eye belongs to that touch point, and where the
+  chevron, the skip mark or the eye belongs to that touch point, and where the
   winding surface runs close to the shell's rim it is the wind that answers,
   with the wind's own cue.
 - **Night toolbar** (small, lowercase): patch-preset menu · shake · grow ·
@@ -307,17 +309,26 @@ an action the next gesture will not receive).
 
 | touch | gesture | writes |
 |---|---|---|
-| **wind the shell** | left-drag along the spiral's drawn line (≤ 8 px); turning toward the mouth winds faster, against it slower — the two shells mirror like their spirals. The reel pearl rides the line as the live hand, and hover brightens the grab (§16.6) | `cocoN speed` (relative, ~2 turns = full range) |
+| **wind the shell** | left-drag along the spiral's drawn line (≤ 8 px); turning toward the mouth winds faster, against it slower — the two shells mirror like their spirals. The reel notch rides the line as the live hand, and hover brightens the grab (§16.6) | `cocoN speed` (relative, ~2 turns = full range) |
 | **the shell's heart** | press the small mark at the spiral's innermost eye: seal / crack the loop; red while sealed (one law with the outer seal and HOLD) | `cocoN hold` toggle |
 | **the mouth chevron** | press the read-direction chevron at the mouth | `cocoN flip` toggle |
-| **tap the read head** | press the bone comet riding the spiral at the loop's true address (≤ 9 px of its drawn home); a drag past 4 px becomes a wind instead, and a tap never nudges the speed (landed 2026-07-21) | `skip(n)` — the loop restarts from the eye |
+| **the mouth's skip mark** | press the spark glyph hanging under the chevron (10 px box, stationary). Momentary: 120 ms ink flash on *any* skip, the Day button's law (§16.7) | `skip(n)` — the loop restarts from the eye |
 | **tide crescents** | a small crescent below each spaf / inVca / fbVca moon, luminous fill = value; vertical drag pours more or less. Socket beside its control — §1's proximity law, reborn at night. spaf wears purple | `cocoN spaf / in / fb` |
 | **the ring's eye** | the storm iris at the ring's center (§16.6); grab and drag — vertical = pitch, horizontal = chaos, and the iris itself answers on both axes. The weather of five castles from one fingertip | `qFreq` (y) + `qChaos` (x), relative |
 | **dial tap** | press a castle's inner clock — the dial face inside the body (§16.6): one step (same act as the day step button and keys 3..7) | `spesal(k)` step |
 | **bird drop + wing crescent** | dropping an audio file on a bird loads that deck (pulled forward from the G2 toolbar step — loading is core); the crescent under the wing is the deck's level | deck load · `deckN level` |
 
-Skip's night home landed 2026-07-21: tapping the read-head comet itself (the
-`a/s` keys remain). The loop's finer diet — slots, dolby,
+Skip's night home moved at the G2 gate (2026-07-22, replacing the read-head
+tap that landed 2026-07-21; the `a/s` keys remain). **A moving target is not a
+control.** The comet was the only touch point in the night that travels, and
+the hand could only land on it while the loop crawled — past the innermost
+turn of the speed scale it was unhittable, and a 5 Hz frame draws it stale on
+top of that. Its home is now a stationary mark under the flip chevron: the Day
+panel's own FLIP/SKIP pair, in the one direction around the mouth that is
+empty. Not above the jack, which looks symmetrical and is wrong — the spiral
+*ends* at the mouth and arrives there from above, so that side is the groove
+itself. The comet keeps its whole job, which was always the honest one: saying
+where the loop is reading. The loop's finer diet — slots, dolby,
 bits, interpolation, ranges — remains day work: the slot defaults (pre 1,
 deck 1) make a dropped file audible at night with `in` up. Body solo-light
 and the night toolbar arrive with the later G2 steps as planned.
@@ -444,7 +455,7 @@ meters:
 |---|---|---|---|
 | G1 | `/cq_aura` | 16 source magnitudes (lagged \|amp\|, canonical source order) | jack glow, cable pulse, root/castle/body glow |
 | G2 | `/cq_phase` | coco read-head position 0..1 **and the read direction as an audio-rate mean** (`Lag.ar(dir, 0.15)`), replyID 1/2 (landed 2026-07-21 as its own message at **5 Hz** on purpose: the send rate is the two shells' repaint ceiling — §10, one shell repaint ≈ 30 Pen calls, so 15 Hz would spend the whole ~3 % GUI budget on two dots). The direction is a *mean*, not a sample, because a flip banana can reverse the loop far faster than 5 Hz can sample it: ±1 = settled, near 0 = shuttling. Deriving direction client-side from consecutive positions aliased and was replaced | the spiral spark, the comet's tail and the mouth chevron |
-| G2 | `/cq_charge` | the 9 gate/trig destination sums (post-weight, pre-Schmitt); landed 2026-07-21 as **three 15 Hz blocks** sent by the synths that already compute those sums — coco 1 (replyID 1) and coco 2 (replyID 2) report their own flip/skip pair, the quantussy (replyID 3) all five spesal sums. Each sum is **peak-held at audio rate** (instant rise, 0.15 s fall) before `A2K`, because a trigger crossing can last a single sample and a plain control-rate sample would miss it; the fall is also §16.8's fired bloom. No second copy of the sums exists in the graph, so a lamp can never disagree with its Schmitt | charge lamps — the answer to "why is my flip banana silent" |
+| G2 | `/cq_charge` | the 9 gate/trig destination sums (post-weight, pre-Schmitt); landed 2026-07-21 as **three 15 Hz blocks** sent by the synths that already compute those sums — coco 1 (replyID 1) and coco 2 (replyID 2) report their own flip/skip pair, the quantussy (replyID 3) all five spesal sums. Each sum is **peak-held at audio rate** (instant rise, 0.15 s fall) before `A2K`, because a trigger crossing can last a single sample and a plain control-rate sample would miss it; the fall is also §16.8's fired bloom. No second copy of the sums exists in the graph, so a lamp can never disagree with its Schmitt | charge lamps — the answer to "why is my flip banana silent" — and, for `cocoN_skip`, the comet's scatter regime (§16.6) |
 
 `/cq_charge` canonical channel order = the matrix destination order filtered
 to gates/trigs, nine channels: `coco1_flip, coco1_skip, coco2_flip,
@@ -806,21 +817,37 @@ matrix-driven flip shows truthfully — and the **mouth chevron reads that same
 travel OR-ed with the FLIP param**, exactly as `\cqCoco` takes
 `max(param, matrix gate)` (amended 2026-07-21: the chevron used to read the
 param alone, so a patched flip banana turned the loop and the comet while the
-chevron kept pointing the old way; §16.6 binds the two to one direction);
-tapping the comet is skip's night home
-(§6.1) and a static hover halos it. The comet draws over the pearl — the two
-share the night's bone-spark hue (§16.2) and are told apart by **form**
-(plain bead vs comet), per §16.2's "no meaning by hue alone" (amended
-2026-07-21). Flip reverses comet and chevron. **Hold**: the outermost turn
+chevron kept pointing the old way; §16.6 binds the two to one direction).
+The comet is **display only** (2026-07-22, G2 gate — see §6.1): it is the only
+mark in the night that travels, and a moving target is not a control.
+It draws over the reel notch and carries the night's bone-spark ink, which now
+belongs to **events** alone — the read head, fired lamps — while settings are
+drawn in line ink. The comet has a third state of its own, by the same regime
+law as the chevron: while the `cocoN_skip` charge is still lit on two
+consecutive `/cq_phase` frames — i.e. the loop is being restarted faster than
+5 Hz can show — the comet stops pretending to be a point and draws the reach
+it actually manages out of the eye as a short smear along the spiral (spark at
+40 %, the bead still at the last sampled address). A bead crawling near zero
+would otherwise read as "almost stopped", the exact opposite of the truth.
+No new telemetry and no client-side timer: the server's 0.15 s peak-hold on
+the charge already says it. Flip reverses comet and chevron.
+**Hold**: the outermost turn
 closes into a full circle and tints danger-red at 60 % — the loop is sealed;
 the **heart** at the spiral's innermost eye (small Ø ≈ 5 mark, red while
-sealed) is the §6.1 hold touch. The spiral's line is the §6.1 winding
-surface; the **reel pearl** (amended 2026-07-21) rides it at the speed's
-normalized position — inner eye = slowest, mouth = fastest — as the winding
-gesture's live hand and the resting speed display — a plain still bead,
-which is how it never blurs with the traveling read-head comet (form, not
-hue: see the read-head entry above). On spiral hover the line
-brightens and the pearl gains a halo (static ink, §4.5). Org fruit =
+sealed) is the §6.1 hold touch. The **skip mark** hangs under the mouth
+chevron: the §16.5 spark glyph in a 9 px box, whisper at rest, line ink on
+hover, a 120 ms bone-spark flash on any skip (§16.7's momentary law, one
+`CQInk.momentaryFlash` constant shared with the Day button). The spiral's line
+is the §6.1 winding surface; the **reel notch** (amended 2026-07-22) rides it
+at the speed's normalized position — inner eye = slowest, mouth = fastest — as
+the winding gesture's live hand and the resting speed display. It is a **tick
+drawn across the groove** in line ink, ±4 px, ±6 px and heavier on hover: a
+speed is a setting on a scale, so it wears a scale mark, and the only
+travelling body on the shell keeps the bead. It was a bone bead until the G2
+gate, 0.2 px larger than the comet and the same hue — which is no difference a
+hand can use. §16.2's "no meaning by hue alone" is satisfied by **form first**;
+where hue can help too, let it. On spiral hover the line
+brightens and the notch lengthens (static ink, §4.5). Org fruit =
 yellow Ø 7 dot on a 6 px stem from the second turn. Moons spaf / inVca /
 fbVca / flip / skip sit on an arc under the spiral, glyphs per §16.5, lamps
 on flip/skip; below the three continuous moons hang their **tide crescents**
