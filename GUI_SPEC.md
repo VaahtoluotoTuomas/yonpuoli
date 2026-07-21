@@ -670,10 +670,14 @@ Signals:
 | inverso cable | `#4A7CC7` | `#62A9FF` |
 | danger (hold, rec, panic, mic) | `#C43D2B` | `#FF6B54` |
 | warning text (watchdog, notices) | `#A87B2F` | `#FFD98A` |
-| lamp fill (charge lamps) | `#E8C97A` | `#FFE9A8` |
+| lamp fill (charge lamps) | `#B57A16` | `#FFE9A8` |
 
 Laws:
 
+- **On paper a lit lamp is more ink, not more light** (amended 2026-07-21 after
+  the G2.5 review): the first day lamp fill was a pale amber that measured
+  1.2:1 against cream and disappeared. Cream ground admits no glow, so the day
+  lamp is a deep amber bead at 3.15:1; the night lamp stays luminous.
 - **No meaning by hue alone.** Every meaning carries a second channel:
   inverso cables are barbed, gates have lamps, commitment is seatedness,
   families have homes and glyphs. (This also resolves the verso≈tri and
@@ -747,6 +751,10 @@ the castle's **inner clock** (amended 2026-07-21 after the G2.3 review): a
 whisper face at r ≈ 10 *inside* the body — where no opaque endpoint view can
 ever cover it — with 8 ticks and the current state as a lit spark bead with a
 halo; a static hover brightens the face so it reads as pressable (§4.5).
+The **flesh around the clock is the body's own §6 solo target**, and hovering
+it lights the quiet outer ring §4.5 gives every pressable control (added
+2026-07-21: a double-click affordance the hand could not otherwise guess).
+The two cues are exclusive — clock or body, never both.
 Range letter i/b/a in whisper at 6 o'clock below (r ≈ 33, its own anchor).
 
 **The ring.** Irregular circle R ≈ 150 px through the five castles, 1 px
@@ -775,7 +783,12 @@ shell box edge at every scale (down = forward, up = flipped; amended
 (`/cq_phase`, §9 — 5 Hz tick; not drawn until the server has reported — no
 telemetry is not zero): a dot with a short tail trailing where it came from, the
 tail's side read from the phase's actual travel (wrap-aware), so a
-matrix-driven flip shows truthfully; tapping the comet is skip's night home
+matrix-driven flip shows truthfully — and the **mouth chevron reads that same
+travel OR-ed with the FLIP param**, exactly as `\cqCoco` takes
+`max(param, matrix gate)` (amended 2026-07-21: the chevron used to read the
+param alone, so a patched flip banana turned the loop and the comet while the
+chevron kept pointing the old way; §16.6 binds the two to one direction);
+tapping the comet is skip's night home
 (§6.1) and a static hover halos it. The comet draws over the pearl — the two
 share the night's bone-spark hue (§16.2) and are told apart by **form**
 (plain bead vs comet), per §16.2's "no meaning by hue alone" (amended

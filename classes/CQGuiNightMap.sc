@@ -15,7 +15,7 @@ CQGuiNightMap {
 	var <crescentViews, crescentNorms, activeCrescents, hoverCrescents, labels;
 	var <geometry, <eyeActive = false;
 	var <eyeFreqNorm = 0.5, <eyeChaosNorm = 0.15;
-	var <speedNorms, <shellHover, <dialHover;
+	var <speedNorms, <shellHover, <dialHover, <bodyHover;
 	var <sparkDirs, <sparkHover, sparkPainted;
 	var <fireflyPhase = 0.0, lastFireflyTime, castlePainted;
 	var <holdStates, <flipStates, <rangeLetters, <sproutState;
@@ -210,6 +210,7 @@ CQGuiNightMap {
 		speedNorms = [0.5, 0.5];
 		shellHover = [false, false];
 		dialHover = Array.fill(5, false);
+		bodyHover = Array.fill(5, false);
 		sparkDirs = [1, 1];
 		sparkHover = [false, false];
 		sparkPainted = Array.newClear(2);
@@ -418,15 +419,22 @@ CQGuiNightMap {
 		};
 	}
 
+	// two cues on one body, told apart by where the hand is: the inner clock's
+	// face brightens for the step tap, the body wears the §4.5 outer echo for
+	// its §6 solo. A cable under the pointer wins both (§4.5), and a repaint
+	// happens only when a boolean actually flips.
 	prHoverCastle { |k, view, x, y|
-		var near = false, point;
+		var near = false, body = false, point, free = true;
 		if(geometry.notNil and: { view.notNil }) {
 			point = this.prStagePoint(view, x, y);
-			near = CQNightGeometry.dialHit(geometry[\castles][k], point)
-				and: { overlay.patchAt(point).isNil };
+			free = overlay.patchAt(point).isNil;
+			near = CQNightGeometry.dialHit(geometry[\castles][k], point) and: { free };
+			body = free and: { near.not }
+				and: { CQNightGeometry.bodyHit(geometry[\castles][k], point) };
 		};
-		if(near != dialHover[k]) {
+		if((near != dialHover[k]) or: { body != bodyHover[k] }) {
 			dialHover[k] = near;
+			bodyHover[k] = body;
 			if(freed.not) { castleViews[k].refresh };
 		};
 	}
@@ -569,7 +577,20 @@ CQGuiNightMap {
 		CQInkNight.drawCastle(castle, castle[\box].leftTop,
 			gui.auraFor(("cas" ++ (k + 1)).asSymbol),
 			(gui.spesalStates[k] ? 0).asInteger, rangeLetters[k],
-			dialHover[k], \night);
+			dialHover[k], bodyHover[k], \night);
+	}
+
+	// The read direction is what the loop is actually doing, and the FLIP param
+	// is only one of its two causes: `\cqCoco` takes `max(param, matrix gate)`,
+	// so a patched flip banana reverses the loop without touching the param.
+	// The chevron therefore reads the same truth the comet's tail reads — the
+	// phase's real travel — OR-ed with the param, exactly like the DSP. §16.6
+	// binds chevron and comet to one direction; before telemetry the param is
+	// the only truth there is.
+	flippedNow { |i|
+		^flipStates[i] or: {
+			gui.phaseNorms[i].notNil and: { sparkDirs[i] < 0 }
+		}
 	}
 
 	prDrawShell { |i|
@@ -577,7 +598,7 @@ CQGuiNightMap {
 		if(geometry.isNil) { ^this };
 		coco = geometry[\cocos][i];
 		CQInkNight.drawShell(coco, coco[\shellBox].leftTop,
-			holdStates[i], flipStates[i], speedNorms[i], shellHover[i],
+			holdStates[i], this.flippedNow(i), speedNorms[i], shellHover[i],
 			gui.phaseNorms[i], sparkDirs[i], sparkHover[i], \night);
 	}
 

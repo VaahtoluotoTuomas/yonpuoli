@@ -145,6 +145,17 @@ CQNightGeometryTest : UnitTest {
 		this.assert(CQNightGeometry.dialHit(geo[\castles][2],
 			geo[\castles][2][\center]).not,
 			"the castle's center is not the dial");
+		// the body is the §6 solo target and wears the §4.5 hover echo
+		this.assert(CQNightGeometry.bodyHit(geo[\castles][2],
+			geo[\castles][2][\center]),
+			"the castle's center is inside its own body");
+		this.assert(CQNightGeometry.bodyHit(geo[\castles][2],
+			geo[\castles][2][\center]
+				+ Point(geo[\castles][2][\bodyRx] + 6, 0)).not,
+			"a point outside the blob's ellipse is not the body");
+		this.assert(CQNightGeometry.bodyHit(geo[\castles][2],
+			geo[\castles][2][\box].leftTop + Point(2, 2)).not,
+			"the layer box's corner is water, not flesh");
 		this.assertEquals(geo[\eye], geo[\ringCenter],
 			"the ring's eye sits at the ring's center");
 		this.assert(geo[\birds][0][\box].containsPoint(geo[\birds][0][\center])

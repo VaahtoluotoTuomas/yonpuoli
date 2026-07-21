@@ -363,6 +363,30 @@ abort = { |error|
 																"night charge blocks land on their own lamps");
 															check.value(gui.chargeFor(\coco2_flip).isNil,
 																"a block that never reported stays unreported");
+															// ---- the chevron reads the real travel ----
+															// \cqCoco takes max(param, matrix gate), so a
+															// patched flip reverses the loop without ever
+															// touching the param — chevron and comet must
+															// still agree (§16.6)
+															state.set(\coco1Flip, 0);
+															gui.prFlushParams;
+															check.value(map.flipStates[0].not,
+																"precondition: the FLIP param is released");
+															gui.prPhaseFrame(1, 0.5);
+															gui.prPhaseFrame(1, 0.56);
+															check.value(map.flippedNow(0).not,
+																"forward travel with a released param reads forward");
+															gui.prPhaseFrame(1, 0.5);
+															check.value(map.sparkDirs[0] == -1
+																and: { map.flippedNow(0) },
+																"a matrix flip gate turns the chevron though the param never moved");
+															state.set(\coco1Flip, 1);
+															gui.prFlushParams;
+															gui.prPhaseFrame(1, 0.56);
+															gui.prPhaseFrame(1, 0.62);
+															check.value(map.sparkDirs[0] == 1
+																and: { map.flippedNow(0) },
+																"the param alone still turns the chevron (max, like the DSP)");
 															// ---- §6 body solo-light ----
 															castleView = map.castleViews[1];
 															castleTwo = map.geometry[\castles][1];
@@ -393,6 +417,24 @@ abort = { |error|
 																dialPoint.x, dialPoint.y, 0, 0, 2);
 															check.value(gui.bananaGrammar.soloTarget.isNil,
 																"a fast second tap on the inner clock is a step, not a solo");
+															// the body's own §4.5 hover echo, distinct from
+															// the clock's: the hand must see the affordance
+															local = castleTwo[\center]
+																- castleTwo[\box].leftTop;
+															castleView.mouseOverAction.value(castleView,
+																local.x, local.y);
+															check.value(map.bodyHover[1]
+																and: { map.dialHover[1].not },
+																"hovering a castle's flesh lights the body's press cue");
+															castleView.mouseOverAction.value(castleView,
+																dialPoint.x, dialPoint.y);
+															check.value(map.dialHover[1]
+																and: { map.bodyHover[1].not },
+																"the clock's cue and the body's cue never light together");
+															castleView.mouseLeaveAction.value(castleView);
+															check.value(map.bodyHover[1].not
+																and: { map.dialHover[1].not },
+																"leaving the castle rests both cues");
 															shell.mouseDownAction.value(shell, 3, 3, 0, 0, 2);
 															check.value(
 																gui.bananaGrammar.soloTarget.notNil

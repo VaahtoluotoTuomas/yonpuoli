@@ -338,6 +338,13 @@ coco-ulostulosta ja lintujen flutter.
   §4.5 sitoo joka klikkausmäärällä — nopea toinen napautus sisäkellolla,
   sydämellä, chevronilla, lukupäässä tai silmässä kuuluu sille säätimelle,
   ei takana olevalle rungolle.)*
+- [ ] **Kaksi aiemmista vaiheista löytynyttä piirtovikaa** (käyttäjä 2026-07-21,
+  G2.5-kierros; kumpikaan ei ole G2.5:n scopea, korjataan omana pienenä
+  lisäyksenään): (1) **juuret leikkaantuvat yläpäästä** — ruudun alareunan
+  envelope-viivat jäävät ilmeisesti juuren kärkijakin läpinäkymättömän näkymän
+  alle eivätkä piirry kokonaan; epäilty syy on piirtojärjestys/kerrosraja, ei
+  geometria. (2) **Lintujen tiedostonimet leikkaantuvat sekä ylhäältä että
+  alhaalta** — `labelRect` on liian matala 10 px monolle.
 - [ ] Ei numeroita, Space-bodya tai dekoratiivista motionia; Master pysyy näkyvänä.
 - [ ] `GUI_SPEC.md` §13:n automaatio, kuuntelu ja käyttäjän visuaalinen hyväksyntä.
   **Loppuportissa palataan kolmeen G2.4:n avoimeen havaintoon** (käyttäjä
@@ -514,6 +521,14 @@ Weather Machinea ei piirretä ennen G2:n hyväksyntää.
   korjattiin vain venyminen (ankkurointi); kysymys siitä, pitäisikö kaaviota madaltaa,
   hiljentää vai poistaa, ratkaistaan omana suunnittelupäätöksenään G2:n jälkeen.
   Sama arviointi koskee "spesal topology" -osiota, joka sen sijaan **on** elävä.
+- **Koko Night-näkymän mittakaava.** Käyttäjän havainto 2026-07-21 (G2.5):
+  loppukatselmuksessa voisi harkita **melkein kaikkien näkyvien elementtien
+  suurentamista** koko yökartalla — bodyt, kuut, sirpit, helmet ja tekstit.
+  Tämä ei ole yksittäinen bugi vaan yksi mittakaavapäätös, joka koskee
+  `CQNightGeometry.compute`n `scale`a ja px-vakioita (§16.10: viivanpaksuudet
+  ja fontit pysyvät px:issä, bodyt skaalautuvat). Liittyy suoraan
+  kosketusnäyttötyöhön alla — tehdään mieluiten samalla kertaa, ei ennen G2:n
+  muiden osien valmistumista.
 - **Kosketusnäyttö-optimointi Night-modeen.** Käyttäjän havainto G2.3-kierroksella
   (2026-07-21): kelaus ja muut §6.1:n eleet vetävät kättä läppärin kosketusnäytölle,
   ja Nightia halutaan soittaa sormin. Oma työvaihe myöhemmin: kosketuskohteiden

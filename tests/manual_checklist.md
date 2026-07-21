@@ -1066,6 +1066,13 @@ katselmoidaan uudelleen §13-portissa:
 3. **Komeetan nykivä liike pitää tarkastella uudestaan** — 5 Hz:n tikitys on
    tietoinen piirtobudjettipäätös (§9/§10), mutta sen luettavuus liikkeenä
    arvioidaan vielä kerran ennen G2:n hyväksyntää.
+4. **Nopeilla nopeuksilla lukupään pallo näyttää glitchaavalta** (havainto
+   2026-07-21, G2.5-kierros): se ei pysy vauhdissa mukana, koska 5 Hz:n
+   näytteenotto ohittaa monta loopin kierrosta ja osoite hyppii satunnaiselta
+   näyttävään paikkaan. Sama juuri kuin kohdassa 3 — ratkaistaan yhdessä
+   niiden kanssa (vaihtoehtoja: nopeampi lähetys vain näkyvälle kuorelle,
+   kieliside-interpolointi kahden kehyksen välillä, tai nopeuden ylittäessä
+   rajan komeetta lakkaa esittämästä yksittäistä osoitetta).
 
 ## G2.5 — latauslamput (`/cq_charge`) ja rungon solo-light
 
@@ -1110,3 +1117,25 @@ CQ.patchPreset(\empty);
 ```
 
 - [ ] G2.5 latauslamput ja rungon solo-light hyväksytty (pvm: )
+
+**G2.5-kierros 1 (2026-07-21) — korjattu samana päivänä, tarkista uudelleen:**
+
+- *Chevron ei seurannut flipiä.* Oikea vika: `\cqCoco` ottaa
+  `max(param, matriisiportti)`, joten patchattu flip käänsi loopin ilman että
+  parametri liikkui — chevron luki vain parametria. Nyt chevron lukee saman
+  totuuden kuin komeetan häntä (vaiheen todellinen kulku) TAI parametrin,
+  täsmälleen kuten DSP. Tarkista: patchaa `tri3 → coco1_flip` 0.9:llä ja katso
+  että chevron kääntyy lampun syttyessä, ja että `q`-näppäin kääntää sen yhä
+  heti myös ilman telemetriaa.
+- *Day-lamppu ei erottunut paperista.* Vanha vaalea keltainen oli 1,2:1
+  kermaa vasten. Paperilla palava lamppu on **enemmän mustetta**, ei enemmän
+  valoa: uusi syvä meripihka `#B57A16` lukee 3,15:1 (§16.2:n raja isoille
+  merkeille). Yön lamppu ennallaan. Tarkista molemmat nahat.
+- *Linnakkeen rungolta puuttui affordanssi.* Nyt rungon päällä hover sytyttää
+  §4.5:n hiljaisen ulkokehän — sama kieli kuin nupeilla ja sisäkellolla.
+  Kello ja runko eivät koskaan sytytä vihjettään yhtä aikaa.
+
+**Avoin kysymys tälle kierrokselle:** kuoren paperi ja ringin vesi ovat myös
+solo-runkoja, mutta niillä ei vielä ole hover-vihjettä (kuoren ainoa "runko"
+on spiraaliviiva, jonka kirkastus tarkoittaa jo kelausta, ja ringin kehän
+korostus olisi iso visuaalinen ele). Päätetään yhdessä.

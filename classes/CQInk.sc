@@ -17,7 +17,11 @@ CQInk {
 			organ: Color.new255(212, 175, 55), pre: Color.new255(251, 247, 237),
 			verso: Color.new255(227, 154, 45), inverso: Color.new255(74, 124, 199),
 			danger: Color.new255(196, 61, 43), warning: Color.new255(168, 123, 47),
-			lamp: Color.new255(232, 201, 122)
+			// On paper a lit lamp is MORE ink, not more light: the earlier pale
+			// amber sat at 1.2:1 against cream and simply vanished (user review
+			// 2026-07-21). This deep amber reads 3.15:1 — §16.2's large-mark
+			// floor — while the night lamp stays luminous.
+			lamp: Color.new255(181, 122, 22)
 		);
 		palettes[\night] = (
 			clear: Color.new(0, 0, 0, 0),

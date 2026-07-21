@@ -138,6 +138,15 @@ CQNightGeometry {
 		^(this.distance(point, castle[\center]) - castle[\dialR]).abs <= 8
 	}
 
+	// the castle's own flesh: the ellipse the blob is drawn around (§16.6). This
+	// is the §6 body-solo target and, with dialHit excluded, the area that wears
+	// the hover echo telling the hand the body is pressable (§4.5).
+	*bodyHit { |castle, point|
+		var dx = (point.x - castle[\center].x) / max(0.001, castle[\bodyRx]);
+		var dy = (point.y - castle[\center].y) / max(0.001, castle[\bodyRy]);
+		^(dx.squared + dy.squared) <= 1
+	}
+
 	// ---- the whole archipelago from one stage size ----
 	// Bodies scale with the window (§16.10); stroke widths and text stay in px
 	// at the draw sites. The minimum stage (1280x570 under the toolbar and the

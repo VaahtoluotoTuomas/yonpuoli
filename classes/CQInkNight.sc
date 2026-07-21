@@ -22,7 +22,7 @@ CQInkNight {
 	// layer's own box corner: the layer is opaque, so an ambient glow repaint
 	// never re-runs the whole landscape underneath.
 	*drawCastle { |castle, origin, aura, spesalState = 0, rangeLetter = "",
-		dialHover = false, skin = \night|
+		dialHover = false, bodyHover = false, skin = \night|
 		var palette = CQInk.palette(skin), center = castle[\center];
 		var tickAngle, bead;
 		Pen.translate(origin.x.neg, origin.y.neg);
@@ -37,6 +37,17 @@ CQInkNight {
 			Pen.fillRadialGradient(center, center, 0, castle[\bodyRx] + 6,
 				palette[\cas].copy.alpha_((aura.clip(0, 1) * 0.3)),
 				palette[\cas].copy.alpha_(0));
+		};
+		// the body's own hover echo: the quiet outer ring §4.5 gives every
+		// pressable Ink control, here saying "this whole body answers a
+		// double-click" (the §6 solo). Static ink, never a pulse, and the
+		// resting drawing is untouched — two Pen calls only under the pointer.
+		if(bodyHover) {
+			Pen.strokeColor = palette[\whisper].copy.alpha_(0.55);
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.addOval(Rect.aboutPoint(center,
+				castle[\bodyRx] + 5, castle[\bodyRy] + 5));
+			Pen.stroke;
 		};
 		Pen.strokeColor = palette[\line];
 		Pen.width = CQInk.strokes[\normal];
