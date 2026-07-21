@@ -234,9 +234,11 @@ body. What changes:
 - **Declutter.** Number boxes, snapshot save/recall and morph A/B/duration
   move to the drawer's memory tab. Deck file-drop + filename label stay.
   Meters, LEDs, spesal display, shake button + amount knob stay (amount is
-  shared with the night toolbar and the `p` key).
+  shared with the night's sowing moon and the `p` key — one state, three
+  layers).
 - The old matrix pane leaves the main window → drawer inspector (§8). The
-  patch-preset menu moves to the night toolbar and the inspector header.
+  patch-preset menu moves to the inspector header; at night the presets are
+  the sower constellation (§16.6).
 
 ---
 
@@ -295,8 +297,13 @@ eye but must keep the topology truths):
   chevron, the skip mark or the eye belongs to that touch point, and where the
   winding surface runs close to the shell's rim it is the wind that answers,
   with the wind's own cue.
-- **Night toolbar** (small, lowercase): patch-preset menu · shake · grow ·
-  wither · breed · amount mini-knob · the compass pad (§7).
+- **Night toolbar → the almanac corner** (decided with the user 2026-07-22,
+  superseding the earlier lowercase word-row sketch): no bar, no box, no
+  menu. The top-right sky carries the **sowing moon** — shake and its amount
+  in one body, the lit phase *is* the value — and the **sower
+  constellation**, one star per patch preset. The §7 weather tools' G3 home
+  is reserved beneath them as empty water (§16.6). The old "amount
+  mini-knob" is superseded: nothing on the night map looks like a knob.
 
 ### 6.1 Night touch grammar (normative, decided 2026-07-21)
 
@@ -317,6 +324,8 @@ an action the next gesture will not receive).
 | **the ring's eye** | the storm iris at the ring's center (§16.6); grab and drag — vertical = pitch, horizontal = chaos, and the iris itself answers on both axes. The weather of five castles from one fingertip | `qFreq` (y) + `qChaos` (x), relative |
 | **dial tap** | press a castle's inner clock — the dial face inside the body (§16.6): one step (same act as the day step button and keys 3..7) | `spesal(k)` step |
 | **bird drop + wing crescent** | dropping an audio file on a bird loads that deck (pulled forward from the G2 toolbar step — loading is core); the crescent under the wing is the deck's level | deck load · `deckN level` |
+| **the sowing moon** | the bone moon in the top-right sky (§16.6). A press that travels < 8 px — the lasso's own threshold — throws a shake at the moon's current phase, with a 120 ms bone flash on *any* shake from any layer (`p` key, Day button, code: one state, three layers, one light). A vertical drag pours the phase fuller or darker; the lit fraction is the value, no number | `shake` (matrix op — one undo, one spellbook entry) · `shakeAmount` (GUI constant, no undo) |
+| **a sower star** | one star per patch preset under the moon; hover whispers its name; a tap sows the recipe — one batch commit, one undo op, one `// preset` spellbook block, the Inspector's own apply path. The star flashes 120 ms and returns to rest: no star stays lit, because a "current preset" mark becomes a lie at the first hand-planted banana | preset apply (batched funnel) |
 
 Skip's night home moved at the G2 gate (2026-07-22, replacing the read-head
 tap that landed 2026-07-21; the `a/s` keys remain). **A moving target is not a
@@ -345,7 +354,7 @@ CQSpec parameter is ever touched by compass, grow, wither, breed or shake
 `docs/history/PLAN_v1.0.md` (KUUNTELU 4): a landscape can be *deaf* if its depth-knobs are down —
 aura and charge lamps make that visible instead of mysterious.
 
-### 7.1 Compass — the 2D patch-blend pad (~140 px, night toolbar)
+### 7.1 Compass — the 2D patch-blend pad (~140 px, the almanac corner's reserved water, §16.6)
 
 - Four corners = four **matrix memories** (weights only; never params, never
   spesal). A stamp button at each corner captures the current matrix;
@@ -736,9 +745,10 @@ Laws:
 - Labels are whispers: whisper color, close to their object, never boxed.
   The project's own words — spaf, spesal, verso, balcium — are decoration
   enough.
-- The night map carries almost no text: toolbar words, filenames under the
-  birds, i/b/a range letters. **Numbers never appear at night** — weights are
-  read as depth and width; precision lives in the inspector.
+- The night map carries almost no text: the sower stars' whispered preset
+  names (§16.6), filenames under the birds, i/b/a range letters. **Numbers
+  never appear at night** — weights are read as depth and width; precision
+  lives in the inspector.
 
 ### 16.5 Glyphs — drawn, never typed
 
@@ -915,10 +925,40 @@ audio file on the bird loads its deck (§6.1). Flutter = 1 px wing bob at
 ambient rate while the deck's level > 0.05 (client-side state, no polling).
 On file-drag hover the bird brightens (drop target law, §16.7).
 
-**Weather corner.** Compass pad = 140 px round-cornered square, hairline
+**The almanac corner** (decided with the user 2026-07-22 — the night
+toolbar's body; the earlier lowercase word-row is superseded). It lives on
+the top-right sky, on the water the bodies leave free — beyond bird B's
+name box and the shell's box at every scale; the geometry owns the exact
+rects and the clearance tests pin them (tune by eye, §15). The farmer's
+almanac holds exactly what this corner holds: the weather, and the sowing
+calendar read from the moon.
+
+**The sowing moon**: a bone-ink circle Ø ≈ 44, its lit phase =
+`shakeAmount` — the terminator drawn as one arc, the lit fraction is the
+value, no number (the tide crescents' law in the sky). Tap (< 8 px travel,
+the lasso's own threshold) = shake at the current phase; vertical drag =
+pour the phase. The moon flashes 120 ms bone on *any* shake from any layer
+(`p` key, Day button, code) — §16.7's momentary law, one
+`CQInk.momentaryFlash` constant. Hover brightens the moon's own drawn rim
+(§4.5: cue and action share one geometry). A fuller moon is a bigger throw
+— the mark teaches its own consequence.
+
+**The sower constellation**: one §16.5 spark-glyph star per patch preset,
+seeded scatter below the moon (§16.3's asymmetry law). Hover whispers the
+preset's name beside the star in whisper type — with the filenames, the
+night's only text. A tap sows the recipe and the star flashes 120 ms; no
+star stays lit, because a "current preset" mark becomes a lie at the first
+hand-planted banana. This is not a starfield (§16.12): the count is the
+preset count, every star is a control, nothing twinkles or drifts.
+
+**The compass water**: beneath the constellation the §7.1 pad's 140 px home
+is reserved as **empty water** — pinned by the clearance tests, never drawn
+before G3, because a dead control breaks §4.5 and §16.12 at once. When G3
+lands the pad keeps its recipe (140 px round-cornered square, hairline
 border, stamp dots in the corners, small cross cursor; while dragging, four
-faint corner gradients (≤ 8 % alpha) show the pull. grow · wither · breed ·
-shake as lowercase word-buttons beside it.
+faint corner gradients ≤ 8 % alpha show the pull), and grow / wither /
+breed take their night form at G3's own review — their home is reserved,
+their look is not yet law.
 
 ### 16.7 Widgets (day-panel language)
 

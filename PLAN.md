@@ -12,10 +12,19 @@ koska §13:n scopesta puuttuu vielä yksi rakentamaton osa: **Night toolbar**. S
 seuraava askel, ja vasta sen jälkeen G3 Weather machine.
 
 **Seuraava askel konkreettisesti:** Night toolbar — G2:n viimeinen
-rakentamaton osa. Se on käyttäjän päätöksellä 2026-07-22 jätetty hautumaan:
-sen sijoittelusta ja ulkoasusta on käyty keskustelu, jota **ei ole
-tarkoituksella kirjattu** — se päätetään uudelleen kun toolbar aloitetaan.
-Sen jälkeen G2 voidaan kuitata ja siirtyä G3 Weather machineen.
+rakentamaton osa. Sen muoto **päätettiin käyttäjän kanssa 2026-07-22** ja on
+kirjattu normatiivisesti `GUI_SPEC.md` §6/§6.1/§16.6:een: ei palkkia, ei
+laatikkoa eikä valikkoa vaan **almanakkakulma** yläoikealla taivaalla —
+**kylvökuu** (napautus < 8 px = shake kuun nykyisellä vaiheella; pystyveto
+kaataa `shakeAmount`in; valaistu osuus on arvo, ei numeroa; 120 ms välähdys
+jokaisesta shake-reitistä — p-näppäin, Dayn nappi, koodi) ja **Kylväjän
+tähdistö** (yksi tähti per preset; hover kuiskaa nimen, napautus kylvää
+Inspectorin apply-polun kautta — yksi batch, yksi undo, yksi
+`// preset` -blokki; mikään tähti ei jää palamaan) sekä G3:n työkaluille
+**tyhjänä varattu tuuliruusun vesi** (clearance-testeihin naulattu, ei
+piirretä ennen G3:a — kuollut säädin rikkoisi §4.5:n ja §16.12:n).
+Seuraavaksi pienin ajettava versio testeineen ja katselmointipysähdys; sen
+ja §13-täydennyksen jälkeen G2 kuitataan ja siirrytään G3 Weather machineen.
 
 **Aktiivinen työhaara:** `archipelago`. GUI_SPECin neljä aiempaa määrittelysaumaa
 ratkaistiin käyttäjän päätöksellä 2026-07-19; avoimia GUI-käyttäytymispäätöksiä ei ole.
@@ -373,10 +382,17 @@ coco-ulostulosta ja lintujen flutter.
   että se, mikä oikeasti ottaa tiedoston vastaan. Piirto siirtyi linnun omasta
   44×32 kerroksesta koko lavan groundille, koska näkymä ei voi maalata omien
   rajojensa ulkopuolelle.
-- [ ] **Täsmällinen Night toolbar** (§6: patch-preset-valikko · shake · grow ·
-  wither · breed · amount-mininuppi · kompassilevy). Sisällöstä olemassa jo:
-  preset-valikko (Inspectorin otsikko), shake ja amount (Day). Grow/wither/
-  breed/kompassi ovat G3:n osia — toolbar varaa niille kodin, ei toteuta niitä.
+- [ ] **Night toolbar = almanakkakulma** (päätetty käyttäjän kanssa 2026-07-22,
+  kirjattu `GUI_SPEC.md` §6/§6.1/§16.6:een; vanha sanarivi/mininuppi-luonnos
+  kumottu): kylvökuu (shake + amount yhtenä kehona, vaihe = arvo) ja Kylväjän
+  tähdistö (presetit; hover kuiskaa nimen, napautus kylvää) yläoikealla
+  taivaalla. Grow/wither/breed/kompassilevy ovat G3:n osia — niiden koti
+  varataan **tyhjänä vetenä** geometriassa ja clearance-testeissä; kuollutta
+  säädintä ei piirretä. Suppilot ovat jo olemassa: preset-apply (Inspector),
+  shake-polku ja jaettu amount-tila (Day, `p`). Rakentamatta: `CQNightGeometry`n
+  `almanac`-osio + yksikkötestit molemmilla lavakooilla, `CQInkNight`in kuu- ja
+  tähtikappaleet, `CQGuiNightTouch`in kaato/tap-erottelu ja delegaatit,
+  `gui_night_smoke`-laajennus sekä manuaalilohko G2.11.
 - [x] **Kaksi aiemmista vaiheista löytynyttä piirtovikaa korjattu** (käyttäjä
   2026-07-21, G2.5-kierros 2): (1) **juuret leikkaantuivat yläpäästä** — syy
   oli juuri se epäilty: juuren viimeinen pätkä jäi kärkijakin läpinäkymättömän
@@ -450,11 +466,11 @@ coco-ulostulosta ja lintujen flutter.
 toolbar.** §13:n G2-scope on "archipelago bodies + spiral read-head + charge
 lamps + solo-light + **toolbar presets/shake** + **deck-bird file drop**".
 Deck-bird drop ja sen §16.7-korostus ovat valmiit ja hyväksytyt (G2.10).
-Avoinna on siis enää **Night toolbar**, joka
-on jätetty käyttäjän päätöksellä hautumaan 2026-07-22: sen sijoittelusta ja
-ulkoasusta on käyty keskustelu, jota **EI ole kirjattu** — se tehdään vasta
-kun toolbar aloitetaan. Kaikki muu G2:ssa on hyväksytty: G2.1–G2.5
-rakennuspalikat sekä loppuportti G2.6–G2.10.
+Avoinna on siis enää **Night toolbar**, jonka
+muoto päätettiin käyttäjän kanssa 2026-07-22 (almanakkakulma: kylvökuu +
+Kylväjän tähdistö + tyhjänä varattu tuuliruusun vesi; kirjattu `GUI_SPEC.md`
+§6/§6.1/§16.6:een) — jäljellä on toteutus ja sen katselmointi. Kaikki muu
+G2:ssa on hyväksytty: G2.1–G2.5 rakennuspalikat sekä loppuportti G2.6–G2.10.
 
 **G2.3-kuuntelukierros 1 (2026-07-21):** kaikki seitsemän kosketuspistettä
 toimivat korvalla; palaute käsitelty samana päivänä (`GUI_SPEC.md` §6.1 ja
@@ -587,10 +603,11 @@ jokaisen jälkeen.**
       *(Hyväksytty 2026-07-21, manuaalitesti G2.5.)*
    3. Deck-bird drag-over-korostus (§16.7). *(Hyväksytty 2026-07-22,
       manuaalitesti G2.10.)*
-   4. **Täsmällinen Night toolbar — ainoa jäljellä oleva.** Käyttäjän kanssa
-      pidettiin tarkistus 2026-07-22 (päätös 2026-07-21), ja hän jätti toolbarin
-      hautumaan: sijoittelusta ja ulkoasusta käyty keskustelu on **tarkoituksella
-      kirjaamatta** ja päätetään uudelleen kun toolbar aloitetaan.
+   4. **Night toolbar = almanakkakulma — ainoa jäljellä oleva.** Muoto
+      päätettiin käyttäjän kanssa 2026-07-22 ja on kirjattu `GUI_SPEC.md`
+      §6/§6.1/§16.6:een (kylvökuu + Kylväjän tähdistö + tyhjänä varattu
+      tuuliruusun vesi, yläoikea taivas). Rakennetaan pienin ajettava versio
+      testeineen ja pysähdytään käyttäjän katselmointiin.
    5. G2:n §13-portti: automaatio, kuuntelugate, 100/125/150 % skaalaus,
       CPU/resurssisoak ja käyttäjän visuaalinen hyväksyntä. *(Läpäisty
       2026-07-22 kaiken rakennetun osalta, lohkot G2.6–G2.10.)*

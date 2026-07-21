@@ -99,9 +99,16 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
     global rect), with two exits — cursor leaves, or drag ends. Any future drag
     affordance in this codebase inherits that: Qt's drag events cannot track hover
     for you, the cursor can.
-  - The Night toolbar was deliberately left to simmer by the user (2026-07-22). A
-    discussion of its placement and look was held and **deliberately not recorded** —
-    decide it again with the user when the toolbar actually starts.
+  - The Night toolbar was decided with the user on 2026-07-22 and recorded in
+    `GUI_SPEC.md` §6/§6.1/§16.6: it is the **almanac corner** in the top-right
+    sky — the **sowing moon** (tap < 8 px = shake at the moon's current phase;
+    vertical drag pours `shakeAmount`; the lit phase is the value; 120 ms flash
+    on any shake from any layer) and the **sower constellation** (one star per
+    preset; hover whispers the name, tap sows via the Inspector's apply path;
+    no star stays lit — a "current preset" mark would lie). The §7 weather
+    tools' G3 home is reserved as **empty water** pinned by clearance tests —
+    no dead controls are drawn. Only the build remains: geometry + tests, Ink
+    pieces, touch delegates, night-smoke extension, manual block G2.11.
   - The night's read head cost four review rounds and produced laws worth keeping:
     **a moving target is not a control** (skip's tap on the comet was replaced by a
     stationary mark under the mouth chevron); **a regime display measures the
