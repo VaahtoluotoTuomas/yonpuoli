@@ -849,6 +849,17 @@ CQ.boot;
 ```
 
 ```supercollider
+// G1.2b — maksimoitu ikkuna (G1.2:n paljastama venytysvika). Ctrl+Shift+L ensin.
+CQ.boot;
+// - Maksimoi ikkuna Windowsin oikean ylänurkan napista.
+// - "signal memory path" ja "spesal topology" pysyvät saman kokoisina kuin
+//   1280x720:ssa (150 / 176 px) eikä niiden sisään jää kasvavaa tyhjää.
+// - Nupit ja saarekkeet pysyvät samoilla korkeuksilla: mikään säädin ei siirry
+//   maksimoinnissa (lihasmuisti). Lisätila on väljyyttä sarakkeen alareunassa.
+// - Palauta ikkuna normaalikokoon: layout palaa täsmälleen ennalleen.
+```
+
+```supercollider
 // G1.3 — CPU / resurssisoak, GUI auki koko ajan.
 CQ.boot; CQ.patchPreset(\mayhem);
 CQ.set(\coco1SlotQ, 1); CQ.set(\coco2SlotQ, 1);
@@ -864,7 +875,35 @@ CQ.server.peakCPU.round(0.1);
 CQ.patchPreset(\empty);
 ```
 
-- [ ] G1.1 kuuntelugate hyväksytty (pvm: ____)
-- [ ] G1.2 skaalaus 100/125/150 % hyväksytty (pvm: ____)
-- [ ] G1.3 CPU/resurssisoak hyväksytty (pvm: ____)
-- [ ] **G1 valmis** (pvm: ____) → seuraava vaihe on G2 Night map
+```supercollider
+// G1.3b — GUI:n CPU-osuus kaapeligeometrian välimuistituksen jälkeen.
+// Toistaa G1.3:n mittauksen: aiemmin sclang vei ~12 johdolla 3,5-4,8 % levossa
+// ja 5,5-6,8 % hiirtä liikuteltaessa. Ctrl+Shift+L ensin.
+CQ.boot; CQ.patchPreset(\mayhem);
+CQ.set(\coco1SlotQ, 1); CQ.set(\coco2SlotQ, 1);
+CQ.set(\coco1Send, 0.5); CQ.set(\coco2Send, 0.5); CQ.set(\spaceMix, 0.4);
+// - Pidä GUI-ikkuna AUKI (ei pienennettynä) koko mittauksen ajan.
+// - Patchaa ~12 johtoa, myös audiorate-modulaatioita, kuten G1.3:ssa.
+// - sclangin CPU Task Managerissa hiiri paikallaan: tavoite ~<= 3 %.
+// - Liikuta hiirtä nopeasti Day-näkymän yli: nousu sallittu, mutta paluun
+//   lepotasolle pitää olla välitön.
+// - Tarkista myös ettei mikään muuttunut näkyvästi: johdot piirtyvät samoin,
+//   hover valitsee saman johdon, rippaus/harvest/undo toimivat kuten G1.1:ssä.
+// - KATSO ERITYISESTI negatiivisen painon (inverso) johdot: niiden poikkitikit
+//   piirretään nyt yhtenä polkuna. Niiden pitää näyttää tismalleen samalta.
+CQ.patchPreset(\mayhem);
+// - mayhem = kaikki 352 solua, yli auraCableLimitin (48): kaapelit EIVÄT saa
+//   sykkiä, vaan pitävät staattisen musteen; 16 lähdejakkia sykkivät yhä.
+//   GUI:n pitää tuntua responsiiviselta levossa (ei jatkuvaa nykimistä).
+//   Hiiren pyyhkäisy tiheän patchin yli saa yhä hidastella - se on tiedossa.
+CQ.patchPreset(\empty);
+```
+
+- [x] G1.1 kuuntelugate hyväksytty (pvm: 2026-07-21)
+- [x] G1.2 skaalaus 100/125/150 % hyväksytty (pvm: 2026-07-21; myös 200 %. Portti
+  paljasti maksimoinnin venytysvian, korjattu ankkuroimalla — tarkista lohko G1.2b.)
+- [x] G1.3 CPU/resurssisoak hyväksytty (pvm: 2026-07-21; serveri 19,8–21,5 %, GUI
+  levossa 2,8–3,8 % 20 johdolla. Portti paljasti kaapelikerroksen piirtokustannuksen
+  ja morphin 30 Hz -virran; korjattu, ks. lohko G1.3b. Morph jää ~5–6 %:iin
+  tietoisesti — kirjattu SPEC §9:ään ja PLAN.md:n "Myöhemmin"-osioon.)
+- [x] **G1 valmis** (pvm: 2026-07-21) → seuraava vaihe on G2 Night map

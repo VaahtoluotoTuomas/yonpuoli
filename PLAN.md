@@ -193,8 +193,67 @@ korjataan olemassa olevaan pintaan, ei uusina osina.
   kokonaan jos mikään lähde ei liikkunut. Hiljaisuus lähteestä (headless,
   serveritön preview) ei ole sama kuin nolla: ilman telemetriaa kaapeli säilyttää
   hyväksytyn staattisen musteen. Hover/fokus ei sytytä auraa (§4.5).
-- [ ] `GUI_SPEC.md` §13:n automaatio, kuuntelu ja käyttäjän visuaalinen hyväksyntä.
-  **Tämä on G1:n ainoa avoin kohta.** Sisältö: (1) neljä markkeria + kolme
+Loppuportin eteneminen: G1.1 kuuntelugate hyväksytty 2026-07-21. G1.2 skaalaus
+hyväksytty 2026-07-21 (100/125/150 % ja 200 %). G1.2 paljasti yhden vian: maksimoidussa
+ikkunassa koko pystylöysä valui kahteen ainoaan min-kokoiseen näkymään — Cocon
+muistipolkuun ja spesal-topologiaan — jotka venyivät tyhjiksi. Syy oli rakenteellinen,
+ei piirtokoodin: `sources`-sarakkeessa oli `nil`-venytys nielemässä löysän, coco- ja
+quantussy-sarakkeissa ei. Korjaus pysyi olemassa olevassa pinnassa: molemmat kaaviot
+ankkuroitiin mitattuun hyväksyttyyn korkeuteensa (150 / 176 px 1280×720:ssa) ja
+sarakkeisiin lisättiin päättävä `nil`, joten lisätila kerääntyy paperiksi eivätkä
+säätimet siirry ikkunan koon mukana. Periaate: elastisuus on suunnittelupäätös —
+vain se kasvaa, jonka informaatiosisältö kasvaa koon mukana.
+
+G1.3 paljasti toisen vian, tällä kertaa GUI:n omassa CPU-osuudessa: serveri pysyi
+`mayhem`-patchilla noin 20–21,5 %:ssa eli SPEC §9:n 25 %:n katon alla, mutta sclangin
+osuus nousi noin 12–15 johdon patchilla lepotilassa 3,5–4,8 %:iin ja hiirtä
+liikuteltaessa 5,5–6,8 %:iin — §13:n tavoite on noin ≤ 3 %. `mayhem`-patchilla GUI
+lagasi näkyvästi. Korjaus vaati kolme kierrosta, ja **ensimmäinen niistä osui väärään
+pullonkaulaan**: `cableRecords` rakensi kaikkien johtojen bezier-geometrian uudelleen
+joka piirrossa (3,25 ms / 12 johtoa) ja `patchAt` maksoi saman jokaisella hiiren
+liikkeellä, joten ne välimuistitettiin (3,25 → 0,007 ms; `patchAt` 3,47 → 0,21 ms) —
+mutta käyttäjän mittaama lepotaso ei liikkunut lainkaan. Vasta Qt:n paint-eventin
+sisältä mitattu profilointi kertoi totuuden: kustannus on **piirtokutsuissa**, ei
+geometriassa. Yksi `Pen`-kutsu maksaa noin 53 µs kielen ja Qt:n rajapinnassa ja yksi
+johto tarvitsee niitä ~11, joten kaapelikerroksen hinta on suoraan O(johdot):
+12 johtoa 6–11 ms/ruutu, `mayhem`in 352 johtoa (kaikki 16×22 solua) **246 ms/ruutu**.
+
+Toinen kierros poisti kutsuja pikselintarkasti: inverso-tikit piirretään yhtenä polkuna
+yhdellä `Pen.stroke`-kutsulla per johto aiemman ~30 sijaan, ja `drawCable` saa valmiin
+polylinen välimuistista sen sijaan että laskisi bezierin uudelleen. Tulos: negatiivinen
+johto 11,37 → 7,34 ms, `mayhem` 246 → 164 ms. Kolmas kierros on käyttäjän 2026-07-21
+tekemä linjapäätös, koska loppuosa on rakenteellinen eikä optimoitavissa:
+`CQGuiCableOverlay.auraCableLimit` = 48 johtoa, jonka yli kaapelit pitävät §16.8:n
+staattisen musteen eivätkä syki, kun taas 16 lähdejakkia sykkivät yhä (1,4 ms kaikille).
+Kirjattu normatiivisesti `GUI_SPEC.md` §10:een. Mikään käsin rakennettu patch ei osu
+rajaan; `mayhem` osuu. Suojattu pysyvillä smoke-tarkistuksilla: välimuistin tuoreus
+(uusi patch, rippaus, painon muutos, ei turhaa uudelleenrakennusta) ja rajan molemmat
+puolet (syke päällä, syke pois 352 johdolla, syke palaa harvennettaessa).
+
+Neljäs kierros tuli käyttäjän havainnosta, että snapshot-morph nauhoituksen aikana vie
+6–7 %. Syy oli aito speksirike: `CQSnapshots.morph` ajaa 30 Hz ja kirjoittaa joka
+askeleella kaikki 57 jatkuvaa parametria sekä jokaisen muuttuneen matriisisolun, eli
+kaksinkertaisella nopeudella §10:n 15 Hz ambient-kattoon nähden. Sekä parametrien
+fan-out (`CQGui.paramFlushPeriod`) että kaapelikerroksen matriisipohjainen piirto
+tahdistetaan nyt 15 Hz:iin etureunalla: ensimmäinen muutos hiljaisen hetken jälkeen
+menee heti läpi, joten nupin käännös, 16n-faderi, koodi-`set`, istutus ja rippaus
+pysyvät välittöminä, ja vain jatkuva virta harvennetaan — viimeistä arvoa ei koskaan
+pudoteta. Mitattu: nuppien piirrot 4 420 → 2 312 kolmen sekunnin morphissa (22,9 % →
+13,9 % seinäkellosta). Kirjattu `GUI_SPEC.md` §10:een.
+
+Loppuun jäi tietoinen, kirjattu rakenteellinen rajoite: overlayn piirtomäärä ei
+liikkunut tahdistuksesta lainkaan, mikä on itsessään todiste siitä, ettei sitä piirretä
+meidän pyynnöistämme vaan sen alta — läpinäkyvä kaapelikerros vetää kaikki johdot aina
+kun mikä tahansa säädin sen alla piirtyy. Käyttäjän päätös 2026-07-21: morph on
+tahallinen ja ohimenevä operaatio, lepotaso palaa heti ~3 %:iin, joten G1 suljetaan ja
+offscreen-välimuisti harkitaan G2:n jälkeen (ks. "Myöhemmin").
+
+G1.3 hyväksytty 2026-07-21: serveri 19,8–21,5 % (SPEC §9:n katto 25 %), GUI lepotilassa
+2,8–3,8 % 20 johdolla, hiiriliike +2 % välittömällä paluulla, ei muistin kasvua eikä
+hidastumista ~20 min ajossa, inverso-johdot ja koko pinta visuaalisesti ennallaan.
+
+- [x] `GUI_SPEC.md` §13:n automaatio, kuuntelu ja käyttäjän visuaalinen hyväksyntä.
+  **Hyväksytty 2026-07-21 — G1 on valmis.** Sisältö: (1) neljä markkeria + kolme
   GUI-smokea, (2) §13:n kuuntelugate — istuta `tri3 → coco1_spaf` korvalla niin
   että swell kuuluu ennen commitia, siirrä banaani, rippaa nykäisemällä,
   wheel-trimmaa, lasso-harvestaa muutama ja peru koko saalis, ja tarkista että
@@ -310,6 +369,21 @@ Night-organismeja tai Weather Machinea ei piirretä ennen G1:n behavior foundati
   kirjoitettujen patch-reseptien kodiksi. Vaatii `config.folders`-lisäyksen,
   SPEC §7 -päivityksen ja vanhan polun lukemisen taaksepäin yhteensopivasti.
   Ei tehdä kesken G1:n GUI-työn.
+- **Kaapelikerroksen offscreen-välimuisti.** Kaapelikerros on läpinäkyvä koko
+  Day-alueen kokoinen taso säätimien päällä, joten kun mikä tahansa nuppi sen alla
+  piirtyy, Qt kutsuu overlayn `drawFunc`ia ja se vetää *kaikki* johdot uudelleen,
+  vaikka Qt näyttää niistä vain nupin kokoisen palan (SC:n `drawFunc` ei tiedä
+  leikkausalueesta). Tämä on ainoa jäljellä oleva syy siihen, että snapshot-morph
+  maksaa ~5–6 % lepotason ~3 %:n sijaan. Oikea korjaus on piirtää kaapelikerros
+  Image-puskuriin ja blitata se, kunnes geometria tai alpha oikeasti muuttuu.
+  Päätös 2026-07-21: ei tehdä G1:n lopussa, koska se on iso muutos hyväksyttyyn
+  renderöintiin ja vaatii oman visuaalisen katselmuksensa — harkitaan G2:n jälkeen.
+- **Dayn staattisen muistipolun visuaalinen paino.** Käyttäjän havainto 2026-07-21:
+  "signal memory path" on Dayn vähiten elävä osa — se näyttää reitin muttei tilaa —
+  joten sen nykyinen tila-osuus on iso suhteessa informaatioarvoon. G1:n loppuportissa
+  korjattiin vain venyminen (ankkurointi); kysymys siitä, pitäisikö kaaviota madaltaa,
+  hiljentää vai poistaa, ratkaistaan omana suunnittelupäätöksenään G2:n jälkeen.
+  Sama arviointi koskee "spesal topology" -osiota, joka sen sijaan **on** elävä.
 - Space-body ja Space-estetiikka odottavat erillistä konseptipäätöstä.
 - Norns + grid + 16n + crow -portti on v2-visio; alkuperäinen tekninen muistio on
   arkistoidun suunnitelman lopussa.
