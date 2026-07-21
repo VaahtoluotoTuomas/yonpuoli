@@ -356,14 +356,22 @@ coco-ulostulosta ja lintujen flutter.
   `CQGui`:ssä (nahat eivät ole koskaan yhtä aikaa näkyvissä), ja Day/Night
   nimeävät kohteensa erikseen (`day_deckA` / `night_deckA`), mikä on
   yksikkötestattu.
-  **Qt-rajoitus, joka pitää tietää:** sclangille ei tule *drag-leave*-callbackia
-  — vain `canReceiveDrag`-predikaatti ja itse pudotus. Korostus siis viritetään
-  predikaatista ja puretaan vahtikoiralla, jonka jokainen uusi kutsu virittää
-  uudelleen (`CQGui.dropTargetHold`, 0,4 s); pudotus nollaa sen heti. Jos Qt
-  kysyy predikaattia vain kerran per sisääntulo eikä joka liikkeellä, reuna
-  näkyy 0,4 s ja vetäytyy — **kumpikin maailma on siedettävä eikä kumpikaan
-  jää mainostamaan kohdetta, josta veto on jo poistunut.** Kumpi maailma on
-  kyseessä, selviää vasta oikealla tiedostovedolla (lohko G2.10).
+  **Mitattu 2026-07-22 oikealla tiedostovedolla:** Qt kysyy `canReceiveDrag`in
+  **vain kerran per dragEnter, ei joka liikkeellä**, eikä drag-leave-callbackia
+  ole lainkaan. Ensimmäinen versio purki korostuksen ajastimella, ja reuna
+  sammui kesken vedon vaikka tiedosto oli yhä laatikon päällä — affordanssi
+  petti juuri sillä hetkellä kun sitä luettiin. **Korostusta pitää nyt yllä se,
+  missä kursori on**: kevyt `QtGUI.cursorPosition`-kysely kohteen omaa globaalia
+  suorakaidetta vasten, samaa jolle reuna piirretään (vihje ja teko jakavat
+  saman geometrian, §4.5). Kaksi toisistaan riippumatonta ulospääsyä — kursori
+  poistuu tai veto päättyy — joten se ei voi jäädä jumiin. Kysely käy vain
+  silloin kun tiedostoa oikeasti raahataan soittimen päällä.
+  Käyttäjän toinen havainto samalla korjattu: **yön kohde oli liian pieni** ja
+  jäi Windowsin raahauskuvakkeen alle. Reuna piirtyy nyt linnun JA sen nimen
+  ympärille (`birds[i][\dropRect]`) — se on sekä se, minkä silmä lukee decksi,
+  että se, mikä oikeasti ottaa tiedoston vastaan. Piirto siirtyi linnun omasta
+  44×32 kerroksesta koko lavan groundille, koska näkymä ei voi maalata omien
+  rajojensa ulkopuolelle.
 - [ ] **Täsmällinen Night toolbar** (§6: patch-preset-valikko · shake · grow ·
   wither · breed · amount-mininuppi · kompassilevy). Sisällöstä olemassa jo:
   preset-valikko (Inspectorin otsikko), shake ja amount (Day). Grow/wither/

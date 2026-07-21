@@ -382,6 +382,14 @@ CQNightGeometry {
 				// CQGui trims an overlong name from its tail only (§16.4)
 				labelRect: Rect(center.x - 100, center.y + (33 * scale), 200, 20))
 		};
+		// §16.7's drop target: the bird AND its name — both what the eye reads
+		// as "this deck" and what actually accepts the file (label and wing
+		// socket take drops too). The bird's own 44x32 box was smaller than the
+		// file icon Windows drags under the cursor, so the border hid beneath
+		// the very thing it was answering (measured 2026-07-22).
+		birds.do { |bird|
+			bird[\dropRect] = bird[\box].union(bird[\labelRect]).insetBy(-6, -6);
+		};
 		endpoints[\deckA_rate] = birds[0][\rateSocket];
 		endpoints[\deckB_rate] = birds[1][\rateSocket];
 

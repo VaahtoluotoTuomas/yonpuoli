@@ -1314,17 +1314,16 @@ CQ.boot;
 //    nuppien ja nappien päälle: reunan pitää pysyä (se merkitsee laatikon,
 //    ei yksittäistä vimpainta).
 // 2. Siirrä veto deck b:n päälle: korostuksen pitää SIIRTYÄ, ei kahdentua.
-// 3. Vedä veto pois laatikoista ilman pudotusta. Reunan pitää sammua noin
-//    puolessa sekunnissa. TÄRKEÄ HAVAINTO: kerro kumpi tapahtuu —
-//    (a) reuna pysyy niin kauan kuin veto on laatikon päällä ja sammuu vasta
-//        kun poistut, vai
-//    (b) reuna sammuu jo ~0,4 s kuluttua vaikka veto on yhä laatikon päällä.
-//    Qt ei anna sclangille drag-leave-kutsua, joten kumpi maailma on
-//    kyseessä, selviää vain tästä. (b) on siedettävä mutta ei ihanteellinen.
+// 3. Pidä veto paikallaan laatikon päällä useita sekunteja: reunan pitää
+//    PYSYÄ palamassa. (Ensimmäinen versio sammui ~0,4 s kuluttua kesken vedon;
+//    korjattu 2026-07-22 niin, että korostusta pitää yllä kursorin sijainti
+//    eikä ajastin.) Vedä sitten pois laatikosta ilman pudotusta: reunan pitää
+//    sammua välittömästi, alle sekunnissa.
 // 4. Pudota tiedosto: reunan pitää kadota heti ja tiedoston latautua.
-// 5. YÖ: Tab, ja toista kohdat 1–4 linnulla. Raahaa myös nimikyltin ja
-//    siiven alla olevan rate-kuun päälle: reunan pitää syttyä LINNUN
-//    ympärille, ei kyltin tai kuun.
+// 5. YÖ: Tab, ja toista kohdat 1–4 linnulla. Reunan pitää nyt piirtyä linnun
+//    JA sen nimen ympärille — selvästi isompana kuin ensimmäisessä versiossa,
+//    jossa se jäi Windowsin raahauskuvakkeen alle. Raahaa myös nimikyltin ja
+//    siiven alla olevan rate-kuun päälle: saman reunan pitää palaa.
 // 6. Raahaa jotain, mikä ei ole tiedosto (esim. valittua tekstiä SC:n
 //    editorista): mitään ei saa korostua.
 ```

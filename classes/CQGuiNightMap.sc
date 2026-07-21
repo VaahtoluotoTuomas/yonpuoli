@@ -578,12 +578,27 @@ CQGuiNightMap {
 			.do { |view|
 				view.canReceiveDragHandler = { |v|
 					var accepted = canDrop.value(v);
-					if(accepted) { gui.dropTargetHover(name, birdViews[i]) };
+					// cue and action share one rect, in the coordinates the
+					// cursor poll speaks (§16.7)
+					if(accepted) {
+						gui.dropTargetHover(name, groundView, {
+							this.prGlobalRect(
+								geometry !? { |geo| geo[\birds][i][\dropRect] })
+						})
+					};
 					accepted
 				};
 				view.receiveDragHandler = doDrop;
 			};
 		};
+	}
+
+	// a stage rect in the screen coordinates QtGUI.cursorPosition reports
+	prGlobalRect { |rect|
+		var origin;
+		if(rect.isNil or: { freed }) { ^nil };
+		origin = container.mapToGlobal(0@0);
+		^Rect(rect.left + origin.x, rect.top + origin.y, rect.width, rect.height)
 	}
 
 	prDeckFor { |which|
@@ -680,6 +695,18 @@ CQGuiNightMap {
 		if(geometry.isNil) { ^this };
 		geometry[\roots].do { |root| CQInkNight.drawRoot(root, \night) };
 		CQInkNight.drawSprout(geometry[\sprout], sproutState, \night);
+		// §16.7's border rings the bird AND its name, so it is drawn on the
+		// full-stage ground rather than inside the bird's own 44x32 layer —
+		// a view cannot paint outside its bounds, and this rect is bigger than
+		// the bird on purpose (it is what accepts the file). Ground is the
+		// bottom layer, but the border runs outside every opaque layer it
+		// encloses, so nothing covers it.
+		geometry[\birds].do { |bird, i|
+			var which = if(i == 0) { \deckA } { \deckB };
+			if(gui.dropTargetIs(this.class.dropTargetName(which))) {
+				CQInk.drawDropTarget(bird[\dropRect], \night)
+			};
+		};
 	}
 
 	prDrawRing {
@@ -745,14 +772,10 @@ CQGuiNightMap {
 	*dropTargetName { |which| ^("night_" ++ which).asSymbol }
 
 	prDrawBird { |i|
-		var bird, which = if(i == 0) { \deckA } { \deckB };
+		var bird;
 		if(geometry.isNil) { ^this };
 		bird = geometry[\birds][i];
 		CQInkNight.drawBird(bird, bird[\box].leftTop, \night);
-		// drawBird leaves the pen translated into stage space
-		if(gui.dropTargetIs(this.class.dropTargetName(which))) {
-			CQInk.drawDropTarget(bird[\box], \night)
-		};
 	}
 
 	prDrawDecoration { |name, spec, anchor|

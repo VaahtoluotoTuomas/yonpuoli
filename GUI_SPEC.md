@@ -956,12 +956,20 @@ shake as lowercase word-buttons beside it.
   2 px dashed ink border — the only dashed rectangle in the app. One target is
   marked at a time; every view that accepts the file marks the **body** it
   belongs to, never itself (the night's filename label and wing socket light
-  the bird). Implementation note (2026-07-22): sclang receives no drag-*leave*
-  callback from Qt, only the `canReceiveDrag` predicate and the drop, so the
-  border is armed by the predicate and released by a watchdog every further
-  call re-arms, with the drop clearing it at once. Whatever Qt's polling turns
-  out to be, the border may never be left advertising a target the drag has
-  already left.
+  the bird). At night the border rings the bird **and its name**: that is what
+  the eye reads as the deck and what actually accepts the file, and the bird's
+  own 44×32 box was narrower than the file icon the OS drags under the cursor,
+  so the border hid beneath the very thing it was answering.
+  Implementation law (measured 2026-07-22): sclang receives no drag-*leave*
+  callback from Qt, and `canReceiveDrag` is asked **once per dragEnter, never
+  per move** — so the predicate can arm the border but can never release it,
+  and a timed release puts it out while the hand is still holding the file
+  over the box. **The border is therefore held by where the cursor is**: a
+  light poll of `QtGUI.cursorPosition` against the target's own global rect —
+  the same rect the border is drawn on, so cue and action share one geometry
+  (§4.5). Two independent exits, the cursor leaving and the drag ending, so it
+  can never stick. The poll runs only while a file is actually being dragged
+  over the instrument; it is hover tracking, not ambient motion (§16.9).
 
 ### 16.8 State table (normative)
 

@@ -327,7 +327,15 @@ CQGuiPanels {
 		bindDrop = { |view|
 			view.canReceiveDragHandler = { |v|
 				var accepted = canDrop.value(v);
-				if(accepted) { gui.dropTargetHover(dropName, row) };
+				// cue and action share one rect, in the coordinates the cursor
+				// poll speaks (§16.7)
+				if(accepted) {
+					gui.dropTargetHover(dropName, row, {
+						var origin = row.mapToGlobal(0@0);
+						Rect(origin.x, origin.y,
+							row.bounds.width, row.bounds.height)
+					})
+				};
 				accepted
 			};
 			view.receiveDragHandler = doDrop;

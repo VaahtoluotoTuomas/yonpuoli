@@ -161,6 +161,29 @@ CQGuiVisualContractTest : UnitTest {
 			"the two birds are distinct targets");
 	}
 
+	// Measured on a real file drag (2026-07-22): Qt asks `canReceiveDrag` once
+	// per dragEnter, never per move, so the predicate can arm the border but
+	// can never release it. A timed release put the border out while the hand
+	// was still holding the file over the box. The border is held by where the
+	// cursor actually is, with two independent exits so it cannot stick.
+	test_dropBorderIsHeldByTheCursorNotByAClock {
+		var rect = Rect(100, 100, 60, 40);
+		this.assert(CQGui.dropTargetKeeps(rect, Point(130, 120), true, 99),
+			"a cursor inside the target holds the border however long it rests");
+		this.assert(CQGui.dropTargetKeeps(rect, Point(300, 120), true, 0).not,
+			"the border releases the moment the cursor leaves the target");
+		this.assert(CQGui.dropTargetKeeps(rect, Point(130, 120), false, 0).not,
+			"a drag that has ended releases it too — the second exit");
+		this.assert(CQGui.dropTargetKeeps(nil, Point(130, 120), true, 0).not,
+			"a target with no rect to test cannot hold anything");
+		// a platform with no cursor to report falls back to the blind hold
+		this.assert(CQGui.dropTargetKeeps(rect, nil, true, 0),
+			"no cursor: the border keeps its blind hold rather than flickering");
+		this.assert(CQGui.dropTargetKeeps(rect, nil, true,
+			CQGui.dropTargetHold + 0.1).not,
+			"no cursor: the blind hold still expires, so it cannot stick");
+	}
+
 	test_cableAlphaPulsesWithSourceAuraOnly {
 		this.assertEquals(CQGuiCableOverlay.plantedAlpha(nil), 0.88,
 			"no telemetry leaves the planted cable at its reviewed static alpha");

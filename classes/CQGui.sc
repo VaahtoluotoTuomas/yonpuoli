@@ -28,9 +28,11 @@ CQGui {
 	var <chargeValues, chargePainted, <chargeNames, chargeIndex;
 	var deckLabels, deckNames, deckCtls, skipButtons;
 	var noticeView, recBtn, recTimeView, recTask, hotTask;
-	// §16.7: which drop target a file drag is hovering, and the view that draws
-	// it. One at a time across both skins — they are never visible together.
-	var <dropTarget, dropTargetView, dropTargetSeq = 0;
+	// §16.7: which drop target a file drag is hovering, the view that draws it,
+	// and a function returning its global rect. One at a time across both
+	// skins — they are never visible together.
+	var <dropTarget, dropTargetView, dropTargetRect;
+	var dropTargetPolling = false, dropTargetArmed = 0;
 	var micLive = false, hotLive = false, cleaned = false;
 	var paramPending, paramFlushScheduled = false, lastParamFlush = 0;
 	// shake throw amplitude shared by the SHAKE button and the p key; GUI-local
@@ -152,20 +154,33 @@ CQGui {
 		^auraValues[index]
 	}
 
-	// §16.7 drop target. Qt hands sclang no drag-LEAVE callback — only the
-	// `canReceiveDrag` predicate and the drop itself — so the highlight is
-	// armed by the predicate and disarmed by a watchdog that every further
-	// call re-arms. A drop clears it at once. If Qt turns out to ask the
-	// predicate once per enter rather than per move, the border shows for
-	// `dropTargetHold` and then withdraws: visible either way, and never left
-	// advertising a target the drag has already walked away from. That is the
-	// whole reason for the hold — it is not a fade or a decoration (§16.9).
+	// §16.7 drop target. Qt hands sclang no drag-LEAVE callback and — measured
+	// on a real file drag, 2026-07-22 — asks `canReceiveDrag` only once per
+	// dragEnter, never per move. So the predicate can arm the border but can
+	// never release it, and a timed release put the border out while the hand
+	// was still holding the file over the box: the affordance failed exactly
+	// while it was being read. The border is therefore held by *where the
+	// cursor is*: a light poll hit-tests `QtGUI.cursorPosition` against the
+	// target's own global rect — the same rect the border is drawn on, so cue
+	// and action share one geometry (§4.5, again). Two independent exits, so
+	// it can never stick: the cursor leaving, or the drag itself ending.
+	// The poll exists only while a file is actually being dragged over the
+	// instrument; it is hover tracking, not ambient motion (§16.9).
+	*dropTargetPoll { ^0.08 }
+	// only the fallback if the platform has no cursor to give us
 	*dropTargetHold { ^0.4 }
+
+	// pure: does the border stay up? nil cursor = the platform would not say,
+	// and then the border keeps its blind hold rather than flickering off
+	*dropTargetKeeps { |rect, cursor, dragging = true, held = 0|
+		if(dragging.not or: { rect.isNil }) { ^false };
+		if(cursor.isNil) { ^held < this.dropTargetHold };
+		^rect.containsPoint(cursor)
+	}
 
 	dropTargetIs { |name| ^dropTarget == name }
 
-	dropTargetHover { |name, view|
-		var seq;
+	dropTargetHover { |name, view, rectFunc|
 		if(cleaned) { ^this };
 		if(dropTarget != name) {
 			var previous = dropTargetView;
@@ -174,23 +189,43 @@ CQGui {
 			previous !? { |v| v.refresh };
 			view !? { |v| v.refresh };
 		};
-		dropTargetSeq = dropTargetSeq + 1;
-		seq = dropTargetSeq;
-		AppClock.sched(this.class.dropTargetHold, {
-			if(cleaned.not and: { seq == dropTargetSeq }) { this.dropTargetClear };
-			nil
-		});
+		dropTargetRect = rectFunc;
+		dropTargetArmed = Main.elapsedTime;
+		this.prDropWatch;
 		^this
 	}
 
 	dropTargetClear {
 		var previous = dropTargetView;
-		dropTargetSeq = dropTargetSeq + 1;
 		if(dropTarget.notNil) {
 			dropTarget = nil;
 			dropTargetView = nil;
+			dropTargetRect = nil;
 			if(cleaned.not) { previous !? { |v| v.refresh } };
 		};
+		^this
+	}
+
+	prDropWatch {
+		if(dropTargetPolling) { ^this };
+		dropTargetPolling = true;
+		AppClock.sched(this.class.dropTargetPoll, {
+			var keep = false;
+			if(cleaned.not and: { dropTarget.notNil }) {
+				keep = this.class.dropTargetKeeps(
+					try { dropTargetRect.value },
+					try { QtGUI.cursorPosition },
+					View.currentDrag.notNil,
+					Main.elapsedTime - dropTargetArmed);
+			};
+			if(keep) {
+				this.class.dropTargetPoll
+			} {
+				dropTargetPolling = false;
+				this.dropTargetClear;
+				nil
+			}
+		});
 		^this
 	}
 
