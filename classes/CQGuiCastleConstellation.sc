@@ -20,7 +20,9 @@ CQGuiCastleConstellation {
 
 	prInit { |owner|
 		gui = owner;
-		view = UserView().minSize_(Size(220, 150))
+		// Five castles are five castles at any window size, so the ring is anchored
+		// vertically: 176 px is the height the reviewed 1280x720 layout gave it.
+		view = UserView().minWidth_(220).fixedHeight_(176)
 			.background_(CQInk.palette(\day)[\ground]);
 		view.drawFunc = {
 			var states = gui.spesalStates;

@@ -102,7 +102,10 @@ CQGuiPanels {
 			this.prGap(12),
 			converter,
 			signalPath,
-			output
+			output,
+			// every island above is fixed-height: a taller window must collect its
+			// slack here as paper, not stretch the memory-path map (GUI_SPEC §16.10)
+			nil
 		).spacing_(6))
 	}
 
@@ -159,7 +162,8 @@ CQGuiPanels {
 			macro,
 			castles,
 			this.prGap(12),
-			spesalView
+			spesalView,
+			nil                       // slack lands as paper, not as a stretched ring
 		).spacing_(6))
 	}
 
@@ -333,8 +337,11 @@ CQGuiPanels {
 		^holder
 	}
 
+	// The memory-path map holds a fixed number of nodes, so its information does
+	// not grow with its size: it is anchored, never elastic.  150 px is the height
+	// the reviewed 1280x720 layout gave it; slack goes to paper (see *coco).
 	*prCocoSignalPath { |seed|
-		var view = UserView().minHeight_(96).background_(CQInk.palette(\day)[\ground]);
+		var view = UserView().fixedHeight_(150).background_(CQInk.palette(\day)[\ground]);
 		view.drawFunc = {
 			CQInk.drawCocoSignalPath(view.bounds.moveTo(0, 0), \day, seed)
 		};
