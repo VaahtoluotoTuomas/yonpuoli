@@ -1116,7 +1116,9 @@ CQ.patch(\tri5, \coco2_skip, 0);
 CQ.patchPreset(\empty);
 ```
 
-- [ ] G2.5 latauslamput ja rungon solo-light hyväksytty (pvm: )
+- [x] G2.5 latauslamput ja rungon solo-light hyväksytty (pvm: 2026-07-21,
+  kolmen korjauskierroksen jälkeen: chevronin kolmas tila, Dayn lampun
+  kontrasti, rungon hover-vihjeet, juuret, tiedostonimet)
 
 **G2.5-kierros 1 (2026-07-21) — korjattu samana päivänä, tarkista uudelleen:**
 

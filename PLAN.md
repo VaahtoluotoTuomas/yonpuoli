@@ -318,8 +318,8 @@ coco-ulostulosta ja lintujen flutter.
   napautuksen kelauksesta), staattinen hover-halo, delta-portti (~1,5 px)
   harventaa lähes paikallaan olevan kelan piirrot. Ei telemetriaa = ei
   komeettaa. `/cq_charge` on oma seuraava lisäyksensä.*
-- [x] `/cq_charge`-latauslamput (9 kanavaa, GUI_SPEC §9). *Toteutettu
-  2026-07-21, odottaa manuaalitestin G2.5 hyväksyntää.* Lataus lähetetään
+- [x] `/cq_charge`-latauslamput (9 kanavaa, GUI_SPEC §9). **Hyväksytty
+  2026-07-21 (manuaalitesti G2.5).** Lataus lähetetään
   niistä samoista synteistä, jotka summat jo laskevat — coco 1 (replyID 1),
   coco 2 (replyID 2) ja quantussy (replyID 3), kukin 15 Hz — joten lamppu ei
   voi olla eri mieltä kuin oma Schmittinsä eikä grafiin synny toista kopiota
@@ -328,16 +328,27 @@ coco-ulostulosta ja lintujen flutter.
   näkemättä, ja sama lasku on §16.8:n kukinta. Piirto: lamppu kerrallaan,
   vain kun sen oma lataus liikkui (≥ 0.02) — kytkemätön gate summautuu ikuisesti
   tarkalleen nollaan eikä maksa mitään. Ei telemetriaa = himmeä lepohelmi.
-- [ ] Solo-light (body), deck-bird drag-over-korostus ja täsmällinen Night
-  toolbar. *(Endpoint- ja kaapelisolo sekä bird-drop toimivat jo. **Rungon
-  solo-light toteutettu 2026-07-21**, odottaa G2.5:n hyväksyntää: yön rungot
-  ovat viisi linnaketta, kaksi kuorta ja ringin vesi — kaksi jälkimmäistä
+- [x] Solo-light (body). **Hyväksytty 2026-07-21 (manuaalitesti G2.5).** Yön
+  rungot ovat viisi linnaketta, kaksi kuorta ja rinki — kolme jälkimmäistä
   Dayn omilla nimillä `coco1`/`coco2`/`quantussy`, joten yksi jaettu kielioppi
   ei pidä kahta soloa samasta elimestä. Juuret ja linnut eivät saa runkoa:
   niillä on yksi endpoint, jonka oma solo sytyttää täsmälleen samat johdot.
-  §4.5 sitoo joka klikkausmäärällä — nopea toinen napautus sisäkellolla,
-  sydämellä, chevronilla, lukupäässä tai silmässä kuuluu sille säätimelle,
-  ei takana olevalle rungolle.)*
+  Kolmen kierroksen jälkeen syntyi yksi normatiivinen laki (`GUI_SPEC.md`
+  §16.6): **runko otetaan kiinni sen omasta piirretystä ääriviivasta, ja se
+  viiva on myös hover-vihje** — linnakkeen kehä, kuoren ulkokehä, joen viiva.
+  Vihje ja teko jakavat aina saman geometrian. §4.5 sitoo joka
+  klikkausmäärällä: nopea toinen napautus sisäkellolla, sydämellä,
+  chevronilla, lukupäässä tai silmässä kuuluu sille säätimelle, ja siellä
+  missä kelauspinta kulkee lähellä kuoren kehää, kelaus voittaa omalla
+  vihjeellään.
+- [ ] **Deck-bird drag-over-korostus (§16.7).** Huom: `drop target` -laki
+  koskee §16.7:n mukaan sekä Dayn deck-laatikkoa että yön lintua, eikä
+  katkoviivakorostusta ole toteutettu kummallekaan — molemmat kuuluvat tähän
+  samaan askeleeseen (tiedostopudotus itsessään toimii jo molemmissa).
+- [ ] **Täsmällinen Night toolbar** (§6: patch-preset-valikko · shake · grow ·
+  wither · breed · amount-mininuppi · kompassilevy). Sisällöstä olemassa jo:
+  preset-valikko (Inspectorin otsikko), shake ja amount (Day). Grow/wither/
+  breed/kompassi ovat G3:n osia — toolbar varaa niille kodin, ei toteuta niitä.
 - [x] **Kaksi aiemmista vaiheista löytynyttä piirtovikaa korjattu** (käyttäjä
   2026-07-21, G2.5-kierros 2): (1) **juuret leikkaantuivat yläpäästä** — syy
   oli juuri se epäilty: juuren viimeinen pätkä jäi kärkijakin läpinäkymättömän
