@@ -388,16 +388,23 @@ abort = { |error|
 															// the eye collapses to nothing exactly when the
 															// regime is clearest (G2 gate, 2026-07-22).
 															gui.prChargeFrame(1, [0.62, 1.0]);
-															gui.prPhaseFrame(1, 0.04);
+															gui.prPhaseFrame(1, 0.04, 1, 12);
 															check.value(map.struckOn[0].not,
 																"one lit frame is a skip, not yet a regime");
-															gui.prPhaseFrame(1, 0.03);
+															gui.prPhaseFrame(1, 0.03, 1, 12);
 															check.value(map.struckOn[0],
 																"two lit frames running mark the head struck");
 															check.value(map.struckOn[1].not,
 																"the other shell's head is left alone");
+															// the rate is worn as weight, never as motion
+															check.value(map.struckNorms[0] > 0
+																and: { map.struckNorms[0] < 0.5 },
+																"a countable rate wears a light mark");
+															gui.prPhaseFrame(1, 0.03, 1, 1500);
+															check.value(map.struckNorms[0] > 0.9,
+																"an audio-rate hammering wears the heaviest mark");
 															gui.prChargeFrame(1, [0.62, 0]);
-															gui.prPhaseFrame(1, 0.5);
+															gui.prPhaseFrame(1, 0.5, 1, 0);
 															check.value(map.struckOn[0].not,
 																"a released skip returns the comet to a point");
 															// ---- the chevron reads the real travel ----

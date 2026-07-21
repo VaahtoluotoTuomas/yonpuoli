@@ -285,8 +285,18 @@ CQSynthDefs {
 			// makes the value alias-free and gives the GUI a third, honest
 			// reading: near ±1 = settled forward/flipped, near 0 = shuttling too
 			// fast to draw as an arrow (GUI_SPEC §16.6).
+			// third value: how often the head is being thrown back, in Hz —
+			// the *combined* reset (matrix trig + \t_skip), i.e. exactly what
+			// Phasor obeys. Impulses of height SampleRate through a one-pole
+			// settle at their own rate, because a Lag's DC gain is 1: the
+			// output IS triggers per second, smoothed over 0.2 s and self-
+			// clearing when they stop. It exists because a rate this fast
+			// cannot be drawn as motion (the eye fuses above ~10 Hz and this
+			// message is 5 Hz), so §16.6 draws it as weight instead.
 			SendReply.kr(Impulse.kr(5), '/cq_phase',
-				[A2K.kr(phase / frames), A2K.kr(Lag.ar(dir, 0.15))],
+				[A2K.kr(phase / frames), A2K.kr(Lag.ar(dir, 0.15)),
+					A2K.kr(Lag.ar((\t_skip.tr(0) + skipTrig) * SampleRate.ir,
+						0.2))],
 				\meterId.ir(0));
 			// GUI_SPEC §9 `/cq_charge` — this coco's two gate/trig sums exactly as
 			// the Schmitt above sees them (post-weight, pre-threshold), so the lamp

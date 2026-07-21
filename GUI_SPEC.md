@@ -454,7 +454,7 @@ meters:
 | phase | message | payload | drives |
 |---|---|---|---|
 | G1 | `/cq_aura` | 16 source magnitudes (lagged \|amp\|, canonical source order) | jack glow, cable pulse, root/castle/body glow |
-| G2 | `/cq_phase` | coco read-head position 0..1 **and the read direction as an audio-rate mean** (`Lag.ar(dir, 0.15)`), replyID 1/2 (landed 2026-07-21 as its own message at **5 Hz** on purpose: the send rate is the two shells' repaint ceiling — §10, one shell repaint ≈ 30 Pen calls, so 15 Hz would spend the whole ~3 % GUI budget on two dots). The direction is a *mean*, not a sample, because a flip banana can reverse the loop far faster than 5 Hz can sample it: ±1 = settled, near 0 = shuttling. Deriving direction client-side from consecutive positions aliased and was replaced | the spiral spark, the comet's tail and the mouth chevron |
+| G2 | `/cq_phase` | coco read-head position 0..1, **the read direction as an audio-rate mean** (`Lag.ar(dir, 0.15)`) and **the skip rate in Hz** (added 2026-07-22: impulses of height `SampleRate` through a one-pole settle at their own rate, because a `Lag`'s DC gain is 1 — so the value *is* triggers/second, over the combined reset `\t_skip + skipTrig` that Phasor actually obeys, smoothed 0.2 s and self-clearing. It exists because a rate this fast cannot be drawn as motion — see §16.6), replyID 1/2 (landed 2026-07-21 as its own message at **5 Hz** on purpose: the send rate is the two shells' repaint ceiling — §10, one shell repaint ≈ 30 Pen calls, so 15 Hz would spend the whole ~3 % GUI budget on two dots). The direction is a *mean*, not a sample, because a flip banana can reverse the loop far faster than 5 Hz can sample it: ±1 = settled, near 0 = shuttling. Deriving direction client-side from consecutive positions aliased and was replaced | the spiral spark, the comet's tail and the mouth chevron; the rate is the struck mark's weight |
 | G2 | `/cq_charge` | the 9 gate/trig destination sums (post-weight, pre-Schmitt); landed 2026-07-21 as **three 15 Hz blocks** sent by the synths that already compute those sums — coco 1 (replyID 1) and coco 2 (replyID 2) report their own flip/skip pair, the quantussy (replyID 3) all five spesal sums. Each sum is **peak-held at audio rate** (instant rise, 0.15 s fall) before `A2K`, because a trigger crossing can last a single sample and a plain control-rate sample would miss it; the fall is also §16.8's fired bloom. No second copy of the sums exists in the graph, so a lamp can never disagree with its Schmitt | charge lamps — the answer to "why is my flip banana silent" — and, for `cocoN_skip`, the read head's struck mark (§16.6) |
 
 `/cq_charge` canonical channel order = the matrix destination order filtered
@@ -825,16 +825,32 @@ belongs to **events** alone — the read head, fired lamps — while settings ar
 drawn in line ink. The comet has a third state of its own, by the same regime
 law as the chevron: while the `cocoN_skip` charge is still lit on two
 consecutive `/cq_phase` frames — i.e. the loop is being restarted faster than
-5 Hz can show — the head is **struck**, and wears the §16.5 spark glyph (Ø 10,
-spark at 75 %) instead of its tail. A bead crawling near zero would otherwise
-read as "almost stopped", the exact opposite of the truth, and a direction
-means nothing under hammering. No new telemetry and no client-side timer: the
-server's 0.15 s peak-hold on the charge already says it. **The struck mark is
-a state, never an extent** (2026-07-22, second attempt): the first version
-drew the reach the head manages out of the eye, and that reach collapses to
-sub-pixel exactly when the regime is clearest — a mark that disappears when it
-is most needed. Any regime display owes this: measure the *condition*, not a
-quantity the condition destroys. Flip reverses comet and chevron.
+5 Hz can show — the head is **struck**, and wears the §16.5 spark glyph
+instead of its tail. A bead crawling near zero would otherwise read as "almost
+stopped", the exact opposite of the truth, and a direction means nothing under
+hammering. The condition itself needs no new telemetry and no client-side
+timer: the server's 0.15 s peak-hold on the charge already says it.
+**The struck mark is a state, never an extent** (2026-07-22, second attempt):
+the first version drew the reach the head manages out of the eye, and that
+reach collapses to sub-pixel exactly when the regime is clearest — a mark that
+disappears when it is most needed. Any regime display owes this: measure the
+*condition*, not a quantity the condition destroys.
+
+The **trigger rate is drawn as weight, never as motion** (2026-07-22, third
+attempt — the static mark read as *calm* while the loop was being hammered
+hundreds of times a second). This is the general law for any rate on this
+surface: above ~10 Hz the eye fuses a flicker into a steady light — a real
+panel LED does exactly the same — and this map only receives 5 Hz, so the
+fastest blink it could draw would be **slower than the truth**, at a rate the
+GUI invented. That is decoration (§16.12) and a lie at once. A tachometer, not
+a strobe: the spark's arms grow 4 → 10 px and a second diagonal pair opens
+past the midpoint, alpha 0.55 → 0.9, on a **logarithmic** 8 Hz → 2 kHz scale
+(a rate is a pitch to the ear, so it is an octave axis to the eye), quantized
+to the eight steps the drawing can distinguish so a drifting rate cannot
+repaint the shell for a difference nobody can see. The rate rides `/cq_phase`
+as a third value rather than opening a fourth stream (§15 leaves message
+merging free; §10 counts messages and Pen calls, not floats). Flip reverses
+comet and chevron.
 **Hold**: the outermost turn
 closes into a full circle and tints danger-red at 60 % — the loop is sealed;
 the **heart** at the spiral's innermost eye (small Ø ≈ 5 mark, red while

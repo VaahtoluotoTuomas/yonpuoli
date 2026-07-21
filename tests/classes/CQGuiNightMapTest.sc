@@ -19,6 +19,34 @@ CQGuiNightMapTest : UnitTest {
 			"an unknown name has no night home");
 	}
 
+	// The struck head wears its trigger rate as weight, never as motion: above
+	// ~10 Hz the eye fuses a flicker, and this surface only gets 5 Hz, so any
+	// blink would be a rate the GUI invented — slower than the truth. The
+	// mapping is logarithmic (a rate is a pitch to the ear) and quantized to
+	// the steps the drawing can show, so a drifting rate cannot repaint the
+	// shell every frame for a difference nobody can see (§10, §16.6).
+	test_struckRateReadsAsWeightOnALogScale {
+		var steps = CQGuiNightMap.struckSteps;
+		this.assertEquals(CQGuiNightMap.struckNorm(nil), 0,
+			"no telemetry weighs nothing — the mark cannot invent a rate");
+		this.assertEquals(CQGuiNightMap.struckNorm(8), 0,
+			"the bottom of the scale is where a flicker stops being countable");
+		this.assertEquals(CQGuiNightMap.struckNorm(2048), 1,
+			"the top of the scale is eight octaves up");
+		this.assertEquals(CQGuiNightMap.struckNorm(100000), 1,
+			"a mad rate clamps instead of growing the mark off the shell");
+		this.assertEquals(CQGuiNightMap.struckNorm(0), 0,
+			"a zero rate clamps too (log2 of zero is not a size)");
+		this.assert(CQGuiNightMap.struckNorm(128) > CQGuiNightMap.struckNorm(32)
+			and: { CQGuiNightMap.struckNorm(32) > CQGuiNightMap.struckNorm(16) },
+			"the weight rises with the rate");
+		this.assertEquals(CQGuiNightMap.struckNorm(128),
+			CQGuiNightMap.struckNorm(132),
+			"a rate that drifts inside one step never repaints the shell");
+		this.assert((CQGuiNightMap.struckNorm(512) * steps).frac < 1e-9,
+			"every weight lands on one of the drawing's own steps");
+	}
+
 	test_lampsExactlyOnGateTrigs {
 		var lamped = CQMatrix.destNames.select { |name|
 			CQGuiNightMap.endpointSpec(name)[\lamp] == true

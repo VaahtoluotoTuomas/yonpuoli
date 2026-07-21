@@ -93,6 +93,12 @@ CQGuiVisualContractTest : UnitTest {
 		// the sums the lamps report on must not have cost the DSP a second copy
 		this.assert(coco.collect { |reply| reply[\name] }.includes('/cq_phase'),
 			"extracting the sums left the read-head telemetry intact");
+		// address · direction mean · skip rate — the rate rides the message
+		// that already exists rather than opening a fourth stream (§15 leaves
+		// message merging free, and §10 counts messages, not floats)
+		this.assertEquals(
+			coco.detect { |reply| reply[\name] == '/cq_phase' }[\values], 3,
+			"the phase message carries address, direction and skip rate");
 		this.assert(quantussy.collect { |reply| reply[\name] }
 			.includes('/cq_castle'),
 			"extracting the sums left the castle activity telemetry intact");

@@ -17,7 +17,7 @@ CQGuiNightMap {
 	var <eyeFreqNorm = 0.5, <eyeChaosNorm = 0.15;
 	var <speedNorms, <shellHover, <dialHover, <bodyHover, <rimHover, <ringHover = false;
 	var <sparkDirs, <skipHover, <skipFlash, sparkPainted, flipPainted;
-	var struckCount, <struckOn;
+	var struckCount, <struckOn, <struckNorms;
 	var <fireflyPhase = 0.0, lastFireflyTime, castlePainted;
 	var <holdStates, <flipStates, <rangeLetters, <sproutState;
 	var freed = false;
@@ -136,7 +136,7 @@ CQGuiNightMap {
 	// A move under ~1.5 px along the line keeps the frame.
 	paintPhase { |i|
 		var norm = gui.phaseNorms[i], mean = gui.phaseDirs[i];
-		var delta, mode, struck, repaint = false;
+		var delta, mode, struck, rate, repaint = false;
 		if(freed) { ^this };
 		// the chevron's regime can change while the address barely moves — a
 		// shuttled loop goes nowhere — so it gets its own gate
@@ -147,6 +147,12 @@ CQGuiNightMap {
 		// opposite of the truth
 		struck = this.prStruck(i);
 		if(struck != struckOn[i]) { struckOn[i] = struck; repaint = true };
+		// the weight only moves in the steps the drawing can show
+		rate = this.class.struckNorm(gui.phaseSkipHz[i]);
+		if(struck and: { rate != struckNorms[i] }) {
+			struckNorms[i] = rate;
+			repaint = true;
+		};
 		// the tail shares the chevron's one truth wherever the server reports a
 		// settled direction; the wrap-aware travel stays the fallback
 		if(mean.notNil and: { mean.abs > this.class.shuttleFloor }) {
@@ -175,6 +181,18 @@ CQGuiNightMap {
 	// faster than the eye can follow, and it wears the struck mark (§16.6).
 	// No new telemetry and no client-side timer: the charge already says it.
 	*struckFrames { ^2 }
+
+	// The rate the struck mark wears as weight, 8 Hz → 2 kHz over a log scale
+	// (rate is a pitch to the ear, so it is an octave axis to the eye too).
+	// Quantized to the eight steps the drawing can actually distinguish, so a
+	// drifting rate cannot repaint the shell on every 5 Hz frame for nothing.
+	*struckSteps { ^8 }
+
+	*struckNorm { |hz|
+		if(hz.isNil) { ^0 };
+		^((((hz.max(1).log2) - 3) / 8).clip(0, 1) * this.struckSteps).round
+			/ this.struckSteps
+	}
 
 	prStruck { |i|
 		var charge = gui.chargeFor(("coco" ++ (i + 1) ++ "_skip").asSymbol);
@@ -270,6 +288,7 @@ CQGuiNightMap {
 		skipFlash = [false, false];
 		struckCount = [0, 0];
 		struckOn = [false, false];
+		struckNorms = [0, 0];
 		sparkPainted = Array.newClear(2);
 		flipPainted = Array.newClear(2);
 		rangeLetters = ["", "", "", "", ""];
@@ -698,7 +717,7 @@ CQGuiNightMap {
 		CQInkNight.drawShell(coco, coco[\shellBox].leftTop,
 			holdStates[i], this.flipMode(i), speedNorms[i], shellHover[i],
 			gui.phaseNorms[i], sparkDirs[i], skipHover[i], skipFlash[i],
-			struckOn[i], rimHover[i], \night);
+			struckOn[i], struckNorms[i], rimHover[i], \night);
 	}
 
 	prDrawBird { |i|

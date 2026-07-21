@@ -122,7 +122,7 @@ CQInkNight {
 	// since the G2 gate; the hand's skip lives on the mouth's own mark.
 	*drawShell { |coco, origin, holdOn = false, flipMode = \forward,
 		speedNorm = 0.5, hover = false, sparkNorm, sparkDir = 1,
-		skipHover = false, skipFlash = false, struck = false,
+		skipHover = false, skipFlash = false, struck = false, struckNorm = 0,
 		rimHover = false, skin = \night|
 		var palette = CQInk.palette(skin), notch, normal, reach, spark, tail;
 		Pen.translate(origin.x.neg, origin.y.neg);
@@ -186,16 +186,7 @@ CQInkNight {
 		sparkNorm !? {
 			spark = CQNightGeometry.spiralPoint(coco, sparkNorm);
 			if(struck) {
-				// re-triggered faster than 5 Hz can show: the head wears the
-				// skip glyph itself — one vocabulary, and the cause is drawn
-				// where the effect is (§1's proximity law). A mark of STATE,
-				// never of extent: the first try at this drew the reach out of
-				// the eye, and that reach collapses to nothing exactly when
-				// the regime is clearest, so the mark vanished when it was
-				// most needed (caught at the G2 gate, 2026-07-22). The tail
-				// goes with it — a direction means nothing under hammering.
-				CQInk.drawGlyph(\skip, Rect.aboutPoint(spark, 5, 5),
-					palette[\spark].copy.alpha_(0.75));
+				this.drawStruck(spark, struckNorm, skin);
 			} {
 				tail = CQNightGeometry.spiralPoint(coco,
 					(sparkNorm - (sparkDir.sign * 0.01)).clip(0, 1));
@@ -208,6 +199,38 @@ CQInkNight {
 			Pen.addOval(Rect.aboutPoint(spark, 2, 2));
 			Pen.fill;
 		};
+	}
+
+	// The read head while it is being hammered (§16.6). It wears the skip
+	// glyph itself — one vocabulary, and the cause drawn where the effect is
+	// (§1's proximity law). A mark of STATE, never of extent: the first try
+	// drew the reach the head manages out of the eye, and that reach collapses
+	// to nothing exactly when the regime is clearest, so the mark vanished
+	// when it was most needed. The tail goes with it — a direction means
+	// nothing under hammering.
+	//
+	// The trigger RATE is drawn as weight, not as motion. Above ~10 Hz the eye
+	// fuses a flicker into a steady light (a real panel LED does the same), and
+	// this surface only gets 5 Hz of telemetry (§10) — so any blink would be a
+	// rate we invented, slower than the truth and decorative besides (§16.12).
+	// A tachometer, not a strobe: the arms grow with the rate and a second,
+	// diagonal pair opens past the midpoint. Four Pen lines, one stroke.
+	*drawStruck { |center, rateNorm = 0, skin = \night|
+		var palette = CQInk.palette(skin);
+		var norm = (rateNorm ? 0).clip(0, 1);
+		var reach = 4 + (6 * norm);
+		Pen.strokeColor = palette[\spark].copy.alpha_(0.55 + (0.35 * norm));
+		Pen.width = CQInk.strokes[\normal];
+		Pen.line(center + Point(reach.neg, 0), center + Point(reach, 0));
+		Pen.line(center + Point(0, reach.neg), center + Point(0, reach));
+		if(norm > 0.5) {
+			var diagonal = reach * 0.7;
+			Pen.line(center + Point(diagonal.neg, diagonal.neg),
+				center + Point(diagonal, diagonal));
+			Pen.line(center + Point(diagonal, diagonal.neg),
+				center + Point(diagonal.neg, diagonal));
+		};
+		Pen.stroke;
 	}
 
 	// §6.1 tide crescent: an open arc whose luminous fill is the value —

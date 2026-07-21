@@ -394,6 +394,17 @@ coco-ulostulosta ja lintujen flutter.
      eli se kutistuu alle pikselin juuri silloin kun regime on selvin. Merkki
      katosi silloin kun sitä eniten tarvittiin. Yleistettiin `GUI_SPEC.md`
      §16.6:een: **regime-näyttö mittaa ehtoa, ei suuretta jonka ehto tuhoaa.**
+     **Kolmas yritys** (2026-07-22): staattinen merkki luki *rauhallisena*,
+     vaikka liipaisu kävi satoja kertoja sekunnissa. Vilkutus ei ole ratkaisu
+     eikä edes mahdollinen — silmä sulauttaa yli ~10 Hz:n (oikea LED myös), ja
+     tämä pinta saa 5 Hz telemetriaa, joten nopein piirrettävä välähdys olisi
+     *hitaampi* kuin totuus ja keksityllä taajuudella. Nopeus piirretään siis
+     **painona**: kipinän sakarat kasvavat 4 → 10 px ja toinen, vino pari
+     avautuu puolivälin jälkeen, logaritmisella 8 Hz → 2 kHz asteikolla
+     kahdeksaan askeleeseen kvantisoituna. Nopeus ratsastaa `/cq_phase`:n
+     kolmantena arvona (§15 sallii viestien yhdistämisen; §10 laskee viestejä
+     ja Pen-kutsuja, ei liukulukuja). Laki `GUI_SPEC.md` §16.6:een:
+     **liike kantaa vain sen suureen, jonka silmä ehtii integroida.**
 - [ ] `GUI_SPEC.md` §13:n käyttäjän visuaalinen hyväksyntä G2.9:n korjauksille
   (lohko G2.9b) ja sen jälkeen G2:n kokonaishyväksyntä.
 

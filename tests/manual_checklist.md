@@ -1343,6 +1343,16 @@ CQ.patch(\tri5, \coco1_skip, 0.8);
 //    ja pallon pitää palata tavalliseksi komeetaksi hännällä parin kehyksen
 //    sisällä. Varmista tarvittaessa, että regime tunnistuu oikeaan kuoreen:
 CQ.gui.nightMap.struckOn;   // -> [ true, false ] kun coco 1 on hakattavana
+// 5b. NOPEUS PAINONA (ei vilkkuna — silmä sulauttaa yli ~10 Hz:n, ja tämä
+//    pinta saa 5 Hz telemetriaa, joten vilkku olisi HITAAMPI kuin totuus).
+//    Aja alla oleva hidas ja nopea vuorotellen ja katso merkin painoa:
+//    hitaalla sakarat ovat lyhyet ja haaleat, audiotaajuisella ne kasvavat ja
+//    merkkiin avautuu toinen, VINO sakarapari. Kasvun pitää olla portaatonta
+//    väliltä eikä nykiä edestakaisin, kun nopeus pysyy paikallaan.
+CQ.set(\qFreq, 6);     // hidas hakkaus: kevyt nelisakarainen merkki
+CQ.set(\qFreq, 400);   // audiotaajuinen: raskas kahdeksansakarainen
+CQ.gui.phaseSkipHz;    // sama luku Hz:nä, jos haluat nähdä sen numerona
+CQ.set(\qFreq, 6);
 CQ.patch(\tri5, \coco1_skip, 0);
 // 6. Toista kohdat 1 ja 5 coco 2:lle (oikea kuori) — merkit ovat peilikuvia.
 CQ.patchPreset(\empty);
