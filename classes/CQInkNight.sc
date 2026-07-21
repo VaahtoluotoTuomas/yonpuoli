@@ -95,9 +95,15 @@ CQInkNight {
 	// reel pearl — a spark bead riding the line at the speed's norm (inner eye
 	// = slowest, mouth = fastest), the winding gesture's live hand. A static
 	// hover (§4.5) brightens the line and halos the pearl: the grab cue.
+	// The read head is the comet: a bone dot at the loop's true address
+	// (sparkNorm, nil until '/cq_phase' has reported — no telemetry is not
+	// zero, §9) with a short tail trailing where it came from, so the pearl
+	// (a plain bead) and the head (a comet) never blur by form (§16.2's
+	// "no meaning by hue alone"). Tapping the head is skip's night home.
 	*drawShell { |coco, origin, holdOn = false, flipped = false,
-		speedNorm = 0.5, hover = false, skin = \night|
-		var palette = CQInk.palette(skin), pearl;
+		speedNorm = 0.5, hover = false, sparkNorm, sparkDir = 1,
+		sparkHover = false, skin = \night|
+		var palette = CQInk.palette(skin), pearl, spark, tail;
 		Pen.translate(origin.x.neg, origin.y.neg);
 		Pen.strokeColor = palette[\line].copy
 			.alpha_(if(hover) { 1.0 } { 0.8 });
@@ -140,6 +146,25 @@ CQInkNight {
 			Pen.width = CQInk.strokes[\hairline];
 			Pen.addOval(Rect.aboutPoint(pearl, 5, 5));
 			Pen.stroke;
+		};
+		// the read head, drawn last so the moving comet passes over the pearl
+		sparkNorm !? {
+			spark = CQNightGeometry.spiralPoint(coco, sparkNorm);
+			tail = CQNightGeometry.spiralPoint(coco,
+				(sparkNorm - (sparkDir.sign * 0.01)).clip(0, 1));
+			Pen.strokeColor = palette[\spark].copy.alpha_(0.45);
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.line(tail, spark);
+			Pen.stroke;
+			Pen.fillColor = palette[\spark];
+			Pen.addOval(Rect.aboutPoint(spark, 2, 2));
+			Pen.fill;
+			if(sparkHover) {
+				Pen.strokeColor = palette[\spark].copy.alpha_(0.5);
+				Pen.width = CQInk.strokes[\hairline];
+				Pen.addOval(Rect.aboutPoint(spark, 5.5, 5.5));
+				Pen.stroke;
+			};
 		};
 	}
 

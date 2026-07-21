@@ -13,7 +13,7 @@ CQGui {
 	var <bananaGrammar, <bananaController, <bananaBodies;
 	var <endpoints, <cableOverlay, <nightMap;
 	var <inkControls;
-	var castleLeds, spesalView, <spesalStates, <castleValues;
+	var castleLeds, spesalView, <spesalStates, <castleValues, <phaseNorms;
 	// GUI_SPEC §9: 16 source magnitudes, nil until the server has actually
 	// reported. No telemetry = no pulse, so serverless and headless surfaces
 	// keep exactly the reviewed static Day look.
@@ -136,6 +136,7 @@ CQGui {
 		skipButtons = IdentityDictionary.new;
 		spesalStates = Cocoquantus.spesalStates;
 		castleValues = [0, 0, 0, 0, 0];
+		phaseNorms = [nil, nil];   // nil until '/cq_phase' reports (§9: no telemetry ≠ 0)
 		inkControls = List.new;
 		endpoints = IdentityDictionary.new;
 		bananaBodies = IdentityDictionary.new;
@@ -272,6 +273,11 @@ CQGui {
 				nightMap !? { nightMap.spesalChanged };
 			}.defer;
 		}, '/cq_spesal');
+		// GUI_SPEC §9 loop phase: the read head's own message; its 5 Hz send
+		// rate IS the night shells' repaint ceiling (§10) — no timer added
+		OSCdef(\cq_gui_phase, { |msg|
+			{ this.prPhaseFrame(msg[2], msg[3]) }.defer;
+		}, '/cq_phase');
 		// watchdog notice (SPEC §5.6): same '/cq_hot' the facade acts on
 		OSCdef(\cq_gui_hot, { { this.prHotNotice }.defer }, '/cq_hot');
 		// deck file labels: dependants of the deck players (nil when unbooted,
@@ -344,6 +350,19 @@ CQGui {
 			if(overlay.cableCount > 0 and: { overlay.auraPulses }) {
 				overlay.view.refresh
 			};
+		};
+	}
+
+	// one '/cq_phase' frame: cache the clamped truth, and only the visible
+	// night stage spends a repaint (the hidden twin repaints in full at the
+	// hard cut). The night map's own delta gate thins a near-still reel.
+	prPhaseFrame { |n, value|
+		var i;
+		if(cleaned) { ^this };
+		i = (n ? 1).asInteger.clip(1, 2) - 1;
+		phaseNorms[i] = (value ? 0).asFloat.clip(0, 1);
+		if(shellState.viewMode == \night) {
+			nightMap !? { nightMap.paintPhase(i) };
 		};
 	}
 
@@ -508,7 +527,7 @@ CQGui {
 		hotTask !? { hotTask.stop };
 		hotTask = nil;
 		#[cq_gui_meters, cq_gui_gr, cq_gui_coco, cq_gui_castle,
-			cq_gui_spesal, cq_gui_hot, cq_gui_aura].do { |k|
+			cq_gui_spesal, cq_gui_hot, cq_gui_aura, cq_gui_phase].do { |k|
 			OSCdef.all[k] !? { |d| d.free }
 		};
 	}

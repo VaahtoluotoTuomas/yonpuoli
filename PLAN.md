@@ -309,6 +309,15 @@ coco-ulostulosta ja lintujen flutter.
   2026-07-21** (chevron, sisäkello, reel pearl, myrsky-iiris ja hoverit
   silmällä ja korvalla; manuaalitesti G2.3b).
 - [ ] Loop phase/read-head spark ja käyttäjän vahvistaman payloadin `/cq_charge`.
+  *Spark-osuus toteutettu 2026-07-21, odottaa katselmointia (manuaalitesti
+  G2.4): `/cq_phase`-telemetria 5 Hz `\cqCoco`-defissä (oma viesti — lähetys-
+  taajuus on kahden shell-kerroksen uudelleenpiirron katto, §10), luunvaalea
+  lukupääkomeetta suuntahäntineen (suunta luetaan vaiheen todellisesta
+  kulusta, wrap-tietoisesti — matriisi-flip näkyy totuudenmukaisesti),
+  komeetan napautus = skip (§6.1:n viimeinen yökoti; slop 4 px erottaa
+  napautuksen kelauksesta), staattinen hover-halo, delta-portti (~1,5 px)
+  harventaa lähes paikallaan olevan kelan piirrot. Ei telemetriaa = ei
+  komeettaa. `/cq_charge` on oma seuraava lisäyksensä.*
 - [ ] Solo-light (body), deck-bird drag-over-korostus ja täsmällinen Night
   toolbar. *(Endpoint- ja kaapelisolo sekä bird-drop toimivat jo.)*
 - [ ] Ei numeroita, Space-bodya tai dekoratiivista motionia; Master pysyy näkyvänä.
@@ -437,11 +446,11 @@ jokaisen jälkeen.**
    hiiren osoittimen sijainti (ks. Qt-jäätymiskorjaus yllä) eikä koodia.
 3. G2:n jäljellä olevat osat toteutetaan tässä järjestyksessä, kukin omana
    pienenä lisäyksenään omalla katselmointipysähdyksellään:
-   1. **Loop-phase/read-head spark** — luunvaalea kipinä spiraalilla loopin
-      todellisessa lukukohdassa (uusi ≤ 15 Hz telemetria serveriltä; ei
-      seinäkelloanimaatiota) ja sen napautus = skip, eli §6.1:n viimeinen
-      yökoti. Spark-värinen reel pearl ja luunvaalea kipinä eivät saa
-      sekoittua (§16.6). *(Aloitettu 2026-07-21.)*
+   1. **Loop-phase/read-head spark** — luunvaalea komeetta spiraalilla loopin
+      todellisessa lukukohdassa (`/cq_phase` 5 Hz; ei seinäkelloanimaatiota)
+      ja sen napautus = skip, eli §6.1:n viimeinen yökoti. Helmi ja komeetta
+      erotetaan muodolla, ei sävyllä (§16.2/§16.6). *(Toteutettu 2026-07-21,
+      odottaa katselmointia — manuaalitesti G2.4.)*
    2. `/cq_charge`-lamput (9 kanavaa, GUI_SPEC §9) ja body-solo-light.
    3. Deck-bird drag-over-korostus (§16.7) ja täsmällinen Night toolbar.
    4. G2:n §13-portti: automaatio, kuuntelugate, 100/125/150 % skaalaus,

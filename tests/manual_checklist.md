@@ -1021,3 +1021,32 @@ CQ.patchPreset(\empty);
 ```
 
 - [x] G2.3b night touch -visuaalit hyväksytty (pvm: 2026-07-21)
+
+## G2.4 NIGHT — lukupääkomeetta ja skip-napautus
+
+Spiraalilla kulkee nyt loopin todellinen lukukohta: luunvaalea komeetta
+(täplä + lyhyt häntä sinne mistä se tuli), `/cq_phase`-telemetria 5 Hz.
+Komeetan napautus = skip (§6.1:n viimeinen yökoti). Helmi (paikallaan istuva
+tasainen napukka) ja komeetta (kulkeva, hännällinen) erottuvat muodosta.
+
+```supercollider
+// G2.4 — lukupää SILMÄLLÄ ja KORVALLA. (Ctrl+Shift+L ensin.)
+CQ.boot; CQ.patchPreset(\classic);
+// - KOMEETTA: molemmilla spiraaleilla tikittää luunvaalea täplä hännällä —
+//   se on loopin todellinen lukukohta (sisäsilmä = alku, suu = loppu).
+//   Tikitys on tarkoituksella rauhallinen (5 Hz): osoite askeltaa, ei liu'u.
+// - SUUNTA: paina suun chevronia (flip) — komeetan kulkusuunta JA häntä
+//   kääntyvät. Häntä osoittaa aina sinne mistä komeetta tuli.
+// - SKIP-NAPAUTUS: napauta komeettaa (osoitin sen päälle — halo syttyy).
+//   Loop hyppää alkuun: komeetta ilmestyy sisäsilmään ja äänessä kuuluu
+//   fraasin reset. Vertaa a/s-näppäimiin — sama teko.
+// - TAP EI KELAA: napautus komeetan päältä EI saa muuttaa speediä
+//   (glissandoa ei kuulu). Veto komeetasta poispäin taas ON kelaus.
+// - NOPEUS: kelaa speed hitaalle — tikitys harvenee (pieni siirtymä
+//   jätetään piirtämättä); nopealla komeetta kulkee rivakasti.
+// - Ilman serveriä / ennen boottia komeettaa ei piirretä lainkaan
+//   (ei telemetriaa ≠ nolla).
+CQ.patchPreset(\empty);
+```
+
+- [ ] G2.4 lukupääkomeetta ja skip-napautus hyväksytty (pvm: ______)

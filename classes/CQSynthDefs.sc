@@ -262,6 +262,12 @@ CQSynthDefs {
 			Out.ar(\modSrcBus.ir(0) + \modOrganIdx.ir(14), organ); // canonical ch 14/15
 			// GUI in/out meters (SPEC §6.2); replyID tells the two instances apart
 			SendPeakRMS.kr([inSig, voice * lvl], 20, 3, '/cq_cocometers', \meterId.ir(0));
+			// GUI_SPEC §9 loop phase → the night read-head spark. Its own message
+			// at 5 Hz on purpose, not the meters' 15: the send rate IS the two
+			// shells' repaint ceiling (§10), and one shell repaint costs ~30 Pen
+			// calls (~1.6 ms), so 15 Hz would spend the GUI budget on two dots.
+			SendReply.kr(Impulse.kr(5), '/cq_phase',
+				A2K.kr(phase / frames), \meterId.ir(0));
 		})
 	}
 
@@ -361,8 +367,9 @@ CQSynthDefs {
 		})
 	}
 
-	// GUI_SPEC §9 `/cq_aura` — the whole spec's only server-side addition, and
-	// telemetry alone: it reads the finished mod-source bus and writes no audio
+	// GUI_SPEC §9 `/cq_aura` — a §9 telemetry addition (its sibling '/cq_phase'
+	// lives inside \cqCoco), and telemetry alone: it reads the finished
+	// mod-source bus and writes no audio
 	// anywhere, so no safety invariant is in its path. Spawned in gMaster, i.e.
 	// after every aModSrc writer, so plain In.ar sees this block's values (the
 	// InFeedback convention above applies only to readers that run first).

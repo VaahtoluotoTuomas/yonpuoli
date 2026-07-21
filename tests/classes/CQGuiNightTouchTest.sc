@@ -24,6 +24,13 @@ CQGuiNightTouchTest : UnitTest {
 			- 0.5pi).abs < 1e-9, "screen-down is +pi/2 (clockwise positive)");
 	}
 
+	test_skipTap {
+		this.assert(CQGuiNightTouch.skipSlop < CQGuiNightTouch.sparkRadius,
+			"the tap slop sits inside the spark's landing radius");
+		this.assert(CQGuiNightTouch.sparkRadius <= 10,
+			"the head's landing zone stays a fingertip, not a region");
+	}
+
 	test_sensitivities {
 		this.assert(
 			((4pi * CQGuiNightTouch.windSensitivity) - 1).abs < 1e-9,

@@ -174,6 +174,7 @@ abort = { |error|
 															var speedBefore, freqBefore, chaosBefore;
 															var samples, cablePoint, cableRecord;
 															var castleTwo, castleView, dialPoint;
+															var sparkPoint, holdBefore, flipBefore;
 															shell = map.shellViews[0];
 															coco = map.geometry[\cocos][0];
 															crescent = map.crescentViews[\coco1Spaf];
@@ -272,6 +273,63 @@ abort = { |error|
 																	- CQSpec.unmap(\qChaos,
 																		state.get(\qChaos))).abs < 1e-6 },
 																"the storm iris paints the funnel truth mid-drag");
+															// ---- the read head: '/cq_phase' spark + skip tap ----
+															check.value(map.sparkPoint(0).isNil,
+																"before telemetry the shell keeps its reviewed ink (no spark)");
+															gui.prPhaseFrame(1, 0.62);
+															check.value((gui.phaseNorms[0] - 0.62).abs < 1e-9
+																and: { map.sparkPoint(0).notNil },
+																"a '/cq_phase' frame lands in the cache and births the spark");
+															gui.prPhaseFrame(1, 2.5);
+															check.value(gui.phaseNorms[0] == 1,
+																"a mad phase clamps at the mouth (every entry clamps)");
+															gui.prPhaseFrame(1, 0.62);
+															sparkPoint = map.sparkPoint(0);
+															speedBefore = state.get(\coco1Speed);
+															holdBefore = state.get(\coco1Hold);
+															flipBefore = state.get(\coco1Flip);
+															local = sparkPoint - coco[\shellBox].leftTop;
+															shell.mouseDownAction.value(shell,
+																local.x, local.y, 0, 0, 1);
+															shell.mouseMoveAction.value(shell,
+																local.x + 2, local.y, 0);
+															shell.mouseUpAction.value(shell,
+																local.x + 2, local.y, 0, 0);
+															check.value(state.get(\coco1Speed) == speedBefore
+																and: { state.get(\coco1Hold) == holdBefore }
+																and: { state.get(\coco1Flip) == flipBefore },
+																"a tap on the read head never winds nor toggles (skip's home)");
+															shell.mouseDownAction.value(shell,
+																local.x, local.y, 0, 0, 1);
+															local = CQNightGeometry.spiralPoint(coco, 0.66)
+																- coco[\shellBox].leftTop;
+															shell.mouseMoveAction.value(shell,
+																local.x, local.y, 0);
+															local = CQNightGeometry.spiralPoint(coco, 0.7)
+																- coco[\shellBox].leftTop;
+															shell.mouseMoveAction.value(shell,
+																local.x, local.y, 0);
+															shell.mouseUpAction.value(shell,
+																local.x, local.y, 0, 0);
+															check.value(state.get(\coco1Speed) > speedBefore,
+																"a drag past the slop is a wind, never a skip");
+															local = sparkPoint - coco[\shellBox].leftTop;
+															shell.mouseOverAction.value(shell,
+																local.x, local.y);
+															check.value(map.sparkHover[0],
+																"hovering the read head halos the comet");
+															shell.mouseLeaveAction.value(shell);
+															check.value(map.sparkHover[0].not,
+																"leaving rests the comet's halo");
+															gui.prPhaseFrame(1, 0.64);
+															check.value(map.sparkDirs[0] == 1,
+																"a forward frame turns the comet's tail forward");
+															gui.prPhaseFrame(1, 0.6);
+															check.value(map.sparkDirs[0] == -1,
+																"the comet's tail reads the true travel direction");
+															gui.prPhaseFrame(1, 0.02);
+															check.value(map.sparkDirs[0] == 1,
+																"a wrap past the mouth still reads as forward travel");
 															cableRecord = map.overlay.cableRecords
 																.detect { |record|
 																record[\dest] == \coco1_spaf
@@ -305,7 +363,7 @@ abort = { |error|
 																#[cq_gui_meters, cq_gui_gr,
 																	cq_gui_coco, cq_gui_castle,
 																	cq_gui_spesal, cq_gui_hot,
-																	cq_gui_aura].do { |key|
+																	cq_gui_aura, cq_gui_phase].do { |key|
 																	check.value(OSCdef.all[key].isNil,
 																		"cleanup removed %".format(key));
 																};

@@ -16,6 +16,7 @@ CQGuiNightMap {
 	var <geometry, <eyeActive = false;
 	var <eyeFreqNorm = 0.5, <eyeChaosNorm = 0.15;
 	var <speedNorms, <shellHover, <dialHover;
+	var <sparkDirs, <sparkHover, sparkPainted;
 	var <fireflyPhase = 0.0, lastFireflyTime, castlePainted;
 	var <holdStates, <flipStates, <rangeLetters, <sproutState;
 	var freed = false;
@@ -93,6 +94,33 @@ CQGuiNightMap {
 		if(freed.not) { eyeView.refresh };
 	}
 
+	// one '/cq_phase' frame (CQGui caches the funnel truth in phaseNorms; the
+	// 5 Hz send rate is the repaint ceiling, §10). The comet's direction is
+	// read from the phase's actual travel — wrap-aware — so a matrix-driven
+	// flip shows truthfully even when the chevron's param says otherwise.
+	// A move under ~1.5 px along the line keeps the frame.
+	paintPhase { |i|
+		var norm = gui.phaseNorms[i], delta;
+		if(freed or: { norm.isNil }) { ^this };
+		if(sparkPainted[i].isNil) {
+			sparkPainted[i] = norm;
+			^shellViews[i].refresh
+		};
+		delta = norm - sparkPainted[i];
+		if(delta.abs > 0.5) { delta = delta - delta.sign };  // crossed the mouth seam
+		if(delta.abs < 0.002) { ^this };
+		if(delta != 0) { sparkDirs[i] = delta.sign };
+		sparkPainted[i] = norm;
+		shellViews[i].refresh;
+	}
+
+	// the read head's stage-space home — nil until the server has reported
+	sparkPoint { |i|
+		var norm = gui.phaseNorms[i];
+		if(geometry.isNil or: { norm.isNil }) { ^nil };
+		^CQNightGeometry.spiralPoint(geometry[\cocos][i], norm)
+	}
+
 	crescentActive { |name, flag|
 		if(flag == true) { activeCrescents.add(name) } {
 			activeCrescents.remove(name)
@@ -142,6 +170,9 @@ CQGuiNightMap {
 		speedNorms = [0.5, 0.5];
 		shellHover = [false, false];
 		dialHover = Array.fill(5, false);
+		sparkDirs = [1, 1];
+		sparkHover = [false, false];
+		sparkPainted = Array.newClear(2);
 		rangeLetters = ["", "", "", "", ""];
 		sproutState = CQNightGeometry.sproutState(config[\micChan].notNil, 0);
 		container = View().background_(night[\ground]);
@@ -323,14 +354,19 @@ CQGuiNightMap {
 	}
 
 	prHoverShell { |i, view, x, y|
-		var near = false, point;
+		var near = false, headNear = false, point, spark;
 		if(geometry.notNil and: { view.notNil }) {
 			point = this.prStagePoint(view, x, y);
 			near = (CQNightGeometry.spiralDistance(geometry[\cocos][i], point)
 				<= 8) and: { overlay.patchAt(point).isNil };
+			spark = this.sparkPoint(i);
+			headNear = near and: { spark.notNil } and: {
+				CQNightGeometry.distance(point, spark)
+					<= CQGuiNightTouch.sparkRadius };
 		};
-		if(near != shellHover[i]) {
+		if((near != shellHover[i]) or: { headNear != sparkHover[i] }) {
 			shellHover[i] = near;
+			sparkHover[i] = headNear;
 			if(freed.not) { shellViews[i].refresh };
 		};
 	}
@@ -494,7 +530,8 @@ CQGuiNightMap {
 		if(geometry.isNil) { ^this };
 		coco = geometry[\cocos][i];
 		CQInkNight.drawShell(coco, coco[\shellBox].leftTop,
-			holdStates[i], flipStates[i], speedNorms[i], shellHover[i], \night);
+			holdStates[i], flipStates[i], speedNorms[i], shellHover[i],
+			gui.phaseNorms[i], sparkDirs[i], sparkHover[i], \night);
 	}
 
 	prDrawBird { |i|
