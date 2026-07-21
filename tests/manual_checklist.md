@@ -1049,4 +1049,4 @@ CQ.boot; CQ.patchPreset(\classic);
 CQ.patchPreset(\empty);
 ```
 
-- [ ] G2.4 lukupääkomeetta ja skip-napautus hyväksytty (pvm: ______)
+- [x] G2.4 lukupääkomeetta ja skip-napautus hyväksytty (pvm: 2026-07-21)

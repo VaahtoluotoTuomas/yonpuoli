@@ -309,8 +309,8 @@ coco-ulostulosta ja lintujen flutter.
   2026-07-21** (chevron, sisäkello, reel pearl, myrsky-iiris ja hoverit
   silmällä ja korvalla; manuaalitesti G2.3b).
 - [ ] Loop phase/read-head spark ja käyttäjän vahvistaman payloadin `/cq_charge`.
-  *Spark-osuus toteutettu 2026-07-21, odottaa katselmointia (manuaalitesti
-  G2.4): `/cq_phase`-telemetria 5 Hz `\cqCoco`-defissä (oma viesti — lähetys-
+  *Spark-osuus toteutettu ja **hyväksytty 2026-07-21** (manuaalitesti G2.4,
+  5 Hz:n tikitys mukaan lukien): `/cq_phase`-telemetria 5 Hz `\cqCoco`-defissä (oma viesti — lähetys-
   taajuus on kahden shell-kerroksen uudelleenpiirron katto, §10), luunvaalea
   lukupääkomeetta suuntahäntineen (suunta luetaan vaiheen todellisesta
   kulusta, wrap-tietoisesti — matriisi-flip näkyy totuudenmukaisesti),
@@ -449,8 +449,8 @@ jokaisen jälkeen.**
    1. **Loop-phase/read-head spark** — luunvaalea komeetta spiraalilla loopin
       todellisessa lukukohdassa (`/cq_phase` 5 Hz; ei seinäkelloanimaatiota)
       ja sen napautus = skip, eli §6.1:n viimeinen yökoti. Helmi ja komeetta
-      erotetaan muodolla, ei sävyllä (§16.2/§16.6). *(Toteutettu 2026-07-21,
-      odottaa katselmointia — manuaalitesti G2.4.)*
+      erotetaan muodolla, ei sävyllä (§16.2/§16.6). *(Hyväksytty 2026-07-21,
+      manuaalitesti G2.4.)*
    2. `/cq_charge`-lamput (9 kanavaa, GUI_SPEC §9) ja body-solo-light.
    3. Deck-bird drag-over-korostus (§16.7) ja täsmällinen Night toolbar.
    4. G2:n §13-portti: automaatio, kuuntelugate, 100/125/150 % skaalaus,
