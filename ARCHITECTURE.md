@@ -1,4 +1,4 @@
-# ARCHITECTURE.md — CocoquantusSC
+# ARCHITECTURE.md — Yölahti
 
 How the code is organized. `SPEC.md` is normative for behavior, names, ranges and
 safety; this file is normative for structure. Code snippets here are **sketches of the
@@ -26,7 +26,7 @@ intended approach** — they show the trick, not final compilable code.
 ## 2. Repository layout
 
 ```
-cocoquantus-sc/
+yolahti/
 ├── SPEC.md  ARCHITECTURE.md  CLAUDE.md  README.md
 ├── boot.scd                    // user entry point: loads config, Cocoquantus.boot
 ├── live.scd                    // performance scratchpad: example blocks, patch recipes
@@ -360,7 +360,7 @@ Loading: unknown keys warn + skip; every value passes `CQSpec.clamp` / matrix cl
 
 ## 8. Testing architecture
 
-All runnable headless by Claude Code; each prints a single machine-readable marker as
+All runnable headless from a local shell, CI, or a coding agent; each prints a single machine-readable marker as
 its last line and sets exit code.
 
 | Script | What | Marker |
@@ -394,7 +394,7 @@ the real preset data — the safety proof covers the actual shipped graph.
   (document exact steps in README for Windows: `%LOCALAPPDATA%\SuperCollider\sclang_conf.yaml`).
   After editing `classes/*.sc`, the IDE needs a class-lib recompile (Ctrl+Shift+L);
   headless test runs always compile fresh.
-- Headless runs (Claude Code):
+- Headless runs (local shell, CI, or coding agent):
   `"<sclang.exe path>" -l tests/sclang_conf_dev.yaml -i none <script>` — the dev conf
   (gitignored, machine-specific) adds `<repo>/classes` and `<repo>/tests/classes` to
   includePaths so runs never depend on the user's global conf; sclang path stored in

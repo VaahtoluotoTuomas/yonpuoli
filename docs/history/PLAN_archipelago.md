@@ -2,7 +2,7 @@
 
 Päivitetty 2026-07-22. Tämä tiedosto kertoo, mitä tehdään seuraavaksi. Valmiin v1.0-
 toteutuksen yksityiskohtainen työpäiväkirja ja alkuperäiset checkboxit on jäädytetty
-tiedostoon [`docs/history/PLAN_v1.0.md`](docs/history/PLAN_v1.0.md).
+tiedostoon [`docs/history/PLAN_v1.0.md`](PLAN_v1.0.md).
 
 **Tilanne yhdellä rivillä (2026-07-22): G1, G2 ja G3 ovat kaikki rakennettu ja
 käyttäjän hyväksymiä.** Foundation F0–F2 ja **koko G1** §13:n loppuportteineen
@@ -81,15 +81,15 @@ ratkaistiin käyttäjän päätöksellä 2026-07-19; avoimia GUI-käyttäytymisp
 
 ## Auktoriteettijärjestys
 
-1. [`SPEC.md`](SPEC.md), erityisesti §8, määrää parametrit, DSP-käyttäytymisen ja
+1. [`SPEC.md`](../../SPEC.md), erityisesti §8, määrää parametrit, DSP-käyttäytymisen ja
    turvallisuuden.
-2. [`GUI_SPEC.md`](GUI_SPEC.md) määrää GUI:n rakenteen, eleet, tilat, mitat ja Ink &
+2. [`GUI_SPEC.md`](../../GUI_SPEC.md) määrää GUI:n rakenteen, eleet, tilat, mitat ja Ink &
    Phosphor -visuaalikielen. GUI-kompromissi hyväksytetään käyttäjällä etukäteen.
-3. [`ARCHITECTURE.md`](ARCHITECTURE.md) määrää toteutusrajat, omistuksen ja pure-view /
+3. [`ARCHITECTURE.md`](../../ARCHITECTURE.md) määrää toteutusrajat, omistuksen ja pure-view /
    yhden kirjoitussuppilon periaatteet.
-4. [`audit/VERIFIED_FINDINGS.md`](audit/VERIFIED_FINDINGS.md) on varmennettujen
-   audit-havaintojen totuus; [`audit/REMEDIATION_ROADMAP.md`](audit/REMEDIATION_ROADMAP.md)
-   ja [`audit/GUI_DEVELOPMENT_PLAN.md`](audit/GUI_DEVELOPMENT_PLAN.md) pilkkovat työn.
+4. [`audit/VERIFIED_FINDINGS.md`](../../audit/VERIFIED_FINDINGS.md) on varmennettujen
+   audit-havaintojen totuus; [`audit/REMEDIATION_ROADMAP.md`](../../audit/REMEDIATION_ROADMAP.md)
+   ja [`audit/GUI_DEVELOPMENT_PLAN.md`](../../audit/GUI_DEVELOPMENT_PLAN.md) pilkkovat työn.
 5. Tämä tiedosto määrää toteutusjärjestyksen ja ajantasaisen statuksen.
 
 Ristiriidassa turvallisuus voittaa. Epäselvää GUI-käyttäytymistä ei arvata eikä

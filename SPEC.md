@@ -1,12 +1,16 @@
-# SPEC.md — CocoquantusSC
+# SPEC.md — Yölahti
 
-A SuperCollider instrument inspired by the **Ciat-Lonbarde Cocoquantus 2** (Peter Blasser):
-two 8-bit "Coco" delay/loopers around a five-oscillator chaotic "Quantussy" brain.
+Yölahti is an independent SuperCollider feedback instrument whose starting point was
+the **Ciat-Lonbarde Cocoquantus 2** (Peter Blasser): two 8-bit "Coco"
+delay/loopers around a five-oscillator chaotic "Quantussy" brain. It is no longer
+positioned as a faithful emulator; its software-native routing, safety architecture,
+file and memory systems, and Night interface deliberately take it in its own direction.
 This document defines **what** the instrument does. `ARCHITECTURE.md` defines how the code
 is organized. `CLAUDE.md` defines working rules for implementation.
 
-Status: design spec, pre-implementation. This file is **normative**: parameter names,
-ranges, defaults and safety requirements here are the single source of truth.
+Status: **implemented normative specification.** The v1.0 engine and Archipelago GUI
+baseline are complete; the active Nocturne phase is tracked in `PLAN.md`. Parameter
+names, ranges, defaults and safety requirements here remain the single source of truth.
 
 ---
 

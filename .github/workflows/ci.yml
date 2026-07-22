@@ -1,0 +1,109 @@
+name: SuperCollider checks
+
+on:
+  push:
+    branches:
+      - main
+      - nocturne
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sc-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  headless-gates:
+    name: Compile, unit, safety, and hold gates
+    runs-on: windows-latest
+    timeout-minutes: 25
+    env:
+      SC_VERSION: 3.14.1
+      SC_ASSET: SuperCollider-3.14.1-win64.zip
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Cache SuperCollider
+        id: cache-supercollider
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}\supercollider-${{ env.SC_VERSION }}
+          key: supercollider-windows-${{ env.SC_VERSION }}-426edf6
+
+      - name: Download SuperCollider
+        if: steps.cache-supercollider.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installDir = Join-Path $env:RUNNER_TEMP "supercollider-$env:SC_VERSION"
+          $archive = Join-Path $env:RUNNER_TEMP $env:SC_ASSET
+          $url = "https://github.com/supercollider/supercollider/releases/download/Version-$env:SC_VERSION/$env:SC_ASSET"
+          Invoke-WebRequest -Uri $url -OutFile $archive
+          Expand-Archive -LiteralPath $archive -DestinationPath $installDir
+
+      - name: Configure isolated sclang paths
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installDir = Join-Path $env:RUNNER_TEMP "supercollider-$env:SC_VERSION"
+          $sclang = Get-ChildItem -LiteralPath $installDir -Recurse -Filter sclang.exe |
+            Select-Object -First 1
+          if ($null -eq $sclang) {
+            throw "sclang.exe not found below $installDir"
+          }
+
+          $workspace = $env:GITHUB_WORKSPACE -replace '\\', '/'
+          $conf = Join-Path $env:RUNNER_TEMP 'yolahti_sclang_conf.yaml'
+          @"
+          includePaths:
+            - "$workspace/classes"
+            - "$workspace/tests/classes"
+          "@ | Set-Content -LiteralPath $conf -Encoding utf8
+
+          "SC_LANG=$($sclang.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "SC_CONF=$conf" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Compile check
+        shell: pwsh
+        run: |
+          $output = & $env:SC_LANG -l $env:SC_CONF -i none tests/compile_check.scd 2>&1
+          $exitCode = $LASTEXITCODE
+          $output | ForEach-Object { Write-Host $_ }
+          if (($exitCode -ne 0) -or -not ($output -match 'CQ_COMPILE_OK')) {
+            throw "Compile gate failed: exit=$exitCode, marker CQ_COMPILE_OK missing"
+          }
+
+      - name: Unit tests
+        shell: pwsh
+        run: |
+          $output = & $env:SC_LANG -l $env:SC_CONF -i none tests/run_all.scd 2>&1
+          $exitCode = $LASTEXITCODE
+          $output | ForEach-Object { Write-Host $_ }
+          if (($exitCode -ne 0) -or -not ($output -match 'CQ_TESTS_PASSED')) {
+            throw "Unit gate failed: exit=$exitCode, marker CQ_TESTS_PASSED missing"
+          }
+
+      - name: NRT output safety
+        shell: pwsh
+        run: |
+          $output = & $env:SC_LANG -l $env:SC_CONF -i none tests/nrt_safety.scd 2>&1
+          $exitCode = $LASTEXITCODE
+          $output | ForEach-Object { Write-Host $_ }
+          if (($exitCode -ne 0) -or -not ($output -match 'CQ_SAFETY_PASSED')) {
+            throw "Safety gate failed: exit=$exitCode, marker CQ_SAFETY_PASSED missing"
+          }
+
+      - name: NRT hold integrity
+        shell: pwsh
+        run: |
+          $output = & $env:SC_LANG -l $env:SC_CONF -i none tests/nrt_hold_integrity.scd 2>&1
+          $exitCode = $LASTEXITCODE
+          $output | ForEach-Object { Write-Host $_ }
+          if (($exitCode -ne 0) -or -not ($output -match 'CQ_HOLD_OK')) {
+            throw "Hold gate failed: exit=$exitCode, marker CQ_HOLD_OK missing"
+          }

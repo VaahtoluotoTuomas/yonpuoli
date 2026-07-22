@@ -1,6 +1,6 @@
-# CocoquantusSC — ajantasainen kehityssuunnitelma (Nocturne-vaihe)
+# Yölahti — ajantasainen kehityssuunnitelma (Nocturne-vaihe)
 
-Päivitetty 2026-07-22. Tämä tiedosto kertoo, **mitä tehdään seuraavaksi** ja
+Päivitetty 2026-07-23. Tämä tiedosto kertoo, **mitä tehdään seuraavaksi** ja
 **missä järjestyksessä**. Vaiheen yksityiskohtainen *miten* — jokaisen osan
 suunnittelu, geometria, karikot, korvakokeet — on
 [`docs/NIGHT_STANDALONE_PLAN.md`](docs/NIGHT_STANDALONE_PLAN.md):ssä; tämä
@@ -14,6 +14,14 @@ archipelago on sulautettu `main`iin (PR #1, tagi `archipelago-1.0`). **Uusi
 vaihe: Nocturne — yö koko soittimena.** Tavoitteena tehdä yökartasta itsenäinen,
 täysin soitettava instrumentti (loput laitteiston olennaiset eleet yöhön,
 maisema uudelleen sommiteltuna) ja lopulta harkita Day-paneelin poistoa.
+
+**Julkinen identiteetti:** soittimen nimi on nyt **Yölahti**. Cocoquantus on
+lähtökohta ja avoimesti dokumentoitu sukulinja, ei tuotteen nimi eikä lupaus
+uskollisesta emulaatiosta. `CQ`/`Cocoquantus` säilyvät toistaiseksi teknisenä
+API- ja luokkanimiavaruutena; niitä ei massauudelleennimetä kesken Nocturnen.
+Portfolio- ja julkaisupinta on `README.md`:ssä, `SOURCES.md`:ssä ja `docs/`-kansion
+case study / development process -dokumenteissa. Etärepon uudelleennimeäminen,
+public-vaihto ja oikeat kuva-/äänidemot ovat erillinen julkaisutoimi.
 
 **Seuraava askel konkreettisesti:** aloita `NIGHT_STANDALONE_PLAN.md §12`:n
 rakennusjärjestyksestä — ensimmäisenä **punch (§2)**, joka on riippumaton
@@ -149,6 +157,123 @@ visuaalinen tarkastus 100/125/150 % skaalauksilla ja CPU/resource-soak.
 G-porttia ei merkitä valmiiksi pelkän toteutuscommitin perusteella.
 Lähtötaso 2026-07-22: `CQ_COMPILE_OK`, **6 611 unit-passia / 0 failurea**,
 `CQ_SAFETY_PASSED`, `CQ_HOLD_OK` ja kaikki neljä GUI-markkeria.
+
+## Omistajuus- ja julkaisurata (kulkee Nocturnen rinnalla)
+
+Tämä rata tekee valmiista instrumentista rehellisen ja kurantin
+portfoliotyönäytteen. Se ei korvaa Nocturnen inkrementtejä eikä todista
+teknistä omistajuutta pelkällä dokumentaatiolla: tavoite on, että tekijä osaa
+perustella keskeiset ratkaisut, jäljittää niiden toteutuksen ja ylläpitää niitä
+myös ilman agentin valmista selitystä. Julkaisuportti sulkeutuu vasta
+Night-only-tuomion ja alla olevien julkaisugatejen jälkeen.
+
+### A. Julkaisupohja ja tekijyyden kuvaus
+
+- [x] **Julkinen identiteetti:** Yölahti on oma digitaalinen instrumentti;
+  Cocoquantus on avoimesti nimetty vaikutteeksi ja tekniseksi lähtökohdaksi,
+  ei tuotteen nimeksi, viralliseksi portiksi eikä uskollisen emulaation
+  lupaukseksi. `CQ`/`Cocoquantus` jää tekniseksi nimiavaruudeksi.
+- [x] **README:n kaksi yleisöä:** muusikko näkee ensin soittimen luonteen,
+  kuuntelu-/käyttötavan ja rajat; työnantaja löytää arkkitehtuurin,
+  turvallisuuden, testauksen ja kehitysprosessin ilman liioiteltua
+  rivitason tekijyysväitettä.
+- [x] **Läpinäkyvä tekijyys:** README ja kehitysprosessikuvaus kertovat
+  AI-avusteisesta työnkulusta sekä ihmisen vastuusta konseptissa,
+  estetiikassa, äänellisissä päätöksissä, hyväksymiskriteereissä,
+  kuuntelussa, manuaalitestauksessa ja julkaistavasta lopputuloksesta.
+- [x] **Projektin perustiedostot:** `LICENSE`, `SOURCES.md`, `CHANGELOG.md`,
+  `CONTRIBUTING.md`, `docs/CASE_STUDY.md` ja
+  `docs/DEVELOPMENT_PROCESS.md` ovat olemassa ja linkitettyinä.
+- [x] **Automaatio pohjalle:** Windows/SuperCollider GitHub Actions -workflow
+  ajaa compile-, unit-, NRT safety- ja hold integrity -portit. Ensimmäisen
+  etäajon onnistuminen todennetaan vielä kohdassa C.
+
+### B. Teknisen omistajuuden itseopiskelu
+
+Jokaisesta alla olevasta siivusta tehdään oma yhden sivun muistiinpano tai
+kaavio `docs/`-kansioon. Valmis tarkoittaa, että tekijä pystyy selittämään
+kulun lähdekoodista ja testeistä omin sanoin, paikantamaan muutoksen
+vaikutuspinnat sekä vastaamaan jatkokysymyksiin ilman AI-avustusta.
+
+- [ ] **1. Tila ja ohjauspolku:** jäljitä yksi parametri koko ketjun läpi
+  `CQSpec → CQState → server → GUI/MIDI/snapshot`; selitä validointi,
+  clamp/enum-käytös, yksi kirjoitussuppilo ja epäkelvon syötteen kohtalo.
+- [ ] **2. DSP ja ääniturvallisuus:** käy läpi yksi Coco sekä master-ketju;
+  selitä `BufRd`/`BufWr`, kellon vaikutus sävelkorkeuteen, hold, feedback,
+  clip/wrap ennen kvantisointia sekä DC-, NaN- ja ulostuloturva. Yhdistä
+  jokainen väite sitä todentavaan testiin tai nimeä avoin testiaukko.
+- [ ] **3. Night-ele päästä päähän:** jäljitä yksi kosketus eleestä puhtaaseen
+  geometriaan, prioriteettiketjuun, tilapäivitykseen, piirtoon,
+  cancel/exit-polkuun, Qt-jonotukseen ja telemetriaan.
+- [ ] **4. Punch omistajuusharjoituksena:** ennusta ensin kaikki
+  vaikutuspinnat, kirjoita tai uudelleenkirjoita itse vähintään yksi kohdistettu
+  testi, lue toteutuksen jokainen diff-rivi ja tee tarkoituksellinen
+  mutaatiokoe, joka osoittaa exit-polun testin oikeasti rikkoutuvan.
+- [ ] **5. Auditointitapauksen rekonstruktio:** valitse yksi aiempi kriittinen
+  löydös (esimerkiksi päällekkäinen ulostulo tai lifecycle-ongelma) ja
+  rekonstruoi oire → reproduktio → juurisyy → korjaus → regressiotesti.
+- [ ] **6. Haastatteluharjoitus:** tallenna ilman AI:ta 90 sekunnin pitch,
+  10 minuutin arkkitehtuuriselitys ja 20 minuutin koodikatselmus. Merkitse
+  epävarmat kohdat opiskelujonoon ja toista, kun selitys kestää jatkokysymykset.
+- [ ] **7. Ylläpitonäyttö:** ratkaise myöhemmässä Nocturne-inkrementissä yksi
+  rajattu bugi tai ominaisuus niin, että hypoteesi, suunnitelma, kaikki diffit,
+  testit ja hyväksyntä käydään tietoisesti läpi. AI:ta saa käyttää, mutta
+  mitään lukematonta muutosta ei hyväksytä.
+
+Erillinen pieni, pääosin käsin kirjoitettu audio-ohjelmointiprojekti voi olla
+hyvä lisä koko portfolioon, mutta se ei ole Yölahden julkaisuportti eikä ehto
+tämän projektin omistajuudelle.
+
+### C. Public beta -julkaisuportti
+
+- [ ] **Etä-CI vihreäksi:** todenna GitHub Actionsista kaikki neljä markeria
+  tuoreella release-ehdokascommitilla; korjaa workflow, jos paikallinen ja
+  etäympäristö eroavat.
+- [ ] **Nimi ja törmäystarkistus:** tee ennen lopullista nimeämistä tavallinen
+  haku GitHubista, hakukoneesta, musiikkiohjelmistoista ja olennaisista
+  tavaramerkkitietokannoista. Yölahti on nykyinen työ- ja tuotenimi, ei tässä
+  dokumentissa tehty juridinen selvitys.
+- [ ] **Historian yksityisyys- ja lähdeauditointi:** tarkista koko Git-historia
+  salaisuuksien, henkilötietojen, yksityisten polkujen, sähköpostiosoitteiden,
+  lisensoimattomien assettien ja tarpeettomien binäärien varalta. Päätä ennen
+  public-vaihtoa, säilytetäänkö nykyinen commit-sähköposti vai puhdistetaanko
+  historia hallitusti.
+- [ ] **Etärepon uudelleennimeäminen:** nimeä repo esimerkiksi `yolahti`:ksi,
+  päivitä paikallinen remote komennolla
+  `git remote set-url origin https://github.com/VaahtoluotoTuomas/yolahti.git`
+  ja varmista `git remote -v`, fetch ja push. Älä luo myöhemmin uutta repoa
+  vanhalla `sc-cocoquantus`-nimellä, jotta GitHubin uudelleenohjaukset eivät
+  rikkoudu.
+- [ ] **Repo-nimeen sidottujen viittausten päivitys:** aja
+  `rg -n "sc-cocoquantus|github.com/VaahtoluotoTuomas"` ja korjaa ainakin
+  README-badge, clone-ohjeet, Pages-/demo-osoitteet, submodulet, ulkoiset
+  integraatiot ja mahdolliset `OWNER/REPO`-muotoiset Actions-viittaukset.
+  GitHub Pagesille käytetään omaa domainia tai sivuston uusi osoite
+  päivitetään erikseen.
+- [ ] **Public-vaihto:** tee vasta historia-auditoinnin jälkeen. Oleta, että
+  koko historia, Actions-ajot ja -lokit tulevat julkisiksi ja kuka tahansa voi
+  forkata repon; tarkista samalla Actions-oikeudet ja community profile.
+- [ ] **Oikea media:** lisää aito käyttökuva, 60–90 sekunnin käyttövideo ja
+  2–3 erilaista ääniesimerkkiä. Normalisoi kuuntelutaso turvalliseksi ja kerro,
+  jos ääni on jälkikäsitelty.
+- [ ] **Vieraan käyttäjän puhdas asennus:** yksi projektiin perehtymätön
+  testaaja asentaa ja käynnistää soittimen README:n avulla ilman suullista
+  apua; dokumentoi löydökset ja korjaa estävät epäselvyydet.
+- [ ] **Laitteistoraja:** todenna ≥4-kanavainen live-stem-kuuntelu tai pidä
+  rajoite näkyvästi dokumentoituna julkaisussa.
+- [ ] **Sukulinjan kohteliaisuus:** harkitse lyhyttä ilmoitusta Peter
+  Blasserille/Ciat-Lonbardelle. Se on kohteliaisuus, ei lupapyyntö eikä väite
+  hyväksynnästä; nimeä, logoja tai ulkoasua ei esitetä virallisena tuotteena.
+- [ ] **Beta-julkaisu:** tagi ja GitHub Release, lyhyet release notes,
+  kuvallinen social preview, aihetunnisteet, issue-templatet sekä selkeä kanava
+  bugiraporteille. README:ssä säilyvät tunnetut rajat ja beta-status.
+
+**Radan exit-kriteeri:** repo on puhtaasti asennettavissa, etä-CI on vihreä,
+media näyttää ja kuulostaa oikealta tuotteelta, sukulinja ja AI-avusteinen
+tekijyys on kuvattu avoimesti, vieras käyttäjä pääsee alkuun dokumentaatiolla
+ja tekijä omistaa vähintään yllä olevat kolme teknistä siivua. Vasta tämän
+jälkeen projektia esitellään CV:ssä valmiina portfoliojulkaisuna; sitä ennen
+sanamuoto on rehellisesti *private beta / active development*.
 
 ## Karikot ja opitut lait (lue ennen koodausta)
 

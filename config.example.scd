@@ -1,4 +1,4 @@
-// CocoquantusSC configuration template (SPEC §7).
+// Yölahti configuration template (SPEC §7).
 // Copy to config.scd (gitignored) and edit for your machine.
 (
 	sampleRate: 48000,          // 44100 / 48000 / 96000; coco clock is capped at SR

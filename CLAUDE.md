@@ -1,7 +1,8 @@
-# CLAUDE.md — CocoquantusSC
+# CLAUDE.md — Yölahti
 
-SuperCollider emulation of the Ciat-Lonbarde Cocoquantus 2. Read `PLAN.md` for the
-current handoff, then `SPEC.md` (behavior, parameter tables, safety — normative) and
+Independent SuperCollider feedback instrument descended from a study of the
+Ciat-Lonbarde Cocoquantus 2. Read `PLAN.md` for the current handoff, then `SPEC.md`
+(behavior, parameter tables, safety — normative) and
 `ARCHITECTURE.md` (structure, SynthDef sketches, tests — normative for code shape).
 For any GUI work, read `GUI_SPEC.md` completely: it is authoritative for structure,
 interaction, constants, visual language and motion, while SPEC §8 wins any safety
@@ -68,6 +69,11 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 
 ## Current handoff
 
+- **Public product identity is Yölahti.** Cocoquantus is the explicitly credited
+  lineage, not the product name or a fidelity promise. Keep the existing `CQ*` /
+  `Cocoquantus` class and API namespace during Nocturne; do not start a mass rename.
+  `README.md`, `SOURCES.md`, `docs/CASE_STUDY.md`, and
+  `docs/DEVELOPMENT_PROCESS.md` define the public authorship and portfolio framing.
 - The detailed v1.0 implementation log is frozen at `docs/history/PLAN_v1.0.md`.
 - The verified audit result is indexed by `audit/README.md`; use
   `audit/VERIFIED_FINDINGS.md` over historical severities in the first audit reports.

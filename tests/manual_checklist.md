@@ -354,7 +354,7 @@ CQ.midi.takeover = \jump;      // palaa oletukseen (tai jätä pickup päälle)
 ## Nocturne-vaihe — yö koko soittimena
 
 Vaiheen kuvaus ja rakennusjärjestys: [`PLAN.md`](../PLAN.md) ja
-[`docs/NIGHT_STANDALONE_PLAN.md`](../docs/NIGHT_STANDALONE_PLAN.md §12).
+[`docs/NIGHT_STANDALONE_PLAN.md`](../docs/NIGHT_STANDALONE_PLAN.md) §12.
 Jokaisen inkrementin oma kuuntelu-/välitarkastuslohko lisätään tähän sitä
 mukaa kun se rakennetaan (punch → kevättulva → almanakan maisemointi → ranget
 → dolby → linnut → juuret → drawer-workshop). Korvapassin (§13) lohkot samoin.

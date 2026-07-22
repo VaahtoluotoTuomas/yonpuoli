@@ -1,4 +1,4 @@
-# GUI_SPEC.md — the Archipelago (CocoquantusSC dream GUI)
+# GUI_SPEC.md — the Archipelago (Yölahti GUI)
 
 > *A matrix is what a patch looks like to an accountant.*
 > *This document describes what it looks like to a hand.*
