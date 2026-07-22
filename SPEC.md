@@ -276,9 +276,16 @@ Outputs published to the mod source bus: `tri1..tri5` (±1 triangle), `cas1..cas
 - `patchDepth` (0–1, default 1.0, lag 50 ms): global scaler over all matrix weights —
   a "how alive is it" macro and instant tamer.
 - API: `patch(src, dest, w)`, `unpatch(src, dest)`, `clearPatch`, `getPatch`,
-  `patchPreset(\name)`, `shake(amount: 0.3, seed: nil)` (throw a sparse random patch —
-  each cell with ~10% probability, weights ±amount — plus random spesal states; never
-  touches levels/feedback — safety+musicality rule; same seed = same throw).
+  `patchPreset(\name)`, `shake(amount: 0.3, seed: nil, density: 0.1)` (throw a sparse
+  random patch — each cell with probability `density`, weights ±amount — plus random
+  spesal states; never touches levels/feedback — safety+musicality rule; same seed =
+  same throw). The throw **replaces** the patch rather than adding to it, so
+  `density: 0` **clears the bay** — nothing sown, nothing left standing — while
+  deliberately leaving the spesal states alone: a clear is a clear, not a scramble in
+  disguise. `density` was added
+  2026-07-22 for the night's sowing moon (GUI_SPEC §16.6), which maps its lit phase
+  onto it — how *much* is sown, while `patchDepth` remains the how-*hard* macro.
+  Existing callers are unaffected: the default is the historical ~10%.
 - Named presets shipped in v1 (derived from documented hardware patches):
   `\empty`, `\classic` (tri→spaf both Cocos, castle→castle FM ring),
   `\selfNoise` (dust looping + VCA wobble), `\quantumDrone` (castles as audio, skip/flip
@@ -441,7 +448,8 @@ action or an unbooted instrument is a silent no-op, so a pattern can carry Rests
 survive a `free`/reboot. Actions: `\hold`/`\flip` (`\coco`, optional `\val`),
 `\skip` (`\coco`), `\spesal` (`\castle`, optional `\state`), `\set` (`\param`,
 `\value`), `\patch` (`\src`, `\dest`, `\weight`), `\deck` (`\deck` = `\a`/`\b`,
-`\do` = `\next`/`\prev`/`\random`/`\restart`), `\shake` (`\amount`, `\seed`). E.g.
+`\do` = `\next`/`\prev`/`\random`/`\restart`), `\shake` (`\amount`, `\seed`,
+`\density`). E.g.
 
 ```supercollider
 Pbind(\type, \cq, \action, \spesal, \castle, 3, \dur, Pexprand(0.5, 4)).play;

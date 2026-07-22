@@ -38,6 +38,10 @@ CQBananaGrammar {
 	}
 	isCandidate { |dest| ^candidateDest == dest and: { audition.isActive } }
 	isHarvesting { ^lassoPath.notNil }
+	// §4.4: a press that travels less than this is a no-op, never a lasso. The
+	// almanac corner's taps borrow the same number (§6.1), so the hand learns
+	// one threshold for "I pressed" versus "I dragged" across the whole night.
+	*lassoTravel { ^8 }
 	undoCount { ^undoRing.size }
 	handSource { ^hand !? { hand[\src] } }
 	handWeight {
@@ -276,7 +280,9 @@ CQBananaGrammar {
 		last = lassoPath.last;
 		if(this.prDistance(last, point) >= 2) { lassoPath = lassoPath.add(point) };
 		cursor = point;
-		caught = if(this.prHarvestTravel >= 8) { this.prCaught(cables) } { [] };
+		caught = if(this.prHarvestTravel >= this.class.lassoTravel) {
+			this.prCaught(cables)
+		} { [] };
 		this.changed(\gesture);
 		^this
 	}
@@ -284,7 +290,9 @@ CQBananaGrammar {
 	finishHarvest { |cables|
 		var before, dense;
 		if(lassoPath.isNil) { ^this };
-		caught = if(this.prHarvestTravel >= 8) { this.prCaught(cables) } { [] };
+		caught = if(this.prHarvestTravel >= this.class.lassoTravel) {
+			this.prCaught(cables)
+		} { [] };
 		if(caught.notEmpty) {
 			before = matrix.fullMatrix;
 			dense = matrix.fullMatrix;

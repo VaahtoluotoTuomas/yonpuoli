@@ -330,6 +330,149 @@ CQNightGeometryTest : UnitTest {
 		};
 	}
 
+	// The almanac corner (§16.6) lives on water the bodies leave free: right of
+	// coco 2's own box, past bird B's name box, inside the stage at every
+	// scale. The sowing moon must be takeable by the same rim it draws — flash
+	// halo included, or the layer would clip its own light — and G3's compass
+	// water must already be empty and clear: the home is pinned now so the
+	// corner cannot grow into it later, but nothing is drawn there, because a
+	// dead control breaks §4.5 and §16.12 at once.
+	test_almanacCorner {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var almanac = geo[\almanac];
+			var box = almanac[\box], compass = almanac[\compass];
+			var moon = almanac[\moon], moonR = almanac[\moonR];
+			var names = CQMatrix.sourceNames ++ CQMatrix.destNames;
+			[[\corner, box], [\water, compass]].do { |pair|
+				var rect = pair[1];
+				this.assert(rect.left >= 0 and: { rect.right <= size[0] }
+					and: { rect.top >= 0 } and: { rect.bottom <= size[1] },
+					"the almanac % stays on the stage (%x%)"
+						.format(pair[0], *size));
+				this.assert(rect.left > geo[\cocos][1][\shellBox].right,
+					"the almanac % opens right of coco 2's own box (%x%)"
+						.format(pair[0], *size));
+				geo[\birds].do { |bird, i|
+					this.assert(rect.intersects(bird[\dropRect]).not,
+						"bird %'s drop rect keeps clear of the almanac % (%x%)"
+							.format(i + 1, pair[0], *size));
+				};
+				names.do { |name|
+					this.assert(rect.containsPoint(geo[\endpoints][name]).not,
+						"no jack or socket lands in the almanac % (% at %x%)"
+							.format(pair[0], name, *size));
+				};
+				geo[\roots].do { |root, i|
+					(root[\points] ++ root[\branch]).do { |point|
+						this.assert(rect.containsPoint(point).not,
+							"root % keeps out of the almanac % (%x%)"
+								.format(i + 1, pair[0], *size));
+					};
+				};
+			};
+			this.assert(box.intersects(compass).not
+				and: { compass.top >= box.bottom },
+				"G3's compass water waits below the constellation (%x%)"
+					.format(*size));
+			this.assertFloatEquals(compass.width, 140 * geo[\scale],
+				"the reserved pad is §7.1's own 140 px (%x%)".format(*size), 0.001);
+			// the moon is a body: the disc it draws is the disc it answers on,
+			// and its own layer holds the 120 ms flash halo whole
+			this.assert(box.contains(Rect.aboutPoint(moon,
+				moonR + CQNightGeometry.moonHalo,
+				moonR + CQNightGeometry.moonHalo)),
+				"the moon and its flash halo fit inside their layer (%x%)"
+					.format(*size));
+			this.assert(CQNightGeometry.moonHit(almanac, moon)
+				and: { CQNightGeometry.moonHit(almanac,
+					moon + Point(moonR - 2, 0)) }
+				and: { CQNightGeometry.moonHit(almanac,
+					moon + Point(moonR + 4, 0)).not },
+				"the moon answers inside its drawn rim and nowhere else (%x%)"
+					.format(*size));
+			// the sower constellation was removed on 2026-07-22: a preset is a
+			// recipe, not a body, and the Inspector is one toolbar click away in
+			// either view. Nothing but the moon lives in this corner.
+			this.assert(almanac[\stars].isNil
+				and: { CQNightGeometry.respondsTo(\starAt).not },
+				"no preset stars remain in the sky (%x%)".format(*size));
+		};
+	}
+
+	// The spesal coupling chord (§16.6): both ends stop outside their castle's
+	// own opaque box — a line under an opaque layer is a line nobody sees — it
+	// bows inward far enough that an *adjacent* pair can never be mistaken for
+	// the river itself, and it never crowds the storm iris at the centre.
+	test_spesalChordsBowInsideTheRiver {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var eye = geo[\eye], ringR = geo[\ringR];
+			var floor = ringR * CQNightGeometry.chordClearance;
+			5.do { |k|
+				(0..4).removing(k).do { |partner|
+					var path = CQNightGeometry.spesalChord(geo, k, partner);
+					var curveMid = (path[0] * 0.125) + (path[1] * 0.375)
+						+ (path[2] * 0.375) + (path[3] * 0.125);
+					this.assert(geo[\castles][k][\box].containsPoint(path[0]).not
+						and: { geo[\castles][partner][\box]
+							.containsPoint(path[3]).not },
+						"chord % -> % leaves both opaque boxes (%x%)"
+							.format(k, partner, *size));
+					this.assert(this.prDistance(path[1], eye) >= (floor - 0.001),
+						"chord % -> % keeps its distance from the eye (%x%)"
+							.format(k, partner, *size));
+					// the river is the outer line; an inner chord must read as a
+					// different mark even when it joins two neighbours
+					this.assert(CQNightGeometry.ringDistance(geo, curveMid) > 12,
+						"chord % -> % never doubles the river's own line (%x%)"
+							.format(k, partner, *size));
+					// the storm iris draws out to roughly 20 px at full chaos
+					this.assert(this.prDistance(curveMid, eye) > 20,
+						"chord % -> % passes clear of the iris itself (%x%)"
+							.format(k, partner, *size));
+				};
+			};
+		};
+	}
+
+	// the travelling light rides the chord from the castle being read to the
+	// one reading it, and it is a function of the phase alone — no clock of its
+	// own anywhere in the geometry (§16.9)
+	test_spesalChordCarriesItsLight {
+		var geo = CQNightGeometry.compute(1280, 570);
+		var path = CQNightGeometry.spesalChord(geo, 3, 0);
+		var early = CQNightGeometry.chordPoint(path, 0.2);
+		var late = CQNightGeometry.chordPoint(path, 0.8);
+		this.assertEquals(CQNightGeometry.chordPoint(path, 0), path[0],
+			"the light leaves the castle being read");
+		this.assertEquals(CQNightGeometry.chordPoint(path, 1), path[3],
+			"and arrives at the one reading it");
+		this.assert(this.prDistance(early, path[0])
+			< this.prDistance(late, path[0]),
+			"it travels one way along the chord, never back");
+		this.assertEquals(CQNightGeometry.chordPoint(path, 2), path[3],
+			"a phase past the end clamps instead of running off the chord");
+		this.assert(CQNightGeometry.chordLaps > 0,
+			"a chord is crossed a whole number of times per river lap");
+	}
+
+	// one spesal state may never mean two different couplings in two skins:
+	// the night reads the Day constellation's own adapter, and defines no
+	// partner rule of its own anywhere
+	test_oneCouplingRuleForBothSkins {
+		this.assert(CQNightGeometry.respondsTo(\partnerIndex).not
+			and: { CQGuiNightMap.respondsTo(\partnerIndex).not }
+			and: { CQNightGeometry.respondsTo(\trackMode).not },
+			"the night derives no partner or mode rule of its own");
+		this.assertEquals(CQGuiCastleConstellation.partnerIndex(2, 5),
+			(0..4).removing(2)[1],
+			"state 5 on castle 3 reads its second remaining neighbour");
+		this.assert(CQGuiCastleConstellation.trackMode(5)
+			and: { CQGuiCastleConstellation.trackMode(1).not },
+			"states 4..7 are track-and-hold, 0..3 sample-and-hold");
+	}
+
 	test_rangeLetter {
 		this.assertEquals(CQNightGeometry.rangeLetter(\infra), "i", "infra = i");
 		this.assertEquals(CQNightGeometry.rangeLetter(\balcium), "b", "balcium = b");

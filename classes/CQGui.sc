@@ -35,10 +35,15 @@ CQGui {
 	var dropTargetPolling = false, dropTargetArmed = 0;
 	var micLive = false, hotLive = false, cleaned = false;
 	var paramPending, paramFlushScheduled = false, lastParamFlush = 0;
-	// shake throw amplitude shared by the SHAKE button and the p key; GUI-local
-	// because shake is an action argument, not a CQSpec param (SPEC §5.5 —
-	// the weight clamp lives in CQMatrix.shake). 0.3 = the facade default.
-	var <>shakeAmount = 0.3;
+	// how much a shake sows (0..1), shared by the SHAKE button, the p key and the
+	// night's sowing moon; GUI-local because shake is an action argument, not a
+	// CQSpec param (SPEC §5.5 — the density clamp lives in CQMatrix.shake).
+	// The default is the **half moon**, which is exactly the v1.0 handful.
+	var <shakeAmount = 0.5;
+	// ...and its own watcher list, deliberately NOT the param registry: that one
+	// is keyed by CQSpec names and primes itself from CQState, which has no
+	// opinion about a gesture constant (GUI_SPEC §10).
+	var shakeWatchers;
 
 	*new { |state, matrix, config|
 		^super.newCopyArgs(state, matrix, config).prInit
@@ -75,11 +80,42 @@ CQGui {
 	cancelAudition {
 		if(drawer.notNil) { drawer.panic } { bananaGrammar !? { bananaGrammar.panic } }
 	}
+	// GUI_SPEC §16.6, decided with the user 2026-07-22: the shared shake amount
+	// is **how much is sown**, not how hard. Strength already has a macro of its
+	// own (`patchDepth`), so mapping the moon's lit area onto the weight ceiling
+	// was both redundant and inaudible; density is reachable from nowhere else.
+	// Linear, so a half moon is exactly the v1.0 handful (10 % ≈ 35 bananas) and
+	// a full one is twice that — dense, but a fifth of `\mayhem`.
+	*fullMoonDensity { ^0.2 }
+	*sowDensity { |norm| ^(norm ? 0).clip(0, 1) * this.fullMoonDensity }
+
 	shake {
 		bananaGrammar.performUndoable({
-			Cocoquantus.shake(shakeAmount, origin: \gui)
+			// the weight stays the facade's documented default: the phase says
+			// how much, patchDepth says how alive
+			Cocoquantus.shake(origin: \gui,
+				density: this.class.sowDensity(shakeAmount))
 		});
 		^this
+	}
+
+	// One amount, three layers (GUI_SPEC §5/§6.1): the Day amount knob and the
+	// night's sowing moon are two views of this one number, so a write from
+	// either fans out to both. Every entry clamps, here as everywhere.
+	shakeAmount_ { |value|
+		var next = (value ? 0).asFloat.clip(0, 1);
+		if(next == shakeAmount) { ^this };
+		shakeAmount = next;
+		shakeWatchers.do { |func| func.value(next) };
+		^this
+	}
+
+	// a watcher is painted at once with the value it is joining, exactly as the
+	// param registry primes its widgets
+	onShakeAmount { |func|
+		shakeWatchers.add(func);
+		func.value(shakeAmount);
+		^func
 	}
 
 	// ---- panel registration API (used by CQGuiPanels while building) ----
@@ -266,6 +302,7 @@ CQGui {
 		chargeValues = Array.newClear(chargeNames.size);   // same law as the aura
 		chargePainted = Array.newClear(chargeNames.size);
 		inkControls = List.new;
+		shakeWatchers = List.new;
 		endpoints = IdentityDictionary.new;
 		bananaBodies = IdentityDictionary.new;
 		widgets = CQGuiWidgets(state, updaters, this);
@@ -359,6 +396,10 @@ CQGui {
 		// momentary actions with no persistent state: skip fires a brief button flash
 		stateCtl.put(\action, { |obj, what, action, n|
 			if(action == \skip) { { this.prFlashSkip(n) }.defer };
+			// any shake, from any layer (`p`, the Day button, code, a pattern),
+			// flashes the night's sowing moon — one state, three layers, one
+			// light (§6.1), exactly as skip lights both of its marks
+			if(action == \shake) { { this.prFlashShake }.defer };
 		});
 		OSCdef(\cq_gui_meters, { |msg|
 			{ meterFuncs[\master].value(msg[3], msg[5]) }.defer;
@@ -686,6 +727,13 @@ CQGui {
 		// the night's mouth mark is momentary too, and hangs off this same
 		// notice — so a skip from the keys, code or a pattern shows in both
 		nightMap !? { |map| map.flashSkip(n) };
+	}
+
+	// the sowing moon's own momentary light (§16.6): the amount it wears is
+	// what was just thrown, so the flash reads as the throw itself
+	prFlashShake {
+		if(cleaned) { ^this };
+		nightMap !? { |map| map.flashShake };
 	}
 
 	// each stage's cable overlay keeps its own fixed skin (Day ink, Night

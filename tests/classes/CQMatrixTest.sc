@@ -206,6 +206,53 @@ CQMatrixTest : UnitTest {
 		this.assertEquals(spesal.size, 5, "spesal states still arrive on a bad amount");
 	}
 
+	// SPEC §5.5's `density` (added 2026-07-22 for the night's sowing moon,
+	// GUI_SPEC §16.6): how MUCH is sown, while `amount` stays how hard. Old
+	// callers must be untouched, and the empty phase clears the bay — the field
+	// is exactly what the moon shows — without touching the spesal states,
+	// because a clear is a clear and not a scramble in disguise.
+	test_shakeDensitySowsMoreOrLess {
+		var sparse = CQMatrix(nil), dense = CQMatrix(nil), fallback = CQMatrix(nil);
+		var explicit = CQMatrix(nil), quiet = CQMatrix(nil), spesal;
+		sparse.shake(0.4, seed: 11, density: 0.02);
+		dense.shake(0.4, seed: 11, density: 0.4);
+		this.assert(dense.asArray.size > (sparse.asArray.size * 2),
+			"a fuller moon sows a denser patch (% vs % cells)"
+				.format(sparse.asArray.size, dense.asArray.size));
+		fallback.shake(0.4, seed: 11);
+		explicit.shake(0.4, seed: 11, density: CQMatrix.shakeDensity);
+		this.assertEquals(fallback.asArray, explicit.asArray,
+			"an omitted density is exactly the historical ~10 % handful");
+		// the empty phase: an empty field, i.e. a clear
+		quiet.patch(\tri1, \coco1_spaf, 0.55);
+		quiet.patch(\envB, \castle3_fm, -0.4);
+		spesal = quiet.shake(0.4, seed: 11, density: 0);
+		this.assertEquals(quiet.asArray, [],
+			"density 0 sows nothing, so it leaves nothing standing — it clears");
+		this.assertEquals(spesal, [],
+			"but it scrambles no spesal state: a clear is a clear");
+	}
+
+	test_shakeDensityClampFuzz {
+		var wild = CQMatrix(nil);
+		wild.shake(0.4, seed: 3, density: 9);
+		this.assert(wild.asArray.size >= 350,
+			"a density over 1 clamps to a full bay instead of misbehaving");
+		wild = CQMatrix(nil);
+		wild.patch(\tri1, \coco1_spaf, 0.5);
+		wild.shake(0.4, seed: 3, density: -2);
+		this.assertEquals(wild.asArray, [],
+			"a negative density clamps to the empty field, never to raw values");
+		wild = CQMatrix(nil);
+		wild.shake(0.4, seed: 3, density: 0.0 / 0.0);
+		this.assert(wild.asArray.size > 0,
+			"a NaN density falls back to the documented default, never raw");
+		this.assertEquals(CQMatrix.clampDensity(nil), CQMatrix.shakeDensity,
+			"no density asked for = the historical throw");
+		this.assertEquals(CQMatrix.clampDensity(\bogus), CQMatrix.shakeDensity,
+			"a non-number density warns and falls back");
+	}
+
 	test_unknownPresetSafe {
 		matrix.patch(\tri1, \coco1_spaf, 0.5);
 		this.assertNoException({ matrix.preset(\bogus) }, "unknown preset never throws");

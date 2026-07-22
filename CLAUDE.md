@@ -84,10 +84,12 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 - The Madrona/Sumu reference contributed only the principle that a visualization must
   expose actual sound/state structure. Do not add decorative filler or animation.
 - **G1 is complete and accepted, §13 end gate included (2026-07-21, `295d14d`).**
-- **G2's whole built night surface is accepted and its §13 gate passed (2026-07-22).
-  G2 itself is NOT signed off**: §13's G2 scope still contains one unbuilt part, the
-  **Night toolbar** (§6). That is the next step. **Do not rebuild or "improve"
-  accepted G1 or G2 surface on your own initiative.** `PLAN.md` holds the detail.
+- **G2's whole night surface is now built and accepted** — the almanac corner and
+  the spesal coupling chords landed last (2026-07-22, manual blocks G2.11 and
+  G2.11b). **G2 itself is still not signed off**: §13 owes the new surface its
+  scaling check (100/125/150 %) and a CPU/resource soak. That is the next step,
+  and only after it comes G3. **Do not rebuild or "improve" accepted G1 or G2
+  surface on your own initiative.** `PLAN.md` holds the detail.
   - §16.7's dashed drop-target border is done and accepted (2026-07-22, checklist
     G2.10), both skins from one `CQInk.drawDropTarget`. Qt hands sclang **no
     drag-leave callback**, and
@@ -99,16 +101,62 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
     global rect), with two exits — cursor leaves, or drag ends. Any future drag
     affordance in this codebase inherits that: Qt's drag events cannot track hover
     for you, the cursor can.
-  - The Night toolbar was decided with the user on 2026-07-22 and recorded in
-    `GUI_SPEC.md` §6/§6.1/§16.6: it is the **almanac corner** in the top-right
-    sky — the **sowing moon** (tap < 8 px = shake at the moon's current phase;
-    vertical drag pours `shakeAmount`; the lit phase is the value; 120 ms flash
-    on any shake from any layer) and the **sower constellation** (one star per
-    preset; hover whispers the name, tap sows via the Inspector's apply path;
-    no star stays lit — a "current preset" mark would lie). The §7 weather
-    tools' G3 home is reserved as **empty water** pinned by clearance tests —
-    no dead controls are drawn. Only the build remains: geometry + tests, Ink
-    pieces, touch delegates, night-smoke extension, manual block G2.11.
+  - The Night toolbar is the **almanac corner** in the top-right sky
+    (`GUI_SPEC.md` §6/§6.1/§16.6): the **sowing moon**, and beneath it G3's
+    reserved **empty water** — pinned by clearance tests, never drawn, because
+    a dead control breaks §4.5 and §16.12 at once. **Accepted 2026-07-22
+    (manual block G2.11)** after three correction rounds, whose decisions are
+    all normative now:
+    1. **The moon's phase is how MUCH is sown, not how hard.** `shake` gained a
+       `density` argument (SPEC §5.5, default 0.1 = the historical throw, so the
+       code layer and patterns are untouched); `CQGui.sowDensity` maps the phase
+       linearly onto it, so the **half moon is exactly the v1.0 handful** (10 %
+       ≈ 35 cables) and the full moon is twice that. The old weight-ceiling
+       mapping was redundant (`patchDepth` is already the how-alive macro) and
+       inaudible — every throw rewrote the same ~35 cells, so a thin crescent
+       read as "everything went quiet". **The new moon clears the bay** (round
+       three): the phase is the field, so an empty field is empty. It was a
+       no-op first, to keep the darkest phase from being the most destructive
+       act, but in the hand that read as a broken control — and a clear is one
+       Ctrl+Z away. Spesal states are left alone either way.
+    2. **The pour is horizontal** and the moon fills from its left limb, so the
+       terminator travels with the hand (§4.5 again: cue and action share one
+       geometry). The tap threshold is `CQBananaGrammar.lassoTravel` — now one
+       constant in both places — and its px are **dead**, so a throw cannot
+       nudge the phase it throws.
+    3. **No presets at night.** The sower constellation lived for one round and
+       was cut: a preset is a recipe, not a body, and it was the night's only
+       control that could not be used without reading text (§16.4). The
+       Inspector's menu is one toolbar click away from either view, and G3 never
+       depended on it (the compass stamps its corners from the live matrix).
+    `shakeAmount` fans out through `CQGui.onShakeAmount` (default now 0.5 = the
+    half moon), so the Day knob and the moon are two views of one number, and
+    `Cocoquantus.shake` announces `\action, \shake` exactly as skip does, which
+    is what lets one light serve three layers. The moon is Ø 52 after round two.
+  - **Spesal coupling chords** (accepted 2026-07-22, manual block G2.11b): the
+    night's inner clock showed a castle's *state* but not
+    what the state means — which castle it reads. The chord now draws that on
+    the ring's layer, reading `CQGuiCastleConstellation.partnerIndex/trackMode`
+    so one state cannot mean two couplings in two skins. Two laws came out of
+    the review and were applied to **both** skins:
+    **the link runs with the signal** (castle k samples its partner *into*
+    itself, SPEC §2.2 — the old arrow pointed at the one being read, which made
+    it the only directional mark in the app running against its own flow), and
+    **track-and-hold is a broken link, not a doubled one** (it follows its input
+    half the clock and freezes the other half, so a dash *is* the mechanism; the
+    parallel second line also collided with the arrowhead). Cross-ticks were not
+    available — barbs mean inverso polarity on the cables. In the night the
+    arrowhead is gone entirely: direction is a **travelling light** on the
+    chord, riding the river's own firefly phase (telemetry frames, never a clock
+    of its own), because an arrowhead there read as a flowchart. Day keeps a
+    static arrow — paper is a calm tool and grows no ambient motion. **It is shown only where
+    the hand asks** — nothing at rest, one chord under a hovered castle, five
+    under the hovered river — because the coupling is structure, not a quantity,
+    and the ring's interior belongs to the iris, the fireflies, the cables and
+    the lasso. The chord bows toward the eye (0.4, clamped at 0.35 × ringR) so
+    an adjacent pair never doubles the river, and both ends stop at the castle
+    boxes via `CQNightGeometry.boxExit` — half a square box's *width* along a
+    diagonal ray is still inside the box, which the clearance test caught.
   - The night's read head cost four review rounds and produced laws worth keeping:
     **a moving target is not a control** (skip's tap on the comet was replaced by a
     stationary mark under the mouth chevron); **a regime display measures the
@@ -157,10 +205,13 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 - `/cq_aura` law: no telemetry is not the same as zero. `CQGui.auraFor` returns `nil`
   until the server reports, and every drawing surface must keep its static reviewed
   look in that case. Focus, solo-dim and hover never pulse (`GUI_SPEC.md` §4.5).
-- Latest full gate on `archipelago` (2026-07-22): 4,959 unit passes / 0 failures,
-  `CQ_COMPILE_OK`, `CQ_SAFETY_PASSED`, `CQ_HOLD_OK`, `CQ_GUI_SHELL_PASSED`,
-  `CQ_GUI_DRAWER_PASSED`, `CQ_GUI_DRAWER_REENTRY_PASSED`, `CQ_GUI_NIGHT_PASSED`.
-  Measured on the user's machine: server 19.8–21.5 % against SPEC §9's 25 % ceiling,
+- Latest full gate on `archipelago` (2026-07-22, almanac corner + spesal
+  chords): 5,371 unit passes / 0 failures, `CQ_COMPILE_OK`, `CQ_SAFETY_PASSED`,
+  `CQ_HOLD_OK`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+  `CQ_GUI_DRAWER_REENTRY_PASSED` and `CQ_GUI_NIGHT_PASSED`. The performance
+  figures are still those measured on the gate before it (4,959 passes) —
+  the almanac corner has not been soaked yet:
+  server 19.8–21.5 % against SPEC §9's 25 % ceiling,
   GUI 2.8–3.8 % at rest with 20 planted cables, and 3–6.8 % with `mayhem`'s 352
   cables — seven times `auraCableLimit`, so inside the documented band rather than a
   regression. Which repaint actually triggers that has **not** been measured in the
@@ -211,6 +262,11 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 - Repo files contain UTF-8 (Finnish text, `±`, `→`): never edit them with PowerShell
   text cmdlets (`Get-Content`/`Set-Content` mangle the encoding) — use the agent's
   file tools or an editor.
+- `CQGuiWidgets.register` is the **CQSpec param** registry: it primes the updater
+  immediately with `state.get(name)`, so registering a GUI-only constant there
+  paints the widget with `nil` on the very first build (it took down every GUI
+  smoke when `shakeAmount` was tried that way). Gesture constants get their own
+  watcher door — `CQGui.onShakeAmount` is the pattern.
 - `config.scd` must stay a pure data expression (the parenthesized Event) — no
   trailing code; `CQConfig` uses the file's return value, and boot lives in `boot.scd`.
 - Qt deadlock: hiding a view under the mouse pointer with a *direct* property write

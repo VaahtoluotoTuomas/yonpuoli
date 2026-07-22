@@ -543,8 +543,12 @@ CQInk {
 		Pen.moveTo(contour.first);
 		contour.drop(1).do { |point| Pen.lineTo(point) };
 		Pen.stroke;
-		mapped.do { |start, i|
-			this.drawDirectedLink(start, mapped[partners[i]], modes[i], skin);
+		// the link runs the way the signal runs: castle i samples its PARTNER's
+		// triangle into its own S&H (SPEC §2.2), so the arrow lands on the
+		// reader, not on the one being read (amended 2026-07-22 — an arrow that
+		// points against the flow is the only mark in the app that would)
+		mapped.do { |node, i|
+			this.drawDirectedLink(mapped[partners[i]], node, modes[i], skin);
 		};
 		mapped.do { |center, i|
 			var state = states[i].asInteger, act = (activity[i] ? 0).clip(-1, 1);
@@ -578,6 +582,15 @@ CQInk {
 		};
 	}
 
+	// `start` is the castle being read, `end` the one reading it — the arrow
+	// therefore points downstream, with the sampled signal.
+	// **Track-and-hold is drawn broken, not doubled** (amended 2026-07-22): a
+	// track-and-hold follows its input while the clock is high and freezes
+	// while it is low, so a link that is connected half the time *is* the
+	// mechanism. The old parallel line was the same fact told twice, and its
+	// second stroke ran into the arrowhead. Cross-ticks were not available:
+	// barbs already mean inverso polarity on the cables (§16.8). Pen's dash
+	// pattern is global state, so it is put back before the arrow is drawn.
 	*drawDirectedLink { |start, end, track = false, skin = \day|
 		var palette = this.palette(skin), delta, length, unit, normal;
 		var from, to, arrow, wing;
@@ -589,12 +602,10 @@ CQInk {
 		to = end - (unit * 14);
 		Pen.strokeColor = palette[\input].copy.alpha_(0.58);
 		Pen.width = this.strokes[\hairline];
+		if(track) { Pen.lineDash = FloatArray[5, 5] };
 		Pen.line(from, to);
 		Pen.stroke;
-		if(track) {
-			Pen.line(from + (normal * 3), to + (normal * 3));
-			Pen.stroke;
-		};
+		if(track) { Pen.lineDash = FloatArray[1, 0] };
 		arrow = to - (unit * 2);
 		wing = 4;
 		Pen.line(arrow, arrow - (unit * wing) + (normal * 2.4));

@@ -9,7 +9,7 @@
 CQGuiNightTouch {
 	var map, state, overlay;
 	var <>controller;   // set after construction — the controller binds later
-	var wind, eyeDrag, crescentDrag;
+	var wind, eyeDrag, crescentDrag, moonDrag;
 
 	*new { |map, state, overlay| ^super.newCopyArgs(map, state, overlay) }
 
@@ -27,6 +27,20 @@ CQGuiNightTouch {
 	// px of drag for the full range of a crescent / the eye's axes
 	*crescentSensitivity { ^1 / 120 }
 	*eyeSensitivity { ^1 / 220 }
+
+	// the sowing moon's one threshold (§6.1): a press that travels less than the
+	// harvest lasso's own 8 px is a **tap** — the throw — and anything longer
+	// pours the phase instead. One body, two acts, told apart by the hand alone,
+	// and told apart by the same number the lasso already teaches.
+	*tapTravel { ^CQBananaGrammar.lassoTravel }
+
+	// the tap's px belong to the tap: a throw must never nudge the phase, and a
+	// pour must not jump the moment it engages
+	*deadzone { |delta, dead|
+		if(delta.abs <= dead) { ^0 };
+		^delta - (dead * delta.sign)
+	}
+
 	// ---- shell: wind (speed) · heart (hold) · chevron (flip) · mark (skip) ----
 
 	shellDown { |index, view, x, y, modifiers = 0, button = 0, clicks = 1|
@@ -152,6 +166,49 @@ CQGuiNightTouch {
 			if(CQNightGeometry.bodyHit(geo[\castles][k], point)) {
 				("castle" ++ (k + 1)).asSymbol
 			})
+	}
+
+	// ---- the almanac corner: the sowing moon ----
+
+	almanacDown { |view, x, y, modifiers = 0, button = 0, clicks = 1|
+		var point = this.prPoint(view, x, y), geo = map.geometry;
+		if(geo.isNil) { ^this };
+		// §4.5 again: a cable crossing the sky is grabbed, never sown through
+		if(button != 0 or: { modifiers.isAlt }
+			or: { overlay.patchAt(point).notNil }) {
+			^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
+		};
+		if(CQNightGeometry.moonHit(geo[\almanac], point)) {
+			moonDrag = (start: point, amount: map.shakeAmount, travel: 0);
+			^this
+		};
+		// the rest of the corner is open water: harvest, solo and hover behave
+		// exactly as they do on any other night paper
+		^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
+	}
+
+	almanacMove { |view, x, y, modifiers = 0|
+		var point;
+		if(moonDrag.isNil) { ^this.forwardMove(view, x, y, modifiers) };
+		point = this.prPoint(view, x, y);
+		moonDrag[\travel] = max(moonDrag[\travel],
+			CQNightGeometry.distance(moonDrag[\start], point));
+		if(moonDrag[\travel] > this.class.tapTravel) {
+			// pouring the phase: the terminator follows the hand, so the drag is
+			// horizontal — right for a fuller moon — at the tide crescents' own
+			// sensitivity (§16.6, decided 2026-07-22)
+			map.pourShake(moonDrag[\amount]
+				+ (this.class.deadzone(point.x - moonDrag[\start].x,
+					this.class.tapTravel) * this.class.crescentSensitivity));
+		};
+		^this
+	}
+
+	almanacUp { |view, x, y, modifiers = 0, button = 0|
+		if(moonDrag.isNil) { ^this.forwardUp(view, x, y, modifiers, button) };
+		if(moonDrag[\travel] <= this.class.tapTravel) { map.throwShake };
+		moonDrag = nil;
+		^this
 	}
 
 	// ---- crescents: dedicated small controls, vertical drag = value ----

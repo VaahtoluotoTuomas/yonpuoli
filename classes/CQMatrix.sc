@@ -146,22 +146,36 @@ CQMatrix {
 	}
 
 	// SPEC §5.5 shake: throw a fresh handful of bananas on the bay — a sparse
-	// random patch (each cell patched with prob. shakeDensity, weight ±amount)
+	// random patch (each cell patched with prob. `density`, weight ±amount)
 	// plus 5 random spesal states, returned for the caller to apply
 	// (Cocoquantus.shake; this class knows no server counters). Never touches
 	// levels/feedback by construction: only weights live here. A seed makes the
 	// throw reproducible (SPEC: shake(0.4, seed: 1234)); the language-side rand
 	// stream is restored afterwards so a seeded shake has no side effects.
+	//
+	// `density` is how MUCH is sown, and it is what the night's sowing moon
+	// wears as its phase (GUI_SPEC §16.6): strength already has a macro of its
+	// own in patchDepth, while density is reachable from nowhere else.
 	shake { |amount = 0.3, seed, origin = \code, committed = true,
-		operation = \shake|
+		operation = \shake, density|
 		var amt = this.class.clampWeight(amount).abs;
+		var sow = this.class.clampDensity(density);
 		var saved = thisThread.randData;
 		var spesal;
+		// an empty moon **clears the bay**: nothing is sown, so nothing is left
+		// standing — the phase is the field, and an empty field is empty. The
+		// spesal states are deliberately left alone: a clear is a clear, not a
+		// scramble in disguise (decided with the user 2026-07-22, replacing the
+		// first version's no-op, which read as a broken control).
+		if(sow <= 0) {
+			this.clearPatch(origin, committed, operation);
+			^[]
+		};
 		seed !? { thisThread.randSeed = seed.asInteger };
 		this.prInit;
 		weights.do { |row, di|
 			row.size.do { |si|
-				if(this.class.shakeDensity.coin) { weights[di][si] = amt.rand2 };
+				if(sow.coin) { weights[di][si] = amt.rand2 };
 			};
 		};
 		spesal = 5.collect { 8.rand };
@@ -172,8 +186,21 @@ CQMatrix {
 		^spesal
 	}
 
-	// ~10% of 16x22 cells = ~35 bananas — a full but still readable table
+	// ~10% of 16x22 cells = ~35 bananas — a full but still readable table, and
+	// the default when no density is asked for (SPEC §5.5: existing callers keep
+	// the historical throw exactly)
 	*shakeDensity { ^0.1 }
+
+	// same manners as clampWeight: a malformed density warns and falls back to
+	// the documented default rather than being applied raw (safety invariant 4)
+	*clampDensity { |d|
+		if(d.isNil) { ^this.shakeDensity };
+		if(d.isNumber.not or: { d.asFloat.isNaN }) {
+			this.prWarn("bad density % ignored".format(d));
+			^this.shakeDensity
+		};
+		^d.asFloat.clip(0, 1)
+	}
 
 	// push every current weight to the server (used once at boot and after clear/load)
 	pushAll { this.prPushAll }

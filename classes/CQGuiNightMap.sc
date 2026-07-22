@@ -12,6 +12,7 @@ CQGuiNightMap {
 	var gui, state, matrix, config;
 	var <stageView, <container, <overlay, <controller, <touch, <endpoints, <bodies;
 	var <groundView, <ringView, <eyeView, <castleViews, <shellViews, <birdViews;
+	var <almanacView, <moonHover = false, <moonFlash = false;
 	var <crescentViews, crescentNorms, activeCrescents, hoverCrescents, labels;
 	var <geometry, <eyeActive = false;
 	var <eyeFreqNorm = 0.5, <eyeChaosNorm = 0.15;
@@ -104,10 +105,37 @@ CQGuiNightMap {
 		overlay !? { overlay.free };
 	}
 
-	// castles read the spesal dial state from CQGui's /cq_spesal cache
+	// castles read the spesal dial state from CQGui's /cq_spesal cache; the ring
+	// carries the coupling those states decide, so a step swings a shown chord
+	// under the very hand that stepped it
 	spesalChanged {
 		if(freed) { ^this };
 		castleViews.do { |view| view.refresh };
+		ringView.refresh;
+	}
+
+	// §16.6: which castle each castle reads is *structure*, so it is drawn only
+	// where the hand is asking — one chord under a hovered castle, all five
+	// under the hovered river, nothing at rest. The partner and the hold mode
+	// come from the Day constellation's own adapter, so one spesal state can
+	// never mean two different couplings in two skins.
+	chordCastles {
+		if(ringHover) { ^(0..4) };
+		^(0..4).select { |k| dialHover[k] or: { bodyHover[k] } }
+	}
+
+	spesalChords {
+		var states = gui.spesalStates;
+		if(geometry.isNil) { ^[] };
+		^this.chordCastles.collect { |k|
+			var state = (states[k] ? 0).asInteger;
+			var partner = CQGuiCastleConstellation.partnerIndex(k, state);
+			// the chord runs the way the signal runs: the partner's triangle is
+			// sampled INTO this castle (SPEC §2.2), so the light travels
+			// partner -> k, and the Day link now points the same way
+			(path: CQNightGeometry.spesalChord(geometry, partner, k),
+				track: CQGuiCastleConstellation.trackMode(state))
+		}
 	}
 
 	eyeActive_ { |flag|
@@ -127,6 +155,31 @@ CQGuiNightMap {
 		eyeFreqNorm = freqNorm;
 		eyeChaosNorm = chaosNorm;
 		if(freed.not) { eyeView.refresh };
+	}
+
+	// ---- the almanac corner (§6.1, §16.6) ----
+	// shakeAmount is a GUI constant, not a CQSpec param, and it is ONE state
+	// worn by three layers: the Day knob, the `p` key and this moon. The write
+	// goes to CQGui, which clamps it and fans the new phase back out to both
+	// skins — so the moon can never disagree with the knob.
+	shakeAmount { ^gui.shakeAmount }
+	pourShake { |norm| gui.shakeAmount = norm; ^this }
+	throwShake { gui.shake; ^this }
+
+	// any shake flashes the moon, from any layer — `p`, the Day button and code
+	// all hang off the one `\action` notice, exactly as the skip marks do, so
+	// one state shows in three places with one light. It flashes even at the new
+	// moon, where nothing is sown: the flash says the press landed, and the dark
+	// disc says why nothing grew.
+	flashShake {
+		if(freed) { ^this };
+		moonFlash = true;
+		almanacView.refresh;
+		AppClock.sched(CQInk.momentaryFlash, {
+			if(freed.not) { moonFlash = false; almanacView.refresh };
+			nil
+		});
+		^this
 	}
 
 	// one '/cq_phase' frame (CQGui caches the funnel truth in phaseNorms; the
@@ -326,6 +379,11 @@ CQGuiNightMap {
 			view.drawFunc = { this.prSafeDraw { this.prDrawBird(i) } };
 			view
 		};
+		// the almanac corner sits above the bodies in z but on water none of
+		// them reach, so its opaque layer covers nothing (§16.6, pinned by the
+		// geometry's clearance tests)
+		almanacView = this.prLayer;
+		almanacView.drawFunc = { this.prSafeDraw { this.prDrawAlmanac } };
 		(CQMatrix.sourceNames ++ CQMatrix.destNames).do { |name|
 			this.prMakeEndpoint(name)
 		};
@@ -459,6 +517,18 @@ CQGuiNightMap {
 				touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
 			};
 		};
+		almanacView.mouseDownAction = { |v, x, y, mods, button, clicks|
+			touch.almanacDown(v, x, y, mods ? 0, button ? 0, clicks ? 1)
+		};
+		almanacView.mouseMoveAction = { |v, x, y, mods|
+			touch.almanacMove(v, x, y, mods ? 0)
+		};
+		almanacView.mouseUpAction = { |v, x, y, mods, button|
+			touch.almanacUp(v, x, y, mods ? 0, button ? 0)
+		};
+		almanacView.mouseWheelAction = { |v, x, y, mods, xd, yd|
+			touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
+		};
 		crescentViews.keysValuesDo { |name, view|
 			view.mouseDownAction = { |v, x, y, mods, button, clicks|
 				touch.crescentDown(name, v, x, y, mods ? 0, button ? 0, clicks ? 1)
@@ -488,6 +558,9 @@ CQGuiNightMap {
 			view.mouseOverAction = { |v, x, y| this.prHoverRing(v, x, y) };
 			view.mouseLeaveAction = { this.prHoverRing(nil, nil, nil) };
 		};
+		almanacView.acceptsMouseOver = true;
+		almanacView.mouseOverAction = { |v, x, y| this.prHoverAlmanac(v, x, y) };
+		almanacView.mouseLeaveAction = { this.prHoverAlmanac(nil, nil, nil) };
 	}
 
 	prStagePoint { |view, x, y|
@@ -552,7 +625,28 @@ CQGuiNightMap {
 		if((near != dialHover[k]) or: { body != bodyHover[k] }) {
 			dialHover[k] = near;
 			bodyHover[k] = body;
-			if(freed.not) { castleViews[k].refresh };
+			if(freed.not) {
+				castleViews[k].refresh;
+				// the coupling chord lives on the ring's layer (§16.6): a castle
+				// cannot paint a line to a body three hundred pixels away
+				ringView.refresh;
+			};
+		};
+	}
+
+	// the moon's own drawn rim is its cue, as everywhere else in the night. A
+	// cable crossing the sky wins the press (§4.5), so it wins the cue too, and
+	// a repaint happens only when the boolean actually flips.
+	prHoverAlmanac { |view, x, y|
+		var moon = false, point;
+		if(geometry.notNil and: { view.notNil }) {
+			point = this.prStagePoint(view, x, y);
+			moon = CQNightGeometry.moonHit(geometry[\almanac], point)
+				and: { overlay.patchAt(point).isNil };
+		};
+		if(moon != moonHover) {
+			moonHover = moon;
+			if(freed.not) { almanacView.refresh };
 		};
 	}
 
@@ -613,6 +707,7 @@ CQGuiNightMap {
 		if(bounds.width < 200 or: { bounds.height < 200 }) { ^this };
 		geometry = CQNightGeometry.compute(bounds.width, bounds.height);
 		groundView.bounds = Rect(0, 0, bounds.width, bounds.height);
+		almanacView.bounds = geometry[\almanac][\box];
 		ringView.bounds = geometry[\ringBox];
 		eyeView.bounds = Rect.aboutPoint(geometry[\eye], 22, 22);
 		castleViews.do { |view, k| view.bounds = geometry[\castles][k][\box] };
@@ -680,6 +775,9 @@ CQGuiNightMap {
 				if(freed.not) { view.refresh };
 			});
 		};
+		// the sowing moon's phase: not a CQSpec param, so it rides CQGui's own
+		// fan-out rather than the paced param stream (§6.1)
+		gui.onShakeAmount({ if(freed.not) { almanacView.refresh } });
 		gui.widgets.register(\micGain, { |value|
 			sproutState = CQNightGeometry.sproutState(
 				config[\micChan].notNil, value);
@@ -711,7 +809,20 @@ CQGuiNightMap {
 
 	prDrawRing {
 		if(geometry.isNil) { ^this };
-		CQInkNight.drawRing(geometry, fireflyPhase, ringHover, \night);
+		CQInkNight.drawRing(geometry, fireflyPhase, ringHover, \night,
+			this.spesalChords);
+	}
+
+	// the almanac corner: the sowing moon wearing its phase, and nothing else.
+	// The §7 weather tools' home below it is deliberately NOT drawn — reserved
+	// water until G3, because a dead control breaks §4.5 and §16.12 at once.
+	prDrawAlmanac {
+		var almanac;
+		if(geometry.isNil) { ^this };
+		almanac = geometry[\almanac];
+		Pen.translate(almanac[\box].left.neg, almanac[\box].top.neg);
+		CQInkNight.drawSowingMoon(almanac[\moon], almanac[\moonR],
+			gui.shakeAmount, moonHover, moonFlash, \night);
 	}
 
 	prDrawEye {

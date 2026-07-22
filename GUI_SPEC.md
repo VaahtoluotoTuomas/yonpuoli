@@ -233,12 +233,15 @@ body. What changes:
   candidate). The controls-first law and cable focus are defined by §4.5.
 - **Declutter.** Number boxes, snapshot save/recall and morph A/B/duration
   move to the drawer's memory tab. Deck file-drop + filename label stay.
-  Meters, LEDs, spesal display, shake button + amount knob stay (amount is
-  shared with the night's sowing moon and the `p` key — one state, three
-  layers).
+  Meters, LEDs, spesal display, shake button + amount knob stay. **`amount` is
+  how much a shake sows**, not how hard (SPEC §5.5's `density`; strength is
+  `patchDepth`'s job) — one state shared with the night's sowing moon and the
+  `p` key: three layers, one number, one light.
 - The old matrix pane leaves the main window → drawer inspector (§8). The
-  patch-preset menu moves to the inspector header; at night the presets are
-  the sower constellation (§16.6).
+  patch-preset menu moves to the inspector header, **and that is its only
+  home**: the night carries no presets (decided 2026-07-22, superseding the
+  sower constellation — see §16.6). The Drawer tab sits in the persistent
+  toolbar, so the recipes are one click away from either view.
 
 ---
 
@@ -299,11 +302,16 @@ eye but must keep the topology truths):
   with the wind's own cue.
 - **Night toolbar → the almanac corner** (decided with the user 2026-07-22,
   superseding the earlier lowercase word-row sketch): no bar, no box, no
-  menu. The top-right sky carries the **sowing moon** — shake and its amount
-  in one body, the lit phase *is* the value — and the **sower
-  constellation**, one star per patch preset. The §7 weather tools' G3 home
-  is reserved beneath them as empty water (§16.6). The old "amount
+  menu. The top-right sky carries the **sowing moon** — shake and how much it
+  sows in one body, the lit phase *is* the value — and beneath it the §7
+  weather tools' G3 home, reserved as empty water (§16.6). The old "amount
   mini-knob" is superseded: nothing on the night map looks like a knob.
+  A **sower constellation** of preset stars stood here for one review round
+  and was removed the same day at the user's direction: a preset is a recipe,
+  not a body, and it was the night's only control that could not be used
+  without reading text (§16.4) — six identical glyphs you had to hover one by
+  one, which is a menu in costume. The night's grammar is bodies, bananas and
+  weather; recipes live in the Inspector, one toolbar click away.
 
 ### 6.1 Night touch grammar (normative, decided 2026-07-21)
 
@@ -322,10 +330,9 @@ an action the next gesture will not receive).
 | **the mouth's skip mark** | press the spark glyph hanging under the chevron (10 px box, stationary). Momentary: 120 ms ink flash on *any* skip, the Day button's law (§16.7) | `skip(n)` — the loop restarts from the eye |
 | **tide crescents** | a small crescent below each spaf / inVca / fbVca moon, luminous fill = value; vertical drag pours more or less. Socket beside its control — §1's proximity law, reborn at night. spaf wears purple | `cocoN spaf / in / fb` |
 | **the ring's eye** | the storm iris at the ring's center (§16.6); grab and drag — vertical = pitch, horizontal = chaos, and the iris itself answers on both axes. The weather of five castles from one fingertip | `qFreq` (y) + `qChaos` (x), relative |
-| **dial tap** | press a castle's inner clock — the dial face inside the body (§16.6): one step (same act as the day step button and keys 3..7) | `spesal(k)` step |
+| **dial tap** | press a castle's inner clock — the dial face inside the body (§16.6): one step (same act as the day step button and keys 3..7). Hovering the castle first shows **which castle it reads** as an inner chord (§16.6's coupling chords), so the step's consequence is visible in the gesture that makes it | `spesal(k)` step |
 | **bird drop + wing crescent** | dropping an audio file on a bird loads that deck (pulled forward from the G2 toolbar step — loading is core); the crescent under the wing is the deck's level | deck load · `deckN level` |
-| **the sowing moon** | the bone moon in the top-right sky (§16.6). A press that travels < 8 px — the lasso's own threshold — throws a shake at the moon's current phase, with a 120 ms bone flash on *any* shake from any layer (`p` key, Day button, code: one state, three layers, one light). A vertical drag pours the phase fuller or darker; the lit fraction is the value, no number | `shake` (matrix op — one undo, one spellbook entry) · `shakeAmount` (GUI constant, no undo) |
-| **a sower star** | one star per patch preset under the moon; hover whispers its name; a tap sows the recipe — one batch commit, one undo op, one `// preset` spellbook block, the Inspector's own apply path. The star flashes 120 ms and returns to rest: no star stays lit, because a "current preset" mark becomes a lie at the first hand-planted banana | preset apply (batched funnel) |
+| **the sowing moon** | the bone moon in the top-right sky (§16.6). A press that travels < 8 px — the lasso's own threshold — throws a shake at the moon's current phase, with a 120 ms bone flash on *any* shake from any layer (`p` key, Day button, code: one state, three layers, one light). A **horizontal** drag pours the phase fuller (right) or darker (left), the way the terminator itself travels; the lit fraction is **how much gets sown**, no number | `shake` (matrix op — one undo, one spellbook entry) · `shakeAmount` (GUI constant, no undo) |
 
 Skip's night home moved at the G2 gate (2026-07-22, replacing the read-head
 tap that landed 2026-07-21; the `a/s` keys remain). **A moving target is not a
@@ -488,6 +495,8 @@ sub-event in `config.scd`, clamped on load.
 | `auditionRadius` | 40 px | socket capture distance |
 | audition curve | closeness² | swell late, near the socket |
 | `inspectorPlant` | 0.3 | double-click plant weight (= shake default) |
+| `shakeAmount` | 0.5 | the sowing moon's phase = the Day amount knob; how much a shake sows (§16.6) |
+| `fullMoonDensity` | 0.2 | the full moon's `density` (SPEC §5.5); half moon = the v1.0 10 % handful |
 | wheel step | 0.05 / Ctrl 0.01 | weight nudge |
 | `growRate` | 2.5 Hz | grow/wither repeat while held |
 | grow weight | ± U(0.15, 0.4) | new banana strength |
@@ -589,10 +598,13 @@ gate, manual_checklist blocks in the established copy-pasteable format.
   lasso-harvest a few and Ctrl+Z the whole catch back; spellbook lines match
   the actions.
 - **G2 — the night map**: archipelago bodies + spiral read-head (+ phase
-  telemetry) + charge lamps (`/cq_charge`) + solo-light + toolbar presets/
-  shake + deck-bird file drop. Listening gate: patch a flip banana while
+  telemetry) + charge lamps (`/cq_charge`) + solo-light + the almanac
+  corner's sowing moon (presets were struck from this scope on 2026-07-22 —
+  §16.6) + deck-bird file drop. Listening gate: patch a flip banana while
   watching its lamp charge and fire through the Schmitt; confirm the ring
-  river's direction matches the `\classic` FM ring audibly.
+  river's direction matches the `\classic` FM ring audibly; and sow a thin
+  crescent against a full moon — the difference must be a difference in
+  *how much*, not in volume.
 - **G3 — the weather**: compass + persistence file + grow/wither + breed +
   elastic right-drag + undo polish. Listening gate: stamp two jungles in
   opposite corners and crossfade ecosystems with one finger; right-drag
@@ -806,6 +818,48 @@ ragged reach is storm. The ink is the actual state, never decoration. The eye
 lives on its own opaque layer so a storm repaint never re-inks the ring
 (§10); it brightens while held and never displays a value.
 
+**The spesal coupling chords** (added 2026-07-22 — the night's answer to
+"which castle is this one attached to?"). The inner clock shows a castle's
+*state*; the chord shows what that state **means**: which of the other four
+it reads. Drawn on the ring's own layer in spesal green, carrying the same fact and the
+same direction as the Day constellation (§16.7) so one state can never mean
+two couplings in two skins — **the chord runs the way the signal runs**, from
+the castle being read into the one reading it — but told in the night's own
+language:
+
+**Direction is a travelling light, never an arrowhead.** A dot with a short
+tail crosses the chord, exactly as the fireflies cross the river two hundred
+pixels away and for exactly the same reason: the sampling never stops. An
+arrowhead here was the only mark in the bay that pointed instead of moved,
+and it read as a flowchart. The light rides the river's own phase — the
+telemetry frames, never a clock of its own (§16.9) — so a silent instrument
+keeps still water on the chords too.
+
+**Track-and-hold is a broken chord**, sample-and-hold a solid one: a
+track-and-hold follows its input while the clock is high and freezes while it
+is low, so a link connected half the time is the mechanism itself. No S/T
+letters — the night carries almost no text (§16.4) — and no barbs, because
+those already mean inverso polarity on the cables (§16.8).
+
+**Shown only where the hand is asking**: nothing at rest, one chord under a
+hovered castle, all five under the hovered river. This is a deliberate
+refusal of the obvious version — five permanent chords through the ring's
+interior — because the coupling is **structure, not a quantity**. It changes
+only when spesal steps; it is read at the moment a hand is on a castle
+deciding whether to step it; and that interior is where the storm iris, the
+fireflies, the cables and the harvest lasso all live. A mark read two
+percent of the time has not earned permanent ink, and the whole-network
+overview already exists one hard cut away in Day's constellation. Stepping
+the clock swings the chord under the same pointer, so the act shows its own
+consequence.
+
+Geometry: the chord bows toward the eye by 0.4 of the way from its own
+midpoint, so an *adjacent* pair reads as an inner chord instead of doubling
+the river's line — clamped at 0.35 × ringR so it can never crowd the iris.
+Both ends stop where the castle's own opaque box begins (§16.6's law about
+lines laid under opaque layers), or the arrowhead would hide beneath the
+very body it points at.
+
 **Coco (×2).** Spiral = Archimedean, 2.5 turns, outer R ≈ 85 px, 1.5 px
 stroke; the mouth at the outer end carries the gray coco-voice source dot;
 the direction chevron (a §6.1 touch: press = flip) hangs ≈ 24 px below the
@@ -931,27 +985,60 @@ the top-right sky, on the water the bodies leave free — beyond bird B's
 name box and the shell's box at every scale; the geometry owns the exact
 rects and the clearance tests pin them (tune by eye, §15). The farmer's
 almanac holds exactly what this corner holds: the weather, and the sowing
-calendar read from the moon.
+calendar read from the moon. Nothing else — the recipes are not almanac
+material, and they left with the sower constellation below.
 
-**The sowing moon**: a bone-ink circle Ø ≈ 44, its lit phase =
+**The sowing moon**: a bone-ink circle Ø ≈ 52 (44 in the first build; grown
+at the second review, where the corner turned out to carry it easily), its lit phase =
 `shakeAmount` — the terminator drawn as one arc, the lit fraction is the
-value, no number (the tide crescents' law in the sky). Tap (< 8 px travel,
-the lasso's own threshold) = shake at the current phase; vertical drag =
-pour the phase. The moon flashes 120 ms bone on *any* shake from any layer
-(`p` key, Day button, code) — §16.7's momentary law, one
-`CQInk.momentaryFlash` constant. Hover brightens the moon's own drawn rim
-(§4.5: cue and action share one geometry). A fuller moon is a bigger throw
-— the mark teaches its own consequence.
+value, no number (the tide crescents' law in the sky).
 
-**The sower constellation**: one §16.5 spark-glyph star per patch preset,
-seeded scatter below the moon (§16.3's asymmetry law). Hover whispers the
-preset's name beside the star in whisper type — with the filenames, the
-night's only text. A tap sows the recipe and the star flashes 120 ms; no
-star stays lit, because a "current preset" mark becomes a lie at the first
-hand-planted banana. This is not a starfield (§16.12): the count is the
-preset count, every star is a control, nothing twinkles or drifts.
+**The phase is how MUCH is sown, not how hard** (decided with the user
+2026-07-22 after the first review round, and carried into SPEC §5.5 as
+`shake`'s `density` argument). Mapping the lit area onto the weight ceiling
+was both redundant — `patchDepth` is already the how-alive macro — and
+inaudible: every throw rewrote the same ~35 cells, so a thin crescent read
+as "everything went quiet" rather than "a little was sown". Density is
+reachable from nowhere else, an area reads as a quantity, and an almanac's
+moon has always said how much seed to throw. The map is linear, so the
+**half moon is exactly the v1.0 handful** (10 % ≈ 35 bananas) and the full
+moon is twice that (~70, dense but a fifth of `\mayhem`). Consequence worth
+knowing: a full sowing passes `auraCableLimit`, so its cables keep §16.8's
+static ink — a big throw costs the pulse, and that is honest.
+**The new moon clears the bay** (amended 2026-07-22 after the second review
+round): the phase *is* the field, and an empty field is empty, so a tap at
+new moon pulls every cable. The first version made it a no-op instead, to
+keep the darkest phase from being the most destructive act — but in the
+hand that read as a broken control rather than a careful one, and a clear
+is one Ctrl+Z away like any other throw. The spesal states are left alone:
+a clear is a clear, not a scramble in disguise.
 
-**The compass water**: beneath the constellation the §7.1 pad's 140 px home
+Tap (< 8 px travel, the lasso's own threshold) = shake at the current
+phase; **horizontal** drag = pour the phase, at the tide crescents' own
+rate. The moon fills from its left limb so the terminator travels *with* a
+rightward drag — the hand pushes the light ahead of it, and cue and action
+share one geometry (§4.5). Astronomically a waxing moon lights from the
+right; this is an instrument, not an ephemeris, and the first version's
+vertical drag lost that argument the moment it was tried by hand.
+**The tap's own px are dead**: the pour starts counting past the threshold,
+so a throw can never nudge the phase it is throwing and a pour cannot jump
+the moment it engages — one body, two acts, told apart by the hand alone.
+The moon flashes 120 ms bone on *any* shake from any layer (`p` key, Day
+button, code) — §16.7's momentary law, one `CQInk.momentaryFlash` constant,
+hung off one action notice so the three layers cannot drift. Hover
+brightens the moon's own drawn rim.
+
+**No presets at night.** A sower constellation of preset stars stood under
+the moon for one review round (2026-07-22) and was removed the same day:
+one star per recipe, hover-whispered names, tap to sow. It failed on its
+own terms — six identical glyphs that had to be hovered one at a time to be
+told apart, i.e. the night's only control that could not be used without
+reading text (§16.4), which is a menu in costume. A preset is a recipe, not
+a body; the night's grammar is bodies, bananas and weather, and the
+Inspector's menu is one toolbar click away from either view. Nothing about
+G3 depended on it: the compass stamps its corners from the live matrix.
+
+**The compass water**: beneath the moon the §7.1 pad's 140 px home
 is reserved as **empty water** — pinned by the clearance tests, never drawn
 before G3, because a dead control breaks §4.5 and §16.12 at once. When G3
 lands the pad keeps its recipe (140 px round-cornered square, hairline
@@ -984,11 +1071,20 @@ their look is not yet law.
   everywhere, so the hand learns one shape.
 - **Spesal topology**: five asymmetric castle nodes replace the administrative
   v1.0 dot ledger without discarding its information. Each node retains three
-  state beads and the 0–7 number; its arrow points to the partner selected by
-  `state % 4`. A single link means sample-and-hold, a parallel link means
-  track-and-hold (`state >= 4`), reinforced by S/T letters rather than color
-  alone. The small mark inside a node follows its instantaneous `/cq_castle`
-  sample and is described only as activity, never as a waveform.
+  state beads and the 0–7 number. **The link runs the way the signal runs**
+  (amended 2026-07-22): castle *k* samples its partner's triangle into its own
+  S&H (SPEC §2.2), so the arrow leaves the partner selected by `state % 4` and
+  lands on *k*. It pointed the other way — at the one being read — for as long
+  as G1 stood; that made it the only directional mark in the app running
+  against its own flow, and it was reversed in both skins at once so the two
+  can never disagree. **Track-and-hold is a broken link** (`state >= 4`): it
+  follows its input while the clock is high and freezes while it is low, so a
+  dash pattern *is* the mechanism, and it is still reinforced by the S/T
+  letters. The old parallel second line said the same thing twice and ran into
+  the arrowhead; cross-ticks were not available, because barbs already mean
+  inverso polarity on the cables (§16.8). The small mark inside a node follows
+  its instantaneous `/cq_castle` sample and is described only as activity,
+  never as a waveform.
 - **Drawer & inspector**: the ledger look is honest here — rectangles, grids
   and right angles allowed; the inspector heatmap recolors to verso amber /
   inverso blue on paper; 9 px mono row/column labels.
@@ -1058,8 +1154,11 @@ their look is not yet law.
 
 Easing: linear or single-pole decay only — no bounces, no overshoot. The one
 comedy allowed is the damped cable wobble on plant. Ambient motion whitelist:
-aura breathing, ring fireflies, read-head sparks, deck flutter — all of them
-information. Nothing else moves uninvited.
+aura breathing, ring fireflies, **spesal coupling lights**, read-head sparks,
+deck flutter — all of them information. The coupling lights joined the list on
+2026-07-22 for the fireflies' own reason: the S&H sampling they depict never
+stops, and they ride the same phase, so every moving mark inside the ring
+advances on one set of telemetry frames. Nothing else moves uninvited.
 
 Every ambient motion is driven **by the telemetry frames themselves, never by
 a clock of its own** (made explicit 2026-07-22 with the struck read head).

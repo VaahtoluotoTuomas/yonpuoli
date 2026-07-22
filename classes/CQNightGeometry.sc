@@ -158,6 +158,98 @@ CQNightGeometry {
 		^(this.distance(point, castle[\center]) - castle[\dialR]).abs <= 8
 	}
 
+	// ---- the almanac corner (§16.6) ----
+	// Free water in the top-right sky: the sowing moon, and under it the 140 px
+	// the §7.1 compass takes at G3 — reserved as *empty water*, never drawn
+	// before then, because a dead control breaks §4.5 and §16.12 at once. The
+	// corner starts where coco 2's own box ends, so no stage size can squeeze
+	// it; the clearance tests pin both rects.
+	//
+	// The sower constellation that first stood here was removed on the user's
+	// decision (2026-07-22): a preset is a recipe, not a body, and it was the
+	// night's only control that could not be used without reading text. Presets
+	// live in the Inspector, one toolbar click away in either view.
+
+	// Ø 52 (grown from 44 at the user's second review: the corner carried it
+	// easily once the constellation left, and the phase reads better big)
+	*moonRadius { |scale = 1| ^26 * scale }
+
+	// the flash halo reaches this far past the rim, so the layer must hold it
+	*moonHalo { ^7 }
+
+	*almanac { |width, scale = 1, freeFrom = 0|
+		var left = freeFrom + (6 * scale);
+		var axis = width - (80 * scale);
+		var moonR = this.moonRadius(scale);
+		var moon = Point(axis, (18 * scale) + moonR);
+		var box = Rect(left, 0, width - left,
+			moon.y + moonR + max(14 * scale, this.moonHalo + 4));
+		^(box: box, moon: moon, moonR: moonR,
+			compass: Rect(axis - (70 * scale), box.bottom + (14 * scale),
+				140 * scale, 140 * scale))
+	}
+
+	*moonHit { |almanac, point|
+		^this.distance(point, almanac[\moon]) <= almanac[\moonR]
+	}
+
+	// ---- spesal coupling chords (§16.6, added 2026-07-22) ----
+	// Which castle each castle reads is structure, not a quantity, so it is
+	// shown only where the hand is asking (§4.5's hover grammar) — one chord
+	// for a hovered castle, all five for the hovered river. The chord bows
+	// toward the ring's eye so that even an *adjacent* pair reads as an inner
+	// chord instead of doubling the river's own line, and it is clamped so it
+	// can never crowd the storm iris sitting at that centre.
+
+	*chordBow { ^0.4 }          // of the way from the chord's midpoint to the eye
+	*chordClearance { ^0.35 }   // ...but never nearer the eye than this × ringR
+
+	// where a ray leaves an axis-aligned box, plus a hair. A castle's layer is
+	// square, so "half its width along the ray" is still *inside* it in every
+	// direction but the four axes — the chord has to start where the opaque
+	// layer actually stops covering it, or its arrowhead hides under the body
+	// it is pointing at.
+	*boxExit { |center, box, unit, margin = 2|
+		var tx = if(unit.x.abs < 1e-9) { inf } { (box.width * 0.5) / unit.x.abs };
+		var ty = if(unit.y.abs < 1e-9) { inf } { (box.height * 0.5) / unit.y.abs };
+		^center + (unit * (min(tx, ty) + margin))
+	}
+
+	*spesalChord { |geometry, from, to|
+		var castles = geometry[\castles];
+		var a = castles[from][\center], b = castles[to][\center];
+		var eye = geometry[\ringCenter];
+		var reach = geometry[\ringR] * this.chordClearance;
+		var length = max(0.001, this.distance(a, b));
+		var unit = (b - a) / length;
+		// both ends stop at their castle's own opaque box, exactly where the
+		// river's visible stretch stops: a line under an opaque layer is a line
+		// nobody sees (§16.6)
+		var start = this.boxExit(a, castles[from][\box], unit);
+		var end = this.boxExit(b, castles[to][\box], unit * -1);
+		var mid = (start + end) * 0.5;
+		var pull = mid + ((eye - mid) * this.chordBow);
+		var pulled = this.distance(pull, eye);
+		if(pulled < reach) {
+			pull = if(pulled < 0.001) { mid } {
+				eye + ((pull - eye) / pulled * reach)
+			};
+		};
+		^[start, pull, pull, end]
+	}
+
+	// a point riding a chord: t = 0 at the castle being read, t = 1 at the one
+	// reading it — the direction the sampled signal actually travels
+	*chordPoint { |path, t|
+		var v = t.clip(0, 1), u = 1 - v;
+		^(path[0] * (u * u * u)) + (path[1] * (3 * u * u * v))
+			+ (path[2] * (3 * u * v * v)) + (path[3] * (v * v * v))
+	}
+
+	// crossings per lap of the river's own firefly phase: the chords are short,
+	// so a light crosses one about three times while a firefly rounds the ring
+	*chordLaps { ^3 }
+
 	// the castle's own flesh: the ellipse the blob is drawn around (§16.6), grown
 	// by `margin` so the body answers the hand slightly before it arrives. This
 	// is the §6 body-solo target AND, with dialHit excluded, the area that wears
@@ -215,7 +307,7 @@ CQNightGeometry {
 		var ringR = 148 * scale;
 		var endpoints = IdentityDictionary.new;
 		var castles, ringSegments, ringSamples, ringBox, cocos, roots, birds;
-		var sprout, xs, ys;
+		var sprout, almanac, xs, ys;
 
 		// five castles in a true ring, castle 1 at top, k -> k+1 clockwise —
 		// pentagon ±6°, radius ±5 %, body ±8 % (§16.3 asymmetry law), seeded
@@ -393,12 +485,16 @@ CQNightGeometry {
 		endpoints[\deckA_rate] = birds[0][\rateSocket];
 		endpoints[\deckB_rate] = birds[1][\rateSocket];
 
+		// the almanac corner takes the water coco 2's own box leaves free, so
+		// the sky's only tools can never land on a body (§16.6)
+		almanac = this.almanac(width, scale, cocos[1][\shellBox].right);
+
 		^(scale: scale, width: width, height: height,
 			ringCenter: ringCenter, ringR: ringR,
 			eye: ringCenter,           // §6.1: the ring's qFreq/qChaos pupil
 			castles: castles, ringSegments: ringSegments,
 			ringSamples: ringSamples, ringBox: ringBox,
 			cocos: cocos, roots: roots, sprout: sprout, birds: birds,
-			endpoints: endpoints)
+			almanac: almanac, endpoints: endpoints)
 	}
 }

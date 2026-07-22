@@ -1303,8 +1303,10 @@ CQ.hold(1, 0); CQ.patchPreset(\empty);
 - [x] G2.10 drag-over-korostus (§16.7) hyväksytty (pvm: 2026-07-22, kahden
   kierroksen jälkeen: reunaa pitää yllä kursorin sijainti eikä ajastin, ja yön
   kohde kiertää linnun JA sen nimen)
-- [ ] **G2 valmis** — *avoinna enää Night toolbar* (§6). Kaikki muu on
-  rakennettu ja hyväksytty; portti läpäisty 2026-07-22.
+- [ ] **G2 valmis** — koko G2:n pinta on nyt rakennettu ja hyväksytty (viimeisenä
+  almanakkakulma G2.11 ja spesal-jänteet G2.11b, 2026-07-22). Avoinna enää §13:n
+  **täydennys uudelle pinnalle**: skaalaustarkastus 100/125/150 % ja CPU-soak
+  kuun ja jänteiden kanssa. Vasta sen jälkeen G3 Weather machine.
 
 ```supercollider
 // G2.10 — §16.7:n katkoviivakorostus SILMÄLLÄ. (Ctrl+Shift+L ensin.)
@@ -1390,5 +1392,131 @@ CQ.set(\qFreq, 6);
 //    merkin pitää jähmettyä, ei jäädä tuikkimaan omin päin.
 CQ.patch(\tri5, \coco1_skip, 0);
 // 6. Toista kohdat 1 ja 5 coco 2:lle (oikea kuori) — merkit ovat peilikuvia.
+CQ.patchPreset(\empty);
+```
+
+## G2.11 — Night toolbar = almanakkakulma (GUI_SPEC §6/§6.1/§16.6)
+
+G2:n viimeinen rakentamaton osa. Ei palkkia, ei laatikkoa eikä valikkoa: yläoikean
+taivaan vapaassa vedessä on **kylvökuu** — shake ja *kuinka paljon se kylvää* yhtenä
+kehona. Kompassin vesi kuun alla on varattu G3:lle **tyhjänä**; siellä ei saa näkyä
+mitään.
+
+Ensimmäisen katselmointikierroksen jälkeen (2026-07-22) muuttui kolme asiaa:
+
+1. **Vaihe = kylvön tiheys, ei painojen katto** (SPEC §5.5 sai `density`-argumentin).
+   Puolikuu = tasan v1.0:n kourallinen (10 % ≈ 35 banaania), täysikuu tuplat (~70).
+   **Uusikuu tyhjentää kaapelit** (toinen kierros: ensimmäisen version no-op tuntui
+   rikkinäiseltä säätimeltä; tyhjä vaihe = tyhjä pelto, ja Ctrl+Z tuo sen takaisin).
+2. **Veto vaakaan**, ja kuu peilattiin niin että terminaattori kulkee käden mukana.
+3. **Preset-tähdet poistettiin.** Presetit ovat Inspectorissa, yhden toolbar-klikin
+   päässä; yön kielioppi on kehot, banaanit ja sää.
+
+- [x] G2.11 almanakkakulma hyväksytty (pvm: 2026-07-22, kolmen kierroksen
+  jälkeen: vaihe = kylvön tiheys, vaakaveto ja peilattu kuu, uusikuu = clear,
+  preset-tähdet poistettu, Ø 52)
+- [x] G2.11b spesal-kytkentäjänteet hyväksytty (pvm: 2026-07-22, palautekierroksen
+  jälkeen: kulkeva valo nuolenkärjen tilalle yössä, linkki signaalin suuntaan
+  molemmissa nahoissa, track-and-hold katkoviivana kaksoisviivan tilalle)
+
+```supercollider
+// G2.11 — almanakkakulma SILMÄLLÄ ja KORVALLA. (Ctrl+Shift+L ensin!)
+// Soiva maisema ensin, jotta heitto ja kylvö kuuluvat eivätkä vain näy
+// (§7:n kuuro maisema on dokumentoitu ilmiö, ei tämän testin aihe):
+CQ.boot; CQ.patchPreset(\classic);
+CQ.deckA.load("123681__aidenfry__cricket-and-bird-field-recording.wav");
+CQ.set(\coco1SlotDeck, 1); CQ.set(\coco1In, 0.7);
+// Tab yöhön. Katso oikeaa yläkulmaa, lintu B:n nimen ja kuoren OIKEALLA puolella.
+// 1. LÖYTYYKÖ: siellä pitää olla yksi luunvaalea kuu — eikä mitään muuta.
+//    Kuun ALAPUOLELLA on pelkkää tyhjää vettä: se on G3:n kompassin varattu
+//    koti, eikä sinne piirretä mitään ennen G3:a.
+// 2. VAIHE = ARVO: aja alla olevat rivit ja katso kuuta. Valaistun osuuden
+//    pitää seurata Dayn amount-nuppia täsmälleen: yksi luku, kaksi näkymää.
+//    Valo kasvaa VASEMMALTA ja terminaattori liukuu oikealle.
+CQ.gui.shakeAmount = 0.0;   // uusikuu: pelkkä kehä
+CQ.gui.shakeAmount = 0.5;   // puolikuu: terminaattori suorana
+CQ.gui.shakeAmount = 1.0;   // täysikuu
+// 3. KAATO ON VAAKASUORA: tartu kuuhun ja vedä sivusuunnassa. Oikealle =
+//    täydempi (työnnät valoa edelläsi), vasemmalle = tyhjempi. ~120 px = koko
+//    alue. Pystyveto ei saa tehdä mitään. Vaihda Dayhin: amount-nupin pitää
+//    olla siellä minne kuu jäi (ja päinvastoin: käännä nuppia, tarkista kuu).
+// 4. NAPAUTUS = HEITTO: napauta kuuta (alle 8 px liikettä). Yökartalle pitää
+//    ilmestyä uusi kourallinen johtoja KUULUVASTI, kuu välähtää 120 ms, ja
+//    Ctrl+Z peruu koko heiton yhdellä painalluksella. Tärkeä ero: napautus ei
+//    saa muuttaa vaihetta, eikä veto saa heittää mitään.
+// 5. TÄMÄ ON SE KOHTA, JOTA VARTEN KIERROS TEHTIIN — vaihe = kylvön TIHEYS,
+//    ei voimakkuus. Aja rivi kerrallaan ja napauta kuuta jokaisen jälkeen.
+//    Katso johtojen MÄÄRÄÄ yökartalla ja kuuntele. Eron pitää olla "vähän vs.
+//    paljon", ei "hiljaa vs. kovaa":
+CQ.gui.shakeAmount = 0.1;   // ohut sirppi: ~7 johtoa, ripaus
+CQ.gui.shakeAmount = 0.5;   // puolikuu: ~35 johtoa = v1.0:n vanha shake
+CQ.gui.shakeAmount = 1.0;   // täysikuu: ~70 johtoa, tiheä (viidesosa mayhemista)
+// 5b. TÄYDEN KUUN HINTA: yli 48 johdolla kaapelit lakkaavat sykkimästä ja
+//    pitävät staattisen musteen (§10). Tarkista että se näyttää tarkoitetulta
+//    eikä rikkinäiseltä.
+// 6. UUSIKUU = CLEAR: istuta käsin pari banaania, aseta kuu pimeäksi ja
+//    napauta. KAIKKIEN kaapeleiden pitää lähteä (tyhjä vaihe = tyhjä pelto),
+//    kuu välähtää, ja Ctrl+Z tuo koko patchin takaisin yhdellä painalluksella.
+//    Spesal-tilat EIVÄT saa arpoutua: clear on clear, ei naamioitu sekoitus.
+CQ.gui.shakeAmount = 0.0;
+// 7. VÄLÄHDYS JOKA REITILTÄ (yksi tila, kolme kerrosta, yksi valo):
+CQ.gui.shakeAmount = 0.5;
+CQ.shake;                   // koodista
+// ...paina `p`-näppäintä, ja käy painamassa Dayn shake-nappia.
+//    Kuun pitää välähtää KAIKISTA kolmesta, myös kun olet yössä.
+// 8. EI KUOLLUTTA SÄÄDINTÄ: yritä napauttaa tyhjää vettä kuun ympärillä —
+//    mitään ei saa tapahtua. Oikean napin veto tyhjästä vedestä aloittaa
+//    normaalin harvest-lasson, kuten muuallakin yön paperilla.
+// 9. SKAALAUS: maksimoi ikkuna ja palauta se. Kuun pitää pysyä kuoren ja
+//    linnun nimen oikealla puolella eikä leikkautua ikkunan reunaan.
+// 10. KOODIKERROS ENNALLAAN: tämä on yhä vanha ~10 %:n heitto ±0.4 painoilla,
+//    eikä sen pitäisi muuttua miksikään — vain GUI:n kuu ajaa tiheyttä.
+CQ.shake(0.4, seed: 1234);
+CQ.patchPreset(\empty);
+```
+
+**Spesal-kytkentäjänteet (§16.6, sama kierros).** Sisäkello näytti *tilan* muttei
+sitä mitä tila tarkoittaa: kenet linnake lukee. Nyt kytkentä piirtyy ringin
+sisäjänteenä — mutta vain siellä missä käsi kysyy, koska kytkentä on **rakenne,
+ei suure**: se muuttuu vain kun spesalia askelletaan, ja ringin sisus on
+myrsky-iiriksen, tulikärpästen, kaapelien ja lasson tilaa.
+
+```supercollider
+// G2.11b — spesal-kytkennät SILMÄLLÄ. (Ctrl+Shift+L ensin!)
+CQ.boot; CQ.patchPreset(\empty);
+// Tab yöhön, katso linnakerinkiä.
+// 1. LEPO: ringin sisällä ei saa näkyä yhtään jännettä. Vain joki, silmä ja
+//    tulikärpäset.
+// 2. YKSI LINNAKE: vie osoitin linnakkeen 2 lihan päälle (älä sisäkellon).
+//    Sen pitää piirtää TÄSMÄLLEEN YKSI jänne, ja jänteellä kulkee pieni valo
+//    (piste + lyhyt häntä) — samaan tapaan kuin tulikärpäset joella. Valon
+//    pitää kulkea SIITÄ linnakkeesta jota luetaan TÄHÄN linnakkeeseen, eli
+//    signaalin suuntaan. Ei nuolenkärkiä yössä.
+//    Huom: valo liikkuu vain kun telemetriaa tulee (§16.9) — hiljainen soitin
+//    jähmettää sen, aivan kuten tulikärpäset. Jos se ei liiku, nosta ääntä.
+// 3. TILA JA MUOTO: yhtenäinen viiva = sample-and-hold, KATKOVIIVA =
+//    track-and-hold (tila 4–7; T&H seuraa tuloaan puolet kellojaksosta ja
+//    jäätyy toisen puolen — katkonainen yhteys on itse mekanismi). Vertaa
+//    Dayhin: Tab, katso "spesal topology" -tähdistöä, palaa. Kumppanin,
+//    moodin JA suunnan pitää täsmätä. Dayssa nuoli säilyy (paperi on
+//    liikkumaton), mutta se osoittaa nyt lukijaan päin, ei luettavaan.
+// 4. SEURAUS NÄKYY TEOSSA: pidä osoitin linnakkeen päällä ja napauta sen
+//    sisäkelloa. Jänteen pitää heilahtaa uuteen kumppaniin heti, saman eleen
+//    aikana. Askella koko kierros (8 tilaa) ja katso että jänne käy läpi
+//    neljä kumppania × kaksi moodia (yhtenäinen → katkoviiva).
+// 5. KOKO VERKKO: vie osoitin joen viivalle. Kaikkien viiden jänteen pitää
+//    ilmestyä yhtä aikaa. Poistu — kaiken pitää sammua.
+// 6. EI SEKAANNUSTA JOKEEN: etsi tila jossa linnake lukee VIEREISTÄ
+//    linnakettaan (nuoli lyhyt). Jänteen pitää kaartua selvästi sisäänpäin
+//    eikä kulkea joen viivan päällä.
+// 7. SILMÄ VAPAANA: nosta chaos ylös niin että iiriksen säteet kasvavat, ja
+//    näytä kaikki viisi jännettä. Yhdenkään ei pidä leikata silmän läpi.
+CQ.set(\qChaos, 0.9);
+CQ.set(\qChaos, 0.15);
+// 8. DAY SAMALLA KIELELLÄ: Tab Dayhin ja katso "spesal topology" -tähdistöä.
+//    Nuolen pitää nyt osoittaa LUKIJAAN (aiemmin se osoitti luettavaan), ja
+//    track-and-hold on katkoviiva eikä kaksoisviiva — vanha toinen viiva
+//    leikkasi nuolenkärjen. S/T-kirjaimet säilyvät Dayssa.
+CQ.spesal(1); CQ.spesal(1); CQ.spesal(1); CQ.spesal(1);   // askella moodin yli
 CQ.patchPreset(\empty);
 ```

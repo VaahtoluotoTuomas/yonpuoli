@@ -67,6 +67,29 @@ CQGuiNightTouchTest : UnitTest {
 		};
 	}
 
+	// The sowing moon's one threshold (§6.1): under it a press is a tap — a
+	// shake thrown at the moon's current phase — and past it the moon pours
+	// that phase instead, horizontally, the way its own terminator travels. It
+	// is the harvest lasso's own number, so the hand learns "pressed" versus
+	// "dragged" once for the whole night, and the tap's own px are dead, so a
+	// throw never nudges the phase it throws and a pour cannot jump when it
+	// engages.
+	test_almanacTapAndPour {
+		this.assertEquals(CQGuiNightTouch.tapTravel, CQBananaGrammar.lassoTravel,
+			"the tap threshold IS the lasso's, never a second number");
+		this.assertEquals(CQGuiNightTouch.deadzone(3, 8), 0,
+			"a wobbling tap pours nothing");
+		this.assertEquals(CQGuiNightTouch.deadzone(-8, 8), 0,
+			"and neither does one that wandered exactly to the edge");
+		this.assertFloatEquals(CQGuiNightTouch.deadzone(20, 8), 12,
+			"past the threshold the pour starts from zero", 1e-9);
+		this.assertFloatEquals(CQGuiNightTouch.deadzone(-20, 8), -12,
+			"a downward pour is the same distance the other way", 1e-9);
+		this.assert(CQGuiNightTouch.tapTravel
+			< (1 / CQGuiNightTouch.crescentSensitivity),
+			"the dead tap costs a sliver of the moon's range, never a jump");
+	}
+
 	test_sensitivities {
 		this.assert(
 			((4pi * CQGuiNightTouch.windSensitivity) - 1).abs < 1e-9,

@@ -87,9 +87,14 @@ CQInkNight {
 	// fireflies that carry the loop's direction (k → k+1). Phase advances only
 	// when telemetry moves — a still bay keeps a still river. The eye lives on
 	// its own opaque layer (drawEye) so a storm repaint never re-inks the ring.
-	*drawRing { |geometry, phase = 0, hover = false, skin = \night|
+	*drawRing { |geometry, phase = 0, hover = false, skin = \night, chords|
 		var palette = CQInk.palette(skin), origin = geometry[\ringBox].leftTop;
 		Pen.translate(origin.x.neg, origin.y.neg);
+		// the spesal coupling rides this layer because a castle's own 80 px box
+		// cannot paint a chord to a body 300 px away — and its travelling lights
+		// ride the river's own phase, so every moving mark in the ring advances
+		// on the same telemetry frames (§16.9)
+		this.drawSpesalChords(chords, phase, skin);
 		// the river's own line is the §6 body handle: hovering it brightens it,
 		// exactly as hovering the spiral brightens the winding surface (§4.5)
 		Pen.strokeColor = palette[\whisper].copy
@@ -101,6 +106,62 @@ CQInkNight {
 			Pen.addOval(Rect.aboutPoint(
 				CQNightGeometry.fireflyPoint(geometry, phase + (i / 10)), 1.2, 1.2));
 		};
+		Pen.fill;
+	}
+
+	// §16.6 the spesal coupling: which castle each castle reads, drawn on the
+	// ring's own layer as inner chords in spesal green. Same fact as the Day
+	// constellation and the same direction — the chord runs the way the signal
+	// runs, from the castle being read into the one reading it (SPEC §2.2) —
+	// but told in the night's own language:
+	//
+	// **direction is a travelling light, not an arrowhead.** A dot with a short
+	// tail crosses the chord, exactly as the fireflies cross the river two
+	// hundred pixels away, and for exactly the same reason: the sampling never
+	// stops. An arrowhead would be the only mark in the bay that points instead
+	// of moves, and it read as a flowchart. The light rides the **telemetry
+	// frames** (§16.9), never a clock of its own, so a silent instrument holds
+	// still water here too.
+	//
+	// **Track-and-hold is drawn broken, not doubled**: it follows its input
+	// while the clock is high and freezes while it is low, so a link that is
+	// connected half the time IS the mechanism. (Cross-ticks were unavailable —
+	// barbs already mean inverso polarity on the cables, §16.8 — and the old
+	// parallel line collided with everything at the far end.)
+	//
+	// Structure, not a quantity: nothing is drawn at rest, so this costs a
+	// resting bay exactly zero Pen calls, and four strokes under the hand
+	// however many chords are showing.
+	*drawSpesalChords { |chords, phase = 0, skin = \night|
+		var palette = CQInk.palette(skin), heads;
+		var t = (phase * CQNightGeometry.chordLaps).mod(1);
+		if(chords.isNil or: { chords.isEmpty }) { ^this };
+		Pen.width = CQInk.strokes[\hairline];
+		[false, true].do { |track|
+			var group = chords.select { |chord| chord[\track] == track };
+			if(group.notEmpty) {
+				Pen.strokeColor = palette[\input].copy.alpha_(0.8);
+				if(track) { Pen.lineDash = FloatArray[5, 5] };
+				group.do { |chord|
+					var path = chord[\path];
+					Pen.moveTo(path[0]);
+					Pen.curveTo(path[3], path[1], path[2]);
+				};
+				Pen.stroke;
+				if(track) { Pen.lineDash = FloatArray[1, 0] };
+			};
+		};
+		heads = chords.collect { |chord|
+			CQNightGeometry.chordPoint(chord[\path], t)
+		};
+		Pen.strokeColor = palette[\input].copy.alpha_(0.5);
+		chords.do { |chord, i|
+			Pen.line(CQNightGeometry.chordPoint(chord[\path], (t - 0.12).max(0)),
+				heads[i]);
+		};
+		Pen.stroke;
+		Pen.fillColor = palette[\input];
+		heads.do { |head| Pen.addOval(Rect.aboutPoint(head, 1.8, 1.8)) };
 		Pen.fill;
 	}
 
@@ -264,6 +325,63 @@ CQInkNight {
 			Pen.addArc(center, 9, start, sweep * norm.clip(0, 1));
 			Pen.stroke;
 		};
+	}
+
+	// §16.6 the sowing moon: shake and how much it sows, in ONE body. The lit
+	// phase is the value — the tide crescents' law carried into the sky — so
+	// there is no number and nothing that looks like a knob. A fuller moon sows
+	// a denser patch, which is the mark teaching its own consequence.
+	//
+	// The moon fills from its LEFT limb and the terminator sweeps right, so a
+	// rightward drag pushes the light ahead of the hand (decided with the user
+	// 2026-07-22: the value's axis is horizontal, so the gesture is too, and
+	// cue and action share one geometry — §4.5). Astronomically a waxing moon
+	// lights from the right; this is an instrument, not an ephemeris.
+	// The lit region is the left limb plus a half-ellipse whose x-radius runs
+	// -R (new, nothing lit) through 0 (half) to +R (full disc): two quarter-arcs
+	// each side, one fill — six Pen calls for any phase (§10).
+	*drawSowingMoon { |center, radius, litNorm = 0, hover = false, flash = false,
+		skin = \night|
+		var palette = CQInk.palette(skin);
+		var lit = (litNorm ? 0).clip(0, 1);
+		var k = radius * 0.5523;
+		var terminator = radius * ((2 * lit) - 1);
+		var tk = terminator * 0.5523;
+		var top = Point(center.x, center.y - radius);
+		var bottom = Point(center.x, center.y + radius);
+		if(flash) {
+			Pen.fillColor = palette[\spark].copy.alpha_(0.28);
+			Pen.addOval(Rect.aboutPoint(center,
+				radius + CQNightGeometry.moonHalo,
+				radius + CQNightGeometry.moonHalo));
+			Pen.fill;
+		};
+		if(lit > 0.001) {
+			Pen.fillColor = palette[\spark].copy
+				.alpha_(if(flash) { 1.0 } { 0.82 });
+			Pen.moveTo(top);
+			Pen.curveTo(Point(center.x - radius, center.y),
+				Point(center.x - k, center.y - radius),
+				Point(center.x - radius, center.y - k));
+			Pen.curveTo(bottom,
+				Point(center.x - radius, center.y + k),
+				Point(center.x - k, center.y + radius));
+			Pen.curveTo(Point(center.x + terminator, center.y),
+				Point(center.x + tk, center.y + radius),
+				Point(center.x + terminator, center.y + k));
+			Pen.curveTo(top,
+				Point(center.x + terminator, center.y - k),
+				Point(center.x + tk, center.y - radius));
+			Pen.fill;
+		};
+		// the drawn rim is the whole body: what the press takes and what the
+		// hover brightens are one geometry (§4.5), so a dark new moon is still
+		// as findable as a full one
+		Pen.strokeColor = palette[if(hover) { \line } { \whisper }].copy
+			.alpha_(if(hover) { 1.0 } { 0.7 });
+		Pen.width = CQInk.strokes[if(hover) { \normal } { \hairline }];
+		Pen.addOval(Rect.aboutPoint(center, radius, radius));
+		Pen.stroke;
 	}
 
 	// fixed ray scatter for the storm iris — seeded once by hand, never

@@ -92,6 +92,22 @@ CQGuiNightMapTest : UnitTest {
 			"a root tip redraws its own arrival under its opaque view");
 	}
 
+	// The night has no presets (decided with the user 2026-07-22, superseding
+	// the sower constellation): a preset is a recipe, not a body, and it was
+	// the night's only control that could not be used without reading text
+	// (§16.4). The Inspector's own menu is one toolbar click away in either
+	// view, so nothing was lost but a menu in costume.
+	test_theNightCarriesNoPresets {
+		this.assert(CQGuiNightMap.respondsTo(\presetNames).not,
+			"the night map lists no recipes of its own");
+		this.assert(CQGuiNightMap.instVarNames.every { |name|
+			name.asString.containsi("preset").not
+		}, "and keeps no preset state to draw");
+		this.assert(CQGuiNightMap.methods.every { |method|
+			#[sow, flashStar].includes(method.name).not
+		}, "no sowing door survives on the night map");
+	}
+
 	test_crescentInventory {
 		this.assertEquals(CQGuiNightMap.crescentNames(0),
 			[\coco1Spaf, \coco1In, \coco1Fb],

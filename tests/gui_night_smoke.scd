@@ -533,6 +533,66 @@ abort = { |error|
 															check.value(map.bodyHover[1].not
 																and: { map.dialHover[1].not },
 																"leaving the castle rests both cues");
+															// ---- §16.6 the spesal coupling chords ----
+															// structure, so it is drawn only where the hand
+															// asks: nothing at rest, one chord under a
+															// castle, all five under the river
+															check.value(map.chordCastles.isEmpty,
+																"a resting bay draws no coupling at all");
+															castleView.mouseOverAction.value(castleView,
+																local.x, local.y);
+															block { |chordDone|
+																var chords = map.spesalChords, path;
+																var state, partner, nearest = 0;
+																check.value(map.chordCastles == [1]
+																	and: { chords.size == 1 },
+																	"hovering a castle draws its own coupling, and only its own");
+																path = chords[0][\path];
+																state = gui.spesalStates[1].asInteger;
+																partner = CQGuiCastleConstellation
+																	.partnerIndex(1, state);
+																(0..4).do { |k|
+																	if(CQNightGeometry.distance(path[0],
+																		map.geometry[\castles][k][\center])
+																		< CQNightGeometry.distance(path[0],
+																			map.geometry[\castles][nearest]
+																				[\center])) { nearest = k };
+																};
+																check.value(nearest == partner
+																	and: { chords[0][\track]
+																		== CQGuiCastleConstellation
+																			.trackMode(state) },
+																	"the chord starts at the partner the Day constellation names, in its mode");
+																// and it runs the way the signal runs:
+																// the partner is sampled INTO this castle
+																nearest = 0;
+																(0..4).do { |k|
+																	if(CQNightGeometry.distance(path[3],
+																		map.geometry[\castles][k][\center])
+																		< CQNightGeometry.distance(path[3],
+																			map.geometry[\castles][nearest]
+																				[\center])) { nearest = k };
+																};
+																check.value(nearest == 1,
+																	"and it ends on the castle doing the reading — the signal's own direction");
+																check.value(CQNightGeometry.distance(
+																	CQNightGeometry.chordPoint(path, 0),
+																	path[0]) < 0.001
+																	and: { CQNightGeometry.distance(
+																		CQNightGeometry.chordPoint(path, 1),
+																		path[3]) < 0.001 },
+																	"the travelling light starts at the source and arrives at the reader");
+																check.value(CQNightGeometry.distance(path[1],
+																	map.geometry[\eye])
+																	>= ((map.geometry[\ringR]
+																		* CQNightGeometry.chordClearance)
+																		- 0.001),
+																	"and it bows inward without ever crowding the storm iris");
+																chordDone.value;
+															};
+															castleView.mouseLeaveAction.value(castleView);
+															check.value(map.chordCastles.isEmpty,
+																"leaving the castle rests its coupling too");
 															// the shell is taken by its rim, and the rim
 															// says so under the pointer (§16.6)
 															shell.mouseDownAction.value(shell, 3, 3, 0, 0, 2);
@@ -575,6 +635,9 @@ abort = { |error|
 																map.ringView, local.x, local.y);
 															check.value(map.ringHover,
 																"hovering the river brightens the line you can take");
+															check.value(map.chordCastles.size == 5
+																and: { map.spesalChords.size == 5 },
+																"and asks the whole ring for its coupling at once");
 															map.ringView.mouseDownAction.value(
 																map.ringView, local.x, local.y, 0, 0, 2);
 															check.value(
@@ -588,6 +651,97 @@ abort = { |error|
 																"leaving rests the river's cue");
 															touchDone.value;
 														};
+														// ---- §6.1/§16.6 the almanac corner ----
+														// the sowing moon: tap = throw, horizontal drag =
+														// pour the phase. The spy counts grammar notices,
+														// which is exactly §4.3's line: a throw is a matrix
+														// op, a poured phase is a GUI constant and touches
+														// nothing undoable.
+														block { |almanacDone|
+															var almanac, local, before, amount;
+															var notices = 0, spy, press, view;
+															almanac = map.geometry[\almanac];
+															view = map.almanacView;
+															spy = SimpleController(gui.bananaGrammar);
+															spy.put(\gesture, { notices = notices + 1 });
+															press = { |point, travel|
+																var from = point - almanac[\box].leftTop;
+																var to = from + (travel ?? { 0@0 });
+																view.mouseDownAction.value(view,
+																	from.x, from.y, 0, 0, 1);
+																travel !? {
+																	view.mouseMoveAction.value(view,
+																		to.x, to.y, 0)
+																};
+																view.mouseUpAction.value(view,
+																	to.x, to.y, 0, 0);
+															};
+															check.value(almanac[\stars].isNil,
+																"the sky carries the moon alone — no preset stars");
+															check.value(map.shakeAmount == gui.shakeAmount,
+																"the moon wears the one shake amount, the Day knob's own number");
+															// the moon's own drawn rim is its cue (§4.5)
+															local = almanac[\moon] - almanac[\box].leftTop;
+															view.mouseOverAction.value(view, local.x, local.y);
+															check.value(map.moonHover,
+																"hovering the moon lights the rim the press acts on");
+															view.mouseLeaveAction.value(view);
+															check.value(map.moonHover.not,
+																"leaving the corner rests the cue");
+															// a tap throws at the phase the moon shows
+															amount = gui.shakeAmount;
+															notices = 0;
+															press.value(almanac[\moon]);
+															check.value(notices > 0
+																and: { gui.shakeAmount == amount },
+																"a tap on the moon throws a shake and never nudges the phase it threw");
+															// pouring is not an op (§4.3): no undo, no throw
+															before = matrix.fullMatrix.asCompileString;
+															notices = 0;
+															press.value(almanac[\moon], 60 @ 0);
+															check.value(gui.shakeAmount > amount
+																and: { notices == 0 }
+																and: { matrix.fullMatrix.asCompileString
+																	== before },
+																"dragging right pours the moon fuller — no throw, no undo op");
+															press.value(almanac[\moon], -200 @ 0);
+															check.value(gui.shakeAmount == 0,
+																"pouring past empty clamps at the new moon (every entry clamps)");
+															notices = 0;
+															press.value(almanac[\moon], 0 @ 40);
+															check.value(notices == 0
+																and: { gui.shakeAmount == 0 },
+																"a press that travelled vertically is a drag, never a throw");
+															gui.shakeAmount = 0.5;
+															check.value(map.shakeAmount == 0.5,
+																"the moon reads the amount back from its one owner");
+															// the rest of the corner is open water
+															amount = gui.shakeAmount;
+															before = matrix.fullMatrix.asCompileString;
+															press.value(almanac[\box].leftTop + Point(6, 6));
+															check.value(gui.shakeAmount == amount
+																and: { matrix.fullMatrix.asCompileString
+																	== before }
+																and: { gui.bananaGrammar.isInHand.not },
+																"the corner's empty water throws nothing");
+															// the phase governs how MUCH is sown (SPEC §5.5)
+															check.value(CQGui.sowDensity(0) == 0
+																and: { CQGui.sowDensity(0.5)
+																	== CQMatrix.shakeDensity }
+																and: { CQGui.sowDensity(1)
+																	== CQGui.fullMoonDensity },
+																"the half moon is exactly the v1.0 handful, the full one twice it");
+															spy.remove;
+															almanacDone.value;
+														};
+														// any shake, from any layer, flashes the moon —
+														// through CQGui's own \action handler, so it lands
+														// on the next GUI tick
+														state.changed(\action, \shake, 0.4);
+														AppClock.sched(0.05, {
+														try {
+														check.value(map.moonFlash,
+															"a shake from any layer flashes the sowing moon");
 														check.value(CQInkControl.drawErrors == 0,
 															"night surfaces paint without callback errors");
 														gui.free;
@@ -614,6 +768,9 @@ abort = { |error|
 															} { |error| abort.value(error) };
 															nil
 														});
+													} { |error| abort.value(error) };
+													nil
+													});
 													} { |error| abort.value(error) };
 													nil
 												});

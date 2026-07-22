@@ -112,16 +112,26 @@ CQGuiPanels {
 	*quantussy { |gui|
 		var w = gui.widgets, c = CQGuiWidgets.colors;
 		var leds, spesalView, rows, shakeKnob, shakeButton, macro, castles;
-		// shake amplitude: unbound knob (action argument, not a CQSpec param —
-		// see CQGui.shakeAmount); 0..1 knob range = the |amount| range, and
-		// CQMatrix.shake clamps again on every throw
+		// how much a shake sows: unbound knob (an action argument, not a CQSpec
+		// param — see CQGui.shakeAmount). 0..1 is the moon's phase, mapped onto
+		// SPEC §5.5's `density` by CQGui.sowDensity — half = the v1.0 handful —
+		// and CQMatrix.shake clamps it again on every throw. Strength is not
+		// here: patchDepth is the how-alive macro (GUI_SPEC §16.6).
 		shakeKnob = gui.registerInkControl(CQInkControl.knob("amount", \spaf));
-		shakeKnob.value = gui.shakeAmount;
-		shakeKnob.display = gui.shakeAmount.round(0.01).asString;
 		shakeKnob.action = { |k|
 			gui.shakeAmount = k.value;
 			k.display = k.value.round(0.01).asString;
 		};
+		// the same amount is poured by the night's sowing moon (§6.1), so the
+		// knob follows CQGui's fan-out — one number, two views. It early-outs on
+		// its own writes, so a Day drag still costs one repaint per frame; the
+		// watcher also paints the knob's initial value.
+		gui.onShakeAmount({ |value|
+			if((shakeKnob.value - value).abs > 1e-9) {
+				shakeKnob.value = value;
+				shakeKnob.display = value.round(0.01).asString;
+			};
+		});
 		shakeButton = this.prActionButton(gui, "shake", 54, \spaf,
 			{ gui.shake });
 		leds = 5.collect {

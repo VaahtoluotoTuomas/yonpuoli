@@ -245,12 +245,19 @@ Cocoquantus {
 	// SPEC §5.5 shake: randomize matrix weights (±amount, sparse) + spesal
 	// states — never levels/feedback (safety+musicality rule; CQMatrix.shake
 	// only reaches weights by construction). seed makes the throw reproducible
-	*shake { |amount = 0.3, seed, origin = \code|
+	// `density` = how much is sown (SPEC §5.5; the night's sowing moon wears it
+	// as its phase). Omitted, it stays the historical ~10% handful.
+	*shake { |amount = 0.3, seed, origin = \code, density|
 		var spesal;
 		if(matrix.isNil) { "Cocoquantus: not booted.".warn; ^this };
 		spesal = matrix.shake(amount, seed, origin: origin,
-			committed: true, operation: \shake);
+			committed: true, operation: \shake, density: density);
 		spesal.do { |v, i| this.spesalSet(i + 1, v) };
+		// like skip, a shake is momentary and leaves no state of its own to
+		// display — so it is announced once here, and every layer's light hangs
+		// off that one notice (GUI_SPEC §6.1: the night's sowing moon flashes
+		// on a throw from the p key, the Day button, code or a pattern alike)
+		state !? { state.changed(\action, \shake, amount) };
 	}
 
 	// panic is always reachable and preserves state (SPEC safety #3)
@@ -682,7 +689,8 @@ Cocoquantus {
 			\set,    { ev[\param] !? { this.set(ev[\param], ev[\value]) } },
 			\patch,  { this.patch(ev[\src], ev[\dest], ev[\weight] ? 1.0) },
 			\deck,   { this.prCqDeck(ev) },
-			\shake,  { this.shake(ev[\amount] ? 0.3, ev[\seed]) },
+			\shake,  { this.shake(ev[\amount] ? 0.3, ev[\seed],
+				density: ev[\density]) },
 			{ "Cocoquantus: \\cq event — unknown action '%' ignored.".format(action).warn }
 		);
 	}

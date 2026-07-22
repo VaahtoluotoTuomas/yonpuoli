@@ -5,26 +5,76 @@ toteutuksen yksityiskohtainen työpäiväkirja ja alkuperäiset checkboxit on j�
 tiedostoon [`docs/history/PLAN_v1.0.md`](docs/history/PLAN_v1.0.md).
 
 **Tilanne yhdellä rivillä:** foundation F0–F2 ja **koko G1 ovat valmiita ja käyttäjän
-hyväksymiä** §13:n loppuportteineen (2026-07-21, commit `295d14d`); **G2:n koko
-rakennettu yöpinta on hyväksytty ja §13:n loppuportti läpäisty 2026-07-22**
-(G2.1–G2.5 rakennuspalikat, loppuportti G2.6–G2.10) — mutta **G2 ei ole kuitattu**,
-koska §13:n scopesta puuttuu vielä yksi rakentamaton osa: **Night toolbar**. Se on
-seuraava askel, ja vasta sen jälkeen G3 Weather machine.
+hyväksymiä** §13:n loppuportteineen (2026-07-21, commit `295d14d`); **koko G2:n
+yöpinta on nyt rakennettu ja hyväksytty** (G2.1–G2.5 rakennuspalikat, loppuportti
+G2.6–G2.10, ja viimeisenä almanakkakulma G2.11 + spesal-kytkentäjänteet G2.11b
+2026-07-22) — **G2:n kuittaus odottaa enää §13:n täydennystä uudelle pinnalle**:
+skaalaustarkastus 100/125/150 % ja CPU-soak kuun ja jänteiden kanssa. Vasta sen
+jälkeen G3 Weather machine.
 
-**Seuraava askel konkreettisesti:** Night toolbar — G2:n viimeinen
-rakentamaton osa. Sen muoto **päätettiin käyttäjän kanssa 2026-07-22** ja on
-kirjattu normatiivisesti `GUI_SPEC.md` §6/§6.1/§16.6:een: ei palkkia, ei
-laatikkoa eikä valikkoa vaan **almanakkakulma** yläoikealla taivaalla —
-**kylvökuu** (napautus < 8 px = shake kuun nykyisellä vaiheella; pystyveto
-kaataa `shakeAmount`in; valaistu osuus on arvo, ei numeroa; 120 ms välähdys
-jokaisesta shake-reitistä — p-näppäin, Dayn nappi, koodi) ja **Kylväjän
-tähdistö** (yksi tähti per preset; hover kuiskaa nimen, napautus kylvää
-Inspectorin apply-polun kautta — yksi batch, yksi undo, yksi
-`// preset` -blokki; mikään tähti ei jää palamaan) sekä G3:n työkaluille
-**tyhjänä varattu tuuliruusun vesi** (clearance-testeihin naulattu, ei
-piirretä ennen G3:a — kuollut säädin rikkoisi §4.5:n ja §16.12:n).
-Seuraavaksi pienin ajettava versio testeineen ja katselmointipysähdys; sen
-ja §13-täydennyksen jälkeen G2 kuitataan ja siirrytään G3 Weather machineen.
+**Seuraava askel konkreettisesti:** **§13:n täydennys uudelle yöpinnalle** —
+skaalaustarkastus 100/125/150 % ja CPU/resurssisoak kylvökuun ja
+spesal-jänteiden kanssa. Automaatio, kuuntelu ja käyttäjän visuaalinen
+hyväksyntä ovat jo kunnossa (G2.11 ja G2.11b hyväksytty 2026-07-22), ja
+loppuportin muut osat läpäistiin 2026-07-21/22 sitä edeltäneelle pinnalle.
+Soakissa kannattaa mitata kaksi uutta asiaa: kulman oma kerros lepotilassa
+(pitäisi olla nolla piirtoa, koska mikään siinä ei liiku ilman kättä) ja
+ringin kerros silloin kun **viisi jännettä** näkyy joen hoverilla, koska
+niiden kulkevat valot ratsastavat aura-kehyksillä. Sen jälkeen G2 kuitataan
+ja siirrytään G3 Weather machineen.
+
+**Almanakkakulma ja spesal-jänteet hyväksyttiin 2026-07-22** (lohkot G2.11 ja
+G2.11b) neljän kierroksen jälkeen. Kulmassa on **kylvökuu** yläoikean taivaan
+vapaassa vedessä (napautus < 8 px = shake; vaakaveto kaataa vaiheen; 120 ms
+välähdys jokaisesta shake-reitistä — p, Dayn nappi, koodi) ja sen alla G3:n
+työkaluille **tyhjänä varattu kompassivesi** (clearance-testeihin naulattu,
+ei piirretä ennen G3:a — kuollut säädin rikkoisi §4.5:n ja §16.12:n).
+
+Katselmoinnin kolme päätöstä (kirjattu `GUI_SPEC.md` §5/§6/§6.1/§10/§13/§16.6
+ja `SPEC.md` §5.5):
+
+1. **Kuun vaihe = kylvön tiheys, ei painojen katto.** Vanha mappaus oli sekä
+   päällekkäinen (`patchDepth` on jo voimakkuusmakro) että kuulumaton: jokainen
+   heitto kirjoitti samat ~35 solua, joten ohut sirppi luki "kaikki hiljeni"
+   eikä "vähän kylvettiin". `CQ.shake` sai `density`-argumentin (oletus 0.1 =
+   entinen käytös, joten koodikerros ja patternit ovat ennallaan). Lineaarinen:
+   **puolikuu = tasan v1.0:n kourallinen** (10 % ≈ 35), täysikuu tuplat (~70,
+   viidesosa mayhemista). **Uusikuu tyhjentää kaapelit** (kierros 3): tyhjä
+   vaihe = tyhjä pelto, ja Ctrl+Z tuo sen takaisin. Ensimmäinen versio teki
+   siitä no-opin, jottei pimein vaihe olisi tuhoisin teko — kädessä se luki
+   rikkinäisenä säätimenä. Spesal-tiloja clear ei koske.
+2. **Veto vaakaan** ja kuu peilattiin: valo kasvaa vasemmalta, terminaattori
+   kulkee käden mukana oikealle. Arvon akseli on vaakasuora, joten eleen pitää
+   olla myös (§4.5: vihje ja teko jakavat saman geometrian).
+3. **Kylväjän tähdistö poistettiin.** Preset on resepti, ei keho, ja se oli yön
+   ainoa säädin jota ei voinut käyttää lukematta tekstiä (§16.4) — kuusi
+   identtistä glyfiä, joista piti hoveroida jokainen. Presetit ovat
+   Inspectorissa, yhden toolbar-klikin päässä kummastakin näkymästä. G3 ei
+   riipu niistä: kompassi leimaa kulmansa elävästä matriisista.
+
+Kolmannella kierroksella lisättiin lisäksi **spesal-kytkentäjänteet** (lohko
+G2.11b, `GUI_SPEC.md` §6.1/§16.6): yön sisäkello näytti *tilan* muttei sitä
+mitä tila tarkoittaa — kenet linnake lukee. Nyt kytkentä piirtyy ringin
+sisäjänteenä, mutta **vain siellä missä käsi kysyy**: ei mitään lepotilassa,
+yksi jänne hoveroidun linnakkeen alla, kaikki viisi hoveroidun joen alla.
+Neljäs kierros (käyttäjän palaute) toi kaksi lakia **molempiin nahkoihin**:
+**linkki kulkee signaalin suuntaan** (linnake näytteistää kumppaninsa *itseensä*
+— vanha nuoli osoitti luettavaan, mikä teki siitä sovelluksen ainoan suuntamerkin
+joka kulki omaa virtaustaan vastaan) ja **track-and-hold on katkoviiva, ei
+kaksoisviiva** (T&H seuraa tuloaan puolet kellojaksosta ja jäätyy toisen puolen,
+joten katko *on* mekanismi; kaksoisviivan toinen juova leikkasi myös nuolenkärjen).
+Poikkiviivat eivät olleet vapaana: väkäset tarkoittavat kaapeleissa inverso-
+polariteettia. Yössä nuoli poistui kokonaan — suunnan kertoo **kulkeva valo**
+jänteellä, joka ratsastaa joen omalla tulikärpäsvaiheella (telemetriakehykset,
+ei omaa kelloa), koska nuolenkärki luki kaaviona. Day pitää staattisen nuolensa:
+paperi on tyyni työkalu eikä kasvata ambient-liikettä. Kytkentä on rakenne eikä
+suure — se muuttuu vain askellettaessa, ja ringin sisus kuuluu iirikselle,
+tulikärpäsille, kaapeleille ja lassolle. Partneri- ja moodisääntö luetaan Dayn
+`CQGuiCastleConstellation`-adapterista, joten yksi spesal-tila ei voi tarkoittaa
+kahta eri kytkentää kahdessa nahassa.
+
+Molemmat lohkot hyväksyttiin käyttäjän ajamina 2026-07-22; §13:n täydennyksen
+(skaalaus + soak) jälkeen G2 kuitataan ja siirrytään G3 Weather machineen.
 
 **Aktiivinen työhaara:** `archipelago`. GUI_SPECin neljä aiempaa määrittelysaumaa
 ratkaistiin käyttäjän päätöksellä 2026-07-19; avoimia GUI-käyttäytymispäätöksiä ei ole.
@@ -382,17 +432,31 @@ coco-ulostulosta ja lintujen flutter.
   että se, mikä oikeasti ottaa tiedoston vastaan. Piirto siirtyi linnun omasta
   44×32 kerroksesta koko lavan groundille, koska näkymä ei voi maalata omien
   rajojensa ulkopuolelle.
-- [ ] **Night toolbar = almanakkakulma** (päätetty käyttäjän kanssa 2026-07-22,
+- [x] **Night toolbar = almanakkakulma** (päätetty käyttäjän kanssa 2026-07-22,
   kirjattu `GUI_SPEC.md` §6/§6.1/§16.6:een; vanha sanarivi/mininuppi-luonnos
-  kumottu): kylvökuu (shake + amount yhtenä kehona, vaihe = arvo) ja Kylväjän
-  tähdistö (presetit; hover kuiskaa nimen, napautus kylvää) yläoikealla
-  taivaalla. Grow/wither/breed/kompassilevy ovat G3:n osia — niiden koti
-  varataan **tyhjänä vetenä** geometriassa ja clearance-testeissä; kuollutta
-  säädintä ei piirretä. Suppilot ovat jo olemassa: preset-apply (Inspector),
-  shake-polku ja jaettu amount-tila (Day, `p`). Rakentamatta: `CQNightGeometry`n
-  `almanac`-osio + yksikkötestit molemmilla lavakooilla, `CQInkNight`in kuu- ja
-  tähtikappaleet, `CQGuiNightTouch`in kaato/tap-erottelu ja delegaatit,
-  `gui_night_smoke`-laajennus sekä manuaalilohko G2.11.
+  kumottu): kylvökuu — shake ja *kuinka paljon se kylvää* yhtenä kehona.
+  Grow/wither/breed/kompassilevy ovat G3:n osia — niiden koti varataan
+  **tyhjänä vetenä** geometriassa ja clearance-testeissä; kuollutta säädintä ei
+  piirretä.
+  **Hyväksytty 2026-07-22 (manuaalilohkot G2.11 ja G2.11b) kolmen
+  korjauskierroksen jälkeen.** Toteutus:
+  `CQNightGeometry.almanac` (kulma alkaa coco 2:n oman laatikon oikealta
+  reunalta, joten se ei voi puristua kasaan millään lavakoolla —
+  clearance-testit naulaavat kuun, sen välähdyshalon ja kompassiveden
+  molemmilla lavakooilla), `CQInkNight.drawSowingMoon` (vaihe yhtenä
+  bezier-terminaattorina: kuusi Pen-kutsua millä tahansa arvolla; valo kasvaa
+  vasemmalta niin että terminaattori kulkee käden mukana),
+  `CQGuiNightTouch.almanacDown/Move/Up` (napautus/veto erotetaan lasson omalla
+  8 px:n kynnyksellä — `CQBananaGrammar.lassoTravel`, nyt yksi vakio kahdessa
+  paikassa; kynnyksen pikselit ovat kuolleita, joten heitto ei nyhtäise
+  vaihetta eikä kaato hypähdä alkaessaan) sekä oma opaakki
+  `almanacView`-kerros. Uusi suppilonpätkä: `CQMatrix.shake`in ja
+  `Cocoquantus.shake`in `density` (+`clampDensity`, SPEC §5.5) ja
+  `CQGui.sowDensity`, joka kartoittaa vaiheen sille. `shakeAmount` sai
+  `CQGui.onShakeAmount`-fanoutin, joten Dayn nuppi ja kuu ovat kaksi näkymää
+  yhteen lukuun; oletus on nyt **0.5 = puolikuu = v1.0:n kourallinen**. Shake
+  ilmoitetaan `state.changed(\action, \shake, amount)` -notisella (kuten skip),
+  joten kuu välähtää `p`:stä, Dayn napista ja koodista samalla valolla.
 - [x] **Kaksi aiemmista vaiheista löytynyttä piirtovikaa korjattu** (käyttäjä
   2026-07-21, G2.5-kierros 2): (1) **juuret leikkaantuivat yläpäästä** — syy
   oli juuri se epäilty: juuren viimeinen pätkä jäi kärkijakin läpinäkymättömän
@@ -462,15 +526,25 @@ coco-ulostulosta ja lintujen flutter.
 - [x] `GUI_SPEC.md` §13:n käyttäjän visuaalinen hyväksyntä G2.9:n korjauksille
   (lohko G2.9b) — **hyväksytty 2026-07-22**, tuike mukaan lukien.
 
-**G2:n tila 2026-07-22: kaikki muu on rakennettu ja hyväksytty paitsi Night
+**G2:n tila 2026-07-22: kaikki on rakennettu; hyväksymättä on enää Night
 toolbar.** §13:n G2-scope on "archipelago bodies + spiral read-head + charge
 lamps + solo-light + **toolbar presets/shake** + **deck-bird file drop**".
 Deck-bird drop ja sen §16.7-korostus ovat valmiit ja hyväksytyt (G2.10).
-Avoinna on siis enää **Night toolbar**, jonka
-muoto päätettiin käyttäjän kanssa 2026-07-22 (almanakkakulma: kylvökuu +
-Kylväjän tähdistö + tyhjänä varattu tuuliruusun vesi; kirjattu `GUI_SPEC.md`
-§6/§6.1/§16.6:een) — jäljellä on toteutus ja sen katselmointi. Kaikki muu
-G2:ssa on hyväksytty: G2.1–G2.5 rakennuspalikat sekä loppuportti G2.6–G2.10.
+**Night toolbar (almanakkakulma) hyväksyttiin 2026-07-22 lohkoissa G2.11 ja
+G2.11b, spesal-kytkentäjänteet mukaan lukien.** Näin koko G2:n pinta on
+rakennettu ja hyväksytty: G2.1–G2.5 rakennuspalikat, loppuportti G2.6–G2.10 ja
+almanakkakulma G2.11/G2.11b. Kuittaamatta on enää §13:n täydennys uudelle
+pinnalle (skaalaus 100/125/150 % + CPU-soak).
+
+Almanakkakulman portti 2026-07-22 (korjauskierrosten ja spesal-jänteiden
+jälkeen): `CQ_COMPILE_OK`,
+**5 371 unit-passia / 0 failurea**, `CQ_SAFETY_PASSED`, `CQ_HOLD_OK` sekä
+kaikki neljä GUI-markkeria (`CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+`CQ_GUI_DRAWER_REENTRY_PASSED`, `CQ_GUI_NIGHT_PASSED` — viimeinen sisältää
+kulman omat väitteet: hover, napautus vs. vaakaveto, tiheysasteikon ankkurit ja
+välähdys mistä tahansa kerroksesta). `CQMatrixTest` sai `density`n omat testit:
+tiheämpi kylvö on tiheämpi, jätetty pois = entinen heitto, nolla = aito no-op,
+ja rikkinäinen arvo kaatuu dokumentoituun oletukseen.
 
 **G2.3-kuuntelukierros 1 (2026-07-21):** kaikki seitsemän kosketuspistettä
 toimivat korvalla; palaute käsitelty samana päivänä (`GUI_SPEC.md` §6.1 ja
@@ -603,14 +677,15 @@ jokaisen jälkeen.**
       *(Hyväksytty 2026-07-21, manuaalitesti G2.5.)*
    3. Deck-bird drag-over-korostus (§16.7). *(Hyväksytty 2026-07-22,
       manuaalitesti G2.10.)*
-   4. **Night toolbar = almanakkakulma — ainoa jäljellä oleva.** Muoto
-      päätettiin käyttäjän kanssa 2026-07-22 ja on kirjattu `GUI_SPEC.md`
-      §6/§6.1/§16.6:een (kylvökuu + Kylväjän tähdistö + tyhjänä varattu
-      tuuliruusun vesi, yläoikea taivas). Rakennetaan pienin ajettava versio
-      testeineen ja pysähdytään käyttäjän katselmointiin.
+   4. **Night toolbar = almanakkakulma.** Muoto päätettiin käyttäjän kanssa
+      2026-07-22 ja on kirjattu `GUI_SPEC.md` §6/§6.1/§16.6:een (kylvökuu +
+      tyhjänä varattu kompassivesi, yläoikea taivas; preset-tähdet kokeiltiin
+      ja poistettiin samana päivänä). *(Hyväksytty 2026-07-22, lohkot G2.11 ja
+      G2.11b — jälkimmäinen spesal-kytkentäjänteille.)*
    5. G2:n §13-portti: automaatio, kuuntelugate, 100/125/150 % skaalaus,
       CPU/resurssisoak ja käyttäjän visuaalinen hyväksyntä. *(Läpäisty
-      2026-07-22 kaiken rakennetun osalta, lohkot G2.6–G2.10.)*
+      2026-07-22 lohkoissa G2.6–G2.10; **avoinna enää skaalaus ja soak
+      almanakkakulman ja spesal-jänteiden kanssa** — se on seuraava askel.)*
 4. Muista G1:n opetus piirtobudjetista: `GUI_SPEC.md` §10 sitoo myös Nightin. Ambient
    enintään 15 Hz, ilmoitusvirrat tahdistetaan etureunalla, eikä kustannusta arvata —
    se mitataan Qt:n paint-eventin sisältä. Kielen ja Qt:n rajapinnan `Pen`-kutsu
