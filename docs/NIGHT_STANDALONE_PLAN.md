@@ -12,12 +12,12 @@
 > enough detail that an implementer who has read `CLAUDE.md`, `GUI_SPEC.md`
 > (all of it, especially §4.5, §6.1, §10, §16.4–§16.6, §16.12) and `PLAN.md`
 > can build it without stepping on the project's known rakes. Nothing here
-> changes DSP, CQSpec ranges, or safety (SPEC §8). **Do not start this work
-> before G2.12–G2.13 are signed off and the G3.1 review has been run** — the
-> review may change the ground under the almanac corner, and this project
-> does not build on unreviewed surface. Where this plan supersedes a GUI_SPEC
-> recipe (it does, in §9), the spec edit is part of the increment that lands
-> it, as always.
+> changes DSP, CQSpec ranges, or safety (SPEC §8). **Its prerequisites are now
+> met** (G2.12–G2.13 and the G3.1 review were all signed off 2026-07-22;
+> archipelago is merged to `main`, tag `archipelago-1.0`), so this is the
+> **active roadmap for the `nocturne` branch** — `PLAN.md` is its status view.
+> Where this plan supersedes a GUI_SPEC recipe (it does, in §9), the spec edit
+> is part of the increment that lands it, as always.
 
 ---
 

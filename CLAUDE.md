@@ -83,15 +83,20 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   `/cq_castle` activity. Do not call that instantaneous sample a waveform.
 - The Madrona/Sumu reference contributed only the principle that a visualization must
   expose actual sound/state structure. Do not add decorative filler or animation.
-- **G1, G2 and G3 are all built and accepted (2026-07-22).** The whole
-  archipelago GUI epic on the `archipelago` branch is complete: G1 §13 end gate
-  (2026-07-21, `295d14d`); G2's whole night surface incl. G2.12 scaling + G2.13
-  soak; and G3's weather machine incl. the G3.1a/G3.1b review — **the tide
-  sings**, the plan's one honest unknown resolved by ear. Next natural step:
-  merge `archipelago` → `main` (Draft PR #1), archive this `PLAN.md` to
-  `docs/history/`, and start the night-first epic from
-  `docs/NIGHT_STANDALONE_PLAN.md`. **Do not rebuild or "improve" accepted G1/G2/G3
-  surface on your own initiative.**
+- **The Archipelago GUI epic (G1 Day · G2 Night · G3 Weather) is complete,
+  accepted and merged (2026-07-22).** All of G1/G2/G3 were signed off — the
+  tide sings, the plan's one honest unknown resolved by ear — and merged to
+  `main` (PR #1, tag `archipelago-1.0`). **The active branch is now `nocturne`**
+  and the active roadmap is `docs/NIGHT_STANDALONE_PLAN.md` (§12 build order),
+  with `PLAN.md` as its status view. The archipelago detail is frozen at
+  `docs/history/PLAN_archipelago.md` and its acceptance checklist at
+  `docs/history/manual_checklist_archipelago.md`; `tests/manual_checklist.md`
+  is now the lean live list (SPEC M1–M8 regression + Nocturne blocks as they
+  land). **Next step: the punch** (NIGHT_STANDALONE_PLAN §2) — a momentary
+  hold on the shell's heart. **Do not rebuild or "improve" accepted G1/G2/G3
+  surface on your own initiative.** The bullets below record what that
+  accepted surface is and the laws it taught — historical reference, not a
+  to-do list.
 - G3's built surface (accepted 2026-07-22): the §7.1
   compass in the almanac's water (corner seeds stamp/clear, tap = jump,
   left-drag = voyage, right-drag = elastic), the weather row beneath it

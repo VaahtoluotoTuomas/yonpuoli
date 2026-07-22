@@ -21,5 +21,8 @@
 	                            // the limiter is the safety). Opt-in.
 	recStems: false,            // true = CQ.rec writes a 4-ch file (master L/R +
 	                            // post-safety coco1 + coco2 stems) instead of stereo
-	headless: false             // true = no GUI (instrument stays fully playable)
+	headless: false,            // true = no GUI (instrument stays fully playable)
+	// gui: (compassDir: nil)   // optional GUI sub-event (GUI_SPEC §10). compassDir
+	                            // overrides where the §7.1 weather-machine memories
+	                            // (compass.cqcompass.scd) live; nil/absent = presets folder
 )
