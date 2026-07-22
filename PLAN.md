@@ -185,8 +185,9 @@ Night-only-tuomion ja alla olevien julkaisugatejen jälkeen.
   `CONTRIBUTING.md`, `docs/CASE_STUDY.md` ja
   `docs/DEVELOPMENT_PROCESS.md` ovat olemassa ja linkitettyinä.
 - [x] **Automaatio pohjalle:** Windows/SuperCollider GitHub Actions -workflow
-  ajaa compile-, unit-, NRT safety- ja hold integrity -portit. Ensimmäisen
-  etäajon onnistuminen todennetaan vielä kohdassa C.
+  ajaa compile-, unit-, NRT safety- ja hold integrity -portit. Ensimmäinen
+  täysi SuperCollider 3.14.1 -etäajo läpäisi kaikki portit commitilla
+  `747aaec` (2026-07-23); release-ehdokkaan tuore ajo kuuluu silti kohtaan C.
 
 ### B. Teknisen omistajuuden itseopiskelu
 
