@@ -9,10 +9,12 @@
 
 CQDeck {
 	classvar <audioExtensions;
-	classvar <>postWarnings = true;
+	classvar <>postWarnings = true, <>loadTimeout = 15;
 	var graph, state, <which, samplesDir;
 	var <buffer, <path, synth;
 	var <files, <fileIndex;
+	var <loadState = \idle, <error, requestGeneration = 0, activeAttempt;
+	var alive = true;
 
 	*initClass {
 		// symbols, not strings: Collection:includes compares identity (===),
@@ -25,32 +27,97 @@ CQDeck {
 	}
 
 	load { |filePath, onDone, channel = 0|
-		var p = this.prResolve(filePath);
-		var ch;
-		if(p.isNil) { ^this };
-		if(graph.isNil or: { graph.isRunning.not }) {
+		this.prepare(filePath, channel, { |attempt|
+			this.commitPrepared(attempt, -1, onDone);
+		});
+		^this
+	}
+
+	// Start an owned, cancellable buffer load without publishing it. CQDeckPair
+	// uses this split phase so L/R can be committed in one server bundle.
+	prepare { |filePath, channel = 0, onReady, onFailure|
+		var p = this.prResolve(filePath), ch, attempt;
+		if(p.isNil) {
+			onFailure.value(Error("CQDeck: file not found"));
+			^nil
+		};
+		if(alive.not or: { graph.isNil or: { graph.isRunning.not } }) {
 			this.class.prWarn("CQDeck: not booted — CQ.boot first.");
-			^this
+			onFailure.value(Error("CQDeck: deck is not active"));
+			^nil
 		};
 		ch = this.prCheckChannel(p, channel);
+		this.prCancelActive;
+		requestGeneration = requestGeneration + 1;
+		attempt = (
+			generation: requestGeneration,
+			path: p,
+			channel: ch,
+			buffer: nil,
+			cancelled: false,
+			onFailure: onFailure
+		);
+		activeAttempt = attempt;
+		error = nil;
+		this.prSetLoadState(\loading);
 		{
-			var cond = Condition.new;
-			var newBuf = Buffer.readChannel(graph.server, p, channels: [ch],
-				action: { cond.unhang });
-			cond.hang;
-			if(newBuf.numFrames.isNil or: { newBuf.numFrames <= 0 }) {
-				this.class.prWarn("CQDeck: could not read '" ++ p ++ "'");
-				newBuf.free;
-			} {
-				newBuf.normalize(0.5);         // peak −6 dBFS on load (SPEC §5.1)
-				graph.server.sync;
-				this.prSwap(newBuf, p);
-				this.prScanFolder(p);
-				("CQDeck %: loaded % (% s)".format(which, p,
-					(newBuf.numFrames / newBuf.sampleRate).round(0.1))).postln;
-				onDone.value(this);
+			try {
+				attempt[\buffer] = this.prReadBuffer(p, ch);
+				if(this.prCanCommit(attempt)) {
+					if(attempt[\buffer].numFrames.isNil or: {
+						attempt[\buffer].numFrames <= 0
+					}) {
+						Error("CQDeck: could not read '" ++ p ++ "'").throw;
+					};
+					attempt[\buffer].normalize(0.5); // −6 dBFS (SPEC §5.1)
+					graph.server.sync;
+					if(this.prCanCommit(attempt)) {
+						onReady.value(attempt);
+					} {
+						this.prDisposeAttempt(attempt);
+					};
+				} {
+					this.prDisposeAttempt(attempt);
+				};
+			} { |failure|
+				this.prAttemptFailed(attempt, failure);
 			};
 		}.fork;
+		^attempt
+	}
+
+	canCommit { |attempt| ^this.prCanCommit(attempt) }
+
+	commitPrepared { |attempt, dryChannel = -1, onDone|
+		if(this.prCanCommit(attempt).not) {
+			this.cancelPrepared(attempt);
+			^false
+		};
+		try {
+			this.prSwap(attempt[\buffer], attempt[\path], dryChannel);
+			attempt[\buffer] = nil; // ownership moved to CQGraph
+			activeAttempt = nil;
+			this.prScanFolder(path);
+			this.prSetLoadState(\idle);
+			("CQDeck %: loaded % (% s)".format(which, path,
+				(buffer.numFrames / buffer.sampleRate).round(0.1))).postln;
+			onDone.value(this);
+		} { |failure|
+			this.prAttemptFailed(attempt, failure);
+			^false
+		};
+		^true
+	}
+
+	cancelPrepared { |attempt|
+		if(attempt.isNil) { ^this };
+		attempt[\cancelled] = true;
+		this.prDisposeAttempt(attempt);
+		if(activeAttempt === attempt) {
+			activeAttempt = nil;
+			if(alive) { this.prSetLoadState(\idle) };
+		};
+		^this
 	}
 
 	// scan a folder and start on its first file (SPEC §5.1 "load a folder")
@@ -93,14 +160,84 @@ CQDeck {
 
 	// language-side detach only; the server objects belong to CQGraph
 	free {
+		alive = false;
+		requestGeneration = requestGeneration + 1;
+		this.prCancelActive;
 		synth = nil;
 		buffer = nil;
 		path = nil;
 		files = nil;
 		fileIndex = nil;
+		error = nil;
+		loadState = \idle;
 	}
 
 	// ---- private ----
+
+	prReadBuffer { |filePath, channel|
+		var cond = Condition.new, completed = false, timedOut = false;
+		var newBuffer = Buffer.readChannel(graph.server, filePath, channels: [channel],
+			action: {
+				completed = true;
+				cond.unhang;
+			});
+		SystemClock.sched(this.class.loadTimeout, {
+			if(completed.not) {
+				timedOut = true;
+				cond.unhang;
+			};
+			nil
+		});
+		cond.hang;
+		if(timedOut) {
+			newBuffer.free;
+			Error("CQDeck: load timed out for '" ++ filePath ++ "'").throw;
+		};
+		^newBuffer
+	}
+
+	prCanCommit { |attempt|
+		^(alive == true)
+			and: { activeAttempt === attempt }
+			and: { attempt[\cancelled] != true }
+			and: { attempt[\generation] == requestGeneration }
+			and: { graph.notNil and: { graph.isRunning } }
+	}
+
+	prCancelActive {
+		var previous = activeAttempt;
+		previous !? {
+			previous[\cancelled] = true;
+			this.prDisposeAttempt(previous);
+		};
+		activeAttempt = nil;
+	}
+
+	prDisposeAttempt { |attempt|
+		attempt[\buffer] !? { |ownedBuffer|
+			try { ownedBuffer.free } { |cleanupError|
+				("CQDeck: buffer cleanup warning — "
+					++ cleanupError.errorString).warn;
+			};
+			attempt[\buffer] = nil;
+		};
+	}
+
+	prAttemptFailed { |attempt, failure|
+		this.prDisposeAttempt(attempt);
+		if(activeAttempt === attempt) {
+			activeAttempt = nil;
+			error = failure.errorString;
+			this.prSetLoadState(\error);
+			attempt[\onFailure].value(failure);
+			this.class.prWarn("CQDeck %: %".format(which, error));
+		};
+	}
+
+	prSetLoadState { |next|
+		loadState = next;
+		this.changed(\state, loadState, error);
+	}
 
 	prParam { |suffix| ^(which ++ suffix).asSymbol }
 
@@ -176,7 +313,7 @@ CQDeck {
 
 	// the only allowed synth churn (ARCH §1.3): new synth fades in over 25 ms,
 	// the old one releases over 25 ms — a click-free buffer swap
-	prSwap { |newBuf, newPath|
+	prSwap { |newBuf, newPath, dryChannel = -1|
 		var old = synth, oldBuf = buffer;
 		synth = Synth(\cqDeck, [
 			\out, graph.buses[which].index,
@@ -187,7 +324,8 @@ CQDeck {
 			\level, state.get(this.prParam("Level")),
 			\patchDepth, state.get(\patchDepth),   // deck may load after a depth change
 			\modSrcBus, graph.buses[\modSrc].index,
-			\wRateBus, graph.buses[(which ++ "_rate").asSymbol].index
+			\wRateBus, graph.buses[(which ++ "_rate").asSymbol].index,
+			\dryChannel, dryChannel
 		], graph.groups[\sources], \addToHead);   // decks run before \cqInput
 		graph.registerSynth(which, synth);
 		graph.registerBuffer(which, newBuf);

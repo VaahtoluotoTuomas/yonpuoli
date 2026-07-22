@@ -29,7 +29,7 @@ CQConfig {
 	*knownKeys {
 		^#[sampleRate, blockSize, device, hardwareBufferSize, inChans, micChan,
 			outChans, stemOuts, bufFrames, sixteenN, folders, autoTrim, recStems,
-			headless]
+			headless, gui]
 	}
 
 	*load { |path|
@@ -72,11 +72,16 @@ CQConfig {
 	*prMergeSub { |cfg, key, val|
 		var allowed = switch(key,
 			\sixteenN, #[enabled, ccBase, chan, takeover],
-			\folders, #[samples, recordings, presets]
+			\folders, #[samples, recordings, presets],
+			// GUI_SPEC §10's optional gui: (...) sub-event. compassDir redirects
+			// the §7.1 compass memories file — the smoke tests point it at a tmp
+			// dir so a test stamp can never overwrite the player's own corners.
+			\gui, #[compassDir]
 		);
 		if(val.isKindOf(Event).not) {
 			Error("CQConfig: % must be an Event (got %)".format(key, val.class)).throw;
 		};
+		cfg[key] = cfg[key] ?? { () };   // gui has no default sub-event
 		val.keysValuesDo { |k2, v2|
 			if(allowed.includes(k2)) {
 				cfg[key][k2] = v2;
@@ -87,7 +92,7 @@ CQConfig {
 	}
 
 	*prCheck { |cfg|
-		var six, fol;
+		var six, fol, overlaps;
 		this.prAssert(#[44100, 48000, 96000].includes(cfg[\sampleRate]),
 			"sampleRate must be 44100, 48000 or 96000 (got %)".format(cfg[\sampleRate]));
 		this.prAssert(#[16, 32, 64, 128, 256, 512].includes(cfg[\blockSize]),
@@ -105,10 +110,18 @@ CQConfig {
 				.format(cfg[\hardwareBufferSize]));
 		this.prCheckChans(cfg[\inChans], \inChans, 1, 8);
 		this.prCheckChans(cfg[\outChans], \outChans, 2, 2);
+		this.prCheckUniqueChans(cfg[\outChans], \outChans);
 		this.prAssert(cfg[\micChan].isNil or: {
 				cfg[\micChan].isInteger and: { cfg[\micChan] >= 0 } },
 			"micChan must be nil or a channel index >= 0 (got %)".format(cfg[\micChan]));
-		if(cfg[\stemOuts].notNil) { this.prCheckChans(cfg[\stemOuts], \stemOuts, 2, 2) };
+		if(cfg[\stemOuts].notNil) {
+			this.prCheckChans(cfg[\stemOuts], \stemOuts, 2, 2);
+			this.prCheckUniqueChans(cfg[\stemOuts], \stemOuts);
+			overlaps = cfg[\outChans].select { |chan| cfg[\stemOuts].includes(chan) };
+			this.prAssert(overlaps.isEmpty,
+				"outChans and stemOuts must be disjoint; overlapping hardware indices: %"
+					.format(overlaps));
+		};
 		this.prAssert(cfg[\bufFrames].isInteger and: {
 				cfg[\bufFrames].inclusivelyBetween(65536, 524288) },
 			"bufFrames must be an integer 2^16..2^19 (got %)".format(cfg[\bufFrames]));
@@ -138,6 +151,12 @@ CQConfig {
 				"folders.% must be a String path (got %)".format(k, fol[k]));
 		};
 
+		cfg[\gui] !? { |g|
+			this.prAssert(g[\compassDir].isNil or: { g[\compassDir].isString },
+				"gui.compassDir must be nil or a String path (got %)"
+					.format(g[\compassDir]));
+		};
+
 		this.prAssert(cfg[\autoTrim].isKindOf(Boolean),
 			"autoTrim must be true or false (got %)".format(cfg[\autoTrim]));
 		this.prAssert(cfg[\recStems].isKindOf(Boolean),
@@ -154,6 +173,16 @@ CQConfig {
 			and: { arr.every { |c| c.isInteger and: { c >= 0 } } },
 			"% must be an array of %..% channel indices >= 0 (got %)"
 				.format(name, minSize, maxSize, arr));
+	}
+
+	*prCheckUniqueChans { |arr, name|
+		var seen = Set.new, duplicates = Set.new;
+		arr.do { |chan|
+			if(seen.includes(chan)) { duplicates.add(chan) } { seen.add(chan) };
+		};
+		this.prAssert(duplicates.isEmpty,
+			"% must use unique hardware channel indices; duplicates: %"
+				.format(name, duplicates.asArray.sort));
 	}
 
 	*prAssert { |bool, msg|

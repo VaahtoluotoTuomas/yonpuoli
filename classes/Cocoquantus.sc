@@ -4,68 +4,73 @@
 
 Cocoquantus {
 	classvar <config, <graph, <state, <matrix, <server;
-	classvar configPath, deckAPlayer, deckBPlayer, snapshotMgr, midi16n, recorder;
+	classvar configPath, deckAPlayer, deckBPlayer, deckPair, snapshotMgr, midi16n, recorder;
 	classvar guiPanel;
 	classvar spesalCache, micWatcher, micWasLive = false, trimDb = 0;
+	classvar <lifecycleState = \stopped, <sessionGeneration = 0, <lifecycleError;
+	classvar pendingBoot, serverQuitAction, serverBootAction;
 
 	*boot { |path, onReady|
-		if(this.isBooted) {
+		var generation, sessionConfig, sessionServer, sessionGraph, sessionState;
+		var sessionMatrix;
+		if(lifecycleState == \running) {
 			"Cocoquantus: already booted — CQ.free first.".warn;
 			^this
 		};
-		// a session killed by Cmd-. leaves the language side dangling (GUI window,
-		// MIDI defs, OSCdefs) while the server graph is gone. Booting again must not
-		// stack on that — tear the dead session down first, then boot fresh. This is
-		// what makes CQ.boot after Cmd-. reopen a LIVE GUI instead of returning the
-		// old frozen one (whose OSCdefs Cmd-. already freed). Mirrors CQ.reboot.
+		if(lifecycleState == \booting) {
+			"Cocoquantus: boot already in progress.".warn;
+			^this
+		};
+		if(lifecycleState == \stopping) {
+			pendingBoot = [path, onReady];
+			"Cocoquantus: boot queued until teardown completes.".postln;
+			^this
+		};
+		// A killed/failed session may retain a dead graph solely so teardown can
+		// release language resources. Queue the new boot behind that teardown.
 		if(graph.notNil) {
+			pendingBoot = [path, onReady];
 			this.free;
-			AppClock.sched(0.8, { this.boot(path, onReady); nil });
 			^this
 		};
 		configPath = path ?? { this.repoDir +/+ "config.scd" };
+		lifecycleError = nil;
+		lifecycleState = \booting;
+		sessionGeneration = sessionGeneration + 1;
+		generation = sessionGeneration;
 		trimDb = 0;                            // watchdog trim resets each boot (SPEC §5.6)
-		config = if(File.exists(configPath.asString)) {
-			CQConfig.load(configPath)
-		} {
-			("Cocoquantus: % not found — using defaults "
-				++ "(copy config.example.scd to config.scd)").format(configPath).warn;
-			CQConfig.validate(())
+		try {
+			sessionConfig = this.prLoadConfig(configPath);
+		} { |err|
+			lifecycleState = \failed;
+			lifecycleError = err.errorString;
+			("Cocoquantus: config failed — " ++ lifecycleError).warn;
+			^this
 		};
-		server = Server.default;
-		graph = CQGraph(server, config);
-		graph.applyOptions;
-		state = CQState(graph);
-		matrix = CQMatrix(graph);
-		this.prInitOsc;        // before spawn: catch the boot-time spesal report
-		this.prInitMicWatch;
+		sessionServer = Server.default;
+		sessionGraph = CQGraph(sessionServer, sessionConfig);
+		sessionGraph.applyOptions;
+		sessionState = CQState(sessionGraph);
+		sessionMatrix = CQMatrix(sessionGraph);
+		config = sessionConfig;
+		server = sessionServer;
+		graph = sessionGraph;
+		state = sessionState;
+		matrix = sessionMatrix;
 		this.prRegisterCqEvent; // \cq pattern event type (SPEC §6.4)
-		server.waitForBoot {
-			graph.build;                       // buses + groups, synced
-			CQSynthDefs.send(config, server);
-			server.sync;
-			graph.spawn;                       // synths in group order, synced
-			state.pushAll;                     // defaults + power-on state
-			matrix.pushAll;                    // matrix empty (SPEC boot sequence)
-			server.sync;
-			deckAPlayer = CQDeck(graph, state, \deckA, this.prSamplesDir);
-			deckBPlayer = CQDeck(graph, state, \deckB, this.prSamplesDir);
-			snapshotMgr = CQSnapshots(state, matrix, this.prPresetsDir,
-				{ this.spesalStates },
-				{ |states| states.do { |v, i| this.spesalSet(i + 1, v) } });
-			midi16n = CQMidi16n(state, config[\sixteenN]);  // no 16n = notice, not error
-			recorder = CQRecorder(graph, config, this.prFolder(\recordings));
-			if(config[\headless] != true) { this.gui };  // ARCH §6 step 7; the
-			                                   // instrument is complete without it
-			graph.fadeIn;                      // silent until verified → 2 s ramp
-			CmdPeriod.add(this);
-			"Cocoquantus: ready — output fading in over 2 s.".postln;
-			onReady.value(this);
-		};
+		sessionServer.waitForBoot({
+			this.prBuildSession(generation, sessionConfig, sessionServer,
+				sessionGraph, sessionState, sessionMatrix, onReady);
+		}, onFailure: {
+			this.prBootFailed(generation, sessionGraph,
+				Error("server failed to boot"));
+		});
 	}
 
 	*isBooted {
-		^graph.notNil and: { graph.isRunning }
+		^(lifecycleState == \running) and: {
+			graph.notNil and: { graph.isRunning }
+		}
 	}
 
 	*set { |name, value|
@@ -139,12 +144,11 @@ Cocoquantus {
 	// SPEC §5.1 linked-pair load: deck A takes L, deck B takes R of a stereo
 	// file (a mono file plays on both — CQDeck warns and falls back to ch 0)
 	*loadStereo { |filePath|
-		if(deckAPlayer.isNil or: { deckBPlayer.isNil }) {
+		if(deckPair.isNil) {
 			"Cocoquantus: not booted — no decks.".warn;
 			^this
 		};
-		deckAPlayer.load(filePath, channel: 0);
-		deckBPlayer.load(filePath, channel: 1);
+		deckPair.load(filePath);
 	}
 
 	// snapshots (SPEC §6.3): save stores micGain as 0 unless includeMic — see
@@ -203,7 +207,7 @@ Cocoquantus {
 	// a preset is weights + knob positions (see CQMatrix preset data): the
 	// matrix part goes through CQMatrix's funnel, the params part through
 	// CQState's — both clamped, both notify dependants
-	*patchPreset { |name|
+	*patchPreset { |name, origin = \code|
 		var data;
 		if(matrix.isNil) { "Cocoquantus: not booted.".warn; ^this };
 		data = CQMatrix.presets[name];
@@ -211,7 +215,7 @@ Cocoquantus {
 			"Cocoquantus: unknown preset '%' ignored.".format(name).warn;
 			^this
 		};
-		matrix.preset(name);
+		matrix.preset(name, origin: origin, committed: true, operation: \preset);
 		data[\params].keysValuesDo { |k, v| state.set(k, v) };
 	}
 
@@ -241,15 +245,24 @@ Cocoquantus {
 	// SPEC §5.5 shake: randomize matrix weights (±amount, sparse) + spesal
 	// states — never levels/feedback (safety+musicality rule; CQMatrix.shake
 	// only reaches weights by construction). seed makes the throw reproducible
-	*shake { |amount = 0.3, seed|
+	// `density` = how much is sown (SPEC §5.5; the night's sowing moon wears it
+	// as its phase). Omitted, it stays the historical ~10% handful.
+	*shake { |amount = 0.3, seed, origin = \code, density|
 		var spesal;
 		if(matrix.isNil) { "Cocoquantus: not booted.".warn; ^this };
-		spesal = matrix.shake(amount, seed);
+		spesal = matrix.shake(amount, seed, origin: origin,
+			committed: true, operation: \shake, density: density);
 		spesal.do { |v, i| this.spesalSet(i + 1, v) };
+		// like skip, a shake is momentary and leaves no state of its own to
+		// display — so it is announced once here, and every layer's light hangs
+		// off that one notice (GUI_SPEC §6.1: the night's sowing moon flashes
+		// on a throw from the p key, the Day button, code or a pattern alike)
+		state !? { state.changed(\action, \shake, amount) };
 	}
 
 	// panic is always reachable and preserves state (SPEC safety #3)
 	*panic {
+		guiPanel !? { guiPanel.cancelAudition };
 		this.set(\monitorMute, 1);
 		"Cocoquantus: PANIC — output muted. CQ.resume to unmute.".postln;
 	}
@@ -277,51 +290,83 @@ Cocoquantus {
 			++ "(if autoTrim) CQ.trimDb -6, and the GUI notice line.").postln;
 	}
 
-	*free {
-		if(graph.isNil) { ^this };
+	*free { |onDone|
+		var oldGraph = graph, oldState = state, oldGui = guiPanel;
+		var oldSnapshots = snapshotMgr, oldMidi = midi16n, oldMicWatcher = micWatcher;
+		var oldDeckA = deckAPlayer, oldDeckB = deckBPlayer, oldPair = deckPair;
+		var oldRecorder = recorder;
+		var generation;
+		if(graph.isNil and: { lifecycleState == \stopped }) {
+			this.prRemoveServerBootAction;
+			onDone.value(this);
+			^this
+		};
+		sessionGeneration = sessionGeneration + 1; // invalidate every pending callback now
+		generation = sessionGeneration;
+		lifecycleState = \stopping;
 		CmdPeriod.remove(this);
+		this.prUnwatchServer;
+		this.prRemoveServerBootAction;
+		graph = nil;
+		state = nil;
+		matrix = nil;
+		config = nil;
+		guiPanel = nil;
+		snapshotMgr = nil;
+		midi16n = nil;
+		micWatcher = nil;
+		deckAPlayer = nil;
+		deckBPlayer = nil;
+		deckPair = nil;
+		recorder = nil;
 		{
-			recorder !? { recorder.stop };     // close the file before teardown (ARCH §6)
-			recorder = nil;
-			if(graph.isRunning) {
-				state.set(\monitorMute, 1);    // 30 ms fade before teardown
+			var queued, recorderDone;
+			oldRecorder !? {
+				recorderDone = Condition.new;
+				oldRecorder.free({ recorderDone.unhang });
+				if(oldRecorder.state != \idle) { recorderDone.hang };
+			}; // close the file before graph teardown (ARCH §6)
+			if(oldGraph.notNil and: { oldGraph.isRunning }) {
+				oldState !? { oldState.set(\monitorMute, 1) }; // 30 ms fade before teardown
 				0.15.wait;
 			};
-			guiPanel !? { guiPanel.free };         // closes window, frees \cq_gui_* defs
-			guiPanel = nil;
-			snapshotMgr !? { snapshotMgr.free };   // stops a running morph
-			snapshotMgr = nil;
-			midi16n !? { midi16n.free };
-			midi16n = nil;
-			micWatcher !? { micWatcher.remove };
-			micWatcher = nil;
+			oldGui !? { oldGui.free };              // closes window, frees \cq_gui_* defs
+			oldSnapshots !? { oldSnapshots.free };  // stops a running morph
+			oldMidi !? { oldMidi.free };
+			oldMicWatcher !? { oldMicWatcher.remove };
 			micWasLive = false;
 			OSCdef.all[\cq_spesal] !? { |d| d.free };
 			OSCdef.all[\cq_hot] !? { |d| d.free };
 			spesalCache = nil;
-			deckAPlayer !? { deckAPlayer.free };
-			deckAPlayer = nil;
-			deckBPlayer !? { deckBPlayer.free };
-			deckBPlayer = nil;
-			graph.free;
-			graph = nil;
-			state = nil;
-			matrix = nil;
-			config = nil;
-			"Cocoquantus: freed.".postln;
+			oldPair !? { oldPair.free };
+			oldDeckA !? { oldDeckA.free };
+			oldDeckB !? { oldDeckB.free };
+			oldGraph !? { oldGraph.free };
+			if(sessionGeneration == generation) {
+				lifecycleState = \stopped;
+				lifecycleError = nil;
+				"Cocoquantus: freed.".postln;
+				onDone.value(this);
+				queued = pendingBoot;
+				pendingBoot = nil;
+				queued !? { this.boot(queued[0], queued[1]) };
+			};
 		}.fork(AppClock);
 	}
 
 	*reboot {
-		var path = configPath;
-		this.free;
-		AppClock.sched(0.8, { this.boot(path); nil });
+		var path = configPath, targetServer = server ?? { Server.default };
+		this.free({ this.prRebootServer(targetServer, path) });
 	}
 
 	// CmdPeriod protocol: Cmd-. kills all nodes — that is silence, which is safe;
 	// the graph cannot be trusted afterwards, so require an explicit reboot (ARCH §6.9)
 	*cmdPeriod {
 		if(graph.notNil and: { graph.isRunning }) {
+			sessionGeneration = sessionGeneration + 1;
+			lifecycleState = \failed;
+			lifecycleError = "CmdPeriod killed the server graph";
+			this.prUnwatchServer;
 			graph.markKilled;
 			guiPanel !? { guiPanel.free };   // the window is dead (server + its OSCdefs
 			guiPanel = nil;                  // gone) — close it now so a reboot/boot
@@ -336,6 +381,215 @@ Cocoquantus {
 	}
 
 	// ---- private ----
+
+	*prLoadConfig { |path|
+		^if(File.exists(path.asString)) {
+			CQConfig.load(path)
+		} {
+			("Cocoquantus: % not found — using defaults "
+				++ "(copy config.example.scd to config.scd)").format(path).warn;
+			CQConfig.validate(())
+		}
+	}
+
+	// Every blocking boot stage is bracketed by a generation check. A free,
+	// reboot, CmdPeriod or failed session increments the generation immediately,
+	// so stale async work can only enter the local cleanup path (CQ-AUD-004).
+	*prBuildSession { |generation, sessionConfig, sessionServer, sessionGraph,
+		sessionState, sessionMatrix, onReady|
+		try {
+			this.prRequireSession(generation);
+			sessionGraph.build;                // buses + groups, synced
+			this.prRequireSession(generation);
+			CQSynthDefs.send(sessionConfig, sessionServer);
+			sessionServer.sync;
+			this.prRequireSession(generation);
+			this.prInitOsc;                     // catch the boot-time spesal report
+			this.prInitMicWatch;
+			sessionGraph.spawn;                // synths in group order, synced
+			this.prRequireSession(generation);
+			sessionState.pushAll;              // defaults + power-on state
+			sessionMatrix.pushAll;             // matrix empty (SPEC boot sequence)
+			sessionServer.sync;
+			this.prRequireSession(generation);
+			deckAPlayer = CQDeck(sessionGraph, sessionState, \deckA, this.prSamplesDir);
+			deckBPlayer = CQDeck(sessionGraph, sessionState, \deckB, this.prSamplesDir);
+			deckPair = CQDeckPair(deckAPlayer, deckBPlayer, sessionServer);
+			snapshotMgr = CQSnapshots(sessionState, sessionMatrix, this.prPresetsDir,
+				{ this.spesalStates },
+				{ |states| states.do { |v, i| this.spesalSet(i + 1, v) } });
+			midi16n = CQMidi16n(sessionState, sessionConfig[\sixteenN]);
+			recorder = CQRecorder(sessionGraph, sessionConfig, this.prFolder(\recordings));
+			this.prRequireSession(generation);
+			lifecycleState = \running;
+			this.prWatchServer(sessionServer, generation);
+			if(sessionConfig[\headless] != true) { this.gui };
+			sessionGraph.fadeIn;               // silent until verified → 2 s ramp
+			CmdPeriod.add(this);
+			"Cocoquantus: ready — output fading in over 2 s.".postln;
+			onReady.value(this);
+		} { |err|
+			if((sessionGeneration == generation) and: {
+				lifecycleState == \booting
+			}) {
+				this.prBootFailed(generation, sessionGraph, err);
+			} {
+				try { sessionGraph.free } { |cleanupError|
+					("Cocoquantus: stale-session cleanup failed — "
+						++ cleanupError.errorString).warn;
+				};
+			};
+		};
+	}
+
+	*prRequireSession { |generation|
+		if((sessionGeneration != generation) or: { lifecycleState != \booting }) {
+			Error("Cocoquantus: stale session generation %".format(generation)).throw;
+		};
+	}
+
+	*prBootFailed { |generation, sessionGraph, err|
+		if(sessionGeneration != generation) { ^this };
+		sessionGeneration = sessionGeneration + 1;
+		lifecycleState = \failed;
+		lifecycleError = err.errorString;
+		CmdPeriod.remove(this);
+		this.prUnwatchServer;
+		guiPanel !? { guiPanel.free };
+		guiPanel = nil;
+		snapshotMgr !? { snapshotMgr.free };
+		snapshotMgr = nil;
+		midi16n !? { midi16n.free };
+		midi16n = nil;
+		micWatcher !? { micWatcher.remove };
+		micWatcher = nil;
+		deckAPlayer !? { deckAPlayer.free };
+		deckAPlayer = nil;
+		deckBPlayer !? { deckBPlayer.free };
+		deckBPlayer = nil;
+		deckPair !? { deckPair.free };
+		deckPair = nil;
+		recorder !? { recorder.free };
+		recorder = nil;
+		OSCdef.all[\cq_spesal] !? { |def| def.free };
+		OSCdef.all[\cq_hot] !? { |def| def.free };
+		try { sessionGraph.free } { |cleanupError|
+			("Cocoquantus: boot rollback cleanup failed — "
+				++ cleanupError.errorString).warn;
+		};
+		graph = nil;
+		state = nil;
+		matrix = nil;
+		config = nil;
+		("Cocoquantus: boot failed and rolled back — " ++ lifecycleError).warn;
+	}
+
+	// CQ.reboot is deliberately the strong operation: it restarts Server.default
+	// so boot-only options take effect. Because that also stops unrelated synths,
+	// callers must invoke it explicitly; normal CQ.free/CQ.boot never quits scsynth.
+	*prRebootServer { |targetServer, path|
+		var preparedConfig, optionGraph, generation, action;
+		path = path ?? { this.repoDir +/+ "config.scd" };
+		try {
+			preparedConfig = this.prLoadConfig(path);
+			optionGraph = CQGraph(targetServer, preparedConfig);
+			optionGraph.applyOptions;
+		} { |err|
+			lifecycleState = \failed;
+			lifecycleError = err.errorString;
+			("Cocoquantus: reboot config failed — " ++ lifecycleError).warn;
+			^this
+		};
+		configPath = path;
+		config = preparedConfig;
+		server = targetServer;
+		lifecycleState = \booting;
+		lifecycleError = nil;
+		sessionGeneration = sessionGeneration + 1;
+		generation = sessionGeneration;
+		action = { |bootedServer|
+			if(bootedServer === targetServer) {
+				ServerBoot.remove(action, targetServer);
+				serverBootAction = nil;
+				if((sessionGeneration == generation) and: {
+					lifecycleState == \booting
+				}) {
+					lifecycleState = \stopped;
+					this.boot(path);
+				};
+			};
+		};
+		serverBootAction = action;
+		ServerBoot.add(action, targetServer);
+		try {
+			targetServer.reboot({}, {
+				if(sessionGeneration == generation) {
+					this.prRemoveServerBootAction;
+					lifecycleState = \failed;
+					lifecycleError = "server reboot failed";
+				};
+			});
+		} { |err|
+			this.prRemoveServerBootAction;
+			lifecycleState = \failed;
+			lifecycleError = err.errorString;
+			("Cocoquantus: server reboot failed — " ++ lifecycleError).warn;
+		};
+	}
+
+	*prRemoveServerBootAction {
+		if(serverBootAction.notNil and: { server.notNil }) {
+			ServerBoot.remove(serverBootAction, server);
+		};
+		serverBootAction = nil;
+	}
+
+	*prWatchServer { |sessionServer, generation|
+		this.prUnwatchServer;
+		serverQuitAction = { |quitServer|
+			if((quitServer === sessionServer) and: {
+				sessionGeneration == generation
+			} and: { lifecycleState == \running }) {
+				this.prUnexpectedServerQuit;
+			};
+		};
+		ServerQuit.add(serverQuitAction, sessionServer);
+	}
+
+	*prUnwatchServer {
+		if(serverQuitAction.notNil and: { server.notNil }) {
+			ServerQuit.remove(serverQuitAction, server);
+		};
+		serverQuitAction = nil;
+	}
+
+	*prUnexpectedServerQuit {
+		sessionGeneration = sessionGeneration + 1;
+		lifecycleState = \failed;
+		lifecycleError = "scsynth quit unexpectedly";
+		CmdPeriod.remove(this);
+		this.prUnwatchServer;
+		graph !? { graph.markKilled };
+		guiPanel !? { guiPanel.free };
+		guiPanel = nil;
+		snapshotMgr !? { snapshotMgr.free };
+		snapshotMgr = nil;
+		midi16n !? { midi16n.free };
+		midi16n = nil;
+		micWatcher !? { micWatcher.remove };
+		micWatcher = nil;
+		deckAPlayer !? { deckAPlayer.free };
+		deckAPlayer = nil;
+		deckBPlayer !? { deckBPlayer.free };
+		deckBPlayer = nil;
+		recorder = nil; // the server-side writer is already gone
+		OSCdef.all[\cq_spesal] !? { |def| def.free };
+		OSCdef.all[\cq_hot] !? { |def| def.free };
+		state = nil;
+		matrix = nil;
+		("Cocoquantus: scsynth quit unexpectedly; session invalidated. "
+			++ "Run CQ.reboot to rebuild.").warn;
+	}
 
 	*prCocoParam { |n, suffix|
 		if(#[1, 2].includes(n).not) {
@@ -435,7 +689,8 @@ Cocoquantus {
 			\set,    { ev[\param] !? { this.set(ev[\param], ev[\value]) } },
 			\patch,  { this.patch(ev[\src], ev[\dest], ev[\weight] ? 1.0) },
 			\deck,   { this.prCqDeck(ev) },
-			\shake,  { this.shake(ev[\amount] ? 0.3, ev[\seed]) },
+			\shake,  { this.shake(ev[\amount] ? 0.3, ev[\seed],
+				density: ev[\density]) },
 			{ "Cocoquantus: \\cq event — unknown action '%' ignored.".format(action).warn }
 		);
 	}

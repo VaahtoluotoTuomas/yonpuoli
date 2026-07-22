@@ -183,7 +183,11 @@ ranges, curves, defaults. All setters clamp to range. `exp` = exponential mappin
 Decks: load single files or a folder (`samples/`); next/prev/random file navigation;
 buffers are peak-normalized to −6 dBFS on load (consistent gain staging for field
 recordings). Formats: anything libsndfile reads (wav/aiff/flac). Mono files play as
-mono; stereo files: deck A takes L, deck B takes R when loaded as a linked pair.
+mono; stereo files: deck A takes L, deck B takes R when loaded as a linked pair. A
+linked pair becomes audible only after both buffers are ready: its two players start in
+one server bundle, and the dry monitor preserves L/R rather than summing them to dual
+mono. Standalone deck loads remain dual mono in the dry monitor. Async loads are
+last-request-wins and cannot publish after deck/session teardown.
 
 ### 5.2 Preamps A / B
 
@@ -272,9 +276,16 @@ Outputs published to the mod source bus: `tri1..tri5` (±1 triangle), `cas1..cas
 - `patchDepth` (0–1, default 1.0, lag 50 ms): global scaler over all matrix weights —
   a "how alive is it" macro and instant tamer.
 - API: `patch(src, dest, w)`, `unpatch(src, dest)`, `clearPatch`, `getPatch`,
-  `patchPreset(\name)`, `shake(amount: 0.3, seed: nil)` (throw a sparse random patch —
-  each cell with ~10% probability, weights ±amount — plus random spesal states; never
-  touches levels/feedback — safety+musicality rule; same seed = same throw).
+  `patchPreset(\name)`, `shake(amount: 0.3, seed: nil, density: 0.1)` (throw a sparse
+  random patch — each cell with probability `density`, weights ±amount — plus random
+  spesal states; never touches levels/feedback — safety+musicality rule; same seed =
+  same throw). The throw **replaces** the patch rather than adding to it, so
+  `density: 0` **clears the bay** — nothing sown, nothing left standing — while
+  deliberately leaving the spesal states alone: a clear is a clear, not a scramble in
+  disguise. `density` was added
+  2026-07-22 for the night's sowing moon (GUI_SPEC §16.6), which maps its lit phase
+  onto it — how *much* is sown, while `patchDepth` remains the how-*hard* macro.
+  Existing callers are unaffected: the default is the historical ~10%.
 - Named presets shipped in v1 (derived from documented hardware patches):
   `\empty`, `\classic` (tri→spaf both Cocos, castle→castle FM ring),
   `\selfNoise` (dust looping + VCA wobble), `\quantumDrone` (castles as audio, skip/flip
@@ -310,10 +321,17 @@ range, +1.6 dBFS for dense material at vol 0. `CQ.testWatchdog` simulates a trip
 - Main out: stereo to `outChans` (config, default [0,1]).
 - Optional stems to additional interface outputs (config `stemOuts`, e.g. [2,3,4,5]):
   post-safety Coco1, Coco2 (mono each) — for re-processing in the modular in real time.
+- Every configured hardware-output index is globally unique: `outChans` contains no
+  duplicates, `stemOuts` contains no duplicates, and the two sets are disjoint. Invalid
+  aliasing is rejected before server boot because separate post-limiter `Out` writes to
+  one physical bus would otherwise sum after the safety ceiling.
 - Recorder: `rec` / `recStop`. Writes 24-bit WAV, timestamped
   `recordings/cq_YYMMDD_HHMMSS.wav`, never overwrites. Optional stem recording
   (`recStems: true`, config choice): `rec` writes a 4-channel file — master L/R plus
   the post-safety Coco1 and Coco2 stems (same taps as `stemOuts`) — instead of stereo.
+  Runtime state is explicitly `idle/starting/recording/stopping/error`; one start attempt
+  owns its path, buffer and writer synth until stop/error cleanup completes. A second REC
+  cannot create another writer, and stop/free during starting cancels that attempt.
 
 ---
 
@@ -360,38 +378,40 @@ macros, sources, global. Takeover mode configurable: `\jump` (default) or `\pick
 
 ### 6.2 GUI panel
 
-> **Version note:** the panel below documents the shipped v1.0 GUI. The adopted
-> post-v1.0 Archipelago GUI behavior and visual language are normative in
-> [`GUI_SPEC.md`](GUI_SPEC.md); until its G1–G3 gates ship, this subsection remains the
-> description of the running implementation. This SPEC still wins for parameters,
-> DSP and all §8 safety invariants.
+> **Version note (edited 2026-07-21, during G2):** GUI **structure, interaction
+> grammar, visual language, motion and constants are normative in
+> [`GUI_SPEC.md`](GUI_SPEC.md)** — one window with a Day panel, a Night map, a
+> persistent Master strip and a Drawer (inspector · spellbook · memory). Its G1
+> gate (day skin) shipped on 2026-07-21; G2 (night map) is in progress and G3
+> (weather machine) has not started. This subsection no longer describes a
+> layout; it keeps only what the GUI owes *this* document whatever its skin.
+> Parameters, ranges, curves, DSP and all §8 safety invariants remain SPEC's,
+> and §8 wins any conflict. The retired v1.0 four-column panel is preserved in
+> this section as it stood at the `v1.0` tag; its build log is
+> [`docs/history/PLAN_v1.0.md`](docs/history/PLAN_v1.0.md).
 
-One window, four columns mirroring the hardware layout — [Sources+Preamps] [Coco1]
-[Quantussy] [Coco2] — plus a master strip. Uses the banana color code as accents:
-orange = triangle, gray = castle/delay out, blue = FM, green = inputs/spesal,
-purple = SP.AF, yellow = organ, white = preamp.
+Requirements on any GUI, independent of skin:
 
-- Coco strip: in/speed/spaf/fb knobs (mirroring 16n), slot-mixer mini-faders
-  (pre/deck/q/x — the input mix feeding the loop, §5.3), **HOLD** button with red
-  LED, FLIP toggle, SKIP momentary, dolby 3-state switches,
-  bits/wrap/interp/dust/organ small controls, level/pan/send, in+out meters.
-- Quantussy: qFreq & qChaos big knobs, per-castle range 3-state + activity LED +
-  Spesal step button, 15-dot Spesal display, "shake" button + amplitude mini-knob
-  (0–1, default 0.3; shared with the `p` key), castle send mini-faders.
-- Sources: preamp src selectors + drive, mic gain (with warning color when >0 and
-  builtin output active), deck transport (load/next/prev, rate, loop). The whole
-  deck box is a file-drop target and shows the loaded file's name (updates on
-  every load path: drop, load button, folder navigation, code).
-- Master: volume, dry, space, patchDepth ("depth" — the global matrix tamer),
-  limiter gain-reduction meter, notice line (mic warning;
-  watchdog in M3), REC with elapsed time, PANIC (= `monitorMute`), snapshot save/recall
-  + A→B morph controls (patch-preset menu lives in the matrix section).
-- Matrix: grid view (16×22) with signed weight cells, preset menu.
-- Keyboard: `1/2` hold Coco1/2 · `q/w` flip · `a/s` skip · `3..7` spesal castle 1–5 ·
-  `r` rec · `space` panic · `p` shake. Panel widgets never take keyboard focus
-  (mouse-only), so the key map — panic included — always works after any click;
-  only text/number entry takes focus, click-to-focus only (never at boot, no
-  tab chain), and releases it on Enter.
+- **It must show**: in/out meters, limiter gain reduction, HOLD state, Spesal
+  states and castle activity, loaded deck filenames (updating on *every* load
+  path: drop, load button, folder navigation, code), REC state + elapsed time,
+  and the notice line.
+- **It must make reachable without code**: hold, flip, skip, Spesal step, dolby
+  and range switches, every §5 `CQSpec` parameter, patch presets, snapshots +
+  A→B morph, the full 16×22 signed-weight matrix, and file loading including
+  drag-and-drop.
+- **Mic**: the preamp's mic control carries a warning color when `micGain` > 0
+  while a builtin output is active, and the GUI never grows a second `micGain`
+  path (§7, §8.5).
+- **Keyboard** (unchanged, global in every view): `1/2` hold Coco1/2 · `q/w`
+  flip · `a/s` skip · `3..7` spesal castle 1–5 · `r` rec · `space` panic ·
+  `p` shake. Widgets never take keyboard focus (mouse-only), so the key map —
+  panic included — always works after any click; only text/number entry takes
+  focus, click-to-focus only (never at boot, no tab chain), and releases it on
+  Enter.
+- **PANIC and the notice line are visible at all times** and may be covered by
+  nothing — no view, no drawer, no overlay (§8.3).
+- The instrument must stay fully playable with the GUI closed (§6 intro).
 
 ### 6.3 Live-coding API (facade `Cocoquantus`, singleton `CQ`)
 
@@ -413,6 +433,12 @@ CQ.resume;                          // unmute after panic (no fade-in re-trigger
 CQ.resetTrim;                       // restore level after a watchdog auto-trim (§5.6)
 ```
 
+Lifecycle is explicit and readable as `CQ.lifecycleState`:
+`\stopped/\booting/\running/\stopping/\failed`. `CQ.free` invalidates pending async
+work immediately; boot failures roll back partial ownership. `CQ.reboot` performs a real
+restart of `Server.default` so device/sample-rate/block-size/I/O options take effect; as
+an explicitly strong operation, it also stops unrelated synths using that shared server.
+
 ### 6.4 Patterns (optional, M3)
 
 Event type `\cq` sequences discrete actions on a TempoClock — generative "player
@@ -422,7 +448,8 @@ action or an unbooted instrument is a silent no-op, so a pattern can carry Rests
 survive a `free`/reboot. Actions: `\hold`/`\flip` (`\coco`, optional `\val`),
 `\skip` (`\coco`), `\spesal` (`\castle`, optional `\state`), `\set` (`\param`,
 `\value`), `\patch` (`\src`, `\dest`, `\weight`), `\deck` (`\deck` = `\a`/`\b`,
-`\do` = `\next`/`\prev`/`\random`/`\restart`), `\shake` (`\amount`, `\seed`). E.g.
+`\do` = `\next`/`\prev`/`\random`/`\restart`), `\shake` (`\amount`, `\seed`,
+`\density`). E.g.
 
 ```supercollider
 Pbind(\type, \cq, \action, \spesal, \castle, 3, \dur, Pexprand(0.5, 4)).play;
@@ -447,8 +474,8 @@ gitignored):
   hardwareBufferSize: 256,    // latency vs. stability for live modular processing
   inChans: [0, 1],            // live stereo pair from modular/mixer
   micChan: nil,               // nil = mic path disabled entirely
-  outChans: [0, 1],
-  stemOuts: nil,              // e.g. [2, 3] → coco1, coco2 post-safety
+  outChans: [0, 1],           // unique physical indices
+  stemOuts: nil,              // e.g. [2, 3] → unique + disjoint from outChans
   bufFrames: 131072,          // Coco RAM (2^16–2^19)
   sixteenN: (enabled: true, ccBase: 32, chan: nil, takeover: \jump),
                               // chan nil = any MIDI channel (per-fader channels,
@@ -488,7 +515,8 @@ Notes:
 4. All gain-class parameters are lagged ≥ 30 ms server-side (no zipper steps, no
    instant jumps to loud).
 5. Boot sequence is silent until the graph is verified, then fades in over 2 s.
-   `CmdPeriod` leaves silence (never a raw unprocessed path) and the facade can rebuild.
+   `CmdPeriod`, stale async work, boot failure and unexpected server quit invalidate the
+   session and leave silence (never a raw unprocessed path); the facade can rebuild.
 6. NaN/inf anywhere in the chain is squelched to silence and reported, never emitted.
 7. The NRT safety test (§10) gates every change: worst-case preset must render with
    peak ≤ −0.75 dBFS, no NaN, |DC| < 0.02.
@@ -504,6 +532,13 @@ an optional comfort feature (sustained-loud notice; opt-in −6 dB auto-ease via
 
 - CPU: full instrument (2 Cocos, Quantussy, decks, space, GUI meters) ≤ 25% of one
   core on a mid-range 2020s laptop at 48 kHz / block 64.
+- GUI CPU (language side) ≤ ~3% at rest with a played-sized patch. Measured
+  2026-07-21 on the reference laptop: ~2.8–3.8% with 20 planted cables, rising a
+  couple of points while the pointer crosses cables and falling back at once. A
+  snapshot morph is a deliberate, temporary exception at ~5–6%: it drives the whole
+  parameter set continuously, and the transparent cable layer re-strokes every cable
+  whenever any control beneath it repaints. See `GUI_SPEC.md` §10 for the pacing and
+  density rules that keep the resting figure.
 - Control latency: 16n fader → audible ≤ 20 ms perceived (smoothing included).
 - Live throughput latency: bounded by `hardwareBufferSize`; no added latency in the
   dry-to-coco path beyond one block.

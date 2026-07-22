@@ -1,0 +1,557 @@
+// CQNightGeometry — pure layout math for the Night map (GUI_SPEC §16.6, §15).
+// No Qt and no instrument state: a stage size goes in, every body and endpoint
+// position comes out, so the topology truths — ring order and direction, cocos
+// left/right, roots below, birds above — are unit-testable without a window.
+// Every irregularity is seeded (§16.11): the same size always returns the same
+// hand-drawn archipelago, and a redraw never boils.
+
+CQNightGeometry {
+
+	// coco spiral turns (§16.6)
+	*turns { ^2.5 }
+
+	// range letters shown in whisper at the castle's 6 o'clock (§16.6)
+	*rangeLetter { |range|
+		^switch(range, \infra, { "i" }, \balcium, { "b" }, \audio, { "a" }, { "" })
+	}
+
+	// mic sprout (§16.6): display only, never a jack. \hidden when no mic is
+	// configured, \dormant while micGain sits at its safe 0, \live once audible.
+	*sproutState { |micConfigured = false, micGain = 0|
+		if(micConfigured != true) { ^\hidden };
+		^if((micGain ? 0) > 0) { \live } { \dormant }
+	}
+
+	// clock-face angle in radians (12 o'clock = up, clockwise — §16.6 positions)
+	*clockAngle { |clock| ^((clock / 12) * 2pi) - 0.5pi }
+
+	*polar { |center, radius, angle|
+		^Point(center.x + (cos(angle) * radius), center.y + (sin(angle) * radius))
+	}
+
+	// closed Catmull-Rom through the given points as cubic segments
+	// [[p0, c1, c2, p1], ...] — one smooth stroke through five castles or six
+	// blob anchors, because a drawing's price is its Pen-call count (§10)
+	*smoothClosedSegments { |points|
+		^points.collect { |p1, i|
+			var p0 = points.wrapAt(i - 1);
+			var p2 = points.wrapAt(i + 1);
+			var p3 = points.wrapAt(i + 2);
+			[p1, p1 + ((p2 - p0) / 6), p2 - ((p3 - p1) / 6), p2]
+		}
+	}
+
+	// sample a bezier segment list into a polyline (firefly travel)
+	*sampleSegments { |segments, perSegment = 16|
+		var points = List.new;
+		segments.do { |seg|
+			perSegment.do { |i|
+				var t = i / perSegment, u = 1 - t;
+				points.add((seg[0] * (u * u * u)) + (seg[1] * (3 * u * u * t))
+					+ (seg[2] * (3 * u * t * t)) + (seg[3] * (t * t * t)));
+			};
+		};
+		^points.asArray
+	}
+
+	// a point riding the ring: phase 0..1 travels castle 1 → 2 → 3 → 4 → 5 → 1,
+	// the direction of the LocalIn loop and the \classic FM ring (cas k → k+1)
+	*fireflyPoint { |geometry, phase|
+		var samples = geometry[\ringSamples], scaled, index, frac, a, b;
+		scaled = phase.mod(1) * samples.size;
+		index = scaled.floor.asInteger;
+		frac = scaled - index;
+		a = samples.wrapAt(index);
+		b = samples.wrapAt(index + 1);
+		^Point(a.x + ((b.x - a.x) * frac), a.y + ((b.y - a.y) * frac))
+	}
+
+	// Archimedean spiral (§16.6) as quarter-turn cubics ending at the mouth on
+	// the outer rim; winding -1 mirrors coco2 against coco1
+	*spiralSegments { |center, innerR, outerR, mouthAngle = 0, winding = 1|
+		var quarters = (this.turns * 4).round.asInteger;
+		var radiusAt = { |i| innerR + ((outerR - innerR) * (i / quarters)) };
+		var pointAt = { |i|
+			this.polar(center, radiusAt.value(i),
+				mouthAngle - (winding * (quarters - i) * 0.5pi))
+		};
+		var tangentAt = { |i|
+			var angle = mouthAngle - (winding * (quarters - i) * 0.5pi);
+			Point(sin(angle).neg, cos(angle)) * winding
+		};
+		^quarters.collect { |i|
+			var p0 = pointAt.value(i), p1 = pointAt.value(i + 1);
+			[p0, p0 + (tangentAt.value(i) * (radiusAt.value(i) * 0.5523)),
+				p1 - (tangentAt.value(i + 1) * (radiusAt.value(i + 1) * 0.5523)), p1]
+		}
+	}
+
+	*prSeeded { |seed, func|
+		var saved = thisThread.randData, result;
+		thisThread.randSeed = seed.asInteger;
+		result = func.value;
+		thisThread.randData = saved;
+		^result
+	}
+
+	*distance { |a, b|
+		^sqrt((b.x - a.x).squared + (b.y - a.y).squared)
+	}
+
+	*prPointSegmentDistance { |point, a, b|
+		var dx, dy, lengthSq, t, projection;
+		dx = b.x - a.x;
+		dy = b.y - a.y;
+		lengthSq = dx.squared + dy.squared;
+		if(lengthSq <= 0.0001) { ^this.distance(point, a) };
+		t = ((((point.x - a.x) * dx) + ((point.y - a.y) * dy)) / lengthSq)
+			.clip(0, 1);
+		projection = Point(a.x + (t * dx), a.y + (t * dy));
+		^this.distance(point, projection)
+	}
+
+	// ---- §6.1 touch hit tests (pure) ----
+
+	// distance from a point to the spiral's drawn line (the winding surface)
+	*spiralDistance { |coco, point|
+		var samples = coco[\spiralSamples], best = inf;
+		samples.doAdjacentPairs { |a, b|
+			best = min(best, this.prPointSegmentDistance(point, a, b));
+		};
+		^best
+	}
+
+	// a point riding the spiral's line: norm 0 = the innermost eye (slowest),
+	// norm 1 = the mouth (fastest) — the reel pearl's home for a speed value
+	*spiralPoint { |coco, norm|
+		var samples = coco[\spiralSamples], scaled, index, frac, a, b;
+		scaled = norm.clip(0, 1) * (samples.size - 1);
+		index = scaled.floor.asInteger.min(samples.size - 2);
+		frac = scaled - index;
+		a = samples[index];
+		b = samples[index + 1];
+		^Point(a.x + ((b.x - a.x) * frac), a.y + ((b.y - a.y) * frac))
+	}
+
+	// the unit normal of the spiral's drawn line at `norm`. The reel notch
+	// crosses the groove, so it needs the line's own direction — not the
+	// shell's radius, which only coincides with it a quarter turn at a time.
+	// The probe stays inside one polyline segment (60 of them span 2.5 turns,
+	// so a wider chord would straddle a vertex and lean the tick by up to 7°).
+	*normalProbe { ^0.002 }
+
+	*spiralNormal { |coco, norm|
+		var a = this.spiralPoint(coco, (norm - this.normalProbe).clip(0, 1));
+		var b = this.spiralPoint(coco, (norm + this.normalProbe).clip(0, 1));
+		var length = max(0.001, this.distance(a, b));
+		^Point((b.y - a.y).neg, b.x - a.x) / length
+	}
+
+	// the mouth's two stationary transport marks (skip above the jack, flip
+	// below it): one box for the cue and for the act, as everywhere in §4.5
+	*markHit { |anchor, point|
+		^Rect.aboutPoint(anchor, 10, 10).containsPoint(point)
+	}
+
+	// the spesal dial annulus around a castle (a tap = one step)
+	*dialHit { |castle, point|
+		^(this.distance(point, castle[\center]) - castle[\dialR]).abs <= 8
+	}
+
+	// ---- the almanac corner (§16.6) ----
+	// Free water in the top-right sky: the sowing moon, and under it the §7.1
+	// compass — the weather machine's home, drawn since G3. The corner starts
+	// where coco 2's own box ends, so no stage size can squeeze it; the
+	// clearance tests pin every rect.
+	//
+	// The sower constellation that first stood here was removed on the user's
+	// decision (2026-07-22): a preset is a recipe, not a body, and it was the
+	// night's only control that could not be used without reading text. Presets
+	// live in the Inspector, one toolbar click away in either view.
+
+	// Ø 52 (grown from 44 at the user's second review: the corner carried it
+	// easily once the constellation left, and the phase reads better big)
+	*moonRadius { |scale = 1| ^26 * scale }
+
+	// the flash halo reaches this far past the rim, so the layer must hold it
+	*moonHalo { ^7 }
+
+	// the pad's corner seeds sit this far inside the water, so a stamped
+	// corner's dot and its halo never touch the hairline border
+	*stampInset { ^13 }
+
+	// a stamp answers within this radius — under the 8 px tap threshold it is
+	// a tap target, not a drag start, so it can afford to be small
+	*stampRadius { ^9 }
+
+	*almanac { |width, scale = 1, freeFrom = 0|
+		var left = freeFrom + (6 * scale);
+		var axis = width - (80 * scale);
+		var moonR = this.moonRadius(scale);
+		var moon = Point(axis, (18 * scale) + moonR);
+		var box = Rect(left, 0, width - left,
+			moon.y + moonR + max(14 * scale, this.moonHalo + 4));
+		var pad = Rect(axis - (70 * scale), box.bottom + (14 * scale),
+			140 * scale, 140 * scale);
+		var inset = this.stampInset * scale;
+		var weatherY = pad.bottom + (16 * scale);
+		^(box: box, moon: moon, moonR: moonR,
+			compass: pad,
+			// corner seeds in pad order TL TR BL BR — the same order
+			// CQCompass.bilinear speaks, so no view ever re-maps them
+			stamps: [
+				Point(pad.left + inset, pad.top + inset),
+				Point(pad.right - inset, pad.top + inset),
+				Point(pad.left + inset, pad.bottom - inset),
+				Point(pad.right - inset, pad.bottom - inset)
+			],
+			// the weather row under the field: rain (grow), the graft (breed),
+			// the sun (wither) — §7.2's own words, "the rain and the drought"
+			weather: (
+				grow: Point(pad.left + (pad.width * 0.22), weatherY),
+				breed: Point(pad.center.x, weatherY),
+				wither: Point(pad.left + (pad.width * 0.78), weatherY)
+			),
+			// the compass layer's own opaque box: pad, stamp halos and the
+			// weather row whole, so no mark can clip against its layer edge
+			compassBox: Rect(pad.left - 8, pad.top - 8,
+				pad.width + 16, weatherY + 12 - pad.top + 8))
+	}
+
+	*moonHit { |almanac, point|
+		^this.distance(point, almanac[\moon]) <= almanac[\moonR]
+	}
+
+	// ---- §7.1 compass hit tests (pure) ----
+
+	*compassHit { |almanac, point|
+		^almanac[\compass].containsPoint(point)
+	}
+
+	// a stage point as pad coordinates 0..1 (TL = origin, the bilinear's frame)
+	*compassNorm { |almanac, point|
+		var pad = almanac[\compass];
+		^Point(((point.x - pad.left) / max(1, pad.width)).clip(0, 1),
+			((point.y - pad.top) / max(1, pad.height)).clip(0, 1))
+	}
+
+	// which corner seed the point lands on, or nil — consulted before the pad
+	// itself, since the seeds live inside the water
+	*stampHit { |almanac, point|
+		^almanac[\stamps].detectIndex { |stamp|
+			this.distance(point, stamp) <= this.stampRadius
+		}
+	}
+
+	// which weather mark the point lands on (\grow / \breed / \wither), or nil
+	*weatherHit { |almanac, point|
+		^#[grow, breed, wither].detect { |name|
+			this.markHit(almanac[\weather][name], point)
+		}
+	}
+
+	// ---- spesal coupling chords (§16.6, added 2026-07-22) ----
+	// Which castle each castle reads is structure, not a quantity, so it is
+	// shown only where the hand is asking (§4.5's hover grammar) — one chord
+	// for a hovered castle, all five for the hovered river. The chord bows
+	// toward the ring's eye so that even an *adjacent* pair reads as an inner
+	// chord instead of doubling the river's own line, and it is clamped so it
+	// can never crowd the storm iris sitting at that centre.
+
+	*chordBow { ^0.4 }          // of the way from the chord's midpoint to the eye
+	*chordClearance { ^0.35 }   // ...but never nearer the eye than this × ringR
+
+	// where a ray leaves an axis-aligned box, plus a hair. A castle's layer is
+	// square, so "half its width along the ray" is still *inside* it in every
+	// direction but the four axes — the chord has to start where the opaque
+	// layer actually stops covering it, or its arrowhead hides under the body
+	// it is pointing at.
+	*boxExit { |center, box, unit, margin = 2|
+		var tx = if(unit.x.abs < 1e-9) { inf } { (box.width * 0.5) / unit.x.abs };
+		var ty = if(unit.y.abs < 1e-9) { inf } { (box.height * 0.5) / unit.y.abs };
+		^center + (unit * (min(tx, ty) + margin))
+	}
+
+	*spesalChord { |geometry, from, to|
+		var castles = geometry[\castles];
+		var a = castles[from][\center], b = castles[to][\center];
+		var eye = geometry[\ringCenter];
+		var reach = geometry[\ringR] * this.chordClearance;
+		var length = max(0.001, this.distance(a, b));
+		var unit = (b - a) / length;
+		// both ends stop at their castle's own opaque box, exactly where the
+		// river's visible stretch stops: a line under an opaque layer is a line
+		// nobody sees (§16.6)
+		var start = this.boxExit(a, castles[from][\box], unit);
+		var end = this.boxExit(b, castles[to][\box], unit * -1);
+		var mid = (start + end) * 0.5;
+		var pull = mid + ((eye - mid) * this.chordBow);
+		var pulled = this.distance(pull, eye);
+		if(pulled < reach) {
+			pull = if(pulled < 0.001) { mid } {
+				eye + ((pull - eye) / pulled * reach)
+			};
+		};
+		^[start, pull, pull, end]
+	}
+
+	// a point riding a chord: t = 0 at the castle being read, t = 1 at the one
+	// reading it — the direction the sampled signal actually travels
+	*chordPoint { |path, t|
+		var v = t.clip(0, 1), u = 1 - v;
+		^(path[0] * (u * u * u)) + (path[1] * (3 * u * u * v))
+			+ (path[2] * (3 * u * v * v)) + (path[3] * (v * v * v))
+	}
+
+	// crossings per lap of the river's own firefly phase: the chords are short,
+	// so a light crosses one about three times while a firefly rounds the ring
+	*chordLaps { ^3 }
+
+	// the castle's own flesh: the ellipse the blob is drawn around (§16.6), grown
+	// by `margin` so the body answers the hand slightly before it arrives. This
+	// is the §6 body-solo target AND, with dialHit excluded, the area that wears
+	// the hover echo (§4.5) — one geometry for both, because a cue that covers
+	// more or less than its action is a cue that lies.
+	*bodyMargin { ^10 }
+
+	*bodyHit { |castle, point, margin|
+		var m = margin ? this.bodyMargin;
+		var dx = (point.x - castle[\center].x) / max(0.001, castle[\bodyRx] + m);
+		var dy = (point.y - castle[\center].y) / max(0.001, castle[\bodyRy] + m);
+		^(dx.squared + dy.squared) <= 1
+	}
+
+	// One law for all three night bodies (decided 2026-07-21): **a body is
+	// taken by its own drawn outline**, and hovering that outline is the cue.
+	// The castle offers its blob, the shell its outer rim, the ring its line —
+	// each a mark the eye already reads as "the whole organism", each narrow
+	// enough that the water around it stays free for the harvest lasso.
+
+	// the shell's rim: a band on the circle the hold seal draws. The spiral
+	// itself never reaches past outerR except at the mouth, and the winding
+	// surface is consulted first, so the two can never fight over a press.
+	*rimMargin { ^10 }
+
+	*shellRimHit { |coco, point, margin|
+		^(this.distance(point, coco[\center]) - coco[\outerR]).abs
+			<= (margin ? this.rimMargin)
+	}
+
+	// distance from a point to the ring's drawn line (the river itself)
+	*ringDistance { |geometry, point|
+		var samples = geometry[\ringSamples], best = inf;
+		// cheap radial reject first: most of the stage is nowhere near the river
+		if((this.distance(point, geometry[\ringCenter]) - geometry[\ringR]).abs
+			> (geometry[\ringR] * 0.45)) { ^inf };
+		samples.doAdjacentPairs { |a, b|
+			best = min(best, this.prPointSegmentDistance(point, a, b));
+		};
+		// the river is a closed loop: its last sample joins its first
+		^min(best, this.prPointSegmentDistance(point, samples.last, samples.first))
+	}
+
+	*ringBodyHit { |geometry, point, margin|
+		^this.ringDistance(geometry, point) <= (margin ? this.rimMargin + 2)
+	}
+
+	// ---- the whole archipelago from one stage size ----
+	// Bodies scale with the window (§16.10); stroke widths and text stay in px
+	// at the draw sites. The minimum stage (1280x570 under the toolbar and the
+	// Master strip) gives scale 1.
+	*compute { |width, height|
+		var scale = min(width / 1280, height / 570).max(0.5);
+		var ringCenter = Point(width * 0.5, height * 0.52);
+		var ringR = 148 * scale;
+		var endpoints = IdentityDictionary.new;
+		var castles, ringSegments, ringSamples, ringBox, cocos, roots, birds;
+		var sprout, almanac, xs, ys;
+
+		// five castles in a true ring, castle 1 at top, k -> k+1 clockwise —
+		// pentagon ±6°, radius ±5 %, body ±8 % (§16.3 asymmetry law), seeded
+		castles = this.prSeeded(9021, {
+			5.collect { |k|
+				var angle = -0.5pi + (k * 0.4pi) + 6.degrad.rand2;
+				var center = this.polar(ringCenter, ringR * (1 + 0.05.rand2), angle);
+				var bodyRx = 23 * scale * (1 + 0.08.rand2);
+				var bodyRy = 20 * scale * (1 + 0.08.rand2);
+				var blobAnchors = 6.collect { |a|
+					var blobAngle = (a / 6 * 2pi) + 0.22.rand2;
+					var jitter = 1 + 0.08.rand2;
+					Point(center.x + (cos(blobAngle) * bodyRx * jitter),
+						center.y + (sin(blobAngle) * bodyRy * jitter))
+				};
+				// the spesal dial is the castle's inner clock (r 10): it lives
+				// inside the body where the opaque endpoint views (r >= ~14.6
+				// to their nearest corner at scale 1) can never cover its hand
+				(center: center, bodyRx: bodyRx, bodyRy: bodyRy,
+					blobSegments: this.smoothClosedSegments(blobAnchors),
+					dialR: 10 * scale,
+					letterAnchor: Point(center.x, center.y + (33 * scale)),
+					box: Rect.aboutPoint(center, (36 * scale) + 4, (36 * scale) + 4))
+			}
+		});
+		// ring stubs: the opaque castle layer redraws the river's short passage
+		// through its own box so the loop reads as continuous under the body
+		castles.do { |castle, k|
+			castle[\stubs] = [castles.wrapAt(k - 1), castles.wrapAt(k + 1)]
+				.collect { |other|
+					var delta = other[\center] - castle[\center];
+					var length = max(0.001, this.distance(castle[\center], other[\center]));
+					var unit = delta / length;
+					var rim = max(castle[\bodyRx], castle[\bodyRy]) + 2;
+					[castle[\center] + (unit * rim),
+						castle[\center] + (unit * (castle[\box].width * 0.5))]
+				};
+		};
+		ringSegments = this.smoothClosedSegments(castles.collect { |c| c[\center] });
+		ringSamples = this.sampleSegments(ringSegments, 24);
+		xs = ringSamples.collect { |p| p.x };
+		ys = ringSamples.collect { |p| p.y };
+		ringBox = Rect(xs.minItem - 12, ys.minItem - 12,
+			xs.maxItem - xs.minItem + 24, ys.maxItem - ys.minItem + 24);
+
+		// coco 1 left, coco 2 right: spiral shells with their mouths toward the
+		// ring, org fruit on the second turn, five moons on an arc below
+		cocos = 2.collect { |i|
+			var side = if(i == 0) { -1 } { 1 };
+			var winding = if(i == 0) { 1 } { -1 };
+			var mouthAngle = if(i == 0) { 0 } { pi };
+			var center = Point(ringCenter.x + (side * (ringR + (190 * scale))),
+				ringCenter.y - (26 * scale));
+			var outerR = 85 * scale;
+			var segments = this.spiralSegments(center, 10 * scale, outerR,
+				mouthAngle, winding);
+			var mouth = segments.last[3];
+			var orgSpiralPoint = segments[5][0];
+			var orgDelta = orgSpiralPoint - center;
+			var orgLength = max(0.001, this.distance(center, orgSpiralPoint));
+			(center: center, outerR: outerR, winding: winding,
+				mouthAngle: mouthAngle, segments: segments,
+				mouth: mouth,
+				// sampleSegments stops at t = 5/6 of the last cubic (an open
+				// curve, unlike the ring) — the mouth closes the winding
+				// surface so the reel pearl and the grab reach the outer rim
+				spiralSamples: this.sampleSegments(segments, 6) ++ [mouth],
+				// §6.1 touch homes: the press-to-flip chevron hangs below the
+				// mouth — clear of the mouth jack's opaque 26 px view and
+				// inside the shell box at every scale — plus the hold heart at
+				// the spiral's innermost eye, the shell's own opaque layer box
+				// and the tide crescents under the three continuous moons
+				chevron: mouth + Point(0, max(24 * scale, 22)),
+				// skip's night home, landed at the G2 gate: a stationary mark
+				// under the flip chevron — the Day panel's own FLIP/SKIP pair,
+				// hanging in the one direction that is empty. The read-head
+				// comet lost the gesture because a moving target is not a
+				// control: past a crawl it cannot be hit at all, and a 5 Hz
+				// frame draws it stale. Above the mouth looked symmetrical and
+				// is wrong: the spiral *ends* at the mouth and arrives there
+				// from above, so that side is the groove itself (caught by the
+				// winding-surface assert, CQGuiNightTouchTest).
+				skipMark: mouth + Point(0, max(24 * scale, 22)
+					+ max(22 * scale, 20)),
+				heartRadius: 14,
+				shellBox: Rect.aboutPoint(center,
+					outerR + (30 * scale), outerR + (30 * scale)),
+				crescents: [126, 108, 90].collect { |degrees|
+					this.polar(center, 130 * scale, degrees.degrad)
+				},
+				orgSpiralPoint: orgSpiralPoint,
+				orgCenter: orgSpiralPoint + ((orgDelta / orgLength) * (10 * scale)),
+				moons: [126, 108, 90, 72, 54].collect { |degrees|
+					this.polar(center, 104 * scale, degrees.degrad)
+				})
+		};
+		cocos.do { |coco, i|
+			var n = i + 1;
+			endpoints[("coco" ++ n).asSymbol] = coco[\mouth];
+			endpoints[("org" ++ n).asSymbol] = coco[\orgCenter];
+			[\spaf, \inVca, \fbVca, \flip, \skip].do { |suffix, m|
+				endpoints[("coco" ++ n ++ "_" ++ suffix).asSymbol] = coco[\moons][m];
+			};
+		};
+		castles.do { |castle, k|
+			var n = k + 1, center = castle[\center];
+			endpoints[("tri" ++ n).asSymbol] =
+				this.polar(center, 33 * scale, this.clockAngle(1.5));
+			endpoints[("cas" ++ n).asSymbol] =
+				this.polar(center, 33 * scale, this.clockAngle(10.5));
+			endpoints[("castle" ++ n ++ "_fm").asSymbol] =
+				this.polar(center, 28 * scale, this.clockAngle(4));
+			// r 40: the lamped spesal view is 34 px wide with the lamp
+			// reaching 25 px toward the body — r 40 keeps its opaque box off
+			// the inner clock at every scale (see CQNightGeometryTest)
+			endpoints[("castle" ++ n ++ "_spesal").asSymbol] =
+				this.polar(center, 40 * scale, this.clockAngle(8));
+		};
+
+		// inputs as roots at the bottom, envA left, envB right; the mic sprout
+		// grows beside envA (display only — the mic is not one of the 16)
+		roots = this.prSeeded(4407, {
+			[0.17, 0.83].collect { |fraction, i|
+				var side = if(i == 0) { -1 } { 1 };
+				var tip = Point(width * fraction, height - (64 * scale));
+				var base = Point(tip.x + (side * 30 * scale), height + 2);
+				var mid1 = Point(base.x + ((tip.x - base.x) * 0.35) + 6.0.rand2,
+					base.y + ((tip.y - base.y) * 0.4) + 4.0.rand2);
+				var mid2 = Point(base.x + ((tip.x - base.x) * 0.7) + 6.0.rand2,
+					base.y + ((tip.y - base.y) * 0.75) + 4.0.rand2);
+				var reach = max(0.001, this.distance(mid2, tip));
+				// the side twig grows AWAY from the tip and leaves low on the
+				// stem. Aimed the other way it ran the length of the tip jack's
+				// opaque box and all but vanished — visibly so on the left root,
+				// whose twig lay almost exactly along the box (fixed 2026-07-21)
+				(points: [base, mid1, mid2, tip],
+					// the unit vector the root arrives on: the tip jack's opaque
+					// view redraws this short passage under its own box, exactly
+					// as a castle redraws the river's (§16.6) — otherwise the
+					// root visibly stops a jack-radius short of its own tip
+					arrival: (tip - mid2) / reach,
+					branch: [mid1, mid1 + Point(side * 20 * scale,
+						(14 * scale).neg + 3.0.rand2)])
+			}
+		});
+		endpoints[\envA] = roots[0][\points].last;
+		endpoints[\envB] = roots[1][\points].last;
+		sprout = (base: Point((width * 0.17) + (46 * scale), height + 2),
+			tip: Point((width * 0.17) + (54 * scale), height - (36 * scale)));
+
+		// decks as birds at the top; the rate moon under the wing with the
+		// deck-level tide crescent beside it, filename (10 px mono) beneath
+		birds = [0.24, 0.76].collect { |fraction|
+			var center = Point(width * fraction, 40 * scale);
+			(center: center, span: 30 * scale,
+				box: Rect.aboutPoint(center, 22 * scale, 16 * scale),
+				rateSocket: center + Point(11 * scale, 19 * scale),
+				levelCrescent: center + Point(-18 * scale, 16 * scale),
+				// 20 px of line box for a 10 px mono face: the earlier 14 px
+				// clipped the filename's ascenders and descenders (§16.4 fixes
+				// the font size, so the box has to give way, not the type)
+				// 200 x 20 px, fixed in px so a resize never re-cuts a name that
+				// already fits; the line box holds a 10 px mono face whole, and
+				// CQGui trims an overlong name from its tail only (§16.4)
+				labelRect: Rect(center.x - 100, center.y + (33 * scale), 200, 20))
+		};
+		// §16.7's drop target: the bird AND its name — both what the eye reads
+		// as "this deck" and what actually accepts the file (label and wing
+		// socket take drops too). The bird's own 44x32 box was smaller than the
+		// file icon Windows drags under the cursor, so the border hid beneath
+		// the very thing it was answering (measured 2026-07-22).
+		birds.do { |bird|
+			bird[\dropRect] = bird[\box].union(bird[\labelRect]).insetBy(-6, -6);
+		};
+		endpoints[\deckA_rate] = birds[0][\rateSocket];
+		endpoints[\deckB_rate] = birds[1][\rateSocket];
+
+		// the almanac corner takes the water coco 2's own box leaves free, so
+		// the sky's only tools can never land on a body (§16.6)
+		almanac = this.almanac(width, scale, cocos[1][\shellBox].right);
+
+		^(scale: scale, width: width, height: height,
+			ringCenter: ringCenter, ringR: ringR,
+			eye: ringCenter,           // §6.1: the ring's qFreq/qChaos pupil
+			castles: castles, ringSegments: ringSegments,
+			ringSamples: ringSamples, ringBox: ringBox,
+			cocos: cocos, roots: roots, sprout: sprout, birds: birds,
+			almanac: almanac, endpoints: endpoints)
+	}
+}

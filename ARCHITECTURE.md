@@ -40,11 +40,16 @@ cocoquantus-sc/
 │   ├── CQSynthDefs.sc          // all SynthDefs (pure server-side DSP)
 │   ├── CQState.sc              // value store, clamped setters, dependant notify
 │   ├── CQMatrix.sc             // routing matrix: name↔index, weights, presets, shake
+│   ├── CQAudition.sc           // transient matrix-preview bookkeeping
+│   ├── CQInspector.sc          // Drawer grid touch/listen + fine-edit transaction
+│   ├── CQSpellbook.sc          // committed matrix notification log + code export
 │   ├── CQMidi16n.sc            // 16n binding, smoothing, takeover
 │   ├── CQGui.sc                // panel window (view-only client of CQState)
+│   ├── CQGuiDrawer.sc          // Inspector / Spellbook / Memory composition
 │   ├── CQSnapshots.sc          // save/recall/morph
 │   ├── CQRecorder.sc           // disk recording (master + stems)
-│   └── CQDeck.sc               // file player control (buffers, folder navigation)
+│   ├── CQDeck.sc               // transactional file player control
+│   └── CQDeckPair.sc           // atomic linked-stereo coordinator
 ├── presets/                    // *.cqsnap.scd snapshot files (text, versioned)
 ├── samples/                    // user field recordings (gitignored)
 ├── recordings/                 // output (gitignored)
@@ -56,6 +61,7 @@ cocoquantus-sc/
     │                           //   files on an include path, not in .scd scripts
     ├── nrt_safety.scd          // NRT worst-case render + analysis: CQ_SAFETY_PASSED
     ├── nrt_hold_integrity.scd  // SPEC A4/A5 renders
+    ├── nrt_linked_stereo.scd   // linked L/R identity + sample-aligned start
     └── manual_checklist.md     // SPEC M1–M8 listening tests
 ```
 
@@ -72,8 +78,22 @@ RootNode
      ├─ gQuantussy  // \cqQuantussy (single synth: 5 castles + spesal + qMix)
      ├─ gCocos      // \cqCoco ×2
      ├─ gFx         // \cqSpace
-     └─ gMaster     // \cqMaster (mix, safety, meters, stems), \cqRecorder when active
+     └─ gMaster     // \cqMaster (mix, safety, meters, stems), \cqAura (telemetry),
+                    // \cqRecorder when active
 ```
+
+`\cqAura` (GUI_SPEC §9) sits here purely because gMaster runs last: it reads the
+finished `aModSrc` bus with plain `In.ar` — no InFeedback needed — rectifies and
+lags at audio rate so audio-range castles cannot alias into the control stream,
+and reports 16 magnitudes at 15 Hz. It writes to no bus and no output, so it is
+outside every safety path; a headless session simply has no listener.
+
+`/cq_charge` (GUI_SPEC §9) needed no such def: the nine gate/trig sums already
+exist inside `\cqQuantussy` and `\cqCoco`, so each synth reports its own — coco 1
+replyID 1, coco 2 replyID 2, the five castles replyID 3 — and the graph never
+holds a second, drifting copy of a sum the Schmitt is reading. Each sum is
+peak-held (`LagUD.ar(sum, 0, 0.15)`) before `A2K`, because a trigger crossing may
+last one sample and a control-rate sample would miss it.
 
 Rationale: modulation sources are computed before their consumers within the same
 block; the only intentional one-block delays are Coco↔Coco cross-signals (InFeedback)
@@ -125,7 +145,12 @@ are wrapped in `Lag.kr(x, 0.03)` minimum (SPEC safety #4).
 
 `PlayBuf`-based, `rate = deckRate + matrixSum(deckX_rate)`, clamped ±2, loop switch,
 `t_trig` restart, out → `aDeckA/B`. Buffer swap on load: new Buffer, 50 ms crossfade
-via two PlayBufs or a short env on synth replace (only allowed synth churn).
+via a short env on synth replace (only allowed synth churn). Each asynchronous load owns
+its buffer locally under a monotonically increasing request generation; stale, failed and
+freed-session completions release that buffer and cannot publish a synth or path.
+`CQDeckPair` prepares linked L/R independently, then commits both synth starts in one
+`Server.bind` bundle. Linked dry monitoring preserves L on the left and R on the right;
+ordinary one-deck loads remain dual mono.
 
 ### 4.2 `\cqInput`
 
@@ -254,17 +279,22 @@ Language side on `\cq_hot`: engage −6 dB trim (a lagged synth arg), GUI notice
 
 | Class | Role | Key methods / notes |
 |---|---|---|
-| `Cocoquantus` | facade singleton; owns boot lifecycle and all subsystems | `*boot(configPath)`, `*free`, `*set/get`, `*patch/unpatch/clearPatch/patchPreset/shake`, `*hold/flip/skip/spesal`, `*deckA/deckB`, `*snap/recall/morph`, `*rec/recStop`, `*panic`, `*gui`. `CQ : Cocoquantus {}` empty subclass = short alias (classvars shared) |
+| `Cocoquantus` | facade singleton; owns boot lifecycle and all subsystems | Explicit `stopped/booting/running/stopping/failed` state plus monotonically increasing session generation; stale callbacks self-cancel. `*boot(configPath)`, waitable `*free(onDone)`, strong `*reboot`, and the existing control API. `CQ : Cocoquantus {}` empty subclass = short alias (classvars shared) |
 | `CQSpec` | parameter registry | `*specs` (IdentityDictionary name → ControlSpec+default+lag+16n slot), `*clamp(name, val)`, `*default(name)`, mirrors SPEC §5 tables 1:1 |
 | `CQConfig` | config load/validate | reads `config.scd`, fills defaults, validates channels/paths, hard-fails informatively |
 | `CQGraph` | server plumbing | allocates buses/groups/buffers, builds ServerOptions from config, spawn order, `s.sync` between stages, teardown, CmdPeriod re-arm hook |
 | `CQState` | value store + funnel | `set(name, val)` → clamp → `synth.set` / bus write → `changed(\param, name, val)`. `get`, `asEvent` (for snapshots), `load(event)`. Enum params travel to the server as indices into the CQSpec value list; every other layer writes symbols through the funnel |
-| `CQMatrix` | routing weights | name↔index maps (source 16, dest 22 — canonical orders §3.2/3.3), `patch/unpatch/clear`, weight cache mirrored to `wDest` buses via `setn`, `preset(\name)`, `shake(amount, seed)` (seeded `Pwhite`-style rand; touches weights + spesal only), `asArray/load` |
+| `CQMatrix` | routing weights | name↔index maps (source 16, dest 22 — canonical orders §3.2/3.3), metadata-bearing single-cell writes plus deep `fullMatrix`/clamped `writeMatrix` batch transactions, weight cache mirrored to `wDest` buses, existing triple `asArray/load`, presets and shake |
+| `CQAudition` | transient patch preview | Serverless one-candidate `{src,dest,prevW,audibleW}` state machine; candidate switches and every §4.1 cancellation path restore through `CQMatrix.patch(... committed:false)`, while plant commits exactly the audible weight |
+| `CQInspector` | Drawer precision gesture state | Shares `CQAudition`; press previews ±0.3, vertical frames are transient, and release publishes one committed fine-edit plus one shared GUI-undo entry; lifecycle cancellation restores the pre-gesture cell |
+| `CQGuiMatrix` | experimental Inspector patch loom | Exact canonical 16×22 single-`UserView` field with 48×24 px hit cells, grouped destination islands, family-marked rows, weighted/polarity-shaped knots, persistent route selection and hover row/column focus; no inner scroll or new state funnel |
+| `CQSpellbook` | read-only committed patch journal | Hooks `CQMatrix` notifications below every client, diffs against the last committed full matrix, excludes `committed:false` frames, exposes row→batch metadata for persistent GUI selection, and exports copyable `CQ.patch(...)` lines or preset data; it does not execute or edit code |
 | `CQMidi16n` | controller layer | `MIDIdef.cc` per fader from config map, 0–127 → spec map, optional `\pickup` takeover, hot-plug via `MIDIClient` device watch; all writes via `CQState` |
-| `CQGui` | panel | pure view: renders from `CQState`/`CQMatrix` dependant notifications, sends via funnel; meters/LEDs from `OSCdef(\cq_meters, \cq_spesal, \cq_hot)`; everything UI inside `{ }.defer`; closes cleanly on `*free` |
+| `CQGui` | panel | pure view: renders from `CQState`/`CQMatrix` dependant notifications, sends via funnel; composes the Day/Night shell and `CQGuiDrawer`; meters/LEDs come from namespaced OSCdefs; `/cq_aura` magnitudes stay `nil` until the server reports, repaint only the jack views and cable layer, and are skipped entirely when nothing moved; `/cq_charge`'s nine slots follow the same law and repaint one lamp view at a time, only when that lamp's own charge moved; everything UI inside `{ }.defer`; closes cleanly on `*free` |
 | `CQSnapshots` | memory | `save(name)` → `(version: 1, params: state.asEvent, matrix: matrix.asArray, spesal: [..], meta: (...))` `.asCompileString` → `presets/name.cqsnap.scd`; `recall` clamps everything on load; `morph(a, b, dur)` = Routine at 30 Hz interpolating continuous params + weights, discrete switch at midpoint; mic gain never auto-recalled above 0 (SPEC §7) |
-| `CQRecorder` | disk | master 2ch 24-bit wav timestamped; optional stems as extra channels/files; never overwrite; `DiskOut` synth in `gMaster` tail |
-| `CQDeck` | file players | buffer lifecycle, folder scan/next/prev/random, peak-normalize on load, linked-stereo mode |
+| `CQRecorder` | disk | Explicit `idle/starting/recording/stopping/error` state machine; attempt-local path/buffer/synth ownership; master 2ch 24-bit wav timestamped or optional 4ch master+stems; never overwrite; `DiskOut` synth in `gMaster` tail |
+| `CQDeck` | file players | Cancellable last-request-wins buffer transaction, folder scan/next/prev/random and peak-normalize on load; stale/error paths always release their local buffer |
+| `CQDeckPair` | linked stereo | Two-phase L/R prepare and one bundled commit; rolls both sides back if either side fails or is superseded |
 
 ### Control/data flow
 
@@ -280,6 +310,12 @@ CQMatrix: same shape, its own funnel (patch → clamp → wDest bus + .changed)
 
 ## 6. Boot sequence (`Cocoquantus.boot`)
 
+The facade publishes an explicit lifecycle state. Every accepted boot captures a fresh
+session generation and local graph/state/matrix references; every async stage checks the
+generation after blocking work. `free`, reboot, CmdPeriod and boot failure invalidate it
+immediately, so a late callback can only clean its own resources. A stage failure rolls
+back GUI/controllers/OSCdefs/decks/recorder and the partial graph, then enters `failed`.
+
 1. Load + validate config (`CQConfig`). Fail hard with a readable message if invalid.
 2. Build `ServerOptions` (device, SR, block, hardwareBufferSize, channel counts).
 3. `server.waitForBoot` → allocate buffers (2 coco RAM, deck placeholders) and buses;
@@ -291,11 +327,17 @@ CQMatrix: same shape, its own funnel (patch → clamp → wDest bus + .changed)
 6. Init MIDI (guarded — absence of 16n is not an error), OSCdefs, recorder standby.
 7. Open GUI (unless `headless: true` in config).
 8. Release master fade → 2 s ramp to nominal (SPEC safety #5).
-9. Install `CmdPeriod` hook: on Cmd-period, mark state dirty and offer `CQ.reboot`
-   (graph is gone; silence is safe; facade can rebuild from live state cache).
+9. Install `CmdPeriod` and server-quit hooks. Either invalidates the session; CmdPeriod
+   marks the killed graph, while an unexpected scsynth quit also tears down language-side
+   clients. Both fail toward silence and require an explicit rebuild.
 
 Teardown (`*free`): recorder stop → master fade 100 ms → free groups/buses/buffers →
-close GUI/MIDI/OSC defs.
+close GUI/MIDI/OSC defs. It is idempotent, invalidates pending work before the fade, and
+accepts an `onDone` callback; a boot requested during stopping is queued behind it.
+
+`CQ.reboot` is intentionally stronger than `free` + `boot`: it calls `Server.reboot` so
+boot-only options take effect. The project uses `Server.default`, so this explicit command
+also terminates unrelated synths on that shared server; ordinary `CQ.free` never quits it.
 
 ---
 

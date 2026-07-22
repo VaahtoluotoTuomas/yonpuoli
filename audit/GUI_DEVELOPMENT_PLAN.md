@@ -151,7 +151,8 @@ ennen organismien monistamista.
   Day-koteihin.
 - Socket on 4–6 px syötettävän ohjaimen vieressä; Proximity is meaning.
 - Window-spanning cable overlay piirtää gravity-sagged kaaret ja stacked plugs mutta
-  hit-testaa vain jackit, socketit ja kaapelit.
+  hit-testaa normaalisti vain jackit, socketit ja kaapelit. Ainoa poikkeus on
+  §4.4:n harvest: oikean napin drag saa alkaa vain aidosti tyhjältä pohjalta.
 - Target on vähintään 12 px; magnetic candidate halo näyttää ainoan ehdokkaan.
 - Overlay ei saa varastaa knob-, slider-, button-, deck-drop- tai Master-eleitä.
 - Jackin väri kertoo perheen, kaapelin amber/blue polariteetin ja plug depth/width
@@ -167,13 +168,19 @@ Toteuta yksi interaction state machine, jota Day, Night ja Inspector käyttävä
 - Shift-release = plant ja source jää käteen;
 - planted plug/cable grab = move tai voidiin yank/rip;
 - right-click = instant rip;
+- right-drag tyhjältä pohjalta = harvest-lasso; alle 8 px liike on no-op;
+- lasso suljetaan virtuaalisella chordilla ja testaa planted-kaapelipolun noin 12 px
+  välein endpointit mukaan lukien; osumien preview on §16.8:n danger-under-glow;
+- release harvestoi koko catchin yhtenä batch commit/undo/spellbook-operaationa;
+  empty catch ei tee entryä ja Esc peruu muuttamatta matriisia;
 - wheel = 0.05, Ctrl 0.01, sign säilyy, floor 0.05;
 - Alt-click = polarity flip;
 - double-click jack/socket/body = solo-light; Esc vapauttaa;
 - Ctrl+Z = GUI-local 32-op full-matrix undo.
 
 Kaikki kirjoitukset kulkevat `CQMatrix`-funnelin kautta. Plant sitoo täsmälleen
-auditionissa kuullun painon. Audition tai compass-frame ei koskaan tee undo-entryä.
+auditionissa kuullun painon. Audition-banaani ei kuulu harvest-joukkoon. Audition tai
+compass-frame ei koskaan tee undo-entryä.
 
 ### G1.4 Drawer: Inspector, Spellbook, Memory
 
@@ -183,8 +190,10 @@ auditionissa kuullun painon. Audition tai compass-frame ei koskaan tee undo-entr
   yhteinen §4.1 revert-kirjanpito.
 - Spellbook kuuntelee matrix notification streamiä, ei GUI:n gesture handleria.
   Se näyttää kaikkien kerrosten committed matrix-opit, ei audition/frame-writeja.
-- Jokainen line on kopioitavaa `CQ.patch(...)`-kieltä. `copy all as preset data`
-  tuottaa `(matrix: [[src, dest, w], ...])` clipboardiin.
+- Jokainen line on kopioitavaa `CQ.patch(...)`-kieltä. Batch-operaatio on yksi
+  tool-commentti ja sen diffatut cell-rivit; harvest tuottaa `// harvest` +
+  `CQ.patch(\src, \dest, 0)` -rivit. `copy all as preset data` tuottaa
+  `(matrix: [[src, dest, w], ...])` clipboardiin.
 - Siirrä snapshot save/recall sekä A→B morph Drawerin Memory-välilehteen muuttamatta
   SPEC §7:n semantiikkaa tai mic-politiikkaa.
 - Patch-preset-menu siirtyy Night-toolbarille ja Inspector-headeriin.
@@ -198,6 +207,10 @@ auditionissa kuullun painon. Audition tai compass-frame ei koskaan tee undo-entr
   depth, GR, notice, REC+elapsed ja PANIC.
 - Masteria ei peitetä, dimmata tai siirretä. Muted-tila käyttää §16.8:n punaista
   filliä ja rulea mutta jättää tilat luettaviksi.
+- REC näyttää runtime-tilakoneen suoraan: idle = ontto danger-rengas; starting… ja
+  stopping… = staattinen okrateksti elapsed-paikalla ja reagoimaton nappi; recording =
+  täytetty rengas + elapsed; error = ontto rengas piirretyllä vinoviivalla ja syy
+  notice-rivillä danger-punaisena, kuittaus seuraavalla REC-painalluksella.
 - Vanhat performance-näppäimet pysyvät globaaleina; Tab, Esc ja Ctrl+Z lisätään ilman
   törmäyksiä.
 
@@ -219,7 +232,11 @@ Automaatio:
 - 16/22 inventory ja canonical mapping;
 - kaikki audition-revert-polut matriisiyhtäläisyydellä;
 - undo-operaatiorajat ja ring depth 32;
-- spellbook: GUI/code/preset/shake sisään, audition/compass-frame ulos;
+- harvest-geometria: <8 px no-op, closing chord, noin 12 px cable sampling,
+  endpoint-osumat, preview enter/leave, empty catch ja Esc; audition-banaani ulos;
+- harvest-release = yksi notification/commit/undo/spellbook-operaatio ja Ctrl+Z
+  palauttaa koko catchin;
+- spellbook: GUI/code/preset/shake/harvest sisään, audition/compass-frame ulos;
 - Day/Night/Drawer/Master build-close-free ilman resurrectionia;
 - overlay hit-test ei estä jokaista nykyistä widget/drop-elettä;
 - headless ei rakenna Qt:ta.
@@ -228,8 +245,9 @@ Kuunteluportti:
 
 1. planttaa `tri3 → coco1_spaf` kuulemalla swell ennen releasea;
 2. move, yank/rip, wheel-trim, polarity flip ja Ctrl+Z;
-3. varmista WYHIWYG-paino Inspectorista;
-4. varmista spellbook-rivit;
+3. lasso-harvestoi useita banaaneja, peru koko catch yhdellä Ctrl+Z:lla ja tarkista
+   `// harvest` -spellbook-entry;
+4. varmista WYHIWYG-paino Inspectorista;
 5. testaa panic ja CmdPeriod kesken auditionin: matriisi palautuu.
 
 G1 commitataan vasta tämän portin ja käyttäjän visuaalisen Day-skin-hyväksynnän
@@ -243,6 +261,9 @@ jälkeen.
   castle 1 ylhäällä; ring arrows/fireflies näyttävät `k → k+1` LocalIn-kierron.
 - Coco 1 vasemmalla ja Coco 2 oikealla 2.5-turn Archimedean spiraaleina.
 - envA/envB ovat roots alhaalla, deckA/deckB birds ylhäällä.
+- Juurten vieressä on ei-patchattava mic sprout: ei piirtoa ilman `micChan`-asetusta,
+  whisper-silmu gainilla 0 ja danger-punainen silmu+kärkirengas vasta kun
+  `micChan` on asetettu ja `micGain > 0`; sillä ei ole jackia tai hit targetia.
 - Kaikki jackit, moons, homes, clock-angle-sijainnit, glyphit ja state-lookit tulevat
   suoraan §3, §6 ja §16:sta.
 - Nightissa ei ole nuppeja eikä numeroita. Sallitut tekstit ovat toolbar, bird-
@@ -259,9 +280,10 @@ ovat invariansseja.
   valinta ei muuta spec-semanttiikkaa.
 - Read-head spark seuraa todellista vaihetta; flip kääntää spark/chevron-suunnan ja
   Hold sulkee uloimman kehän danger-rediksi.
-- Lisää `/cq_charge`: 11 gate/trig-destination summaa post-weight/pre-Schmitt noin
-  15 Hz. Lampun alpha näyttää etenemisen kohti +0.5-rajaa, gate jää päälle Schmitt-
-  tilassa ja trig saa 120 ms spark-bloomin.
+- Lisää `/cq_charge`: 9 gate/trig-destination summaa post-weight/pre-Schmitt noin
+  15 Hz. Kanoninen järjestys on `coco1_flip`, `coco1_skip`, `coco2_flip`,
+  `coco2_skip`, `castle1_spesal` … `castle5_spesal`. Lampun alpha näyttää etenemisen
+  kohti +0.5-rajaa, gate jää päälle Schmitt-tilassa ja trig saa 120 ms spark-bloomin.
 - Telemetriat voidaan yhdistää pakettiin vain, jos payload mapping ja testit pysyvät
   yksiselitteisinä.
 
@@ -359,25 +381,21 @@ Nämä mitataan ensimmäisellä relevantilla prototyypillä:
 - Frontend-luokkien nimet ja jako ovat vapaita, mutta §16.11:n yksi Ink kit sekä
   pure-view/funnel/lifecycle-lait eivät ole.
 
-## Spesifikaatiosaumat, jotka kysytään ennen relevanttia toteutusta
+## Ratkaistut spesifikaatiosaumat
 
-Näihin ei tehdä omaa tulkintaa eikä `GUI_SPEC.md`:ää muuteta tässä commitissa:
+Käyttäjä ratkaisi kaikki neljä saumaa 2026-07-19, ja päätökset ovat normatiivisina
+`GUI_SPEC.md`:ssä:
 
-1. **Charge-lukumäärä:** destination-inventaario sisältää yhdeksän gate/trig-kohdetta
-   (Coco 1/2 flip+skip = 4, castle spesal = 5), mutta §9 määrittelee `/cq_charge`-
-   payloadiksi 11 summaa. G2:n payloadia ei lukita ennen käyttäjän vastausta.
-2. **Harvest:** §4.3 nimeää `harvest`-operaation yhden undo-opin listassa, mutta elettä
-   tai semantiikkaa ei määritellä muualla. Sitä ei toteuteta tai arvata ennen
-   määrittelyä.
-3. **Mic root:** §16.6 mainitsee “mic rootin”, mutta §3.1:n 16 source -inventaario
-   sisältää vain `envA`/`envB`-rootsit eikä erillistä mic-sourcea. Uutta jackia tai
-   matriisilähdettä ei lisätä; varoitusrenkaan visuaalinen koti hyväksytetään ensin.
-4. **REC-välitilat:** P1-korjaus tarvitsee recorderille starting/stopping/error-tilat,
-   mutta §16.8 määrittelee vain idle/recording-lookit. Runtime-tilakone tehdään, mutta
-   uusien näkyvien REC-lookien muoto kysytään ennen Master-stripin muutosta.
+1. **Charge:** 9 kanavaa; matriisin destination-järjestys suodatettuna gate/trigeihin,
+   `coco1_flip`, `coco1_skip`, `coco2_flip`, `coco2_skip`, castle 1–5 `spesal`.
+2. **Harvest:** kuuluu G1:n yhteiseen kielioppiin §4.4:n freehand-lassona. Endpointit
+   osallistuvat, audition ei; release on yksi batch commit/undo/spellbook-operaatio.
+3. **Mic sprout:** display-only, ei 17. sourcea tai jackia; kolme §16.6:n tilaa.
+4. **REC:** §16.8:n staattiset starting/stopping-lookit sekä vinoviivallinen error,
+   danger-notice ja seuraavan REC-painalluksen kuittaus.
 
-Nämä eivät estä baselinea, matrix batch/read -API:a, lifecycle-korjausta tai Ink kitin
-perustaa. Ne estävät vain kyseisen määrittelemättömän käytöksen viimeistelyn.
+Saumat eivät enää estä toteutusta. Mahdollinen uusi tekninen ristiriita käsitellään
+`GUI_SPEC.md`:n normaalilla etukäteishyväksynnällä.
 
 ## Commit- ja handoff-järjestys
 

@@ -105,6 +105,10 @@ G1–G3-vaiheille.
   `CQ.midiRescan` (Windows/portmidi ei hot-plugaa itsekseen).
 - Cmd-. (Ctrl-.) tappaa palvelingraafin — se on turvallista (hiljaisuus),
   mutta jatka sen jälkeen `CQ.reboot`illa.
+- `CQ.reboot` käynnistää nyt oikeasti `Server.default`-scsynthin uudelleen, jotta
+  device/sample rate/block size/I/O -muutokset tulevat voimaan. Se on tarkoituksella
+  vahva komento ja pysäyttää myös muut samalla oletusserverillä ajettavat synthit;
+  tavallinen `CQ.free` ei sammuta serveriä.
 
 ## Dokumentit
 

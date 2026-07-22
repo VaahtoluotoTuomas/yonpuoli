@@ -119,6 +119,11 @@ CQGraph {
 			\inBus, buses[\space].index,
 			\outBus, buses[\spaceRet].index
 		], groups[\fx]);
+		// GUI_SPEC §9 telemetry: reads the completed 16-channel mod-source bus in
+		// the last group and only reports — it writes to no bus and no output
+		synths[\aura] = Synth(\cqAura, [
+			\modSrcBus, buses[\modSrc].index
+		], groups[\master]);
 		synths[\master] = Synth(\cqMaster, [
 			\coco1Bus, buses[\coco1].index,
 			\coco2Bus, buses[\coco2].index,

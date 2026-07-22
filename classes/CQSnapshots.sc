@@ -15,6 +15,7 @@ CQSnapshots {
 	classvar <>postWarnings = true;
 	var state, matrix, <dir, getSpesal, setSpesal;
 	var morphRoutine;
+	var <morphProgress = 0.0, <morphFrom, <morphTo;
 
 	*new { |state, matrix, dir, getSpesal, setSpesal|
 		^super.newCopyArgs(state, matrix, dir, getSpesal, setSpesal)
@@ -48,7 +49,7 @@ CQSnapshots {
 		var data = this.read(name);
 		if(data.isNil) { ^false };
 		this.stopMorph;
-		this.prApply(data);
+		this.prApply(data, \snapshot, true, \recall);
 		^true
 	}
 
@@ -61,6 +62,10 @@ CQSnapshots {
 		var contNames, aNorm, bNorm, cells, nSteps;
 		if(a.isNil or: { b.isNil }) { ^this };
 		this.stopMorph;
+		morphFrom = from.asSymbol;
+		morphTo = to.asSymbol;
+		morphProgress = 0.0;
+		this.changed(\morph, morphProgress, morphFrom, morphTo, \running);
 		contNames = CQSpec.names.select { |n|
 			#[num, int].includes(CQSpec.kind(n)) and: { n != \micGain }
 		};
@@ -88,11 +93,14 @@ CQSnapshots {
 			var switched = false;
 			nSteps.do { |i|
 				var t = (i + 1) / nSteps;
+				morphProgress = t;
+				this.changed(\morph, morphProgress, morphFrom, morphTo, \running);
 				contNames.do { |n, j|
 					state.set(n, CQSpec.map(n, aNorm[j] + ((bNorm[j] - aNorm[j]) * t)));
 				};
 				cells.keysValuesDo { |key, w|
-					matrix.patch(key[0], key[1], w[0] + ((w[1] - w[0]) * t));
+					matrix.patch(key[0], key[1], w[0] + ((w[1] - w[0]) * t),
+						origin: \morph, committed: false, operation: \morphFrame);
 				};
 				if(switched.not and: { t >= 0.5 }) {
 					switched = true;
@@ -101,7 +109,8 @@ CQSnapshots {
 				(1/30).wait;
 			};
 			morphRoutine = nil;
-			this.prApply(b);
+			this.prApply(b, \snapshot, true, \morph);
+			this.changed(\morph, morphProgress, morphFrom, morphTo, \complete);
 		}.play(SystemClock);
 		("CQSnapshots: morphing '%' -> '%' over % s".format(from, to, dur)).postln;
 	}
@@ -109,8 +118,12 @@ CQSnapshots {
 	isMorphing { ^morphRoutine.notNil }
 
 	stopMorph {
+		var wasMorphing = morphRoutine.notNil;
 		morphRoutine !? { morphRoutine.stop };
 		morphRoutine = nil;
+		if(wasMorphing) {
+			this.changed(\morph, morphProgress, morphFrom, morphTo, \stopped)
+		};
 	}
 
 	// snapshot names available on disk, sorted
@@ -197,7 +210,7 @@ CQSnapshots {
 	}
 
 	// apply everything through the funnels; sparse params leave the rest untouched
-	prApply { |data|
+	prApply { |data, origin = \snapshot, committed = true, operation = \recall|
 		data[\params].keysValuesDo { |k, v|
 			case
 			{ k == \monitorMute } {
@@ -212,7 +225,7 @@ CQSnapshots {
 			this.class.prWarn("this snapshot OPENS THE MIC (micGain = "
 				++ state.get(\micGain) ++ ") — CQ.set(\\micGain, 0) to mute");
 		};
-		matrix.load(data[\matrix]);
+		matrix.load(data[\matrix], origin, committed, operation);
 		data[\spesal] !? { |st| setSpesal.value(st) };
 	}
 
