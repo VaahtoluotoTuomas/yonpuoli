@@ -44,6 +44,10 @@ CQGui {
 	// is keyed by CQSpec names and primes itself from CQState, which has no
 	// opinion about a gesture constant (GUI_SPEC §10).
 	var shakeWatchers;
+	// the §7.1 weather machine's four matrix memories, loaded from
+	// presets/compass.cqcompass.scd at GUI open (config gui.compassDir
+	// overrides the home — the smokes point it at a tmp dir)
+	var <compass;
 
 	*new { |state, matrix, config|
 		^super.newCopyArgs(state, matrix, config).prInit
@@ -78,7 +82,10 @@ CQGui {
 	}
 
 	cancelAudition {
-		if(drawer.notNil) { drawer.panic } { bananaGrammar !? { bananaGrammar.panic } }
+		if(drawer.notNil) { drawer.panic } { bananaGrammar !? { bananaGrammar.panic } };
+		// the weather's hand comes off the wheel on the same paths as the
+		// audition (§4.1's spirit): an uncommitted voyage goes home
+		nightMap !? { nightMap.cancelWeather };
 	}
 	// GUI_SPEC §16.6, decided with the user 2026-07-22: the shared shake amount
 	// is **how much is sown**, not how hard. Strength already has a macro of its
@@ -303,6 +310,7 @@ CQGui {
 		chargePainted = Array.newClear(chargeNames.size);
 		inkControls = List.new;
 		shakeWatchers = List.new;
+		compass = CQCompass(this.prCompassDir);
 		endpoints = IdentityDictionary.new;
 		bananaBodies = IdentityDictionary.new;
 		widgets = CQGuiWidgets(state, updaters, this);
@@ -523,7 +531,7 @@ CQGui {
 			// a patch too dense to pulse inside the frame budget draws static ink,
 			// so an ambient frame must not repaint it either (auraCableLimit)
 			if(overlay.cableCount > 0 and: { overlay.auraPulses }) {
-				overlay.view.refresh
+				overlay.auraTick   // the alphas moved: the offscreen cache re-renders
 			};
 		};
 	}
@@ -658,9 +666,11 @@ CQGui {
 		};
 		if(char.notNil and: { char.ascii == 27 }) {
 			drawer.escape;
+			nightMap !? { nightMap.cancelWeather };
 			^this
 		};
 		if(char.notNil and: { char.ascii == 9 }) {
+			nightMap !? { nightMap.cancelWeather };
 			shell.toggleView(this.prTextHasFocus);
 			^this
 		};
@@ -687,6 +697,21 @@ CQGui {
 				};
 			}
 		);
+	}
+
+	// where the compass memories live: config gui.compassDir wins, otherwise the
+	// presets folder (relative paths resolve against the repo, exactly as the
+	// facade resolves them). nil = memory only, which is what a bare test build
+	// without folders gets.
+	prCompassDir {
+		var override = config[\gui] !? { |g| g[\compassDir] };
+		var folder;
+		override !? { ^override.asString };
+		folder = config[\folders] !? { |f| f[\presets].asString };
+		if(folder.isNil) { ^nil };
+		^if(PathName(folder).isAbsolutePath) { folder } {
+			Cocoquantus.repoDir +/+ folder
+		}
 	}
 
 	prTextHasFocus {

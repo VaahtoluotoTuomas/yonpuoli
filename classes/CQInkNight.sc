@@ -384,6 +384,127 @@ CQInkNight {
 		Pen.stroke;
 	}
 
+	// ---- the compass water (§7.1, drawn since G3) ----
+	// The §16.6 recipe made law: a round-cornered hairline square on the water
+	// under the sowing moon, corner seeds for the four matrix memories, a small
+	// cross while a voyage is being poured, and four faint corner pulls
+	// (≤ 8 % alpha) that exist only under the hand. No numbers, no labels: a
+	// stamped corner is a seated seed, empty water is a hollow ring, and the
+	// weather row beneath speaks §16.5's glyph language. At rest this layer
+	// asks for no repaints at all — nothing on it moves without the hand.
+	//
+	// drag = nil, or (pos: Point(0..1), pull: [4 bilinear weights])
+	// hover = nil | \pad | [\stamp, i] | \grow | \breed | \wither
+	// held  = nil | \grow | \wither      flash = the same, for 120 ms
+	*drawCompass { |almanac, stamped, drag, breedArmed = false, breedFirst,
+		hover, held, flash, skin = \night|
+		var palette = CQInk.palette(skin), pad = almanac[\compass];
+		var stampHover = hover.isKindOf(SequenceableCollection);
+		var cross;
+		// the four pulls, only while the hand is pouring (§16.6: if a gradient
+		// is visible as a gradient, it is too strong)
+		drag !? {
+			almanac[\stamps].do { |corner, c|
+				var strength = (drag[\pull][c] ? 0).clip(0, 1);
+				if(strength > 0.02) {
+					Pen.addOval(Rect.aboutPoint(corner,
+						pad.width * 0.55, pad.width * 0.55));
+					Pen.fillRadialGradient(corner, corner, 0, pad.width * 0.55,
+						palette[\spark].copy.alpha_(strength * 0.08),
+						palette[\spark].copy.alpha_(0));
+				};
+			};
+		};
+		Pen.strokeColor = palette[\whisper].copy
+			.alpha_(if(hover == \pad or: { drag.notNil }) { 0.9 } { 0.55 });
+		Pen.width = CQInk.strokes[\hairline];
+		Pen.addRoundedRect(pad, 6, 6);
+		Pen.stroke;
+		// corner seeds: a stamped memory is a seated seed in line ink, empty
+		// water a hollow whisper ring — settings, so never spark ink (§16.6)
+		almanac[\stamps].do { |corner, c|
+			var isHover = stampHover and: { hover[1] == c };
+			if(stamped[c] == true) {
+				Pen.fillColor = palette[\line].copy
+					.alpha_(if(isHover) { 1.0 } { 0.85 });
+				Pen.addOval(Rect.aboutPoint(corner, 3, 3));
+				Pen.fill;
+			} {
+				Pen.strokeColor = palette[\whisper].copy
+					.alpha_(if(isHover) { 0.9 } { 0.5 });
+				Pen.width = CQInk.strokes[\hairline];
+				Pen.addOval(Rect.aboutPoint(corner, 2.5, 2.5));
+				Pen.stroke;
+			};
+			// the chosen parent while breeding wears a quiet ring; the hover
+			// echo is the same ring fainter — cue and act share one geometry
+			if((breedFirst == c) or: { isHover }) {
+				Pen.strokeColor = palette[\line].copy
+					.alpha_(if(breedFirst == c) { 0.9 } { 0.5 });
+				Pen.width = CQInk.strokes[\hairline];
+				Pen.addOval(Rect.aboutPoint(corner, 6, 6));
+				Pen.stroke;
+			};
+		};
+		// the voyage's own cross, at the position being poured
+		drag !? {
+			cross = Point(pad.left + (drag[\pos].x * pad.width),
+				pad.top + (drag[\pos].y * pad.height));
+			Pen.strokeColor = palette[\line];
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.line(cross + Point(-4, 0), cross + Point(4, 0));
+			Pen.line(cross + Point(0, -4), cross + Point(0, 4));
+			Pen.stroke;
+		};
+		this.drawWeatherMark(\grow, almanac[\weather][\grow],
+			hover == \grow, held == \grow, flash == \grow, false, skin);
+		this.drawWeatherMark(\breed, almanac[\weather][\breed],
+			hover == \breed, breedArmed, flash == \breed, breedArmed, skin);
+		this.drawWeatherMark(\wither, almanac[\weather][\wither],
+			hover == \wither, held == \wither, flash == \wither, false, skin);
+	}
+
+	// §7.2/§7.3 in the almanac's own pictures: the rain (grow), the graft
+	// (breed — two parents sharing flesh) and the sun (wither: in a farmer's
+	// almanac the sun is the drought). Whisper at rest, line ink under the
+	// hand or while held; the 120 ms flash is each seed actually landing —
+	// §16.7's momentary law at the weather's own 2.5 Hz, so a held rain
+	// visibly rains. An armed graft keeps a halo until its parents are chosen.
+	*drawWeatherMark { |name, anchor, hover = false, active = false,
+		flash = false, halo = false, skin = \night|
+		var palette = CQInk.palette(skin);
+		var ink = if(flash) { palette[\spark] } {
+			palette[if(hover or: { active }) { \line } { \whisper }]
+		};
+		Pen.strokeColor = ink;
+		Pen.width = CQInk.strokes[\hairline];
+		switch(name,
+			\grow, {
+				Pen.line(anchor + Point(-5, -4), anchor + Point(-7, 3));
+				Pen.line(anchor + Point(0, -5), anchor + Point(-2, 4));
+				Pen.line(anchor + Point(5, -4), anchor + Point(3, 3));
+			},
+			\breed, {
+				Pen.addOval(Rect.aboutPoint(anchor + Point(-2.5, 0), 3.5, 3.5));
+				Pen.addOval(Rect.aboutPoint(anchor + Point(2.5, 0), 3.5, 3.5));
+			},
+			\wither, {
+				Pen.addOval(Rect.aboutPoint(anchor, 2.5, 2.5));
+				4.do { |i|
+					var angle = (i / 4 * 2pi) + 0.25pi;
+					Pen.line(CQNightGeometry.polar(anchor, 4, angle),
+						CQNightGeometry.polar(anchor, 6.5, angle));
+				};
+			}
+		);
+		Pen.stroke;
+		if(halo) {
+			Pen.strokeColor = ink.copy.alpha_(0.45);
+			Pen.addOval(Rect.aboutPoint(anchor, 9, 9));
+			Pen.stroke;
+		};
+	}
+
 	// fixed ray scatter for the storm iris — seeded once by hand, never
 	// randomized at draw time, so a still storm keeps a still eye (§16.11)
 	*irisJitters {

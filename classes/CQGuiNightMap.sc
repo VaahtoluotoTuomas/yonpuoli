@@ -13,6 +13,11 @@ CQGuiNightMap {
 	var <stageView, <container, <overlay, <controller, <touch, <endpoints, <bodies;
 	var <groundView, <ringView, <eyeView, <castleViews, <shellViews, <birdViews;
 	var <almanacView, <moonHover = false, <moonFlash = false;
+	// the §7.1 compass water: its own opaque layer, so pouring a voyage never
+	// re-inks the moon and a moon flash never re-inks the field
+	var <compassView, <compassHover, <compassDragState;
+	var <breedArmed = false, <breedFirst, <weatherActive, <weatherFlash;
+	var blendPending, blendScheduled = false, lastBlendWrite = 0;
 	var <crescentViews, crescentNorms, activeCrescents, hoverCrescents, labels;
 	var <geometry, <eyeActive = false;
 	var <eyeFreqNorm = 0.5, <eyeChaosNorm = 0.15;
@@ -101,6 +106,7 @@ CQGuiNightMap {
 	free {
 		if(freed) { ^this };
 		freed = true;
+		touch !? { touch.cancelWeather };
 		controller !? { controller.free };
 		overlay !? { overlay.free };
 	}
@@ -179,6 +185,209 @@ CQGuiNightMap {
 			if(freed.not) { moonFlash = false; almanacView.refresh };
 			nil
 		});
+		^this
+	}
+
+	// ---- the compass water (§7.1) ----
+	// All matrix work funnels through here so the touch machine owns gestures
+	// only. The blend is CQCompass's tide; every write is a writeMatrix through
+	// the batched funnel — clamped, one notification per frame.
+
+	matrixCopy { ^matrix.fullMatrix }
+
+	// a voyage frame: paced to the §7.1 write law with a leading edge, so the
+	// first pour of a still hand lands at once and only the stream is thinned.
+	// The overlay holds storm form for exactly as long as the pour runs.
+	pourBlend { |norm|
+		var wait;
+		blendPending = norm;
+		overlay.stormMode = true;
+		if(blendScheduled) { ^this };
+		wait = CQGuiNightTouch.compassWritePeriod
+			- (Main.elapsedTime - lastBlendWrite);
+		if(wait <= 0) { ^this.prFlushBlend };
+		blendScheduled = true;
+		AppClock.sched(wait, { this.prFlushBlend; nil });
+		^this
+	}
+
+	prFlushBlend {
+		var norm = blendPending;
+		blendScheduled = false;
+		lastBlendWrite = Main.elapsedTime;
+		blendPending = nil;
+		if(freed or: { norm.isNil }) { ^this };
+		matrix.writeMatrix(gui.compass.blendAt(norm.x, norm.y),
+			origin: \gui, committed: false, operation: \compassFrame);
+		compassDragState = (pos: norm, pull: CQCompass.bilinear(norm.x, norm.y));
+		compassView.refresh;
+		^this
+	}
+
+	// release (or a tap on open water): one committed write, one undo op, one
+	// spellbook entry — `// compass` plus its diffed cells
+	commitBlend { |norm, before|
+		blendPending = nil;
+		overlay.stormMode = false;
+		if(freed) { ^this };
+		matrix.writeMatrix(gui.compass.blendAt(norm.x, norm.y),
+			origin: \gui, committed: true, operation: \compass);
+		gui.bananaGrammar.rememberMatrix(before);
+		compassDragState = nil;
+		compassView.refresh;
+		^this
+	}
+
+	// the right-drag's snap home (§7.1): a short ~3-frame glide, transient all
+	// the way — the elastic never enters the undo ring or the spellbook
+	elasticReturn { |before|
+		var steps = CQGuiNightTouch.elasticFrames, from;
+		blendPending = nil;
+		overlay.stormMode = false;
+		compassDragState = nil;
+		if(freed) { ^this };
+		compassView.refresh;
+		from = matrix.fullMatrix;
+		steps.do { |i|
+			var t = (i + 1) / steps;
+			AppClock.sched(0.016 * (i + 1), {
+				if(freed.not) {
+					if(i == (steps - 1)) {
+						matrix.writeMatrix(before, origin: \gui,
+							committed: false, operation: \compassElastic);
+					} {
+						matrix.writeMatrix(
+							from.collect { |row, di|
+								row.collect { |w, si|
+									w + ((before[di][si] - w) * t)
+								}
+							},
+							origin: \gui, committed: false,
+							operation: \compassElastic);
+					};
+				};
+				nil
+			});
+		};
+		^this
+	}
+
+	// a voyage that never poured (cancelled tap) still clears its paint state
+	clearVoyage {
+		blendPending = nil;
+		overlay.stormMode = false;
+		compassDragState = nil;
+		if(freed.not) { compassView.refresh };
+		^this
+	}
+
+	// corner seeds: a tap stamps the live matrix (weights only, ever), a
+	// right press clears the memory. Neither touches the bay, so neither is an
+	// undo op; both auto-save through CQCompass.
+	stampCorner { |i|
+		gui.compass.stamp(i, matrix.fullMatrix);
+		if(freed.not) { compassView.refresh };
+		^this
+	}
+
+	clearCorner { |i|
+		gui.compass.clear(i);
+		if(freed.not) { compassView.refresh };
+		^this
+	}
+
+	// §7.3 breed: arm the graft, pick two parents, the offspring becomes the
+	// bay — one committed write, one undo op. Pressing the graft again, or any
+	// stray pad press, forgets it; so does Esc (cancelWeather).
+	armBreed {
+		breedArmed = breedArmed.not;
+		breedFirst = nil;
+		if(freed.not) { compassView.refresh };
+		^this
+	}
+
+	disarmBreed {
+		if(breedArmed or: { breedFirst.notNil }) {
+			breedArmed = false;
+			breedFirst = nil;
+			if(freed.not) { compassView.refresh };
+		};
+		^this
+	}
+
+	pickParent { |i|
+		var before, offspring;
+		if(breedArmed.not) { ^this };
+		if(breedFirst.isNil) {
+			breedFirst = i;
+			if(freed.not) { compassView.refresh };
+			^this
+		};
+		before = matrix.fullMatrix;
+		offspring = CQCompass.breed(gui.compass.corner(breedFirst),
+			gui.compass.corner(i));
+		matrix.writeMatrix(offspring, origin: \gui, committed: true,
+			operation: \breed);
+		gui.bananaGrammar.rememberMatrix(before);
+		this.prFlashWeather(\breed);
+		breedArmed = false;
+		breedFirst = nil;
+		if(freed.not) { compassView.refresh };
+		^this
+	}
+
+	// one §7.2 seed lands (grow) or one cable thins (wither) — audible at
+	// once as a transient write; the mark flashes 120 ms per act, so a held
+	// rain visibly rains at its own 2.5 Hz
+	weatherStep { |mark|
+		var change;
+		if(freed) { ^false };
+		change = if(mark == \grow) {
+			CQCompass.growStep(matrix.fullMatrix)
+		} {
+			CQCompass.witherStep(matrix.fullMatrix)
+		};
+		if(change.isNil) { ^false };
+		matrix.patch(CQMatrix.sourceNames[change[1]],
+			CQMatrix.destNames[change[0]], change[2],
+			origin: \gui, committed: false,
+			operation: if(mark == \grow) { \growFrame } { \witherFrame });
+		this.prFlashWeather(mark);
+		^true
+	}
+
+	// one hold = one committed op, one undo, one `// grow` / `// wither`
+	// spellbook batch; a hold that landed nothing commits nothing
+	commitWeather { |mark, before, landed = false|
+		if(landed.not or: { freed }) { ^this };
+		matrix.writeMatrix(matrix.fullMatrix, origin: \gui, committed: true,
+			operation: mark);
+		gui.bananaGrammar.rememberMatrix(before);
+		^this
+	}
+
+	weatherActive_ { |mark|
+		weatherActive = mark;
+		if(freed.not) { compassView.refresh };
+	}
+
+	prFlashWeather { |mark|
+		if(freed) { ^this };
+		weatherFlash = mark;
+		compassView.refresh;
+		AppClock.sched(CQInk.momentaryFlash, {
+			if(freed.not and: { weatherFlash == mark }) {
+				weatherFlash = nil;
+				compassView.refresh;
+			};
+			nil
+		});
+		^this
+	}
+
+	// every hand-off-the-wheel path (Esc, Tab, panic, free) lands here
+	cancelWeather {
+		touch !? { touch.cancelWeather };
 		^this
 	}
 
@@ -325,7 +534,7 @@ CQGuiNightMap {
 			};
 		};
 		if(overlay.cableCount > 0 and: { overlay.auraPulses }) {
-			overlay.view.refresh
+			overlay.auraTick   // the alphas moved: the offscreen cache re-renders
 		};
 	}
 
@@ -384,6 +593,8 @@ CQGuiNightMap {
 		// geometry's clearance tests)
 		almanacView = this.prLayer;
 		almanacView.drawFunc = { this.prSafeDraw { this.prDrawAlmanac } };
+		compassView = this.prLayer;
+		compassView.drawFunc = { this.prSafeDraw { this.prDrawCompass } };
 		(CQMatrix.sourceNames ++ CQMatrix.destNames).do { |name|
 			this.prMakeEndpoint(name)
 		};
@@ -529,6 +740,18 @@ CQGuiNightMap {
 		almanacView.mouseWheelAction = { |v, x, y, mods, xd, yd|
 			touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
 		};
+		compassView.mouseDownAction = { |v, x, y, mods, button, clicks|
+			touch.compassDown(v, x, y, mods ? 0, button ? 0, clicks ? 1)
+		};
+		compassView.mouseMoveAction = { |v, x, y, mods|
+			touch.compassMove(v, x, y, mods ? 0)
+		};
+		compassView.mouseUpAction = { |v, x, y, mods, button|
+			touch.compassUp(v, x, y, mods ? 0, button ? 0)
+		};
+		compassView.mouseWheelAction = { |v, x, y, mods, xd, yd|
+			touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
+		};
 		crescentViews.keysValuesDo { |name, view|
 			view.mouseDownAction = { |v, x, y, mods, button, clicks|
 				touch.crescentDown(name, v, x, y, mods ? 0, button ? 0, clicks ? 1)
@@ -561,6 +784,9 @@ CQGuiNightMap {
 		almanacView.acceptsMouseOver = true;
 		almanacView.mouseOverAction = { |v, x, y| this.prHoverAlmanac(v, x, y) };
 		almanacView.mouseLeaveAction = { this.prHoverAlmanac(nil, nil, nil) };
+		compassView.acceptsMouseOver = true;
+		compassView.mouseOverAction = { |v, x, y| this.prHoverCompass(v, x, y) };
+		compassView.mouseLeaveAction = { this.prHoverCompass(nil, nil, nil) };
 	}
 
 	prStagePoint { |view, x, y|
@@ -650,6 +876,29 @@ CQGuiNightMap {
 		};
 	}
 
+	// one cue at a time on the water: a seed, the pad, or a weather mark — and
+	// a cable crossing the corner wins them all (§4.5). Repaint only when the
+	// element under the hand actually changes.
+	prHoverCompass { |view, x, y|
+		var next, point, almanac, seed;
+		if(geometry.notNil and: { view.notNil }) {
+			point = this.prStagePoint(view, x, y);
+			almanac = geometry[\almanac];
+			if(overlay.patchAt(point).isNil) {
+				seed = CQNightGeometry.stampHit(almanac, point);
+				next = if(seed.notNil) { [\stamp, seed] } {
+					if(CQNightGeometry.compassHit(almanac, point)) { \pad } {
+						CQNightGeometry.weatherHit(almanac, point)
+					}
+				};
+			};
+		};
+		if(next != compassHover) {
+			compassHover = next;
+			if(freed.not) { compassView.refresh };
+		};
+	}
+
 	// §6.1 bird drop: same plumbing as the Day deck box — every view of the
 	// bird accepts the file, and the deck guards its own unbooted state
 	prBindDrops {
@@ -708,6 +957,7 @@ CQGuiNightMap {
 		geometry = CQNightGeometry.compute(bounds.width, bounds.height);
 		groundView.bounds = Rect(0, 0, bounds.width, bounds.height);
 		almanacView.bounds = geometry[\almanac][\box];
+		compassView.bounds = geometry[\almanac][\compassBox];
 		ringView.bounds = geometry[\ringBox];
 		eyeView.bounds = Rect.aboutPoint(geometry[\eye], 22, 22);
 		castleViews.do { |view, k| view.bounds = geometry[\castles][k][\box] };
@@ -813,9 +1063,9 @@ CQGuiNightMap {
 			this.spesalChords);
 	}
 
-	// the almanac corner: the sowing moon wearing its phase, and nothing else.
-	// The §7 weather tools' home below it is deliberately NOT drawn — reserved
-	// water until G3, because a dead control breaks §4.5 and §16.12 at once.
+	// the almanac corner's sky: the sowing moon wearing its phase. The weather
+	// lives on its own layer below (prDrawCompass), so the two never repaint
+	// each other.
 	prDrawAlmanac {
 		var almanac;
 		if(geometry.isNil) { ^this };
@@ -823,6 +1073,19 @@ CQGuiNightMap {
 		Pen.translate(almanac[\box].left.neg, almanac[\box].top.neg);
 		CQInkNight.drawSowingMoon(almanac[\moon], almanac[\moonR],
 			gui.shakeAmount, moonHover, moonFlash, \night);
+	}
+
+	// the compass water (§7.1, drawn since G3): pad, corner seeds, the weather
+	// row. At rest nothing here moves, so this layer costs a still bay zero
+	// repaints — it repaints under the hand and on the 120 ms weather flashes.
+	prDrawCompass {
+		var almanac;
+		if(geometry.isNil) { ^this };
+		almanac = geometry[\almanac];
+		Pen.translate(almanac[\compassBox].left.neg, almanac[\compassBox].top.neg);
+		CQInkNight.drawCompass(almanac, gui.compass.stampedMask,
+			compassDragState, breedArmed, breedFirst, compassHover,
+			weatherActive, weatherFlash, \night);
 	}
 
 	prDrawEye {

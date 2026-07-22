@@ -400,6 +400,82 @@ CQNightGeometryTest : UnitTest {
 		};
 	}
 
+	// The compass water at G3: the §7.1 pad is drawn now, with its corner
+	// seeds and the weather row beneath — all inside their own layer box, all
+	// on water no body reaches, at both reference stage sizes.
+	test_compassWater {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var almanac = geo[\almanac];
+			var pad = almanac[\compass], box = almanac[\compassBox];
+			var names = CQMatrix.sourceNames ++ CQMatrix.destNames;
+			var marks = #[grow, breed, wither].collect { |n| almanac[\weather][n] };
+			this.assert(box.left >= 0 and: { box.right <= size[0] }
+				and: { box.top >= 0 } and: { box.bottom <= size[1] },
+				"the compass layer stays on the stage (%x%)".format(*size));
+			this.assert(box.contains(pad),
+				"the layer holds the whole pad (%x%)".format(*size));
+			this.assert(box.left > geo[\cocos][1][\shellBox].right,
+				"the compass water opens right of coco 2's box (%x%)".format(*size));
+			geo[\birds].do { |bird, i|
+				this.assert(box.intersects(bird[\dropRect]).not,
+					"bird %'s drop rect keeps clear of the compass (%x%)"
+						.format(i + 1, *size));
+			};
+			names.do { |name|
+				this.assert(box.containsPoint(geo[\endpoints][name]).not,
+					"no jack or socket lands in the compass water (% at %x%)"
+						.format(name, *size));
+			};
+			geo[\roots].do { |root, i|
+				(root[\points] ++ root[\branch]).do { |point|
+					this.assert(box.containsPoint(point).not,
+						"root % keeps out of the compass water (%x%)"
+							.format(i + 1, *size));
+				};
+			};
+			// the four seeds sit inside the pad in bilinear order TL TR BL BR,
+			// and each seed answers at its own point
+			almanac[\stamps].do { |stamp, c|
+				this.assert(pad.containsPoint(stamp),
+					"seed % sits inside the pad (%x%)".format(c, *size));
+				this.assertEquals(CQNightGeometry.stampHit(almanac, stamp), c,
+					"seed % answers at its own point (%x%)".format(c, *size));
+			};
+			this.assert(almanac[\stamps][0].x < almanac[\stamps][1].x
+				and: { almanac[\stamps][0].y < almanac[\stamps][2].y },
+				"seed order is TL TR BL BR — the bilinear's own frame (%x%)"
+					.format(*size));
+			// the weather marks hang below the field, inside the layer, apart
+			// (the 24 px hit law), and answer as themselves
+			marks.do { |mark, i|
+				this.assert(mark.y > pad.bottom,
+					"weather mark % hangs below the field (%x%)".format(i, *size));
+				this.assert(box.containsPoint(mark),
+					"weather mark % lives inside the layer (%x%)".format(i, *size));
+			};
+			marks.doAdjacentPairs { |a, b|
+				this.assert(CQNightGeometry.distance(a, b) >= 24,
+					"weather marks keep the 24 px hit law apart (%x%)".format(*size));
+			};
+			this.assertEquals(
+				CQNightGeometry.weatherHit(almanac, almanac[\weather][\breed]),
+				\breed, "the graft answers at its own mark (%x%)".format(*size));
+			// pad coordinates are the bilinear's 0..1 frame
+			this.assertEquals(
+				CQNightGeometry.compassNorm(almanac, pad.leftTop), Point(0, 0),
+				"pad TL is the norm origin (%x%)".format(*size));
+			this.assertEquals(
+				CQNightGeometry.compassNorm(almanac,
+					Point(pad.right, pad.bottom)), Point(1, 1),
+				"pad BR is norm (1,1) (%x%)".format(*size));
+			// the moon's sky layer and the compass layer never overlap: a moon
+			// flash may not re-ink the field, nor a voyage the moon
+			this.assert(box.intersects(almanac[\box]).not,
+				"the sky and the water are separate layers (%x%)".format(*size));
+		};
+	}
+
 	// The spesal coupling chord (§16.6): both ends stop outside their castle's
 	// own opaque box — a line under an opaque layer is a line nobody sees — it
 	// bows inward far enough that an *adjacent* pair can never be mistaken for

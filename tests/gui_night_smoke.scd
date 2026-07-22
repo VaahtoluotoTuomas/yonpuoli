@@ -7,8 +7,11 @@
 (
 var state = CQState(nil);
 var matrix = CQMatrix(nil);
-var config = CQConfig.validate((headless: true));
-var gui, ok = true, abort;
+// the §7.1 compass memories go to a gitignored tmp home so a smoke stamp can
+// never overwrite the player's own corners (config gui.compassDir)
+var compassDir = Cocoquantus.repoDir +/+ "tests" +/+ "tmp" +/+ "cqcompass_smoke";
+var config;
+var gui, ok = true, abort, compassChecks, weatherAsync;
 var check = { |condition, message|
 	if(condition) { ("ok:   " ++ message).postln } {
 		ok = false;
@@ -18,7 +21,16 @@ var check = { |condition, message|
 var auraMsg = { |casValue|
 	['/cq_aura', 0, 0, 0.2, 0, 0, 0, 0, casValue, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 };
+(compassDir +/+ "*").pathMatch.do { |p| File.delete(p) };
+config = CQConfig.validate((headless: true, gui: (compassDir: compassDir)));
 CQInkControl.resetDrawErrors;
+// a hung continuation must still exit: sclang's stdout is block-buffered when
+// redirected, so only an exit flushes the evidence of how far the smoke got
+SystemClock.sched(90, {
+	"FAIL: smoke watchdog — a continuation never completed".postln;
+	"CQ_GUI_NIGHT_FAILED".postln;
+	1.exit;
+});
 matrix.patch(\tri1, \coco1_spaf, 0.55);
 matrix.patch(\envB, \castle3_fm, -0.45);
 abort = { |error|
@@ -28,6 +40,201 @@ abort = { |error|
 	gui !? { gui.free };
 	"CQ_GUI_NIGHT_FAILED".postln;
 	1.exit;
+};
+
+// ---- §7.1 the compass water (G3): seeds, voyages, weather — the synchronous
+// acts. Defined here at sane indentation; called from the night sequence.
+compassChecks = { |map|
+	var almanac = map.geometry[\almanac];
+	var cView = map.compassView;
+	var boxOrigin = almanac[\compassBox].leftTop;
+	var pad = almanac[\compass];
+	var at = { |stagePoint| stagePoint - boxOrigin };
+	var press = { |stagePoint, button = 0|
+		var p = at.value(stagePoint);
+		cView.mouseDownAction.value(cView, p.x, p.y, 0, button, 1);
+		cView.mouseUpAction.value(cView, p.x, p.y, 0, button);
+	};
+	var check = { |condition, message|
+		if(condition) { ("ok:   " ++ message).postln } {
+			ok = false;
+			("FAIL: " ++ message).postln;
+		};
+	};
+	var undoBefore, local, local2;
+	var di, si, mark, xEnd, growWeight;
+	var savedRand, expected, countBefore;
+	check.value(cView.notNil
+		and: { (cView.bounds.left - almanac[\compassBox].left).abs < 1 },
+		"the compass water is laid out on its own layer");
+	check.value(gui.compass.stampedMask == [false, false, false, false],
+		"the pad opens with empty water in all four corners");
+	// two different jungles into TL and TR
+	matrix.load([[\tri1, \coco1_spaf, 0.55], [\envB, \castle3_fm, -0.45]]);
+	press.value(almanac[\stamps][0]);
+	check.value(gui.compass.stampedMask == [true, false, false, false],
+		"a tap on a corner seed stamps the live matrix");
+	check.value(File.exists(compassDir +/+ CQCompass.fileName),
+		"a stamp auto-saves the memories file");
+	matrix.load([[\cas2, \coco2_fbVca, 0.4]]);
+	press.value(almanac[\stamps][1]);
+	check.value(gui.compass.stampedMask == [true, true, false, false],
+		"the second corner holds its own patch");
+	// a tap on the pad is a jump: one committed step to that weather
+	matrix.clearPatch;
+	undoBefore = gui.bananaGrammar.undoCount;
+	press.value(pad.leftTop);
+	check.value(matrix.getPatch(\tri1, \coco1_spaf) == 0.55
+		and: { matrix.getPatch(\envB, \castle3_fm) == -0.45 }
+		and: { matrix.asArray.size == 2 },
+		"a tap at a pure corner recalls that stamp bit-exact");
+	check.value(gui.bananaGrammar.undoCount == (undoBefore + 1),
+		"the jump to a place on the pad is one undo op");
+	gui.window.view.keyDownAction.value(gui.window.view, nil, 262144, 26, 0, 90);
+	check.value(matrix.asArray.size == 0,
+		"Ctrl+Z returns the bay the jump replaced");
+	// a voyage: pour along the pad, commit on release. The end position is
+	// derived from the cell's own tide mark, so the assertion is
+	// deterministic geography, not luck.
+	di = CQMatrix.destIndex(\coco1_spaf);
+	si = CQMatrix.srcIndex(\tri1);
+	mark = CQCompass.tideMarks[di][si];
+	xEnd = (1 - mark) * 0.5;
+	undoBefore = gui.bananaGrammar.undoCount;
+	local = at.value(Point(pad.left + (xEnd * pad.width), pad.top + 30));
+	local2 = at.value(Point(pad.left + (xEnd * pad.width), pad.top + 2));
+	cView.mouseDownAction.value(cView, local.x, local.y, 0, 0, 1);
+	cView.mouseMoveAction.value(cView, local2.x, local2.y, 0);
+	check.value(map.overlay.stormMode,
+		"a pour holds the night overlay in storm form");
+	check.value(map.compassDragState.notNil,
+		"the voyage paints its cross and its pulls");
+	cView.mouseUpAction.value(cView, local2.x, local2.y, 0, 0);
+	check.value(map.overlay.stormMode.not,
+		"release returns the bay to full ink");
+	check.value(map.compassDragState.isNil, "and takes the cross with it");
+	check.value((matrix.getPatch(\tri1, \coco1_spaf) - 0.55).abs < 1e-9,
+		"a cable standing above its tide mark keeps its stamped weight");
+	check.value(gui.bananaGrammar.undoCount == (undoBefore + 1),
+		"the whole voyage is one undo op");
+	// grow: the first raindrop lands on the press itself
+	matrix.clearPatch;
+	undoBefore = gui.bananaGrammar.undoCount;
+	local = at.value(almanac[\weather][\grow]);
+	cView.mouseDownAction.value(cView, local.x, local.y, 0, 0, 1);
+	check.value(matrix.asArray.size == 1,
+		"grow plants one banana on the press itself");
+	growWeight = matrix.asArray.first[2];
+	check.value(growWeight.abs >= 0.15 and: { growWeight.abs <= 0.4 },
+		"the raindrop weighs §7.2's ±U(0.15, 0.4)");
+	cView.mouseUpAction.value(cView, local.x, local.y, 0, 0);
+	check.value(gui.bananaGrammar.undoCount == (undoBefore + 1),
+		"one rain hold is one undo op");
+	// wither thins what stands
+	undoBefore = gui.bananaGrammar.undoCount;
+	local = at.value(almanac[\weather][\wither]);
+	cView.mouseDownAction.value(cView, local.x, local.y, 0, 0, 1);
+	cView.mouseUpAction.value(cView, local.x, local.y, 0, 0);
+	check.value(matrix.asArray.size == 1
+		and: { (matrix.asArray.first[2].abs - (growWeight.abs * 0.7)).abs < 1e-9 },
+		"the sun decays its pick ×0.7");
+	check.value(gui.bananaGrammar.undoCount == (undoBefore + 1),
+		"one drought hold is one undo op");
+	// breed: arm the graft, pick two parents — seeded here so the offspring
+	// is checkable bit-exact against §7.3's own math
+	savedRand = thisThread.randData;
+	thisThread.randSeed = 777;
+	expected = CQCompass.breed(gui.compass.corner(0), gui.compass.corner(1));
+	undoBefore = gui.bananaGrammar.undoCount;
+	press.value(almanac[\weather][\breed]);
+	check.value(map.breedArmed, "pressing the graft arms the breeding");
+	press.value(almanac[\stamps][0]);
+	check.value(map.breedFirst == 0, "the first parent is chosen and held");
+	thisThread.randSeed = 777;
+	press.value(almanac[\stamps][1]);
+	thisThread.randData = savedRand;
+	check.value(map.breedArmed.not and: { map.breedFirst.isNil },
+		"the second parent completes the graft and disarms it");
+	check.value(matrix.fullMatrix == expected,
+		"the offspring becomes the bay, exactly as §7.3 breeds it");
+	check.value(gui.bananaGrammar.undoCount == (undoBefore + 1),
+		"one breeding is one undo op");
+	// Esc forgets an armed graft (cancelWeather)
+	press.value(almanac[\weather][\breed]);
+	check.value(map.breedArmed, "the graft re-arms");
+	gui.window.view.keyDownAction.value(gui.window.view, 27.asAscii, 0);
+	check.value(map.breedArmed.not, "Esc forgets the armed graft");
+	// a right press on a seed clears that memory, and it stays cleared on disk
+	press.value(almanac[\stamps][1], 1);
+	check.value(gui.compass.stampedMask == [true, false, false, false],
+		"a right press on a seed clears its memory");
+	check.value(CQCompass(compassDir).stampedMask
+		== [true, false, false, false],
+		"stamps and clears survive on disk (versioned file)");
+	// the water around the marks acts on nothing
+	countBefore = matrix.asArray.size;
+	press.value(Point(pad.left + (pad.width * 0.05),
+		almanac[\compassBox].bottom - 2));
+	check.value(matrix.asArray.size == countBefore
+		and: { gui.bananaGrammar.isInHand.not },
+		"the open water around the marks acts on nothing");
+};
+
+// ---- the elastic and the offscreen cache need real Qt ticks, so they run as
+// their own async step just before teardown; `done` continues the sequence.
+weatherAsync = { |map, done|
+	var almanac = map.geometry[\almanac];
+	var cView = map.compassView;
+	var pad = almanac[\compass];
+	var boxOrigin = almanac[\compassBox].leftTop;
+	var check = { |condition, message|
+		if(condition) { ("ok:   " ++ message).postln } {
+			ok = false;
+			("FAIL: " ++ message).postln;
+		};
+	};
+	var beforeString, undoBefore, local, local2;
+	matrix.load([[\tri1, \coco1_spaf, 0.55]]);
+	beforeString = matrix.fullMatrix.asCompileString;
+	undoBefore = gui.bananaGrammar.undoCount;
+	local = Point(pad.center.x, pad.top + 30) - boxOrigin;
+	local2 = Point(pad.center.x, pad.bottom - 10) - boxOrigin;
+	cView.mouseDownAction.value(cView, local.x, local.y, 0, 1, 1);
+	cView.mouseMoveAction.value(cView, local2.x, local2.y, 0);
+	check.value(map.overlay.stormMode, "the elastic pours in storm form too");
+	cView.mouseUpAction.value(cView, local2.x, local2.y, 0, 1);
+	AppClock.sched(0.3, {
+		try {
+			check.value(matrix.fullMatrix.asCompileString == beforeString,
+				"the elastic snaps the whole bay home");
+			check.value(gui.bananaGrammar.undoCount == undoBefore,
+				"and never enters the undo ring");
+			check.value(map.overlay.stormMode.not,
+				"the storm lifts with the hand");
+			check.value(map.overlay.renderCount > 0,
+				"the cable layer actually renders through the offscreen image");
+			map.overlay.view.refresh;
+			AppClock.sched(0.12, {
+				try {
+					var renders = map.overlay.renderCount;
+					var draws = map.overlay.drawCount;
+					map.overlay.view.refresh;
+					AppClock.sched(0.12, {
+						try {
+							check.value(map.overlay.drawCount > draws,
+								"a damage repaint still paints");
+							check.value(map.overlay.renderCount == renders,
+								"but unchanged ink is a blit, not a re-stroke");
+							done.value;
+						} { |error| abort.value(error) };
+						nil
+					});
+				} { |error| abort.value(error) };
+				nil
+			});
+		} { |error| abort.value(error) };
+		nil
+	});
 };
 
 {
@@ -734,6 +941,7 @@ abort = { |error|
 															spy.remove;
 															almanacDone.value;
 														};
+														compassChecks.value(map);
 														// any shake, from any layer, flashes the moon —
 														// through CQGui's own \action handler, so it lands
 														// on the next GUI tick
@@ -744,6 +952,7 @@ abort = { |error|
 															"a shake from any layer flashes the sowing moon");
 														check.value(CQInkControl.drawErrors == 0,
 															"night surfaces paint without callback errors");
+														weatherAsync.value(map, {
 														gui.free;
 														AppClock.sched(0.25, {
 															try {
@@ -768,6 +977,7 @@ abort = { |error|
 															} { |error| abort.value(error) };
 															nil
 														});
+													});
 													} { |error| abort.value(error) };
 													nil
 													});

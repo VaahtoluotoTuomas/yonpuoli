@@ -29,7 +29,7 @@ CQConfig {
 	*knownKeys {
 		^#[sampleRate, blockSize, device, hardwareBufferSize, inChans, micChan,
 			outChans, stemOuts, bufFrames, sixteenN, folders, autoTrim, recStems,
-			headless]
+			headless, gui]
 	}
 
 	*load { |path|
@@ -72,11 +72,16 @@ CQConfig {
 	*prMergeSub { |cfg, key, val|
 		var allowed = switch(key,
 			\sixteenN, #[enabled, ccBase, chan, takeover],
-			\folders, #[samples, recordings, presets]
+			\folders, #[samples, recordings, presets],
+			// GUI_SPEC §10's optional gui: (...) sub-event. compassDir redirects
+			// the §7.1 compass memories file — the smoke tests point it at a tmp
+			// dir so a test stamp can never overwrite the player's own corners.
+			\gui, #[compassDir]
 		);
 		if(val.isKindOf(Event).not) {
 			Error("CQConfig: % must be an Event (got %)".format(key, val.class)).throw;
 		};
+		cfg[key] = cfg[key] ?? { () };   // gui has no default sub-event
 		val.keysValuesDo { |k2, v2|
 			if(allowed.includes(k2)) {
 				cfg[key][k2] = v2;
@@ -144,6 +149,12 @@ CQConfig {
 		#[samples, recordings, presets].do { |k|
 			this.prAssert(fol[k].isString,
 				"folders.% must be a String path (got %)".format(k, fol[k]));
+		};
+
+		cfg[\gui] !? { |g|
+			this.prAssert(g[\compassDir].isNil or: { g[\compassDir].isString },
+				"gui.compassDir must be nil or a String path (got %)"
+					.format(g[\compassDir]));
 		};
 
 		this.prAssert(cfg[\autoTrim].isKindOf(Boolean),

@@ -320,6 +320,13 @@ CQBananaGrammar {
 		^caught.any { |patch| patch[\src] == src and: { patch[\dest] == dest } }
 	}
 
+	// the current catch as comparable pairs — the cable layer's offscreen cache
+	// keys its planted-ink signature on this, so membership changes re-render
+	// while a mere lasso-path move stays a blit
+	harvestKey {
+		^caught.collect { |patch| [patch[\src], patch[\dest]] }
+	}
+
 	toggleSoloEndpoint { |kind, name|
 		var same;
 		same = soloTarget.notNil and: { soloTarget[\kind] == kind }

@@ -86,10 +86,38 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 - **G1 is complete and accepted, §13 end gate included (2026-07-21, `295d14d`).**
 - **G2's whole night surface is now built and accepted** — the almanac corner and
   the spesal coupling chords landed last (2026-07-22, manual blocks G2.11 and
-  G2.11b). **G2 itself is still not signed off**: §13 owes the new surface its
-  scaling check (100/125/150 %) and a CPU/resource soak. That is the next step,
-  and only after it comes G3. **Do not rebuild or "improve" accepted G1 or G2
-  surface on your own initiative.** `PLAN.md` holds the detail.
+  G2.11b). **G2's sign-off waits only for the user to run checklist blocks
+  G2.12–G2.13** (scaling + soak with the moon and chords; the blocks are
+  written). **Do not rebuild or "improve" accepted G1 or G2 surface on your
+  own initiative.** `PLAN.md` holds the detail.
+- **G3's first runnable, tested version was built 2026-07-22** and awaits the
+  user's visual + listening review (checklist blocks G3.1a/G3.1b): the §7.1
+  compass in the almanac's water (corner seeds stamp/clear, tap = jump,
+  left-drag = voyage, right-drag = elastic), the weather row beneath it
+  (rain = grow, graft = breed, sun = wither, §7.2/§7.3 exact constants), a
+  versioned/validated/clamped `presets/compass.cqcompass.scd` in CQSnapshots'
+  manners (config `gui: (compassDir:)` redirects it — smokes use tests/tmp),
+  and `CQCompass` as the pure model. **The blend is the tide, not the spec's
+  first bilinear-amplitude sketch** (GUI_SPEC §7.1, normative now): shared
+  cells glide, disjoint cables stand at full stamped weight until the pull
+  drops below their fixed per-cell tide mark, then lift whole — so a midpoint
+  is a handful of full-voice bananas instead of mush, Schmitt gates keep
+  firing across the pad, and the pad is stable, learnable geography. Whether
+  the tide is *musical* is the plan's one honest unknown — G3.1a decides it
+  by ear before any polish.
+- G3 also landed the cable layer's offscreen Image cache + the weather
+  gestures' storm form, both measured inside the real Qt paint event
+  (`tests/gui_paint_profile.scd`; table in PLAN.md): blit ≈ 4.5 ms at any
+  cable count vs 175 ms full ink at 352. Three hard-won laws, all in
+  GUI_SPEC §7.1/§11: never render an Image inside a paint event
+  (QtCollider's Pen is one global painter — it deadlocks the GUI thread);
+  never batch cables into one giant path (Qt's stroker is superlinear in
+  subpath count — 505 ms vs 177 at 352); and sibling-view repaints do NOT
+  damage the overlay in a StackLayout stage (measured +0 draws), so the
+  cache serves the 60 Hz gesture layers and whole-window damage. Also:
+  sclang's stdout is block-buffered when redirected — a hung smoke shows
+  nothing; the night smoke now carries a 90 s watchdog exit that flushes
+  the evidence. `Rect.extent` returns a Point (no `.width`).
   - §16.7's dashed drop-target border is done and accepted (2026-07-22, checklist
     G2.10), both skins from one `CQInk.drawDropTarget`. Qt hands sclang **no
     drag-leave callback**, and
@@ -205,17 +233,16 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 - `/cq_aura` law: no telemetry is not the same as zero. `CQGui.auraFor` returns `nil`
   until the server reports, and every drawing surface must keep its static reviewed
   look in that case. Focus, solo-dim and hover never pulse (`GUI_SPEC.md` §4.5).
-- Latest full gate on `archipelago` (2026-07-22, almanac corner + spesal
-  chords): 5,371 unit passes / 0 failures, `CQ_COMPILE_OK`, `CQ_SAFETY_PASSED`,
-  `CQ_HOLD_OK`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
-  `CQ_GUI_DRAWER_REENTRY_PASSED` and `CQ_GUI_NIGHT_PASSED`. The performance
-  figures are still those measured on the gate before it (4,959 passes) —
-  the almanac corner has not been soaked yet:
-  server 19.8–21.5 % against SPEC §9's 25 % ceiling,
-  GUI 2.8–3.8 % at rest with 20 planted cables, and 3–6.8 % with `mayhem`'s 352
-  cables — seven times `auraCableLimit`, so inside the documented band rather than a
-  regression. Which repaint actually triggers that has **not** been measured in the
-  real Qt paint event; do it with the offscreen buffer, do not guess (G1.3's lesson).
+- Latest full gate on `archipelago` (2026-07-22, G3 first version): **6,611
+  unit passes / 0 failures**, `CQ_COMPILE_OK`, `CQ_SAFETY_PASSED`,
+  `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+  `CQ_GUI_DRAWER_REENTRY_PASSED` and `CQ_GUI_NIGHT_PASSED` (now including
+  the compass water's own assertions and the cache's blit-vs-render
+  counters); `CQ_HOLD_OK` stands from the previous gate (no DSP change).
+  The CPU soak figures are still the pre-almanac ones: server 19.8–21.5 %
+  against SPEC §9's 25 % ceiling, GUI 2.8–3.8 % at rest with 20 planted
+  cables, 3–6.8 % with `mayhem`'s 352. The repaint-trigger question is now
+  measured (see the G3 bullet above); the user's own soak runs as G2.13.
 - The four former `GUI_SPEC.md` seams were resolved by the user on 2026-07-19 and are
   recorded in the spec and `PLAN.md`: nine charge channels, the G1 harvest lasso,
   display-only mic sprout and static REC transition/error states. Do not reopen or

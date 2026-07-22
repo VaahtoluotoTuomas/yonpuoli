@@ -10,6 +10,7 @@ CQGuiNightTouch {
 	var map, state, overlay;
 	var <>controller;   // set after construction — the controller binds later
 	var wind, eyeDrag, crescentDrag, moonDrag;
+	var compassDrag, weatherHold;
 
 	*new { |map, state, overlay| ^super.newCopyArgs(map, state, overlay) }
 
@@ -40,6 +41,17 @@ CQGuiNightTouch {
 		if(delta.abs <= dead) { ^0 };
 		^delta - (dead * delta.sign)
 	}
+
+	// §7.1 compass writes: the law's ceiling is 60 Hz; 30 is chosen because the
+	// weights are unlagged control buses (§15 — a banana contact is a step too),
+	// so faster stepping buys no audible smoothness, only server traffic
+	*compassWritePeriod { ^1/30 }
+
+	// §7.2 grow/wither repeat while held
+	*growRate { ^2.5 }
+
+	// §16.9 the elastic return's short glide, ~3 frames
+	*elasticFrames { ^3 }
 
 	// ---- shell: wind (speed) · heart (hold) · chevron (flip) · mark (skip) ----
 
@@ -208,6 +220,135 @@ CQGuiNightTouch {
 		if(moonDrag.isNil) { ^this.forwardUp(view, x, y, modifiers, button) };
 		if(moonDrag[\travel] <= this.class.tapTravel) { map.throwShake };
 		moonDrag = nil;
+		^this
+	}
+
+	// ---- the compass water (§7.1): voyages, seeds, weather ----
+
+	compassDown { |view, x, y, modifiers = 0, button = 0, clicks = 1|
+		var point = this.prPoint(view, x, y), geo = map.geometry, almanac, seed, mark;
+		if(geo.isNil) { ^this };
+		almanac = geo[\almanac];
+		// §4.5: a cable crossing the water is grabbed, never blended through
+		if(modifiers.isAlt or: { overlay.patchAt(point).notNil }) {
+			^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
+		};
+		seed = CQNightGeometry.stampHit(almanac, point);
+		if(seed.notNil) {
+			// right on a seed clears that memory; while a graft is armed a left
+			// tap picks it as a parent; otherwise the press may still become a
+			// voyage — the tap/drag split is the moon's own 8 px threshold
+			if(button == 1) { ^map.clearCorner(seed) };
+			if(button != 0) { ^this };
+			if(map.breedArmed) { ^map.pickParent(seed) };
+			compassDrag = (mode: \blend, start: point, travel: 0, seed: seed,
+				before: map.matrixCopy);
+			^this
+		};
+		if(CQNightGeometry.compassHit(almanac, point)) {
+			if(map.breedArmed) { map.disarmBreed };   // a stray pad press disarms
+			if(#[0, 1].includes(button).not) { ^this };
+			// left = a voyage that commits on release; right = the elastic —
+			// the same pour, but release snaps home (§7.1)
+			compassDrag = (mode: if(button == 1) { \elastic } { \blend },
+				start: point, travel: 0, before: map.matrixCopy);
+			^this
+		};
+		mark = CQNightGeometry.weatherHit(almanac, point);
+		if(mark.notNil and: { button == 0 }) {
+			if(mark == \breed) { ^map.armBreed };
+			^this.beginWeatherHold(mark)
+		};
+		// the rest of the corner is open water: harvest, solo and hover behave
+		// exactly as on any other night paper
+		^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
+	}
+
+	compassMove { |view, x, y, modifiers = 0|
+		var point;
+		if(compassDrag.isNil) { ^this.forwardMove(view, x, y, modifiers) };
+		point = this.prPoint(view, x, y);
+		compassDrag[\travel] = max(compassDrag[\travel],
+			CQNightGeometry.distance(compassDrag[\start], point));
+		if(compassDrag[\travel] > this.class.tapTravel) {
+			map.pourBlend(
+				CQNightGeometry.compassNorm(map.geometry[\almanac], point));
+		};
+		^this
+	}
+
+	compassUp { |view, x, y, modifiers = 0, button = 0|
+		var drag = compassDrag, point, norm;
+		if(weatherHold.notNil) { ^this.endWeatherHold };
+		if(drag.isNil) { ^this.forwardUp(view, x, y, modifiers, button) };
+		compassDrag = nil;
+		point = this.prPoint(view, x, y);
+		norm = CQNightGeometry.compassNorm(map.geometry[\almanac], point);
+		if(drag[\travel] <= this.class.tapTravel) {
+			// a tap: on a seed it stamps the live matrix into that memory; on
+			// open water it is one committed step to that weather — the pad is
+			// a landscape, and pointing at a place takes you there. A right
+			// tap is nothing (an elastic of zero travel has nowhere to return
+			// from).
+			if(drag[\seed].notNil) { ^map.stampCorner(drag[\seed]) };
+			if(drag[\mode] == \blend) { ^map.commitBlend(norm, drag[\before]) };
+			^map.clearVoyage
+		};
+		if(drag[\mode] == \blend) { ^map.commitBlend(norm, drag[\before]) };
+		^map.elasticReturn(drag[\before])
+	}
+
+	// grow/wither: press = the first seed lands at once, the hold repeats at
+	// §7.2's 2.5 Hz. One hold = one undo op, committed at release.
+	beginWeatherHold { |mark|
+		weatherHold = (mark: mark, before: map.matrixCopy, landed: false);
+		map.weatherActive_(mark);
+		this.prWeatherStep;
+		this.prScheduleWeather;
+		^this
+	}
+
+	prScheduleWeather {
+		var hold = weatherHold;
+		AppClock.sched(1 / this.class.growRate, {
+			if(weatherHold === hold) {
+				this.prWeatherStep;
+				this.prScheduleWeather;
+			};
+			nil
+		});
+		^this
+	}
+
+	prWeatherStep {
+		weatherHold !? { |hold|
+			if(map.weatherStep(hold[\mark])) { hold[\landed] = true };
+		};
+		^this
+	}
+
+	endWeatherHold {
+		var hold = weatherHold;
+		weatherHold = nil;
+		map.weatherActive_(nil);
+		hold !? { map.commitWeather(hold[\mark], hold[\before], hold[\landed]) };
+		^this
+	}
+
+	// every path that takes the hand away mid-gesture (Esc, Tab, panic, free):
+	// an uncommitted voyage goes home like the elastic, a held rain commits
+	// what already landed (the seeds fell audibly; Ctrl+Z takes them back as
+	// one op), and an armed graft is forgotten
+	cancelWeather {
+		var drag = compassDrag;
+		compassDrag = nil;
+		if(drag.notNil and: { drag[\travel] > this.class.tapTravel }) {
+			map.elasticReturn(drag[\before]);
+		} {
+			if(drag.notNil) { map.clearVoyage };
+		};
+		if(weatherHold.notNil) { this.endWeatherHold };
+		map.disarmBreed;
 		^this
 	}
 

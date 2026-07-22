@@ -361,23 +361,62 @@ CQSpec parameter is ever touched by compass, grow, wither, breed or shake
 `docs/history/PLAN_v1.0.md` (KUUNTELU 4): a landscape can be *deaf* if its depth-knobs are down —
 aura and charge lamps make that visible instead of mysterious.
 
-### 7.1 Compass — the 2D patch-blend pad (~140 px, the almanac corner's reserved water, §16.6)
+### 7.1 Compass — the 2D patch-blend pad (~140 px, the almanac corner's water, §16.6)
 
 - Four corners = four **matrix memories** (weights only; never params, never
-  spesal). A stamp button at each corner captures the current matrix;
-  right-click a corner clears it. An empty corner = the zero matrix (all
-  unpatched) — traveling toward it is a wither-by-travel, documented behavior.
-- **Left-drag** inside the pad: bilinear blend of the four corner matrices,
-  written continuously (batched funnel write, one notification per frame,
-  ≤ 60 Hz). Release **commits** (one undo op).
-- **Right-drag**: **elastic** — same blending live, but release snaps back to
-  the pre-gesture matrix (short glide, ~3 frames; no undo entry). The whole
-  matrix becomes a wobble you can flick.
+  spesal). The night has no buttons, so each corner is a **seed** (§16.6): a
+  tap on a seed stamps the current matrix into it, a right press clears it.
+  An empty corner = the zero matrix (all unpatched) — traveling toward it is
+  a wither-by-travel, documented behavior.
+- **The tide** (amended at G3, superseding the first bilinear-amplitude
+  sketch — this is the blend law): a position on the pad pulls on the four
+  corners bilinearly, but the pull decides **which cables stand, not how loud
+  everything is**. Cells the corners *share* crossfade their weights
+  continuously — the common skeleton glides — while cells only some corners
+  carry keep their **full stamped weight** until the position's pull on them
+  falls below that cell's own fixed **tide mark** (a deterministic hash of
+  its coordinates, deliberately not session-seeded), and then they lift —
+  one banana at a time, to exactly zero. At a pure corner the stamp comes
+  back bit-exact. Three reasons, all musical: (1) a patch is discrete
+  bananas, and half-way between two patches should be half the bananas of
+  each *at full voice* — an amplitude blend of four sparse patches
+  quadruples the cable count and quarters every weight, mush by
+  construction; (2) gate/trig cables live behind the +0.5 Schmitt, so an
+  amplitude blend silences every flip/skip/spesal banana almost everywhere
+  on the pad, while the tide keeps them firing through the whole voyage;
+  (3) fixed tide marks make the pad **learnable geography** — the same
+  position always grows the same patch, across sessions. Weights below the
+  wither floor (0.05) round to gone. Traveling toward an empty corner is
+  therefore *literally* wither-by-travel: cables dropping off one by one.
+- **Left-drag** inside the pad: the tide poured continuously (batched funnel
+  write, one transient notification per frame, ≤ 60 Hz — implemented at
+  30 Hz, since the weights are unlagged control buses and faster stepping
+  buys no audible smoothness). Release **commits** (one undo op, one
+  `// compass` spellbook batch). A **tap** on open pad water (< 8 px, the
+  lasso's own threshold) is a **jump**: one committed step to that place —
+  the pad is a landscape, and pointing at a place takes you there.
+- **Right-drag**: **elastic** — the same pour, but release snaps back to
+  the pre-gesture matrix (short glide, ~3 frames; no undo entry, no
+  spellbook entry — transient all the way). The whole matrix becomes a
+  wobble you can flick, and under the tide the wobble has *texture*:
+  crossing a cable's tide mark lands and lifts a real banana.
+- **Storm form** (the §10/§11 measured consequence): while a voyage is being
+  poured the matrix changes every frame, so the cable layer's offscreen
+  cache cannot help — the bay is instead drawn *through rain*:
+  polarity-colored fixed-width cores only, no plugs, no barbs, each cable
+  its own small stroke (the obvious "one giant path per polarity" was built
+  first and measured **worse than full ink** — 505 ms against 177 at 352
+  cables; Qt's stroker goes superlinear in one path's subpath count), and a
+  repaint happens **only when the planted set actually changes** (a banana
+  landing or lifting is an event; a glide of shared weights is drawn as
+  nothing and costs nothing). Release returns full ink at once.
 - `patchDepth` stays the global tamer on top; the pad never touches it.
 - **Persistence:** corners auto-save to `presets/compass.cqcompass.scd` (pure
   data expression, integer version field, validated and clamped on load,
   malformed file rejected with a warning — CQSnapshots' safe-load manners) and
-  auto-load at GUI open.
+  auto-load at GUI open. `config.scd` may override the home with
+  `gui: (compassDir: ...)` — the smoke tests point it at a tmp dir so a test
+  stamp can never overwrite the player's corners.
 
 ### 7.2 Grow / wither (hold-buttons, ~2.5 Hz while held)
 
@@ -550,6 +589,28 @@ sub-event in `config.scd`, clamped on load.
   be attributed to one cable is not information, and a late pulse is worse than
   none. `\mayhem` patches all 352 cells and is the case this exists for
   (measured 2026-07-21: 164 ms per repaint at 352 cables, 1.4 ms for all 16 jacks).
+- **The cable layer's offscreen cache** (landed at G3; measured 2026-07-22
+  inside the real Qt paint event: full ink costs 2.1 ms at 12 cables and
+  82.7 ms at 352 on the dev machine, roughly half the reference laptop's
+  figures — and a blit is ~4.5 ms flat at any cable count): the planted
+  pass renders into an `Image` and every repaint the planted ink did not
+  ask for — the 60 Hz hand cable and lasso, a resize, the hard cut's
+  full expose — pays one blit. The image re-renders only when its pixels
+  can actually have moved: the patch set, the hover/solo/harvest marks, an
+  aura frame. Pixel-identical by construction (the image is drawn by the
+  same Pen code), and a platform without a working Image API falls back to
+  direct drawing loudly, never to silently absent ink. Two things were
+  measured on the way (drawCount counters, 2026-07-22), both correcting
+  older guesses: **a sibling view's repaint does not damage the overlay at
+  all** in the StackLayout stage (ten castle or compass repaints = zero
+  overlay draws), so the cache's real customers are the gesture layers and
+  whole-window damage; and **the render must never run inside a paint
+  event** — QtCollider's Pen is one global painter, and opening the image's
+  painter while a drawFunc's own is active deadlocks the whole GUI thread
+  (the same family as the queued-view-swap law). Renders happen on the
+  AppClock before the refresh they prepare; a paint that finds its image
+  stale draws direct at today's price and schedules the render for the
+  next damage.
 - **Overlay hit-testing**: the cable layer must not steal knob/button
   interactions; only jacks/sockets/cables are targets (≥ 12 px, magnetic
   candidate halo). The one exception is the harvest lasso's right-drag
@@ -1038,14 +1099,31 @@ a body; the night's grammar is bodies, bananas and weather, and the
 Inspector's menu is one toolbar click away from either view. Nothing about
 G3 depended on it: the compass stamps its corners from the live matrix.
 
-**The compass water**: beneath the moon the §7.1 pad's 140 px home
-is reserved as **empty water** — pinned by the clearance tests, never drawn
-before G3, because a dead control breaks §4.5 and §16.12 at once. When G3
-lands the pad keeps its recipe (140 px round-cornered square, hairline
-border, stamp dots in the corners, small cross cursor; while dragging, four
-faint corner gradients ≤ 8 % alpha show the pull), and grow / wither /
-breed take their night form at G3's own review — their home is reserved,
-their look is not yet law.
+**The compass water** (drawn since G3, on its own opaque layer so a moon
+flash never re-inks the field and a voyage never re-inks the moon): the
+§7.1 pad as a 140 px round-cornered hairline square, its four **corner
+seeds** inset 13 px in bilinear order TL TR BL BR — a stamped memory is a
+seated line-ink seed, empty water a hollow whisper ring, and the drawn
+mark is the tap target (§4.5, cue and act one geometry). While a voyage is
+being poured, a small line-ink cross rides the position and four faint
+corner gradients ≤ 8 % alpha show the pull; at rest the water carries no
+moving ink at all, so the layer costs a still bay zero repaints. No
+numbers, no labels — the pad's geography is read by ear and by the bay.
+
+**The weather row** hangs under the field, three §16.5-style drawn marks
+in the almanac's own pictures — §7.2's words made glyphs: the **rain**
+(three slanted strokes) is grow, the **sun** (disc and four rays — in a
+farmer's almanac the sun is the drought) is wither, and between them the
+**graft** (two overlapping rings — two parents sharing flesh) is breed.
+Whisper at rest, line ink under the hand or while held. Grow and wither
+are hold-marks at §7.2's 2.5 Hz, and the mark flashes 120 ms bone on
+**each seed that actually lands** — §16.7's momentary law at the weather's
+own rate, so a held rain visibly rains and a hold that lands nothing (a
+full or empty bay) stays honest. The graft arms with a halo, takes its two
+parents as seed taps, and is forgotten by Esc, by a stray pad press, or by
+pressing it again. One hold, one jump, one voyage, one breeding = one undo
+op each; stamping and clearing corners touch no cable, so they are not ops
+at all.
 
 ### 16.7 Widgets (day-panel language)
 

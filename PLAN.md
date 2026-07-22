@@ -6,22 +6,20 @@ tiedostoon [`docs/history/PLAN_v1.0.md`](docs/history/PLAN_v1.0.md).
 
 **Tilanne yhdellä rivillä:** foundation F0–F2 ja **koko G1 ovat valmiita ja käyttäjän
 hyväksymiä** §13:n loppuportteineen (2026-07-21, commit `295d14d`); **koko G2:n
-yöpinta on nyt rakennettu ja hyväksytty** (G2.1–G2.5 rakennuspalikat, loppuportti
+yöpinta on rakennettu ja hyväksytty** (G2.1–G2.5 rakennuspalikat, loppuportti
 G2.6–G2.10, ja viimeisenä almanakkakulma G2.11 + spesal-kytkentäjänteet G2.11b
-2026-07-22) — **G2:n kuittaus odottaa enää §13:n täydennystä uudelle pinnalle**:
-skaalaustarkastus 100/125/150 % ja CPU-soak kuun ja jänteiden kanssa. Vasta sen
-jälkeen G3 Weather machine.
+2026-07-22) — G2:n kuittaus odottaa käyttäjän ajamia lohkoja **G2.12–G2.13**
+(skaalaus + soak kuun ja jänteiden kanssa; lohkot valmiina checklistissä).
+**G3 Weather machinen ensimmäinen ajettava ja testattu versio on rakennettu
+2026-07-22** (kompassi + vuorovesi-sekoitus + sade/aurinko/oksastus +
+kaapelikerroksen offscreen-välimuisti + myrskymuoto) ja odottaa käyttäjän
+visuaalista ja kuuntelukatselmointia (lohkot G3.1a/G3.1b).
 
-**Seuraava askel konkreettisesti:** **§13:n täydennys uudelle yöpinnalle** —
-skaalaustarkastus 100/125/150 % ja CPU/resurssisoak kylvökuun ja
-spesal-jänteiden kanssa. Automaatio, kuuntelu ja käyttäjän visuaalinen
-hyväksyntä ovat jo kunnossa (G2.11 ja G2.11b hyväksytty 2026-07-22), ja
-loppuportin muut osat läpäistiin 2026-07-21/22 sitä edeltäneelle pinnalle.
-Soakissa kannattaa mitata kaksi uutta asiaa: kulman oma kerros lepotilassa
-(pitäisi olla nolla piirtoa, koska mikään siinä ei liiku ilman kättä) ja
-ringin kerros silloin kun **viisi jännettä** näkyy joen hoverilla, koska
-niiden kulkevat valot ratsastavat aura-kehyksillä. Sen jälkeen G2 kuitataan
-ja siirrytään G3 Weather machineen.
+**Seuraava askel konkreettisesti:** käyttäjä ajaa **G2.12 + G2.13** (G2:n
+kuittaus) ja sitten **G3.1a + G3.1b** (weather machinen ensimmäinen
+katselmointi — ennen kaikkea korvalla: vuorovesi-sekoituksen musikaalisuus on
+koko suunnitelman ainoa aito tuntematon). Palautteen mukaan viimeistellään;
+uutta G3-pintaa ei rakenneta ennen katselmointia.
 
 **Almanakkakulma ja spesal-jänteet hyväksyttiin 2026-07-22** (lohkot G2.11 ja
 G2.11b) neljän kierroksen jälkeen. Kulmassa on **kylvökuu** yläoikean taivaan
@@ -582,12 +580,118 @@ session alussa; DSP-koodia ei muutettu.)
 
 ### G3 — Weather machine
 
-- [ ] Compass: neljä weights-only-matriisimuistia, bilinear left commit, right elastic,
-  enintään 60 Hz batch writes ja yksi undo-operaatio.
-- [ ] Versioitu, validoitu ja clampattu `presets/compass.cqcompass.scd` autosave/load.
-- [ ] Grow/wither 2,5 Hz hold-operaatioina ja Breed täsmälleen §7:n vakioilla.
-- [ ] Weather-operaatiot eivät muuta `CQSpec`-parametreja; `patchDepth` säilyy.
-- [ ] `GUI_SPEC.md` §13:n automaatio, kuuntelu ja käyttäjän visuaalinen hyväksyntä.
+**Nykytila 2026-07-22: ensimmäinen ajettava ja testattu versio on rakennettu;
+katselmointi (G3.1a/G3.1b) odottaa käyttäjää.** Kolme session alussa nimettyä
+haastetta ratkaistiin näin:
+
+1. **Suorituskyky mitattiin ennen kuin mitään päätettiin** (G1.3:n laki).
+   Uusi harness `tests/gui_paint_profile.scd` mittaa oikean Qt-paint-eventin
+   sisältä: täysi muste maksaa dev-koneella 2,1 ms / 12 johtoa ja 82,7 ms /
+   352 johtoa per repaint (referenssiläppäri ~2× hitaampi) — kompassiveto
+   täydellä musteella olisi ollut mahdoton. Ratkaisu on kaksiosainen:
+   **(a) kaapelikerroksen offscreen-Image-välimuisti** ("Myöhemmin"-listan
+   kohta, nyt tehty — kompassin esiehto, kuten arveltiin, mutta *leposyistä*:
+   kompassi kutsuu isoja patcheja pysyvästi lavalle, ja jokainen damage-
+   repaint niiden alla oli O(johdot)); istutettu muste renderöidään Imageen
+   ja kaikki repaintit joita muste ei itse pyytänyt (nuppi kerroksen alla,
+   morphin paneelipiirrot, 60 Hz käsikaapeli ja lasso) maksavat yhden blitin.
+   **(b) myrskymuoto**: itse vedon aikana matriisi muuttuu joka kehyksellä
+   eikä välimuisti voi auttaa, joten lahti piirretään sateen läpi —
+   polariteettiväriset vakioleveät rungot ilman tulppia ja väkäsiä, jokainen
+   johto omana pienenä strokenaan — ja piirto tapahtuu **vain kun johtojen
+   joukko muuttuu**: vuorovedessä repaint on banaanin laskeutuminen tai
+   nousu, ei jatkuva kustannus. Ilmeinen "yksi jättipolku per polariteetti"
+   rakennettiin ensin ja mitattiin **täyttä mustetta huonommaksi** (505 ms
+   vs 177 ms / 352 johtoa — Qt:n stroker on superlineaarinen yhden polun
+   alipolkujen määrässä); G1.3:n laki iski kolmannenkin kerran. Blitti
+   maksaa ~4,5 ms johtomäärästä riippumatta. Mittarit vastasivat samalla
+   PLANin vanhaan arvailukiellettyyn kysymykseen: **naapurinäkymän repaint
+   ei laukaise overlayn piirtoa lainkaan** StackLayout-lavalla (10 castle-
+   tai kompassirefreshiä = +0 overlay-piirtoa; `drawCount`-laskurit), joten
+   välimuistin todelliset asiakkaat ovat 60 Hz elekerrokset ja koko ikkunan
+   damage (resize, hard cut). Kaksi toteutuslakia kirjattiin `GUI_SPEC.md`
+   §11:een: **Imagea ei koskaan renderöidä paint-eventin sisällä**
+   (QtColliderin Pen on yksi globaali maalari — sisäkkäinen maalari jumittaa
+   koko GUI-säikeen; renderit ajetaan AppClockilla ennen refreshiä, ja
+   vanhentunut kuva piirtyy suoraan entiseen hintaan) ja välimuisti on
+   **pikselintarkasti identtinen** (kuvan piirtää sama Pen-koodi; alusta
+   ilman toimivaa Image-APIa putoaa äänekkäästi suoraan piirtoon, ei koskaan
+   hiljaa puuttuvaan musteeseen).
+   Mitatut mediaanit per oikea Qt-repaint (dev-kone; referenssiläppäri ~2×;
+   `tests/gui_paint_profile.scd` toistaa nämä milloin vain):
+
+   | johtoja | täysi muste | blit | myrsky/event |
+   |---|---|---|---|
+   | 12 | 3,9 ms | 4,4 ms | 1,2 ms |
+   | 35 | 12,4 ms | 4,4 ms | 3,5 ms |
+   | 70 | 23,0 ms | 4,3 ms | 6,7 ms |
+   | 140 | 57,7 ms | 4,5 ms | 19,8 ms |
+   | 352 | 174,9 ms | 4,8 ms | 49,4 ms |
+2. **`compass.cqcompass.scd` kopioi CQSnapshotsin tavat** täsmälleen:
+   kokonaislukuversio, rakenteellinen portti (väärä muoto tai uudempi versio
+   hylkää koko tiedoston varoituksella), solukohtainen roskien ohitus,
+   jokainen paino `CQMatrix.clampWeight`in läpi, autosave jokaisesta
+   leimasta ja tyhjennyksestä. `config.scd` sai GUI_SPEC §10:n mukaisen
+   `gui: (compassDir: ...)` -alieventin, jolla smoket osoittavat tiedoston
+   `tests/tmp/`-kansioon — testileima ei voi koskaan ylikirjoittaa soittajan
+   omia kulmia.
+3. **Musikaalisuus (suunnitelman ainoa aito tuntematon) hoidettiin
+   rakenteella, ei toivolla**: spekin bilineaarinen *amplitudi*sekoitus
+   korvattiin **vuorovedellä** (`GUI_SPEC.md` §7.1, normatiivinen):
+   kulmien jakamat solut liukuvat painojaan jatkuvasti (yhteinen runko
+   morphaa), mutta eriävät johdot seisovat täydessä leimapainossaan kunnes
+   aseman veto alittaa solun oman kiinteän vuorovesirajan — ja nousevat
+   silloin kokonaan, banaani kerrallaan. Kolme perustetta: patch on
+   diskreettejä banaaneja (puolimatka = puolet kummankin banaaneista
+   täydellä äänellä, ei kaikki puoliteholla = puuroa); gate/trig-johdot
+   elävät +0.5-Schmittin takana (amplitudisekoitus mykistäisi jokaisen
+   flip/skip/spesal-banaanin lähes koko padolla, vuorovesi pitää ne
+   laukeavina koko matkan); ja rajat ovat istunnoista riippumaton hash,
+   joten padosta tulee **opittavaa maantiedettä** — sama kohta kasvattaa
+   aina saman patchin. Tyhjää kulmaa kohti matkaaminen on kirjaimellisesti
+   wither-by-travel. Lopullinen tuomio annetaan silti korvalla: G3.1a on
+   ennen kaikkea kuuntelukoe, ja jos vuorovesi ei soi, palataan
+   suunnittelupöytään tämä kirjaus edellä.
+
+Toteutus: `CQCompass` (puhdas malli: kulmat, vuorovesi, breed/grow/wither,
+tiedosto — yksikkötestattu `CQCompassTest`illä), `CQNightGeometry.almanac`
+laajeni (pato + siemenkulmat + säärivi + `compassBox`, clearance-testit
+molemmilla lavakooilla), `CQInkNight.drawCompass/drawWeatherMark` (pato,
+siemenet, risti, ≤ 8 % kulmavedot; sade/oksastus/aurinko §16.5:n hengessä),
+`CQGuiNightTouch` (matka/hyppy/elastinen/leima/sää — tap vs. veto lasson
+8 px:llä kuten kuussa; Esc/Tab/panic → `cancelWeather`), `CQGuiNightMap`
+(oma opaakki compassView-kerros; kaikki kirjoitukset writeMatrix-suppilon
+läpi, transientit vedossa, yksi committi + yksi undo + yksi spellbook-lohko
+per teko), `CQGuiCableOverlay` (välimuisti + myrskymuoto + piirtolaskurit
+`drawCount`/`renderCount`/`lastDrawMs` soakia varten).
+
+- [x] Compass: neljä weights-only-matriisimuistia, left commit, right elastic,
+  ≤ 60 Hz batch writes (toteutettu 30 Hz — painot ovat lagittomia
+  kontrollibusseja, nopeampi askellus ei osta kuuluvaa) ja yksi
+  undo-operaatio. *(Sekoituslaki on nyt §7.1:n vuorovesi, ks. yllä.)*
+- [x] Versioitu, validoitu ja clampattu `presets/compass.cqcompass.scd`
+  autosave/load.
+- [x] Grow/wither 2,5 Hz hold-operaatioina ja Breed täsmälleen §7:n vakioilla
+  (breed lisäksi siivoaa < 0.05-haamut — witherin oma lattia).
+- [x] Weather-operaatiot eivät muuta `CQSpec`-parametreja; `patchDepth` säilyy.
+  *(Rakenteellisesti tosi: kaikki kirjoitukset kulkevat `CQMatrix`in kautta,
+  jossa ei ole parametreja.)*
+- [ ] `GUI_SPEC.md` §13:n kuuntelu ja käyttäjän visuaalinen hyväksyntä
+  (checklist-lohkot G3.1a/G3.1b; automaatio on jo vihreä — portti alla).
+
+G3:n ensimmäisen version portti 2026-07-22: `CQ_COMPILE_OK`, **6 611
+unit-passia / 0 failurea**, `CQ_SAFETY_PASSED`, kaikki neljä GUI-markeria
+(`CQ_GUI_NIGHT_PASSED` sisältää kompassin omat väitteet: leima/clear +
+levypysyvyys, kulmatarkka recall, vuorovesirajasta johdettu deterministinen
+matka, myrskymuoto päällä vain vedon ajan, grow/wither/breed §7:n vakioilla
+ja siemenillä bittitarkasti, Esc-disarm, elastisen täsmäpaluu ilman undoa,
+sekä välimuistin blit-vs-render-laskurit). DSP-koodiin ei koskettu, joten
+`CQ_HOLD_OK` on edellisen portin arvo. Kaksi sitkeää opetusta matkalta:
+sclangin stdout **puskuroituu uudelleenohjattuna** — jumittunut smoke näytti
+tyhjältä, ja vasta skriptin oma watchdog-exit (nyt pysyvästi
+`gui_night_smoke.scd`:ssä) huuhtoi evidenssin näkyviin; ja `Rect.extent`
+palauttaa **Pointin**, jolla ei ole `width`iä — virhe joka kytki välimuistin
+hiljaa pois ja paljastui vain jäljitysajolla.
 
 ## Ratkaistut GUI_SPEC-päätökset
 
@@ -650,48 +754,32 @@ Night map ja Weather Machine — tehdään seuraavalla tavalla:
 
 ## Seuraavan toteutussession ensimmäiset askeleet
 
-**G2:n anatomia (G2.1–G2.2) ja koko night touch grammar visuaalisine
-palautteineen (G2.3–G2.3b) on hyväksytty 2026-07-21. G1 on suljettu eikä sitä
-avata uudelleen. G2:n loput osat tehdään pieninä, erikseen katselmoitavina
-lisäyksinä — yksi näkyvä kokonaisuus kerrallaan, pysähdys palautteeseen
-jokaisen jälkeen.**
+**G3:n ensimmäinen ajettava versio on rakennettu ja automaatio on vihreä
+(2026-07-22). Seuraava sessio alkaa käyttäjän palautteesta, ei uudesta
+pinnasta.**
 
-1. Varmista `archipelago`-haara ja puhdas työpuu, ja lue `CLAUDE.md`, `PLAN.md` sekä
-   `GUI_SPEC.md` kokonaan — erityisesti §16.6 (Night-anatomia) ja §10 (piirtobudjetti).
-   Dayn muistipolun koko ja kaapelikerroksen offscreen-välimuisti ovat kirjattuja,
-   tietoisesti siirrettyjä kysymyksiä — ne eivät ole G2:n scopea.
-2. Aja automaatio ensin ja raportoi markerit: neljä markkeria (`compile_check`,
-   `run_all`, `nrt_safety`, `nrt_hold_integrity`) ja **neljä** GUI-smokea
-   (`gui_shell_smoke`, `gui_drawer_smoke`, `gui_drawer_preview_reentry_smoke`,
-   `gui_night_smoke`). Lähtötaso 2026-07-21: `CQ_COMPILE_OK`, 4 747 passia /
-   0 failurea, `CQ_SAFETY_PASSED`, `CQ_HOLD_OK` ja kaikki neljä GUI-markkeria.
-   **Huom:** GUI-smoket ajetaan omana prosessinaan; jos ne jumittuvat, tarkista ensin
-   hiiren osoittimen sijainti (ks. Qt-jäätymiskorjaus yllä) eikä koodia.
-3. G2:n jäljellä olevat osat toteutetaan tässä järjestyksessä, kukin omana
-   pienenä lisäyksenään omalla katselmointipysähdyksellään:
-   1. **Loop-phase/read-head spark** — luunvaalea komeetta spiraalilla loopin
-      todellisessa lukukohdassa (`/cq_phase` 5 Hz; ei seinäkelloanimaatiota).
-      *(Hyväksytty 2026-07-21, manuaalitesti G2.4; komeetan napautus = skip
-      poistettiin 2026-07-22, ks. G2.9 — liikkuva kohde ei ole säädin.)*
-   2. `/cq_charge`-lamput (9 kanavaa, GUI_SPEC §9) ja body-solo-light.
-      *(Hyväksytty 2026-07-21, manuaalitesti G2.5.)*
-   3. Deck-bird drag-over-korostus (§16.7). *(Hyväksytty 2026-07-22,
-      manuaalitesti G2.10.)*
-   4. **Night toolbar = almanakkakulma.** Muoto päätettiin käyttäjän kanssa
-      2026-07-22 ja on kirjattu `GUI_SPEC.md` §6/§6.1/§16.6:een (kylvökuu +
-      tyhjänä varattu kompassivesi, yläoikea taivas; preset-tähdet kokeiltiin
-      ja poistettiin samana päivänä). *(Hyväksytty 2026-07-22, lohkot G2.11 ja
-      G2.11b — jälkimmäinen spesal-kytkentäjänteille.)*
-   5. G2:n §13-portti: automaatio, kuuntelugate, 100/125/150 % skaalaus,
-      CPU/resurssisoak ja käyttäjän visuaalinen hyväksyntä. *(Läpäisty
-      2026-07-22 lohkoissa G2.6–G2.10; **avoinna enää skaalaus ja soak
-      almanakkakulman ja spesal-jänteiden kanssa** — se on seuraava askel.)*
-4. Muista G1:n opetus piirtobudjetista: `GUI_SPEC.md` §10 sitoo myös Nightin. Ambient
-   enintään 15 Hz, ilmoitusvirrat tahdistetaan etureunalla, eikä kustannusta arvata —
-   se mitataan Qt:n paint-eventin sisältä. Kielen ja Qt:n rajapinnan `Pen`-kutsu
-   maksaa noin 53 µs, joten piirron hinta on kutsujen määrä, ei matematiikka.
-
-Weather Machinea ei piirretä ennen G2:n hyväksyntää.
+1. Varmista `archipelago`-haara ja puhdas työpuu; lue `CLAUDE.md`, `PLAN.md`
+   ja `GUI_SPEC.md` — erityisesti §7 (weather machine + vuorovesi) ja §11:n
+   uusi offscreen-välimuistilaki.
+2. Aja automaatio ja raportoi markerit: `compile_check`, `run_all`,
+   `nrt_safety` (+ `nrt_hold_integrity` jos DSP:hen kosketaan) ja neljä
+   GUI-smokea. Lähtötaso 2026-07-22: `CQ_COMPILE_OK`, 6 611 passia /
+   0 failurea, `CQ_SAFETY_PASSED` ja kaikki neljä GUI-markkeria.
+   **Huom:** GUI-smoket omana prosessinaan; jos smoke näyttää jumittuneelta,
+   muista että sclangin stdout puskuroituu uudelleenohjattuna — yösmoken
+   watchdog pakottaa exitin 90 s:ssa ja huuhtoo evidenssin. Tarkista myös
+   hiiren osoittimen sijainti (Qt-jäätymislaki) ennen kuin epäilet koodia.
+3. Käyttäjän kanssa, tässä järjestyksessä:
+   1. **G2:n kuittaus**: checklist-lohkot G2.12 (skaalaus) ja G2.13 (soak).
+   2. **G3.1a/G3.1b**: kompassin, vuoroveden ja säärivin visuaalinen ja
+      ennen kaikkea kuuntelukatselmointi. Vuoroveden musikaalisuus on
+      suunnitelman ainoa aito tuntematon — jos se ei soi, päätös §7.1:n
+      sekoituslaista avataan uudelleen kirjatun perustelun pohjalta.
+   3. Palautteen viimeistelykierrokset olemassa olevaan pintaan; sitten
+      §13:n G3-portti kokonaisuudessaan (skaalaus + soak myös padolle).
+4. G1.3:n laki pätee yhä ja iski tänäkin sessiona kolmesti: kustannus
+   mitataan Qt:n paint-eventin sisältä (`tests/gui_paint_profile.scd`), ei
+   arvata. Uudet mittarit: `CQGuiCableOverlay.drawCount/renderCount/lastDrawMs`.
 
 ## Myöhemmin, ei tämän vaiheen scopea
 
@@ -702,15 +790,14 @@ Weather Machinea ei piirretä ennen G2:n hyväksyntää.
   kirjoitettujen patch-reseptien kodiksi. Vaatii `config.folders`-lisäyksen,
   SPEC §7 -päivityksen ja vanhan polun lukemisen taaksepäin yhteensopivasti.
   Ei tehdä kesken G1:n GUI-työn.
-- **Kaapelikerroksen offscreen-välimuisti.** Kaapelikerros on läpinäkyvä koko
-  Day-alueen kokoinen taso säätimien päällä, joten kun mikä tahansa nuppi sen alla
-  piirtyy, Qt kutsuu overlayn `drawFunc`ia ja se vetää *kaikki* johdot uudelleen,
-  vaikka Qt näyttää niistä vain nupin kokoisen palan (SC:n `drawFunc` ei tiedä
-  leikkausalueesta). Tämä on ainoa jäljellä oleva syy siihen, että snapshot-morph
-  maksaa ~5–6 % lepotason ~3 %:n sijaan. Oikea korjaus on piirtää kaapelikerros
-  Image-puskuriin ja blitata se, kunnes geometria tai alpha oikeasti muuttuu.
-  Päätös 2026-07-21: ei tehdä G1:n lopussa, koska se on iso muutos hyväksyttyyn
-  renderöintiin ja vaatii oman visuaalisen katselmuksensa — harkitaan G2:n jälkeen.
+- **Kaapelikerroksen offscreen-välimuisti — TEHTY G3:n alussa 2026-07-22**
+  (ks. G3-osio). Samalla mitattiin `drawCount`-laskureilla se, mitä tässä
+  kohdassa aiemmin oletettiin: naapurinäkymän repaint EI laukaise overlayn
+  piirtoa StackLayout-lavalla lainkaan — morphin ylimääräinen kustannus tuli
+  matriisin transienttien notifikaatioiden ajamista overlay-piirroista (jotka
+  välimuisti nyt muuttaa blitiksi aina kun solut eivät oikeasti muuttuneet) ja
+  nuppien omista piirroista, ei damage-vuodosta. Blitti ~4,5 ms johtomäärästä
+  riippumatta; morph-luvut kannattaa mitata uudelleen G3:n soakissa.
 - **Dayn staattisen muistipolun visuaalinen paino.** Käyttäjän havainto 2026-07-21:
   "signal memory path" on Dayn vähiten elävä osa — se näyttää reitin muttei tilaa —
   joten sen nykyinen tila-osuus on iso suhteessa informaatioarvoon. G1:n loppuportissa

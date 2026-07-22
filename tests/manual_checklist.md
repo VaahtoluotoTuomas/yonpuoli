@@ -1520,3 +1520,135 @@ CQ.set(\qChaos, 0.15);
 CQ.spesal(1); CQ.spesal(1); CQ.spesal(1); CQ.spesal(1);   // askella moodin yli
 CQ.patchPreset(\empty);
 ```
+
+## G2.12 — §13:n täydennys uudelle yöpinnalle: skaalaus (kuu + jänteet)
+
+G2:n kuittauksen avoin osa 1/2. Sama kuin G2.7, mutta katse almanakkakulmassa
+ja ringin jänteissä, jotka eivät olleet olemassa kun G2.7 ajettiin.
+
+```supercollider
+// G2.12 — skaalaus 100 / 125 / 150 %, almanakkakulma ja spesal-jänteet.
+// Windows: Asetukset > Näyttö > Skaalaus; vaihda, käynnistä SC uudelleen ja
+// aja tämä jokaisella kolmella arvolla. (Ctrl+Shift+L ensin!)
+CQ.boot; CQ.patchPreset(\classic);
+// Tab yöhön.
+// - KUU: pysyy kuoren ja linnun nimen oikealla puolella, ei leikkaudu
+//   reunaan, vaihe piirtyy oikein (CQ.gui.shakeAmount = 0.3 → ohut sirppi).
+// - KOMPASSIVESI kuun alla: pato, neljä siemenkulmaa ja kolme säämerkkiä
+//   (sade · oksastus · aurinko) näkyvät kokonaisina — mikään ei leikkaudu
+//   kerroksen reunaan eikä osu linnun nimeen tai kuoren laatikkoon.
+// - Muste ei paksune eikä teksti kasva (§16.10): viivat px-tarkkoja.
+// - JÄNTEET: vie osoitin joen viivalle — kaikki viisi jännettä piirtyvät
+//   eivätkä leikkaa silmän läpi millään skaalalla.
+CQ.set(\qChaos, 0.9);   // iiris isoksi: jänteiden clearance näkyy
+CQ.set(\qChaos, 0.15);
+// - Maksimoi ja palauta: kulma ja pato palaavat oikeaan kokoon ja paikkaan.
+CQ.patchPreset(\empty);
+```
+
+- [ ] G2.12 skaalaus hyväksytty (pvm: ______)
+
+## G2.13 — §13:n täydennys uudelle yöpinnalle: CPU-soak (kuu + jänteet)
+
+G2:n kuittauksen avoin osa 2/2. PLAN.md:n kaksi mittauspyyntöä: kulman oma
+kerros lepotilassa (nolla piirtoa) ja viisi jännettä kulkevine valoineen.
+
+```supercollider
+// G2.13 — CPU / resurssisoak, YÖ auki. (Ctrl+Shift+L ensin!)
+CQ.boot; CQ.patchPreset(\mayhem);
+CQ.set(\coco1SlotQ, 1); CQ.set(\coco2SlotQ, 1);
+CQ.set(\coco1Send, 0.5); CQ.set(\coco2Send, 0.5); CQ.set(\spaceMix, 0.4);
+CQ.server.avgCPU.round(0.1);   // SPEC §9:n katto 25 %
+// 1. LEPO: hiiri pois ikkunasta, katso sclangin CPU Task Managerista.
+//    Kulma (kuu + pato + säämerkit) ei liiku ilman kättä, joten sen ei pidä
+//    maksaa mitään: lepotaso samaa luokkaa kuin G2.8:ssa (3–6,8 % mayhemilla,
+//    ~3 % soitetun kokoisella patchilla).
+// 2. VÄLIMUISTI: nyt kaapelikerros blittaa kun mikään muste ei muuttunut.
+//    Vertaa G2.8:aan: hiiren nopea liike yön yli EI saa enää nostaa CPU:ta
+//    yhtä paljon kuin ennen (johtoja ei vedetä uudelleen joka damagesta).
+//    Piirtolaskurit näkyvät suoraan:
+CQ.gui.nightMap.overlay.drawCount;    // kasvaa repainteista
+CQ.gui.nightMap.overlay.renderCount;  // kasvaa VAIN kun muste oikeasti muuttui
+// 3. JÄNTEET: vie osoitin joen viivalle ja pidä se siinä ~1 min: viisi
+//    jännettä + kulkevat valot. Nousun pitää olla pieni ja palata heti.
+// 4. MYRSKY: leimaa mayhem patoon (napauta siemenkulmaa) ja vedä patoa
+//    edestakaisin ~30 s. Tämä on tahallinen ääritapaus: myrskymuoto piirtää
+//    polariteettiviivat ilman tulppia ja väkäsiä, ja piirtää VAIN kun johtoja
+//    syttyy tai sammuu. CPU saa nousta vedon ajaksi, paluu välitön.
+// 5. Anna soida 15 min: ei muistin kasvua, ei hidastumista, ei virheryöppyä.
+CQ.patchPreset(\empty);
+```
+
+- [ ] G2.13 CPU/resurssisoak hyväksytty (pvm: ______)
+- [ ] **G2 valmis** — kun G2.12 ja G2.13 on hyväksytty, koko G2 kuitataan.
+
+## G3.1 — Weather machine: kompassi, vuorovesi, sää (GUI_SPEC §7)
+
+Ensimmäinen ajettava G3-versio. Kolme uutta asiaa almanakkakulmassa kuun
+alla: **pato** (§7.1 kompassi) neljine siemenkulmineen, ja padon alla
+**säärivi**: sade (grow) · oksastus (breed) · aurinko (wither = kuivuus).
+
+Sekoitus EI ole spekin alkuperäinen bilineaarinen amplitudisekoitus vaan
+**vuorovesi**: jaetut johdot liukuvat painojaan, eriävät johdot seisovat
+täydessä painossaan kunnes asema hylkää ne — banaani kerrallaan, nollaan
+asti. Perustelut GUI_SPEC §7.1:ssä (puuron välttäminen, gatet elossa koko
+matkan, opittava maantiede). Tämä on suunnitelman ainoa aito tuntematon:
+**soiko se?** — siksi tämä lohko on ennen kaikkea kuuntelukoe.
+
+```supercollider
+// G3.1a — KOMPASSI SILMÄLLÄ JA KORVALLA. (Ctrl+Shift+L ensin!)
+// Soiva maisema, jotta matka kuuluu:
+CQ.boot;
+CQ.deckA.load("123681__aidenfry__cricket-and-bird-field-recording.wav");
+CQ.set(\coco1SlotDeck, 1); CQ.set(\coco1In, 0.7);
+// Tab yöhön. Kuun alla on nyt pato ja sen alla kolme säämerkkiä.
+// 1. LEIMAA KAKSI VIIDAKKOA: aja \classic ja napauta padon VASENTA YLÄ-
+//    siementä; aja \organMode ja napauta OIKEAA YLÄsiementä. Leimattu
+//    siemen täyttyy; tyhjä on ontto rengas.
+CQ.patchPreset(\classic);    // → napauta vasen yläsiemen
+CQ.patchPreset(\organMode);  // → napauta oikea yläsiemen
+// 2. MATKA: vedä hitaasti vasemmasta yläkulmasta oikeaan pitkin yläreunaa
+//    ja KUUNTELE. Odotus: yhteiset johdot (tri3→spaf molemmissa) liukuvat,
+//    ja matkan varrella yksittäisiä banaaneja nousee ja laskeutuu KUULUVASTI
+//    — ei yleistä himmenemistä, ei puuroa keskellä. Sama matka uudelleen =
+//    SAMAT tapahtumat samoissa kohdissa (maantiede on opittavaa).
+// 3. VEDON AIKANA: risti kulkee sormen mukana, neljä haaleaa kulmavetoa
+//    (≤ 8 %) näyttävät mihin asema nojaa, ja johdot piirtyvät sateen läpi
+//    (pelkät polariteettiviivat). Irrotus palauttaa täyden musteen heti.
+// 4. NAPAUTUS = HYPPY: napauta padon keskikohtaa. Yksi committi, yksi
+//    Ctrl+Z. Napauta leimattua kulmaa lähellä kulmaa — tasan sen viidakko.
+// 5. ELASTINEN: vedä OIKEALLA napilla padossa ja irrota: koko lahti palaa
+//    lähtötilaan (~3 ruudun liuku). Heiluta edestakaisin jonkin johdon
+//    vuorovesirajan yli: banaani laskeutuu ja nousee — tekstuuria, jota
+//    voi soittaa. Ei undo-merkintää.
+// 6. TYHJÄ KULMA: vedä kohti leimaamatonta kulmaa: johdot putoavat yksi
+//    kerrallaan (wither-by-travel), eivät himmene yhdessä.
+CQ.patchPreset(\empty);
+```
+
+```supercollider
+// G3.1b — SÄÄRIVI JA PYSYVYYS. (jatkoa edelliselle)
+// 1. SADE (grow): paina ja PIDÄ sadeglyfiä. Ensimmäinen banaani istuu heti,
+//    sitten ~2,5 siementä sekunnissa; merkki välähtää jokaisesta. Irrotus =
+//    yksi undo-op (Ctrl+Z vie koko kuuron).
+// 2. AURINKO (wither): pidä aurinkoa tiheän patchin päällä: johdot ohenevat
+//    ×0.7 ja katoavat 0.05:n alla. Kuuntele: sade ja kuivuus ovat rain &
+//    drought — shake on salama.
+// 3. OKSASTUS (breed): paina oksastusglyfiä (halo syttyy), napauta kahta
+//    leimattua siementä: jälkeläinen korvaa lahden — erilainen mutta
+//    sukuinen. Esc tai uusi painallus unohtaa aseen.
+// 4. SPELLBOOK: avaa drawer → spellbook. Matka = yksi `// compass` -lohko,
+//    sade = `// grow`, aurinko = `// wither`, oksastus = `// breed`.
+//    Elastinen EI näy lainkaan.
+// 5. PYSYVYYS: sulje GUI (ikkunan X) ja avaa uudelleen:
+CQ.gui;   // reopens the closed window
+//    Leimatut siemenet ovat tallella (presets/compass.cqcompass.scd).
+//    Riko tiedosto käsin (esim. version: 99) ja avaa GUI: varoitus + tyhjä
+//    vesi, ei kaatumista, ei raakoja arvoja.
+// 6. TURVA: space (panic) kesken vedon — käsi irtoaa, matka palaa kotiin,
+//    eikä auditio/matka vuoda (§4.1:n henki). patchDepth pysyy kesyttäjänä
+//    padon päällä: F15 alas = koko maisema hiljenee, pato ei koske siihen.
+CQ.patchPreset(\empty);
+```
+
+- [ ] G3.1 kompassi + vuorovesi + säärivi hyväksytty (pvm: ______)

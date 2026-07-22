@@ -159,11 +159,10 @@ CQNightGeometry {
 	}
 
 	// ---- the almanac corner (§16.6) ----
-	// Free water in the top-right sky: the sowing moon, and under it the 140 px
-	// the §7.1 compass takes at G3 — reserved as *empty water*, never drawn
-	// before then, because a dead control breaks §4.5 and §16.12 at once. The
-	// corner starts where coco 2's own box ends, so no stage size can squeeze
-	// it; the clearance tests pin both rects.
+	// Free water in the top-right sky: the sowing moon, and under it the §7.1
+	// compass — the weather machine's home, drawn since G3. The corner starts
+	// where coco 2's own box ends, so no stage size can squeeze it; the
+	// clearance tests pin every rect.
 	//
 	// The sower constellation that first stood here was removed on the user's
 	// decision (2026-07-22): a preset is a recipe, not a body, and it was the
@@ -177,6 +176,14 @@ CQNightGeometry {
 	// the flash halo reaches this far past the rim, so the layer must hold it
 	*moonHalo { ^7 }
 
+	// the pad's corner seeds sit this far inside the water, so a stamped
+	// corner's dot and its halo never touch the hairline border
+	*stampInset { ^13 }
+
+	// a stamp answers within this radius — under the 8 px tap threshold it is
+	// a tap target, not a drag start, so it can afford to be small
+	*stampRadius { ^9 }
+
 	*almanac { |width, scale = 1, freeFrom = 0|
 		var left = freeFrom + (6 * scale);
 		var axis = width - (80 * scale);
@@ -184,13 +191,63 @@ CQNightGeometry {
 		var moon = Point(axis, (18 * scale) + moonR);
 		var box = Rect(left, 0, width - left,
 			moon.y + moonR + max(14 * scale, this.moonHalo + 4));
+		var pad = Rect(axis - (70 * scale), box.bottom + (14 * scale),
+			140 * scale, 140 * scale);
+		var inset = this.stampInset * scale;
+		var weatherY = pad.bottom + (16 * scale);
 		^(box: box, moon: moon, moonR: moonR,
-			compass: Rect(axis - (70 * scale), box.bottom + (14 * scale),
-				140 * scale, 140 * scale))
+			compass: pad,
+			// corner seeds in pad order TL TR BL BR — the same order
+			// CQCompass.bilinear speaks, so no view ever re-maps them
+			stamps: [
+				Point(pad.left + inset, pad.top + inset),
+				Point(pad.right - inset, pad.top + inset),
+				Point(pad.left + inset, pad.bottom - inset),
+				Point(pad.right - inset, pad.bottom - inset)
+			],
+			// the weather row under the field: rain (grow), the graft (breed),
+			// the sun (wither) — §7.2's own words, "the rain and the drought"
+			weather: (
+				grow: Point(pad.left + (pad.width * 0.22), weatherY),
+				breed: Point(pad.center.x, weatherY),
+				wither: Point(pad.left + (pad.width * 0.78), weatherY)
+			),
+			// the compass layer's own opaque box: pad, stamp halos and the
+			// weather row whole, so no mark can clip against its layer edge
+			compassBox: Rect(pad.left - 8, pad.top - 8,
+				pad.width + 16, weatherY + 12 - pad.top + 8))
 	}
 
 	*moonHit { |almanac, point|
 		^this.distance(point, almanac[\moon]) <= almanac[\moonR]
+	}
+
+	// ---- §7.1 compass hit tests (pure) ----
+
+	*compassHit { |almanac, point|
+		^almanac[\compass].containsPoint(point)
+	}
+
+	// a stage point as pad coordinates 0..1 (TL = origin, the bilinear's frame)
+	*compassNorm { |almanac, point|
+		var pad = almanac[\compass];
+		^Point(((point.x - pad.left) / max(1, pad.width)).clip(0, 1),
+			((point.y - pad.top) / max(1, pad.height)).clip(0, 1))
+	}
+
+	// which corner seed the point lands on, or nil — consulted before the pad
+	// itself, since the seeds live inside the water
+	*stampHit { |almanac, point|
+		^almanac[\stamps].detectIndex { |stamp|
+			this.distance(point, stamp) <= this.stampRadius
+		}
+	}
+
+	// which weather mark the point lands on (\grow / \breed / \wither), or nil
+	*weatherHit { |almanac, point|
+		^#[grow, breed, wither].detect { |name|
+			this.markHit(almanac[\weather][name], point)
+		}
 	}
 
 	// ---- spesal coupling chords (§16.6, added 2026-07-22) ----
