@@ -83,15 +83,16 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   `/cq_castle` activity. Do not call that instantaneous sample a waveform.
 - The Madrona/Sumu reference contributed only the principle that a visualization must
   expose actual sound/state structure. Do not add decorative filler or animation.
-- **G1 is complete and accepted, §13 end gate included (2026-07-21, `295d14d`).**
-- **G2's whole night surface is now built and accepted** — the almanac corner and
-  the spesal coupling chords landed last (2026-07-22, manual blocks G2.11 and
-  G2.11b). **G2's sign-off waits only for the user to run checklist blocks
-  G2.12–G2.13** (scaling + soak with the moon and chords; the blocks are
-  written). **Do not rebuild or "improve" accepted G1 or G2 surface on your
-  own initiative.** `PLAN.md` holds the detail.
-- **G3's first runnable, tested version was built 2026-07-22** and awaits the
-  user's visual + listening review (checklist blocks G3.1a/G3.1b): the §7.1
+- **G1, G2 and G3 are all built and accepted (2026-07-22).** The whole
+  archipelago GUI epic on the `archipelago` branch is complete: G1 §13 end gate
+  (2026-07-21, `295d14d`); G2's whole night surface incl. G2.12 scaling + G2.13
+  soak; and G3's weather machine incl. the G3.1a/G3.1b review — **the tide
+  sings**, the plan's one honest unknown resolved by ear. Next natural step:
+  merge `archipelago` → `main` (Draft PR #1), archive this `PLAN.md` to
+  `docs/history/`, and start the night-first epic from
+  `docs/NIGHT_STANDALONE_PLAN.md`. **Do not rebuild or "improve" accepted G1/G2/G3
+  surface on your own initiative.**
+- G3's built surface (accepted 2026-07-22): the §7.1
   compass in the almanac's water (corner seeds stamp/clear, tap = jump,
   left-drag = voyage, right-drag = elastic), the weather row beneath it
   (rain = grow, graft = breed, sun = wither, §7.2/§7.3 exact constants), a
@@ -102,9 +103,8 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   cells glide, disjoint cables stand at full stamped weight until the pull
   drops below their fixed per-cell tide mark, then lift whole — so a midpoint
   is a handful of full-voice bananas instead of mush, Schmitt gates keep
-  firing across the pad, and the pad is stable, learnable geography. Whether
-  the tide is *musical* is the plan's one honest unknown — G3.1a decides it
-  by ear before any polish.
+  firing across the pad, and the pad is stable, learnable geography. The tide
+  was confirmed musical at the G3.1a review (2026-07-22).
 - G3 also landed the cable layer's offscreen Image cache + the weather
   gestures' storm form, both measured inside the real Qt paint event
   (`tests/gui_paint_profile.scd`; table in PLAN.md): blit ≈ 4.5 ms at any

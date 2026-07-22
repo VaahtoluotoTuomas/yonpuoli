@@ -4,22 +4,24 @@ Päivitetty 2026-07-22. Tämä tiedosto kertoo, mitä tehdään seuraavaksi. Val
 toteutuksen yksityiskohtainen työpäiväkirja ja alkuperäiset checkboxit on jäädytetty
 tiedostoon [`docs/history/PLAN_v1.0.md`](docs/history/PLAN_v1.0.md).
 
-**Tilanne yhdellä rivillä:** foundation F0–F2 ja **koko G1 ovat valmiita ja käyttäjän
-hyväksymiä** §13:n loppuportteineen (2026-07-21, commit `295d14d`); **koko G2:n
-yöpinta on rakennettu ja hyväksytty** (G2.1–G2.5 rakennuspalikat, loppuportti
-G2.6–G2.10, ja viimeisenä almanakkakulma G2.11 + spesal-kytkentäjänteet G2.11b
-2026-07-22) — G2:n kuittaus odottaa käyttäjän ajamia lohkoja **G2.12–G2.13**
-(skaalaus + soak kuun ja jänteiden kanssa; lohkot valmiina checklistissä).
-**G3 Weather machinen ensimmäinen ajettava ja testattu versio on rakennettu
-2026-07-22** (kompassi + vuorovesi-sekoitus + sade/aurinko/oksastus +
-kaapelikerroksen offscreen-välimuisti + myrskymuoto) ja odottaa käyttäjän
-visuaalista ja kuuntelukatselmointia (lohkot G3.1a/G3.1b).
+**Tilanne yhdellä rivillä (2026-07-22): G1, G2 ja G3 ovat kaikki rakennettu ja
+käyttäjän hyväksymiä.** Foundation F0–F2 ja **koko G1** §13:n loppuportteineen
+(2026-07-21, `295d14d`); **koko G2:n yöpinta** (G2.1–G2.5 rakennuspalikat,
+loppuportti G2.6–G2.10, almanakkakulma G2.11 + spesal-jänteet G2.11b, ja §13:n
+täydennys uudelle pinnalle G2.12 skaalaus + G2.13 soak — kaikki hyväksytty);
+ja **G3 Weather machine** (kompassi + vuorovesi-sekoitus + sade/aurinko/oksastus
++ kaapelikerroksen offscreen-välimuisti + myrskymuoto), jonka kuuntelu- ja
+visuaalikatselmointi lohkoissa G3.1a/G3.1b hyväksyttiin — **vuorovesi soi**,
+suunnitelman ainoa aito tuntematon ratkesi korvalla.
 
-**Seuraava askel konkreettisesti:** käyttäjä ajaa **G2.12 + G2.13** (G2:n
-kuittaus) ja sitten **G3.1a + G3.1b** (weather machinen ensimmäinen
-katselmointi — ennen kaikkea korvalla: vuorovesi-sekoituksen musikaalisuus on
-koko suunnitelman ainoa aito tuntematon). Palautteen mukaan viimeistellään;
-uutta G3-pintaa ei rakenneta ennen katselmointia.
+**Seuraava askel konkreettisesti:** tämä (archipelago G1–G3) on
+kokonaisuudessaan valmis ja hyväksytty; luontevin seuraava vaihe on
+**mergata `archipelago` → `main`** (Draft-PR #1 valmiiksi), **arkistoida tämä
+PLAN.md** `docs/history/`-kansioon ja **aloittaa uusi vaihe**
+`docs/NIGHT_STANDALONE_PLAN.md`:n pohjalta (night-first-soitin: punch, ranget,
+dolby, kevättulva, almanakan maisemointi, linnut, juuret → drawer-workshop →
+day-tuomio; sitten §13 korvapassi ja §14 norns-portti). Ks. sen §12
+rakennusjärjestys ja §13/§14.
 
 **Almanakkakulma ja spesal-jänteet hyväksyttiin 2026-07-22** (lohkot G2.11 ja
 G2.11b) neljän kierroksen jälkeen. Kulmassa on **kylvökuu** yläoikean taivaan
@@ -580,9 +582,9 @@ session alussa; DSP-koodia ei muutettu.)
 
 ### G3 — Weather machine
 
-**Nykytila 2026-07-22: ensimmäinen ajettava ja testattu versio on rakennettu;
-katselmointi (G3.1a/G3.1b) odottaa käyttäjää.** Kolme session alussa nimettyä
-haastetta ratkaistiin näin:
+**Nykytila 2026-07-22: rakennettu, testattu JA hyväksytty.** Kuuntelu- ja
+visuaalikatselmointi (lohkot G3.1a/G3.1b) hyväksyttiin 2026-07-22; vuorovesi soi.
+Kolme session alussa nimettyä haastetta ratkaistiin näin:
 
 1. **Suorituskyky mitattiin ennen kuin mitään päätettiin** (G1.3:n laki).
    Uusi harness `tests/gui_paint_profile.scd` mittaa oikean Qt-paint-eventin
@@ -676,8 +678,8 @@ per teko), `CQGuiCableOverlay` (välimuisti + myrskymuoto + piirtolaskurit
 - [x] Weather-operaatiot eivät muuta `CQSpec`-parametreja; `patchDepth` säilyy.
   *(Rakenteellisesti tosi: kaikki kirjoitukset kulkevat `CQMatrix`in kautta,
   jossa ei ole parametreja.)*
-- [ ] `GUI_SPEC.md` §13:n kuuntelu ja käyttäjän visuaalinen hyväksyntä
-  (checklist-lohkot G3.1a/G3.1b; automaatio on jo vihreä — portti alla).
+- [x] `GUI_SPEC.md` §13:n kuuntelu ja käyttäjän visuaalinen hyväksyntä
+  (checklist-lohkot G3.1a/G3.1b hyväksytty 2026-07-22; vuorovesi soi).
 
 G3:n ensimmäisen version portti 2026-07-22: `CQ_COMPILE_OK`, **6 611
 unit-passia / 0 failurea**, `CQ_SAFETY_PASSED`, kaikki neljä GUI-markeria

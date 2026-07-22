@@ -1303,10 +1303,10 @@ CQ.hold(1, 0); CQ.patchPreset(\empty);
 - [x] G2.10 drag-over-korostus (§16.7) hyväksytty (pvm: 2026-07-22, kahden
   kierroksen jälkeen: reunaa pitää yllä kursorin sijainti eikä ajastin, ja yön
   kohde kiertää linnun JA sen nimen)
-- [ ] **G2 valmis** — koko G2:n pinta on nyt rakennettu ja hyväksytty (viimeisenä
-  almanakkakulma G2.11 ja spesal-jänteet G2.11b, 2026-07-22). Avoinna enää §13:n
-  **täydennys uudelle pinnalle**: skaalaustarkastus 100/125/150 % ja CPU-soak
-  kuun ja jänteiden kanssa. Vasta sen jälkeen G3 Weather machine.
+- [x] **G2 valmis** (käyttäjän hyväksymä 2026-07-22) — koko G2:n pinta rakennettu
+  ja hyväksytty (viimeisenä almanakkakulma G2.11 ja spesal-jänteet G2.11b), ja
+  §13:n täydennys uudelle pinnalle läpäisty lohkoissa G2.12 (skaalaus) ja G2.13
+  (CPU-soak).
 
 ```supercollider
 // G2.10 — §16.7:n katkoviivakorostus SILMÄLLÄ. (Ctrl+Shift+L ensin.)
@@ -1546,7 +1546,7 @@ CQ.set(\qChaos, 0.15);
 CQ.patchPreset(\empty);
 ```
 
-- [ ] G2.12 skaalaus hyväksytty (pvm: ______)
+- [x] G2.12 skaalaus hyväksytty (pvm: 2026-07-22)
 
 ## G2.13 — §13:n täydennys uudelle yöpinnalle: CPU-soak (kuu + jänteet)
 
@@ -1579,8 +1579,8 @@ CQ.gui.nightMap.overlay.renderCount;  // kasvaa VAIN kun muste oikeasti muuttui
 CQ.patchPreset(\empty);
 ```
 
-- [ ] G2.13 CPU/resurssisoak hyväksytty (pvm: ______)
-- [ ] **G2 valmis** — kun G2.12 ja G2.13 on hyväksytty, koko G2 kuitataan.
+- [x] G2.13 CPU/resurssisoak hyväksytty (pvm: 2026-07-22)
+- [x] **G2 kuitattu** — G2.12 ja G2.13 hyväksytty, koko G2 valmis (2026-07-22).
 
 ## G3.1 — Weather machine: kompassi, vuorovesi, sää (GUI_SPEC §7)
 
@@ -1651,4 +1651,6 @@ CQ.gui;   // reopens the closed window
 CQ.patchPreset(\empty);
 ```
 
-- [ ] G3.1 kompassi + vuorovesi + säärivi hyväksytty (pvm: ______)
+- [x] G3.1 kompassi + vuorovesi + säärivi hyväksytty (pvm: 2026-07-22, lohkot
+  G3.1a kompassi/vuorovesi ja G3.1b säärivi/pysyvyys molemmat hyväksytty —
+  vuorovesi soi, suunnitelman ainoa aito tuntematon ratkesi korvalla)
