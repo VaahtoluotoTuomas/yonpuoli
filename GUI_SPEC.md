@@ -325,7 +325,8 @@ an action the next gesture will not receive).
 | touch | gesture | writes |
 |---|---|---|
 | **wind the shell** | left-drag along the spiral's drawn line (≤ 8 px); turning toward the mouth winds faster, against it slower — the two shells mirror like their spirals. The reel notch rides the line as the live hand, and hover brightens the grab (§16.6) | `cocoN speed` (relative, ~2 turns = full range) |
-| **the shell's heart** | press the small mark at the spiral's innermost eye: seal / crack the loop; red while sealed (one law with the outer seal and HOLD) | `cocoN hold` toggle |
+| **the shell's heart** | **left tap** the small mark at the spiral's innermost eye: seal / crack the loop; red while sealed (one law with the outer seal and HOLD) | `cocoN hold` toggle |
+| **the heart's punch** | **right press held** on the same heart mark: momentarily *invert* the seal for as long as it is held — a looper's punch-in (sealed → material drops into the ring; open → a fragment freezes), restored on release. The exact prior value is captured and restored on **every** exit path — mouse-up, Esc, Tab, panic, window close, GUI free, CmdPeriod — because a stuck punch leaves a loop recording over itself (a right press on a *cable* crossing the heart still rips, §4.5). No timer: the split from the left tap is the button, not the clock | `cocoN hold` (momentary invert, no undo) |
 | **the mouth chevron** | press the read-direction chevron at the mouth | `cocoN flip` toggle |
 | **the mouth's skip mark** | press the spark glyph hanging under the chevron (10 px box, stationary). Momentary: 120 ms ink flash on *any* skip, the Day button's law (§16.7) | `skip(n)` — the loop restarts from the eye |
 | **tide crescents** | a small crescent below each spaf / inVca / fbVca moon, luminous fill = value; vertical drag pours more or less. Socket beside its control — §1's proximity law, reborn at night. spaf wears purple | `cocoN spaf / in / fb` |
@@ -989,7 +990,10 @@ and chevron.
 **Hold**: the outermost turn
 closes into a full circle and tints danger-red at 60 % — the loop is sealed;
 the **heart** at the spiral's innermost eye (small Ø ≈ 5 mark, red while
-sealed) is the §6.1 hold touch. The **skip mark** hangs under the mouth
+sealed) is the §6.1 hold touch — a left tap toggles the seal, and a **right
+press held on it punches**: the seal inverts for as long as it is held and is
+restored on release and on every exit path (§6.1's punch row), so the same
+crack/close the display already draws animates the momentary hold for free. The **skip mark** hangs under the mouth
 chevron: the §16.5 spark glyph in a 9 px box, whisper at rest, line ink on
 hover, a 120 ms bone-spark flash on any skip (§16.7's momentary law, one
 `CQInk.momentaryFlash` constant shared with the Day button). The spiral's line

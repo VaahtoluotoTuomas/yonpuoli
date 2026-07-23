@@ -359,5 +359,48 @@ Jokaisen inkrementin oma kuuntelu-/välitarkastuslohko lisätään tähän sitä
 mukaa kun se rakennetaan (punch → kevättulva → almanakan maisemointi → ranget
 → dolby → linnut → juuret → drawer-workshop). Korvapassin (§13) lohkot samoin.
 
-*(Ei vielä lohkoja — Nocturne alkaa punchista.)*
+### N1 — Punch (momentaarinen hold, §2)
+
+Oikean napin **pito** kuoren sydämellä (spiraalin sisin silmä, sama merkki kuin
+HOLD) invertoi loopin sinetin pidon ajaksi ja palauttaa irrotettaessa. Vasen
+napautus sydämeen = tavallinen hold-toggle kuten ennen. Uusi ele, ei uutta
+grafiikkaa — sinetti/sydän piirtyvät jo hold-tilasta, joten pidon aikana sinetti
+näkyvästi halkeaa tai sulkeutuu. **Vaatii GUI:n yökartan.**
+
+```supercollider
+// N1 — Punch. Lähtötila: deck A soi (ks. yllä). Avaa GUI ja paina Tab -> yökartta.
+CQ.hold(1, 1);                 // 1. lukitse coco1:n looppi: punainen sydän, sinetti ehjä
+// 2. Vie hiiri coco1:n (vasemman kuoren) SYDÄMEEN ja pidä OIKEAA nappia pohjassa:
+//    venttiili aukeaa pidon ajaksi -> uutta materiaalia (deck A) tippuu renkaaseen
+//    ja sinetti halkeaa näkyvästi. Irrota nappi -> looppi sulkeutuu ja juuri
+//    pudonnut pätkä jää kiertämään. Tämä on nauhurin punch-in.
+CQ.hold(1, 0);                 // 3. avaa looppi (delay-tila, deck A kiertää sisään)
+// 4. Tee sama oikean napin pito sydämellä: looppi JÄÄTYY hetkeksi (pätkä
+//    pysähtyy), irrotus vapauttaa kierron taas. Sama ele, molempiin suuntiin.
+// 5. Vasen napautus sydämeen = hold-toggle kuten ennen (punch on vain oikea nappi).
+```
+
+**Exit-polut (KRIITTINEN turvatesti).** Jumiin jäänyt punch jättäisi loopin
+auki tallentamaan ja tuhoaisi materiaalin, joten jokainen keskeytys palauttaa
+holdin täsmälleen pidon-alkua-edeltäneeseen arvoon. Aloita oikean napin **pito**
+sydämellä ja keskeytä se kullakin tavalla erikseen; joka kerran jälkeen sinetin
+(punaisen holdin) pitää palata lähtötilaansa **eikä** coco1 saa jäädä
+materiaalia/kohinaa kasaavaan tilaan:
+
+- **irrota hiiren nappi** (luonnollinen vapautus)
+- **Esc** (pidä nappia, paina Esc)
+- **Tab** (pidä nappia, paina Tab — näkymä vaihtuu, hold palautuu silti)
+- **välilyönti = panic** (pidä nappia, paina space; jälkeen `CQ.resume`)
+- **ikkunan X / `CQ.free`** ja **CmdPeriod (Ctrl+.)** — nämä repivät koko GUI:n;
+  hold palautuu tilaan, CmdPeriodin jälkeen vaadi `CQ.reboot`.
+
+Koko exit-polkujoukko (mouse-up · Esc · Tab · panic · window close · GUI free ·
+CmdPeriod) on lisäksi konevarmistettu automaattitestissä
+`tests/gui_night_smoke.scd` — manuaalisesti riittää todeta soiva käytös ja
+muutama kädellä toistettava keskeytys.
+
+- [x] N1 hyväksytty (pvm: 2026-07-23 — punch soi (materiaali tippuu sinetöityyn
+      looppiin ja jää; auki-tilassa jäätyy pätkä), exit-polut palauttavat holdin
+      eikä looppi jää tallentamaan. Oikea nappi = punchin koti; valinnainen
+      Shift+1/2-näppäinpunch jätettiin pois.)
 

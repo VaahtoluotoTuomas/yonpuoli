@@ -106,7 +106,9 @@ CQGuiNightMap {
 	free {
 		if(freed) { ^this };
 		freed = true;
-		touch !? { touch.cancelWeather };
+		// window close, GUI free and CmdPeriod all reach here — restore a held
+		// punch and let go of any weather gesture through the one choke point
+		this.cancelGestures;
 		controller !? { controller.free };
 		overlay !? { overlay.free };
 	}
@@ -298,7 +300,7 @@ CQGuiNightMap {
 
 	// §7.3 breed: arm the graft, pick two parents, the offspring becomes the
 	// bay — one committed write, one undo op. Pressing the graft again, or any
-	// stray pad press, forgets it; so does Esc (cancelWeather).
+	// stray pad press, forgets it; so does Esc (cancelGestures).
 	armBreed {
 		breedArmed = breedArmed.not;
 		breedFirst = nil;
@@ -385,9 +387,17 @@ CQGuiNightMap {
 		^this
 	}
 
-	// every hand-off-the-wheel path (Esc, Tab, panic, free) lands here
-	cancelWeather {
-		touch !? { touch.cancelWeather };
+	// The single "hand comes off every night gesture" choke point. Every
+	// non-mouse-up exit path lands here — Esc and Tab (CQGui.prKey), panic
+	// (CQGui.cancelAudition), and window close / GUI free / CmdPeriod (free,
+	// below). Restoring the momentary punch FIRST is deliberate: a stuck punch
+	// leaves a loop recording over itself (§2), so it is the destructive one.
+	// The weather's uncommitted voyage then goes home like the elastic.
+	cancelGestures {
+		touch !? {
+			touch.cancelPunch;
+			touch.cancelWeather;
+		};
 		^this
 	}
 

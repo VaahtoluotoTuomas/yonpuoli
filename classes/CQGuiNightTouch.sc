@@ -9,7 +9,7 @@
 CQGuiNightTouch {
 	var map, state, overlay;
 	var <>controller;   // set after construction — the controller binds later
-	var wind, eyeDrag, crescentDrag, moonDrag;
+	var wind, punch, eyeDrag, crescentDrag, moonDrag;
 	var compassDrag, weatherHold;
 
 	*new { |map, state, overlay| ^super.newCopyArgs(map, state, overlay) }
@@ -59,18 +59,31 @@ CQGuiNightTouch {
 		var point = this.prPoint(view, x, y), geo = map.geometry, coco, n;
 		var body = ("coco" ++ (index + 1)).asSymbol;
 		if(geo.isNil) { ^this };
-		// §4.5 controls first, at every click count: a fast second tap belongs to
-		// the touch point under it, never to the body solo behind it. Shell paper
-		// between the turns is what carries the double-click to the body.
-		if(button != 0 or: { modifiers.isAlt }
-			or: { overlay.patchAt(point).notNil }) {
-			^this.forwardDown(view, x, y, modifiers, button, clicks, body)
-		};
 		coco = geo[\cocos][index];
 		n = index + 1;
+		// §4.5 controls first, at every click count: a cable inside its hit
+		// target is grabbed (and a right press on it rips), and Alt is the
+		// ground grammar's polarity flip. This precedes the punch on purpose —
+		// a right press on a cable crossing the heart must still rip (§2), never
+		// punch. Shell paper between the turns carries a double-click to the body.
+		if(modifiers.isAlt or: { overlay.patchAt(point).notNil }) {
+			^this.forwardDown(view, x, y, modifiers, button, clicks, body)
+		};
+		// the shell's heart. Left tap: seal / crack the loop (hold toggle).
+		// Right press held: the PUNCH — momentarily invert the hold, restored on
+		// release and on every exit path (§2). Checked before the generic
+		// non-left forward so a right press on the heart can never fall through
+		// to a harvest/rip on the shell body.
 		if(CQNightGeometry.distance(point, coco[\center])
 			<= coco[\heartRadius]) {
-			^this.prToggle(("coco" ++ n ++ "Hold").asSymbol)
+			if(button == 0) { ^this.prToggle(("coco" ++ n ++ "Hold").asSymbol) };
+			if(button == 1) { ^this.prPunchDown(index) };
+		};
+		// every other non-left button falls to the ground grammar exactly as
+		// before: harvest on empty shell paper, rip, solo — carrying the body's
+		// §6 solo identity down
+		if(button != 0) {
+			^this.forwardDown(view, x, y, modifiers, button, clicks, body)
 		};
 		if(CQNightGeometry.markHit(coco[\chevron], point)) {
 			^this.prToggle(("coco" ++ n ++ "Flip").asSymbol)
@@ -108,12 +121,43 @@ CQGuiNightTouch {
 	}
 
 	shellUp { |index, view, x, y, modifiers = 0, button = 0|
+		// mouse-up is the punch's natural release. Qt grabs the press, so the up
+		// always arrives at the shell view that began it — but restore on *any*
+		// shell up regardless of index/button, so a stray up can never leave a
+		// loop recording (§2). It is the first thing checked, ahead of the wind.
+		if(punch.notNil) { ^this.cancelPunch };
 		if(wind.notNil) {
 			wind = nil;
 			^this
 		};
 		^this.forwardUp(view, x, y, modifiers, button)
 	}
+
+	// ---- the punch (§2): a momentary hold invert, held while the right button
+	// is down on the heart. Capture the exact prior value and invert it; every
+	// exit path restores precisely that captured value (never a re-toggle, which
+	// could drift under multi-button chording) — see cancelPunch.
+	prPunchDown { |index|
+		var name = ("coco" ++ (index + 1) ++ "Hold").asSymbol;
+		var before = (state.get(name) ? 0);
+		punch = (index: index, name: name, before: before);
+		state.set(name, 1 - before);
+		^this
+	}
+
+	// idempotent: a nil punch is a no-op, so calling this from several exit paths
+	// (the mouse-up, plus the shared cancel choke point reached by Esc, Tab,
+	// panic, window close, GUI free and CmdPeriod) can never double-restore
+	cancelPunch {
+		var held = punch;
+		if(held.isNil) { ^this };
+		punch = nil;
+		state.set(held[\name], held[\before]);
+		^this
+	}
+
+	// the night smoke's window onto the transient punch state (§5)
+	punchActive { ^punch.notNil }
 
 	// ---- ring: the eye (qFreq vertical, qChaos horizontal) ----
 

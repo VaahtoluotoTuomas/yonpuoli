@@ -11,7 +11,7 @@ var matrix = CQMatrix(nil);
 // never overwrite the player's own corners (config gui.compassDir)
 var compassDir = Cocoquantus.repoDir +/+ "tests" +/+ "tmp" +/+ "cqcompass_smoke";
 var config;
-var gui, ok = true, abort, compassChecks, weatherAsync;
+var gui, ok = true, abort, compassChecks, weatherAsync, punchChecks;
 var check = { |condition, message|
 	if(condition) { ("ok:   " ++ message).postln } {
 		ok = false;
@@ -235,6 +235,85 @@ weatherAsync = { |map, done|
 		} { |error| abort.value(error) };
 		nil
 	});
+};
+
+// ---- §2 the punch (momentary hold): a right press held on the shell's heart
+// inverts cocoNHold, restored on mouse-up and on every exit path. Synchronous
+// (state.set is the funnel; the shell repaints from the already-registered hold
+// updater), night-view, no cable dependency. Called from the §6.1 touch block;
+// Tab and the free/close/CmdPeriod path are exercised in the teardown tail,
+// where a view flip and a real gui.free are affordable.
+punchChecks = { |map|
+	var shell = map.shellViews[0];
+	var coco = map.geometry[\cocos][0];
+	var touch = map.touch;
+	var local = coco[\center] - coco[\shellBox].leftTop;
+	var before;
+	var punch = { shell.mouseDownAction.value(shell, local.x, local.y, 0, 1, 1) };
+	var release = { shell.mouseUpAction.value(shell, local.x, local.y, 0, 1) };
+	// a right press held on the heart inverts the hold from its power-on seal
+	state.set(\coco1Hold, 1);
+	before = state.get(\coco1Hold);
+	punch.value;
+	check.value(state.get(\coco1Hold) == (1 - before)
+		and: { touch.punchActive },
+		"a right press on the heart punches — the hold inverts while held");
+	// mouse-up is the natural release: it restores the exact prior value
+	release.value;
+	check.value(state.get(\coco1Hold) == before
+		and: { touch.punchActive.not },
+		"releasing the punch restores the hold to its pre-punch value");
+	// the same invert works from the open state (crack -> seal -> crack)
+	state.set(\coco1Hold, 0);
+	before = state.get(\coco1Hold);
+	punch.value;
+	check.value(state.get(\coco1Hold) == 1 and: { touch.punchActive },
+		"the punch seals an open loop while held");
+	release.value;
+	check.value(state.get(\coco1Hold) == 0 and: { touch.punchActive.not },
+		"and gives the open loop back on release");
+	// ---- exit paths: a stuck punch must never be left recording (§2) ----
+	// Esc (CQGui.prKey ascii 27 -> cancelGestures)
+	state.set(\coco1Hold, 1);
+	before = state.get(\coco1Hold);
+	punch.value;
+	check.value(state.get(\coco1Hold) == 0 and: { touch.punchActive },
+		"precondition: the Esc test starts punched");
+	gui.window.view.keyDownAction.value(gui.window.view, 27.asAscii, 0);
+	check.value(state.get(\coco1Hold) == before and: { touch.punchActive.not },
+		"Esc restores a held punch");
+	// panic: the exact path CQ.panic runs on the gui panel (cancelAudition)
+	punch.value;
+	check.value(state.get(\coco1Hold) == 0 and: { touch.punchActive },
+		"precondition: the panic test starts punched");
+	gui.cancelAudition;
+	check.value(state.get(\coco1Hold) == before and: { touch.punchActive.not },
+		"panic (CQGui.cancelAudition) restores a held punch");
+	// §4.5: a right press on a cable crossing the shell rips, never punches — the
+	// cable check precedes the heart in shellDown. Uses a live cable point inside
+	// the shell box (the coco1_spaf cable is still planted at this point).
+	block { |cableDone|
+		var record = map.overlay.cableRecords.detect { |r| r[\dest] == \coco1_spaf };
+		var cablePoint = record !? {
+			record[\points].detect { |p| coco[\shellBox].containsPoint(p) }
+		};
+		var cLocal, holdWas;
+		if(cablePoint.isNil) {
+			check.value(false,
+				"precondition: a coco1_spaf cable point lies inside the shell box");
+			cableDone.value;
+		} {
+			holdWas = state.get(\coco1Hold);
+			cLocal = cablePoint - coco[\shellBox].leftTop;
+			shell.mouseDownAction.value(shell, cLocal.x, cLocal.y, 0, 1, 1);
+			check.value(touch.punchActive.not
+				and: { state.get(\coco1Hold) == holdWas },
+				"a right press on a cable crossing the shell rips, it does not punch");
+			gui.bananaGrammar.escape;
+			shell.mouseUpAction.value(shell, cLocal.x, cLocal.y, 0, 1);
+			cableDone.value;
+		};
+	};
 };
 
 {
@@ -856,6 +935,8 @@ weatherAsync = { |map, done|
 															map.ringView.mouseLeaveAction.value(map.ringView);
 															check.value(map.ringHover.not,
 																"leaving rests the river's cue");
+															// ---- §2 the punch (the heart), while cables are live ----
+															punchChecks.value(map);
 															touchDone.value;
 														};
 														// ---- §6.1/§16.6 the almanac corner ----
@@ -953,12 +1034,43 @@ weatherAsync = { |map, done|
 														check.value(CQInkControl.drawErrors == 0,
 															"night surfaces paint without callback errors");
 														weatherAsync.value(map, {
+														var hShell = map.shellViews[0];
+														var hCoco = map.geometry[\cocos][0];
+														var heartLocal = hCoco[\center] - hCoco[\shellBox].leftTop;
+														var tabBefore, freeBefore;
+														// Tab view flip is a punch exit path (§2): begin in night
+														// (clean geometry), flip away, assert the loop was not
+														// left inverted
+														state.set(\coco1Hold, 1);
+														tabBefore = state.get(\coco1Hold);
+														hShell.mouseDownAction.value(hShell,
+															heartLocal.x, heartLocal.y, 0, 1, 1);
+														check.value(state.get(\coco1Hold) == 0
+															and: { map.touch.punchActive },
+															"precondition: a punch is held before the Tab flip");
+														gui.window.view.keyDownAction.value(
+															gui.window.view, 9.asAscii, 0);
+														check.value(state.get(\coco1Hold) == tabBefore
+															and: { map.touch.punchActive.not },
+															"a Tab view flip restores a held punch");
+														// window close / GUI free / CmdPeriod all reach
+														// nightMap.free -> cancelGestures. Establish the active
+														// punch directly (the press routing is proven above) so
+														// the teardown restore needs no post-flip geometry.
+														state.set(\coco1Hold, 1);
+														freeBefore = state.get(\coco1Hold);
+														map.touch.prPunchDown(0);
+														check.value(state.get(\coco1Hold) == 0
+															and: { map.touch.punchActive },
+															"precondition: a punch is held before GUI free");
 														gui.free;
 														AppClock.sched(0.25, {
 															try {
 																check.value(gui.shellState
 																	.lifecycleState == \closed,
 																	"GUI free reaches closed");
+																	check.value(state.get(\coco1Hold) == freeBefore,
+																		"GUI free / window close / CmdPeriod restores a held punch");
 																#[cq_gui_meters, cq_gui_gr,
 																	cq_gui_coco, cq_gui_castle,
 																	cq_gui_spesal, cq_gui_hot,

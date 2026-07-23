@@ -98,11 +98,17 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   `docs/history/PLAN_archipelago.md` and its acceptance checklist at
   `docs/history/manual_checklist_archipelago.md`; `tests/manual_checklist.md`
   is now the lean live list (SPEC M1–M8 regression + Nocturne blocks as they
-  land). **Next step: the punch** (NIGHT_STANDALONE_PLAN §2) — a momentary
-  hold on the shell's heart. **Do not rebuild or "improve" accepted G1/G2/G3
-  surface on your own initiative.** The bullets below record what that
-  accepted surface is and the laws it taught — historical reference, not a
-  to-do list.
+  land). **Nocturne build-order step 1, the punch (§2), is done and accepted
+  (2026-07-23, checklist N1)** — a right-press held on the shell's heart
+  momentarily inverts `cocoNHold`, restored on release and on every exit path
+  through one choke point (`CQGuiNightMap.cancelGestures`; mouse-up via
+  `CQGuiNightTouch.shellUp`), captured-and-restored so a stuck punch can never
+  leave a loop recording; the night smoke asserts each exit path. **Next step:
+  build-order step 2, the spring flood (§8)** — the size pass (collision matrix
+  first, one composition review at two window sizes). **Do not rebuild or
+  "improve" accepted G1/G2/G3 surface on your own initiative.** The bullets
+  below record what that accepted surface is and the laws it taught — historical
+  reference, not a to-do list.
 - G3's built surface (accepted 2026-07-22): the §7.1
   compass in the almanac's water (corner seeds stamp/clear, tap = jump,
   left-drag = voyage, right-drag = elastic), the weather row beneath it

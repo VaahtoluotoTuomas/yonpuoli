@@ -23,11 +23,14 @@ Portfolio- ja julkaisupinta on `README.md`:ssä, `SOURCES.md`:ssä ja `docs/`-ka
 case study / development process -dokumenteissa. Etärepon uudelleennimeäminen,
 public-vaihto ja oikeat kuva-/äänidemot ovat erillinen julkaisutoimi.
 
-**Seuraava askel konkreettisesti:** aloita `NIGHT_STANDALONE_PLAN.md §12`:n
-rakennusjärjestyksestä — ensimmäisenä **punch (§2)**, joka on riippumaton
-kaikesta muusta ja välittömästi musikaalinen. §13 korvapassi voi kulkea
-limittäin (jopa ensin — se on pelkkää kuuntelua). Norns-portti (§14) on vasta
-night-first-vaiheen jälkeen.
+**Seuraava askel konkreettisesti:** rakennusjärjestyksen (`NIGHT_STANDALONE_PLAN.md
+§12`) kohta 1 **punch (§2) on valmis ja hyväksytty (2026-07-23)**. Seuraavana on
+kohta 2 **kevättulva — kokopassi (§8)**: yön kehojen ja kosketuskohteiden
+peruskokojen nosto minimilavalla. Menetelmä on sitova: nimeä geometriavakiot,
+kirjoita törmäysmatriisi-testit ensin (molemmilla referenssikoolla), viritä
+punaisesta vihreäksi, ja pidä yksi sommittelukatselmointi kahdella ikkunakoolla.
+§13 korvapassi voi kulkea limittäin (se on pelkkää kuuntelua). Norns-portti
+(§14) on vasta night-first-vaiheen jälkeen.
 
 ## Auktoriteettijärjestys
 
@@ -70,10 +73,16 @@ patteri). Kohtien 2–3 (kevättulva, almanakan maisemointi) tausta ja perustelu
 **§7:n layout-tuomio: uudelleensommittelu, ei uudelleensuunnittelu** — topologia
 säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
 
-- [ ] **1. Punch — momentaarinen hold** (§2). Oikean napin pito kuoren
-  sydämellä invertoi holdin painalluksen ajaksi. Ei geometriaa; kriittistä on
-  tyhjentävä exit-polkulista (jumiin jäänyt punch on tuhoisa). Riippumaton
-  kaikesta muusta → hyvä aloitus.
+- [x] **1. Punch — momentaarinen hold** (§2). **Valmis ja hyväksytty
+  2026-07-23** (checklist N1). Oikean napin pito kuoren sydämellä invertoi
+  holdin painalluksen ajaksi; vasen napautus = tavallinen hold-toggle. Ei uutta
+  geometriaa. Kaikki exit-polut kulkevat yhden solmukohdan kautta:
+  ei-hiiren-irrotus-polut (Esc, Tab, panic, ikkunan sulku, GUI free, CmdPeriod)
+  osuvat `CQGuiNightMap.cancelGestures`iin (palauttaa punchin ja päästää irti
+  sääeleestä), hiiren irrotus `CQGuiNightTouch.shellUp`iin. Punch kaappaa holdin
+  täsmäarvon ja palauttaa juuri sen (ei uudelleentogglea); yösmoke varmistaa
+  jokaisen polun erikseen. Valinnainen Shift+1/2-näppäinpunch jätettiin pois
+  (§2 vaatisi siihen käyttäjän luvan; autorepeat-karikko odottaisi silloin).
 - [ ] **2. Kevättulva — kokopassi** (§8). Yön kaikkien kehojen ja
   kosketuskohteiden peruskokojen nosto minimilavalla. Ei uusia muotoja:
   törmäysmatriisi-testit ensin, sitten viritys punaisesta vihreäksi, yksi

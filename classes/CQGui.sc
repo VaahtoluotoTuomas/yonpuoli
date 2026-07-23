@@ -83,9 +83,11 @@ CQGui {
 
 	cancelAudition {
 		if(drawer.notNil) { drawer.panic } { bananaGrammar !? { bananaGrammar.panic } };
-		// the weather's hand comes off the wheel on the same paths as the
-		// audition (§4.1's spirit): an uncommitted voyage goes home
-		nightMap !? { nightMap.cancelWeather };
+		// the night gestures come off the wheel on the same paths as the audition
+		// (§4.1's spirit): a held punch is restored (a stuck one leaves a loop
+		// recording, §2) and an uncommitted weather voyage goes home. This is the
+		// path CQ.panic runs on the gui panel.
+		nightMap !? { nightMap.cancelGestures };
 	}
 	// GUI_SPEC §16.6, decided with the user 2026-07-22: the shared shake amount
 	// is **how much is sown**, not how hard. Strength already has a macro of its
@@ -666,11 +668,11 @@ CQGui {
 		};
 		if(char.notNil and: { char.ascii == 27 }) {
 			drawer.escape;
-			nightMap !? { nightMap.cancelWeather };
+			nightMap !? { nightMap.cancelGestures };
 			^this
 		};
 		if(char.notNil and: { char.ascii == 9 }) {
-			nightMap !? { nightMap.cancelWeather };
+			nightMap !? { nightMap.cancelGestures };
 			shell.toggleView(this.prTextHasFocus);
 			^this
 		};
