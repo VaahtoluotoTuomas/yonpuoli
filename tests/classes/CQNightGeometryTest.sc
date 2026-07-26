@@ -8,15 +8,11 @@ CQNightGeometryTest : UnitTest {
 		^sqrt((b.x - a.x).squared + (b.y - a.y).squared)
 	}
 
-	// mirrors CQGuiNightMap.prMakeEndpoint: jack 26x26 anchored (13,13),
-	// socket 20x20 anchored (9,10), a lamped socket widens to 34
+	// the very box CQGuiNightMap.prMakeEndpoint builds — one table, no mirror,
+	// so a flooded view size can never pass a clearance test it would fail live
 	prEndpointBox { |name, center|
 		var spec = CQGuiNightMap.endpointSpec(name);
-		var jack = spec[\kind] == \jack;
-		var width = if(spec[\lamp] == true) { 34 } { if(jack) { 26 } { 20 } };
-		var height = if(jack) { 26 } { 20 };
-		var anchor = if(jack) { Point(13, 13) } { Point(9, 10) };
-		^Rect(center.x - anchor.x, center.y - anchor.y, width, height)
+		^CQNightGeometry.endpointBox(center, spec[\kind], spec[\lamp])
 	}
 
 	prRectDistance { |point, rect|
@@ -157,7 +153,7 @@ CQNightGeometryTest : UnitTest {
 			"the body answers just outside the drawn blob (the margin)");
 		this.assert(CQNightGeometry.bodyHit(geo[\castles][2],
 			geo[\castles][2][\center] + Point(geo[\castles][2][\bodyRx]
-				+ CQNightGeometry.bodyMargin + 4, 0)).not,
+				+ CQNightMeasures.bodyMargin + 4, 0)).not,
 			"past the margin it is water again");
 		this.assert(CQNightGeometry.bodyHit(geo[\castles][2],
 			geo[\castles][2][\center], 0),
@@ -169,9 +165,9 @@ CQNightGeometryTest : UnitTest {
 			// the hover echo is drawn on that same boundary — it must fit inside
 			// the castle's own opaque layer or it would be clipped
 			this.assert(castle[\box].width
-				>= (2 * (castle[\bodyRx] + CQNightGeometry.bodyMargin))
+				>= (2 * (castle[\bodyRx] + CQNightMeasures.bodyMargin))
 				and: { castle[\box].height
-					>= (2 * (castle[\bodyRy] + CQNightGeometry.bodyMargin)) },
+					>= (2 * (castle[\bodyRy] + CQNightMeasures.bodyMargin)) },
 				"castle %'s hover echo fits inside its own layer".format(k + 1));
 		};
 		// each body is taken by its own drawn outline (§16.6) — the cue and the
@@ -205,7 +201,7 @@ CQNightGeometryTest : UnitTest {
 		// twig must not disappear under that same box
 		geo[\roots].do { |root, i|
 			var arrival = root[\arrival];
-			var tipBox = Rect.aboutPoint(root[\points].last, 13, 13);
+			var tipBox = CQNightGeometry.endpointBox(root[\points].last, \jack);
 			this.assertFloatEquals(
 				sqrt(arrival.x.squared + arrival.y.squared), 1.0,
 				"root %'s arrival is a unit direction".format(i + 1), 0.0001);
@@ -277,7 +273,7 @@ CQNightGeometryTest : UnitTest {
 			var geo = CQNightGeometry.compute(size[0], size[1]);
 			geo[\cocos].do { |coco, i|
 				var glyph = Rect.aboutPoint(coco[\chevron], 6, 5);
-				var jack = Rect.aboutPoint(coco[\mouth], 13, 13);
+				var jack = CQNightGeometry.endpointBox(coco[\mouth], \jack);
 				this.assert((glyph.intersects(jack)).not,
 					"coco % chevron glyph clears the mouth jack's view (%x%)"
 						.format(i + 1, *size));
@@ -380,8 +376,8 @@ CQNightGeometryTest : UnitTest {
 			// the moon is a body: the disc it draws is the disc it answers on,
 			// and its own layer holds the 120 ms flash halo whole
 			this.assert(box.contains(Rect.aboutPoint(moon,
-				moonR + CQNightGeometry.moonHalo,
-				moonR + CQNightGeometry.moonHalo)),
+				moonR + CQNightMeasures.moonHalo,
+				moonR + CQNightMeasures.moonHalo)),
 				"the moon and its flash halo fit inside their layer (%x%)"
 					.format(*size));
 			this.assert(CQNightGeometry.moonHit(almanac, moon)
@@ -547,6 +543,287 @@ CQNightGeometryTest : UnitTest {
 		this.assert(CQGuiCastleConstellation.trackMode(5)
 			and: { CQGuiCastleConstellation.trackMode(1).not },
 			"states 4..7 are track-and-hold, 0..3 sample-and-hold");
+	}
+
+	// ---- §8's collision matrix (NIGHT_STANDALONE_PLAN §8) ----
+	// The spring flood re-bases the night's measures, and a measure is safe only
+	// if the bodies it grows still miss each other. These asserts were written
+	// BEFORE any constant moved, at both reference stage sizes, so a measure
+	// that stops fitting fails here instead of in the user's hands. Every castle
+	// irregularity is seeded inside `compute`, so all of it is deterministic.
+
+	// every opaque layer the night paints on, in z order
+	prOpaqueLayers { |geo|
+		var layers = List.new;
+		layers.add([\ring, geo[\ringBox]]);
+		layers.add([\eye, Rect.aboutPoint(geo[\eye],
+			CQNightMeasures.eyeLayerR, CQNightMeasures.eyeLayerR)]);
+		geo[\castles].do { |castle, k|
+			layers.add([("castle" ++ (k + 1)).asSymbol, castle[\box]])
+		};
+		geo[\cocos].do { |coco, i|
+			layers.add([("shell" ++ (i + 1)).asSymbol, coco[\shellBox]])
+		};
+		geo[\birds].do { |bird, i|
+			layers.add([("bird" ++ (i + 1)).asSymbol, bird[\box]])
+		};
+		layers.add([\almanac, geo[\almanac][\box]]);
+		layers.add([\compass, geo[\almanac][\compassBox]]);
+		^layers.asArray
+	}
+
+	// An opaque layer covers whatever is under it, so two of them overlapping
+	// means one body is quietly eating another's ink. The river is the one
+	// exception in both directions: the castles stand ON it (and each redraws
+	// its own short passage as a stub, §16.6) and the storm iris keeps its own
+	// layer over the ring's centre so a storm repaint never re-inks the river.
+	test_floodOpaqueLayersMissEachOther {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var stage = Rect(0, 0, size[0], size[1]);
+			var layers = this.prOpaqueLayers(geo);
+			layers.do { |a, i|
+				this.assert(stage.contains(a[1]),
+					"the % layer stays on the stage (%x%)".format(a[0], *size));
+				layers.drop(i + 1).do { |b|
+					var pair = [a[0], b[0]];
+					var nested = pair.includes(\ring)
+						and: { pair.any { |name|
+							name == \eye or: { name.asString.beginsWith("castle") } } };
+					if(nested.not) {
+						this.assert(a[1].intersects(b[1]).not,
+							"opaque layers % and % keep off each other (%x%)"
+								.format(a[0], b[0], *size));
+					};
+				};
+			};
+		};
+	}
+
+	// §16.7's drop border is drawn around the bird AND its name, so that whole
+	// rect has to be free water: over a castle or the river it would ring ink
+	// that does not accept the file.
+	test_floodBirdsClearTheLandscape {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var stage = Rect(0, 0, size[0], size[1]);
+			geo[\birds].do { |bird, i|
+				var drop = bird[\dropRect];
+				this.assert(stage.contains(drop),
+					"bird %'s drop target stays on the stage (%x%)"
+						.format(i + 1, *size));
+				this.assert(drop.intersects(geo[\ringBox]).not,
+					"bird % flies clear of the river's own layer (%x%)"
+						.format(i + 1, *size));
+				geo[\castles].do { |castle, k|
+					this.assert(drop.intersects(castle[\box]).not,
+						"bird % keeps off castle %'s box (%x%)"
+							.format(i + 1, k + 1, *size));
+				};
+				geo[\cocos].do { |coco, c|
+					this.assert(drop.intersects(coco[\shellBox]).not,
+						"bird % keeps off coco %'s shell (%x%)"
+							.format(i + 1, c + 1, *size));
+				};
+			};
+		};
+	}
+
+	// The small opaque boxes are allowed to graze each other — 24 px of hit
+	// spacing is less than two grown views — but never so far that one swallows
+	// the other's drawn dot. A centre under a neighbour's box is a jack the eye
+	// can see and the hand cannot reach.
+	test_floodSmallBoxesNeverSwallowACentre {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var names = CQMatrix.sourceNames ++ CQMatrix.destNames;
+			var stage = Rect(0, 0, size[0], size[1]);
+			var crescents = List.new;
+			var boxes = names.collect { |name|
+				[name, this.prEndpointBox(name, geo[\endpoints][name]),
+					geo[\endpoints][name]]
+			};
+			var half = CQNightMeasures.crescentExtent * 0.5;
+			geo[\cocos].do { |coco, i|
+				coco[\crescents].do { |point, m|
+					crescents.add([("coco" ++ (i + 1) ++ "c" ++ m).asSymbol, point])
+				};
+			};
+			geo[\birds].do { |bird, i|
+				crescents.add([("deck" ++ (i + 1) ++ "level").asSymbol,
+					bird[\levelCrescent]])
+			};
+			boxes.do { |a|
+				this.assert(stage.contains(a[1]),
+					"% keeps its whole view on the stage (%x%)"
+						.format(a[0], *size));
+			};
+			boxes.do { |a, i|
+				boxes.drop(i + 1).do { |b|
+					this.assert(a[1].containsPoint(b[2]).not
+						and: { b[1].containsPoint(a[2]).not },
+						"neither % nor % swallows the other's centre (%x%)"
+							.format(a[0], b[0], *size));
+				};
+			};
+			// a tide crescent and the moon beside it are two different hands on
+			// two different values. Their opaque views are allowed to graze at a
+			// corner — the crescent is drawn last and the sliver it takes is
+			// empty paper — but never far enough to reach a drawn mark, which is
+			// what §16.10's 24 px between centres buys.
+			crescents.do { |c|
+				var box = Rect.aboutPoint(c[1], half, half);
+				this.assert(stage.contains(box),
+					"crescent % keeps its whole view on the stage (%x%)"
+						.format(c[0], *size));
+				boxes.do { |b|
+					this.assert(box.containsPoint(b[2]).not
+						and: { b[1].containsPoint(c[1]).not },
+						"neither crescent % nor % swallows the other's centre (%x%)"
+							.format(c[0], b[0], *size));
+					this.assert(CQNightGeometry.distance(c[1], b[2]) >= 24,
+						"crescent % keeps the 24 px hit law from % (%x%)"
+							.format(c[0], b[0], *size));
+				};
+			};
+			crescents.do { |a, i|
+				crescents.drop(i + 1).do { |b|
+					this.assert(CQNightGeometry.distance(a[1], b[1])
+						>= CQNightMeasures.crescentExtent,
+						"crescents % and % keep their views apart (%x%)"
+							.format(a[0], b[0], *size));
+				};
+			};
+		};
+	}
+
+	// The roots climb into the same lower water the shells hang their tide
+	// crescents in, and their tips carry jacks. Nothing down there may cross.
+	test_floodRootsClearTheLowerWater {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var stage = Rect(0, 0, size[0], size[1]);
+			var half = CQNightMeasures.crescentExtent * 0.5;
+			geo[\roots].do { |root, i|
+				var tipBox = CQNightGeometry.endpointBox(root[\points].last, \jack);
+				this.assert(stage.contains(tipBox),
+					"root %'s tip jack stays on the stage (%x%)"
+						.format(i + 1, *size));
+				geo[\cocos].do { |coco, c|
+					coco[\crescents].do { |point, m|
+						var box = Rect.aboutPoint(point, half, half);
+						(root[\points] ++ root[\branch]).doAdjacentPairs { |a, b|
+							this.assert(box.containsPoint(a).not
+								and: { box.containsPoint(b).not },
+								"root % misses coco % crescent % (%x%)"
+									.format(i + 1, c + 1, m, *size));
+						};
+					};
+					this.assert(root[\points].every { |point|
+						coco[\shellBox].containsPoint(point).not },
+						"root % grows clear of coco %'s shell (%x%)"
+							.format(i + 1, c + 1, *size));
+				};
+				this.assert(root[\points].every { |point|
+					geo[\ringBox].containsPoint(point).not },
+					"root % stops below the river's layer (%x%)"
+						.format(i + 1, *size));
+			};
+		};
+	}
+
+	// §16.10's hit law is not a minimum-stage courtesy: it holds wherever the
+	// window is dragged to.
+	test_floodHitSpacingAtBothSizes {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var names = CQMatrix.sourceNames ++ CQMatrix.destNames;
+			names.do { |a, i|
+				names.drop(i + 1).do { |b|
+					this.assert(this.prDistance(geo[\endpoints][a],
+						geo[\endpoints][b]) >= 24,
+						"% and % keep the 24 px hit spacing (%x%)"
+							.format(a, b, *size));
+				};
+			};
+		};
+	}
+
+	// The night's own playing targets, measured as the hand meets them: each
+	// one has to be findable without aiming, and none may reach into another.
+	test_floodTouchTargetsAreReachable {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			geo[\cocos].do { |coco, i|
+				var heart = coco[\heartRadius];
+				var mark = CQNightMeasures.markHitReach;
+				var scale = geo[\scale];
+				var inner = CQNightMeasures.spiralInnerR * scale;
+				// radial distance between two turns of the groove
+				var pitch = (coco[\outerR] - inner) / CQNightGeometry.turns;
+				var inkReach = [CQNightMeasures.notchHoverReach,
+					CQNightMeasures.struckBase + CQNightMeasures.struckRange,
+					CQNightMeasures.skipGlyphR].maxItem + 2;
+				this.assert(CQNightGeometry.distance(coco[\chevron],
+					coco[\skipMark]) >= (2 * mark),
+					"coco %'s flip and skip marks never share a press (%x%)"
+						.format(i + 1, *size));
+				this.assert(CQNightGeometry.distance(coco[\mouth],
+					coco[\chevron]) > (mark + (CQNightMeasures.jackExtent * 0.5)),
+					"coco %'s chevron clears the mouth jack's own view (%x%)"
+						.format(i + 1, *size));
+				// The heart is checked BEFORE the winding surface (§4.5's chain
+				// in CQGuiNightTouch.shellDown), so its disc quietly takes the
+				// innermost turn of the groove with it — which is right, since a
+				// speed grab there sits at norm 0 anyway. What it may never do is
+				// swallow a SECOND turn: past that, a visible stretch of groove
+				// would stop answering the winding gesture at all.
+				this.assert(heart < (inner + pitch),
+					"coco %'s heart takes the innermost turn and no more (%x%)"
+						.format(i + 1, *size));
+				// ...and the grab band has to stay inside one turn for the same
+				// reason, from the other side
+				this.assert(CQNightMeasures.windGrab < (pitch * 0.5),
+					"coco %'s winding grab answers one turn, not two (%x%)"
+						.format(i + 1, *size));
+				this.assert(coco[\shellBox].contains(
+					Rect.aboutPoint(coco[\skipMark], mark, mark)),
+					"coco %'s skip box stays inside the shell layer (%x%)"
+						.format(i + 1, *size));
+				// The layer's slack past the rim is trimmed to what the shell
+				// actually draws, because those pixels are what the castles and
+				// the almanac live on. So it has to be pinned: the widest mark
+				// leaving the rim is the hammered read head's arms, then the
+				// notch's hover reach, then the skip glyph — plus the seal ring's
+				// own stroke. If a future mark grows, this fails before it clips.
+				this.assert(coco[\shellBox].contains(Rect.aboutPoint(coco[\center],
+					coco[\outerR] + inkReach, coco[\outerR] + inkReach)),
+					"coco %'s layer holds every mark its rim carries (%x%)"
+						.format(i + 1, *size));
+			};
+			geo[\castles].do { |castle, k|
+				var flesh = min(castle[\bodyRx], castle[\bodyRy]);
+				// the inner clock and the body around it are two different taps.
+				// What is drawn — the face, its ticks and the lit state bead with
+				// its halo — has to sit inside the drawn blob, or the clock stops
+				// reading as the castle's own inside.
+				this.assert((castle[\dialR] + max(CQNightMeasures.clockTickReach,
+					CQNightMeasures.clockBeadHaloR)) < flesh,
+					"castle %'s clock is drawn inside its own flesh (%x%)"
+						.format(k + 1, *size));
+				// and its annulus may not answer a press the eye reads as water:
+				// the dial's reach stays inside the body's own (§4.5 — a cue that
+				// covers more than its action is a cue that lies)
+				this.assert((castle[\dialR] + CQNightMeasures.clockHit)
+					<= (flesh + CQNightMeasures.bodyMargin),
+					"castle %'s clock steals no press from the water (%x%)"
+						.format(k + 1, *size));
+			};
+			this.assert(CQNightMeasures.eyeHit
+				<= CQNightMeasures.eyeLayerR,
+				"the eye answers no further than its own layer draws (%x%)"
+					.format(*size));
+		};
 	}
 
 	test_rangeLetter {

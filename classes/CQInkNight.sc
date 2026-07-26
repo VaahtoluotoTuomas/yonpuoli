@@ -46,8 +46,8 @@ CQInkNight {
 			Pen.strokeColor = palette[\whisper].copy.alpha_(0.55);
 			Pen.width = CQInk.strokes[\hairline];
 			Pen.addOval(Rect.aboutPoint(center,
-				castle[\bodyRx] + CQNightGeometry.bodyMargin,
-				castle[\bodyRy] + CQNightGeometry.bodyMargin));
+				castle[\bodyRx] + CQNightMeasures.bodyMargin,
+				castle[\bodyRy] + CQNightMeasures.bodyMargin));
 			Pen.stroke;
 		};
 		Pen.strokeColor = palette[\line];
@@ -62,8 +62,9 @@ CQInkNight {
 		Pen.strokeColor = palette[\whisper];
 		8.do { |i|
 			var angle = (22.5 + (i * 45)).degrad;
-			Pen.line(CQNightGeometry.polar(center, castle[\dialR] - 2.5, angle),
-				CQNightGeometry.polar(center, castle[\dialR] + 2.5, angle));
+			var tick = CQNightMeasures.clockTickReach;
+			Pen.line(CQNightGeometry.polar(center, castle[\dialR] - tick, angle),
+				CQNightGeometry.polar(center, castle[\dialR] + tick, angle));
 		};
 		Pen.stroke;
 		// current spesal state lit as the clock's spark hand — a mark, never
@@ -71,12 +72,14 @@ CQInkNight {
 		tickAngle = (22.5 + ((spesalState.asInteger.clip(0, 7)) * 45)).degrad;
 		bead = CQNightGeometry.polar(center, castle[\dialR], tickAngle);
 		Pen.fillColor = palette[\spark];
-		Pen.addOval(Rect.aboutPoint(bead, 2.4, 2.4));
+		Pen.addOval(Rect.aboutPoint(bead, CQNightMeasures.clockBeadR,
+			CQNightMeasures.clockBeadR));
 		Pen.fill;
 		Pen.strokeColor = palette[\spark]
 			.copy.alpha_(if(dialHover) { 0.8 } { 0.5 });
 		Pen.width = CQInk.strokes[\hairline];
-		Pen.addOval(Rect.aboutPoint(bead, 3.5, 3.5));
+		Pen.addOval(Rect.aboutPoint(bead, CQNightMeasures.clockBeadHaloR,
+			CQNightMeasures.clockBeadHaloR));
 		Pen.stroke;
 		Pen.stringCenteredIn(rangeLetter.asString,
 			Rect.aboutPoint(castle[\letterAnchor], 7, 6),
@@ -103,8 +106,9 @@ CQInkNight {
 		this.strokeSegments(geometry[\ringSegments]);
 		Pen.fillColor = palette[\spark];
 		10.do { |i|
+			var r = CQNightMeasures.fireflyR;
 			Pen.addOval(Rect.aboutPoint(
-				CQNightGeometry.fireflyPoint(geometry, phase + (i / 10)), 1.2, 1.2));
+				CQNightGeometry.fireflyPoint(geometry, phase + (i / 10)), r, r));
 		};
 		Pen.fill;
 	}
@@ -161,7 +165,10 @@ CQInkNight {
 		};
 		Pen.stroke;
 		Pen.fillColor = palette[\input];
-		heads.do { |head| Pen.addOval(Rect.aboutPoint(head, 1.8, 1.8)) };
+		heads.do { |head|
+			Pen.addOval(Rect.aboutPoint(head, CQNightMeasures.chordLightR,
+				CQNightMeasures.chordLightR))
+		};
 		Pen.fill;
 	}
 
@@ -185,7 +192,7 @@ CQInkNight {
 		speedNorm = 0.5, hover = false, sparkNorm, sparkDir = 1,
 		skipHover = false, skipFlash = false, struckNorm, struckTwinkle = false,
 		rimHover = false, skin = \night|
-		var palette = CQInk.palette(skin), notch, normal, reach, spark, tail;
+		var palette = CQInk.palette(skin), notch, normal, reach, spark, tail, heart;
 		Pen.translate(origin.x.neg, origin.y.neg);
 		// the shell's rim is its §6 body handle: hovering it draws the outline
 		// the double-click acts on, in whisper hairline so the danger-red hold
@@ -208,17 +215,19 @@ CQInkNight {
 			Pen.stroke;
 		};
 		// the heart: hollow whisper eye while open, danger-red while sealed
+		heart = CQNightMeasures.heartDotR;
 		if(holdOn) {
 			Pen.fillColor = palette[\danger];
-			Pen.addOval(Rect.aboutPoint(coco[\center], 2.5, 2.5));
+			Pen.addOval(Rect.aboutPoint(coco[\center], heart, heart));
 			Pen.fill;
 			Pen.strokeColor = palette[\danger].copy.alpha_(0.4);
-			Pen.addOval(Rect.aboutPoint(coco[\center], 5.5, 5.5));
+			Pen.addOval(Rect.aboutPoint(coco[\center], CQNightMeasures.heartSealR,
+				CQNightMeasures.heartSealR));
 			Pen.stroke;
 		} {
 			Pen.strokeColor = palette[\whisper];
 			Pen.width = CQInk.strokes[\hairline];
-			Pen.addOval(Rect.aboutPoint(coco[\center], 2.5, 2.5));
+			Pen.addOval(Rect.aboutPoint(coco[\center], heart, heart));
 			Pen.stroke;
 		};
 		this.drawMouthChevron(coco[\chevron], flipMode, skin);
@@ -231,14 +240,16 @@ CQInkNight {
 		// (§6.1). Momentary, so it carries §16.7's 120 ms ink flash — fired by
 		// ANY skip (mark, `a/s`, code, pattern, matrix gate), exactly like the
 		// Day button it mirrors, since both hang off the one `\action` notice.
-		CQInk.drawGlyph(\skip, Rect.aboutPoint(coco[\skipMark], 4.5, 4.5),
+		CQInk.drawGlyph(\skip, Rect.aboutPoint(coco[\skipMark],
+			CQNightMeasures.skipGlyphR, CQNightMeasures.skipGlyphR),
 			if(skipFlash) { palette[\spark] } {
 				palette[if(skipHover) { \line } { \whisper }]
 			});
 		// the reel notch: a tick across the groove, never a bead
 		notch = CQNightGeometry.spiralPoint(coco, speedNorm ? 0.5);
 		normal = CQNightGeometry.spiralNormal(coco, speedNorm ? 0.5);
-		reach = if(hover) { 6 } { 4 };
+		reach = if(hover) { CQNightMeasures.notchHoverReach }
+			{ CQNightMeasures.notchReach };
 		Pen.strokeColor = palette[\line];
 		Pen.width = CQInk.strokes[if(hover) { \strong } { \normal }];
 		Pen.line(notch - (normal * reach), notch + (normal * reach));
@@ -259,7 +270,8 @@ CQInkNight {
 				Pen.stroke;
 			};
 			Pen.fillColor = palette[\spark];
-			Pen.addOval(Rect.aboutPoint(spark, 2, 2));
+			Pen.addOval(Rect.aboutPoint(spark, CQNightMeasures.cometR,
+				CQNightMeasures.cometR));
 			Pen.fill;
 		};
 	}
@@ -288,7 +300,7 @@ CQInkNight {
 	*drawStruck { |center, rateNorm = 0, twinkle = false, skin = \night|
 		var palette = CQInk.palette(skin);
 		var norm = (rateNorm ? 0).clip(0, 1);
-		var reach = 4 + (6 * norm);
+		var reach = CQNightMeasures.struckBase + (CQNightMeasures.struckRange * norm);
 		var cross = reach * if(twinkle) { 0.74 } { 1.0 };
 		Pen.strokeColor = palette[\spark].copy.alpha_(
 			(0.55 + (0.35 * norm)) * if(twinkle) { 0.78 } { 1.0 });
@@ -313,16 +325,16 @@ CQInkNight {
 		skin = \night|
 		var palette = CQInk.palette(skin);
 		var accent = palette[family] ?? { palette[\whisper] };
-		var start = 0.75pi, sweep = 1.5pi;
+		var start = 0.75pi, sweep = 1.5pi, arcR = CQNightMeasures.crescentArcR;
 		Pen.strokeColor = palette[\whisper].copy
 			.alpha_(if(active) { 0.9 } { 0.55 });
 		Pen.width = CQInk.strokes[\hairline];
-		Pen.addArc(center, 9, start, sweep);
+		Pen.addArc(center, arcR, start, sweep);
 		Pen.stroke;
 		if(norm > 0.001) {
 			Pen.strokeColor = accent.copy.alpha_(if(active) { 1.0 } { 0.85 });
 			Pen.width = CQInk.strokes[\strong];
-			Pen.addArc(center, 9, start, sweep * norm.clip(0, 1));
+			Pen.addArc(center, arcR, start, sweep * norm.clip(0, 1));
 			Pen.stroke;
 		};
 	}
@@ -352,8 +364,8 @@ CQInkNight {
 		if(flash) {
 			Pen.fillColor = palette[\spark].copy.alpha_(0.28);
 			Pen.addOval(Rect.aboutPoint(center,
-				radius + CQNightGeometry.moonHalo,
-				radius + CQNightGeometry.moonHalo));
+				radius + CQNightMeasures.moonHalo,
+				radius + CQNightMeasures.moonHalo));
 			Pen.fill;
 		};
 		if(lit > 0.001) {
@@ -519,7 +531,8 @@ CQInkNight {
 	*drawEye { |center, active = false, freqNorm = 0.5, chaosNorm = 0.15,
 		skin = \night|
 		var palette = CQInk.palette(skin), jitters = this.irisJitters;
-		var pupil = 2.5 + (freqNorm.clip(0, 1) * 4.5);
+		var pupil = CQNightMeasures.pupilMin
+			+ (freqNorm.clip(0, 1) * CQNightMeasures.pupilRange);
 		var chaos = chaosNorm.clip(0, 1);
 		Pen.fillColor = palette[\spark].copy.alpha_(if(active) { 0.55 } { 0.25 });
 		Pen.addOval(Rect.aboutPoint(center, pupil, pupil));
@@ -531,8 +544,10 @@ CQInkNight {
 		Pen.strokeColor = palette[\spark].copy.alpha_(if(active) { 0.8 } { 0.5 });
 		12.do { |i|
 			var angle = (i / 12 * 2pi) + (jitters[i] * chaos * 0.45);
-			var innerR = pupil + 3;
-			var length = 2.5 + (chaos * (3 + (jitters.wrapAt(i + 5).abs * 4)));
+			var innerR = pupil + CQNightMeasures.irisGap;
+			var length = CQNightMeasures.irisRayBase
+				+ (chaos * (CQNightMeasures.irisRayChaos
+					+ (jitters.wrapAt(i + 5).abs * CQNightMeasures.irisRayJitter)));
 			Pen.line(CQNightGeometry.polar(center, innerR, angle),
 				CQNightGeometry.polar(center, innerR + length, angle));
 		};
@@ -591,7 +606,8 @@ CQInkNight {
 			Point(c.x + (span * 0.1), c.y - (span * 0.28)));
 		Pen.stroke;
 		Pen.fillColor = palette[\line];
-		Pen.addOval(Rect.aboutPoint(c, 1.7, 1.7));
+		Pen.addOval(Rect.aboutPoint(c, CQNightMeasures.birdBodyR,
+			CQNightMeasures.birdBodyR));
 		Pen.fill;
 	}
 
@@ -634,36 +650,46 @@ CQInkNight {
 	// decided on the server, at audio rate (§9), never by guessing here.
 	*drawMouthChevron { |anchor, mode = \forward, skin = \night|
 		var palette = CQInk.palette(skin);
+		var reach = CQNightMeasures.chevronReach;
+		var rise = CQNightMeasures.chevronRise;
+		var shuttleRise = CQNightMeasures.chevronShuttleRise;
 		var head = { |dy|
-			Pen.line(anchor + Point(-5, dy.neg), anchor + Point(0, dy));
-			Pen.line(anchor + Point(0, dy), anchor + Point(5, dy.neg));
+			Pen.line(anchor + Point(reach.neg, dy.neg), anchor + Point(0, dy));
+			Pen.line(anchor + Point(0, dy), anchor + Point(reach, dy.neg));
 		};
 		Pen.strokeColor = palette[\cas];
 		Pen.width = CQInk.strokes[\hairline];
 		switch(mode,
-			\shuttle, { head.value(4.5); head.value(-4.5) },
-			\flipped, { head.value(-3.5) },
-			{ head.value(3.5) }
+			\shuttle, { head.value(shuttleRise); head.value(shuttleRise.neg) },
+			\flipped, { head.value(rise.neg) },
+			{ head.value(rise) }
 		);
 		Pen.stroke;
 	}
 
 	// the root's last stretch, redrawn inside the tip jack's own opaque view so
-	// the line reaches its dot instead of vanishing under the box (§16.6)
+	// the line reaches its dot instead of vanishing under the box (§16.6).
+	// The reach is the box's own half-diagonal, so however big the view grows
+	// the stub still crosses it from any arrival angle and Qt clips the rest
+	// (rake 12 — derived from the box, never re-tuned by hand).
 	*drawRootStub { |anchor, arrival, skin = \night|
 		var palette = CQInk.palette(skin), direction = arrival ? Point(0, -1);
+		var reach = (CQNightMeasures.jackExtent * 0.5 * 2.sqrt) + 1;
 		Pen.strokeColor = palette[\line].copy.alpha_(0.75);
 		Pen.width = CQInk.strokes[\normal];
-		Pen.line(anchor - (direction * 20), anchor);
+		Pen.line(anchor - (direction * reach), anchor);
 		Pen.stroke;
 	}
 
-	// the org fruit's stem tip entering its view from the spiral side
+	// the org fruit's stem tip entering its view from the spiral side: from the
+	// box's own top edge down to the jack dot's rim, both read off the measures
 	*drawStemStub { |anchor, skin = \night|
 		var palette = CQInk.palette(skin);
+		var top = (CQNightMeasures.jackExtent * 0.5) - 1;
 		Pen.strokeColor = palette[\organ].copy.alpha_(0.8);
 		Pen.width = CQInk.strokes[\hairline];
-		Pen.line(anchor + Point(0, -12), anchor + Point(0, -5));
+		Pen.line(anchor + Point(0, top.neg),
+			anchor + Point(0, CQNightMeasures.jackDotRim.neg));
 		Pen.stroke;
 	}
 }

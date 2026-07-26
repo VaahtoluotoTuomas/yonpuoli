@@ -94,7 +94,8 @@ CQGuiNightTouch {
 		if(CQNightGeometry.markHit(coco[\skipMark], point)) {
 			^Cocoquantus.skip(n)
 		};
-		if(CQNightGeometry.spiralDistance(coco, point) <= 8) {
+		if(CQNightGeometry.spiralDistance(coco, point)
+			<= CQNightMeasures.windGrab) {
 			wind = (index: index,
 				angle: this.class.angleAt(coco[\center], point));
 			^this
@@ -169,7 +170,8 @@ CQGuiNightTouch {
 		// panel's own `quantussy` solo, so both stages share one solo state
 		if(button == 0 and: { modifiers.isAlt.not }
 			and: { overlay.patchAt(point).isNil }
-			and: { CQNightGeometry.distance(point, geo[\eye]) <= 12 }) {
+			and: { CQNightGeometry.distance(point, geo[\eye])
+				<= CQNightMeasures.eyeHit }) {
 			eyeDrag = (start: point,
 				freq: this.prNorm(\qFreq), chaos: this.prNorm(\qChaos));
 			map.eyeActive = true;

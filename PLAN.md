@@ -24,13 +24,14 @@ case study / development process -dokumenteissa. Etärepon uudelleennimeäminen,
 public-vaihto ja oikeat kuva-/äänidemot ovat erillinen julkaisutoimi.
 
 **Seuraava askel konkreettisesti:** rakennusjärjestyksen (`NIGHT_STANDALONE_PLAN.md
-§12`) kohta 1 **punch (§2) on valmis ja hyväksytty (2026-07-23)**. Seuraavana on
-kohta 2 **kevättulva — kokopassi (§8)**: yön kehojen ja kosketuskohteiden
-peruskokojen nosto minimilavalla. Menetelmä on sitova: nimeä geometriavakiot,
-kirjoita törmäysmatriisi-testit ensin (molemmilla referenssikoolla), viritä
-punaisesta vihreäksi, ja pidä yksi sommittelukatselmointi kahdella ikkunakoolla.
-§13 korvapassi voi kulkea limittäin (se on pelkkää kuuntelua). Norns-portti
-(§14) on vasta night-first-vaiheen jälkeen.
+§12`) kohdat 1 **punch (§2)** ja 2 **kevättulva (§8)** ovat valmiit ja hyväksytyt
+(2026-07-23 ja 2026-07-26). Seuraavana on kohta 3 **almanakka maisemaksi (§9)**:
+kuu nousee, pato muuttuu vuorovesilammikoksi ja säärivi sirotellaan rannoille.
+Sama matematiikka, uusi ruumiinkieli. **Kokoihin palataan §9:n katselmoinnissa:**
+käyttäjä hyväksyi tulvan mutta arvioi, että osa elementeistä voi vielä kasvaa —
+ja koska koot ovat suhteellisia (§8), ne katsotaan uudessa sommitelmassa
+kerralla eikä yksi kerrallaan. §13 korvapassi voi kulkea limittäin (se on
+pelkkää kuuntelua). Norns-portti (§14) on vasta night-first-vaiheen jälkeen.
 
 ## Auktoriteettijärjestys
 
@@ -83,14 +84,29 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
   täsmäarvon ja palauttaa juuri sen (ei uudelleentogglea); yösmoke varmistaa
   jokaisen polun erikseen. Valinnainen Shift+1/2-näppäinpunch jätettiin pois
   (§2 vaatisi siihen käyttäjän luvan; autorepeat-karikko odottaisi silloin).
-- [ ] **2. Kevättulva — kokopassi** (§8). Yön kaikkien kehojen ja
-  kosketuskohteiden peruskokojen nosto minimilavalla. Ei uusia muotoja:
-  törmäysmatriisi-testit ensin, sitten viritys punaisesta vihreäksi, yksi
-  sommittelukatselmointi kahdella ikkunakoolla.
+- [x] **2. Kevättulva — kokopassi** (§8). **Valmis ja hyväksytty 2026-07-26**
+  (checklist N2). Mitat asuvat nyt yhdessä taulukossa, `CQNightMeasures`, ja
+  `CQNightGeometry` on pelkkää matematiikkaa; törmäysmatriisi kirjoitettiin
+  ensin nykyisiä vakioita vastaan ja vasta sitten vakiot liikkuivat. Rengas
+  148 → 158, linnan keho 46×40 → 58×50, sisäkello 10/±8 → 14/±10, kuoren
+  outerR 85 → 100, sydän Ø 5/r14 → Ø 8/r18, silmä 44/r12 → 96/r24, jakki/kanta/
+  lampullinen 26/20/34 → 30/24/40, siipiväli 30 → 46, juuret 64 → 110. Viivat,
+  kirjasimet ja värit koskemattomat (§16.3/§16.4/§16.10). Kuoren kerroksen
+  reunusta kavennettiin 30 → 24 px — se osti minimilavan marginaalit (kuori↔linna
+  8.0/12.9 px, kuori↔kompassi 16.0 px) ja on nyt itse testillä pinnattu.
+  Almanakan rivit (kylvökuu, kompassi, säämerkit) jätettiin §9:lle, joka
+  siirtää ne joka tapauksessa. **Hyväksytty tieto:** skip-merkki painui suusta
+  46 → 56 px (kasvaneet osumalaatikot pakottavat, pidetty alarajalla) ja
+  renkaasta kuoren kuihin menevät kaapelit kulkevat sen kaistan läpi (mitattu
+  `tri1 → coco1_spaf` 6.0 px, ennen tulvaa 17.5 px). §4.5 pätee: kaapeli
+  voittaa osoittimen alla. Merkin kotia ei siirretty.
 - [ ] **3. Almanakka maisemaksi** (§9). Kuu nousee, pato muuttuu
   vuorovesilammikoksi (kuun heijastukseksi), säärivi sirotellaan rannoille.
-  Sama matematiikka, uusi ruumiinkieli. Pidetään tulvasta erillisenä, jottei
-  padon muodosta erimielisyys panttaa kokopassia.
+  Sama matematiikka, uusi ruumiinkieli. Pidettiin tulvasta erillisenä, jottei
+  padon muodosta erimielisyys panttaisi kokopassia. **Kokojen jälkitarkastus
+  kulkee tämän mukana** (ks. yllä). Reunaehto mitattu tulvassa: 156 px:n allas
+  mahtuu kuorta vasten (marginaali 16 → 8 px) mutta menisi lavan oikeasta
+  reunasta yli 6 px:llä — `moonAxis` on siirrettävä sisäänpäin.
 - [ ] **4. Range-väreet** (§3). Castlen 6-suunnan piirretty väre, jonka *muoto
   on regime* (infra/balcium/audio); napautus askeltaa. Yön suurin
   soitettavuusaukko. Kasvaneeseen maisemaan, jotta clearance tehdään kerran.
@@ -164,8 +180,10 @@ Lisäksi neljä GUI-smokea (`gui_shell_smoke`, `gui_drawer_smoke`,
 `GUI_SPEC.md` §13:n serverless interaction-testit, manuaalinen kuuntelu,
 visuaalinen tarkastus 100/125/150 % skaalauksilla ja CPU/resource-soak.
 G-porttia ei merkitä valmiiksi pelkän toteutuscommitin perusteella.
-Lähtötaso 2026-07-22: `CQ_COMPILE_OK`, **6 611 unit-passia / 0 failurea**,
-`CQ_SAFETY_PASSED`, `CQ_HOLD_OK` ja kaikki neljä GUI-markkeria.
+Lähtötaso 2026-07-26 (kevättulvan portti): `CQ_COMPILE_OK`, **11 175
+unit-passia / 0 failurea** (oli 6 611 — §8:n törmäysmatriisi tuo ~4 560
+assertia molemmilla referenssikoolla), `CQ_SAFETY_PASSED` ja kaikki neljä
+GUI-markkeria. `CQ_HOLD_OK` kantaa edellisestä portista: DSP:hen ei koskettu.
 
 ## Omistajuus- ja julkaisurata (kulkee Nocturnen rinnalla)
 
@@ -298,6 +316,16 @@ mitataan Qt:n paint-eventistä (`tests/gui_paint_profile.scd`), ei arvata.
 
 ## Myöhemmin, ei tämän vaiheen scopea
 
+- **Johtojen piilotus/himmennys taustalle** (käyttäjän toive 2026-07-26, N2:n
+  katselmoinnissa): GUI tarvitsee todennäköisesti jonkinlaisen kytkimen, joka
+  vetää kaapelikerroksen taustalle — piiloon tai selvästi himmeämmäksi — jotta
+  täyden kentän alta näkee kehot ja merkit. Ei vielä päätetty muoto (kytkin vai
+  pidike, koko kerros vai vain ei-fokusoidut, näkyvyys vai osumat) eikä koti.
+  Huomaa kaksi rajaa jo nyt: §4.5:n mukaan kaapeli voittaa osoittimen alla,
+  joten pelkkä *näkyvyyden* himmennys ei saa muuttaa sitä kuka painalluksen saa
+  — muuten kytkin tekee valehtelevan vihjeen; ja §16.8:n johtokieli (napa,
+  paino, solo-dim) on jo hyväksyttyä pintaa. Ratkaisisi myös osan siitä, miksi
+  skip-merkin kaltaiset kohteet jäävät kaapelin alle. Palataan tähän erikseen.
 - **Snapshotit omaan kansioonsa** (`snapshots/` vs `presets/`) — kirjattu jo
   Archipelago-vaiheessa, tehdään omana pienenä työnään.
 - **Kosketusnäyttö-optimointi Night-modeen** (multi-touch, ele-erottelu) —

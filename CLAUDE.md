@@ -104,8 +104,24 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   through one choke point (`CQGuiNightMap.cancelGestures`; mouse-up via
   `CQGuiNightTouch.shellUp`), captured-and-restored so a stuck punch can never
   leave a loop recording; the night smoke asserts each exit path. **Next step:
-  build-order step 2, the spring flood (§8)** — the size pass (collision matrix
-  first, one composition review at two window sizes). **Do not rebuild or
+  build-order step 3, the almanac becomes landscape (§9).** Step 2, the spring
+  flood (§8), **is done and accepted (2026-07-26, checklist N2)**: the night's
+  measures now live in one table, `CQNightMeasures`, and `CQNightGeometry` is
+  the math that composes them, holding no size literal. The collision matrix was
+  written first against the OLD constants, at both reference stage sizes, and
+  only then did the numbers move — that order is the method, not a formality.
+  Strokes, type, palette and alphas did not move (§16.3/§16.4/§16.10). Three
+  things the flood taught: the shell layer's slack past the rim is what the
+  castle boxes and the almanac live on (trimmed 30 → 24 px, now pinned by a test
+  that names every mark the rim carries); the heart's disc deliberately swallows
+  the innermost turn of the groove, because §4.5 checks it before the winding
+  surface; and **cables are not static geometry, so no clearance test can cover
+  them** — the grown transport marks now sit in the lane where cables from the
+  ring sag toward this shell's moons (measured 6.0 px on `tri1 → coco1_spaf`,
+  17.5 px before the flood). The user accepted that as the grammar working
+  (cable wins under the pointer) and the mark's G2-gated home did not move. The
+  user's own size touch-up rides §9's review, because sizes are relational and
+  are judged in the new composition rather than one at a time. **Do not rebuild or
   "improve" accepted G1/G2/G3 surface on your own initiative.** The bullets
   below record what that accepted surface is and the laws it taught — historical
   reference, not a to-do list.

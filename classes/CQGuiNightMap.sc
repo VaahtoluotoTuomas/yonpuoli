@@ -652,10 +652,11 @@ CQGuiNightMap {
 
 	prMakeEndpoint { |name|
 		var spec = this.class.endpointSpec(name);
-		var jack = spec[\kind] == \jack;
-		var width = if(spec[\lamp] == true) { 34 } { if(jack) { 26 } { 20 } };
-		var height = if(jack) { 26 } { 20 };
-		var anchor = if(jack) { Point(13, 13) } { Point(9, 10) };
+		// the box and its anchor come from CQNightGeometry, so the map, the
+		// clearance tests and the stubs all size from one table (rake 12)
+		var extent = CQNightGeometry.endpointExtent(spec[\kind], spec[\lamp]);
+		var anchor = CQNightGeometry.endpointAnchor(spec[\kind]);
+		var width = extent.x, height = extent.y;
 		var view = UserView(container, Rect(0, 0, width, height))
 			.background_(CQInk.palette(\night)[\ground]);
 		view.drawFunc = {
@@ -670,12 +671,14 @@ CQGuiNightMap {
 	}
 
 	prMakeCrescent { |name|
-		var view = UserView(container, Rect(0, 0, 24, 24))
+		var extent = CQNightMeasures.crescentExtent;
+		var view = UserView(container, Rect(0, 0, extent, extent))
 			.background_(CQInk.palette(\night)[\ground]);
 		var family = if(name.asString.endsWith("Spaf")) { \spaf } { nil };
 		view.drawFunc = {
 			this.prSafeDraw {
-				CQInkNight.drawCrescent(Point(12, 12), crescentNorms[name] ? 0,
+				CQInkNight.drawCrescent(Point(extent * 0.5, extent * 0.5),
+					crescentNorms[name] ? 0,
 					family, activeCrescents.includes(name)
 						or: { hoverCrescents.includes(name) }, \night);
 			}
@@ -809,7 +812,7 @@ CQGuiNightMap {
 			point = this.prStagePoint(view, x, y);
 			free = overlay.patchAt(point).isNil;
 			near = (CQNightGeometry.spiralDistance(geometry[\cocos][i], point)
-				<= 8) and: { free };
+				<= CQNightMeasures.windGrab) and: { free };
 			// the skip mark sits off the winding surface, above the mouth
 			// jack, so it answers the hand on its own account
 			mark = free and: {
@@ -836,7 +839,8 @@ CQGuiNightMap {
 		if(geometry.notNil and: { view.notNil }) {
 			point = this.prStagePoint(view, x, y);
 			near = CQNightGeometry.ringBodyHit(geometry, point)
-				and: { CQNightGeometry.distance(point, geometry[\eye]) > 12 }
+				and: { CQNightGeometry.distance(point, geometry[\eye])
+					> CQNightMeasures.eyeHit }
 				and: { overlay.patchAt(point).isNil };
 		};
 		if(near != ringHover) {
@@ -969,7 +973,8 @@ CQGuiNightMap {
 		almanacView.bounds = geometry[\almanac][\box];
 		compassView.bounds = geometry[\almanac][\compassBox];
 		ringView.bounds = geometry[\ringBox];
-		eyeView.bounds = Rect.aboutPoint(geometry[\eye], 22, 22);
+		eyeView.bounds = Rect.aboutPoint(geometry[\eye], CQNightMeasures.eyeLayerR,
+			CQNightMeasures.eyeLayerR);
 		castleViews.do { |view, k| view.bounds = geometry[\castles][k][\box] };
 		shellViews.do { |view, i|
 			view.bounds = geometry[\cocos][i][\shellBox] };
@@ -994,8 +999,10 @@ CQGuiNightMap {
 	}
 
 	prPlaceCrescent { |name, center|
+		var extent = CQNightMeasures.crescentExtent;
 		crescentViews[name].bounds =
-			Rect(center.x - 12, center.y - 12, 24, 24);
+			Rect(center.x - (extent * 0.5), center.y - (extent * 0.5),
+				extent, extent);
 	}
 
 	prRegisterUpdaters {
@@ -1101,7 +1108,8 @@ CQGuiNightMap {
 	prDrawEye {
 		var origin;
 		if(geometry.isNil) { ^this };
-		origin = Rect.aboutPoint(geometry[\eye], 22, 22).leftTop;
+		origin = Rect.aboutPoint(geometry[\eye], CQNightMeasures.eyeLayerR,
+			CQNightMeasures.eyeLayerR).leftTop;
 		Pen.translate(origin.x.neg, origin.y.neg);
 		CQInkNight.drawEye(geometry[\eye], eyeActive,
 			eyeFreqNorm, eyeChaosNorm, \night);

@@ -404,3 +404,54 @@ muutama kädellä toistettava keskeytys.
       eikä looppi jää tallentamaan. Oikea nappi = punchin koti; valinnainen
       Shift+1/2-näppäinpunch jätettiin pois.)
 
+### N2 — Kevättulva: kokopassi (§8)
+
+Yön kaikkien kehojen ja kosketuskohteiden peruskoot on nostettu **yhtenä
+sommitelmana**. Ei uusia muotoja eikä uusia merkityksiä: sama topologia, samat
+eleet, samat värit, samat viivanpaksuudet ja kirjasinkoot (§16.3/§16.4 eivät
+liiku — muste ei paksune kun paperi kasvaa). Mitat asuvat nyt yhdessä
+taulukossa, `classes/CQNightMeasures.sc`, ja törmäysmatriisi
+(`CQNightGeometryTest`) pitää ne erillään molemmilla referenssikoolla.
+
+**Tämä on sommittelukatselmointi: katso ensin, älä säädä.** Käy läpi
+**kahdella ikkunakoolla** (§15:n oma laki): ensin minimi-ikkuna 1280×720,
+sitten läppärin maksimoitu koko.
+
+```supercollider
+// N2 — Kevättulva. Aja rivi kerrallaan. Vaatii GUI:n; luokkakirjasto
+// uudelleenkäännetty (Ctrl+Shift+L) ennen tätä.
+CQ.boot;                       // 1. käynnistä ja avaa GUI, paina Tab -> yökartta
+// 2. MINIMIKOKO: raahaa ikkuna 1280x720:een (tai lähimpään). Katso koko lahtea
+//    kerralla: onko mittakaava nyt käden mittainen vai liian ahdas? Erityisesti
+//    (a) linnojen sisäkellot, (b) kuorten sydämet, (c) renkaan silmä (myrskyiiris),
+//    (d) vuorovesisirpit, (e) lintujen siivet ja juurten korkeus.
+CQ.set(\qChaos, 0.9); CQ.set(\qFreq, 0.8);   // 3. iiris: säteet ja pupilli isoina
+CQ.set(\qChaos, 0.05); CQ.set(\qFreq, 0.2);  // 4. ...ja tyynenä. Lukeeko ero yhä?
+CQ.hold(1, 1);                 // 5. sinetti + sydän: näkyykö punainen selvästi?
+CQ.hold(1, 0);
+CQ.shake;                      // 6. heitä kaapelikenttä: peittääkö mikään kasvanut
+                               //    keho tai laatikko merkkejä joita ennen näkyi?
+CQ.clearPatch;                 // 7. tyhjennä kenttä (tai Ctrl+Z GUI:ssa)
+// 8. MAKSIMOI ikkuna. Sama katsaus: pysyykö sommitelma kasassa, jääkö vettä
+//    liikaa/liian vähän, ovatko merkit yhä oikean kokoisia suhteessa kehoihin?
+// 9. Kokeile käsin: sydän (hold), sisäkello (spesal-askel), sirppi (veto),
+//    silmä (veto = qFreq/qChaos), kuoren ura (nopeus), suun chevron ja skip-merkki.
+//    Osuuko käsi nyt kohteisiin ilman tähtäämistä?
+```
+
+**Tiedossa oleva, katselmoinnissa päätettävä asia:** suun alla oleva
+**skip-merkki** on tulvan jälkeen 30 + 26 px suusta (kasvaneet osumalaatikot
+pakottavat sen sinne). Juuri siinä vedessä kulkevat renkaasta tämän kuoren
+kuihin menevät kaapelit: mitattu esimerkki `tri1 → coco1_spaf` kulkee **6.0 px**
+merkin ohi (ennen tulvaa 17.5 px), ja §4.5:n mukaan **kaapeli voittaa
+osoittimen alla** — eli sellaisen patchin aikana skip-merkki ei vastaa ennen
+kuin kaapeli siirretään. Merkin koti lyötiin lukkoon G2-portissa neljän
+katselmointikierroksen jälkeen, joten sitä ei siirretty omin päin. Päätä
+katselmoinnissa: (a) hyväksy kielioppi sellaisenaan, (b) kutista `shellOuterR` /
+`moonArc`, vai (c) avaa merkin koti uudelleen.
+
+- [x] N2 hyväksytty (pvm: 2026-07-26 — mittakaava, molemmat ikkunakoot.
+      Skip-merkin kaapelikaista hyväksyttiin sellaisenaan: §4.5:n kielioppi
+      (kaapeli voittaa osoittimen alla) jää voimaan, merkin koti ei liiku.
+      Kokoihin palataan vielä §9:n uuden sommitelman yhteydessä.)
+

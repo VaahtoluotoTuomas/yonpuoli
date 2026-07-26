@@ -4,6 +4,10 @@
 // left/right, roots below, birds above — are unit-testable without a window.
 // Every irregularity is seeded (§16.11): the same size always returns the same
 // hand-drawn archipelago, and a redraw never boils.
+//
+// The measures themselves live next door in `CQNightMeasures` — this class is
+// the math that composes them (NIGHT_STANDALONE_PLAN §8). Nothing here is a
+// size literal; if a number belongs to a body or a hit target, it belongs there.
 
 CQNightGeometry {
 
@@ -150,12 +154,44 @@ CQNightGeometry {
 	// the mouth's two stationary transport marks (skip above the jack, flip
 	// below it): one box for the cue and for the act, as everywhere in §4.5
 	*markHit { |anchor, point|
-		^Rect.aboutPoint(anchor, 10, 10).containsPoint(point)
+		var reach = CQNightMeasures.markHitReach;
+		^Rect.aboutPoint(anchor, reach, reach).containsPoint(point)
 	}
 
 	// the spesal dial annulus around a castle (a tap = one step)
 	*dialHit { |castle, point|
-		^(this.distance(point, castle[\center]) - castle[\dialR]).abs <= 8
+		^(this.distance(point, castle[\center]) - castle[\dialR]).abs
+			<= CQNightMeasures.clockHit
+	}
+
+	// ---- the opaque endpoint views (rake 12) ----
+	// One source for the boxes the map builds and the clearance tests assert
+	// against: a jack is a square, a socket is a little wider than tall once it
+	// carries a lamp, and both are opaque, so anything drawn under one is gone.
+	// The socket's anchor sits a pixel left of centre, which is the pixel the
+	// lamp bead borrows on its side.
+
+	*endpointExtent { |kind, lamp = false|
+		var socket = CQNightMeasures.socketExtent;
+		if(kind == \jack) {
+			^Point(CQNightMeasures.jackExtent, CQNightMeasures.jackExtent)
+		};
+		^Point(if(lamp == true) { CQNightMeasures.lampedWidth } { socket.x },
+			socket.y)
+	}
+
+	*endpointAnchor { |kind|
+		var socket = CQNightMeasures.socketExtent;
+		if(kind == \jack) {
+			^Point(CQNightMeasures.jackExtent * 0.5, CQNightMeasures.jackExtent * 0.5)
+		};
+		^Point((socket.x * 0.5) - 1, socket.y * 0.5)
+	}
+
+	*endpointBox { |center, kind, lamp = false|
+		var extent = this.endpointExtent(kind, lamp);
+		var anchor = this.endpointAnchor(kind);
+		^Rect(center.x - anchor.x, center.y - anchor.y, extent.x, extent.y)
 	}
 
 	// ---- the almanac corner (§16.6) ----
@@ -171,30 +207,21 @@ CQNightGeometry {
 
 	// Ø 52 (grown from 44 at the user's second review: the corner carried it
 	// easily once the constellation left, and the phase reads better big)
-	*moonRadius { |scale = 1| ^26 * scale }
-
-	// the flash halo reaches this far past the rim, so the layer must hold it
-	*moonHalo { ^7 }
-
-	// the pad's corner seeds sit this far inside the water, so a stamped
-	// corner's dot and its halo never touch the hairline border
-	*stampInset { ^13 }
-
-	// a stamp answers within this radius — under the 8 px tap threshold it is
-	// a tap target, not a drag start, so it can afford to be small
-	*stampRadius { ^9 }
+	*moonRadius { |scale = 1| ^CQNightMeasures.moonRadius * scale }
 
 	*almanac { |width, scale = 1, freeFrom = 0|
-		var left = freeFrom + (6 * scale);
-		var axis = width - (80 * scale);
+		var pad2 = CQNightMeasures.padExtent * scale;
+		var left = freeFrom + (CQNightMeasures.almanacInset * scale);
+		var axis = width - (CQNightMeasures.moonAxis * scale);
 		var moonR = this.moonRadius(scale);
-		var moon = Point(axis, (18 * scale) + moonR);
+		var moon = Point(axis, (CQNightMeasures.moonTop * scale) + moonR);
 		var box = Rect(left, 0, width - left,
-			moon.y + moonR + max(14 * scale, this.moonHalo + 4));
-		var pad = Rect(axis - (70 * scale), box.bottom + (14 * scale),
-			140 * scale, 140 * scale);
-		var inset = this.stampInset * scale;
-		var weatherY = pad.bottom + (16 * scale);
+			moon.y + moonR + max(CQNightMeasures.moonBoxSlack * scale,
+				CQNightMeasures.moonHalo + 4));
+		var pad = Rect(axis - (pad2 * 0.5),
+			box.bottom + (CQNightMeasures.padGap * scale), pad2, pad2);
+		var inset = CQNightMeasures.stampInset * scale;
+		var weatherY = pad.bottom + (CQNightMeasures.weatherGap * scale);
 		^(box: box, moon: moon, moonR: moonR,
 			compass: pad,
 			// corner seeds in pad order TL TR BL BR — the same order
@@ -214,8 +241,11 @@ CQNightGeometry {
 			),
 			// the compass layer's own opaque box: pad, stamp halos and the
 			// weather row whole, so no mark can clip against its layer edge
-			compassBox: Rect(pad.left - 8, pad.top - 8,
-				pad.width + 16, weatherY + 12 - pad.top + 8))
+			compassBox: Rect(pad.left - CQNightMeasures.compassBoxPad,
+				pad.top - CQNightMeasures.compassBoxPad,
+				pad.width + (2 * CQNightMeasures.compassBoxPad),
+				weatherY + CQNightMeasures.compassBoxFoot - pad.top
+					+ CQNightMeasures.compassBoxPad))
 	}
 
 	*moonHit { |almanac, point|
@@ -236,10 +266,11 @@ CQNightGeometry {
 	}
 
 	// which corner seed the point lands on, or nil — consulted before the pad
-	// itself, since the seeds live inside the water
+	// itself, since the seeds live inside the water. A stamp answers under the
+	// 8 px tap threshold, so it is a tap target and never a drag start.
 	*stampHit { |almanac, point|
 		^almanac[\stamps].detectIndex { |stamp|
-			this.distance(point, stamp) <= this.stampRadius
+			this.distance(point, stamp) <= CQNightMeasures.stampRadius
 		}
 	}
 
@@ -312,10 +343,8 @@ CQNightGeometry {
 	// is the §6 body-solo target AND, with dialHit excluded, the area that wears
 	// the hover echo (§4.5) — one geometry for both, because a cue that covers
 	// more or less than its action is a cue that lies.
-	*bodyMargin { ^10 }
-
 	*bodyHit { |castle, point, margin|
-		var m = margin ? this.bodyMargin;
+		var m = margin ? CQNightMeasures.bodyMargin;
 		var dx = (point.x - castle[\center].x) / max(0.001, castle[\bodyRx] + m);
 		var dy = (point.y - castle[\center].y) / max(0.001, castle[\bodyRy] + m);
 		^(dx.squared + dy.squared) <= 1
@@ -330,11 +359,9 @@ CQNightGeometry {
 	// the shell's rim: a band on the circle the hold seal draws. The spiral
 	// itself never reaches past outerR except at the mouth, and the winding
 	// surface is consulted first, so the two can never fight over a press.
-	*rimMargin { ^10 }
-
 	*shellRimHit { |coco, point, margin|
 		^(this.distance(point, coco[\center]) - coco[\outerR]).abs
-			<= (margin ? this.rimMargin)
+			<= (margin ? CQNightMeasures.rimMargin)
 	}
 
 	// distance from a point to the ring's drawn line (the river itself)
@@ -351,7 +378,8 @@ CQNightGeometry {
 	}
 
 	*ringBodyHit { |geometry, point, margin|
-		^this.ringDistance(geometry, point) <= (margin ? this.rimMargin + 2)
+		^this.ringDistance(geometry, point)
+			<= (margin ? CQNightMeasures.rimMargin + 2)
 	}
 
 	// ---- the whole archipelago from one stage size ----
@@ -359,9 +387,11 @@ CQNightGeometry {
 	// at the draw sites. The minimum stage (1280x570 under the toolbar and the
 	// Master strip) gives scale 1.
 	*compute { |width, height|
-		var scale = min(width / 1280, height / 570).max(0.5);
-		var ringCenter = Point(width * 0.5, height * 0.52);
-		var ringR = 148 * scale;
+		var scale = min(width / CQNightMeasures.refWidth,
+			height / CQNightMeasures.refHeight).max(CQNightMeasures.minScale);
+		var ringCenter = Point(width * 0.5,
+			height * CQNightMeasures.ringHeightFraction);
+		var ringR = CQNightMeasures.ringRadius * scale;
 		var endpoints = IdentityDictionary.new;
 		var castles, ringSegments, ringSamples, ringBox, cocos, roots, birds;
 		var sprout, almanac, xs, ys;
@@ -372,22 +402,25 @@ CQNightGeometry {
 			5.collect { |k|
 				var angle = -0.5pi + (k * 0.4pi) + 6.degrad.rand2;
 				var center = this.polar(ringCenter, ringR * (1 + 0.05.rand2), angle);
-				var bodyRx = 23 * scale * (1 + 0.08.rand2);
-				var bodyRy = 20 * scale * (1 + 0.08.rand2);
+				var bodyRx = CQNightMeasures.castleRx * scale * (1 + 0.08.rand2);
+				var bodyRy = CQNightMeasures.castleRy * scale * (1 + 0.08.rand2);
 				var blobAnchors = 6.collect { |a|
 					var blobAngle = (a / 6 * 2pi) + 0.22.rand2;
 					var jitter = 1 + 0.08.rand2;
 					Point(center.x + (cos(blobAngle) * bodyRx * jitter),
 						center.y + (sin(blobAngle) * bodyRy * jitter))
 				};
-				// the spesal dial is the castle's inner clock (r 10): it lives
-				// inside the body where the opaque endpoint views (r >= ~14.6
-				// to their nearest corner at scale 1) can never cover its hand
+				// the spesal dial is the castle's inner clock: it lives inside
+				// the body, where the opaque endpoint views can never cover its
+				// hand — pinned by test_inkClearances, not by eye
+				var reach = (CQNightMeasures.castleBoxReach * scale)
+					+ CQNightMeasures.castleBoxSlack;
 				(center: center, bodyRx: bodyRx, bodyRy: bodyRy,
 					blobSegments: this.smoothClosedSegments(blobAnchors),
-					dialR: 10 * scale,
-					letterAnchor: Point(center.x, center.y + (33 * scale)),
-					box: Rect.aboutPoint(center, (36 * scale) + 4, (36 * scale) + 4))
+					dialR: CQNightMeasures.clockRadius * scale,
+					letterAnchor: Point(center.x,
+						center.y + (CQNightMeasures.rangeLetterDrop * scale)),
+					box: Rect.aboutPoint(center, reach, reach))
 			}
 		});
 		// ring stubs: the opaque castle layer redraws the river's short passage
@@ -399,6 +432,8 @@ CQNightGeometry {
 					var length = max(0.001, this.distance(castle[\center], other[\center]));
 					var unit = delta / length;
 					var rim = max(castle[\bodyRx], castle[\bodyRy]) + 2;
+					// the far end is read off the box itself, so a grown layer
+					// carries its own stub with it (rake 12)
 					[castle[\center] + (unit * rim),
 						castle[\center] + (unit * (castle[\box].width * 0.5))]
 				};
@@ -407,8 +442,10 @@ CQNightGeometry {
 		ringSamples = this.sampleSegments(ringSegments, 24);
 		xs = ringSamples.collect { |p| p.x };
 		ys = ringSamples.collect { |p| p.y };
-		ringBox = Rect(xs.minItem - 12, ys.minItem - 12,
-			xs.maxItem - xs.minItem + 24, ys.maxItem - ys.minItem + 24);
+		ringBox = Rect(xs.minItem - CQNightMeasures.ringBoxPad,
+			ys.minItem - CQNightMeasures.ringBoxPad,
+			xs.maxItem - xs.minItem + (2 * CQNightMeasures.ringBoxPad),
+			ys.maxItem - ys.minItem + (2 * CQNightMeasures.ringBoxPad));
 
 		// coco 1 left, coco 2 right: spiral shells with their mouths toward the
 		// ring, org fruit on the second turn, five moons on an arc below
@@ -416,15 +453,18 @@ CQNightGeometry {
 			var side = if(i == 0) { -1 } { 1 };
 			var winding = if(i == 0) { 1 } { -1 };
 			var mouthAngle = if(i == 0) { 0 } { pi };
-			var center = Point(ringCenter.x + (side * (ringR + (190 * scale))),
-				ringCenter.y - (26 * scale));
-			var outerR = 85 * scale;
-			var segments = this.spiralSegments(center, 10 * scale, outerR,
+			var center = Point(ringCenter.x
+				+ (side * (ringR + (CQNightMeasures.shellGap * scale))),
+				ringCenter.y - (CQNightMeasures.shellRise * scale));
+			var outerR = CQNightMeasures.shellOuterR * scale;
+			var segments = this.spiralSegments(center,
+				CQNightMeasures.spiralInnerR * scale, outerR,
 				mouthAngle, winding);
 			var mouth = segments.last[3];
 			var orgSpiralPoint = segments[5][0];
 			var orgDelta = orgSpiralPoint - center;
 			var orgLength = max(0.001, this.distance(center, orgSpiralPoint));
+			var shellReach = outerR + (CQNightMeasures.shellBoxPad * scale);
 			(center: center, outerR: outerR, winding: winding,
 				mouthAngle: mouthAngle, segments: segments,
 				mouth: mouth,
@@ -437,7 +477,8 @@ CQNightGeometry {
 				// inside the shell box at every scale — plus the hold heart at
 				// the spiral's innermost eye, the shell's own opaque layer box
 				// and the tide crescents under the three continuous moons
-				chevron: mouth + Point(0, max(24 * scale, 22)),
+				chevron: mouth + Point(0, max(CQNightMeasures.chevronDrop * scale,
+					CQNightMeasures.chevronDropFloor)),
 				// skip's night home, landed at the G2 gate: a stationary mark
 				// under the flip chevron — the Day panel's own FLIP/SKIP pair,
 				// hanging in the one direction that is empty. The read-head
@@ -447,18 +488,23 @@ CQNightGeometry {
 				// is wrong: the spiral *ends* at the mouth and arrives there
 				// from above, so that side is the groove itself (caught by the
 				// winding-surface assert, CQGuiNightTouchTest).
-				skipMark: mouth + Point(0, max(24 * scale, 22)
-					+ max(22 * scale, 20)),
-				heartRadius: 14,
-				shellBox: Rect.aboutPoint(center,
-					outerR + (30 * scale), outerR + (30 * scale)),
+				skipMark: mouth + Point(0,
+					max(CQNightMeasures.chevronDrop * scale,
+						CQNightMeasures.chevronDropFloor)
+					+ max(CQNightMeasures.skipDrop * scale,
+						CQNightMeasures.skipDropFloor)),
+				heartRadius: CQNightMeasures.heartHit,
+				shellBox: Rect.aboutPoint(center, shellReach, shellReach),
 				crescents: [126, 108, 90].collect { |degrees|
-					this.polar(center, 130 * scale, degrees.degrad)
+					this.polar(center, CQNightMeasures.crescentArc * scale,
+						degrees.degrad)
 				},
 				orgSpiralPoint: orgSpiralPoint,
-				orgCenter: orgSpiralPoint + ((orgDelta / orgLength) * (10 * scale)),
+				orgCenter: orgSpiralPoint + ((orgDelta / orgLength)
+					* (CQNightMeasures.orgStemReach * scale)),
 				moons: [126, 108, 90, 72, 54].collect { |degrees|
-					this.polar(center, 104 * scale, degrees.degrad)
+					this.polar(center, CQNightMeasures.moonArc * scale,
+						degrees.degrad)
 				})
 		};
 		cocos.do { |coco, i|
@@ -471,26 +517,31 @@ CQNightGeometry {
 		};
 		castles.do { |castle, k|
 			var n = k + 1, center = castle[\center];
+			var jackOrbit = CQNightMeasures.castleJackOrbit * scale;
 			endpoints[("tri" ++ n).asSymbol] =
-				this.polar(center, 33 * scale, this.clockAngle(1.5));
+				this.polar(center, jackOrbit, this.clockAngle(1.5));
 			endpoints[("cas" ++ n).asSymbol] =
-				this.polar(center, 33 * scale, this.clockAngle(10.5));
+				this.polar(center, jackOrbit, this.clockAngle(10.5));
 			endpoints[("castle" ++ n ++ "_fm").asSymbol] =
-				this.polar(center, 28 * scale, this.clockAngle(4));
-			// r 40: the lamped spesal view is 34 px wide with the lamp
-			// reaching 25 px toward the body — r 40 keeps its opaque box off
-			// the inner clock at every scale (see CQNightGeometryTest)
+				this.polar(center, CQNightMeasures.castleFmOrbit * scale,
+					this.clockAngle(4));
+			// the lamped spesal view is the widest box a castle carries, with
+			// its lamp reaching further still toward the body — this orbit is
+			// what keeps it off the inner clock (see CQNightGeometryTest)
 			endpoints[("castle" ++ n ++ "_spesal").asSymbol] =
-				this.polar(center, 40 * scale, this.clockAngle(8));
+				this.polar(center, CQNightMeasures.castleSpesalOrbit * scale,
+					this.clockAngle(8));
 		};
 
 		// inputs as roots at the bottom, envA left, envB right; the mic sprout
 		// grows beside envA (display only — the mic is not one of the 16)
 		roots = this.prSeeded(4407, {
-			[0.17, 0.83].collect { |fraction, i|
+			CQNightMeasures.rootFractions.collect { |fraction, i|
 				var side = if(i == 0) { -1 } { 1 };
-				var tip = Point(width * fraction, height - (64 * scale));
-				var base = Point(tip.x + (side * 30 * scale), height + 2);
+				var tip = Point(width * fraction,
+					height - (CQNightMeasures.rootReach * scale));
+				var base = Point(tip.x
+					+ (side * CQNightMeasures.rootSpread * scale), height + 2);
 				var mid1 = Point(base.x + ((tip.x - base.x) * 0.35) + 6.0.rand2,
 					base.y + ((tip.y - base.y) * 0.4) + 4.0.rand2);
 				var mid2 = Point(base.x + ((tip.x - base.x) * 0.7) + 6.0.rand2,
@@ -506,30 +557,41 @@ CQNightGeometry {
 					// as a castle redraws the river's (§16.6) — otherwise the
 					// root visibly stops a jack-radius short of its own tip
 					arrival: (tip - mid2) / reach,
-					branch: [mid1, mid1 + Point(side * 20 * scale,
-						(14 * scale).neg + 3.0.rand2)])
+					branch: [mid1, mid1 + Point(
+						side * CQNightMeasures.rootTwigX * scale,
+						(CQNightMeasures.rootTwigY * scale).neg + 3.0.rand2)])
 			}
 		});
 		endpoints[\envA] = roots[0][\points].last;
 		endpoints[\envB] = roots[1][\points].last;
-		sprout = (base: Point((width * 0.17) + (46 * scale), height + 2),
-			tip: Point((width * 0.17) + (54 * scale), height - (36 * scale)));
+		sprout = (
+			base: Point((width * CQNightMeasures.rootFractions[0])
+				+ (CQNightMeasures.sproutOffset * scale), height + 2),
+			tip: Point((width * CQNightMeasures.rootFractions[0])
+				+ (CQNightMeasures.sproutTipOffset * scale),
+				height - (CQNightMeasures.sproutReach * scale)));
 
 		// decks as birds at the top; the rate moon under the wing with the
 		// deck-level tide crescent beside it, filename (10 px mono) beneath
 		birds = [0.24, 0.76].collect { |fraction|
-			var center = Point(width * fraction, 40 * scale);
-			(center: center, span: 30 * scale,
-				box: Rect.aboutPoint(center, 22 * scale, 16 * scale),
-				rateSocket: center + Point(11 * scale, 19 * scale),
-				levelCrescent: center + Point(-18 * scale, 16 * scale),
+			var center = Point(width * fraction,
+				CQNightMeasures.birdAltitude * scale);
+			(center: center, span: CQNightMeasures.birdSpan * scale,
+				box: Rect.aboutPoint(center, CQNightMeasures.birdBoxRx * scale,
+					CQNightMeasures.birdBoxRy * scale),
+				rateSocket: center + (CQNightMeasures.birdRateOffset * scale),
+				levelCrescent: center
+					+ (CQNightMeasures.birdCrescentOffset * scale),
 				// 20 px of line box for a 10 px mono face: the earlier 14 px
 				// clipped the filename's ascenders and descenders (§16.4 fixes
 				// the font size, so the box has to give way, not the type)
-				// 200 x 20 px, fixed in px so a resize never re-cuts a name that
-				// already fits; the line box holds a 10 px mono face whole, and
-				// CQGui trims an overlong name from its tail only (§16.4)
-				labelRect: Rect(center.x - 100, center.y + (33 * scale), 200, 20))
+				// fixed in px so a resize never re-cuts a name that already fits;
+				// the line box holds a 10 px mono face whole, and CQGui trims an
+				// overlong name from its tail only (§16.4)
+				labelRect: Rect(center.x - (CQNightMeasures.birdLabelExtent.x * 0.5),
+					center.y + (CQNightMeasures.birdLabelDrop * scale),
+					CQNightMeasures.birdLabelExtent.x,
+					CQNightMeasures.birdLabelExtent.y))
 		};
 		// §16.7's drop target: the bird AND its name — both what the eye reads
 		// as "this deck" and what actually accepts the file (label and wing
@@ -537,7 +599,8 @@ CQNightGeometry {
 		// file icon Windows drags under the cursor, so the border hid beneath
 		// the very thing it was answering (measured 2026-07-22).
 		birds.do { |bird|
-			bird[\dropRect] = bird[\box].union(bird[\labelRect]).insetBy(-6, -6);
+			var pad = CQNightMeasures.birdDropPad.neg;
+			bird[\dropRect] = bird[\box].union(bird[\labelRect]).insetBy(pad, pad);
 		};
 		endpoints[\deckA_rate] = birds[0][\rateSocket];
 		endpoints[\deckB_rate] = birds[1][\rateSocket];

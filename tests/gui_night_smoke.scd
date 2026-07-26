@@ -345,24 +345,29 @@ punchChecks = { |map|
 					"hard cut reached the night map");
 				AppClock.sched(0.2, {
 					try {
-						var geo = map.geometry, expected, view;
-						var sourceView, destView, destPoint, dragPoint;
-						var before, triView, target, movePoint;
+						var geo = map.geometry, expected, view, anchor;
+						var sourceView, destView, destPoint, dragPoint, sourceAnchor;
+						var before, triView, target, movePoint, triAnchor;
 						check.value(geo.notNil, "night geometry is laid out");
 						expected = geo[\endpoints][\tri1];
 						view = map.endpoints[\tri1][\view];
+						// the anchor is read, never assumed: a flooded view size
+						// must move this assert's expectation with it (rake 11)
+						anchor = map.endpoints[\tri1][\anchor];
 						check.value(
-							(view.bounds.left - (expected.x - 13)).abs < 1
-							and: { (view.bounds.top - (expected.y - 13)).abs < 1 },
+							(view.bounds.left - (expected.x - anchor.x)).abs < 1
+							and: { (view.bounds.top - (expected.y - anchor.y)).abs < 1 },
 							"a castle leaf jack sits exactly on its computed home");
 						check.value(map.overlay.cableCount == 2,
 							"night overlay renders every planted matrix cable");
 						sourceView = map.endpoints[\org2][\view];
+						sourceAnchor = map.endpoints[\org2][\anchor];
 						destView = map.endpoints[\deckB_rate][\view];
 						destPoint = destView.mapToGlobal(
 							map.endpoints[\deckB_rate][\anchor]);
 						dragPoint = destPoint - sourceView.mapToGlobal(0@0);
-						sourceView.mouseDownAction.value(sourceView, 13, 13, 0, 0, 1);
+						sourceView.mouseDownAction.value(sourceView,
+							sourceAnchor.x, sourceAnchor.y, 0, 0, 1);
 						sourceView.mouseMoveAction.value(sourceView,
 							dragPoint.x, dragPoint.y, 0);
 						sourceView.mouseUpAction.value(sourceView,
@@ -376,10 +381,12 @@ punchChecks = { |map|
 						// §4.1: the view flip is a normative audition revert path
 						before = matrix.fullMatrix.asCompileString;
 						triView = map.endpoints[\tri3][\view];
+						triAnchor = map.endpoints[\tri3][\anchor];
 						target = map.endpoints[\coco1_spaf];
 						movePoint = target[\view].mapToGlobal(target[\anchor])
 							- triView.mapToGlobal(0@0);
-						triView.mouseDownAction.value(triView, 13, 13, 0, 0, 1);
+						triView.mouseDownAction.value(triView,
+							triAnchor.x, triAnchor.y, 0, 0, 1);
 						triView.mouseMoveAction.value(triView,
 							movePoint.x, movePoint.y, 0);
 						check.value(gui.bananaGrammar.isInHand,
@@ -461,15 +468,19 @@ punchChecks = { |map|
 															var samples, cablePoint, cableRecord;
 															var castleTwo, castleView, dialPoint;
 															var sparkPoint, holdBefore, flipBefore, blinkBefore;
+															var savedPatches;
+																// the crescent view's own centre, so a flooded
+																// view keeps this exactly a 30 px pull (rake 11)
+																var mid = CQNightMeasures.crescentExtent * 0.5;
 															shell = map.shellViews[0];
 															coco = map.geometry[\cocos][0];
 															crescent = map.crescentViews[\coco1Spaf];
 															crescent.mouseDownAction.value(
-																crescent, 12, 12, 0, 0, 1);
+																crescent, mid, mid, 0, 0, 1);
 															crescent.mouseMoveAction.value(
-																crescent, 12, -18, 0);
+																crescent, mid, mid - 30, 0);
 															crescent.mouseUpAction.value(
-																crescent, 12, -18, 0, 0);
+																crescent, mid, mid - 30, 0, 0);
 															check.value(
 																(state.get(\coco1Spaf) - 2.0).abs < 0.02,
 																"a tide-crescent pull pours spaf through the funnel");
@@ -599,6 +610,21 @@ punchChecks = { |map|
 															check.value(state.get(\coco1Speed) > speedBefore,
 																"the comet's home is winding surface like any other");
 															// ---- skip's stationary mark above the mouth jack ----
+															// §4.5 gives a cable under the pointer the
+															// press, and after the spring flood the
+															// baseline tri1 -> coco1_spaf cable sags
+															// straight across this mark (2.5 px, measured;
+															// 17.5 px before the flood — recorded for the
+															// §8 composition review). That is the grammar
+															// working, not a defect, but it is not what
+															// this block tests: the mark is exercised on
+															// its own free water and the patch goes back
+															// afterwards. `invalidate` is called by hand
+															// because the overlay's own listener defers,
+															// and this block is already inside AppClock.
+															savedPatches = matrix.asArray;
+															matrix.load([]);
+															map.overlay.invalidate;
 															local = coco[\skipMark] - coco[\shellBox].leftTop;
 															speedBefore = state.get(\coco1Speed);
 															shell.mouseOverAction.value(shell,
@@ -621,6 +647,11 @@ punchChecks = { |map|
 															shell.mouseLeaveAction.value(shell);
 															check.value(map.skipHover[0].not,
 																"leaving rests the mark");
+															matrix.load(savedPatches);
+															map.overlay.invalidate;
+															check.value(map.overlay.cableRecords.any { |r|
+																r[\dest] == \coco1_spaf },
+																"the mark's block put the patch back");
 															check.value(map.struckOn[0].not,
 																"a quiet skip leaves the comet a plain point");
 															gui.prPhaseFrame(1, 0.64);
