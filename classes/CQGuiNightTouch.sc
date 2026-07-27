@@ -588,10 +588,30 @@ CQGuiNightTouch {
 		^this
 	}
 
-	// ---- crescents: dedicated small controls, vertical drag = value ----
+	// ---- crescents: vertical value pour; in/fb carry a specific Dolby oyster ----
 
 	crescentDown { |name, view, x, y, modifiers = 0, button = 0, clicks = 1|
-		if(button != 0) { ^this };
+		var point = this.prPoint(view, x, y);
+		var center = map.crescentCenter(name);
+		var dolbyName = CQGuiNightMap.dolbyNameForCrescent(name);
+		// §4.5 is unchanged: a cable or Alt gesture over either mark belongs to
+		// the banana grammar. The oyster is then the smaller target and must be
+		// consulted before the crescent's old drag square.
+		if(modifiers.isAlt or: { overlay.patchAt(point).notNil }) {
+			^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
+		};
+		if(button == 0 and: { dolbyName.notNil }
+			and: { CQNightGeometry.dolbyOysterHit(center, point) }) {
+			^this.prCycleEnum(dolbyName)
+		};
+		if(button != 0) {
+			^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
+		};
+		// The grown owner's lower paper is not a larger value drag. A drag may
+		// begin only in the crescent's original, bit-identical 30 px square.
+		if(CQNightGeometry.crescentControlHit(center, point).not) {
+			^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
+		};
 		crescentDrag = (name: name, startY: y, start: this.prNorm(name));
 		map.crescentActive(name, true);
 		^this

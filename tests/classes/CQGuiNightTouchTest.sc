@@ -161,6 +161,12 @@ CQGuiNightTouchTest : UnitTest {
 			"a malformed current value clamps to the spec default before stepping");
 		this.assert(CQGuiNightTouch.nextEnum(\qFreq, 4).isNil,
 			"a non-enum cannot be stepped");
+		this.assertEquals(CQGuiNightTouch.nextEnum(\coco1DolbyIn, \off), \gate,
+			"the input oyster follows CQSpec's Dolby order");
+		this.assertEquals(CQGuiNightTouch.nextEnum(\coco1DolbyIn, \gate), \duck,
+			"the oyster reaches duck without a literal mode list");
+		this.assertEquals(CQGuiNightTouch.nextEnum(\coco1DolbyIn, \duck), \off,
+			"the oyster wraps to off");
 	}
 
 	test_sensitivities {

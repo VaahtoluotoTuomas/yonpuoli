@@ -36,15 +36,15 @@ includePaths:
 Run these in order after a class or SynthDef change:
 
 ```powershell
-& "C:\Program Files\SuperCollider-3.14.1\sclang.exe" -l tests/sclang_conf_dev.yaml -i none tests/compile_check.scd
-& "C:\Program Files\SuperCollider-3.14.1\sclang.exe" -l tests/sclang_conf_dev.yaml -i none tests/run_all.scd
-& "C:\Program Files\SuperCollider-3.14.1\sclang.exe" -l tests/sclang_conf_dev.yaml -i none tests/nrt_safety.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/compile_check.scd -Sclang "C:\Program Files\SuperCollider-3.14.1\sclang.exe"
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/run_all.scd -Sclang "C:\Program Files\SuperCollider-3.14.1\sclang.exe"
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_safety.scd -Sclang "C:\Program Files\SuperCollider-3.14.1\sclang.exe"
 ```
 
 DSP-behavior changes also require:
 
 ```powershell
-& "C:\Program Files\SuperCollider-3.14.1\sclang.exe" -l tests/sclang_conf_dev.yaml -i none tests/nrt_hold_integrity.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_hold_integrity.scd -Sclang "C:\Program Files\SuperCollider-3.14.1\sclang.exe"
 ```
 
 A marker missing from the end of output counts as failure even if the process exits

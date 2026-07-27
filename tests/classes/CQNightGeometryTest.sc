@@ -1031,6 +1031,60 @@ CQNightGeometryTest : UnitTest {
 		};
 	}
 
+	// N5 grows only the in/fb crescent owner, and only outward/downward. The
+	// old value hand keeps its exact centre and square; the oyster gets a
+	// disjoint tap below it and the complete opaque owner remains on paper.
+	test_dolbyOystersGrowAwayFromTheirMoons {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var stage = Rect(0, 0, size[0], size[1]);
+			var allCrescents = geo[\cocos].collect(_[\crescents]).flat
+				++ geo[\birds].collect(_[\levelCrescent]);
+			var endpointPoints = geo[\endpoints].values;
+			geo[\cocos].do { |coco, i|
+				2.do { |channel|
+					var m = channel + 1;
+					var center = coco[\crescents][m];
+					var moon = coco[\moons][m];
+					var view = CQNightGeometry.crescentViewBox(center, true);
+					var oldView = CQNightGeometry.crescentViewBox(center, false);
+					var oyster = CQNightGeometry.dolbyOysterAnchor(center);
+					this.assert(stage.contains(view),
+						"coco % channel % oyster stays on stage (%x%)"
+							.format(i + 1, channel, *size));
+					this.assertEquals(view.top, oldView.top,
+						"the grown owner never moves toward its moon");
+					this.assertEquals(view.width, oldView.width,
+						"the owner grows only downward");
+					this.assert(view.bottom > oldView.bottom,
+						"the extra paper is below the old crescent");
+					this.assert(CQNightGeometry.distance(center, oyster) >= 24,
+						"crescent and oyster keep the 24 px centre law");
+					this.assert(CQNightGeometry.dolbyOysterBox(center)
+						.intersects(oldView).not,
+						"oyster tap and value drag are disjoint");
+					this.assert(CQNightGeometry.distance(oyster, moon)
+						> CQNightGeometry.distance(center, moon),
+						"the oyster grows away from its moon");
+					allCrescents.do { |other|
+						if(other != center) {
+							this.assert(CQNightGeometry.distance(oyster, other) >= 24,
+								"oyster clears every neighbouring crescent centre");
+							this.assert(view.containsPoint(other).not,
+								"grown oyster paper swallows no neighbouring crescent");
+						};
+					};
+					endpointPoints.do { |other|
+						this.assert(CQNightGeometry.distance(oyster, other) >= 24,
+							"oyster keeps the 24 px hit law from every endpoint");
+						this.assert(view.containsPoint(other).not,
+							"grown oyster paper swallows no endpoint centre");
+					};
+				};
+			};
+		};
+	}
+
 	// The roots climb into the same lower water the shells hang their tide
 	// crescents in, and their tips carry jacks. Nothing down there may cross.
 	test_floodRootsClearTheLowerWater {

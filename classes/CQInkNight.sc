@@ -532,6 +532,48 @@ CQInkNight {
 		};
 	}
 
+	// §6.1 Dolby oyster: posture, never colour, is the enum. Off breathes
+	// open; gate nearly closes; duck closes and receives a short stroke from
+	// the partner channel that keys it. This is setting ink, not invented
+	// telemetry, so it never blinks.
+	*drawDolbyOyster { |center, mode = \off, partnerDirection = 1,
+		hover = false, skin = \night|
+		var palette = CQInk.palette(skin);
+		var width = CQNightMeasures.dolbyOysterWidth;
+		var gap = switch(mode,
+			\gate, { CQNightMeasures.dolbyOysterGateGap },
+			\duck, { 0 },
+			{ CQNightMeasures.dolbyOysterOpenGap });
+		var bow = if(mode == \off) { 3.5 } { 2.2 };
+		var left = center + Point(width.neg, 0);
+		var right = center + Point(width, 0);
+		Pen.strokeColor = palette[\whisper].copy.alpha_(if(hover) { 0.95 } { 0.62 });
+		Pen.width = if(hover) { CQInk.strokes[\normal] } {
+			CQInk.strokes[\hairline]
+		};
+		Pen.moveTo(left + Point(0, gap.neg));
+		Pen.curveTo(right + Point(0, gap.neg),
+			center + Point(width * -0.45, gap.neg - bow),
+			center + Point(width * 0.45, gap.neg - bow));
+		Pen.moveTo(left + Point(0, gap));
+		Pen.curveTo(right + Point(0, gap),
+			center + Point(width * -0.45, gap + bow),
+			center + Point(width * 0.45, gap + bow));
+		if(mode == \duck) {
+			var direction = if(partnerDirection < 0) { -1 } { 1 };
+			// The arrival lives inside the 30 px owner, entering across the
+			// partner-facing lip instead of clipping outside opaque paper.
+			var outer = center + Point(direction * (width - 1), 0);
+			var inner = center + Point(direction * (width - 6), 0);
+			Pen.moveTo(outer);
+			Pen.lineTo(inner);
+			Pen.moveTo(inner + Point(direction * 3, -2.5));
+			Pen.lineTo(inner);
+			Pen.lineTo(inner + Point(direction * 3, 2.5));
+		};
+		Pen.stroke;
+	}
+
 	// G3 drew this as a round-cornered hairline square — the app's one
 	// widget-shaped body at night, and it always looked like one. §9 made it a
 	// **pool**: a seeded, wobbled closed shore (the castle blob's cousin,

@@ -164,6 +164,38 @@ CQNightGeometry {
 		^this.rangeBox(castle).containsPoint(point)
 	}
 
+	// The in/fb owner grows only below its unchanged crescent anchor. Keeping
+	// this pure lets the collision matrix assert the real opaque rectangle.
+	*crescentViewBox { |center, carriesDolby = false|
+		var extent = CQNightMeasures.crescentExtent;
+		var height = if(carriesDolby) {
+			CQNightMeasures.dolbyCrescentHeight
+		} {
+			extent
+		};
+		^Rect(center.x - (extent * 0.5), center.y - (extent * 0.5),
+			extent, height)
+	}
+
+	*dolbyOysterAnchor { |crescentCenter|
+		^crescentCenter + Point(0, CQNightMeasures.dolbyOysterDrop)
+	}
+
+	*dolbyOysterBox { |crescentCenter|
+		^Rect.aboutPoint(this.dolbyOysterAnchor(crescentCenter),
+			CQNightMeasures.dolbyOysterHitX,
+			CQNightMeasures.dolbyOysterHitY)
+	}
+
+	*dolbyOysterHit { |crescentCenter, point|
+		^this.dolbyOysterBox(crescentCenter).containsPoint(point)
+	}
+
+	*crescentControlHit { |crescentCenter, point|
+		var half = CQNightMeasures.crescentExtent * 0.5;
+		^Rect.aboutPoint(crescentCenter, half, half).containsPoint(point)
+	}
+
 	// the spesal dial annulus around a castle (a tap = one step)
 	*dialHit { |castle, point|
 		^(this.distance(point, castle[\center]) - castle[\dialR]).abs

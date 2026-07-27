@@ -132,6 +132,26 @@ CQGuiNightMapTest : UnitTest {
 		};
 	}
 
+	test_onlyCocoChannelCrescentsCarryDolby {
+		#[coco1In, coco1Fb, coco2In, coco2Fb].do { |name|
+			var dolby = CQGuiNightMap.dolbyNameForCrescent(name);
+			this.assert(CQGuiNightMap.hasDolbyCrescent(name),
+				"% owns an oyster".format(name));
+			this.assert(CQSpec.at(dolby).notNil,
+				"% maps to the real CQSpec enum %".format(name, dolby));
+		};
+		#[coco1Spaf, coco2Spaf, deckALevel, deckBLevel].do { |name|
+			this.assert(CQGuiNightMap.hasDolbyCrescent(name).not,
+				"% keeps its plain crescent".format(name));
+			this.assert(CQGuiNightMap.dolbyNameForCrescent(name).isNil,
+				"% invents no Dolby parameter".format(name));
+		};
+		this.assertEquals(CQGuiNightMap.dolbyNameForCrescent(\coco1In),
+			\coco1DolbyIn, "input oyster controls input Dolby");
+		this.assertEquals(CQGuiNightMap.dolbyNameForCrescent(\coco2Fb),
+			\coco2DolbyFb, "feedback oyster controls feedback Dolby");
+	}
+
 	// GUI_SPEC §6: solo-light on a body lights everything touching it. The
 	// night's bodies are its own anatomy, but they keep the Day panel's names
 	// where the organ is the same — one grammar must not hold two solos for it.

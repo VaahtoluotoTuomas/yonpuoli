@@ -24,6 +24,8 @@ tagged. Earlier tags describe internal development baselines.
 - Contribution guide, GPL-3.0-or-later license, and Windows CI gates.
 - Playable, captionless castle range ripples on the Night landscape, with
   audible infra/balcium/audio stepping and cable-first interaction.
+- Captionless Dolby oysters beneath the Night input/feedback crescents, with
+  posture-led off/gate/duck stepping and unchanged cable-first interaction.
 
 ### In progress
 

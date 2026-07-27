@@ -134,6 +134,10 @@ CQNightMeasures {
 	*lampedWidth { ^40 }                    // px — a socket that carries a lamp
 	*lampOffset { ^16 }                     // px — the lamp bead's own home
 	*crescentExtent { ^30 }                 // px, square
+	// Only the two in/fb crescents grow downward to carry their Dolby mark.
+	// The crescent itself keeps the old 30 px square and exact anchor; the
+	// extra paper is below it, away from the moons.
+	*dolbyCrescentHeight { ^50 }            // px — grown in/fb owner view
 	// CQInk.drawJack's idle dot plus its outline. Day and night share that one
 	// primitive (§16.11), so it does NOT move with the flood — but the stubs
 	// drawn inside a night view have to stop at it.
@@ -181,6 +185,12 @@ CQNightMeasures {
 	*notchReach { ^6 }                      // the reel notch across the groove
 	*notchHoverReach { ^9 }                 // the grab cue
 	*crescentArcR { ^12 }                   // the tide crescent's own arc
+	*dolbyOysterDrop { ^24 }                // px — centre-to-centre from crescent
+	*dolbyOysterWidth { ^13 }               // px — half-width of the paired arcs
+	*dolbyOysterOpenGap { ^4.5 }            // px — off posture
+	*dolbyOysterGateGap { ^1.2 }            // px — gate's hairline opening
+	*dolbyOysterHitX { ^13 }                // px — specific tap before crescent
+	*dolbyOysterHitY { ^8 }                 // px
 	*clockBeadR { ^3.2 }                    // the spesal state's lit bead
 	*clockBeadHaloR { ^4.6 }
 	*clockTickReach { ^3.5 }                // the eight tick marks' half-length

@@ -563,6 +563,49 @@ erotusura joen katkolta?
       köli/aalto-perhe erottuu fm-kuusta, 13 px kehorako ja joen paikallinen
       vektoriura toimivat, hover-prioriteetti ja molemmat ikkunakoot hyväksytty)
 
+### N5 — Dolby-osterit (§4)
+
+Kummankin Cocon input- ja feedback-sirpin alla on oma tekstittämätön
+kolmiasentoinen osteri. Auki = `off`, lähes kiinni = `gate`, kiinni ja
+kumppanikanavan suunnasta tuleva lyhyt painallusviiva = `duck`. Napautus askeltaa
+`off → gate → duck → off`; sirpin oma pystysuora VCA-veto ei muutu.
+
+```supercollider
+// N5 — Dolby-osterit. Ctrl+Shift+L, sitten käynnistä Night.
+CQ.boot;
+CQ.clearPatch;
+CQ.loadA(Platform.resourceDir +/+ "sounds/a11wlk01.wav");
+CQ.set(\deckALevel, 0.7);
+CQ.set(\coco1PreSlot, 1);      // deck A input-kanavaan
+CQ.set(\coco1In, 0.8);
+CQ.set(\coco1Fb, 0.72);
+CQ.set(\coco1Speed, 0.34);
+CQ.hold(1, 0);
+CQ.set(\coco1DolbyIn, \off);
+CQ.set(\coco1DolbyFb, \off);
+// 1. Etsi vasemman kuoren IN- ja FB-sirppien alta kaksi osteria. Niissä ei ole
+//    kirjaimia. Ovatko auki / lähes kiinni / kumppanin painama kiinni luettavissa
+//    100 % skaalassa normaalilta soittoetäisyydeltä?
+// 2. Napauta INPUT-osteria kolmesti. Kuuntele: gate sulkee inputin oman
+//    hiljaisuuden; duck antaa feedback-envelope'n artikuloida inputia; off palaa.
+// 3. Napauta FEEDBACK-osteri duckiin. Kuuntele loopin aikakerrosten pumppaava
+//    vastavuoroisuus: input-envelope painaa feedbackia, ei sama kanava itseään.
+// 4. Vedä IN- ja FB-sirppejä pystysuoraan. VCA:n pitää yhä kaatua täsmälleen
+//    kuten ennen; osterista alkava veto ei saa liikuttaa VCA:ta.
+// 5. Tee tiheä patch CQ.shake-komennolla. Kaapeli osterin päällä voittaa hoverin
+//    ja painalluksen: siitä tartutaan johtoon, Dolby ei askella.
+CQ.clearPatch;
+```
+
+**Visuaalinen portti:** tarkista sekä 1280×720 että maksimoitu ikkuna, 100/125/
+150 % käyttöjärjestelmäskaalaus. Osterin pitää pysyä oman sirppinsä alla,
+naapurisirppien ja kuun osuma-alueiden pitää säilyä erillään, eikä partnerin
+saapumisviiva saa leikkautua oman 30 px leveän paperinsa reunaan.
+
+- [ ] N5 hyväksytty (pvm: ______ — off/gate/duck luettavuus, input/feedbackin
+      oikea ristikkäinen artikulaatio, VCA-vedon säilyminen, kaapeli-etusija,
+      molemmat ikkunakoot)
+
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>
 

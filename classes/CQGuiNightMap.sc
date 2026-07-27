@@ -23,6 +23,7 @@ CQGuiNightMap {
 	var <weatherActive, <weatherFlash, <weatherIntensity = 0;
 	var blendPending, blendScheduled = false, lastBlendWrite = 0;
 	var <crescentViews, crescentNorms, activeCrescents, hoverCrescents, labels;
+	var <dolbyStates, <dolbyHover;
 	var <geometry, <eyeActive = false;
 	var <eyeFreqNorm = 0.5, <eyeChaosNorm = 0.15;
 	var <speedNorms, <shellHover, <dialHover, <rangeHover, <bodyHover;
@@ -298,6 +299,23 @@ CQGuiNightMap {
 		gui.compass.stamp(i, matrix.fullMatrix);
 		if(freed.not) { compassView.refresh };
 		^this
+	}
+
+	*hasDolbyCrescent { |name|
+		var string = name.asString;
+		^(string.beginsWith("coco")
+			and: { string.endsWith("In") or: { string.endsWith("Fb") } })
+	}
+
+	*dolbyNameForCrescent { |name|
+		var string;
+		if(this.hasDolbyCrescent(name).not) { ^nil };
+		string = name.asString;
+		^if(string.endsWith("In")) {
+			(string.keep(string.size - 2) ++ "DolbyIn").asSymbol
+		} {
+			(string.keep(string.size - 2) ++ "DolbyFb").asSymbol
+		}
 	}
 
 	seedTap { |i, overwrite = false, focusWrite = false|
@@ -641,6 +659,8 @@ CQGuiNightMap {
 		crescentNorms = IdentityDictionary.new;
 		activeCrescents = IdentitySet.new;
 		hoverCrescents = IdentitySet.new;
+		dolbyStates = IdentityDictionary.new;
+		dolbyHover = IdentitySet.new;
 		castlePainted = Array.newClear(5);
 		holdStates = [false, false];
 		flipStates = [false, false];
@@ -777,7 +797,13 @@ CQGuiNightMap {
 
 	prMakeCrescent { |name|
 		var extent = CQNightMeasures.crescentExtent;
-		var view = UserView(container, Rect(0, 0, extent, extent))
+		var carriesDolby = this.class.hasDolbyCrescent(name);
+		var height = if(carriesDolby) {
+			CQNightMeasures.dolbyCrescentHeight
+		} {
+			extent
+		};
+		var view = UserView(container, Rect(0, 0, extent, height))
 			.background_(CQInk.palette(\night)[\ground]);
 		var family = if(name.asString.endsWith("Spaf")) { \spaf } { nil };
 		view.drawFunc = {
@@ -786,14 +812,19 @@ CQGuiNightMap {
 					crescentNorms[name] ? 0,
 					family, activeCrescents.includes(name)
 						or: { hoverCrescents.includes(name) }, \night);
+				if(carriesDolby) {
+					CQInkNight.drawDolbyOyster(
+						Point(extent * 0.5, (extent * 0.5)
+							+ CQNightMeasures.dolbyOysterDrop),
+						dolbyStates[this.class.dolbyNameForCrescent(name)] ? \off,
+						if(name.asString.endsWith("In")) { 1 } { -1 },
+						dolbyHover.includes(name), \night);
+				};
 			}
-		};
-		view.mouseEnterAction = {
-			hoverCrescents.add(name);
-			view.refresh;
 		};
 		view.mouseLeaveAction = {
 			hoverCrescents.remove(name);
+			dolbyHover.remove(name);
 			view.refresh;
 		};
 		crescentViews[name] = view;
@@ -879,6 +910,10 @@ CQGuiNightMap {
 			};
 			view.mouseUpAction = { |v, x, y, mods, button|
 				touch.crescentUp(name, v, x, y, mods ? 0, button ? 0)
+			};
+			view.acceptsMouseOver = true;
+			view.mouseOverAction = { |v, x, y|
+				this.prHoverCrescent(name, v, x, y)
 			};
 		};
 		// static hover cues (§4.5: hover never pulses — ink only, and never
@@ -1155,10 +1190,41 @@ CQGuiNightMap {
 	}
 
 	prPlaceCrescent { |name, center|
-		var extent = CQNightMeasures.crescentExtent;
-		crescentViews[name].bounds =
-			Rect(center.x - (extent * 0.5), center.y - (extent * 0.5),
-				extent, extent);
+		crescentViews[name].bounds = CQNightGeometry.crescentViewBox(center,
+			this.class.hasDolbyCrescent(name));
+	}
+
+	prHoverCrescent { |name, view, x, y|
+		var center = this.crescentCenter(name), point, oyster = false;
+		var crescent = false, free = true;
+		if(view.notNil and: { center.notNil }) {
+			point = view.mapToGlobal(Point(x, y))
+				- container.mapToGlobal(0@0);
+			free = overlay.patchAt(point).isNil;
+			if(free and: { this.class.hasDolbyCrescent(name) }) {
+				oyster = CQNightGeometry.dolbyOysterHit(center, point)
+			};
+			crescent = free and: { oyster.not }
+				and: { CQNightGeometry.crescentControlHit(center, point) };
+		};
+		if(crescent) { hoverCrescents.add(name) } {
+			hoverCrescents.remove(name)
+		};
+		if(oyster) { dolbyHover.add(name) } { dolbyHover.remove(name) };
+		if(freed.not) { crescentViews[name].refresh };
+		^this
+	}
+
+	crescentCenter { |name|
+		2.do { |i|
+			this.class.crescentNames(i).do { |candidate, m|
+				if(candidate == name) { ^geometry[\cocos][i][\crescents][m] };
+			};
+		};
+		this.class.crescentNames(nil).do { |candidate, i|
+			if(candidate == name) { ^geometry[\birds][i][\levelCrescent] };
+		};
+		^nil
 	}
 
 	prRegisterUpdaters {
@@ -1183,6 +1249,17 @@ CQGuiNightMap {
 				speedNorms[i] = CQSpec.unmap(speedName, value);
 				if(freed.not) { shellViews[i].refresh };
 			});
+			[\In, \Fb].do { |channel|
+				var dolbyName = ("coco" ++ n ++ "Dolby" ++ channel).asSymbol;
+				dolbyStates[dolbyName] = \off;
+				gui.widgets.register(dolbyName, { |value|
+					dolbyStates[dolbyName] = value;
+					if(freed.not) {
+						crescentViews[("coco" ++ n ++ channel).asSymbol]
+							.refresh
+					};
+				});
+			};
 		};
 		gui.widgets.register(\qFreq, { |value|
 			eyeFreqNorm = CQSpec.unmap(\qFreq, value);

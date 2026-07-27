@@ -26,9 +26,13 @@ On the first session, ask the user for their SuperCollider install path and stor
 in `tests/dev_paths.scd`. Then, after **every** change to `classes/` or SynthDef code,
 run in order (each prints a marker as its last line):
 
-1. `"<sclang.exe>" -i none tests/compile_check.scd` → must print `CQ_COMPILE_OK`
-2. `"<sclang.exe>" -i none tests/run_all.scd` → must print `CQ_TESTS_PASSED`
-3. `"<sclang.exe>" -i none tests/nrt_safety.scd` → must print `CQ_SAFETY_PASSED`
+Use `tests/run_sclang_gate.ps1` for every headless gate. It preserves output and
+terminates only the child it started if sclang falls back to its interactive
+prompt after a class-library compile error.
+
+1. `powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/compile_check.scd` → must print `CQ_COMPILE_OK`
+2. `powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/run_all.scd` → must print `CQ_TESTS_PASSED`
+3. `powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_safety.scd` → must print `CQ_SAFETY_PASSED`
    (NRT render, can take ~1 min; needs scsynth, no audio device)
 4. DSP-behavior changes additionally: `tests/nrt_hold_integrity.scd` → `CQ_HOLD_OK`
 

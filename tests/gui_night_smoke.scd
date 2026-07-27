@@ -553,12 +553,14 @@ punchChecks = { |map|
 															"Ctrl+Z restores the whole night harvest");
 														// ---- §6.1 night touch grammar ----
 														block { |touchDone|
-															var shell, coco, local, crescent;
+															var shell, coco, local, crescent, dolbyView;
 															var speedBefore, freqBefore, chaosBefore;
 															var samples, cablePoint, cableRecord;
 															var castleTwo, castleView, dialPoint;
 															var rangePoint, rangeBefore, rangeBox, rangeCable;
 															var matrixBeforeRange;
+															var dolbyY, dolbyBefore, dolbyBox, dolbyCable;
+															var matrixBeforeDolby, inBefore;
 															var sparkPoint, holdBefore, flipBefore, blinkBefore;
 															var savedPatches;
 																// the crescent view's own centre, so a flooded
@@ -576,6 +578,104 @@ punchChecks = { |map|
 															check.value(
 																(state.get(\coco1Spaf) - 2.0).abs < 0.02,
 																"a tide-crescent pull pours spaf through the funnel");
+															// N5: the in/fb crescent keeps that same drag,
+															// while its smaller oyster owns one tap below.
+															dolbyView = map.crescentViews[\coco1In];
+															dolbyY = mid
+																+ CQNightMeasures.dolbyOysterDrop;
+															state.set(\coco1DolbyIn, \off);
+															gui.prFlushParams;
+															dolbyView.mouseOverAction.value(
+																dolbyView, mid, dolbyY);
+															check.value(map.dolbyHover.includes(\coco1In),
+																"the input oyster owns its static hover cue");
+															dolbyView.mouseDownAction.value(
+																dolbyView, mid, dolbyY, 0, 0, 1);
+															check.value(state.get(\coco1DolbyIn) == \gate,
+																"tapping the oyster steps off to gate through CQState");
+															gui.prFlushParams;
+															check.value(map.dolbyStates[\coco1DolbyIn] == \gate,
+																"the oyster repaints from funnel truth");
+															dolbyView.mouseDownAction.value(
+																dolbyView, mid, dolbyY, 0, 0, 1);
+															check.value(state.get(\coco1DolbyIn) == \duck,
+																"the second posture is cross-keyed duck");
+															dolbyView.mouseDownAction.value(
+																dolbyView, mid, dolbyY, 0, 0, 1);
+															check.value(state.get(\coco1DolbyIn) == \off,
+																"three oyster taps wrap through CQSpec choices");
+															#[coco1Fb, coco2In, coco2Fb].do { |crescentName|
+																var view = map.crescentViews[crescentName];
+																var param = CQGuiNightMap
+																	.dolbyNameForCrescent(crescentName);
+																state.set(param, \off);
+																gui.prFlushParams;
+																view.mouseDownAction.value(
+																	view, mid, dolbyY, 0, 0, 1);
+																check.value(state.get(param) == \gate,
+																	"% oyster has the same funnel step"
+																		.format(crescentName));
+															};
+															inBefore = state.get(\coco1In);
+															dolbyView.mouseMoveAction.value(
+																dolbyView, mid, dolbyY - 20, 0);
+															dolbyView.mouseUpAction.value(
+																dolbyView, mid, dolbyY - 20, 0, 0);
+															check.value(state.get(\coco1In) == inBefore,
+																"a drag starting on the oyster never pours the crescent");
+															dolbyView.mouseOverAction.value(
+																dolbyView, mid, mid);
+															check.value(map.dolbyHover.includes(\coco1In).not,
+																"crescent and oyster hover cues are exclusive");
+
+															// Plant a real cable across the oyster and call the
+															// covered view directly: §4.5 must still win in logic.
+															dolbyBox = CQNightGeometry.dolbyOysterBox(
+																map.geometry[\cocos][0][\crescents][1]);
+															CQMatrix.sourceNames.do { |src|
+																CQMatrix.destNames.do { |dest|
+																	if(dolbyCable.isNil) {
+																		var start = map.overlay.pointFor(src);
+																		var finish = map.overlay.pointFor(dest);
+																		var points = CQInk.cablePoints(start,
+																			finish, 400);
+																		var crossing = points.detect { |p|
+																			dolbyBox.containsPoint(p)
+																		};
+																		crossing !? {
+																			dolbyCable = (src: src,
+																				dest: dest, point: crossing)
+																		};
+																	};
+																};
+															};
+															check.value(dolbyCable.notNil,
+																"precondition: endpoint geometry offers a cable across the oyster");
+															if(dolbyCable.notNil) {
+																matrixBeforeDolby = matrix.fullMatrix;
+																matrix.patch(dolbyCable[\src],
+																	dolbyCable[\dest], 0.5,
+																	\test, false, \dolbyPriority);
+																map.overlay.invalidate;
+																dolbyBefore = state.get(\coco1DolbyIn);
+																local = dolbyCable[\point]
+																	- dolbyView.bounds.leftTop;
+																dolbyView.mouseOverAction.value(
+																	dolbyView, local.x, local.y);
+																check.value(map.dolbyHover
+																	.includes(\coco1In).not,
+																	"a cable suppresses the oyster hover cue");
+																dolbyView.mouseDownAction.value(dolbyView,
+																	local.x, local.y, 0, 0, 1);
+																check.value(state.get(\coco1DolbyIn)
+																	== dolbyBefore,
+																	"a cable crossing the oyster wins; Dolby does not step");
+																dolbyView.mouseUpAction.value(dolbyView,
+																	local.x, local.y, 0, 0);
+																matrix.writeMatrix(matrixBeforeDolby,
+																	\test, false, \dolbyPriorityRestore);
+																map.overlay.invalidate;
+															};
 															local = coco[\center]
 																- coco[\shellBox].leftTop;
 															shell.mouseDownAction.value(shell,
