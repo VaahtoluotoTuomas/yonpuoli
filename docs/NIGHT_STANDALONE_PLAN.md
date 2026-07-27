@@ -662,6 +662,11 @@ The next root increment therefore does this:
 
 ## 11. The birds fetch — loading without a single arrow
 
+> **Status — accepted 2026-07-28 (checklist N6).** The configured samples
+> folder, cancellation, folder wheel, inert straight drag and final
+> Windows/Qt-safe ruffle were exercised in the live instrument. The accepted
+> implementation is commit `59ade79` on `nocturne-birds-fetch`.
+
 The decks need in-GUI loading and folder navigation, and the night forbids
 buttons, arrows and question marks. The bird itself is the control, in the
 app's own gesture grammar — three acts, told apart by the hand, no new

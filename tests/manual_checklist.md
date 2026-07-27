@@ -656,9 +656,11 @@ myös suoraan lintuhandlerille, koska nykyisessä hyväksytyssä sommittelussa
 rate-socketin ylempi sisarnäkymä omistaa tavallisesti linnun alapuolisen
 kaapelin viimeiset pikselit.
 
-- [ ] N6 hyväksytty (pvm: ______ — dialogin samples-aloituskansio/peruutus,
+- [x] N6 hyväksytty (pvm: 2026-07-28 — dialogin samples-aloituskansio/peruutus,
       kansion rullaus ja momentum, pörhistyksen satunnaislataus, suoran vedon
-      inerttiys, nimi+120 ms välähdys, hover sekä molemmat ikkunakoot/skaalaukset)
+      inerttiys sekä nimi+120 ms välähdys toimivat live-testissä. Ensimmäinen
+      pörhistystunnistin ei lauennut Windows/Qt-ikkunassa; hyväksytty versio
+      kaappaa lintudragin ja seuraa kursoria myös lintunäkymän ulkopuolella.)
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>

@@ -286,6 +286,8 @@ eye but must keep the topology truths):
   on the bird remains an equal loading
   path; the wing socket is the rate moon, and the filename is written small
   under the bird.
+  **Accepted 2026-07-28 (checklist N6):** the complete tap, wheel and
+  Windows/Qt-safe ruffle grammar passed live playing review.
 - Cables follow the same grammar (§4), arcing around bodies, pulsing with
   their source's aura. Solo-light on a body lights everything touching it.
   The night's bodies (landed 2026-07-21): each **castle** (its two buds, its

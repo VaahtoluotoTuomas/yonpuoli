@@ -29,7 +29,8 @@ tagged. Earlier tags describe internal development baselines.
 - Captionless Night deck-bird gestures: tap to fetch from the configured
   samples folder, wheel to walk the loaded folder, and a short out-and-back
   ruffle for a random sibling, all sharing the filename truth and 120 ms
-  successful-load flash.
+  successful-load flash. The complete bird interaction passed live review on
+  2026-07-28.
 
 ### In progress
 

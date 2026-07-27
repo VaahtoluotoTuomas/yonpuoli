@@ -1,6 +1,6 @@
 # Yölahti — ajantasainen kehityssuunnitelma (Nocturne-vaihe)
 
-Päivitetty 2026-07-23. Tämä tiedosto kertoo, **mitä tehdään seuraavaksi** ja
+Päivitetty 2026-07-28. Tämä tiedosto kertoo, **mitä tehdään seuraavaksi** ja
 **missä järjestyksessä**. Vaiheen yksityiskohtainen *miten* — jokaisen osan
 suunnittelu, geometria, karikot, korvakokeet — on
 [`docs/NIGHT_STANDALONE_PLAN.md`](docs/NIGHT_STANDALONE_PLAN.md):ssä; tämä
@@ -23,16 +23,14 @@ Portfolio- ja julkaisupinta on `README.md`:ssä, `SOURCES.md`:ssä ja `docs/`-ka
 case study / development process -dokumenteissa. Etärepon uudelleennimeäminen,
 public-vaihto ja oikeat kuva-/äänidemot ovat erillinen julkaisutoimi.
 
-**Seuraava askel konkreettisesti:** rakennusjärjestyksen (`NIGHT_STANDALONE_PLAN.md
-§12`) kohdat 1 **punch (§2)**, 2 **kevättulva (§8)** ja 3 **almanakka maisemaksi
-(§9)** ja 4 **range-väreet (§3)** ovat valmiit ja hyväksytyt (2026-07-23,
-2026-07-26 ja 2026-07-27), samoin kohta 5 **Dolby-osterit (§4)** on valmis ja
-hyväksytty 2026-07-27. Seuraava inkrementti on kohta 6 **Linnut hakevat (§11)**:
-lintua napautetaan tiedostodialogiin, rullataan kansion seuraavaan/edelliseen
-tiedostoon ja pörhistetään satunnaiseen tiedostoon ilman nuoli- tai tekstinappeja.
-**N6:n ensimmäinen vihreä katselmointiversio on valmis
-`nocturne-birds-fetch`-haaralla 2026-07-27; visuaalinen ja soitettava hyväksyntä
-odottaa.** Hyväksytty N5 elää sen alla `nocturne-dolby-oysters`-haaralla;
+**Seuraava askel konkreettisesti:** rakennusjärjestyksen
+(`NIGHT_STANDALONE_PLAN.md` §12) kohdat 1–6 ovat valmiit ja käyttäjän
+hyväksymät. N6 **Linnut hakevat (§11)** hyväksyttiin 2026-07-28
+`nocturne-birds-fetch`-haaralla. **Seuraava inkrementti on kohta 7, Juuret —
+preamp-keho (§10):** lähdesäikeet kokoontuvat drive/bias-solmuun, kiinteä
+audiojuoni tekee preamp→Coco-reitin näkyväksi ja `envA/B` jää rehelliseksi
+post-preamp-sivukasvuksi. Hyväksytty N5 elää sen alla
+`nocturne-dolby-oysters`-haaralla;
 `nocturne` seisoo vielä commitissa `a5e4b17` (kevättulva), eikä haaroja
 sulauteta ilman erillistä pyyntöä. §13 korvapassi voi kulkea limittäin, mutta
 Norns-portti (§14) on vasta night-first-vaiheen jälkeen.
@@ -74,7 +72,7 @@ korvata teknisesti helpommalla ratkaisulla ilman käyttäjän päätöstä.
 - Nocturnen nykyiset N3→N4→N5→N6-haarat ovat **pinottu ketju**, eivät neljä
   toisistaan riippumatonta toteutusta: `nocturne-nightscape` pohjautuu
   `nocturne`en, `nocturne-range-ripples` sen päälle ja
-  `nocturne-dolby-oysters` edelleen N4:n päälle; katselmointia odottava
+  `nocturne-dolby-oysters` edelleen N4:n päälle; hyväksytty
   `nocturne-birds-fetch` jatkaa N5:stä. Oma haara ei ole jokaisen N-vaiheen
   itseisarvo; sitä käytetään nyt hyväksytyn checkpointin säilyttämiseen samalla
   kun seuraava näkyvä inkrementti voidaan arvioida erikseen. Ketju sulautetaan
@@ -176,13 +174,15 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
   katkaisi kuoren spiraalin. Night-crescentit julkaisevat nyt risteävän kaapelin
   hoverin, ja org-laatikko piirtää sisäänsä aidon kaartuvan spiraalisegmentin
   sekä säteittäisen varren ennen keltaista jakkia.
-- [ ] **6. Linnut hakevat** (§11). **Ensimmäinen vihreä katselmointiversio
-  valmis `nocturne-birds-fetch`-haaralla 2026-07-27; checklist N6 odottaa
-  käyttäjän visuaalista ja soitettavaa hyväksyntää.** Deckin lataus ja
+- [x] **6. Linnut hakevat** (§11). **Valmis ja käyttäjän hyväksymä
+  `nocturne-birds-fetch`-haaralla 2026-07-28 (checklist N6).** Deckin lataus ja
   kansionavigointi ilman ainuttakaan nuolta: napautus = hakee (asynkroninen
   tiedostodialogi avautuu konfiguroidussa samples-kansiossa, peruutus on no-op),
   rulla alas/ylös = seuraava/edellinen 150 ms momentum-portilla, vähintään 6 px
-  vaakaveto ja 6 px paluu = satunnainen. Muu veto on inertti. Onnistunut
+  vaakaveto ja 6 px paluu = satunnainen. Windows/Qt-livekatselmuksen
+  hyväksytyssä versiossa lintu kaappaa vedon, 60 Hz kursorivarmistus seuraa
+  kättä myös pienen UserView'n ulkopuolella ja jo tunnistettu pörhistys säilyy
+  leveänä tai toistuvana. Muu veto on inertti. Onnistunut
   `\file`-ilmoitus päivittää yhden
   nimilähteen ja väläyttää oman linnun 120 ms kaikilla viidellä polulla
   (dialogi, rulla, pörhistys, drop, code); kaapeli säilyy lintuhandlerin
@@ -192,6 +192,14 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
   kiinteä audiojuoni Cocoon; `envA/B` jää post-preamp-envelope-sivusilmuksi.
   Ei koristeellista juurimäärää eikä tekaistuja audiojakkeja. Toteutetaan
   vasta vuorovesikentän sommittelupalautteen jälkeen omana porttinaan.
+  **Haastavuus: keskikorkea (4/5), selvästi N4–N6:ta suurempi mutta N3:n
+  almanakkauudistusta rajatumpi.** DSP-reitti on jo olemassa eikä sitä ole
+  tarkoitus muuttaa; työ osuu kuitenkin yhtä aikaa mittoihin, geometriaan,
+  piirtoon, tilapeilaukseen, kosketuskielioppiin ja törmäystesteihin. Ennen
+  toteutusta lukitaan kolme asiaa: drive-ele, bias/asymmetrian luettava muoto
+  ja lähdeprovenienssin hetkellinen näyttötapa. Suurin riski on tehdä
+  alareunasta taas ohjauspaneeli tai sekoittaa kiinteä audioanatomia
+  patchattavaan vihreään `envA/B`-jakkiin.
 - [ ] **8. Drawer-workshop** (§0). Kaikki loput CQSpec-parametrit rehellisin
   ledger-säätimin drawerin sivulle. Exit-kriteeri: **SPEC §6.2:n kattavuusauditointi
   — jokainen §5-parametri saavutettavissa** pelkällä yöllä + drawerilla +
@@ -334,9 +342,9 @@ parse-virheessä sclang ei suorita `compile_check.scd`:n `exit`iä vaan jää
 interaktiiviseksi. `tests/run_sclang_gate.ps1` antaa porteille nyt ulkoisen
 aikarajan, säilyttää virhetulosteen ja lopettaa vain itse käynnistämänsä PID:n.
 
-Haaran `nocturne-birds-fetch` v1-portti 2026-07-27 (§11,
-**automaatio vihreä; visuaalinen ja soitettava checklist N6 vielä avoin**):
-`CQ_COMPILE_OK`, **12 173 unit-passia / 0 failurea / 28/28 luokkaa**,
+Haaran `nocturne-birds-fetch` hyväksytty portti 2026-07-28 (§11,
+**visuaalinen ja soitettava katselmus hyväksytty, checklist N6**):
+`CQ_COMPILE_OK`, **12 174 unit-passia / 0 failurea / 28/28 luokkaa**,
 `CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
 `CQ_GUI_DRAWER_REENTRY_PASSED` ja `CQ_GUI_NIGHT_PASSED`. Yösmoke käyttää
 injektoitua dialogia ja deck-dispatcheria, joten se avaa oikean natiivipaneelin
@@ -344,6 +352,13 @@ sijaan testipolun ja varmistaa dialogin tuloksen/peruutuksen, pyörän
 aloituskansion, momentum-portin, yhden luontevan ulos–takaisin-pörhistyksen,
 muun vedon inerttiyden, exit-keskeytyksen, `\file`-auktoriteetin 120 ms
 välähdyksen sekä lintuhandlerin cable-first-hoverin ja -painalluksen.
+Livekatselmuksen kaksi korjauskierrosta vaihtoivat dialogin aloituskansioksi
+projektin konfiguroidun `samples`-kansion ja tekivät pörhistyksestä aidossa
+Windows/Qt-ikkunassa luotettavan: käsitelty drag ei vuoda lavalle, globaalia
+kursoria seurataan painalluksen ajan ja selvä suunnanvaihto säilyy kelvollisena
+myös leveässä tai toistuvassa liikkeessä. Lopullinen yksikkö- ja Night-smoke
+ovat vihreät; muut GUI- ja NRT-portit kantavat saman inkrementin v1-portista,
+koska korjaukset eivät koskeneet DSP:tä tai muita näkymiä.
 `CQ_HOLD_OK` kantaa: DSP:hen ei koskettu.
 
 ## Omistajuus- ja julkaisurata (kulkee Nocturnen rinnalla)
