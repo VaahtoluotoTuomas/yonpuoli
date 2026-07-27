@@ -66,8 +66,9 @@ deferred): **GUI = the eyes + the hands. Code = the memory + the rituals.
 
 Keyboard: the sacred map is unchanged and global in both views —
 `1/2` hold · `q/w` flip · `a/s` skip · `3..7` spesal · `r` rec · `space` panic
-· `p` shake. New, non-colliding: **Tab** = day/night flip (only when no text
-entry has focus), **Esc** = drop the banana in hand / release solo-light,
+· `p` shake. Night adds **Tab** = latch/unlatch water focus (§7.1; ignored
+while text entry or the Drawer has focus). Day/Night is now a deliberate
+toolbar destination only. **Esc** = drop the banana in hand / release solo-light,
 **Ctrl+Z** = matrix undo. Widgets stay non-focusable (existing focus law);
 Esc and Ctrl+Z are window-level keys.
 
@@ -247,7 +248,7 @@ body. What changes:
 
 ## 6. Night map — the archipelago
 
-Tab flips the same window to night: a patch-first landscape. No transplanted
+The toolbar flips the same window to night: a patch-first landscape. No transplanted
 panel widgets and no numbers — only bodies, jacks, bananas, weather, and the
 bodies' own touch points (§6.1). The master strip stays below.
 
@@ -317,10 +318,12 @@ eye but must keep the topology truths):
 
 The essential playing controls live on the bodies, in each body's own logic.
 All writes go through the normal funnels; parameter gestures have no undo
-(§14); gesture redraw ≤ 60 Hz only during the drag (§10). On every press the
-cable layer is consulted first: a cable inside its narrow hit target is
-grabbed, never wound or tapped through (§4.5 — the overlay may never advertise
-an action the next gesture will not receive).
+(§14); gesture redraw ≤ 60 Hz only during the drag (§10). Except for an
+explicitly named exception, on every press the cable layer is consulted first:
+a cable inside its narrow hit target is grabbed, never wound or tapped through
+(§4.5 — the overlay may never advertise an action the next gesture will not
+receive). The one approved future exception is the tide-focus gill recorded
+below; it does not silently grant priority to any other control.
 
 | touch | gesture | writes |
 |---|---|---|
@@ -333,7 +336,7 @@ an action the next gesture will not receive).
 | **the ring's eye** | the storm iris at the ring's center (§16.6); grab and drag — vertical = pitch, horizontal = chaos, and the iris itself answers on both axes. The weather of five castles from one fingertip | `qFreq` (y) + `qChaos` (x), relative |
 | **dial tap** | press a castle's inner clock — the dial face inside the body (§16.6): one step (same act as the day step button and keys 3..7). Hovering the castle first shows **which castle it reads** as an inner chord (§16.6's coupling chords), so the step's consequence is visible in the gesture that makes it | `spesal(k)` step |
 | **bird drop + wing crescent** | dropping an audio file on a bird loads that deck (pulled forward from the G2 toolbar step — loading is core); the crescent under the wing is the deck's level | deck load · `deckN level` |
-| **the sowing moon** | the bone moon in the top-right sky (§16.6). A press that travels < 8 px — the lasso's own threshold — throws a shake at the moon's current phase, with a 120 ms bone flash on *any* shake from any layer (`p` key, Day button, code: one state, three layers, one light). A **horizontal** drag pours the phase fuller (right) or darker (left), the way the terminator itself travels; the lit fraction is **how much gets sown**, no number | `shake` (matrix op — one undo, one spellbook entry) · `shakeAmount` (GUI constant, no undo) |
+| **the sowing moon** | the bone moon in the top-right sky (§16.6). It opens as a small 0.22 crescent. A press that travels < 8 px — the lasso's own threshold — throws a shake at the moon's current phase, with a 120 ms bone flash on *any* shake from any layer (`p` key, Day button, code: one state, three layers, one light). A **horizontal** drag pours the phase fuller (right) or darker (left), the way the terminator itself travels; the lit fraction is **how much gets sown**, through the slow-first quadratic fertility curve in §10, no number | `shake` (matrix op — one undo, one spellbook entry) · `shakeAmount` (GUI constant, no undo) |
 
 Skip's night home moved at the G2 gate (2026-07-22, replacing the read-head
 tap that landed 2026-07-21; the `a/s` keys remain). **A moving target is not a
@@ -362,22 +365,22 @@ CQSpec parameter is ever touched by compass, grow, wither, breed or shake
 `docs/history/PLAN_v1.0.md` (KUUNTELU 4): a landscape can be *deaf* if its depth-knobs are down —
 aura and charge lamps make that visible instead of mysterious.
 
-### 7.1 Compass — the 2D patch-blend pad (the tide pool in the bay's water, §16.6)
+### 7.1 Compass — the bay-wide tide field (§16.6)
 
 - Four corners = four **matrix memories** (weights only; never params, never
-  spesal). The night has no buttons, so each corner is a **seed** (§16.6): a
-  tap on a seed stamps the current matrix into it, a right press clears it.
+  spesal). The night has no buttons, so each corner is a **seed** (§16.6).
+  A filled tap recalls bit-exact; Shift+tap writes or overwrites; with
+  Tab/gill focus latched, tapping a vacant seed also writes, so the complete
+  grammar remains available without a keyboard. An ordinary unfocused tap on
+  a vacant seed is inert; right press clears. Drag one filled seed onto
+  another to breed them. The ink has three truths: vacant = open husk,
+  occupied silence = closed dark dormant kernel, occupied patch = luminous
+  veined kernel whose light follows stored cable density.
   An empty corner = the zero matrix (all unpatched) — traveling toward it is
-  a wither-by-travel, documented behavior. Since §9 — **provisional, see the
-  status note in §16.6** — the pad is a **tide pool
-  in the bay's own bottom water**, so the corners live on its shore at the
-  four diagonal winds and a seed marks the direction of its own corner; the
-  water just past that seed's shore *is* the pure corner (§16.6's mapping
-  paragraph). Being in the bay rather than in reserved water has a cost that
-  is measured, not guessed: cables cross the pool, and §4.5 gives a cable
-  under the pointer the press, so a patched bay shadows the seeds on the
-  bay-facing side (17 % and 35 % of random 35-cable bays; 0 % for the two
-  landward seeds and for everything in the sky).
+  a wither-by-travel, documented behavior. There is **no pad or pool body**:
+  the four seeds stand in open winds around the central organism and imply
+  one large rectangular bilinear field passing behind it. The field has no
+  resting outline, fill, wave or sparkle.
 - **The tide** (amended at G3, superseding the first bilinear-amplitude
   sketch — this is the blend law): a position on the pad pulls on the four
   corners bilinearly, but the pull decides **which cables stand, not how loud
@@ -398,18 +401,37 @@ aura and charge lamps make that visible instead of mysterious.
   position always grows the same patch, across sessions. Weights below the
   wither floor (0.05) round to gone. Traveling toward an empty corner is
   therefore *literally* wither-by-travel: cables dropping off one by one.
-- **Left-drag** inside the pad: the tide poured continuously (batched funnel
+- **Focused left-drag** on genuinely open water inside the four winds: the
+  tide pours continuously after the lasso's own 8 px threshold (batched funnel
   write, one transient notification per frame, ≤ 60 Hz — implemented at
   30 Hz, since the weights are unlagged control buses and faster stepping
   buys no audible smoothness). Release **commits** (one undo op, one
-  `// compass` spellbook batch). A **tap** on open pad water (< 8 px, the
-  lasso's own threshold) is a **jump**: one committed step to that place —
-  the pad is a landscape, and pointing at a place takes you there.
-- **Right-drag**: **elastic** — the same pour, but release snaps back to
+  `// compass` spellbook batch). Outside water focus both a tap and an
+  arbitrarily long left sweep are a **no-op**: exploratory movement cannot
+  replace the patch accidentally.
+- **Water focus** has two entrances into one state. **Tab** latches it until
+  the next Tab, and the small clickable **gill** below the two lower castles
+  opens/closes the exact same latch. Native key repeat is suppressed: one
+  physical Tab press toggles once. **Shift** with no banana in hand remains
+  its momentary form. In focus, planted cable
+  spans dim to background alpha and stop hit-testing, while bodies, jacks,
+  sockets and seated plugs keep priority. The four seeds breathe and the
+  gill opens in blue, so the mode is visible without a label.
+- **Accepted polish debt (2026-07-27; not yet implemented):** the gill is the
+  persistent entrance to a whole-stage playing mode, so it must ultimately be
+  consulted **before** a cable span in both hover and press. A crossing cable
+  must not erase its discoverability: its cue needs a top-layer echo, local
+  knockout or another reviewed form that remains legible through the cable
+  field. This is a narrow exception for the Tab-equivalent gill only; the
+  general cable-first law remains intact everywhere else.
+- **Focused right-drag**: **elastic** — the same pour, but release snaps back to
   the pre-gesture matrix (short glide, ~3 frames; no undo entry, no
   spellbook entry — transient all the way). The whole matrix becomes a
   wobble you can flick, and under the tide the wobble has *texture*:
-  crossing a cable's tide mark lands and lifts a real banana.
+  crossing a cable's tide mark lands and lifts a real banana. Outside focus,
+  right-drag remains the learned harvest lasso. Once a tide gesture crosses
+  its threshold, pointer capture continues across bodies and cables until
+  release.
 - **Storm form** (the §10/§11 measured consequence): while a voyage is being
   poured the matrix changes every frame, so the cable layer's offscreen
   cache cannot help — the bay is instead drawn *through rain*:
@@ -428,18 +450,34 @@ aura and charge lamps make that visible instead of mysterious.
   `gui: (compassDir: ...)` — the smoke tests point it at a tmp dir so a test
   stamp can never overwrite the player's corners.
 
-### 7.2 Grow / wither (hold-buttons, ~2.5 Hz while held)
+### 7.2 Grow / wither (the moon's tensioned vertical weather)
 
 - **grow**: pick a random unpatched cell, plant weight ± U(0.15, 0.4), random
   sign. — **wither**: pick a random patched cell, w ×= 0.7; |w| < 0.05 → 0.
+- On the sowing moon, the dominant axis locks after 8 px: horizontal pours
+  phase, vertical down holds rain/grow and vertical up holds sun/wither.
+  The next 32 px of vertical travel are **weather tension**. Near the moon,
+  rain drizzles at 0.6 Hz and sun thins at 2.5 Hz; at full pull they reach
+  1.6 Hz and 6 Hz. Rain is deliberately slower because each step births one
+  complete cable, while one sun step only multiplies a random cable by 0.7.
+  The rain gains drops and the sun gains rays with the same normalized
+  tension, so the symbol shows the current rate. Rain or sun is drawn only
+  while its gesture is active.
 - One hold = one undo op. Language-side rand, no seed UI (seeded chaos stays
   in the code layer: `CQ.shake(amt, seed:)`).
 - Shake is the lightning; these are the rain and the drought.
 
+**Deferred musical-design pass — ecological shake.** The current shake still
+chooses matrix cells uniformly. A later, separately reviewed pass may generate
+“sweet spot” patches from weighted source/destination affinities, guaranteed
+audible paths and bounded feedback/gate populations. It changes the musical
+grammar, not this moon layout, and was explicitly deferred on 2026-07-27.
+
 ### 7.3 Breed
 
-Press **breed** → click two corners → the offspring becomes the current
-matrix (one undo op). Per cell: coin-pick a parent's weight; then with
+Drag one filled corner seed directly onto another → the offspring becomes
+the current matrix (one undo op). There is no graft button or armed mode.
+Per cell: coin-pick a parent's weight; then with
 p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
 
 ---
@@ -544,10 +582,11 @@ sub-event in `config.scd`, clamped on load.
 | `auditionRadius` | 40 px | socket capture distance |
 | audition curve | closeness² | swell late, near the socket |
 | `inspectorPlant` | 0.3 | double-click plant weight (= shake default) |
-| `shakeAmount` | 0.5 | the sowing moon's phase = the Day amount knob; how much a shake sows (§16.6) |
-| `fullMoonDensity` | 0.2 | the full moon's `density` (SPEC §5.5); half moon = the v1.0 10 % handful |
+| `shakeAmount` | 0.22 | the sowing moon's opening phase = the Day amount knob; an iconic sparse crescent (§16.6) |
+| `fullMoonDensity` | 0.2 | the full moon's `density` (SPEC §5.5); intermediate density = `0.2 × phase²` (quarter ≈ 1.25 %, half = 5 %) |
 | wheel step | 0.05 / Ctrl 0.01 | weight nudge |
-| `growRate` | 2.5 Hz | grow/wither repeat while held |
+| rain rate | 0.6…1.6 Hz | vertical pull tension; one new cable per step |
+| sun rate | 2.5…6 Hz | vertical pull tension; one random cable ×0.7 per step |
 | grow weight | ± U(0.15, 0.4) | new banana strength |
 | wither | ×0.7, floor 0.05 | decay per step |
 | breed | p 0.08, amt ≤ 0.15 | mutation odds / size |
@@ -625,9 +664,10 @@ sub-event in `config.scd`, clamped on load.
   interactions; only jacks/sockets/cables are targets (≥ 12 px, magnetic
   candidate halo). The one exception is the harvest lasso's right-drag
   (§4.4), which may claim only empty ground.
-- **Focus law unchanged**: widgets non-focusable; text entry is click-focus
-  only and releases on Enter; Tab flips views only when no text entry has
-  focus; Esc and Ctrl+Z handled at window level.
+- **Focus law**: widgets are non-focusable; text entry is click-focus only
+  and releases on Enter. Tab toggles Night water focus only when neither text
+  entry nor the Drawer owns the interaction; Esc and Ctrl+Z remain
+  window-level.
 - **Headless**: boot never constructs the GUI (existing flag); all GUI
   classes must build serverless (the smoke-script law).
 - **Spellbook hooks the matrix notification stream**, not the gesture layer —
@@ -733,7 +773,8 @@ icon fonts, no external assets, ever.
 - The master strip keeps one identical layout in both skins (muscle memory),
   only re-inked: paper band by day, dark slate by night; PANIC is vermillion
   in both.
-- Tab is a **hard cut**, not a transition. Turning your head, not a cutscene.
+- The Day/Night toolbar destination is a **hard cut**, not a transition.
+  Turning your head, not a cutscene.
 
 Rough night geography (day keeps the v1.0 columns):
 
@@ -859,9 +900,9 @@ teeth — this *is* the cas source (gray dot at its base). At 1–2 o'clock, an
 8 px triangular leaf on a 6 px stem — the tri source (orange dot). fm moon =
 blue ring Ø 12 orbiting at 4 o'clock, r ≈ 28; spesal moon = green ring +
 lamp at 8 o'clock, r ≈ 40 (moved out from 34 on 2026-07-21: the lamped view
-is 34 px wide and its opaque box must clear the inner clock). Spesal dial =
+is 34 px wide and its detail/hit box must clear the inner clock). Spesal dial =
 the castle's **inner clock** (amended 2026-07-21 after the G2.3 review): a
-whisper face at r ≈ 10 *inside* the body — where no opaque endpoint view can
+whisper face at r ≈ 10 *inside* the body — where no endpoint mark can
 ever cover it — with 8 ticks and the current state as a lit spark bead with a
 halo; a static hover brightens the face so it reads as pressable (§4.5).
 The **flesh around the clock is the body's own §6 solo target**, and hovering
@@ -872,6 +913,13 @@ one geometry: the drawn blob grown by `bodyMargin` (10 px, so the body answers
 the approaching hand), and the echo is stroked exactly on that boundary. A cue
 that covers more or less ground than its action is a cue that lies.
 Range letter i/b/a in whisper at 6 o'clock below (r ≈ 33, its own anchor).
+
+**Layer amendment, 2026-07-27.** Castle paper and its four endpoint-detail
+views are transparent. The blob first fills only its own irregular flesh with
+Night ground, then draws aura and outline; therefore the ring and coupling
+chords can run beneath each castle centre and emerge at the true body edge.
+No rectangular blank area may erase castle ink, and no synthetic “river
+stub” may protrude from a castle to repair such an erasure.
 
 **The ring.** Irregular circle R ≈ 150 px through the five castles, 1 px
 hairline. Flow k → k+1 shown by two **firefly dots** per arc segment
@@ -1053,6 +1101,47 @@ audio file on the bird loads its deck (§6.1). Flutter = 1 px wing bob at
 ambient rate while the deck's level > 0.05 (client-side state, no polling).
 On file-drag hover the bird brightens (drop target law, §16.7).
 
+**The moon and the tide field** (accepted for the next visual iteration with
+the user 2026-07-27). The weather machine is integrated by *gesture and
+relation*, not collected into a panel:
+
+- The sowing moon is a solitary Ø ≈ 56 body in the far upper-right, beyond
+  bird B and slightly above its flight line. It opens as a 0.22 crescent;
+  sowing density is `0.2 × phase²`, so quarter/half/full average roughly
+  4/18/70 cables rather than crowding the first half. Tap throws shake;
+  horizontal axis-locked drag pours phase. Vertical down holds rain/grow and
+  vertical up holds sun/wither. The dominant axis locks only after the shared
+  8 px threshold; the next 32 px control weather tension (rain 0.6…1.6 Hz,
+  sun 2.5…6 Hz) and visibly add drops/rays. Rain and sun are transient faces
+  beside the moon and exist only while held — no static satellites remain.
+- There is no pond, shore or pad. Four inward-pointing memory seeds in the
+  NW/NE/SW/SE winds imply a large bilinear tide field through the bay. At
+  rest only those seeds are inked. During a voyage, a small cross and four
+  sparse wavefront pulls (≤ 8 % alpha) reveal the relation; there is no
+  ambient animation and no rectangular boundary.
+- Filled seed tap recalls, Shift+tap stores/overwrites, and a latched Tab/gill
+  focus lets a plain tap store into a vacant seed. A vacant unfocused tap is
+  inert; right clears. Vacancy is an **open husk**, stored silence a closed
+  dark dormant kernel, and a stored living patch a luminous veined kernel
+  whose light follows its cable density. Dragging one filled seed onto another
+  breeds. Its temporary curved relation is drawn on the stage's topmost
+  hit-transparent layer; a valid filled target catches the thread at its
+  centre and opens a blue double bloom. No graft glyph or armed state exists.
+- Open-field left drag does nothing until water focus is open. Tab and the
+  clickable gill below the lower castles latch the mode; Shift is its
+  momentary form. In focus, cable spans go behind the water and out of
+  hit-testing while endpoints and bodies keep priority; left commits and
+  right is elastic. Outside focus, right remains harvest. A captured voyage
+  continues across the organism until release.
+
+The two roots remain in their pre-existing form in this review increment.
+Their next pass must expose the actual preamp→Coco audio path as well as its
+envelope side-growth; merely multiplying decorative roots is explicitly not
+the solution.
+
+<details>
+<summary><b>Superseded almanac/pool experiments (2026-07-22—27)</b></summary>
+
 **The almanac corner** (decided with the user 2026-07-22 — the night
 toolbar's body; the earlier lowercase word-row is superseded). It lives on
 the top-right sky, on the water the bodies leave free — beyond bird B's
@@ -1062,15 +1151,13 @@ almanac holds exactly what this corner holds: the weather, and the sowing
 calendar read from the moon. Nothing else — the recipes are not almanac
 material, and they left with the sower constellation below.
 
-> **Status — provisional, built but NOT accepted (2026-07-27).** Everything
-> from here to the end of the weather paragraph describes the §9 rebuild that
-> is on the `nocturne-nightscape` branch and awaiting the user's visual review
-> (checklist N3). It is written as spec text because that is the only honest
-> way to describe what the code does, but **the accepted night surface is
-> still the 2026-07-22 almanac corner above**, and that is what `nocturne`
-> carries. If N3 is rejected, this block is deleted rather than amended.
-> One decision inside it is explicitly open: the cable shadowing of the pool's
-> seeds (see the pool paragraph).
+> **Status — accepted 2026-07-27 (checklist N3).** Everything from here to the
+> end of the weather paragraph describes the accepted §9 v3.2 rebuild on the
+> `nocturne-nightscape` branch. It supersedes the 2026-07-22 almanac corner;
+> `nocturne` itself still carries the older surface until the accepted branch
+> is explicitly merged. One later polish debt does not reopen this gate: the
+> Tab-equivalent gill must gain the narrow cable-priority/discoverability
+> exception specified in §7.1.
 
 **There is no almanac corner** (proposed 2026-07-27). Keeping the three parts
 together in one patch of right-hand sky was tried twice — first as a column,
@@ -1209,6 +1296,8 @@ pressing it again. One hold, one jump, one voyage, one breeding = one undo
 op each; stamping and clearing corners touch no cable, so they are not ops
 at all.
 
+</details>
+
 ### 16.7 Widgets (day-panel language)
 
 - **Knob**: three reviewed body sizes express breadth of consequence, never
@@ -1311,7 +1400,8 @@ at all.
 | solo-light fade | 150 ms |
 | plant wobble (optional garnish) | ≤ 300 ms damped |
 | compass elastic return | ~3 frames glide |
-| view flip (Tab) | hard cut |
+| Day/Night toolbar destination | hard cut |
+| tide focus (Tab / gill) | immediate state change |
 | ambient (aura, fireflies, sparks, flutter) | telemetry rate, ≤ 15 Hz |
 
 Easing: linear or single-pole decay only — no bounces, no overshoot. The one

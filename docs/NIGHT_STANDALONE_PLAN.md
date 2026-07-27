@@ -29,7 +29,8 @@ menu-like remainder. This document does not decide that. It matters here for
 one reason: **these three additions are prerequisites for even evaluating
 night-only.** Ranges, dolby and the punch are the last musically load-bearing
 things a player cannot do at night. Once they land, night-only can be
-evaluated by simply *not pressing Tab* for a few sessions — no code, no
+evaluated by selecting Night in the toolbar and staying there for a few
+sessions — no code, no
 feature flag (PLAN.md forbids runtime flags), no deletion. If the verdict is
 night-only, the follow-up work (its own gate, not this one) is:
 
@@ -68,18 +69,22 @@ them the hard way.
    asserts **at both reference stage sizes** (1280×570 and 1920×855). The
    castle bodies carry seeded ±8 % jitter — the seed is fixed inside
    `compute`, so the asserts are deterministic. Do not eyeball clearances.
-4. **Opaque boxes eat lines and marks.** Every endpoint view is an opaque
-   box (26 px jacks, 34 px lamped sockets, 24 px crescents). A mark drawn on
-   a body layer near one of those boxes can be silently covered — this bug
-   has been fixed twice already (roots, inner clock). Either draw the mark
-   inside a view that owns it, or assert box-vs-mark clearance in the
-   geometry test.
-5. **The §4.5 priority chain, identically in hover and press.** Order inside
-   every `Down` handler: cable under the pointer wins (`overlay.patchAt`),
-   then the new touch point, then the existing touch points, then
-   body-solo/ground fallthrough. The hover cue must be computed with the
-   *same* priority — a cue that advertises an action the next press will not
-   receive is a lying cue.
+4. **Opaque boxes eat lines and marks.** Most endpoint views remain opaque
+   boxes (jacks, lamped sockets, crescents). The four detail views surrounding
+   each castle are the deliberate exception: transparent paper lets the
+   irregular flesh, not a rectangle, decide what masks the river. A mark near
+   any remaining opaque box can still be silently covered. Either draw it
+   inside its owner, route it to the top gesture layer, or assert
+   box-vs-mark clearance in the geometry test.
+5. **The §4.5 priority chain, identically in hover and press.** Unless a
+   reviewed exception is named, order inside every `Down` handler is: cable
+   under the pointer wins (`overlay.patchAt`), then the new touch point, then
+   the existing touch points, then body-solo/ground fallthrough. The hover cue
+   must be computed with the *same* priority — a cue that advertises an action
+   the next press will not receive is a lying cue. N3 closed with one
+   deliberately deferred exception: the Tab-equivalent tide gill must
+   eventually precede cable hit-testing and keep a discoverable top-layer cue.
+   That exception is the gill's alone.
 6. **Redraw discipline (§10).** New marks live on the owning opaque layer
    (castle view, shell view, crescent view), repaint only that layer, only
    when their state changes. No timers, no telemetry additions, no ambient
@@ -121,7 +126,7 @@ start on empty ground, and the heart is a control.
 **The one real trap — exit paths.** A stuck punch is destructive (a loop
 left recording overwrites itself). The punch needs §4.1's discipline:
 enumerate every exit and restore on all of them — mouse up (Qt grabs the
-press, so it always arrives at the shell view), **Esc**, **Tab view flip**,
+press, so it always arrives at the shell view), **Esc**, **Tab water-focus toggle**,
 **window close / GUI free**, **panic**, **CmdPeriod**. The plumbing already
 exists: `CQGui.prKey` (Esc and Tab branches) and `CQGui.cancelAudition`
 already call `nightMap.cancelWeather`; extend that cancel path (or add a
@@ -197,12 +202,12 @@ already-registered `cNRange` updater in `CQGuiNightMap.prRegisterUpdaters`
   `rangeHit` **before** `bodyHit`, and `prHoverCastle` must do the same
   (three exclusive cues on one castle now: clock, ripple, body — never two
   lit at once).
-- The ripple is drawn by the castle's own opaque layer (`prDrawCastle` →
-  `CQInkNight`), so its repaint stays local; it must also *fit inside the
-  castle's layer box* (`box` = ±(36·scale + 4)) — at scale 1 the letter
-  anchor sits at +33 with the caption below it: measure, and if the caption
-  clips, grow the box and re-run every clearance test, because the box is
-  also the layer that covers the river stubs (§16.6's courtesy law).
+- The ripple is drawn by the castle's own transparent view (`prDrawCastle` →
+  `CQInkNight`), so its repaint stays local; it must still *fit inside the
+  view box* (`box` = ±(36·scale + 4)) — at scale 1 the letter anchor sits at
+  +33 with the caption below it. If the caption clips, grow the box and
+  re-run every clearance test. The view's clear paper must stay clear: only
+  the irregular flesh painted by `drawCastle` may mask the river.
 
 **Funnel.** `state.set(\cNRange, next)` via the shared enum-cycle helper
 (law 1.2). CQState/CQSpec clamp malformed enums already; the GUI never
@@ -334,12 +339,11 @@ hear the silence close), PLAN.
     reads of `endpoint[\anchor]` / geometry anchors *before* touching the
     constants, or the smokes will fail for reasons that look like layout
     bugs.
-12. **(flood)** Growing an endpoint view grows an **opaque box**: every
-    grown box re-triggers the courtesy law (§16.6 — a line under an opaque
-    layer must be redrawn by that layer or routed clear). The river stubs,
-    the root arrival stubs and the org stems all have lengths tuned to the
-    *current* boxes. Re-derive them from the box sizes, don't re-tune by
-    hand.
+12. **(flood)** Growing an opaque endpoint view re-triggers the courtesy law
+    (§16.6 — a line under opaque paper must be redrawn by that owner or routed
+    clear). Root arrivals and org stems remain derived from their current box.
+    Castle details are transparent and must never regain synthetic
+    rectangle-repair passages or protruding stubs.
 13. **(pool)** The disc→square mapping in `compassNorm` must keep the four
     corners *reachable* (rim at the diagonals maps to exactly (0,0)…(1,1)),
     or a stamped corner can never be recalled bit-exact and the smoke's
@@ -494,6 +498,49 @@ surface at the review, not something the implementer decides.
 
 ## 9. The almanac becomes landscape — the cluster is broken
 
+**Third design, v3.2 accepted after visual/interaction review 2026-07-27
+(checklist N3).** The cluster is dissolved one step further: weather becomes
+an act of the moon and the compass becomes a property of the bay.
+
+- The **solitary moon** is Ø 56 in the far upper-right, beyond bird B and
+  slightly above it. It opens as a 0.22 crescent and sows through
+  `0.2 × phase²` (quarter/half/full ≈ 4/18/70 cables). Tap throws and
+  horizontal drag pours phase. Down holds rain/grow and up holds sun/wither:
+  one 8 px dominant-axis lock chooses the act, then 32 px of travel tensions
+  rain 0.6…1.6 Hz and sun 2.5…6 Hz while adding drops/rays to the transient
+  glyph.
+- The **pool is removed**, not relocated. Four memory seeds at 31/69 % width
+  and 22/91 % height imply a large direct bilinear field behind the central
+  organism. No shore, rectangle, ambient wave or sparkle is drawn at rest.
+  A voyage reveals a cross and four sparse ≤8 % wavefront pulls.
+- Filled/Shift/right seed taps mean recall/write-or-overwrite/clear. A latched
+  Tab/gill focus also lets a vacant tap write without a keyboard; an ordinary
+  unfocused vacant tap is inert. Vacancy is an open inward husk, stored silence
+  a closed dark dormant kernel, and a living patch a closed luminous kernel
+  whose light follows its cable density.
+  Filled-seed → filled-seed drag breeds directly. Its curved chord lives on a
+  topmost hit-transparent layer; a valid filled target catches it and opens a
+  blue double bloom. This replaces the graft glyph and its armed mode.
+- Unfocused open water is inert even under a long left sweep. Tab and the
+  clickable gill below the lower castles latch water focus; Shift is its
+  momentary form. Focus backgrounds planted cable spans and removes their hit
+  paths while leaving bodies/endpoints/plugs alive; left commits and right is
+  elastic. Outside focus, right remains harvest. Capture continues across
+  bodies once the tide has begun.
+- **Deferred polish accepted with N3:** the gill must always win a crossing
+  cable in matching hover/press priority and remain discoverable through the
+  cable ink (top-layer echo, local knockout or another reviewed form). This is
+  one narrow exception to cable-first, not a new general control law.
+- Castle and castle-endpoint paper is transparent. The irregular flesh masks
+  the river and coupling chords only inside its real shape, so no rectangular
+  blank bites the body and no synthetic ring stub protrudes from it.
+- This increment deliberately stops before the roots. Their next version
+  must show the real source→preamp→Coco audio vein with the envelope as a
+  side-growth; §10's decoration-only mangrove proposal is no longer enough.
+
+<details>
+<summary><b>Superseded almanac/pool designs v1–v2</b></summary>
+
 **Rewritten 2026-07-27, after the first build of this section was rejected.**
 The version below the line is the history; read it, because the way it was
 wrong is the useful part.
@@ -581,27 +628,34 @@ composition"</b> (kept because the failure is instructive)</summary>
 
 </details>
 
+</details>
+
 ---
 
-## 10. The roots — mangrove, not thread
+## 10. The roots — the intake body, not an envelope on a stick
 
-Two lonely polylines read as fragile because they are drawn as *lines*
-carrying a jack, not as *bodies* carrying the instrument's blood in. The
-fix adds visual mass without inventing information:
+The root metaphor works only if it tells the whole signal story. In the DSP,
+each side first chooses `preASrc` / `preBSrc` (`liveL`, `liveR`, `mic`,
+`deckA`, `deckB`, `none`), passes through the drive+bias asymmetric tanh
+preamp and HPF, and that **audio** feeds its Coco input. `envA` / `envB` is
+only the post-preamp `Amplitude` side-growth used by the modulation matrix.
+The current drawing exposes the derivative and hides the blood.
 
-- Each root becomes a **mangrove foot**: 3–4 seeded, wobbled strands
-  leaving the bottom edge over a widened base (~40–60 px of shoreline) and
-  **converging to the single tip jack** — one endpoint, exactly as today,
-  because there is exactly one envelope per side and extra tips would be
-  lying marks. Reach grows ~64 → ~110 px.
-- The tip jack view grows with §8's table and keeps its aura glow; the
-  arrival-stub courtesy (the root's last stretch redrawn inside the jack's
-  box) now applies per-strand — derive the stub from the box size (rake
-  12), and keep the side twigs growing *away* from the tip (the recorded
-  2026-07-21 fix; do not re-learn it).
-- The mic sprout stays exactly as it is — display only, three states,
-  beside envA.
-- Roots stay bodies-without-solo (single endpoint — the recorded law).
+The next root increment therefore does this:
+
+- Several source strands enter one **preamp knot**. Their current provenance
+  is revealed on hover/gesture, not as five permanently labelled roots.
+- A fixed, visibly thicker **audio vein** leaves that knot and joins the
+  corresponding Cocoon. This is anatomy, not a patch cable: the DSP relation
+  already exists and must be drawn as such.
+- The existing `envA` / `envB` jack becomes a smaller side bud off the
+  post-preamp vein. It remains the one real patchable modulation endpoint.
+- The knot gets a bodily drive gesture and shows bias/asymmetry in its shape;
+  exact source choice and less-performative setup may remain in the Drawer.
+- Do not add decorative root count without information, and do not invent
+  extra patchable audio jacks. Making `preA` / `preB` audio patchable would
+  expand the canonical 16×22 matrix and is a separate DSP/interface epic.
+- The mic sprout remains a truthful three-state provenance cue beside side A.
 
 ---
 
@@ -655,18 +709,18 @@ its own visual/listening review stop, its own commit.
    everything below.
 2. **The spring flood** (§8) — sizes only, no new forms; collision matrix
    first, one composition review at two window sizes.
-3. **The almanac becomes landscape** (§9) — the cluster breaks: moon + rain
-   + sun rise into the sky, the pool goes to the bay's bottom water with the
-   graft, the corner empties. (Kept separate from the flood so a disagreement
-   about the pool's form cannot hold the size pass hostage — which is exactly
-   what happened: the first build of this step was rejected and rebuilt, and
-   §8 was already safe on `main`'s line.) The **size re-check of the whole bay
-   rides this step's review**, because sizes are relational (§8).
+3. **The almanac becomes landscape** (§9) — the moon becomes one remote
+   three-axis weather body; the pool disappears into a four-seed tide field
+   behind the organism; Shift gives that water temporary priority over cable
+   spans; breed becomes a direct seed relation. (Kept separate from the flood
+   so the rejected v1/v2 compositions never held §8 hostage.) The **size
+   re-check of the whole bay rides this step's review**, because sizes are
+   relational (§8).
 4. **Range ripples** (§3) and 5. **dolby oysters** (§4) — into the grown
    landscape, so their clearances are done once.
 6. **The birds fetch** (§11).
-7. **The roots** (§10) — pure drawing, can ride along with 6 if reviews
-   allow.
+7. **The roots** (§10) — a functional preamp/intake-body pass after the tide
+   composition is accepted; it no longer rides as decoration with the birds.
 8. **The drawer workshop page** (§0) — its own gate; completeness audit
    against SPEC §6.2 (every CQSpec parameter reachable) is its exit
    criterion.
@@ -676,7 +730,7 @@ its own visual/listening review stop, its own commit.
 After steps 1–7 the night map is, deliberately, a complete instrument:
 every hardware-panel gesture (speed, in, fb, spaf, hold+punch, flip, skip,
 dolby, ranges, master freq, chaos, spesal, patching) plus the machine's own
-gifts (the moon, the pool, the weather, the birds) — playable from one
+gifts (the moon, the tide field, the weather, the birds) — playable from one
 landscape, with the drawer as its workshop and the master strip as its
 spine.
 

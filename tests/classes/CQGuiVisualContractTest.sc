@@ -3,6 +3,21 @@
 // the persistent Master strip while the Qt composition evolves.
 
 CQGuiVisualContractTest : UnitTest {
+	test_sowingMoonStartsAsACrescentAndWaxesSlowly {
+		this.assertFloatEquals(CQGui.defaultShakeAmount, 0.22,
+			"the instrument opens on an iconic small crescent", 1e-9);
+		this.assertFloatEquals(CQGui.sowDensity(0), 0,
+			"the new moon still clears the bay", 1e-9);
+		this.assertFloatEquals(CQGui.sowDensity(0.25), 0.0125,
+			"a quarter moon sows a genuinely small patch", 1e-9);
+		this.assertFloatEquals(CQGui.sowDensity(0.5), 0.05,
+			"the first half waxes slowly", 1e-9);
+		this.assertFloatEquals(CQGui.sowDensity(1), CQGui.fullMoonDensity,
+			"the full moon keeps the whole former ceiling", 1e-9);
+		this.assert(CQGui.sowDensity(0.75) > CQGui.sowDensity(0.5),
+			"the second half gathers fertility");
+	}
+
 	test_dayKeepsTheFourOrganOrder {
 		this.assertEquals(CQGuiPanels.dayRegions,
 			#[sources, coco1, quantussy, coco2],

@@ -33,7 +33,7 @@ CQNightMeasures {
 
 	*castleRx { ^29 }                       // body — the drawn blob's ellipse
 	*castleRy { ^25 }                       // body
-	*castleBoxReach { ^45 }                 // body — the opaque castle layer
+	*castleBoxReach { ^45 }                 // body — transparent castle paper
 	*castleBoxSlack { ^4 }                  // px, hairline room inside that box
 	*clockRadius { ^14 }                    // body — the inner spesal dial
 	*rangeLetterDrop { ^41 }                // body — the whisper letter at 6 o'clock
@@ -120,10 +120,12 @@ CQNightMeasures {
 	*sproutTipOffset { ^-66 }               // body
 	*sproutReach { ^60 }                    // body
 
-	// ---- the opaque endpoint views (px, rake 12) ----
-	// Every one of these is an opaque box that eats the lines and marks beneath
-	// it. Growing one re-runs the courtesy law: the stub that used to reach its
-	// dot must be re-derived from the box, never re-tuned by hand.
+	// ---- endpoint view extents (px, rake 12) ----
+	// Most of these remain opaque boxes that eat lines and marks beneath them.
+	// The four castle details are deliberately clear so the irregular castle
+	// flesh, not a rectangular pad, decides what masks the river. Growing an
+	// opaque owner re-runs the courtesy law; clear castle details must not add
+	// synthetic repair stubs.
 
 	*jackExtent { ^30 }                     // px, square
 	*socketExtent { ^Point(24, 24) }        // px
@@ -135,68 +137,37 @@ CQNightMeasures {
 	// drawn inside a night view have to stop at it.
 	*jackDotRim { ^5 }                      // px
 
-	// ---- the moon and the tide pool (§16.6, §9) ----
-	// The almanac corner is gone (decided with the user 2026-07-26). Keeping the
-	// three parts together in the right-hand sky fixed nothing: they were a
-	// cluster of unlike things — a shake control, a matrix blend, three matrix
-	// ops — grouped by FUNCTION and touching no body around them, which is what
-	// a toolbar is. Everything else at night is grouped by body: this castle's
-	// controls are on this castle.
-	//
-	// So the parts were separated and each given its own element. The **moon**
-	// goes into the sky at the birds' own altitude, between castle 1's box and
-	// bird B's name — the thing the birds fly under. The **tide pool** goes into
-	// the water at the bottom of the bay, tangent to the stage's lower edge. The
-	// roots already run past that edge, so it reads as the waterline, and
-	// nothing has to be drawn to say the plants and the pool share one water. A
-	// tide pool is literally the memory of a tide, which is what this control is.
-	//
-	// It is an ELLIPSE, not a disc, and it is tangent rather than clipped. Both
-	// are load-bearing. A Qt layer is a RECTANGLE, so what the pool may occupy is
-	// not the largest free disc but the largest free rect, and the bottom pocket
-	// is bounded by coco 1's tide crescents above (they hang to y 437 at the
-	// minimum stage), the river's own layer on the right, envA's jack on the
-	// left and the waterline below: 227 × 126 px. An ellipse uses that; a disc
-	// would waste half of it. Measured honestly, the move to the water buys
-	// roughly the area the G3 pad already had — it buys BELONGING, not size.
-	// Size has only one real lever left and it is the minimum window (§8).
-	//
-	// A clipped pool would put two of the tide's four corners past the frame,
-	// and an unreachable corner is a memory the pad has lost; tangent, the
-	// corners sit at the diagonals 0.29 × ry above the waterline while the
-	// shore's own wobble kisses and crosses it.
+	// ---- the solitary moon and the bay-wide tide (§16.6) ----
+	// The moon is a remote body beyond bird B, not the heading of an almanac
+	// panel. Its vertical gesture briefly wears rain or sun; those glyphs have
+	// geometry only so their active ink cannot clip, never as resting targets.
+	*moonFraction { ^0.925 }                // of width — beyond bird B
+	*moonAltitude { ^42 }                   // body — slightly above the birds
+	*moonRadius { ^28 }                     // body (Ø 56)
+	*moonBoxSlack { ^4 }                    // px, hairline room past all ink
+	*moonHalo { ^9 }                        // px — the 120 ms shake flash
+	// [name, dx, dy] from the moon; deliberately asymmetric, never a row.
+	*moonWeatherPlaces { ^[[\grow, -25, 39], [\wither, 29, 35]] }
 
-	*moonFraction { ^0.617 }                // of the width — the open sky
-	*poolFraction { ^0.2742 }               // of the width — the bottom pocket
-	*moonRadius { ^32 }                     // body (Ø 64)
-	*moonBoxSlack { ^4 }                    // px, hairline room past the halo
-	*moonHalo { ^9 }                        // px — the 120 ms flash reach
-	*poolRx { ^100 }                        // body
-	*poolRy { ^59 }                         // body — cy = height - ry (tangent)
-	*poolWobble { ^0.06 }                   // seeded shore irregularity (§16.3)
-	*poolAnchors { ^9 }                     // shore anchors the blob runs through
-	// the pool answers a little past its drawn shore, exactly as a castle body
-	// does (`bodyMargin`). That band is what makes the tide's pure corners
-	// reachable: a press outside the shore holds at the nearest place ON it, and
-	// the shore at a diagonal is exactly a bilinear corner.
-	*poolCatch { ^10 }                      // px
-	*stampInset { ^14 }                     // body — seeds inside the shore
-	*stampRadius { ^9 }                     // px — under the 8 px tap threshold
-	// The weather row is gone, and the three marks did not stay together — they
-	// went where each one ACTS. Rain and sun grow and wither the live bay, not
-	// the pool's memories, so they are sky weather and they join the moon, which
-	// is also a whole-bay act (sowing). The graft breeds two stamped memories
-	// and takes its two parents as seed taps, so it stays on the pool where its
-	// parents are: a mark whose gesture ends on the seeds may not live a bay
-	// away from them.
-	//
-	// Sky: [name, dx, dy] as body offsets from the moon. Pool: [name, degrees,
-	// radial factor] in the ellipse's own frame, so > 1 stands off the shore.
-	// Unequal on purpose — no mark may line up with another mark, with a seed or
-	// with the moon on either axis. CQNightGeometryTest holds that.
-	*skyWeatherPlaces { ^[[\grow, -74, -12], [\wither, -60, 46]] }
-	*poolWeatherPlaces { ^[[\breed, 40, 1.13]] }
-	*compassBoxPad { ^4 }                   // px
+	// There is no pool body. Four memory seeds in open winds imply one large
+	// rectangular bilinear field passing behind the organism. At rest the
+	// rectangle itself is never drawn; these fractions place only its seeds.
+	*tideLeftFraction { ^0.31 }
+	*tideRightFraction { ^0.69 }
+	*tideTopFraction { ^0.22 }
+	*tideBottomFraction { ^0.91 }
+	*stampRadius { ^9 }                     // px touch body around a tiny seed
+	// The bay-wide focus is opened by a small gill below the two lower
+	// castles. It is an organ of the same landscape, not a toolbar toggle:
+	// closed = ordinary cable grammar, open = cables submerged + tide playable.
+	*tideGateFraction { ^0.86 }             // of stage height
+	*tideGateHit { ^17 }                    // px, one compact touch body
+	*tideGateBoxSlack { ^2 }                // px past the hover echo
+	*seedLength { ^7 }                      // px, inward-pointing kernel
+	*seedWidth { ^4.5 }                     // px
+	*seedHalo { ^10 }                       // px, focus / breed target bloom
+	*tideGateSpan { ^14 }                   // px, half-width of the gill strokes
+	*tideGateRise { ^8 }                    // px, opening breath
 
 	// ---- drawn ink bodies (px — CQInkNight draws at these) ----
 	// Not stroke widths and not type: those are frozen (§16.3, §16.4). These are

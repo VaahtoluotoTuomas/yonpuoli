@@ -24,14 +24,15 @@ case study / development process -dokumenteissa. Etärepon uudelleennimeäminen,
 public-vaihto ja oikeat kuva-/äänidemot ovat erillinen julkaisutoimi.
 
 **Seuraava askel konkreettisesti:** rakennusjärjestyksen (`NIGHT_STANDALONE_PLAN.md
-§12`) kohdat 1 **punch (§2)** ja 2 **kevättulva (§8)** ovat valmiit ja hyväksytyt
-(2026-07-23 ja 2026-07-26). Kohta 3 **almanakka maisemaksi (§9)** on **rakennettu
-kahdesti, ei kummallakaan kerralla hyväksytty, ja odottaa käyttäjän harkintaa.**
-Se ei ole `nocturne`ssa: `nocturne` seisoo commitissa `a5e4b17` (kevättulva) ja
-§9:n toinen versio on omalla haarallaan `nocturne-nightscape`. Katselmointi on
-checklistin lohko **N3**. §13 korvapassi voi kulkea limittäin (se on pelkkää
-kuuntelua) ja on turvallinen paikka jatkaa, jos §9:n suunta ottaa aikaa.
-Norns-portti (§14) on vasta night-first-vaiheen jälkeen.
+§12`) kohdat 1 **punch (§2)**, 2 **kevättulva (§8)** ja 3 **almanakka maisemaksi
+(§9)** ovat valmiit ja hyväksytyt (2026-07-23, 2026-07-26 ja 2026-07-27).
+Seuraava inkrementti on kohta 4 **range-väreet (§3)**: linnojen nykyiset
+display-only `i/b/a`-kirjaimet saavat soitettavat, muodoltaan eri tahtia
+kuvaavat väreet. §9:n hyväksytty commit elää ensin
+`nocturne-nightscape`-haaralla; `nocturne` seisoo vielä commitissa `a5e4b17`
+(kevättulva), eikä haaroja sulauteta ilman erillistä pyyntöä. §13 korvapassi
+voi kulkea limittäin, mutta Norns-portti (§14) on vasta night-first-vaiheen
+jälkeen.
 
 ## Auktoriteettijärjestys
 
@@ -56,16 +57,15 @@ korvata teknisesti helpommalla ratkaisulla ilman käyttäjän päätöstä.
   testattuina committeina ja pidetään Draft-PR:ssä `main`-haaraa vasten. PR
   merkitään valmiiksi (`gh pr ready`) vasta kun vaihe on ohi.
 - Vanhaa GUI:ta ei kopioida rinnakkaiseksi tuotteeksi eikä runtime-feature-flagia
-  lisätä. Night-only arvioidaan yksinkertaisesti **olemalla painamatta Tabia**
-  muutaman session ajan — ei koodia, ei lippua, ei poistoa ennen päätöstä.
+  lisätä. Night-only arvioidaan valitsemalla Night toolbarista ja pysymällä
+  siinä muutaman session ajan — ei koodia, ei lippua, ei poistoa ennen päätöstä.
 - Erillisiä lyhytikäisiä työhaaroja tarvitaan vain todellisessa rinnakkaistyössä
-  **tai kun valmis inkrementti jää käyttäjän harkintaan.** Näin on nyt: §9
-  (almanakka maisemaksi) elää haarassa `nocturne-nightscape`, jotta `nocturne`n
-  kärki pysyy viimeisessä *hyväksytyssä* tilassa `a5e4b17`. Työn saa esiin
-  komennolla `git switch nocturne-nightscape` ja pois komennolla
-  `git switch nocturne`; hyväksytty se sulautuu `nocturne`en, hylätty haara
-  poistetaan. **Testi-commit ei ole hyväksyntä** — hyväksyntä on aina
-  checklist-rivin rasti käyttäjältä.
+  **tai kun valmis inkrementti jää käyttäjän harkintaan.** §9 (almanakka
+  maisemaksi) hyväksyttiin 2026-07-27 `nocturne-nightscape`-haaralla; haara
+  säilyy erillään, kunnes käyttäjä pyytää sulautuksen `nocturne`en. Työn saa
+  esiin komennolla `git switch nocturne-nightscape` ja pois komennolla
+  `git switch nocturne`. **Testi-commit ei ole hyväksyntä** — hyväksyntä on
+  aina checklist-rivin rasti käyttäjältä.
 - Lähdekoodi, testit ja dokumentit pidetään samassa commitissa silloin, kun ne
   yhdessä muodostavat yhden todennettavan käyttäytymismuutoksen.
 
@@ -107,35 +107,45 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
   renkaasta kuoren kuihin menevät kaapelit kulkevat sen kaistan läpi (mitattu
   `tri1 → coco1_spaf` 6.0 px, ennen tulvaa 17.5 px). §4.5 pätee: kaapeli
   voittaa osoittimen alla. Merkin kotia ei siirretty.
-- [ ] **3. Almanakka maisemaksi** (§9). **Rakennettu, portit vihreät, EI
-  hyväksytty — käyttäjän harkinnassa (2026-07-27).** Työ on haaran
-  `nocturne-nightscape` kärjessä; `nocturne` seisoo `a5e4b17`:ssä eikä sisällä
-  tästä riviäkään. Katselmointi = checklist **N3**.
-  - *Versio 1 (hylätty).* Toteutettiin suunnitelmatekstin mukaan: kaikki kolme
-    osaa pysyivät oikeassa yläkulmassa, vain akseli rikottiin. Käyttäjä hylkäsi
-    näkemältä — "valikkomainen alue sivussa" ei korjaannu järjestelemällä.
-    Suunnitelmateksti itse oli väärä; §7.2 ja §9 on nyt korjattu ja vanha versio
-    säilytetty niissä varoituksena.
-  - *Versio 2 (nykyinen).* **Rypäs hajotettiin.** Kuu (Ø 64) nousi lintujen
-    korkeudelle taivaalle ja **sade + aurinko sen seuraksi** (ne kasvattavat ja
-    harventavat elävää lahtea, eivät lammen muisteja). **Lampi meni lahden
-    pohjukan veteen**, tangentiksi alareunaan, ellipsi 200 × 118 sahatulla
-    rannalla; **oksastus jäi lammelle**, koska se ottaa vanhempansa
-    siemennapautuksina. Mikroverso siirtyi juuri A:n toiselle puolelle. Oikea
-    yläkulma on nyt tyhjää vettä. Vuoroveden matematiikka säilyi: ellipsi↔neliö
-    -kuvaus, jonka käänteisfunktion kulmasingulariteetti korjattiin lähteessä
-    (`cornerSnap` 1e-6), joten leimattu kulma palautuu bittitarkasti.
-  - **Kaksi mitattua hintaa, kumpikaan ei piilossa.** (1) Väitin ensin että
-    pohjukka antaa lammelle ~1.8× pinta-alan — **väärin**, koska Qt-kerros on
-    suorakaide eikä kiekko: lopputulos 18 535 px² vastaan G3-padin 19 600.
-    Siirto ostaa **kuulumisen, ei kokoa**; kokoon on enää yksi vipu, minimi-ikkuna.
-    (2) Lampi on lahden vedessä, joten **kaapelit varjostavat sen siemeniä**:
-    60 satunnaisella kentällä, 35 johtoa → lahteen päin olevat siemenet 17 % ja
-    35 %, oksastus 17 %; 70 johtoa → 32 % / 48 % / 25 %; maan puoleiset siemenet
-    ja koko taivas 0 %. Avoin käyttäjäpäätös N3:ssa (hyväksy / paikallinen
-    §4.5-poikkeus / lampi takaisin vapaalle vedelle) — **ei ratkaista koodissa.**
-  - **Kokojen jälkitarkastus koko lahdesta kuuluu tähän katselmointiin** (§8:n
-    laki: koot ovat suhteellisia, ne katsotaan sommitelmassa kerralla).
+- [x] **3. Almanakka maisemaksi** (§9). **Versio 3.2 valmis ja hyväksytty
+  `nocturne-nightscape`-haaralla 2026-07-27** (checklist N3):
+  - Lampi, ranta ja padiraja poistettiin. Neljä sisäänpäin osoittavaa
+    muistisiementä muodostavat koko lahden läpi kulkevan bilineaarisen
+    vuorovesikentän; levossa kenttää ei muuten piirretä. Fokusoimaton avoin
+    vesi on inertti myös pitkällä vasemmalla vedolla.
+  - Tab ja alakeskellä oleva klikattava kidus lukitsevat saman vesifokuksen;
+    Shift on sen hetkellinen muoto. Fokus vie kaapelijänteet taustalle ja pois
+    osumatestistä, mutta kehot, liittimet ja istutetut plugit säilyvät elävinä.
+    Fokuksessa vasen veto committoi ja oikea on elastinen; fokuksen ulkopuolella
+    oikea säilyy harvest-lassona.
+  - Kuu on yksin oikean linnun takaisessa ylätaivaassa (Ø 56) ja käynnistyy
+    0,22-sirppinä. Tap = shake, vaaka = vaihe; kylvötiheys on `0,2 × vaihe²`,
+    joten neljännes/puoli/täysi kuu tuottavat keskimäärin noin 4/18/70 johtoa.
+    Alas = sade/grow ja ylös = aurinko/wither: 8 px lukitsee akselin ja seuraavat
+    32 px kiristävät näkyvän sään (sade 0,6…1,6 Hz, aurinko 2,5…6 Hz).
+  - Siemenellä on kolme totuutta: vapaa avoin kuori, tallennetun hiljaisuuden
+    suljettu tumma ydin ja elävän patchin tiheyden mukaan hohtava suonellinen
+    ydin. Täysi tap palauttaa; Shift+tap tallentaa/korvaa; avoimessa Tab/kidus-
+    fokuksessa tyhjän kuoren tap tallentaa myös ilman näppäimistöä. Tavallinen
+    fokusoimaton tyhjän kuoren tap on inertti ja oikea tyhjentää. Täydestä
+    siemenestä toiseen vetäminen breedaa; kelvollinen kohde nappaa ylimmän
+    kerroksen langan ja kukkii sinisellä kaksoiskehällä.
+  - Castlejen ja niiden neljän endpointin paperi on läpinäkyvä. Castlen oma
+    epäsäännöllinen liha peittää renkaan vain muotonsa kohdalta; suorakulmaiset
+    aukot ja niitä paikanneet lyhyet river-stubit poistuivat.
+  - **Tämä pysähdys koskee vuorovettä + kuuta.** Juurten funktionaalinen
+    preamp-keho (audiojuoni Cocoon ja envelope sivukasvuna) tehdään vasta tämän
+    sommittelupalautteen jälkeen; pelkkää koristejuurten lisäämistä ei tehdä.
+  - **Myöhemmäksi jätetty musiikillinen työ:** topology-aware “sweet spot” /
+    ekologinen shake, joka suosii eläviä signaalipolkuja ja rajaa feedback- ja
+    gate-populaatioita. Käyttäjä siirsi tämän tarkoituksella pois N3:n GUI-
+    viimeistelystä 2026-07-27.
+  - **Hyväksynnän mukana kirjattu myöhempi GUI-viilaus:** Tabin kanssa saman
+    vesifokuksen avaavan kiduksen pitää voittaa sen yli kulkeva kaapelijänne
+    sekä hoverissa että painalluksessa ja pysyä visuaalisesti löydettävänä
+    kaapelien alta. Tämä on tietoinen, vain kidusta koskeva poikkeus §4.5:n
+    cable-first-kieleen; tarkka top-layer/knockout-muoto ratkaistaan omassa
+    polish-passissa eikä avaa N3:a uudelleen.
 - [ ] **4. Range-väreet** (§3). Castlen 6-suunnan piirretty väre, jonka *muoto
   on regime* (infra/balcium/audio); napautus askeltaa. Yön suurin
   soitettavuusaukko. Kasvaneeseen maisemaan, jotta clearance tehdään kerran.
@@ -144,9 +154,10 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
 - [ ] **6. Linnut hakevat** (§11). Deckin lataus ja kansionavigointi ilman
   ainuttakaan nuolta: napautus = hakee (tiedostodialogi), rulla = seuraava/
   edellinen, pörhistys = satunnainen.
-- [ ] **7. Juuret — mangrove** (§10). Kaksi ohutta viivaa → useampi säie
-  yhteen kärkijakkiin; massaa ilman valehtelevia merkkejä. Pelkkää piirtoa;
-  voi kulkea kohdan 6 mukana jos katselmoinnit sallivat.
+- [ ] **7. Juuret — preamp-keho** (§10). Lähdesäikeet → drive/bias-solmu →
+  kiinteä audiojuoni Cocoon; `envA/B` jää post-preamp-envelope-sivusilmuksi.
+  Ei koristeellista juurimäärää eikä tekaistuja audiojakkeja. Toteutetaan
+  vasta vuorovesikentän sommittelupalautteen jälkeen omana porttinaan.
 - [ ] **8. Drawer-workshop** (§0). Kaikki loput CQSpec-parametrit rehellisin
   ledger-säätimin drawerin sivulle. Exit-kriteeri: **SPEC §6.2:n kattavuusauditointi
   — jokainen §5-parametri saavutettavissa** pelkällä yöllä + drawerilla +
@@ -225,6 +236,41 @@ tulosti ennen sekä `CQ_TESTS_FAILED`in että `CQ_TESTS_PASSED`in (sclangin
 suoritettujen luokkien määrän eikä passed-markeri lähde ilman sitä. Se on oma
 committinsa ja kelpaa `nocturne`en riippumatta §9:n kohtalosta
 (`git cherry-pick`).
+
+Saman haaran portti 2026-07-27 (§9 v3, **ensimmäinen vuorovesikentän
+katselmointiversio; vihreä mutta ei hyväksytty**): `CQ_COMPILE_OK`,
+**11 206 unit-passia / 0 failurea / 28/28 luokkaa**, `CQ_SAFETY_PASSED`,
+`CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+`CQ_GUI_DRAWER_REENTRY_PASSED` ja `CQ_GUI_NIGHT_PASSED`. Assertimäärän lasku
+v2:sta johtuu poistetun lampigeometrian testipinnan korvaamisesta
+vuorovesikentän käyttäytymistesteillä, ei ohitetusta testiluokasta.
+`CQ_HOLD_OK` kantaa: DSP:hen ei koskettu.
+
+Saman haaran portti 2026-07-27 (§9 v3.1, **Tab/kidus-fokus, luettavat
+siemenet, breed-kohdekukinta ja linnojen kerroskorjaus; vihreä mutta ei
+hyväksytty**): `CQ_COMPILE_OK`, **11 252 unit-passia / 0 failurea / 28/28
+luokkaa**, `CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`,
+`CQ_GUI_DRAWER_PASSED`, `CQ_GUI_DRAWER_REENTRY_PASSED` ja
+`CQ_GUI_NIGHT_PASSED`. Tavallinen vasen veto avoimessa vedessä on nyt
+passiivinen; Tab tai klikattava kidus lukitsee soitettavan vesifokuksen ja
+Shift avaa sen hetkeksi. Breed-suhde ja validin kohteen sininen kukinta
+kulkevat päällimmäisellä läpinäkyvällä elekerroksella. Linnojen ja niiden
+neljän yksityiskohtanäkymän paperi on läpinäkyvä, eikä geometria enää tuota
+synteettisiä jokitappeja. `CQ_HOLD_OK` kantaa: DSP:hen ei koskettu.
+
+Saman haaran portti 2026-07-27 (§9 v3.2, **pieni sirppi, kasvava sääjännite
+ja siementen kolme luettavaa elintilaa; vihreä ja käyttäjän hyväksymä**):
+`CQ_COMPILE_OK`, **11 269 unit-passia / 0 failurea / 28/28 luokkaa**,
+`CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+`CQ_GUI_DRAWER_REENTRY_PASSED` ja `CQ_GUI_NIGHT_PASSED`. Kuu avautuu
+määrästä 0.22 ja kylvää epälineaarisesti (`0.2 × vaihe²`), joten pieni sirppi
+tekee pieniä patcheja ja täysi kuu kasvaa voimakkaammin. Sateen ja auringon
+vedon syvyys ohjaa sekä merkin runsautta että toiston tahtia; sade on nyt
+aurinkoa harkitsevampi. Tyhjä kuori, talletettu hiljainen ydin ja elävä siemen
+ovat eri tilat. Tavallinen klikkaus ei kirjoita tyhjään kuoreen: Shift-klikkaus
+tallentaa, ja avoin Tab/kidus sallii saman ilman näppäimistöä. Topologiaa
+ymmärtävä “sweet spot” -shake jäi tietoisesti myöhemmäksi musiikilliseksi
+työksi. `CQ_HOLD_OK` kantaa: DSP:hen ei koskettu.
 
 ## Omistajuus- ja julkaisurata (kulkee Nocturnen rinnalla)
 
@@ -370,11 +416,15 @@ sommittelua (§7.2 korjattiin vasta hylätyn buildin jälkeen).
   vetää kaapelikerroksen taustalle — piiloon tai selvästi himmeämmäksi — jotta
   täyden kentän alta näkee kehot ja merkit. Ei vielä päätetty muoto (kytkin vai
   pidike, koko kerros vai vain ei-fokusoidut, näkyvyys vai osumat) eikä koti.
-  Huomaa kaksi rajaa jo nyt: §4.5:n mukaan kaapeli voittaa osoittimen alla,
+  Huomaa kaksi rajaa jo nyt: §4.5:n mukaan kaapeli voittaa yleensä osoittimen alla,
   joten pelkkä *näkyvyyden* himmennys ei saa muuttaa sitä kuka painalluksen saa
   — muuten kytkin tekee valehtelevan vihjeen; ja §16.8:n johtokieli (napa,
   paino, solo-dim) on jo hyväksyttyä pintaa. Ratkaisisi myös osan siitä, miksi
-  skip-merkin kaltaiset kohteet jäävät kaapelin alle. Palataan tähän erikseen.
+  skip-merkin kaltaiset kohteet jäävät kaapelin alle. **Yksi rajattu poikkeus
+  päätettiin N3:n hyväksynnässä 2026-07-27:** Tab-kidus saa myöhemmässä
+  polish-passissa aina painalluksen ennen kaapelijännettä, ja sen hover-/piirto-
+  vihje nostetaan löydettäväksi johtojen alta. Poikkeusta ei yleistetä muihin
+  kontrolleihin ilman uutta päätöstä. Palataan toteutukseen erikseen.
 - **Snapshotit omaan kansioonsa** (`snapshots/` vs `presets/`) — kirjattu jo
   Archipelago-vaiheessa, tehdään omana pienenä työnään.
 - **Kosketusnäyttö-optimointi Night-modeen** (multi-touch, ele-erottelu) —

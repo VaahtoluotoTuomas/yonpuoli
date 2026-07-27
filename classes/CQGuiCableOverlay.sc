@@ -24,6 +24,9 @@ CQGuiCableOverlay {
 	// barbs) and repainted only when the planted SET actually changes: under
 	// the tide a redraw is a banana landing or lifting, not a continuous cost.
 	var <stormMode = false, stormSig;
+	// Momentary Shift water focus: planted spans recede and stop intercepting
+	// the hand, while endpoint views and socket plug tests remain fully alive.
+	var <backgrounded = false;
 	// read by the paint-profile harness and the soak checklist: what actually
 	// repaints, how often, and what one repaint cost (G1.3's law — measure
 	// inside the paint event, never guess)
@@ -49,6 +52,7 @@ CQGuiCableOverlay {
 	// pulsing (all sixteen together cost about one cable). No hand-built patch
 	// comes near the limit; `\mayhem` patches all 352 cells and does.
 	*auraCableLimit { ^48 }
+	*backgroundAlpha { ^0.14 }
 
 	auraPulses { ^this.cableCount <= this.class.auraCableLimit }
 
@@ -80,6 +84,17 @@ CQGuiCableOverlay {
 		stormMode = next;
 		stormSig = nil;
 		imageDirty = true;
+		view.refresh;
+		^this
+	}
+
+	backgrounded_ { |flag|
+		var next = flag == true;
+		if(next == backgrounded) { ^this };
+		backgrounded = next;
+		if(next) { grammar.hoverCable = nil };
+		imageDirty = true;
+		this.prEnsureImage;
 		view.refresh;
 		^this
 	}
@@ -224,6 +239,7 @@ CQGuiCableOverlay {
 
 	patchAt { |point, threshold = 7|
 		var best, bestDistance;
+		if(backgrounded) { ^nil };
 		bestDistance = threshold;
 		this.cableRecords.do { |record|
 			// cheap reject first: the pointer cannot be within `threshold` of this
@@ -363,7 +379,8 @@ CQGuiCableOverlay {
 	// grabbed or auditioning cable is skipped), harvest marks
 	prInkSignature {
 		^[this.cableRecords, grammar.hoverCable, grammar.soloTarget,
-			grammar.handSource, grammar.candidateDest, grammar.harvestKey]
+			grammar.handSource, grammar.candidateDest, grammar.harvestKey,
+			backgrounded]
 	}
 
 	prDrawPlanted {
@@ -374,20 +391,22 @@ CQGuiCableOverlay {
 			if(grammar.isGrabbed(record[\src], record[\dest]).not
 				and: { grammar.isTransient(record[\src], record[\dest]).not }) {
 				focused = grammar.isCableHovered(record[\src], record[\dest]);
-				alpha = if(focused) { 1.0 } {
-					if(grammar.isCableDim(record[\src], record[\dest])) { 0.22 } {
-						if(hasFocus) { 0.46 } {
-							this.class.plantedAlpha(
-								if(pulses) {
-									auraFunc !? { auraFunc.value(record[\src]) }
-								})
+				alpha = if(backgrounded) { this.class.backgroundAlpha } {
+					if(focused) { 1.0 } {
+						if(grammar.isCableDim(record[\src], record[\dest])) { 0.22 } {
+							if(hasFocus) { 0.46 } {
+								this.class.plantedAlpha(
+									if(pulses) {
+										auraFunc !? { auraFunc.value(record[\src]) }
+									})
+							}
 						}
 					}
 				};
 				lifted = if(grammar.isHarvested(record[\src], record[\dest])) { 2 } {
 					if(focused) { 1 } { 0 }
 				};
-				if(lifted > 0) {
+				if(lifted > 0 and: { backgrounded.not }) {
 					if(grammar.isHarvested(record[\src], record[\dest])) {
 						CQInk.drawCableGlow(record[\start], record[\finish], skin)
 					} {
@@ -411,10 +430,11 @@ CQGuiCableOverlay {
 	// made it three times worse. Measured, not guessed (G1.3's law, again).
 	prDrawStorm {
 		var palette = CQInk.palette(skin), records = this.cableRecords;
+		var alpha = if(backgrounded) { this.class.backgroundAlpha } { 0.7 };
 		[[\verso, { |w| w >= 0 }], [\inverso, { |w| w < 0 }]].do { |pair|
 			var group = records.select { |r| pair[1].value(r[\weight]) };
 			if(group.notEmpty) {
-				Pen.strokeColor = palette[pair[0]].copy.alpha_(0.7);
+				Pen.strokeColor = palette[pair[0]].copy.alpha_(alpha);
 				Pen.width = CQInk.strokes[\normal];
 				group.do { |r|
 					var controls = CQInk.cableControls(r[\start], r[\finish]);

@@ -34,12 +34,14 @@ CQGui {
 	var <dropTarget, dropTargetView, dropTargetRect;
 	var dropTargetPolling = false, dropTargetArmed = 0;
 	var micLive = false, hotLive = false, cleaned = false;
+	var tabHeld = false;
 	var paramPending, paramFlushScheduled = false, lastParamFlush = 0;
 	// how much a shake sows (0..1), shared by the SHAKE button, the p key and the
 	// night's sowing moon; GUI-local because shake is an action argument, not a
 	// CQSpec param (SPEC §5.5 — the density clamp lives in CQMatrix.shake).
-	// The default is the **half moon**, which is exactly the v1.0 handful.
-	var <shakeAmount = 0.5;
+	// The default is a small crescent. Its visible phase remains linear, but
+	// sowDensity waxes quadratically so early light can make a tiny patch.
+	var <shakeAmount = 0.22;
 	// ...and its own watcher list, deliberately NOT the param registry: that one
 	// is keyed by CQSpec names and primes itself from CQState, which has no
 	// opinion about a gesture constant (GUI_SPEC §10).
@@ -93,10 +95,13 @@ CQGui {
 	// is **how much is sown**, not how hard. Strength already has a macro of its
 	// own (`patchDepth`), so mapping the moon's lit area onto the weight ceiling
 	// was both redundant and inaudible; density is reachable from nowhere else.
-	// Linear, so a half moon is exactly the v1.0 handful (10 % ≈ 35 bananas) and
-	// a full one is twice that — dense, but a fifth of `\mayhem`.
+	// Quadratic fertility: quarter ≈ 1.25 %, half = 5 %, full = 20 %. The first
+	// half stays sparse enough to play; the second half gathers force.
 	*fullMoonDensity { ^0.2 }
-	*sowDensity { |norm| ^(norm ? 0).clip(0, 1) * this.fullMoonDensity }
+	*defaultShakeAmount { ^0.22 }
+	*sowDensity { |norm|
+		^(norm ? 0).clip(0, 1).squared * this.fullMoonDensity
+	}
 
 	shake {
 		bananaGrammar.performUndoable({
@@ -369,6 +374,17 @@ CQGui {
 		window.view.layout = VLayout(shell.view).margins_(0).spacing_(0);
 		window.view.keyDownAction = { |v, char, modifiers, unicode, keycode, key|
 			this.prKey(char, modifiers ? 0, unicode, keycode, key)
+		};
+		window.view.keyUpAction = { |v, char, modifiers, unicode, keycode, key|
+			var ascii = char !? { char.ascii };
+			if(ascii == 9 or: { unicode == 9 }) { tabHeld = false };
+		};
+		window.view.keyModifiersChangedAction = { |v, modifiers|
+			nightMap !? { |map|
+				map.modifierTideFocus_(
+					shellState.viewMode == \night
+					and: { (modifiers ? 0).isShift })
+			}
 		};
 		window.onClose = { shellState.close; this.prCleanup };
 		window.view.children.do { |ch| this.prDefocus(ch) };
@@ -671,9 +687,22 @@ CQGui {
 			nightMap !? { nightMap.cancelGestures };
 			^this
 		};
-		if(char.notNil and: { char.ascii == 9 }) {
-			nightMap !? { nightMap.cancelGestures };
-			shell.toggleView(this.prTextHasFocus);
+		if(ascii == 9 or: { unicode == 9 }) {
+			// Native key repeat must not open/close a toggle several times
+			// while one physical Tab press is held.
+			if(tabHeld) { ^this };
+			tabHeld = true;
+			// Night owns Tab now: it opens/closes the same persistent water
+			// focus as the tide gill. Day/Night remains a deliberate toolbar
+			// destination, and text entry / the Drawer keep Tab to themselves.
+			if(this.prTextHasFocus.not
+				and: { shellState.drawerOpen.not }
+				and: { shellState.viewMode == \night }) {
+				nightMap !? {
+					nightMap.cancelGestures;
+					nightMap.toggleTideFocus
+				};
+			};
 			^this
 		};
 		switch(char,

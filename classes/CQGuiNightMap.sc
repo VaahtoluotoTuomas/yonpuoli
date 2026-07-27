@@ -2,9 +2,11 @@
 // archipelago carrying the same 16 jacks, 22 sockets, cable overlay and banana
 // grammar as Day, plus the §6.1 night touch grammar (CQGuiNightTouch). Pure
 // view: geometry from CQNightGeometry, pixels from CQInk/CQInkNight, every
-// write through the shared grammar and funnels. The layers are opaque-backed
-// (ground → ring → eye → castles → shells → birds → endpoints → crescents →
-// labels, the hit-transparent overlay on top) so an ambient repaint touches
+// write through the shared grammar and funnels. Large stable bodies remain
+// opaque-backed; castles and their endpoint details use transparent paper so
+// only irregular flesh masks the river. Z order is ground → ring → eye →
+// castles → shells → birds → endpoints → crescents → labels → cable overlay →
+// hit-transparent tide gesture overlay, so an ambient repaint touches
 // only the views whose information actually moved (§10) — the storm iris in
 // particular repaints without re-inking the ring.
 
@@ -13,10 +15,12 @@ CQGuiNightMap {
 	var <stageView, <container, <overlay, <controller, <touch, <endpoints, <bodies;
 	var <groundView, <ringView, <eyeView, <castleViews, <shellViews, <birdViews;
 	var <almanacView, <moonHover = false, <moonFlash = false;
-	// the §7.1 compass water: its own opaque layer, so pouring a voyage never
-	// re-inks the moon and a moon flash never re-inks the field
+	// The tide is the full ground itself: four seeds, no pool body or outline.
 	var <compassView, <compassHover, <compassDragState;
-	var <breedArmed = false, <breedFirst, <weatherActive, <weatherFlash;
+	var <tideGestureView, <tideGateView, <tideGateHover = false;
+	var <tideFocus = false, <tideFocusLatched = false;
+	var <tideFocusRequested = false;
+	var <weatherActive, <weatherFlash, <weatherIntensity = 0;
 	var blendPending, blendScheduled = false, lastBlendWrite = 0;
 	var <crescentViews, crescentNorms, activeCrescents, hoverCrescents, labels;
 	var <geometry, <eyeActive = false;
@@ -222,7 +226,7 @@ CQGuiNightMap {
 		matrix.writeMatrix(gui.compass.blendAt(norm.x, norm.y),
 			origin: \gui, committed: false, operation: \compassFrame);
 		compassDragState = (pos: norm, pull: CQCompass.bilinear(norm.x, norm.y));
-		compassView.refresh;
+		tideGestureView.refresh;
 		^this
 	}
 
@@ -236,7 +240,7 @@ CQGuiNightMap {
 			origin: \gui, committed: true, operation: \compass);
 		gui.bananaGrammar.rememberMatrix(before);
 		compassDragState = nil;
-		compassView.refresh;
+		tideGestureView.refresh;
 		^this
 	}
 
@@ -248,7 +252,7 @@ CQGuiNightMap {
 		overlay.stormMode = false;
 		compassDragState = nil;
 		if(freed) { ^this };
-		compassView.refresh;
+		tideGestureView.refresh;
 		from = matrix.fullMatrix;
 		steps.do { |i|
 			var t = (i + 1) / steps;
@@ -279,16 +283,30 @@ CQGuiNightMap {
 		blendPending = nil;
 		overlay.stormMode = false;
 		compassDragState = nil;
+		if(freed.not) { tideGestureView.refresh };
+		^this
+	}
+
+	// Corner seeds are memories, not four identical buttons. A filled tap
+	// recalls; Shift writes/overwrites; an open Tab/gill focus lets an empty tap
+	// write without a keyboard; right clears. Dragging one filled seed onto
+	// another breeds them without introducing a graft tool.
+	cornerStamped { |i| ^gui.compass.corner(i).notNil }
+
+	stampCorner { |i|
+		gui.compass.stamp(i, matrix.fullMatrix);
 		if(freed.not) { compassView.refresh };
 		^this
 	}
 
-	// corner seeds: a tap stamps the live matrix (weights only, ever), a
-	// right press clears the memory. Neither touches the bay, so neither is an
-	// undo op; both auto-save through CQCompass.
-	stampCorner { |i|
-		gui.compass.stamp(i, matrix.fullMatrix);
-		if(freed.not) { compassView.refresh };
+	seedTap { |i, overwrite = false, focusWrite = false|
+		if(overwrite) { ^this.stampCorner(i) };
+		if(this.cornerStamped(i)) {
+			^this.commitBlend(Point(i % 2, i div: 2), matrix.fullMatrix)
+		};
+		if(focusWrite) { ^this.stampCorner(i) };
+		// Reading an unplanted husk is intentionally inert. Writing is guarded
+		// by Shift, or by opening the bay with Tab/the gill.
 		^this
 	}
 
@@ -298,49 +316,95 @@ CQGuiNightMap {
 		^this
 	}
 
-	// §7.3 breed: arm the graft, pick two parents, the offspring becomes the
-	// bay — one committed write, one undo op. Pressing the graft again, or any
-	// stray pad press, forgets it; so does Esc (cancelGestures).
-	armBreed {
-		breedArmed = breedArmed.not;
-		breedFirst = nil;
-		if(freed.not) { compassView.refresh };
-		^this
-	}
-
-	disarmBreed {
-		if(breedArmed or: { breedFirst.notNil }) {
-			breedArmed = false;
-			breedFirst = nil;
-			if(freed.not) { compassView.refresh };
+	previewBreed { |i, point|
+		var target = CQNightGeometry.stampHit(geometry[\almanac], point);
+		if(target == i or: { target.notNil and: {
+			this.cornerStamped(target).not } }) {
+			target = nil
 		};
+		compassDragState = (breedFrom: i, cursor: point,
+			breedTarget: target);
+		if(freed.not) { tideGestureView.refresh };
 		^this
 	}
 
-	pickParent { |i|
+	breedCorners { |a, b|
 		var before, offspring;
-		if(breedArmed.not) { ^this };
-		if(breedFirst.isNil) {
-			breedFirst = i;
-			if(freed.not) { compassView.refresh };
-			^this
+		if(this.cornerStamped(a).not or: { this.cornerStamped(b).not }) {
+			^this.clearVoyage
 		};
 		before = matrix.fullMatrix;
-		offspring = CQCompass.breed(gui.compass.corner(breedFirst),
-			gui.compass.corner(i));
+		offspring = CQCompass.breed(gui.compass.corner(a), gui.compass.corner(b));
 		matrix.writeMatrix(offspring, origin: \gui, committed: true,
 			operation: \breed);
 		gui.bananaGrammar.rememberMatrix(before);
-		this.prFlashWeather(\breed);
-		breedArmed = false;
-		breedFirst = nil;
-		if(freed.not) { compassView.refresh };
+		compassDragState = nil;
+		if(freed.not) { tideGestureView.refresh };
+		^this
+	}
+
+	// Shift is a momentary water focus; Tab and the gill latch the same state.
+	// Modifier release waits until a captured tide gesture ends, so the cable
+	// field cannot jump back over the pointer mid-voyage. A latch survives Esc,
+	// panic and view changes until Tab/the gill explicitly closes it.
+	modifierTideFocus_ { |flag|
+		tideFocusRequested = flag == true;
+		if(tideFocusRequested) {
+			if(gui.bananaGrammar.isInHand.not) { this.prSetTideFocus(true) };
+		} {
+			if(touch.isNil or: { touch.tideActive.not }) {
+				this.prSetTideFocus(tideFocusLatched)
+			};
+		};
+		^this
+	}
+
+	toggleTideFocus {
+		if(gui.bananaGrammar.isInHand) { ^this };
+		tideFocusLatched = tideFocusLatched.not;
+		this.prSetTideFocus(tideFocusLatched or: { tideFocusRequested });
+		^this
+	}
+
+	tideFocusLatched_ { |flag|
+		tideFocusLatched = flag == true;
+		if(gui.bananaGrammar.isInHand.not) {
+			this.prSetTideFocus(tideFocusLatched or: { tideFocusRequested })
+		};
+		^this
+	}
+
+	tideFocusGesture_ { |flag|
+		if(flag == true and: { gui.bananaGrammar.isInHand.not }) {
+			this.prSetTideFocus(true)
+		};
+		^this
+	}
+
+	finishTideFocus { |shifted = false|
+		tideFocusRequested = shifted == true;
+		if(touch.isNil or: { touch.tideActive.not }) {
+			this.prSetTideFocus((tideFocusLatched or: { tideFocusRequested })
+				and: { gui.bananaGrammar.isInHand.not })
+		};
+		^this
+	}
+
+	prSetTideFocus { |flag|
+		var next = flag == true;
+		if(next == tideFocus) { ^this };
+		tideFocus = next;
+		overlay !? { overlay.backgrounded = next };
+		if(freed.not) {
+			compassView.refresh;
+			tideGateView !? { tideGateView.refresh };
+		};
 		^this
 	}
 
 	// one §7.2 seed lands (grow) or one cable thins (wither) — audible at
 	// once as a transient write; the mark flashes 120 ms per act, so a held
-	// rain visibly rains at its own 2.5 Hz
+	// rain visibly rains at the pull's current tension
 	weatherStep { |mark|
 		var change;
 		if(freed) { ^false };
@@ -368,16 +432,26 @@ CQGuiNightMap {
 		^this
 	}
 
-	// the three weather marks live on two layers since §9 (rain and sun in the
-	// sky with the moon, the graft on the water with its parents), so both
-	// repaint — each still only when its own state changes
+	// Rain and sun are transient faces of the moon's vertical gesture. No
+	// weather glyph exists on the resting tide.
 	prRefreshWeather {
-		if(freed.not) { compassView.refresh; almanacView.refresh };
+		if(freed.not) { almanacView.refresh };
+	}
+
+	weatherGesture { |mark, intensity = 0|
+		var next = (intensity ? 0).asFloat.clip(0, 1);
+		if(mark.isNil) { next = 0 };
+		if(mark == weatherActive
+			and: { (next - weatherIntensity).abs <= 0.001 }) { ^this };
+		weatherActive = mark;
+		weatherIntensity = next;
+		this.prRefreshWeather;
+		^this
 	}
 
 	weatherActive_ { |mark|
-		weatherActive = mark;
-		this.prRefreshWeather;
+		^this.weatherGesture(mark,
+			if(mark.isNil) { 0 } { weatherIntensity })
 	}
 
 	prFlashWeather { |mark|
@@ -405,6 +479,8 @@ CQGuiNightMap {
 			touch.cancelPunch;
 			touch.cancelWeather;
 		};
+		tideFocusRequested = false;
+		this.prSetTideFocus(tideFocusLatched);
 		^this
 	}
 
@@ -586,12 +662,17 @@ CQGuiNightMap {
 		container = View().background_(night[\ground]);
 		groundView = this.prLayer;
 		groundView.drawFunc = { this.prSafeDraw { this.prDrawGround } };
+		// Public compatibility name; the tide is now painted by, and receives
+		// open-water gestures through, the full-stage ground.
+		compassView = groundView;
 		ringView = this.prLayer;
 		ringView.drawFunc = { this.prSafeDraw { this.prDrawRing } };
 		eyeView = this.prLayer;
 		eyeView.drawFunc = { this.prSafeDraw { this.prDrawEye } };
 		castleViews = 5.collect { |k|
-			var view = this.prLayer;
+			// Transparent paper lets the river remain continuous around the
+			// irregular flesh. drawCastle masks only the flesh itself.
+			var view = this.prLayer(false);
 			view.drawFunc = { this.prSafeDraw { this.prDrawCastle(k) } };
 			view
 		};
@@ -610,8 +691,6 @@ CQGuiNightMap {
 		// geometry's clearance tests)
 		almanacView = this.prLayer;
 		almanacView.drawFunc = { this.prSafeDraw { this.prDrawAlmanac } };
-		compassView = this.prLayer;
-		compassView.drawFunc = { this.prSafeDraw { this.prDrawCompass } };
 		(CQMatrix.sourceNames ++ CQMatrix.destNames).do { |name|
 			this.prMakeEndpoint(name)
 		};
@@ -626,8 +705,18 @@ CQGuiNightMap {
 			gui.setDeckLabel(which, label, night[\whisper]);
 			label
 		};
+		tideGateView = this.prLayer(false);
+		tideGateView.drawFunc = { this.prSafeDraw { this.prDrawTideGate } };
 		overlay = CQGuiCableOverlay(matrix, endpoints, gui.bananaGrammar,
 			{ |src| gui.auraFor(src) }).skin_(\night);
+		// Gesture ink must cross every opaque landscape rectangle. This view is
+		// the topmost stage sibling and never accepts the mouse.
+		tideGestureView = UserView()
+			.background_(night[\clear])
+			.acceptsMouse_(false);
+		tideGestureView.drawFunc = {
+			this.prSafeDraw { this.prDrawTideGesture }
+		};
 		touch = CQGuiNightTouch(this, state, overlay);
 		this.prBindTouch;
 		crescentControls = List.new;
@@ -643,29 +732,36 @@ CQGuiNightMap {
 			bodies, overlay, crescentControls);
 		controller.bindGround(container);
 		touch.controller = controller;
+		this.prBindTideGround;
+		this.prBindTideGate;
 		this.prBindDrops;
 		stageView = View().background_(night[\ground]).layout_(
-			StackLayout(overlay.view, container).mode_(\stackAll));
+			StackLayout(tideGestureView, overlay.view, container).mode_(\stackAll));
 		container.onResize = { this.prLayout };
 		this.prRegisterUpdaters;
 		{ this.prLayout }.defer;
 		^this
 	}
 
-	prLayer {
+	prLayer { |opaque = true|
+		var palette = CQInk.palette(\night);
 		^UserView(container, Rect(0, 0, 4, 4))
-			.background_(CQInk.palette(\night)[\ground])
+			.background_(palette[if(opaque) { \ground } { \clear }])
 	}
 
 	prMakeEndpoint { |name|
 		var spec = this.class.endpointSpec(name);
 		// the box and its anchor come from CQNightGeometry, so the map, the
-		// clearance tests and the stubs all size from one table (rake 12)
+		// clearance tests and the view itself size from one table (rake 12)
 		var extent = CQNightGeometry.endpointExtent(spec[\kind], spec[\lamp]);
 		var anchor = CQNightGeometry.endpointAnchor(spec[\kind]);
 		var width = extent.x, height = extent.y;
+		var castleDetail = name.asString.beginsWith("tri")
+			or: { name.asString.beginsWith("cas") }
+			or: { name.asString.beginsWith("castle") };
 		var view = UserView(container, Rect(0, 0, width, height))
-			.background_(CQInk.palette(\night)[\ground]);
+			.background_(CQInk.palette(\night)[
+				if(castleDetail) { \clear } { \ground }]);
 		view.drawFunc = {
 			this.prSafeDraw {
 				spec[\decoration] !? { this.prDrawDecoration(name, spec, anchor) };
@@ -739,10 +835,10 @@ CQGuiNightMap {
 				touch.castleDown(k, v, x, y, mods ? 0, button ? 0, clicks ? 1)
 			};
 			view.mouseMoveAction = { |v, x, y, mods|
-				touch.forwardMove(v, x, y, mods ? 0)
+				touch.landscapeMove(v, x, y, mods ? 0)
 			};
 			view.mouseUpAction = { |v, x, y, mods, button|
-				touch.forwardUp(v, x, y, mods ? 0, button ? 0)
+				touch.landscapeUp(v, x, y, mods ? 0, button ? 0)
 			};
 			view.mouseWheelAction = { |v, x, y, mods, xd, yd|
 				touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
@@ -807,6 +903,52 @@ CQGuiNightMap {
 		compassView.acceptsMouseOver = true;
 		compassView.mouseOverAction = { |v, x, y| this.prHoverCompass(v, x, y) };
 		compassView.mouseLeaveAction = { this.prHoverCompass(nil, nil, nil) };
+	}
+
+	// The shared controller first teaches every piece of paper the ordinary
+	// banana/harvest grammar. Open night ground then gets this one extra pass:
+	// a left voyage inside the four winds, with every unclaimed act forwarded
+	// straight back to that controller.
+	prBindTideGround {
+		groundView.mouseDownAction = { |v, x, y, mods, button, clicks|
+			touch.tideDown(v, x, y, mods ? 0, button ? 0, clicks ? 1)
+		};
+		groundView.mouseMoveAction = { |v, x, y, mods|
+			touch.tideMove(v, x, y, mods ? 0)
+		};
+		groundView.mouseUpAction = { |v, x, y, mods, button|
+			touch.tideUp(v, x, y, mods ? 0, button ? 0)
+		};
+		groundView.mouseWheelAction = { |v, x, y, mods, xd, yd|
+			touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
+		};
+		^this
+	}
+
+	// The gill is the GUI entrance to the same state Tab latches. A cable still
+	// wins while the bay is closed; once open, spans are deliberately behind
+	// the water and the organ itself remains available to close it again.
+	prBindTideGate {
+		tideGateView.mouseDownAction = { |v, x, y, mods, button, clicks|
+			touch.tideGateDown(v, x, y, mods ? 0, button ? 0, clicks ? 1)
+		};
+		tideGateView.mouseMoveAction = { |v, x, y, mods|
+			touch.landscapeMove(v, x, y, mods ? 0)
+		};
+		tideGateView.mouseUpAction = { |v, x, y, mods, button|
+			touch.landscapeUp(v, x, y, mods ? 0, button ? 0)
+		};
+		tideGateView.mouseWheelAction = { |v, x, y, mods, xd, yd|
+			touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
+		};
+		tideGateView.acceptsMouseOver = true;
+		tideGateView.mouseOverAction = { |v, x, y|
+			this.prHoverTideGate(v, x, y)
+		};
+		tideGateView.mouseLeaveAction = {
+			this.prHoverTideGate(nil, nil, nil)
+		};
+		^this
 	}
 
 	prStagePoint { |view, x, y|
@@ -885,43 +1027,33 @@ CQGuiNightMap {
 	// cable crossing the sky wins the press (§4.5), so it wins the cue too, and
 	// a repaint happens only when the boolean actually flips.
 	prHoverAlmanac { |view, x, y|
-		var moon = false, point, sky, free = false;
+		var moon = false, point, free = false;
 		if(geometry.notNil and: { view.notNil }) {
 			point = this.prStagePoint(view, x, y);
 			free = overlay.patchAt(point).isNil;
 			moon = CQNightGeometry.moonHit(geometry[\almanac], point) and: { free };
-			// the same order almanacDown runs: the moon's own rim, then the two
-			// sky marks beside it (§4.5 — one cue, and it never lies)
-			if(moon.not and: { free }) {
-				sky = CQNightGeometry.weatherHit(geometry[\almanac], point);
-				if(sky.notNil
-					and: { geometry[\almanac][\skyMarks][sky].isNil }) { sky = nil };
-			};
 		};
-		if((moon != moonHover) or: { sky != compassHover }) {
+		if(moon != moonHover) {
 			moonHover = moon;
-			compassHover = sky;
-			if(freed.not) { almanacView.refresh; compassView.refresh };
+			if(freed.not) { almanacView.refresh };
 		};
 	}
 
-	// one cue at a time on the water: a seed, the pad, or a weather mark — and
-	// a cable crossing the corner wins them all (§4.5). Repaint only when the
-	// element under the hand actually changes.
+	// At rest only a seed advertises an action. The field itself becomes
+	// perceptible under Shift focus or after the hand has crossed the 8 px
+	// threshold; ordinary open water keeps no widget hover rectangle.
 	prHoverCompass { |view, x, y|
 		var next, point, almanac, seed;
 		if(geometry.notNil and: { view.notNil }) {
 			point = this.prStagePoint(view, x, y);
 			almanac = geometry[\almanac];
 			if(overlay.patchAt(point).isNil) {
-				// the same order the press runs (CQGuiNightTouch.compassDown):
-				// seed, then weather mark, then the water they stand on. A cue
-				// computed in any other order would advertise an act the next
-				// press does not give (§4.5).
 				seed = CQNightGeometry.stampHit(almanac, point);
 				next = if(seed.notNil) { [\stamp, seed] } {
-					CQNightGeometry.weatherHit(almanac, point)
-						?? { if(CQNightGeometry.compassHit(almanac, point)) { \pad } }
+					if(tideFocus
+						and: { CQNightGeometry.compassHit(almanac, point) }) {
+						\pad
+					}
 				};
 			};
 		};
@@ -989,7 +1121,7 @@ CQGuiNightMap {
 		geometry = CQNightGeometry.compute(bounds.width, bounds.height);
 		groundView.bounds = Rect(0, 0, bounds.width, bounds.height);
 		almanacView.bounds = geometry[\almanac][\box];
-		compassView.bounds = geometry[\almanac][\compassBox];
+		tideGateView.bounds = geometry[\tideGateBox];
 		ringView.bounds = geometry[\ringBox];
 		eyeView.bounds = Rect.aboutPoint(geometry[\eye], CQNightMeasures.eyeLayerR,
 			CQNightMeasures.eyeLayerR);
@@ -1076,6 +1208,7 @@ CQGuiNightMap {
 
 	prDrawGround {
 		if(geometry.isNil) { ^this };
+		this.prDrawCompass;
 		geometry[\roots].do { |root| CQInkNight.drawRoot(root, \night) };
 		CQInkNight.drawSprout(geometry[\sprout], sproutState, \night);
 		// §16.7's border rings the bird AND its name, so it is drawn on the
@@ -1098,9 +1231,8 @@ CQGuiNightMap {
 			this.spesalChords);
 	}
 
-	// the almanac corner's sky: the sowing moon wearing its phase. The weather
-	// lives on its own layer below (prDrawCompass), so the two never repaint
-	// each other.
+	// One remote weather body. Rain or sun exists only while the moon's locked
+	// vertical gesture is active; at rest there is no satellite toolbar.
 	prDrawAlmanac {
 		var almanac;
 		if(geometry.isNil) { ^this };
@@ -1108,25 +1240,47 @@ CQGuiNightMap {
 		Pen.translate(almanac[\box].left.neg, almanac[\box].top.neg);
 		CQInkNight.drawSowingMoon(almanac[\moon], almanac[\moonR],
 			gui.shakeAmount, moonHover, moonFlash, \night);
-		// the rain and the sun keep the moon company: all three are whole-bay
-		// weather, and the sky is where an almanac keeps its weather (§9)
-		almanac[\skyMarks].keysValuesDo { |name, point|
-			CQInkNight.drawWeatherMark(name, point, compassHover == name,
-				weatherActive == name, weatherFlash == name, false, \night)
+		weatherActive !? { |name|
+			CQInkNight.drawWeatherMark(name,
+				almanac[\weatherPreview][name], false, true,
+				weatherFlash == name, false, \night, weatherIntensity)
 		};
 	}
 
-	// the compass water (§7.1, drawn since G3): pad, corner seeds, the weather
-	// row. At rest nothing here moves, so this layer costs a still bay zero
-	// repaints — it repaints under the hand and on the 120 ms weather flashes.
+	prHoverTideGate { |view, x, y|
+		var next = false, point;
+		if(geometry.notNil and: { view.notNil }) {
+			point = this.prStagePoint(view, x, y);
+			next = CQNightGeometry.tideGateHit(geometry, point)
+				and: { overlay.patchAt(point).isNil };
+		};
+		if(next != tideGateHover) {
+			tideGateHover = next;
+			if(freed.not) { tideGateView.refresh };
+		};
+	}
+
+	// The tide is inferred by four seeds. No shore or rectangle is drawn at
+	// rest; focus and a live voyage reveal only faint pulls through the bay.
 	prDrawCompass {
 		var almanac;
 		if(geometry.isNil) { ^this };
 		almanac = geometry[\almanac];
-		Pen.translate(almanac[\compassBox].left.neg, almanac[\compassBox].top.neg);
-		CQInkNight.drawCompass(almanac, gui.compass.stampedMask,
-			compassDragState, breedArmed, breedFirst, compassHover,
-			weatherActive, weatherFlash, \night);
+		CQInkNight.drawTideField(almanac, gui.compass.memoryDensities,
+			tideFocus, compassHover, \night);
+	}
+
+	prDrawTideGesture {
+		if(geometry.isNil) { ^this };
+		CQInkNight.drawTideGesture(geometry[\almanac],
+			compassDragState, \night);
+	}
+
+	prDrawTideGate {
+		if(geometry.isNil) { ^this };
+		CQInkNight.drawTideGate(geometry[\tideGate],
+			geometry[\tideGateBox].leftTop,
+			tideFocus, tideGateHover, \night);
 	}
 
 	prDrawEye {

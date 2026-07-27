@@ -114,8 +114,9 @@ CQGuiPanels {
 		var leds, spesalView, rows, shakeKnob, shakeButton, macro, castles;
 		// how much a shake sows: unbound knob (an action argument, not a CQSpec
 		// param — see CQGui.shakeAmount). 0..1 is the moon's phase, mapped onto
-		// SPEC §5.5's `density` by CQGui.sowDensity — half = the v1.0 handful —
-		// and CQMatrix.shake clamps it again on every throw. Strength is not
+		// SPEC §5.5's `density` by CQGui.sowDensity — the first half waxes
+		// slowly, the full moon keeps its 20 % ceiling — and CQMatrix.shake
+		// clamps it again on every throw. Strength is not
 		// here: patchDepth is the how-alive macro (GUI_SPEC §16.6).
 		shakeKnob = gui.registerInkControl(CQInkControl.knob("amount", \spaf));
 		shakeKnob.action = { |k|

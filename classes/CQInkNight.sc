@@ -7,10 +7,14 @@
 
 CQInkNight {
 
-	// one smooth stroke through precomputed cubic segments
-	*strokeSegments { |segments|
+	// one smooth path through precomputed cubic segments
+	*addSegments { |segments|
 		Pen.moveTo(segments.first[0]);
 		segments.do { |seg| Pen.curveTo(seg[3], seg[1], seg[2]) };
+	}
+
+	*strokeSegments { |segments|
+		this.addSegments(segments);
 		Pen.stroke;
 	}
 
@@ -19,18 +23,19 @@ CQInkNight {
 	// face inside the body — where no opaque endpoint view can cover it —
 	// with the current state as a lit spark bead, and a static hover
 	// brightening (§4.5) so the face reads as pressable. Origin = the castle
-	// layer's own box corner: the layer is opaque, so an ambient glow repaint
-	// never re-runs the whole landscape underneath.
+	// layer's own box corner. The paper is transparent and the blob fills only
+	// its irregular flesh with ground, so no rectangular edge can cut the river.
 	*drawCastle { |castle, origin, aura, spesalState = 0, rangeLetter = "",
 		dialHover = false, bodyHover = false, skin = \night|
 		var palette = CQInk.palette(skin), center = castle[\center];
 		var tickAngle, bead;
 		Pen.translate(origin.x.neg, origin.y.neg);
-		// the river's short passage under the body
-		Pen.strokeColor = palette[\whisper].copy.alpha_(0.55);
-		Pen.width = CQInk.strokes[\hairline];
-		castle[\stubs].do { |stub| Pen.line(stub[0], stub[1]) };
-		Pen.stroke;
+		// The castle view is transparent. Only the irregular flesh masks the
+		// river below it; the old opaque rectangle needed two artificial ring
+		// stubs, which read as unexplained short lines outside every castle.
+		Pen.fillColor = palette[\ground];
+		this.addSegments(castle[\blobSegments]);
+		Pen.fill;
 		if((aura ? 0) > 0.01) {
 			Pen.addOval(Rect.aboutPoint(center,
 				castle[\bodyRx] + 6, castle[\bodyRy] + 6));
@@ -397,6 +402,93 @@ CQInkNight {
 	}
 
 	// ---- the tide pool (§7.1, §9) ----
+	// The pool body was removed in the landscape pass of 2026-07-27. The tide
+	// now belongs to the whole bay: four memory seeds are its only resting ink.
+	// Shift focus gives those seeds a quiet breath; an actual voyage reveals
+	// four ≤8 % pulls and the hand's cross. No rectangle, shore, ambient wave or
+	// sparkle is ever drawn. A seed-to-seed breed shows one temporary relation
+	// line, then disappears with the release.
+	*legacyDrawTideField { |almanac, stamped, drag, focused = false, hover,
+		skin = \night|
+		var palette = CQInk.palette(skin), tide = almanac[\compass];
+		var stampHover = hover.isKindOf(SequenceableCollection);
+		var reach = min(tide.width, tide.height) * 0.56;
+		var cross, target;
+		if(drag.notNil and: { drag[\pos].notNil }) {
+			cross = CQNightGeometry.compassPointAt(almanac, drag[\pos])
+		};
+		if(drag.notNil and: { drag[\pull].notNil }) {
+			almanac[\stamps].do { |corner, c|
+				var strength = (drag[\pull][c] ? 0).clip(0, 1);
+				if(strength > 0.02) {
+					var angle = CQGuiNightTouch.angleAt(corner, cross);
+					4.do { |i|
+						var fraction = 0.22 + (i * 0.18);
+						Pen.strokeColor = palette[\spark].copy.alpha_(
+							strength * 0.08 * (1 - (i * 0.18)));
+						Pen.width = CQInk.strokes[\hairline];
+						Pen.addArc(corner, reach * fraction,
+							angle - 0.44, 0.88);
+						Pen.stroke;
+					};
+				};
+			};
+		};
+		almanac[\stamps].do { |corner, c|
+			var isHover = stampHover and: { hover[1] == c };
+			var angle = CQGuiNightTouch.angleAt(corner, tide.center);
+			var inward = CQNightGeometry.polar(corner, 4.2, angle);
+			var outward = CQNightGeometry.polar(corner, 4.2, angle + pi);
+			var sideA = CQNightGeometry.polar(corner, 3.0, angle + (0.5pi));
+			var sideB = CQNightGeometry.polar(corner, 3.0, angle - (0.5pi));
+			var seedInk;
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.moveTo(inward);
+			Pen.curveTo(outward, sideA, sideA);
+			Pen.curveTo(inward, sideB, sideB);
+			if(stamped[c] == true) {
+				seedInk = palette[\line].copy.alpha_(
+					if(isHover or: { focused }) { 1.0 } { 0.82 });
+				Pen.fillColor = seedInk;
+				Pen.strokeColor = seedInk;
+				Pen.fillStroke;
+			} {
+				Pen.strokeColor = palette[\whisper].copy.alpha_(
+					if(isHover or: { focused }) { 0.9 } { 0.48 });
+				Pen.stroke;
+			};
+			if(isHover or: { focused }) {
+				Pen.strokeColor = palette[\line].copy
+					.alpha_(if(isHover) { 0.58 } { 0.24 });
+				Pen.width = CQInk.strokes[\hairline];
+				Pen.addOval(Rect.aboutPoint(corner,
+					if(isHover) { 6 } { 5 }, if(isHover) { 6 } { 5 }));
+				Pen.stroke;
+			};
+		};
+		if(drag.notNil and: { drag[\pos].notNil }) {
+			Pen.strokeColor = palette[\line];
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.line(cross + Point(-4, 0), cross + Point(4, 0));
+			Pen.line(cross + Point(0, -4), cross + Point(0, 4));
+			Pen.stroke;
+		};
+		if(drag.notNil and: { drag[\breedFrom].notNil }) {
+			cross = almanac[\stamps][drag[\breedFrom]];
+			target = drag[\cursor];
+			Pen.strokeColor = palette[\line].copy.alpha_(0.42);
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.moveTo(cross);
+			Pen.curveTo(target,
+				cross + ((target - cross) * 0.36) + Point(0, -8),
+				cross + ((target - cross) * 0.72) + Point(0, 8));
+			Pen.stroke;
+			Pen.addOval(Rect.aboutPoint(cross, 6, 6));
+			Pen.addOval(Rect.aboutPoint(target, 4, 4));
+			Pen.stroke;
+		};
+	}
+
 	// G3 drew this as a round-cornered hairline square — the app's one
 	// widget-shaped body at night, and it always looked like one. §9 made it a
 	// **pool**: a seeded, wobbled closed shore (the castle blob's cousin,
@@ -485,11 +577,13 @@ CQInkNight {
 	// (breed — two parents sharing flesh) and the sun (wither: in a farmer's
 	// almanac the sun is the drought). Whisper at rest, line ink under the
 	// hand or while held; the 120 ms flash is each seed actually landing —
-	// §16.7's momentary law at the weather's own 2.5 Hz, so a held rain
-	// visibly rains. An armed graft keeps a halo until its parents are chosen.
+	// §16.7's momentary law at the pull's current rate, so a held rain visibly
+	// thickens as the hand moves away. An armed graft keeps a halo until its
+	// parents are chosen.
 	*drawWeatherMark { |name, anchor, hover = false, active = false,
-		flash = false, halo = false, skin = \night|
+		flash = false, halo = false, skin = \night, intensity = 0|
 		var palette = CQInk.palette(skin);
+		var force = (intensity ? 0).asFloat.clip(0, 1);
 		var ink = if(flash) { palette[\spark] } {
 			palette[if(hover or: { active }) { \line } { \whisper }]
 		};
@@ -497,20 +591,29 @@ CQInkNight {
 		Pen.width = CQInk.strokes[\hairline];
 		switch(name,
 			\grow, {
-				Pen.line(anchor + Point(-5, -4), anchor + Point(-7, 3));
-				Pen.line(anchor + Point(0, -5), anchor + Point(-2, 4));
-				Pen.line(anchor + Point(5, -4), anchor + Point(3, 3));
+				var drops = 1 + (force * 3).round.asInteger;
+				var span = 5 + (force * 2);
+				var slant = 1 + force;
+				drops.do { |i|
+					var x = if(drops == 1) { 0 } {
+						(((i / (drops - 1)) * 2) - 1) * span
+					};
+					Pen.line(anchor + Point(x, -4 - force),
+						anchor + Point(x - slant, 3 + (force * 2)));
+				};
 			},
 			\breed, {
 				Pen.addOval(Rect.aboutPoint(anchor + Point(-2.5, 0), 3.5, 3.5));
 				Pen.addOval(Rect.aboutPoint(anchor + Point(2.5, 0), 3.5, 3.5));
 			},
 			\wither, {
-				Pen.addOval(Rect.aboutPoint(anchor, 2.5, 2.5));
-				4.do { |i|
-					var angle = (i / 4 * 2pi) + 0.25pi;
+				var rays = 4 + (force * 4).round.asInteger;
+				Pen.addOval(Rect.aboutPoint(anchor,
+					2.5 + (force * 0.5), 2.5 + (force * 0.5)));
+				rays.do { |i|
+					var angle = (i / rays * 2pi) + 0.25pi;
 					Pen.line(CQNightGeometry.polar(anchor, 4, angle),
-						CQNightGeometry.polar(anchor, 6.5, angle));
+						CQNightGeometry.polar(anchor, 6.5 + (force * 1.5), angle));
 				};
 			}
 		);
@@ -677,6 +780,221 @@ CQInkNight {
 	// The reach is the box's own half-diagonal, so however big the view grows
 	// the stub still crosses it from any arrival angle and Qt clips the rest
 	// (rake 12 — derived from the box, never re-tuned by hand).
+	// Four resting seeds imply the full field. Vacancy is an open husk; stored
+	// silence is a closed dark kernel; a living memory is luminous in proportion
+	// to its cable density. Occupancy and musical emptiness remain distinct.
+	*drawTideField { |almanac, memories, focused = false, hover, skin = \night|
+		var palette = CQInk.palette(skin), tide = almanac[\compass];
+		var stampHover = hover.isKindOf(SequenceableCollection);
+		almanac[\stamps].do { |corner, c|
+			var isHover = stampHover and: { hover[1] == c };
+			var angle = CQGuiNightTouch.angleAt(corner, tide.center);
+			var density = memories[c];
+			var fullness, seedInk;
+			if(density.isNil) {
+				// Vacant memory: an unmistakably open inward-facing husk.
+				Pen.strokeColor = palette[\whisper].copy.alpha_(
+					if(isHover or: { focused }) { 0.98 } { 0.72 });
+				Pen.width = CQInk.strokes[
+					if(isHover or: { focused }) { \normal } { \hairline }];
+				this.prAddSeed(corner, angle, false);
+				Pen.stroke;
+			} {
+				if(density <= 0) {
+					// Occupied silence: closed, dark, with one dormant pale vein.
+					Pen.fillColor = palette[\ground];
+					Pen.strokeColor = palette[\line].copy.alpha_(
+						if(isHover or: { focused }) { 0.98 } { 0.7 });
+					Pen.width = CQInk.strokes[
+						if(isHover or: { focused }) { \normal } { \hairline }];
+					this.prAddSeed(corner, angle, true);
+					Pen.fillStroke;
+					Pen.strokeColor = palette[\whisper].copy.alpha_(
+						if(isHover or: { focused }) { 0.72 } { 0.42 });
+					Pen.width = CQInk.strokes[\hairline];
+					Pen.line(CQNightGeometry.polar(corner,
+						CQNightMeasures.seedLength * 0.34, angle + pi),
+						CQNightGeometry.polar(corner,
+							CQNightMeasures.seedLength * 0.34, angle));
+					Pen.stroke;
+				} {
+					// Living memory: density changes the kernel's stored light,
+					// while even a sparse patch remains visibly occupied.
+					fullness = (density / CQGui.fullMoonDensity)
+						.clip(0, 1).sqrt;
+					seedInk = palette[\line].copy.alpha_(
+						(0.55 + (fullness * 0.4)
+							+ (if(isHover or: { focused }) { 0.08 } { 0 }))
+							.clip(0, 1));
+					Pen.fillColor = seedInk;
+					Pen.strokeColor = seedInk;
+					Pen.width = CQInk.strokes[\hairline];
+					this.prAddSeed(corner, angle, true);
+					Pen.fillStroke;
+					Pen.strokeColor = palette[\ground].copy.alpha_(0.82);
+					Pen.line(CQNightGeometry.polar(corner,
+						CQNightMeasures.seedLength * 0.58, angle + pi),
+						CQNightGeometry.polar(corner,
+							CQNightMeasures.seedLength * 0.58, angle));
+					Pen.stroke;
+				};
+			};
+			if(isHover or: { focused }) {
+				Pen.strokeColor = palette[\line].copy
+					.alpha_(if(isHover) { 0.58 } { 0.24 });
+				Pen.width = CQInk.strokes[\hairline];
+				Pen.addOval(Rect.aboutPoint(corner,
+					if(isHover) { CQNightMeasures.seedHalo + 2 }
+						{ CQNightMeasures.seedHalo },
+					if(isHover) { CQNightMeasures.seedHalo + 2 }
+						{ CQNightMeasures.seedHalo }));
+				Pen.stroke;
+			};
+		};
+	}
+
+	*prAddSeed { |center, angle, closed = true|
+		var forward = Point(cos(angle), sin(angle));
+		var normal = Point(forward.y.neg, forward.x);
+		var length = CQNightMeasures.seedLength;
+		var width = CQNightMeasures.seedWidth;
+		var inward = center + (forward * length);
+		var outward = center - (forward * (length * 0.72));
+		var sideA = center + (normal * width);
+		var sideB = center - (normal * width);
+		if(closed) {
+			Pen.moveTo(inward);
+			Pen.curveTo(outward, sideA, sideA);
+			Pen.curveTo(inward, sideB, sideB);
+		} {
+			Pen.moveTo(inward - (forward * 1.8) + (normal * 1.3));
+			Pen.curveTo(outward, sideA, sideA);
+			Pen.curveTo(inward - (forward * 1.8) - (normal * 1.3),
+				sideB, sideB);
+		};
+	}
+
+	// Voyage and breeding ink live on the topmost hit-transparent stage layer.
+	// A valid breed target catches the thread at its centre and opens a double
+	// bloom: an explicit visual promise that releasing here will make a child.
+	*drawTideGesture { |almanac, drag, skin = \night|
+		var palette = CQInk.palette(skin), tide = almanac[\compass];
+		var reach = min(tide.width, tide.height) * 0.56;
+		var cross, target, targetIndex, source;
+		if(drag.isNil) { ^this };
+		if(drag[\pos].notNil) {
+			cross = CQNightGeometry.compassPointAt(almanac, drag[\pos])
+		};
+		if(drag[\pull].notNil and: { cross.notNil }) {
+			almanac[\stamps].do { |corner, c|
+				var strength = (drag[\pull][c] ? 0).clip(0, 1);
+				if(strength > 0.02) {
+					var angle = CQGuiNightTouch.angleAt(corner, cross);
+					4.do { |i|
+						var fraction = 0.22 + (i * 0.18);
+						Pen.strokeColor = palette[\spark].copy.alpha_(
+							strength * 0.08 * (1 - (i * 0.18)));
+						Pen.width = CQInk.strokes[\hairline];
+						Pen.addArc(corner, reach * fraction,
+							angle - 0.44, 0.88);
+						Pen.stroke;
+					};
+				};
+			};
+		};
+		if(cross.notNil) {
+			Pen.strokeColor = palette[\line];
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.line(cross + Point(-4, 0), cross + Point(4, 0));
+			Pen.line(cross + Point(0, -4), cross + Point(0, 4));
+			Pen.stroke;
+		};
+		if(drag[\breedFrom].notNil) {
+			source = almanac[\stamps][drag[\breedFrom]];
+			targetIndex = drag[\breedTarget];
+			target = if(targetIndex.notNil) {
+				almanac[\stamps][targetIndex]
+			} {
+				drag[\cursor]
+			};
+			Pen.strokeColor = palette[\line].copy
+				.alpha_(if(targetIndex.notNil) { 0.88 } { 0.42 });
+			Pen.width = CQInk.strokes[
+				if(targetIndex.notNil) { \normal } { \hairline }];
+			Pen.moveTo(source);
+			Pen.curveTo(target,
+				source + ((target - source) * 0.36) + Point(0, -8),
+				source + ((target - source) * 0.72) + Point(0, 8));
+			Pen.stroke;
+			Pen.strokeColor = palette[\line].copy.alpha_(0.7);
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.addOval(Rect.aboutPoint(source, 8, 8));
+			Pen.stroke;
+			if(targetIndex.notNil) {
+				Pen.fillColor = palette[\fm].copy.alpha_(0.12);
+				Pen.addOval(Rect.aboutPoint(target,
+					CQNightMeasures.seedHalo + 5,
+					CQNightMeasures.seedHalo + 5));
+				Pen.fill;
+				Pen.strokeColor = palette[\fm].copy.alpha_(0.9);
+				Pen.width = CQInk.strokes[\normal];
+				Pen.addOval(Rect.aboutPoint(target,
+					CQNightMeasures.seedHalo,
+					CQNightMeasures.seedHalo));
+				Pen.addOval(Rect.aboutPoint(target,
+					CQNightMeasures.seedHalo + 5,
+					CQNightMeasures.seedHalo + 5));
+				Pen.stroke;
+			} {
+				Pen.addOval(Rect.aboutPoint(target, 4, 4));
+				Pen.stroke;
+			};
+		};
+	}
+
+	// Closed gill = ordinary cable grammar. Open, ribbed gill = the cords sink
+	// behind the field and the water becomes playable. The bay appears to take
+	// a breath; this is not a disguised checkbox.
+	*drawTideGate { |center, origin, active = false, hover = false, skin = \night|
+		var palette = CQInk.palette(skin);
+		var span = CQNightMeasures.tideGateSpan;
+		var rise = if(active) { CQNightMeasures.tideGateRise } { 3.5 };
+		var left = center + Point(span.neg, 0);
+		var right = center + Point(span, 0);
+		Pen.translate(origin.x.neg, origin.y.neg);
+		if(hover or: { active }) {
+			Pen.strokeColor = palette[if(active) { \fm } { \line }]
+				.copy.alpha_(if(hover) { 0.55 } { 0.28 });
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.addOval(Rect.aboutPoint(center,
+				CQNightMeasures.tideGateHit,
+				CQNightMeasures.tideGateHit * 0.72));
+			Pen.stroke;
+		};
+		Pen.strokeColor = palette[if(active) { \fm } {
+			if(hover) { \line } { \whisper }
+		}].copy.alpha_(if(active or: { hover }) { 0.95 } { 0.66 });
+		Pen.width = CQInk.strokes[if(active) { \normal } { \hairline }];
+		Pen.moveTo(left);
+		Pen.curveTo(right,
+			center + Point(span * -0.45, rise.neg),
+			center + Point(span * 0.45, rise.neg));
+		Pen.moveTo(left);
+		Pen.curveTo(right,
+			center + Point(span * -0.45, rise),
+			center + Point(span * 0.45, rise));
+		Pen.stroke;
+		Pen.strokeColor = palette[if(active) { \fm } { \whisper }]
+			.copy.alpha_(if(active) { 0.62 } { 0.36 });
+		Pen.width = CQInk.strokes[\hairline];
+		[-7, 0, 7].do { |x|
+			var rib = if(active) { 4.2 } { 1.8 };
+			Pen.line(center + Point(x, rib.neg),
+				center + Point(x, rib));
+		};
+		Pen.stroke;
+	}
+
 	*drawRootStub { |anchor, arrival, skin = \night|
 		var palette = CQInk.palette(skin), direction = arrival ? Point(0, -1);
 		var reach = (CQNightMeasures.jackExtent * 0.5 * 2.sqrt) + 1;

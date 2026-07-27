@@ -53,6 +53,16 @@ CQCompass {
 	corner { |i| ^corners[i !? { i.asInteger.clip(0, 3) }] }
 	stampedAt { |i| ^corners[i.asInteger.clip(0, 3)].notNil }
 	stampedMask { ^4.collect { |i| corners[i].notNil } }
+	// A vacant memory and a memory that faithfully contains silence are not
+	// the same thing. nil is an open husk; 0 is a closed dormant kernel; a
+	// positive density lets the ink show how much life the kernel carries.
+	cornerDensity { |i|
+		var dense = this.corner(i);
+		if(dense.isNil) { ^nil };
+		^dense.sum { |row| row.count { |w| w != 0.0 } }
+			/ (CQMatrix.destNames.size * CQMatrix.sourceNames.size)
+	}
+	memoryDensities { ^4.collect { |i| this.cornerDensity(i) } }
 
 	// capture a dense matrix into a corner (weights only, ever — the landscape
 	// law: no params, no spesal). Clamped cell by cell on the way in, so a
@@ -159,7 +169,7 @@ CQCompass {
 	}
 
 	// ---- grow / wither (GUI_SPEC §7.2, exact constants) ----
-	// One step each; the GUI repeats them at growRate while the mark is held.
+	// One step each; the GUI repeats them at the moon pull's weatherRate.
 	// Both return [di, si, w] — the single cell they touched — or nil when the
 	// bay has nothing left to give (grow on a full table, wither on an empty).
 

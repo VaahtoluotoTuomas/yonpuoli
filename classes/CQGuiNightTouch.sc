@@ -42,13 +42,53 @@ CQGuiNightTouch {
 		^delta - (dead * delta.sign)
 	}
 
+	// The moon chooses one act only after the shared 8 px threshold. Once the
+	// caller stores this answer it never asks again, so diagonal drift cannot
+	// switch rain into phase halfway through a gesture.
+	*moonAxis { |delta|
+		if(CQNightGeometry.distance(Point(0, 0), delta) <= this.tapTravel) {
+			^nil
+		};
+		if(delta.x.abs >= delta.y.abs) { ^\phase };
+		^if(delta.y > 0) { \grow } { \wither }
+	}
+
+	// Open paper stays inert until the bay is deliberately focused by Shift,
+	// Tab or its gill. Inside focus left pours and right is elastic; outside
+	// focus right remains the learned harvest lasso.
+	*tideMode { |button, focused = false|
+		if(focused and: { button == 0 }) { ^\blend };
+		if(focused and: { button == 1 }) { ^\elastic };
+		^nil
+	}
+
 	// §7.1 compass writes: the law's ceiling is 60 Hz; 30 is chosen because the
 	// weights are unlagged control buses (§15 — a banana contact is a step too),
 	// so faster stepping buys no audible smoothness, only server traffic
 	*compassWritePeriod { ^1/30 }
 
 	// §7.2 grow/wither repeat while held
-	*growRate { ^2.5 }
+	// The first 8 px choose the act; the next 32 px tighten it from a drizzle
+	// or mild sun to its deliberate performance rate. Rain is slower because
+	// every drop births a whole cable. Sun runs faster because one ray only
+	// thins a random cable by x0.7.
+	*weatherRateTravel { ^32 }
+	*rainRateMin { ^0.6 }
+	*rainRateMax { ^1.6 }
+	*sunRateMin { ^2.5 }
+	*sunRateMax { ^6.0 }
+	*weatherClockPeriod { ^1/20 }
+
+	*weatherIntensity { |delta|
+		^((delta.y.abs - this.tapTravel) / this.weatherRateTravel).clip(0, 1)
+	}
+
+	*weatherRate { |mark, intensity = 0|
+		var t = (intensity ? 0).asFloat.clip(0, 1);
+		var lo = if(mark == \grow) { this.rainRateMin } { this.sunRateMin };
+		var hi = if(mark == \grow) { this.rainRateMax } { this.sunRateMax };
+		^lo + ((hi - lo) * t)
+	}
 
 	// §16.9 the elastic return's short glide, ~3 frames
 	*elasticFrames { ^3 }
@@ -83,6 +123,11 @@ CQGuiNightTouch {
 		// before: harvest on empty shell paper, rip, solo — carrying the body's
 		// §6 solo identity down
 		if(button != 0) {
+			if(button == 1 and: { modifiers.isShift }
+				and: { CQNightGeometry.compassHit(geo[\almanac], point) }
+				and: { CQNightGeometry.shellRimHit(coco, point).not }) {
+				^this.compassDown(view, x, y, modifiers, button, clicks)
+			};
 			^this.forwardDown(view, x, y, modifiers, button, clicks, body)
 		};
 		if(CQNightGeometry.markHit(coco[\chevron], point)) {
@@ -100,13 +145,18 @@ CQGuiNightTouch {
 				angle: this.class.angleAt(coco[\center], point));
 			^this
 		};
-		// the body solo answers on the rim the hover cue drew, nowhere else
-		^this.forwardDown(view, x, y, modifiers, button, clicks,
-			if(CQNightGeometry.shellRimHit(coco, point)) { body })
+		// The drawn rim is body. Empty paper inside this large opaque shell
+		// view is still bay water, so it must reach the tide instead of being
+		// lost merely because Qt's rectangle is larger than the organism.
+		if(CQNightGeometry.shellRimHit(coco, point)) {
+			^this.forwardDown(view, x, y, modifiers, button, clicks, body)
+		};
+		^this.compassDown(view, x, y, modifiers, button, clicks)
 	}
 
 	shellMove { |index, view, x, y, modifiers = 0|
 		var point, coco, angle, delta, name;
+		if(compassDrag.notNil) { ^this.compassMove(view, x, y, modifiers) };
 		if(wind.isNil) { ^this.forwardMove(view, x, y, modifiers) };
 		point = this.prPoint(view, x, y);
 		coco = map.geometry[\cocos][wind[\index]];
@@ -122,6 +172,9 @@ CQGuiNightTouch {
 	}
 
 	shellUp { |index, view, x, y, modifiers = 0, button = 0|
+		if(compassDrag.notNil) {
+			^this.compassUp(view, x, y, modifiers, button)
+		};
 		// mouse-up is the punch's natural release. Qt grabs the press, so the up
 		// always arrives at the shell view that began it — but restore on *any*
 		// shell up regardless of index/button, so a stray up can never leave a
@@ -177,12 +230,15 @@ CQGuiNightTouch {
 			map.eyeActive = true;
 			^this
 		};
-		^this.forwardDown(view, x, y, modifiers, button, clicks,
-			if(CQNightGeometry.ringBodyHit(geo, point)) { \quantussy })
+		if(CQNightGeometry.ringBodyHit(geo, point)) {
+			^this.forwardDown(view, x, y, modifiers, button, clicks, \quantussy)
+		};
+		^this.compassDown(view, x, y, modifiers, button, clicks)
 	}
 
 	ringMove { |view, x, y, modifiers = 0|
 		var point, sens;
+		if(compassDrag.notNil) { ^this.compassMove(view, x, y, modifiers) };
 		if(eyeDrag.isNil) { ^this.forwardMove(view, x, y, modifiers) };
 		point = this.prPoint(view, x, y);
 		sens = this.class.eyeSensitivity;
@@ -197,6 +253,9 @@ CQGuiNightTouch {
 	}
 
 	ringUp { |view, x, y, modifiers = 0, button = 0|
+		if(compassDrag.notNil) {
+			^this.compassUp(view, x, y, modifiers, button)
+		};
 		if(eyeDrag.notNil) {
 			eyeDrag = nil;
 			map.eyeActive = false;
@@ -220,16 +279,17 @@ CQGuiNightTouch {
 		};
 		// the body solo answers exactly where the hover echo promised it would
 		// (§4.5): the flesh plus its margin, not the whole layer box
-		^this.forwardDown(view, x, y, modifiers, button, clicks,
-			if(CQNightGeometry.bodyHit(geo[\castles][k], point)) {
-				("castle" ++ (k + 1)).asSymbol
-			})
+		if(CQNightGeometry.bodyHit(geo[\castles][k], point)) {
+			^this.forwardDown(view, x, y, modifiers, button, clicks,
+				("castle" ++ (k + 1)).asSymbol)
+		};
+		^this.compassDown(view, x, y, modifiers, button, clicks)
 	}
 
 	// ---- the almanac corner: the sowing moon ----
 
 	almanacDown { |view, x, y, modifiers = 0, button = 0, clicks = 1|
-		var point = this.prPoint(view, x, y), geo = map.geometry, mark;
+		var point = this.prPoint(view, x, y), geo = map.geometry;
 		if(geo.isNil) { ^this };
 		// §4.5 again: a cable crossing the sky is grabbed, never sown through
 		if(button != 0 or: { modifiers.isAlt }
@@ -237,39 +297,48 @@ CQGuiNightTouch {
 			^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
 		};
 		if(CQNightGeometry.moonHit(geo[\almanac], point)) {
-			moonDrag = (start: point, amount: map.shakeAmount, travel: 0);
+			moonDrag = (start: point, amount: map.shakeAmount,
+				travel: 0, axis: nil);
 			^this
 		};
-		// the rain and the sun share the moon's sky since §9 — same hold, same
-		// 2.5 Hz, same one-undo-per-hold as when they hung under the pad
-		mark = CQNightGeometry.weatherHit(geo[\almanac], point);
-		if(mark.notNil and: { geo[\almanac][\skyMarks][mark].notNil }) {
-			^this.beginWeatherHold(mark)
-		};
-		// the rest of the corner is open water: harvest, solo and hover behave
-		// exactly as they do on any other night paper
-		^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
+		^this.compassDown(view, x, y, modifiers, button, clicks)
 	}
 
 	almanacMove { |view, x, y, modifiers = 0|
-		var point;
+		var point, delta, axis;
+		if(compassDrag.notNil) { ^this.compassMove(view, x, y, modifiers) };
 		if(moonDrag.isNil) { ^this.forwardMove(view, x, y, modifiers) };
 		point = this.prPoint(view, x, y);
+		delta = point - moonDrag[\start];
 		moonDrag[\travel] = max(moonDrag[\travel],
 			CQNightGeometry.distance(moonDrag[\start], point));
-		if(moonDrag[\travel] > this.class.tapTravel) {
-			// pouring the phase: the terminator follows the hand, so the drag is
-			// horizontal — right for a fuller moon — at the tide crescents' own
-			// sensitivity (§16.6, decided 2026-07-22)
+		if(moonDrag[\axis].isNil) {
+			axis = this.class.moonAxis(delta);
+			axis !? {
+				moonDrag[\axis] = axis;
+				if(#[grow, wither].includes(axis)) {
+					this.beginWeatherHold(axis, delta)
+				};
+			};
+		};
+		if(weatherHold.notNil) { this.updateWeatherHold(delta) };
+		if(moonDrag[\axis] == \phase) {
 			map.pourShake(moonDrag[\amount]
-				+ (this.class.deadzone(point.x - moonDrag[\start].x,
+				+ (this.class.deadzone(delta.x,
 					this.class.tapTravel) * this.class.crescentSensitivity));
 		};
 		^this
 	}
 
 	almanacUp { |view, x, y, modifiers = 0, button = 0|
-		if(weatherHold.notNil) { ^this.endWeatherHold };
+		if(compassDrag.notNil) {
+			^this.compassUp(view, x, y, modifiers, button)
+		};
+		if(weatherHold.notNil) {
+			this.endWeatherHold;
+			moonDrag = nil;
+			^this
+		};
 		if(moonDrag.isNil) { ^this.forwardUp(view, x, y, modifiers, button) };
 		if(moonDrag[\travel] <= this.class.tapTravel) { map.throwShake };
 		moonDrag = nil;
@@ -279,47 +348,50 @@ CQGuiNightTouch {
 	// ---- the compass water (§7.1): voyages, seeds, weather ----
 
 	compassDown { |view, x, y, modifiers = 0, button = 0, clicks = 1|
-		var point = this.prPoint(view, x, y), geo = map.geometry, almanac, seed, mark;
+		var point = this.prPoint(view, x, y), geo = map.geometry, almanac, seed;
+		var mode;
 		if(geo.isNil) { ^this };
 		almanac = geo[\almanac];
+		if(modifiers.isShift) { map.tideFocusGesture_(true) };
 		// §4.5: a cable crossing the water is grabbed, never blended through
 		if(modifiers.isAlt or: { overlay.patchAt(point).notNil }) {
+			map.finishTideFocus(modifiers.isShift);
 			^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
 		};
 		seed = CQNightGeometry.stampHit(almanac, point);
 		if(seed.notNil) {
-			// right on a seed clears that memory; while a graft is armed a left
-			// tap picks it as a parent; otherwise the press may still become a
-			// voyage — the tap/drag split is the moon's own 8 px threshold
 			if(button == 1) { ^map.clearCorner(seed) };
 			if(button != 0) { ^this };
-			if(map.breedArmed) { ^map.pickParent(seed) };
-			compassDrag = (mode: \blend, start: point, travel: 0, seed: seed,
-				before: map.matrixCopy);
+			compassDrag = (mode: \seed, start: point, travel: 0, seed: seed,
+				overwrite: modifiers.isShift,
+				focusWrite: map.tideFocusLatched);
 			^this
 		};
-		// The weather is consulted BEFORE the water it stands on, exactly as a
-		// seed is (§4.5's most-specific-mark-first rule). It used to be the
-		// other way round only because the marks hung in a row far from the pad;
-		// §9 scattered them onto the pool's own shores, inside the catch band,
-		// so the order has to say which one the hand means — and a mark is a
-		// mark, while the water around it is ground.
-		mark = CQNightGeometry.weatherHit(almanac, point);
-		if(mark.notNil and: { button == 0 }) {
-			if(mark == \breed) { ^map.armBreed };
-			^this.beginWeatherHold(mark)
-		};
 		if(CQNightGeometry.compassHit(almanac, point)) {
-			if(map.breedArmed) { map.disarmBreed };   // a stray pad press disarms
-			if(#[0, 1].includes(button).not) { ^this };
-			// left = a voyage that commits on release; right = the elastic —
-			// the same pour, but release snaps home (§7.1)
-			compassDrag = (mode: if(button == 1) { \elastic } { \blend },
+			mode = this.class.tideMode(button, map.tideFocus);
+			if(mode.isNil) {
+				map.finishTideFocus(modifiers.isShift);
+				^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
+			};
+			compassDrag = (mode: mode,
 				start: point, travel: 0, before: map.matrixCopy);
 			^this
 		};
-		// the rest of the corner is open water: harvest, solo and hover behave
-		// exactly as on any other night paper
+		map.finishTideFocus(modifiers.isShift);
+		^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
+	}
+
+	// The gill and Tab toggle one persistent focus state. While closed, a cable
+	// crossing the organ keeps §4.5 priority; while open, cable spans are below
+	// the water and the gill remains available to close the field.
+	tideGateDown { |view, x, y, modifiers = 0, button = 0, clicks = 1|
+		var point = this.prPoint(view, x, y);
+		if(button == 0 and: { clicks == 1 }
+			and: { CQNightGeometry.tideGateHit(map.geometry, point) }
+			and: { overlay.patchAt(point).isNil }) {
+			map.toggleTideFocus;
+			^this
+		};
 		^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
 	}
 
@@ -329,6 +401,13 @@ CQGuiNightTouch {
 		point = this.prPoint(view, x, y);
 		compassDrag[\travel] = max(compassDrag[\travel],
 			CQNightGeometry.distance(compassDrag[\start], point));
+		if(compassDrag[\mode] == \seed) {
+			if(compassDrag[\travel] > this.class.tapTravel
+				and: { map.cornerStamped(compassDrag[\seed]) }) {
+				map.previewBreed(compassDrag[\seed], point)
+			};
+			^this
+		};
 		if(compassDrag[\travel] > this.class.tapTravel) {
 			map.pourBlend(
 				CQNightGeometry.compassNorm(map.geometry[\almanac], point));
@@ -337,41 +416,106 @@ CQGuiNightTouch {
 	}
 
 	compassUp { |view, x, y, modifiers = 0, button = 0|
-		var drag = compassDrag, point, norm;
+		var drag = compassDrag, point, norm, seed;
 		if(weatherHold.notNil) { ^this.endWeatherHold };
 		if(drag.isNil) { ^this.forwardUp(view, x, y, modifiers, button) };
 		compassDrag = nil;
 		point = this.prPoint(view, x, y);
+		if(drag[\mode] == \seed) {
+			if(drag[\travel] <= this.class.tapTravel) {
+				map.seedTap(drag[\seed], drag[\overwrite],
+					drag[\focusWrite]);
+			} {
+				seed = CQNightGeometry.stampHit(map.geometry[\almanac], point);
+				if(seed.notNil and: { seed != drag[\seed] }
+					and: { map.cornerStamped(seed) }) {
+					map.breedCorners(drag[\seed], seed)
+				} {
+					map.clearVoyage
+				};
+			};
+			map.finishTideFocus(modifiers.isShift);
+			^this
+		};
 		norm = CQNightGeometry.compassNorm(map.geometry[\almanac], point);
 		if(drag[\travel] <= this.class.tapTravel) {
-			// a tap: on a seed it stamps the live matrix into that memory; on
-			// open water it is one committed step to that weather — the pad is
-			// a landscape, and pointing at a place takes you there. A right
-			// tap is nothing (an elastic of zero travel has nowhere to return
-			// from).
-			if(drag[\seed].notNil) { ^map.stampCorner(drag[\seed]) };
-			if(drag[\mode] == \blend) { ^map.commitBlend(norm, drag[\before]) };
-			^map.clearVoyage
+			map.clearVoyage;
+			map.finishTideFocus(modifiers.isShift);
+			^this
 		};
-		if(drag[\mode] == \blend) { ^map.commitBlend(norm, drag[\before]) };
-		^map.elasticReturn(drag[\before])
+		if(drag[\mode] == \blend) {
+			map.commitBlend(norm, drag[\before])
+		} {
+			map.elasticReturn(drag[\before])
+		};
+		map.finishTideFocus(modifiers.isShift);
+		^this
 	}
 
-	// grow/wither: press = the first seed lands at once, the hold repeats at
-	// §7.2's 2.5 Hz. One hold = one undo op, committed at release.
-	beginWeatherHold { |mark|
-		weatherHold = (mark: mark, before: map.matrixCopy, landed: false);
-		map.weatherActive_(mark);
+	// Public aliases name the new landscape without breaking scripts that still
+	// address the former compass surface during this branch.
+	tideDown { |view, x, y, modifiers = 0, button = 0, clicks = 1|
+		^this.compassDown(view, x, y, modifiers, button, clicks)
+	}
+
+	tideMove { |view, x, y, modifiers = 0|
+		^this.compassMove(view, x, y, modifiers)
+	}
+
+	tideUp { |view, x, y, modifiers = 0, button = 0|
+		^this.compassUp(view, x, y, modifiers, button)
+	}
+
+	tideActive { ^compassDrag.notNil }
+
+	landscapeMove { |view, x, y, modifiers = 0|
+		if(compassDrag.notNil) { ^this.compassMove(view, x, y, modifiers) };
+		^this.forwardMove(view, x, y, modifiers)
+	}
+
+	landscapeUp { |view, x, y, modifiers = 0, button = 0|
+		if(compassDrag.notNil) {
+			^this.compassUp(view, x, y, modifiers, button)
+		};
+		^this.forwardUp(view, x, y, modifiers, button)
+	}
+
+	// grow/wither: press = the first act lands at once; the hold repeats at the
+	// pull's visible weather tension. One hold = one undo op at release.
+	beginWeatherHold { |mark, delta|
+		var intensity = this.class.weatherIntensity(delta ? Point(0, 0));
+		weatherHold = (mark: mark, before: map.matrixCopy, landed: false,
+			intensity: intensity, phase: 0.0);
+		map.weatherGesture(mark, intensity);
 		this.prWeatherStep;
 		this.prScheduleWeather;
 		^this
 	}
 
+	updateWeatherHold { |delta|
+		weatherHold !? { |hold|
+			var next = this.class.weatherIntensity(delta);
+			if((next - hold[\intensity]).abs > 0.01) {
+				hold[\intensity] = next;
+				map.weatherGesture(hold[\mark], next);
+			};
+		};
+		^this
+	}
+
 	prScheduleWeather {
 		var hold = weatherHold;
-		AppClock.sched(1 / this.class.growRate, {
+		var period = this.class.weatherClockPeriod;
+		AppClock.sched(period, {
+			var rate, phase;
 			if(weatherHold === hold) {
-				this.prWeatherStep;
+				rate = this.class.weatherRate(hold[\mark], hold[\intensity]);
+				phase = hold[\phase] + (rate * period);
+				if(phase >= 1) {
+					phase = phase - 1;
+					this.prWeatherStep;
+				};
+				hold[\phase] = phase;
 				this.prScheduleWeather;
 			};
 			nil
@@ -389,7 +533,7 @@ CQGuiNightTouch {
 	endWeatherHold {
 		var hold = weatherHold;
 		weatherHold = nil;
-		map.weatherActive_(nil);
+		map.weatherGesture(nil, 0);
 		hold !? { map.commitWeather(hold[\mark], hold[\before], hold[\landed]) };
 		^this
 	}
@@ -401,13 +545,16 @@ CQGuiNightTouch {
 	cancelWeather {
 		var drag = compassDrag;
 		compassDrag = nil;
-		if(drag.notNil and: { drag[\travel] > this.class.tapTravel }) {
+		moonDrag = nil;
+		if(drag.notNil
+			and: { #[blend, elastic].includes(drag[\mode]) }
+			and: { drag[\travel] > this.class.tapTravel }) {
 			map.elasticReturn(drag[\before]);
 		} {
 			if(drag.notNil) { map.clearVoyage };
 		};
 		if(weatherHold.notNil) { this.endWeatherHold };
-		map.disarmBreed;
+		map.finishTideFocus(false);
 		^this
 	}
 

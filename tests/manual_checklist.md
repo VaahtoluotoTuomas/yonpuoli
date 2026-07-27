@@ -368,7 +368,7 @@ grafiikkaa — sinetti/sydän piirtyvät jo hold-tilasta, joten pidon aikana sin
 näkyvästi halkeaa tai sulkeutuu. **Vaatii GUI:n yökartan.**
 
 ```supercollider
-// N1 — Punch. Lähtötila: deck A soi (ks. yllä). Avaa GUI ja paina Tab -> yökartta.
+// N1 — Punch. Lähtötila: deck A soi (ks. yllä). Valitse toolbarista Night.
 CQ.hold(1, 1);                 // 1. lukitse coco1:n looppi: punainen sydän, sinetti ehjä
 // 2. Vie hiiri coco1:n (vasemman kuoren) SYDÄMEEN ja pidä OIKEAA nappia pohjassa:
 //    venttiili aukeaa pidon ajaksi -> uutta materiaalia (deck A) tippuu renkaaseen
@@ -389,7 +389,7 @@ materiaalia/kohinaa kasaavaan tilaan:
 
 - **irrota hiiren nappi** (luonnollinen vapautus)
 - **Esc** (pidä nappia, paina Esc)
-- **Tab** (pidä nappia, paina Tab — näkymä vaihtuu, hold palautuu silti)
+- **Tab** (pidä nappia, paina Tab — vesifokus vaihtuu, hold palautuu silti)
 - **välilyönti = panic** (pidä nappia, paina space; jälkeen `CQ.resume`)
 - **ikkunan X / `CQ.free`** ja **CmdPeriod (Ctrl+.)** — nämä repivät koko GUI:n;
   hold palautuu tilaan, CmdPeriodin jälkeen vaadi `CQ.reboot`.
@@ -420,7 +420,7 @@ sitten läppärin maksimoitu koko.
 ```supercollider
 // N2 — Kevättulva. Aja rivi kerrallaan. Vaatii GUI:n; luokkakirjasto
 // uudelleenkäännetty (Ctrl+Shift+L) ennen tätä.
-CQ.boot;                       // 1. käynnistä ja avaa GUI, paina Tab -> yökartta
+CQ.boot;                       // 1. käynnistä ja avaa GUI, valitse toolbarista Night
 // 2. MINIMIKOKO: raahaa ikkuna 1280x720:een (tai lähimpään). Katso koko lahtea
 //    kerralla: onko mittakaava nyt käden mittainen vai liian ahdas? Erityisesti
 //    (a) linnojen sisäkellot, (b) kuorten sydämet, (c) renkaan silmä (myrskyiiris),
@@ -455,7 +455,67 @@ katselmoinnissa: (a) hyväksy kielioppi sellaisenaan, (b) kutista `shellOuterR` 
       (kaapeli voittaa osoittimen alla) jää voimaan, merkin koti ei liiku.
       Kokoihin palataan vielä §9:n uuden sommitelman yhteydessä.)
 
-### N3 — Kuu taivaalle, lampi veteen (§9, uudelleensuunniteltu 2026-07-27)
+### N3 — Kuu ja koko lahden vuorovesi (§9, versio 3, 2026-07-27)
+
+Lampi ja almanakkarypäs on poistettu. Neljä siementä ovat nyt ainoat levossa
+näkyvät vuorovesimerkit; niiden väliin ei piirretä rajaa. Kuu on yksin oikean
+linnun takaisessa ylätaivaassa ja kantaa myös sään pystyeleissään.
+
+```supercollider
+// N3 — Vaatii GUI:n; Ctrl+Shift+L ennen tätä.
+CQ.boot;                       // 1. avaa GUI, valitse toolbarista Night
+// 2. Katso koko maisemaa: tuntuuko kuu taivaankappaleelta eikä sivupaneelilta?
+//    Tuntuvatko neljä pientä siementä yhden laajan kentän tuulensuunnilta?
+// 3. Kuun pitää aueta pienenä sirppinä. Napauta eri vaiheissa: neljänneskuun
+//    pitäisi tuottaa vain noin 4 johtoa, puolikuun noin 18 ja täyden noin 70.
+//    Vedä vaakaan = vaihe. Vedä alas = sade/grow, ylös = aurinko/wither:
+//    aivan kuun vieressä sää on harva; noin 40 px vedolla sadepisaroita /
+//    auringonsäteitä on enemmän ja rytmi nopeampi. Sade saa silti olla selvästi
+//    aurinkoa hitaampi. Merkit näkyvät vain pidon ajan.
+CQ.patch(\tri1, \coco1_spaf, 0.55);
+CQ.patch(\envB, \castle3_fm, -0.45);
+// 4. Tavallinen tap vapaaseen kuoreen EI kirjoita. Shift+tap tallentaa/korvaa;
+//    täyden tap palauttaa ja oikea tyhjentää. Avaa Tab/kidus-fokus: nyt tap
+//    vapaaseen kuoreen tallentaa myös ilman näppäimistöä.
+// 5. Klikkaa TAI vedä >8 px fokusoimatonta avointa vettä: mitään ei tapahdu.
+//    Paina Tab: alakeskuksen kidus aukeaa sinisenä ja kaapelijänteet uppoavat.
+//    Nyt vasen morph jatkuu myös kehojen yli; vapautus = yksi undo-op.
+// 6. Paina Tab uudelleen tai klikkaa kidusta: sama pysyvä fokus sulkeutuu.
+//    Shift antaa hetkellisen fokuksen. Fokuksessa oikea veto on elastinen ja
+//    palaa lähtöön; fokuksen ulkopuolella oikea veto on edelleen lasso.
+// 7. Varmista kolme eri kuvaa: vapaa paikka = avoin kuori; tallenna siihen
+//    täysin tyhjä patch = suljettu tumma leposiemen; tallenna soiva patch =
+//    tiheyden mukaan hohtava suonellinen ydin. Vedä täysi toisen täyden päälle:
+//    lanka kulkee kaikkien kehojen päällä, tarttuu kohteen keskelle ja kohde
+//    kukkii sinisellä kaksoiskehällä.
+// 8. Katso kaikki viisi castlea: ei lyhyitä irrallisia viivastubeja, ei
+//    suorakulmaisia tyhjiä endpoint-aukkoja castlen ääriviivan päällä.
+```
+
+**Katso erityisesti:**
+
+1. Onko kuu tarpeeksi kaukana linnusta ja tarpeeksi pieni (Ø 56), vai näyttääkö
+   se yhä irralliselta kontrollilta?
+2. Erottuvatko avoin kuori, tallennettu hiljaisuus ja elävä siemen varmasti
+   toisistaan, mutta pysyvätkö ne silti osana maisemaa?
+3. Näkyvätkö aktiiviset, enintään 8 % wavefront-kaaret riittävästi ilman että
+   vesi muuttuu koristeanimaatioksi?
+4. Onko Tab/kidus-fokus ymmärrettävä ja säilyykö patchin topologia luettavana?
+5. Ovatko uusi store/recall-suoja ja breedin kelvollinen pudotuskohde
+   yksiselitteisiä?
+6. Ovatko castlet ehjiä kaikissa viidessä asennossa ilman laatikkoleikkauksia?
+7. Koko lahden kokojälkitarkastus 100/125/150 %. Juuret arvioidaan tässä, mutta
+   niiden preamp-kehoa ei vielä toteutettu.
+
+- [x] N3 hyväksytty (pvm: 2026-07-27 — kuun koti/koko, siementen paikat,
+      vuorovesipalautteen voimakkuus, Tab/kidus-fokus, breed-vihje,
+      castle-kerrokset ja kokojen jälkitarkastus. Myöhemmäksi polish-velaksi
+      kirjattiin yksi rajattu poikkeus: Tab-kiduksen pitää voittaa sen yli
+      kulkeva kaapeli hoverissa ja painalluksessa sekä pysyä löydettävänä
+      kaapeli-inkistä huolimatta. Tämä ei avaa N3-porttia uudelleen.)
+
+<details>
+<summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>
 
 Ensimmäinen §9-versio piti kuun, padon ja säärivin yhdessä oikeassa yläkulmassa
 (niin kuin suunnitelmateksti sanoi) eikä ratkaissut valikkomaisuutta. Tämä
@@ -490,7 +550,7 @@ tuntuu liian pieneltä käyttää, vipu on minimi-ikkunan koko (§15), ei sijain
 
 ```supercollider
 // N3 — Kuu ja lampi. Vaatii GUI:n; Ctrl+Shift+L ennen tätä.
-CQ.boot;                       // 1. avaa GUI, Tab -> yökartta
+CQ.boot;                       // 1. avaa GUI, valitse toolbarista Night
 // 2. Katso KOKO lahtea, älä yhtä kulmaa: onko oikea yläkulma nyt tyhjä vettä?
 //    Lukeeko taivas maisemana (lintu — castle — kuu+sää — lintu) ja pohjukka
 //    vetenä johon lampi ja juuret kuuluvat? Vai näyttääkö jompikumpi yhä
@@ -528,4 +588,4 @@ skip-merkin, koska siemenet ovat padin koko käyttöliittymä. Vaihtoehdot:
 - [ ] N3 hyväksytty (pvm: ______ — rypään purku, lammen paikka ja koko,
       taivaan sää, siementen kaapelivarjo, kokojen jälkitarkastus)
 
-
+</details>

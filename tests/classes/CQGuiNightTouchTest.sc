@@ -90,6 +90,66 @@ CQGuiNightTouchTest : UnitTest {
 			"the dead tap costs a sliver of the moon's range, never a jump");
 	}
 
+	// One moon, three acts. The first 8 px still belong to a tap; after that
+	// the dominant axis locks for the rest of the gesture. Horizontal pours
+	// phase, down brings rain/grow and up brings sun/wither.
+	test_moonAxisLocksWeatherIntoTheBody {
+		this.assertEquals(CQGuiNightTouch.moonAxis(Point(4, 3)), nil,
+			"a tap-sized moon wobble chooses no act");
+		this.assertEquals(CQGuiNightTouch.moonAxis(Point(20, 6)), \phase,
+			"a horizontal pull pours the moon phase");
+		this.assertEquals(CQGuiNightTouch.moonAxis(Point(-20, 6)), \phase,
+			"phase is the same act in either horizontal direction");
+		this.assertEquals(CQGuiNightTouch.moonAxis(Point(5, 20)), \grow,
+			"a downward pull calls rain / grow");
+		this.assertEquals(CQGuiNightTouch.moonAxis(Point(5, -20)), \wither,
+			"an upward pull calls sun / wither");
+	}
+
+	test_weatherTensionIsVisibleAndPerceptuallyBalanced {
+		this.assertFloatEquals(
+			CQGuiNightTouch.weatherIntensity(Point(0, 8)), 0,
+			"the axis-lock distance has no hidden weather jump", 1e-9);
+		this.assertFloatEquals(
+			CQGuiNightTouch.weatherIntensity(Point(0, 24)), 0.5,
+			"a half pull carries half the visible weather tension", 1e-9);
+		this.assertFloatEquals(
+			CQGuiNightTouch.weatherIntensity(Point(0, -40)), 1,
+			"sun reaches full tension in the same travel as rain", 1e-9);
+		this.assert(
+			CQGuiNightTouch.weatherRate(\grow, 0)
+				< CQGuiNightTouch.weatherRate(\grow, 1),
+			"pulling rain farther makes it denser");
+		this.assert(
+			CQGuiNightTouch.weatherRate(\wither, 0)
+				< CQGuiNightTouch.weatherRate(\wither, 1),
+			"pulling sun farther makes it stronger");
+		this.assert(
+			CQGuiNightTouch.weatherRate(\grow, 1)
+				< CQGuiNightTouch.weatherRate(\wither, 0),
+			"even hard rain stays slower than mild sun because their steps differ");
+		this.assert(
+			CQGuiNightTouch.weatherClockPeriod
+				< (1 / CQGuiNightTouch.sunRateMax),
+			"the tension integrator follows the hand faster than its fastest act");
+	}
+
+	// Open paper is inert until the bay is deliberately focused. Shift is the
+	// momentary entrance and Tab/the gill is the persistent entrance; once
+	// focused, left pours and right becomes the elastic voyage. Outside focus,
+	// right remains the learned harvest lasso and an accidental left sweep
+	// changes nothing.
+	test_tideGestureRequiresWaterFocus {
+		this.assertEquals(CQGuiNightTouch.tideMode(0, false), nil,
+			"plain left on unfocused water is inert");
+		this.assertEquals(CQGuiNightTouch.tideMode(1, false), nil,
+			"plain right on unfocused water remains the harvest lasso");
+		this.assertEquals(CQGuiNightTouch.tideMode(0, true), \blend,
+			"focused left pours the bay");
+		this.assertEquals(CQGuiNightTouch.tideMode(1, true), \elastic,
+			"focused right is the explicit elastic voyage");
+	}
+
 	test_sensitivities {
 		this.assert(
 			((4pi * CQGuiNightTouch.windSensitivity) - 1).abs < 1e-9,

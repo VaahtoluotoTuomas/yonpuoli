@@ -124,16 +124,13 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   "improve" accepted G1/G2/G3 surface on your own initiative.** The bullets
   below record what that accepted surface is and the laws it taught — historical
   reference, not a to-do list.
-- **Build-order step 3, the almanac becomes landscape (§9), is built and green
-  but NOT accepted (2026-07-27). It is not on `nocturne`.** `nocturne` stands at
-  `a5e4b17` (the flood) and the §9 work lives on branch `nocturne-nightscape`;
-  the user is thinking it over and said so plainly ("en ole ihan varma tästä,
-  tämä ei oikein toimi"). Review = checklist **N3**. Do not merge it, do not
-  build step 4 on top of it, and do not treat its `GUI_SPEC.md` block as
-  accepted surface — that block carries its own provisional status note, and if
-  N3 is rejected the block is deleted rather than amended. If work continues
-  while the user thinks, prefer §13's ear pass, which touches none of this.
-  What the two attempts taught, all of it now in the plan:
+- **Build-order step 3, the almanac becomes landscape (§9), reached v3.2 on
+  `nocturne-nightscape` and was accepted by the user on 2026-07-27 (checklist
+  N3).** It is ready for an explicitly requested merge; do not merge branches
+  merely because the review is closed. Build-order step 4, the castle range
+  ripples (§3), is next. The accepted increment stops at tide+moon; the
+  functional root/preamp body remains its own later step.
+  What the three attempts taught, all of it now in the plan:
   1. **Version 1 was built exactly as `NIGHT_STANDALONE_PLAN.md` said and was
      rejected on sight.** The plan text was wrong, not the implementation: §7.2
      said "the fix is not to move them somewhere else … break the axis", which
@@ -142,23 +139,38 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
      the old text kept as a warning; read the corrected §9 before touching this.
   2. The real fault was **grouping by function instead of by body** — a shake
      control, a matrix blend and three matrix ops sitting together touch no body
-     around them, which is what a toolbar is, and re-composing a toolbar leaves
-     a toolbar. Version 2 breaks the cluster: moon + rain + sun to the sky at
-     the birds' altitude (they act on the *live bay*), pool + graft to the bay's
-     bottom water tangent to the lower edge (the graft takes its parents as seed
-     taps, so it may not live a bay away from them), right corner left as empty
-     water. The tide's math survives via an elliptical disc↔square mapping whose
-     inverse singularity is snapped at the source (`cornerSnap`), so a stamped
-     corner still recalls bit-exact.
-  3. Two costs, both measured, neither hidden — and the first was **my wrong
-     claim, corrected**: the move buys *belonging, not size* (18 535 px² vs the
-     G3 pad's 19 600 — a Qt layer is a **rectangle**, so free-*disc* comparisons
-     overstate room), and the pool now lies under the cable field, so §4.5 gives
-     cables the press on its bay-facing seeds (17 % / 35 % of random 35-cable
-     bays, 0 % for the landward seeds and the whole sky). That last one is an
-     **open user decision** in N3 — accept, a local "inside the shore the pool
-     wins" exception, or move the pool back to free water. **Do not settle it in
-     code.**
+     around them, which is what a toolbar is. Version 2 separated the pieces,
+     but the bottom ellipse still read as a placed control and its seeds were
+     measurably shadowed by cables.
+  3. **Version 3 removes the pool body.** Four inward-pointing memory seeds at
+     the open NW/NE/SW/SE winds imply one direct bilinear field behind the
+     organism; no shore, pad, outline or ambient water ink remains. After the
+     first review, unfocused water became inert even under a long left sweep.
+     Tab and the clickable lower-centre gill latch water focus; Shift is its
+     momentary form. Focus backgrounds cable spans and removes their hit paths,
+     but endpoints and bodies retain priority; left commits, right is elastic,
+     and outside focus right stays harvest. Seeds have three truths: vacant
+     open husk, stored-silence dark closed kernel, living luminous kernel.
+     Shift writes; a latched Tab/gill focus also lets a vacant tap write;
+     filled tap recalls and right clears. Filled-seed→filled-seed breeds
+     directly; a valid target catches the top-layer thread and blooms.
+  4. The moon is one Ø56 body beyond bird B and opens as a 0.22 crescent.
+     Tap = shake, horizontal = phase; sowing density is `0.2 × phase²`.
+     Vertical down/up = rain/grow and sun/wither after a dominant-axis 8 px
+     lock. The next 32 px visibly tension rain 0.6…1.6 Hz and sun 2.5…6 Hz;
+     weather glyphs exist only during the hold.
+  5. Castle paper and its endpoint detail views are transparent; irregular
+     ground-filled flesh masks the ring/chords at their real body edge. The
+     old rectangle-repair ring stubs are forbidden.
+  6. **Accepted later polish debt:** the Tab-equivalent lower-centre gill must
+     become the one deliberate exception to cable-first priority. Hover and
+     press must find it before a crossing cable, and a top-layer echo, local
+     knockout or another reviewed cue must keep it discoverable beneath cable
+     ink. Do not generalize this exception to other controls.
+  7. Roots are not a decoration pass. The actual DSP is source selection →
+     drive/bias preamp → Coco audio, with `envA/B` only the post-preamp
+     Amplitude side-growth. When the root increment arrives it must draw and
+     play that anatomy; extra decorative root lines alone are not authorized.
 - `tests/run_all.scd` gained a `completed`/`aborted` guard (on the same branch,
   its own commit, cherry-pickable): an uncaught error inside a test class used
   to print `CQ_TESTS_FAILED` and then let the run reach `CQ_TESTS_PASSED`,
@@ -202,17 +214,15 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
     global rect), with two exits — cursor leaves, or drag ends. Any future drag
     affordance in this codebase inherits that: Qt's drag events cannot track hover
     for you, the cursor can.
-  - The Night toolbar is the **almanac corner** in the top-right sky
-    (`GUI_SPEC.md` §6/§6.1/§16.6): the **sowing moon**, and beneath it G3's
-    reserved **empty water** — pinned by clearance tests, never drawn, because
-    a dead control breaks §4.5 and §16.12 at once. **Accepted 2026-07-22
-    (manual block G2.11)** after three correction rounds, whose decisions are
-    all normative now:
+  - The **sowing moon's musical laws** were accepted 2026-07-22 (manual block
+    G2.11) after three correction rounds. Its old almanac-corner home is now
+    historical; on the §9 v3 branch the same moon is a solitary weather body
+    beyond bird B. These decisions remain normative:
     1. **The moon's phase is how MUCH is sown, not how hard.** `shake` gained a
        `density` argument (SPEC §5.5, default 0.1 = the historical throw, so the
-       code layer and patterns are untouched); `CQGui.sowDensity` maps the phase
-       linearly onto it, so the **half moon is exactly the v1.0 handful** (10 %
-       ≈ 35 cables) and the full moon is twice that. The old weight-ceiling
+       code layer and patterns are untouched); `CQGui.sowDensity` now maps the
+       phase quadratically (`0.2 × phase²`), so a quarter moon averages ~4
+       cables, half ~18 and full ~70. The old weight-ceiling
        mapping was redundant (`patchDepth` is already the how-alive macro) and
        inaudible — every throw rewrote the same ~35 cells, so a thin crescent
        read as "everything went quiet". **The new moon clears the bay** (round
@@ -230,10 +240,12 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
        control that could not be used without reading text (§16.4). The
        Inspector's menu is one toolbar click away from either view, and G3 never
        depended on it (the compass stamps its corners from the live matrix).
-    `shakeAmount` fans out through `CQGui.onShakeAmount` (default now 0.5 = the
-    half moon), so the Day knob and the moon are two views of one number, and
+    `shakeAmount` fans out through `CQGui.onShakeAmount` (default now 0.22, a
+    small crescent), so the Day knob and the moon are two views of one number, and
     `Cocoquantus.shake` announces `\action, \shake` exactly as skip does, which
-    is what lets one light serve three layers. The moon is Ø 52 after round two.
+    is what lets one light serve three layers. The current §9 body is Ø 56.
+    A topology-aware “sweet spot” / ecological shake was explicitly deferred
+    on 2026-07-27; do not fold that musical redesign into GUI polish.
   - **Spesal coupling chords** (accepted 2026-07-22, manual block G2.11b): the
     night's inner clock showed a castle's *state* but not
     what the state means — which castle it reads. The chord now draws that on
@@ -255,9 +267,10 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
     under the hovered river — because the coupling is structure, not a quantity,
     and the ring's interior belongs to the iris, the fireflies, the cables and
     the lasso. The chord bows toward the eye (0.4, clamped at 0.35 × ringR) so
-    an adjacent pair never doubles the river, and both ends stop at the castle
-    boxes via `CQNightGeometry.boxExit` — half a square box's *width* along a
-    diagonal ray is still inside the box, which the clearance test caught.
+    an adjacent pair never doubles the river. Since the 2026-07-27 layer fix,
+    both ends run to the castle centres on the ring layer; transparent castle
+    paper masks them with the irregular ground-filled flesh, so they emerge at
+    the true body edge without a rectangular gap.
   - The night's read head cost four review rounds and produced laws worth keeping:
     **a moving target is not a control** (skip's tap on the comet was replaced by a
     stationary mark under the mouth chevron); **a regime display measures the
@@ -316,6 +329,11 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   against SPEC §9's 25 % ceiling, GUI 2.8–3.8 % at rest with 20 planted
   cables, 3–6.8 % with `mayhem`'s 352. The repaint-trigger question is now
   measured (see the G3 bullet above); the user's own soak runs as G2.13.
+- Accepted N3 v3.2 gate on `nocturne-nightscape` (2026-07-27):
+  `CQ_COMPILE_OK`, **11,269 unit passes / 0 failures / 28/28 classes**,
+  `CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+  `CQ_GUI_DRAWER_REENTRY_PASSED` and `CQ_GUI_NIGHT_PASSED`; `CQ_HOLD_OK`
+  carries because the increment did not touch DSP.
 - The four former `GUI_SPEC.md` seams were resolved by the user on 2026-07-19 and are
   recorded in the spec and `PLAN.md`: nine charge channels, the G1 harvest lasso,
   display-only mic sprout and static REC transition/error states. Do not reopen or

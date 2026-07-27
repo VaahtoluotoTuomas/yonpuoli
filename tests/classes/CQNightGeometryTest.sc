@@ -171,7 +171,7 @@ CQNightGeometryTest : UnitTest {
 			"the layer box's corner is water, not flesh");
 		geo[\castles].do { |castle, k|
 			// the hover echo is drawn on that same boundary — it must fit inside
-			// the castle's own opaque layer or it would be clipped
+			// the castle's transparent view bounds or it would still be clipped
 			this.assert(castle[\box].width
 				>= (2 * (castle[\bodyRx] + CQNightMeasures.bodyMargin))
 				and: { castle[\box].height
@@ -341,7 +341,7 @@ CQNightGeometryTest : UnitTest {
 	// rides the birds' own altitude band and the tide pool hangs below it, so
 	// the two are a composition rather than a column, and their layers still
 	// have to keep off each other: a moon flash may never re-ink the water.
-	test_almanacCorner {
+	legacy_almanacCorner {
 		[[1280, 570], [1920, 855]].do { |size|
 			var geo = CQNightGeometry.compute(size[0], size[1]);
 			var almanac = geo[\almanac];
@@ -431,7 +431,7 @@ CQNightGeometryTest : UnitTest {
 	// its four memories seated on it at the diagonal winds and the weather
 	// scattered around it — all inside their own layer box, all on water no
 	// body reaches, at both reference stage sizes.
-	test_compassWater {
+	legacy_compassWater {
 		[[1280, 570], [1920, 855]].do { |size|
 			var geo = CQNightGeometry.compute(size[0], size[1]);
 			var almanac = geo[\almanac];
@@ -594,6 +594,154 @@ CQNightGeometryTest : UnitTest {
 		};
 	}
 
+	// The moon is no longer one item in an almanac panel. It is a solitary
+	// weather body beyond bird B: slightly higher than the birds, clear of the
+	// name/drop body, and large enough to play without becoming a second sun.
+	// Rain and sun are transient faces of its vertical gesture, so their
+	// anchors fit the moon layer but no static weather target survives.
+	test_moonIsASolitaryWeatherBody {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var moon = geo[\almanac][\moon];
+			var moonR = geo[\almanac][\moonR];
+			var box = geo[\almanac][\box];
+			var bird = geo[\birds][1];
+			var previews = geo[\almanac][\weatherPreview];
+			this.assert(box.left >= 0 and: { box.right <= size[0] }
+				and: { box.top >= 0 } and: { box.bottom <= size[1] },
+				"the remote moon stays inside the sky (%x%)".format(*size));
+			this.assert(moon.x > bird[\dropRect].right
+				and: { box.intersects(bird[\dropRect]).not },
+				"the moon lives beyond bird B, never beside the centred organism (%x%)"
+					.format(*size));
+			this.assert(moon.y < bird[\center].y,
+				"the moon is slightly above the birds, not aligned into a row (%x%)"
+					.format(*size));
+			this.assertFloatEquals(moonR,
+				CQNightMeasures.moonRadius * geo[\scale],
+				"the moon keeps the reduced playable body at this scale (%x%)"
+					.format(*size), 0.001);
+			this.assert(box.contains(Rect.aboutPoint(moon,
+				moonR + CQNightMeasures.moonHalo,
+				moonR + CQNightMeasures.moonHalo)),
+				"the moon and its flash halo fit the sky layer (%x%)"
+					.format(*size));
+			#[grow, wither].do { |name|
+				this.assert(box.contains(Rect.aboutPoint(previews[name],
+					CQNightMeasures.markHitReach,
+					CQNightMeasures.markHitReach)),
+					"the transient % face cannot clip at the moon (%x%)"
+						.format(name, *size));
+			};
+			this.assert(geo[\almanac][\skyMarks].isNil
+				and: { geo[\almanac][\weather].isNil }
+				and: { geo[\almanac][\pool].isNil },
+				"no almanac panel, static weather mark or pool body survives (%x%)"
+					.format(*size));
+			this.assert(CQNightGeometry.moonHit(geo[\almanac], moon)
+				and: { CQNightGeometry.moonHit(geo[\almanac],
+					moon + Point(moonR + 3, 0)).not },
+				"the moon answers on its drawn body only (%x%)".format(*size));
+		};
+	}
+
+	// The compass is now the bay's large invisible tide field. Its four memory
+	// seeds are the only resting marks: no shore, outline or graft. The field
+	// deliberately passes under the organism, while each seed itself lands in
+	// an open wind and maps directly to one exact bilinear corner.
+	test_tideFieldBelongsToTheWholeBay {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var tide = geo[\almanac][\compass];
+			var stamps = geo[\almanac][\stamps];
+			var gate = geo[\tideGate], gateBox = geo[\tideGateBox];
+			var endpointNames = CQMatrix.sourceNames ++ CQMatrix.destNames;
+			this.assert(tide.left >= 0 and: { tide.right <= size[0] }
+				and: { tide.top >= 0 } and: { tide.bottom <= size[1] },
+				"the tide's four winds stay on the stage (%x%)".format(*size));
+			this.assert(tide.width > (size[0] * 0.35)
+				and: { tide.height > (size[1] * 0.6) },
+				"the tide is a landscape field, not a disguised pad (%x%)"
+					.format(*size));
+			this.assertEquals(stamps,
+				[tide.leftTop, tide.rightTop, tide.leftBottom, tide.rightBottom],
+				"the four seeds ARE the tide's TL TR BL BR corners (%x%)"
+					.format(*size));
+			stamps.do { |stamp, c|
+				this.assertEquals(CQNightGeometry.stampHit(
+					geo[\almanac], stamp), c,
+					"seed % answers at its own open wind (%x%)"
+						.format(c, *size));
+				geo[\castles].do { |castle, k|
+					this.assert(castle[\box].containsPoint(stamp).not,
+						"seed % clears castle % (%x%)".format(c, k + 1, *size));
+				};
+				geo[\cocos].do { |coco, i|
+					this.assert(coco[\shellBox].containsPoint(stamp).not,
+						"seed % clears cocoon % (%x%)".format(c, i + 1, *size));
+				};
+				geo[\birds].do { |bird, i|
+					this.assert(bird[\dropRect].containsPoint(stamp).not,
+						"seed % clears bird % (%x%)".format(c, i + 1, *size));
+				};
+				endpointNames.do { |name|
+					var spec = CQGuiNightMap.endpointSpec(name);
+					this.assert(CQNightGeometry.endpointBox(
+						geo[\endpoints][name], spec[\kind], spec[\lamp])
+						.containsPoint(stamp).not,
+						"seed % clears endpoint % (%x%)".format(c, name, *size));
+				};
+				this.assertEquals(CQNightGeometry.compassNorm(
+					geo[\almanac], stamp), Point(c % 2, c div: 2),
+					"seed % recalls its corner bit-exact (%x%)"
+						.format(c, *size));
+			};
+			this.assert(CQNightGeometry.compassHit(geo[\almanac], tide.center),
+				"open water inside the four winds answers");
+			this.assert(CQNightGeometry.compassHit(geo[\almanac],
+				tide.leftTop - Point(2, 2)).not,
+				"water outside the four winds remains ordinary ground");
+			block { |done|
+				var middle = CQNightGeometry.compassNorm(
+					geo[\almanac], tide.center);
+				this.assertFloatEquals(middle.x, 0.5,
+					"the landscape's middle is the bilinear middle (x)", 1e-9);
+				this.assertFloatEquals(middle.y, 0.5,
+					"the landscape's middle is the bilinear middle (y)", 1e-9);
+			};
+			this.assertEquals(CQNightGeometry.compassPointAt(
+				geo[\almanac], Point(0.25, 0.75)),
+				Point(tide.left + (tide.width * 0.25),
+					tide.top + (tide.height * 0.75)),
+				"field and tide use one direct coordinate frame");
+			this.assertFloatEquals(gate.x, geo[\ringCenter].x,
+				"the tide gill grows on the organism's centre line", 0.001);
+			this.assert(tide.containsPoint(gate)
+				and: { Rect(0, 0, size[0], size[1]).contains(gateBox) },
+				"the tide gill belongs to the field and stays on the stage (%x%)"
+					.format(*size));
+			this.assert(CQNightGeometry.tideGateHit(geo, gate)
+				and: { CQNightGeometry.tideGateHit(geo,
+					gate + Point(CQNightMeasures.tideGateHit + 2, 0)).not },
+				"the gill answers on its one deliberate touch body (%x%)"
+					.format(*size));
+			geo[\castles].do { |castle, k|
+				this.assert(gateBox.intersects(castle[\box]).not,
+					"the tide gill clears castle % (%x%)".format(k + 1, *size));
+			};
+			geo[\cocos].do { |coco, i|
+				this.assert(gateBox.intersects(coco[\shellBox]).not,
+					"the tide gill clears cocoon % (%x%)".format(i + 1, *size));
+			};
+			endpointNames.do { |name|
+				var spec = CQGuiNightMap.endpointSpec(name);
+				this.assert(gateBox.intersects(CQNightGeometry.endpointBox(
+					geo[\endpoints][name], spec[\kind], spec[\lamp])).not,
+					"the tide gill clears endpoint % (%x%)".format(name, *size));
+			};
+		};
+	}
+
 	// The spesal coupling chord (§16.6): both ends stop outside their castle's
 	// own opaque box — a line under an opaque layer is a line nobody sees — it
 	// bows inward far enough that an *adjacent* pair can never be mistaken for
@@ -608,10 +756,11 @@ CQNightGeometryTest : UnitTest {
 					var path = CQNightGeometry.spesalChord(geo, k, partner);
 					var curveMid = (path[0] * 0.125) + (path[1] * 0.375)
 						+ (path[2] * 0.375) + (path[3] * 0.125);
-					this.assert(geo[\castles][k][\box].containsPoint(path[0]).not
-						and: { geo[\castles][partner][\box]
-							.containsPoint(path[3]).not },
-						"chord % -> % leaves both opaque boxes (%x%)"
+					this.assertEquals(path[0], geo[\castles][k][\center],
+						"chord % -> % begins beneath the source flesh (%x%)"
+							.format(k, partner, *size));
+					this.assertEquals(path[3], geo[\castles][partner][\center],
+						"chord % -> % ends beneath the reader flesh (%x%)"
 							.format(k, partner, *size));
 					this.assert(this.prDistance(path[1], eye) >= (floor - 0.001),
 						"chord % -> % keeps its distance from the eye (%x%)"
@@ -673,7 +822,7 @@ CQNightGeometryTest : UnitTest {
 	// diagonal is exactly a corner** — a stamped memory that cannot be reached
 	// bit-exact is a memory the pad has lost (rake 13). These fixed points are
 	// asserted on the pure math, with no window and no almanac anywhere near.
-	test_poolMappingKeepsItsCorners {
+	legacy_poolMappingKeepsItsCorners {
 		var root = 1 / 2.sqrt;
 		var corners = [Point(-1, -1), Point(1, -1), Point(-1, 1), Point(1, 1)];
 		this.assertEquals(CQNightGeometry.squareToDisc(Point(0, 0)), Point(0, 0),
@@ -743,15 +892,12 @@ CQNightGeometryTest : UnitTest {
 	// that stops fitting fails here instead of in the user's hands. Every castle
 	// irregularity is seeded inside `compute`, so all of it is deterministic.
 
-	// every opaque layer the night paints on, in z order
+	// every truly opaque body layer the night paints on, in z order
 	prOpaqueLayers { |geo|
 		var layers = List.new;
 		layers.add([\ring, geo[\ringBox]]);
 		layers.add([\eye, Rect.aboutPoint(geo[\eye],
 			CQNightMeasures.eyeLayerR, CQNightMeasures.eyeLayerR)]);
-		geo[\castles].do { |castle, k|
-			layers.add([("castle" ++ (k + 1)).asSymbol, castle[\box]])
-		};
 		geo[\cocos].do { |coco, i|
 			layers.add([("shell" ++ (i + 1)).asSymbol, coco[\shellBox]])
 		};
@@ -759,15 +905,14 @@ CQNightGeometryTest : UnitTest {
 			layers.add([("bird" ++ (i + 1)).asSymbol, bird[\box]])
 		};
 		layers.add([\almanac, geo[\almanac][\box]]);
-		layers.add([\compass, geo[\almanac][\compassBox]]);
 		^layers.asArray
 	}
 
 	// An opaque layer covers whatever is under it, so two of them overlapping
-	// means one body is quietly eating another's ink. The river is the one
-	// exception in both directions: the castles stand ON it (and each redraws
-	// its own short passage as a stub, §16.6) and the storm iris keeps its own
-	// layer over the ring's centre so a storm repaint never re-inks the river.
+	// means one body is quietly eating another's ink. Castles are intentionally
+	// absent: their paper is clear and only their irregular painted flesh masks
+	// the river. The storm iris keeps its own layer over the ring's centre so a
+	// storm repaint never re-inks the river.
 	test_floodOpaqueLayersMissEachOther {
 		[[1280, 570], [1920, 855]].do { |size|
 			var geo = CQNightGeometry.compute(size[0], size[1]);
@@ -778,9 +923,7 @@ CQNightGeometryTest : UnitTest {
 					"the % layer stays on the stage (%x%)".format(a[0], *size));
 				layers.drop(i + 1).do { |b|
 					var pair = [a[0], b[0]];
-					var nested = pair.includes(\ring)
-						and: { pair.any { |name|
-							name == \eye or: { name.asString.beginsWith("castle") } } };
+					var nested = pair.includes(\ring) and: { pair.includes(\eye) };
 					if(nested.not) {
 						this.assert(a[1].intersects(b[1]).not,
 							"opaque layers % and % keep off each other (%x%)"

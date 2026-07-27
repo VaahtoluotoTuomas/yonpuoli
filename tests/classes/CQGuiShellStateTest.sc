@@ -26,17 +26,20 @@ CQGuiShellStateTest : UnitTest {
 		this.assertEquals(shell.viewMode, \day, "shell opens in Day");
 		this.assert(shell.masterVisible, "Master is persistent in Day");
 		shell.toggleView(false);
-		this.assertEquals(shell.viewMode, \night, "Tab hard-cuts to Night");
+		this.assertEquals(shell.viewMode, \night,
+			"the toolbar destination hard-cuts to Night");
 		this.assert(shell.masterVisible, "Master remains persistent in Night");
 	}
 
-	test_textFocusBlocksTabAndToggleRevertsAudition {
+	test_textFocusBlocksDestinationAndToggleRevertsAudition {
 		if(this.prRequireShell.not) { ^this };
 		matrix.patch(\tri1, \coco1_spaf, 0.2);
 		audition.preview(\tri1, \coco1_spaf, 0.8);
 		shell.toggleView(true);
-		this.assertEquals(shell.viewMode, \day, "Tab is ignored while text has focus");
-		this.assert(audition.isActive, "blocked Tab does not cancel the current gesture");
+		this.assertEquals(shell.viewMode, \day,
+			"the destination switch is ignored while text has focus");
+		this.assert(audition.isActive,
+			"a blocked destination switch does not cancel the current gesture");
 		shell.toggleView(false);
 		this.assertEquals(matrix.getPatch(\tri1, \coco1_spaf), 0.2,
 			"accepted view toggle reverts audition before the hard cut");

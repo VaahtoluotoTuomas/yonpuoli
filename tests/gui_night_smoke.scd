@@ -48,20 +48,18 @@ compassChecks = { |map|
 	var almanac = map.geometry[\almanac];
 	var cView = map.compassView;
 	var boxOrigin = almanac[\compassBox].leftTop;
-	var aView = map.almanacView;
-	var skyOrigin = almanac[\box].leftTop;
-	var pool = almanac[\pool];
 	var at = { |stagePoint| stagePoint - boxOrigin };
-	// the pool is addressed through the tide's own frame (§9): a norm goes in,
-	// the place on the water comes out. Rect arithmetic would be a second,
-	// silently drifting model of the same geography.
+	// One geometry owns both the four seeds and the active cross.
 	var atNorm = { |nx, ny|
 		CQNightGeometry.compassPointAt(almanac, Point(nx, ny))
 	};
-	var press = { |stagePoint, button = 0|
+	var press = { |stagePoint, button = 0, modifiers = 0|
 		var p = at.value(stagePoint);
-		cView.mouseDownAction.value(cView, p.x, p.y, 0, button, 1);
-		cView.mouseUpAction.value(cView, p.x, p.y, 0, button);
+		cView.mouseDownAction.value(cView, p.x, p.y, modifiers, button, 1);
+		cView.mouseUpAction.value(cView, p.x, p.y, modifiers, button);
+		if(modifiers.isShift) {
+			gui.window.view.keyModifiersChangedAction.value(gui.window.view, 0)
+		};
 	};
 	var check = { |condition, message|
 		if(condition) { ("ok:   " ++ message).postln } {
@@ -70,39 +68,86 @@ compassChecks = { |map|
 		};
 	};
 	var undoBefore, local, local2;
-	var di, si, mark, xEnd, growWeight;
+	var di, si, mark, xEnd;
 	var savedRand, expected, countBefore;
+	var record, cablePoint;
 	check.value(cView.notNil
 		and: { (cView.bounds.left - almanac[\compassBox].left).abs < 1 },
-		"the compass water is laid out on its own layer");
+		"the tide is the full-stage ground, not a pool layer");
 	check.value(gui.compass.stampedMask == [false, false, false, false],
-		"the pad opens with empty water in all four corners");
+		"the pad opens with four vacant memory husks");
 	// two different jungles into TL and TR
 	matrix.load([[\tri1, \coco1_spaf, 0.55], [\envB, \castle3_fm, -0.45]]);
 	press.value(almanac[\stamps][0]);
+	check.value(gui.compass.stampedMask == [false, false, false, false]
+		and: { matrix.asArray.size == 2 },
+		"an ordinary tap cannot accidentally write a vacant seed");
+	press.value(almanac[\stamps][0], 0, 131072);
 	check.value(gui.compass.stampedMask == [true, false, false, false],
-		"a tap on a corner seed stamps the live matrix");
+		"Shift-tap writes the live matrix into a vacant seed");
 	check.value(File.exists(compassDir +/+ CQCompass.fileName),
 		"a stamp auto-saves the memories file");
 	matrix.load([[\cas2, \coco2_fbVca, 0.4]]);
+	map.tideFocusLatched_(true);
 	press.value(almanac[\stamps][1]);
+	map.tideFocusLatched_(false);
 	check.value(gui.compass.stampedMask == [true, true, false, false],
-		"the second corner holds its own patch");
-	// a tap on the pad is a jump: one committed step to that weather
+		"an open gill lets a plain tap plant a vacant seed without a keyboard");
+	// A filled seed recalls exactly. Unfocused open water remains inert even
+	// past the shared 8 px threshold: a tide voyage requires the deliberate
+	// Tab/gill latch or momentary Shift focus.
 	matrix.clearPatch;
 	undoBefore = gui.bananaGrammar.undoCount;
-	// the shore at the TL seed's own diagonal wind IS the tide's TL corner
 	press.value(atNorm.value(0, 0));
 	check.value(matrix.getPatch(\tri1, \coco1_spaf) == 0.55
 		and: { matrix.getPatch(\envB, \castle3_fm) == -0.45 }
 		and: { matrix.asArray.size == 2 },
 		"a tap at a pure corner recalls that stamp bit-exact");
 	check.value(gui.bananaGrammar.undoCount == (undoBefore + 1),
-		"the jump to a place on the pad is one undo op");
+		"one filled-seed recall is one undo op");
 	gui.window.view.keyDownAction.value(gui.window.view, nil, 262144, 26, 0, 90);
 	check.value(matrix.asArray.size == 0,
-		"Ctrl+Z returns the bay the jump replaced");
-	// a voyage: pour along the pad, commit on release. The end position is
+		"Ctrl+Z returns the bay the seed recall replaced");
+	press.value(almanac[\stamps][2], 0, 131072);
+	check.value(gui.compass.stampedMask == [true, true, true, false]
+		and: { gui.compass.memoryDensities[2] == 0 },
+		"a stored silent patch is occupied but remains a dormant dark kernel");
+	press.value(almanac[\stamps][2], 1);
+	check.value(gui.compass.stampedMask == [true, true, false, false],
+		"right press returns a dormant kernel to a vacant husk");
+	undoBefore = gui.bananaGrammar.undoCount;
+	press.value(atNorm.value(0.5, 0.5));
+	check.value(matrix.asArray.isEmpty
+		and: { gui.bananaGrammar.undoCount == undoBefore },
+		"an open-water tap is a no-op, never an accidental jump");
+	local = at.value(atNorm.value(0.42, 0.42));
+	local2 = at.value(atNorm.value(0.58, 0.58));
+	cView.mouseDownAction.value(cView, local.x, local.y, 0, 0, 1);
+	cView.mouseMoveAction.value(cView, local2.x, local2.y, 0);
+	check.value(map.touch.tideActive.not
+		and: { map.overlay.stormMode.not }
+		and: { matrix.asArray.isEmpty },
+		"an unfocused left sweep cannot accidentally activate morph");
+	cView.mouseUpAction.value(cView, local2.x, local2.y, 0, 0);
+	// Tab latches the water without changing Day/Night. The gill is the exact
+	// same state in the landscape and can close and reopen it.
+	gui.window.view.keyDownAction.value(gui.window.view, 9.asAscii, 0);
+	gui.window.view.keyDownAction.value(gui.window.view, 9.asAscii, 0);
+	gui.window.view.keyUpAction.value(gui.window.view, 9.asAscii, 0);
+	check.value(map.tideFocus and: { map.tideFocusLatched }
+		and: { map.overlay.backgrounded }
+		and: { gui.shellState.viewMode == \night },
+		"one held Tab opens focus once, without autorepeat or a view flip");
+	local = map.geometry[\tideGate] - map.geometry[\tideGateBox].leftTop;
+	map.tideGateView.mouseDownAction.value(map.tideGateView,
+		local.x, local.y, 0, 0, 1);
+	check.value(map.tideFocus.not and: { map.tideFocusLatched.not },
+		"the closed gill toggles the same persistent focus off");
+	map.tideGateView.mouseDownAction.value(map.tideGateView,
+		local.x, local.y, 0, 0, 1);
+	check.value(map.tideFocus and: { map.tideFocusLatched },
+		"the gill opens the playable water again");
+	// a voyage: pour through the field, commit on release. The end position is
 	// derived from the cell's own tide mark, so the assertion is
 	// deterministic geography, not luck.
 	di = CQMatrix.destIndex(\coco1_spaf);
@@ -116,8 +161,8 @@ compassChecks = { |map|
 	cView.mouseMoveAction.value(cView, local2.x, local2.y, 0);
 	check.value(map.overlay.stormMode,
 		"a pour holds the night overlay in storm form");
-	check.value(map.compassDragState.notNil,
-		"the voyage paints its cross and its pulls");
+	check.value(map.touch.tideActive,
+		"the voyage captures the hand while its paced cross catches up");
 	cView.mouseUpAction.value(cView, local2.x, local2.y, 0, 0);
 	check.value(map.overlay.stormMode.not,
 		"release returns the bay to full ink");
@@ -126,70 +171,54 @@ compassChecks = { |map|
 		"a cable standing above its tide mark keeps its stamped weight");
 	check.value(gui.bananaGrammar.undoCount == (undoBefore + 1),
 		"the whole voyage is one undo op");
-	// The rain and the sun are sky weather since §9: they act on the live bay
-	// exactly as the moon's sowing does, so they keep the moon company and
-	// their presses arrive through the sky's own layer. Same hold, same 2.5 Hz,
-	// same one-undo-per-hold as when they hung under the pad.
-	check.value(almanac[\skyMarks][\grow].notNil
-		and: { almanac[\skyMarks][\wither].notNil }
-		and: { almanac[\skyMarks][\breed].isNil },
-		"rain and sun went to the sky; the graft stayed with its parents");
-	// grow: the first raindrop lands on the press itself
+	check.value(map.tideFocus and: { map.tideFocusLatched },
+		"persistent water focus stays open after the voyage");
+	gui.window.view.keyDownAction.value(gui.window.view, 9.asAscii, 0);
+	gui.window.view.keyUpAction.value(gui.window.view, 9.asAscii, 0);
+	// Shift still offers the temporary version without erasing patch topology:
+	// spans recede and
+	// stop hit-testing, while their seated socket plugs still answer.
+	record = map.overlay.cableRecords.first;
+	cablePoint = record[\points][record[\points].size div: 2];
+	check.value(map.overlay.patchAt(cablePoint).notNil,
+		"a planted span answers before water focus");
+	gui.window.view.keyModifiersChangedAction.value(gui.window.view, 131072);
+	check.value(map.tideFocus and: { map.overlay.backgrounded }
+		and: { map.overlay.patchAt(cablePoint).isNil },
+		"Shift sends cable spans behind the playable water");
+	check.value(map.overlay.patchAtSocket(record[\dest], record[\finish]).notNil,
+		"water focus keeps endpoint plugs interactive");
+	gui.window.view.keyModifiersChangedAction.value(gui.window.view, 0);
+	check.value(map.tideFocus.not and: { map.overlay.backgrounded.not }
+		and: { map.overlay.patchAt(cablePoint).notNil },
+		"releasing Shift restores the ordinary cable grammar");
+	// Breed is no longer a graft tool. A filled seed dragged directly onto a
+	// second filled seed draws one temporary relation and plants the offspring
+	// as one undoable act. Shift keeps dense cable spans behind the gesture.
 	matrix.clearPatch;
-	undoBefore = gui.bananaGrammar.undoCount;
-	local = almanac[\weather][\grow] - skyOrigin;
-	aView.mouseDownAction.value(aView, local.x, local.y, 0, 0, 1);
-	check.value(matrix.asArray.size == 1,
-		"grow plants one banana on the press itself");
-	growWeight = matrix.asArray.first[2];
-	check.value(growWeight.abs >= 0.15 and: { growWeight.abs <= 0.4 },
-		"the raindrop weighs §7.2's ±U(0.15, 0.4)");
-	aView.mouseUpAction.value(aView, local.x, local.y, 0, 0);
-	check.value(gui.bananaGrammar.undoCount == (undoBefore + 1),
-		"one rain hold is one undo op");
-	// wither thins what stands
-	undoBefore = gui.bananaGrammar.undoCount;
-	local = almanac[\weather][\wither] - skyOrigin;
-	aView.mouseDownAction.value(aView, local.x, local.y, 0, 0, 1);
-	aView.mouseUpAction.value(aView, local.x, local.y, 0, 0);
-	check.value(matrix.asArray.size == 1
-		and: { (matrix.asArray.first[2].abs - (growWeight.abs * 0.7)).abs < 1e-9 },
-		"the sun decays its pick ×0.7");
-	check.value(gui.bananaGrammar.undoCount == (undoBefore + 1),
-		"one drought hold is one undo op");
-	// breed: arm the graft, pick two parents — seeded here so the offspring
-	// is checkable bit-exact against §7.3's own math
+	map.overlay.invalidate;
 	savedRand = thisThread.randData;
 	thisThread.randSeed = 777;
 	expected = CQCompass.breed(gui.compass.corner(0), gui.compass.corner(1));
-	undoBefore = gui.bananaGrammar.undoCount;
-	press.value(almanac[\weather][\breed]);
-	check.value(map.breedArmed, "pressing the graft arms the breeding");
-	press.value(almanac[\stamps][0]);
-	check.value(map.breedFirst == 0, "the first parent is chosen and held");
 	thisThread.randSeed = 777;
-	press.value(almanac[\stamps][1]);
+	undoBefore = gui.bananaGrammar.undoCount;
+	local = at.value(almanac[\stamps][0]);
+	local2 = at.value(almanac[\stamps][1]);
+	cView.mouseDownAction.value(cView, local.x, local.y, 131072, 0, 1);
+	cView.mouseMoveAction.value(cView, local2.x, local2.y, 131072);
+	check.value(map.compassDragState.notNil
+		and: { map.compassDragState[\breedFrom] == 0 }
+		and: { map.compassDragState[\breedTarget] == 1 }
+		and: { map.tideGestureView.acceptsMouse.not },
+		"a valid breed target catches the top-layer relation and blooms");
+	cView.mouseUpAction.value(cView, local2.x, local2.y, 131072, 0);
+	map.modifierTideFocus_(false);
 	thisThread.randData = savedRand;
-	check.value(map.breedArmed.not and: { map.breedFirst.isNil },
-		"the second parent completes the graft and disarms it");
 	check.value(matrix.fullMatrix == expected,
-		"the offspring becomes the bay, exactly as §7.3 breeds it");
+		"releasing on a second seed breeds the exact §7.3 offspring");
 	check.value(gui.bananaGrammar.undoCount == (undoBefore + 1),
 		"one breeding is one undo op");
-	// Esc forgets an armed graft (cancelWeather)
-	press.value(almanac[\weather][\breed]);
-	check.value(map.breedArmed, "the graft re-arms");
-	gui.window.view.keyDownAction.value(gui.window.view, 27.asAscii, 0);
-	check.value(map.breedArmed.not, "Esc forgets the armed graft");
 	// a right press on a seed clears that memory, and it stays cleared on disk.
-	// NOTE (§9, open for review): the pool now sits in the bay's own water, so
-	// the offspring this breeding just planted lies ACROSS its seeds, and §4.5
-	// gives a cable under the pointer the press — a right press there rips the
-	// cable instead of clearing the memory. That is the grammar working, but it
-	// is a much heavier cost than the skip mark's: the four seeds are the pad's
-	// whole interface, and a patched bay shadows them most of the time. The
-	// clear is exercised on free water so this gate tests the act rather than
-	// the luck of a patch; the decision itself is the user's.
 	matrix.clearPatch;
 	map.overlay.invalidate;
 	check.value(CQNightGeometry.stampHit(almanac, almanac[\stamps][1]) == 1
@@ -201,10 +230,9 @@ compassChecks = { |map|
 	check.value(CQCompass(compassDir).stampedMask
 		== [true, false, false, false],
 		"stamps and clears survive on disk (versioned file)");
-	// the water around the marks acts on nothing
+	// Outside the four winds the ground keeps its ordinary grammar.
 	countBefore = matrix.asArray.size;
-	// the layer's own lower-left corner: well outside the shore's catch band
-	// and nowhere near a scattered mark, so it is ground like any other
+	// the full-stage layer's own lower-left corner lies outside the tide
 	press.value(almanac[\compassBox].leftTop
 		+ Point(3, almanac[\compassBox].height - 3));
 	check.value(CQNightGeometry.compassHit(almanac,
@@ -213,10 +241,10 @@ compassChecks = { |map|
 		and: { CQNightGeometry.weatherHit(almanac,
 			almanac[\compassBox].leftTop
 				+ Point(3, almanac[\compassBox].height - 3)).isNil },
-		"precondition: the layer's corner is neither pool nor weather");
+		"precondition: the stage corner is outside the tide");
 	check.value(matrix.asArray.size == countBefore
 		and: { gui.bananaGrammar.isInHand.not },
-		"the open water around the marks acts on nothing");
+		"water outside the four winds acts on nothing");
 };
 
 // ---- the elastic and the offscreen cache need real Qt ticks, so they run as
@@ -240,10 +268,11 @@ weatherAsync = { |map, done|
 	undoBefore = gui.bananaGrammar.undoCount;
 	local = atNorm.value(0.5, 0.16) - boxOrigin;
 	local2 = atNorm.value(0.5, 0.9) - boxOrigin;
-	cView.mouseDownAction.value(cView, local.x, local.y, 0, 1, 1);
-	cView.mouseMoveAction.value(cView, local2.x, local2.y, 0);
+	cView.mouseDownAction.value(cView, local.x, local.y, 131072, 1, 1);
+	cView.mouseMoveAction.value(cView, local2.x, local2.y, 131072);
 	check.value(map.overlay.stormMode, "the elastic pours in storm form too");
-	cView.mouseUpAction.value(cView, local2.x, local2.y, 0, 1);
+	cView.mouseUpAction.value(cView, local2.x, local2.y, 131072, 1);
+	map.modifierTideFocus_(false);
 	AppClock.sched(0.3, {
 		try {
 			check.value(matrix.fullMatrix.asCompileString == beforeString,
@@ -372,6 +401,26 @@ punchChecks = { |map|
 					and: { map.overlay.skin == \night }
 					and: { map.overlay.view.acceptsMouse.not },
 					"night owns a hit-transparent phosphor cable overlay");
+				check.value(map.tideGestureView.acceptsMouse.not
+					and: { CQNightGeometry.compute(1280, 570)[\castles]
+						.every { |castle|
+						castle[\stubs].isNil } },
+					"tide relations own the top transparent layer and castles grow no fake stubs");
+				check.value(map.castleViews.every { |view|
+					view.background.alpha == 0
+				} and: {
+					(1..5).every { |n|
+						#[tri, cas].every { |prefix|
+							map.endpoints[(prefix.asString ++ n).asSymbol]
+								[\view].background.alpha == 0
+						} and: {
+							#[fm, spesal].every { |suffix|
+								map.endpoints[("castle" ++ n ++ "_" ++ suffix).asSymbol]
+									[\view].background.alpha == 0
+							}
+						}
+					}
+				}, "castle flesh and its endpoint details have no rectangular occlusion");
 				check.value(gui.cableOverlay.skin == \day,
 					"the day overlay keeps its own fixed ink");
 				check.value(map.endpoints.values.every { |endpoint|
@@ -989,6 +1038,33 @@ punchChecks = { |map|
 																map.ringView, 6, 6, 0, 0, 2);
 															check.value(gui.bananaGrammar.soloTarget.isNil,
 																"still water inside the ring is not the ring's body");
+															map.ringView.mouseUpAction.value(
+																map.ringView, 6, 6, 0, 0);
+															block { |tideDone|
+																var stageFrom = map.geometry[\eye]
+																	+ Point(62, 0);
+																var stageTo = stageFrom + Point(18, 14);
+																var ringOrigin = map.geometry[\ringBox].leftTop;
+																var from = stageFrom - ringOrigin;
+																var to = stageTo - ringOrigin;
+																var tideBefore = matrix.fullMatrix;
+																map.ringView.mouseDownAction.value(
+																	map.ringView, from.x, from.y,
+																	131072, 0, 1);
+																map.ringView.mouseMoveAction.value(
+																	map.ringView, to.x, to.y, 131072);
+																check.value(map.compassDragState.notNil
+																	and: { map.overlay.stormMode },
+																	"free central water starts a small Shift morph through the ring view");
+																map.ringView.mouseUpAction.value(
+																	map.ringView, to.x, to.y,
+																	131072, 0);
+																matrix.writeMatrix(tideBefore,
+																	origin: \test, committed: false,
+																	operation: \centralTideSmokeRestore);
+																map.modifierTideFocus_(false);
+																tideDone.value;
+															};
 															map.ringView.mouseOverAction.value(
 																map.ringView, local.x, local.y);
 															check.value(map.ringHover,
@@ -1019,6 +1095,7 @@ punchChecks = { |map|
 														// nothing undoable.
 														block { |almanacDone|
 															var almanac, local, before, amount;
+															var from, to, undoBefore, growWeight;
 															var notices = 0, spy, press, view;
 															almanac = map.geometry[\almanac];
 															view = map.almanacView;
@@ -1038,8 +1115,13 @@ punchChecks = { |map|
 															};
 															check.value(almanac[\stars].isNil,
 																"the sky carries the moon alone — no preset stars");
-															check.value(map.shakeAmount == gui.shakeAmount,
-																"the moon wears the one shake amount, the Day knob's own number");
+															check.value(almanac[\skyMarks].isNil
+																and: { almanac[\pool].isNil },
+																"the moon has no panel companions and the bay has no pool body");
+															check.value(map.shakeAmount == gui.shakeAmount
+																and: { gui.shakeAmount
+																	== CQGui.defaultShakeAmount },
+																"the moon and Day knob open on one small crescent");
 															// the moon's own drawn rim is its cue (§4.5)
 															local = almanac[\moon] - almanac[\box].leftTop;
 															view.mouseOverAction.value(view, local.x, local.y);
@@ -1067,11 +1149,47 @@ punchChecks = { |map|
 															press.value(almanac[\moon], -200 @ 0);
 															check.value(gui.shakeAmount == 0,
 																"pouring past empty clamps at the new moon (every entry clamps)");
-															notices = 0;
-															press.value(almanac[\moon], 0 @ 40);
-															check.value(notices == 0
+															// The vertical axis now belongs to the moon too:
+															// down = rain/grow, up = sun/wither. The glyph
+															// exists only while that axis-locked hold is live.
+															matrix.clearPatch;
+															undoBefore = gui.bananaGrammar.undoCount;
+															from = almanac[\moon] - almanac[\box].leftTop;
+															to = from + (0 @ 40);
+															view.mouseDownAction.value(view,
+																from.x, from.y, 0, 0, 1);
+															view.mouseMoveAction.value(view,
+																to.x, to.y, 0);
+															check.value(map.weatherActive == \grow
+																and: { map.weatherIntensity == 1 }
+																and: { matrix.asArray.size == 1 }
 																and: { gui.shakeAmount == 0 },
-																"a press that travelled vertically is a drag, never a throw");
+																"a deep downward pull reveals hard rain and lands one grow seed");
+															growWeight = matrix.asArray.first[2];
+															view.mouseUpAction.value(view,
+																to.x, to.y, 0, 0);
+															check.value(map.weatherActive.isNil
+																and: { gui.bananaGrammar.undoCount
+																	== (undoBefore + 1) },
+																"releasing the moon hides rain and commits one weather hold");
+															matrix.load([[\tri1, \coco1_spaf, growWeight]]);
+															undoBefore = gui.bananaGrammar.undoCount;
+															to = from + (0 @ -40);
+															view.mouseDownAction.value(view,
+																from.x, from.y, 0, 0, 1);
+															view.mouseMoveAction.value(view,
+																to.x, to.y, 0);
+															check.value(map.weatherActive == \wither
+																and: { map.weatherIntensity == 1 }
+																and: { (matrix.asArray.first[2].abs
+																	- (growWeight.abs * 0.7)).abs < 1e-9 },
+																"a deep upward pull reveals full sun and withers ×0.7");
+															view.mouseUpAction.value(view,
+																to.x, to.y, 0, 0);
+															check.value(map.weatherActive.isNil
+																and: { gui.bananaGrammar.undoCount
+																	== (undoBefore + 1) },
+																"releasing the moon hides sun and commits one drought");
 															gui.shakeAmount = 0.5;
 															check.value(map.shakeAmount == 0.5,
 																"the moon reads the amount back from its one owner");
@@ -1086,11 +1204,13 @@ punchChecks = { |map|
 																"the corner's empty water throws nothing");
 															// the phase governs how MUCH is sown (SPEC §5.5)
 															check.value(CQGui.sowDensity(0) == 0
+																and: { CQGui.sowDensity(0.25)
+																	== 0.0125 }
 																and: { CQGui.sowDensity(0.5)
-																	== CQMatrix.shakeDensity }
+																	== 0.05 }
 																and: { CQGui.sowDensity(1)
 																	== CQGui.fullMoonDensity },
-																"the half moon is exactly the v1.0 handful, the full one twice it");
+																"the crescent sows sparsely, then the full moon gathers force");
 															spy.remove;
 															almanacDone.value;
 														};
@@ -1110,21 +1230,25 @@ punchChecks = { |map|
 														var hCoco = map.geometry[\cocos][0];
 														var heartLocal = hCoco[\center] - hCoco[\shellBox].leftTop;
 														var tabBefore, freeBefore;
-														// Tab view flip is a punch exit path (§2): begin in night
-														// (clean geometry), flip away, assert the loop was not
-														// left inverted
+														// Tab focus entry is also a punch exit path (§2):
+														// begin in night, enter the tide, and assert that the
+														// loop was restored without changing view
 														state.set(\coco1Hold, 1);
 														tabBefore = state.get(\coco1Hold);
 														hShell.mouseDownAction.value(hShell,
 															heartLocal.x, heartLocal.y, 0, 1, 1);
 														check.value(state.get(\coco1Hold) == 0
 															and: { map.touch.punchActive },
-															"precondition: a punch is held before the Tab flip");
+															"precondition: a punch is held before Tab enters tide focus");
 														gui.window.view.keyDownAction.value(
 															gui.window.view, 9.asAscii, 0);
+														gui.window.view.keyUpAction.value(
+															gui.window.view, 9.asAscii, 0);
 														check.value(state.get(\coco1Hold) == tabBefore
-															and: { map.touch.punchActive.not },
-															"a Tab view flip restores a held punch");
+															and: { map.touch.punchActive.not }
+															and: { map.tideFocusLatched }
+															and: { gui.shellState.viewMode == \night },
+															"Tab restores a held punch before latching water focus");
 														// window close / GUI free / CmdPeriod all reach
 														// nightMap.free -> cancelGestures. Establish the active
 														// punch directly (the press routing is proven above) so
