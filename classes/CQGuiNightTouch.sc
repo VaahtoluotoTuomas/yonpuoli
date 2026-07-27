@@ -39,21 +39,18 @@ CQGuiNightTouch {
 	// horizontal swing. A ruffle is recognized from a direction change rather
 	// than time, so a slow deliberate shake and a quick one are the same act.
 	*ruffleSwing { ^6 }
-	*ruffleTravelMax { ^300 }
+	*birdPollPeriod { ^1/60 }
 	*birdWheelCooldown { ^0.15 }
 
 	*newRuffle { |point, index = 0|
-		^(index: index, start: point, last: point, extremeX: point.x,
-			direction: 0, reversals: 0, total: 0, maxTravel: 0)
+		^(index: index, start: point, extremeX: point.x,
+			direction: 0, reversals: 0, maxTravel: 0)
 	}
 
 	*advanceRuffle { |gesture, point|
 		var direction = gesture[\direction], dx;
-		gesture[\total] = gesture[\total]
-			+ CQNightGeometry.distance(gesture[\last], point);
 		gesture[\maxTravel] = max(gesture[\maxTravel],
 			CQNightGeometry.distance(gesture[\start], point));
-		gesture[\last] = point;
 		dx = point.x - gesture[\extremeX];
 		if(direction == 0) {
 			if(dx.abs >= this.ruffleSwing) {
@@ -80,10 +77,7 @@ CQGuiNightTouch {
 	// the natural hand act; the first version required two and made an ordinary
 	// left-right ruffle look like an inert drag in live review.
 	*birdGestureAction { |gesture|
-		if(gesture[\reversals] >= 1
-			and: { gesture[\total] <= this.ruffleTravelMax }) {
-			^\random
-		};
+		if(gesture[\reversals] >= 1) { ^\random };
 		if(gesture[\maxTravel] < this.tapTravel) { ^\fetch };
 		^nil
 	}
@@ -180,6 +174,7 @@ CQGuiNightTouch {
 			^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
 		};
 		birdDrag = this.class.newRuffle(point, index);
+		this.prBirdWatch(birdDrag);
 		^this
 	}
 
@@ -762,6 +757,29 @@ CQGuiNightTouch {
 
 	prPoint { |view, x, y|
 		^view.mapToGlobal(Point(x, y)) - map.container.mapToGlobal(0@0)
+	}
+
+	// Qt normally keeps sending mouseMoveAction to the pressed view, but a
+	// small transparent UserView can lose those samples after the cursor leaves
+	// its bounds on some Windows/Qt combinations. While a bird owns the hand,
+	// sample the same global cursor already used by the proven file-drop hover
+	// path. The ordinary event callbacks remain in place, so the poll is only a
+	// live-window safety net and synthetic tests stay deterministic.
+	prBirdWatch { |gesture|
+		AppClock.sched(this.class.birdPollPeriod, {
+			var cursor;
+			if(birdDrag === gesture) {
+				cursor = try { QtGUI.cursorPosition };
+				cursor !? {
+					this.class.advanceRuffle(gesture,
+						cursor - map.container.mapToGlobal(0@0))
+				};
+				this.class.birdPollPeriod
+			} {
+				nil
+			}
+		});
+		^this
 	}
 
 	prNorm { |name| ^CQSpec.unmap(name, state.get(name)) }

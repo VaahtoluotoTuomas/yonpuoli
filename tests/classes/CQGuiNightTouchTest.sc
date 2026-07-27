@@ -97,7 +97,7 @@ CQGuiNightTouchTest : UnitTest {
 		var tap = CQGuiNightTouch.newRuffle(Point(0, 0));
 		var edge = CQGuiNightTouch.newRuffle(Point(0, 0));
 		var ruffle = CQGuiNightTouch.newRuffle(Point(0, 0));
-		var long = CQGuiNightTouch.newRuffle(Point(0, 0));
+		var repeated = CQGuiNightTouch.newRuffle(Point(0, 0));
 		CQGuiNightTouch.advanceRuffle(tap, Point(7, 0));
 		this.assertEquals(CQGuiNightTouch.birdGestureAction(tap), \fetch,
 			"less than the shared 8 px threshold is a fetch tap");
@@ -111,12 +111,14 @@ CQGuiNightTouchTest : UnitTest {
 			"one 6 px out-and-back is counted as the natural ruffle");
 		this.assertEquals(CQGuiNightTouch.birdGestureAction(ruffle), \random,
 			"the ruffle wins even when its compact shape stays inside the tap radius");
-		[Point(151, 0), Point(0, 0)].do { |point|
-			CQGuiNightTouch.advanceRuffle(long, point)
+		this.assert(CQGuiNightTouch.birdPollPeriod > 0
+			and: { CQGuiNightTouch.birdPollPeriod <= (1/30) },
+			"the live cursor fallback samples quickly enough to catch a hand reversal");
+		[Point(80, 0), Point(-80, 0), Point(80, 0), Point(-80, 0)].do { |point|
+			CQGuiNightTouch.advanceRuffle(repeated, point)
 		};
-		this.assert(long[\total] > CQGuiNightTouch.ruffleTravelMax
-			and: { CQGuiNightTouch.birdGestureAction(long).isNil },
-			"a >300 px thrash is neither a ruffle nor a tap");
+		this.assertEquals(CQGuiNightTouch.birdGestureAction(repeated), \random,
+			"repeated or wide ruffling stays recognized once the reversal is clear");
 	}
 
 	test_birdWheelDirectionAndMomentumGate {

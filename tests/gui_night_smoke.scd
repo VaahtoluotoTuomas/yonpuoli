@@ -90,10 +90,15 @@ birdChecks = { |map|
 		and: { routes.size == (before + 1) },
 		"wheel-down routes one next step and suppresses immediate momentum");
 	before = routes.size;
-	view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
-	view.mouseMoveAction.value(view, local.x + 7, local.y, 0);
-	view.mouseMoveAction.value(view, local.x, local.y, 0);
-	view.mouseUpAction.value(view, local.x, local.y, 0, 0);
+	check.value(view.mouseDownAction.value(view,
+			local.x, local.y, 0, 0, 1) == true
+		and: { view.mouseMoveAction.value(view,
+			local.x + 7, local.y, 0) == true }
+		and: { view.mouseMoveAction.value(view,
+			local.x, local.y, 0) == true }
+		and: { view.mouseUpAction.value(view,
+			local.x, local.y, 0, 0) == true },
+		"the bird claims the complete Qt drag instead of leaking it to the stage");
 	check.value(routes.size == (before + 1)
 		and: { routes.last == [\deckA, \random, nil] },
 		"one natural out-and-back ruffle routes random on release");

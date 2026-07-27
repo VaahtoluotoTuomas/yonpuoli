@@ -679,10 +679,15 @@ glyphs at all:
   here the neighborhood is the folder. Rake 15 (momentum) applies.
 - **Ruffle the bird = bring me anything.** A drag that starts on the bird,
   travels horizontally ≥ 6 px and returns ≥ 6 px in the opposite direction
-  (one reversal, total travel ≤ ~300 px) is a *ruffle* — on release the
+  (one reversal) is a *ruffle* — on release the
   startled bird returns with a random file (`CQ.deckX.random`). The first
   implementation required two reversals; live review showed that a natural
-  out-and-back contains one, so that stricter recognizer was corrected.
+  out-and-back contains one, so that stricter recognizer was corrected. A
+  second live review found that Windows/Qt could lose move samples when the
+  cursor left the bird's small UserView: the bird now claims the event and a
+  60 Hz global-cursor fallback follows the held hand. The old 300 px path cap
+  was also removed, so repeated or broad ruffling cannot invalidate an
+  already-clear reversal.
   Travel-based, no timer, and surreal in exactly the way this instrument means
   it: you shake the tree, the bird brings what it brings. A drag that is neither
   a tap nor a ruffle does nothing.

@@ -345,7 +345,7 @@ below; it does not silently grant priority to any other control.
 | **range ripple** | tap the drawn rate at a castle's 6 o'clock: one slow swell → one full cycle → five tight half-waves → one slow swell. The form is the whole regime display; no legacy `i/b/a` caption remains. Cable-first remains absolute, and ripple/clock/body hover cues are exclusive | `cNRange`: `infra → balcium → audio → infra` (CQSpec enum order) |
 | **bird fetch + drop + wing crescent** | tap the bird with < 8 px travel to open the asynchronous system file dialog at the configured samples folder; cancelling is inert. Dropping an audio file remains an equal load path, and the crescent under the wing remains the deck's level | deck load · `deckN level` |
 | **bird folder walk** | wheel down = next file, wheel up = previous. Qt momentum is gated to one sign-step per 150 ms so one flick cannot skip a handful of perches; before a load, the deck's own guard scans the samples folder | `deckN.next / prev` |
-| **bird ruffle** | horizontal drag travels ≥ 6 px and reverses once by ≥ 6 px — one natural out-and-back, total path ≤ 300 px; release chooses a random file. A drag that is neither a tap nor a ruffle is inert | `deckN.random` |
+| **bird ruffle** | horizontal drag travels ≥ 6 px and reverses once by ≥ 6 px — one natural out-and-back; release chooses a random file. Repeated or broad ruffling remains valid once that reversal is clear. A drag that is neither a tap nor a ruffle is inert | `deckN.random` |
 | **the sowing moon** | the bone moon in the top-right sky (§16.6). It opens as a small 0.22 crescent. A press that travels < 8 px — the lasso's own threshold — throws a shake at the moon's current phase, with a 120 ms bone flash on *any* shake from any layer (`p` key, Day button, code: one state, three layers, one light). A **horizontal** drag pours the phase fuller (right) or darker (left), the way the terminator itself travels; the lit fraction is **how much gets sown**, through the slow-first quadratic fertility curve in §10, no number | `shake` (matrix op — one undo, one spellbook entry) · `shakeAmount` (GUI constant, no undo) |
 
 Skip's night home moved at the G2 gate (2026-07-22, replacing the read-head
@@ -1140,7 +1140,10 @@ the wing, and beside it the deck-level tide crescent (§6.1). Dropping an
 audio file on the bird loads its deck (§6.1). The same body now carries three
 captionless hand acts: tap (< 8 px) opens `Dialog.openPanel` at the configured
 samples folder; wheel sign walks the loaded folder with a 150 ms momentum gate;
-one ≥ 6 px horizontal out-and-back within a ≤ 300 px path ruffles to random.
+one ≥ 6 px horizontal out-and-back ruffles to random; repeated or broad
+ruffling remains valid once that reversal is clear. While held, the bird owns
+the Qt drag and a 60 Hz global-cursor fallback preserves motion samples if the
+pointer leaves its small UserView on Windows.
 A different drag is inert. Cable
 hit-testing remains first inside the bird view, while the rate socket and level
 crescent keep their higher sibling views and own geometry. Any successful

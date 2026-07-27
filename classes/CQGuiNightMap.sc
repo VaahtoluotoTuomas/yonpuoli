@@ -894,16 +894,20 @@ CQGuiNightMap {
 		};
 		birdViews.do { |view, i|
 			view.mouseDownAction = { |v, x, y, mods, button, clicks|
-				touch.birdDown(i, v, x, y, mods ? 0, button ? 0, clicks ? 1)
+				touch.birdDown(i, v, x, y, mods ? 0, button ? 0, clicks ? 1);
+				true
 			};
 			view.mouseMoveAction = { |v, x, y, mods|
-				touch.birdMove(i, v, x, y, mods ? 0)
+				touch.birdMove(i, v, x, y, mods ? 0);
+				true
 			};
 			view.mouseUpAction = { |v, x, y, mods, button|
-				touch.birdUp(i, v, x, y, mods ? 0, button ? 0)
+				touch.birdUp(i, v, x, y, mods ? 0, button ? 0);
+				true
 			};
 			view.mouseWheelAction = { |v, x, y, mods, xd, yd|
-				touch.birdWheel(i, v, x, y, mods ? 0, yd ? 0)
+				touch.birdWheel(i, v, x, y, mods ? 0, yd ? 0);
+				true
 			};
 			view.acceptsMouseOver = true;
 			view.mouseOverAction = { |v, x, y| this.prHoverBird(i, v, x, y) };

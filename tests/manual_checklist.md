@@ -635,6 +635,8 @@ CQ.set(\masterVol, -24);
 //    (yksi luonteva suunnanvaihto), sitten irrota. Satunnaisen sisarustiedoston
 //    pitää latautua ja näkyä nimessä. Tee viisi kertaa:
 //    valintojen ei tarvitse olla eri, mutta jokaisen onnistumisen pitää välähtää.
+//    Kokeile myös leveää ja usean suunnanvaihdon heilautusta: selvä pörhistys
+//    ei saa raueta, vaikka osoitin käy linnun pienen piirtoalueen ulkopuolella.
 // 4. Vedä lintua kerran suoraan yli 8 px ja irrota. Tämä ei ole napautus eikä
 //    pörhistys: dialogia ei aukea eikä tiedosto vaihdu.
 // 5. Vie osoitin linnun päälle: lintu kirkastuu staattisesti. Kokeile myös

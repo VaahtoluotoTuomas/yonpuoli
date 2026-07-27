@@ -40,6 +40,9 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Fixed
 
+- Made the Night bird ruffle reliable in the live Windows/Qt window: the bird
+  now claims its drag, follows the global cursor while held, and keeps a clear
+  reversal valid even after repeated or broad movement.
 - Preserved cable hover and cable-first presses where a planted cable crosses
   a Night Dolby oyster.
 - Repainted the real shell spiral and radial stem beneath each opaque yellow
