@@ -576,7 +576,7 @@ CQ.boot;
 CQ.clearPatch;
 CQ.loadA(Platform.resourceDir +/+ "sounds/a11wlk01.wav");
 CQ.set(\deckALevel, 0.7);
-CQ.set(\coco1PreSlot, 1);      // deck A input-kanavaan
+CQ.set(\coco1SlotPre, 1);      // deck A input-kanavaan
 CQ.set(\coco1In, 0.8);
 CQ.set(\coco1Fb, 0.72);
 CQ.set(\coco1Speed, 0.34);
@@ -621,7 +621,7 @@ tiedostonimen ja väläyttävät linnun 120 ms ajan.
 // N6 — Ctrl+Shift+L, sitten CQ.boot ja toolbarista Night.
 CQ.boot;
 CQ.set(\deckALevel, 0.7);
-CQ.set(\coco1PreSlot, 1);
+CQ.set(\coco1SlotPre, 1);
 CQ.set(\coco1In, 0.8);
 CQ.set(\masterVol, -24);
 // 1. NAPAUTA vasenta lintua liikkumatta yli 8 px. Dialogin pitää avautua
@@ -664,11 +664,15 @@ kaapelin viimeiset pikselit.
 
 ### N7 — Juuret ovat preamp-keho (§10)
 
-Kummankin alareunan viisi nimetöntä lähdesäiettä kokoontuvat kaksilobiseen
-preamp-solmuun. Paksu kiinteä audiojuoni nousee siitä vastaavaan Cocoon ja
-vihreä `envA/B` on pieni ulospäin kasvava patchattava sivusilmu. Solmun hover
-paljastaa vain nykyisen tulolähteen; pystysuora veto soittaa drivea. Bias on
-luettavissa muodosta mutta jää tässä portissa asetusparametriksi.
+Kummankin alareunan viisi nimetöntä, leveästi ja epäsäännöllisesti kasvavaa
+lähdesäiettä kokoontuvat kaksilobiseen preamp-solmuun. Säikeen hover paljastaa
+ehdokkaan, klikkaus valitsee sen ja valitun toinen klikkaus sulkee tulon
+(`none`). Solmun 8 px akselilukon jälkeen pystysuora 240 px veto soittaa
+drivea ja vaakasuora biasia. Audiojuoni nousee vastaavaan Cocoon, ohenee
+levossa 1,5 px:iin ja kasvaa driven mukana 2/3 px:iin; `SlotPre` ja env-aura
+kertovat reitin avautumisesta. Vihreä `envA/B` säilyy pienenä ulospäin
+kasvavana patchattavana sivusilmuna. Lintu- tai juuri-hover paljastaa vain
+todet, ehdolliset deck→Coco- ja bird→preamp-lennot.
 
 ```supercollider
 // N7 — Ctrl+Shift+L, sitten käynnistä Night.
@@ -678,55 +682,57 @@ CQ.loadA(Platform.resourceDir +/+ "sounds/a11wlk01.wav");
 CQ.set(\preASrc, \deckA);
 CQ.set(\preADrive, 2);
 CQ.set(\preABias, 0.15);
-CQ.set(\coco1PreSlot, 1);
+CQ.set(\coco1SlotPre, 1);
 CQ.set(\coco1In, 0.8);
 CQ.set(\coco1Fb, 0.35);
 CQ.set(\masterVol, -24);
 CQ.hold(1, 0);
-// 1. LEPO: kummallakin puolella pitää näkyä viisi hiljaista, nimetöntä
-//    tulosäiettä, kaksilobinen solmu, selvästi niitä paksumpi audiojuoni,
+// 1. LEPO: kummallakin puolella pitää näkyä viisi leveää, epäsymmetristä,
+//    nimetöntä tulosäiettä, kaksilobinen solmu, hillitty audiojuoni,
 //    ja pieni vihreään env-jakkiin päättyvä sivusilmu. Audiojuonen pitää
 //    liittyä Cocoon viivaan — ei pysähtyä suorakulmaiseen näkymärajaan.
-// 2. HOVER solmulla: vain deck a -säie kirkastuu ja pieni "deck a" ilmestyy.
-//    Poistu: sekä korostus että nimi katoavat. Vaihda:
-CQ.set(\preASrc, \liveL);      // hover näyttää live l ja toisen säikeen
-CQ.set(\preASrc, \mic);        // hover näyttää mic
-CQ.set(\preASrc, \none);       // hover näyttää none, mutta yksikään säie ei syty
-// 3. Palauta deck A ja vedä vasenta solmua YLÖS. Driven pitää nousta
-//    pehmeästi mutta exp-käyrän mukaisesti ja äänen säröytyä. Vedä alas:
-//    arvo palaa kohti 1:tä. Irrotus jättää arvon paikalleen.
-CQ.set(\preASrc, \deckA);
-// 4. Vertaa bias-muotoja. Nollalla lobet ovat tasapainossa; suurella arvolla
-//    ulosmenevä/ylempi lobe paisuu ja sisääntuleva/alempi kuroutuu:
-CQ.set(\preABias, 0);
-CQ.set(\preABias, 0.6);
-CQ.set(\preABias, 0.15);       // lopuksi oletus
-// 5. Patchaa vihreä sivusilmu. Vain env-jakista lähtee tavallinen kaapeli;
+// 2. HOVER jokaisella säikeellä: vain ehdokas kirkastuu ja sen nimi ilmestyy.
+//    Klikkaa deck a; sen pitää jäädä hienovaraisesti aktiiviseksi. Klikkaa
+//    samaa uudelleen: kaikki säikeet lepäävät ja solmun hover sanoo "none".
+// 3. Valitse deck a ja vedä vasenta solmua YLÖS. Driven pitää nousta
+//    aiempaa rauhallisemmin, äänen säröytyä ja audiojuonen painon kasvaa
+//    1,5 -> 2 -> 3 px. Vedä alas: arvo palaa kohti 1:tä.
+// 4. Vedä samaa solmua OIKEALLE/VASEMMALLE. Biasin pitää muuttua ilman driven
+//    liikettä; oikealle ylempi lobe paisuu ja alempi kuroutuu. Vinossa vedossa
+//    ensimmäinen selvä akseli lukittuu koko eleeksi.
+// 5. Hoveroi lintu A: himmeä reitti menee sen omaan Cocoon ja katoaa, jos
+//    coco1SlotDeck = 0. Kun deck A on preamp A/B:n lähde, hover paljastaa myös
+//    lennon oikeaan juureen. Deck-säikeen hover tekee saman juuresta käsin.
+// 6. Patchaa vihreä sivusilmu. Vain env-jakista lähtee tavallinen kaapeli;
 //    solmusta, tulosäikeistä tai paksusta audiojuonesta ei voi tarttua.
 CQ.patch(\envA, \coco1_spaf, 0.7);
-// 6. Vedä/repäise kaapelia solmun yli. §4.5: kaapeli voittaa sekä hoverin
-//    että painalluksen, eikä drive liiku. Esc, Tab, PANIC ja ikkunan sulku
-//    vapauttavat kesken jääneen drive-vedon; jo kirjoitettu drive jää voimaan.
+// 7. Vedä/repäise kaapelia solmun tai säikeen yli. §4.5: kaapeli voittaa
+//    hoverin ja painalluksen. Esc, Tab, PANIC ja ikkunan sulku vapauttavat
+//    kesken jääneen solmuvedon; jo kirjoitettu arvo jää voimaan.
 ```
 
 **Visuaalinen ja soitettava portti:** tarkista 1280×720 ja maksimoituna sekä
 100/125/150 % käyttöjärjestelmäskaalaus. Arvioi erityisesti:
 
-1. Lukeeko paksu juoni kiinteänä audioanatomiana eikä uutena patch-kaapelina?
+1. Lukeeko 1,5/2/3 px juoni audioanatomiana eikä uutena patch-kaapelina?
 2. Onko vihreä `envA/B` selvästi pienempi sivukasvu mutta silti helppo tarttua?
-3. Näkyykö biasin 0 / 0,15 / 0,6 ero normaalilta soittoetäisyydeltä ilman
-   numeroa tai uutta hoveria?
-4. Löytyykö solmu käteen ja tuntuuko 120 px koko drive-alueelle sopivalta?
-5. Pysyvätkö nimet ja vihreä lähdesäie aidosti hetkellisinä — alareuna ei saa
-   muuttua tekstipaneeliksi?
+3. Valitsevatko viisi säiettä varmasti oikean lähteen, ja tuntuuko aktiivisen
+   toinen klikkaus luontevalta tavalta sulkea tulo?
+4. Lukittuuko solmu varmasti pystysuunnassa driveen ja vaakasuunnassa biasiin?
+   Tuntuuko 240 px riittävän rauhalliselta mutta yhä soitettavalta?
+5. Näkyykö biasin muoto ja driven viivapaino soittoetäisyydeltä ilman numeroa?
 6. Kiertääkö audiojuoni sirpit luonnollisesti molemmilla puolilla, ja liittyykö
    se spiraaliin ilman katkoa kaikissa kolmessa skaalassa?
-7. Kuuluuko drive-muutos selvästi deckillä/live-inputilla eikä muuta DSP-reittiä
-   tai env-patchin toimintaa?
+7. Paljastuuko bird→Coco vain lintu-hoverissa ja häviääkö se `SlotDeck = 0`:ssa?
+   Seuraako bird→root aina todellista valintaa myös ristiin A→B / B→A?
+8. Ovatko juuret riittävän leveät, epäsymmetriset ja levottomat mutta jokainen
+   säie silti seurattavissa ja klikattavissa?
+9. Kuuluuko drive/bias-muutos selvästi deckillä/live-inputilla eikä muuta
+   DSP-reittiä tai env-patchin toimintaa?
 
-- [ ] N7 hyväksytty (pvm: ______ — anatomian luettavuus, drive-käden tuntu,
-      bias-muoto, hover-provenienssi, env-sivusilmu, kaapeliprioriteetti,
-      100/125/150 % ja kuuntelu)
+- [ ] N7 hyväksytty (pvm: ______ — lähdeklikkaus, drive/bias-käden tuntu,
+      viivapaine, bird/Coco/root-reitit, env-sivusilmu, kaapeliprioriteetti,
+      juurten epäsymmetria, 100/125/150 % ja kuuntelu)
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>

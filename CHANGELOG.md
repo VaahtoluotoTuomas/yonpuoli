@@ -31,11 +31,16 @@ tagged. Earlier tags describe internal development baselines.
   ruffle for a random sibling, all sharing the filename truth and 120 ms
   successful-load flash. The complete bird interaction passed live review on
   2026-07-28.
-- First-review Night intake bodies: five CQSpec-derived source strands converge
-  on a playable drive/bias knot, a fixed thick audio vein reaches the real
-  Cocoon spiral, and `envA/B` remains the smaller patchable post-preamp branch.
-  Source provenance is revealed only under the hand; live visual/listening
-  acceptance remains open.
+- Second-review Night intake bodies: five wide, seeded-irregular source strands
+  select or deactivate the CQSpec source directly; an axis-locked 240 px knot
+  gesture plays drive vertically and bias horizontally. Drive now weighs the
+  Cocoon-bound audio vein at 1.5/2/3 px, while pre/deck slot gains inform route
+  visibility. Transient bird flights reveal the direct deck-to-Cocoon path and
+  any current bird-to-preamp provenance without hard-wiring a false landscape
+  relation. `envA/B` remains the smaller patchable post-preamp branch; live
+  visual/listening acceptance remains open.
+- Recorded preamp loudness compensation as a later equal-loudness DSP
+  experiment; N7 deliberately changes only interaction and route drawing.
 
 ### In progress
 

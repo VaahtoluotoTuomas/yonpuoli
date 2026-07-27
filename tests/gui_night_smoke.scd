@@ -150,11 +150,11 @@ birdChecks = { |map|
 	map.overlay.invalidate;
 };
 
-// ---- §10 intake roots: source provenance · drive knot · fixed audio body ----
+// ---- §10 intake roots: selectable provenance · drive/bias knot · audio body ----
 preampChecks = { |map|
 	var view = map.rootViews[0], root = map.geometry[\roots][0];
 	var local = root[\knot] - root[\box].leftTop;
-	var before, after, savedMatrix, cable, cablePoint;
+	var before, after, sourceIndex, sourcePoint, savedMatrix, cable, cablePoint;
 	var check = { |condition, message|
 		if(condition) { ("ok:   " ++ message).postln } {
 			ok = false;
@@ -170,16 +170,24 @@ preampChecks = { |map|
 	view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
 	check.value(map.touch.preampGestureActive and: { map.preampActive[0] },
 		"the preamp knot owns one bodily drive gesture");
-	view.mouseMoveAction.value(view, local.x, local.y - 30, 0);
+	view.mouseMoveAction.value(view, local.x, local.y - 60, 0);
 	after = state.get(\preADrive);
 	check.value(after > before
 		and: { map.preampDriveNorms[0]
 			== CQSpec.unmap(\preADrive, after) },
 		"pulling the knot upward raises exponential drive through CQState");
-	view.mouseUpAction.value(view, local.x, local.y - 30, 0, 0);
+	view.mouseUpAction.value(view, local.x, local.y - 60, 0, 0);
 	check.value(map.touch.preampGestureActive.not
 		and: { map.preampActive[0].not },
 		"release rests the knot without reverting its continuous setting");
+	before = state.get(\preABias);
+	view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
+	view.mouseMoveAction.value(view, local.x + 60, local.y + 2, 0);
+	after = state.get(\preABias);
+	view.mouseUpAction.value(view, local.x + 60, local.y + 2, 0, 0);
+	check.value(after > before
+		and: { map.preampBiasNorms[0] == CQSpec.unmap(\preABias, after) },
+		"a rightward knot knead raises bias through the same state funnel");
 	view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
 	map.cancelGestures;
 	check.value(map.touch.preampGestureActive.not
@@ -188,6 +196,22 @@ preampChecks = { |map|
 	view.mouseLeaveAction.value(view);
 	check.value(map.preampHover[0].not,
 		"leaving the root hides its transient provenance");
+	sourceIndex = root[\sourceValues].indexOf(\deckA);
+	sourcePoint = CQNightGeometry.cubicPoint(
+		root[\sourceStrands][sourceIndex], 0.12) - root[\box].leftTop;
+	view.mouseOverAction.value(view, sourcePoint.x, sourcePoint.y);
+	check.value(map.preampSourceHover[0] == sourceIndex,
+		"hovering an intake strand reveals that candidate before selection");
+	view.mouseDownAction.value(view, sourcePoint.x, sourcePoint.y, 0, 0, 1);
+	check.value(state.get(\preASrc) == \deckA,
+		"clicking a source strand selects its exact CQSpec enum value");
+	view.mouseDownAction.value(view, sourcePoint.x, sourcePoint.y, 0, 0, 1);
+	check.value(state.get(\preASrc) == \none,
+		"clicking the selected strand again closes the preamp intake");
+	state.set(\preASrc, \deckA);
+	check.value(map.deckSlotNorms[0] > 0
+		and: { map.preampSlotNorms[0] > 0 },
+		"the route painting knows both default deck and preamp slot gains");
 
 	// As with the bird fixture, feed an exact planted path point through this
 	// body handler. It proves §4.5 independently of where a review patch happens

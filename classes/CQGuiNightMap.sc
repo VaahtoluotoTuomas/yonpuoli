@@ -29,7 +29,8 @@ CQGuiNightMap {
 	var <eyeFreqNorm = 0.5, <eyeChaosNorm = 0.15;
 	var <speedNorms, <shellHover, <dialHover, <rangeHover, <bodyHover;
 	var <rimHover, <ringHover = false;
-	var <preampHover, <preampActive, <preampDriveNorms, <preampBiasNorms;
+	var <preampHover, <preampSourceHover, <preampActive;
+	var <preampDriveNorms, <preampBiasNorms, <preampSlotNorms, <deckSlotNorms;
 	var <preampSources, preampPainted;
 	var <sparkDirs, <skipHover, <skipFlash, sparkPainted, flipPainted;
 	var struckCount, <struckOn, <struckNorms, <struckBlink;
@@ -659,12 +660,25 @@ CQGuiNightMap {
 
 	setPreampActive { |i, flag|
 		preampActive[i] = flag == true;
-		if(freed.not) { rootViews[i].refresh };
+		if(freed.not) {
+			rootViews[i].refresh;
+			groundView.refresh;
+			birdViews.do(_.refresh);
+		};
 		^this
 	}
 
 	paintPreampDrive { |i, norm|
 		preampDriveNorms[i] = norm;
+		if(freed.not) {
+			rootViews[i].refresh;
+			shellViews[i].refresh;
+		};
+		^this
+	}
+
+	paintPreampBias { |i, norm|
+		preampBiasNorms[i] = norm;
 		if(freed.not) { rootViews[i].refresh };
 		^this
 	}
@@ -725,9 +739,12 @@ CQGuiNightMap {
 		rangeHover = Array.fill(5, false);
 		bodyHover = Array.fill(5, false);
 		preampHover = [false, false];
+		preampSourceHover = [nil, nil];
 		preampActive = [false, false];
 		preampDriveNorms = [0, 0];
 		preampBiasNorms = [0, 0];
+		preampSlotNorms = [0, 0];
+		deckSlotNorms = [0, 0];
 		preampSources = [\none, \none];
 		preampPainted = Array.newClear(2);
 		sparkDirs = [1, 1];
@@ -1115,15 +1132,28 @@ CQGuiNightMap {
 	}
 
 	prHoverPreamp { |i, view, x, y|
-		var next = false, point;
+		var next = false, nextSource, point, free = false;
 		if(geometry.notNil and: { view.notNil }) {
 			point = this.prStagePoint(view, x, y);
-			next = CQNightGeometry.preampKnotHit(geometry[\roots][i], point)
-				and: { overlay.patchAt(point).isNil };
+			free = overlay.patchAt(point).isNil;
+			if(free) {
+				next = CQNightGeometry.preampKnotHit(
+					geometry[\roots][i], point);
+				if(next.not) {
+					nextSource = CQNightGeometry.preampSourceHit(
+						geometry[\roots][i], point)
+				};
+			};
 		};
-		if(next != preampHover[i]) {
+		if(next != preampHover[i]
+			or: { nextSource != preampSourceHover[i] }) {
 			preampHover[i] = next;
-			if(freed.not) { rootViews[i].refresh };
+			preampSourceHover[i] = nextSource;
+			if(freed.not) {
+				rootViews[i].refresh;
+				groundView.refresh;
+				birdViews.do(_.refresh);
+			};
 		};
 	}
 
@@ -1247,7 +1277,11 @@ CQGuiNightMap {
 		};
 		if(next != birdHover[i]) {
 			birdHover[i] = next;
-			if(freed.not) { birdViews[i].refresh };
+			if(freed.not) {
+				birdViews[i].refresh;
+				shellViews[i].refresh;
+				groundView.refresh;
+			};
 		};
 	}
 
@@ -1457,16 +1491,42 @@ CQGuiNightMap {
 			var biasName = this.class.preampParamName(i, \Bias);
 			gui.widgets.register(srcName, { |value|
 				preampSources[i] = value;
-				if(freed.not) { rootViews[i].refresh };
+				if(freed.not) {
+					rootViews[i].refresh;
+					groundView.refresh;
+					birdViews.do(_.refresh);
+				};
 			});
 			gui.widgets.register(driveName, { |value|
 				preampDriveNorms[i] = CQSpec.unmap(driveName, value);
-				if(freed.not) { rootViews[i].refresh };
+				if(freed.not) {
+					rootViews[i].refresh;
+					shellViews[i].refresh;
+				};
 			});
 			gui.widgets.register(biasName, { |value|
 				preampBiasNorms[i] = CQSpec.unmap(biasName, value);
 				if(freed.not) { rootViews[i].refresh };
 			});
+			gui.widgets.register(("coco" ++ (i + 1) ++ "SlotPre").asSymbol,
+				{ |value|
+					preampSlotNorms[i] = CQSpec.unmap(
+						("coco" ++ (i + 1) ++ "SlotPre").asSymbol, value);
+					if(freed.not) {
+						rootViews[i].refresh;
+						shellViews[i].refresh;
+					};
+				});
+			gui.widgets.register(("coco" ++ (i + 1) ++ "SlotDeck").asSymbol,
+				{ |value|
+					deckSlotNorms[i] = CQSpec.unmap(
+						("coco" ++ (i + 1) ++ "SlotDeck").asSymbol, value);
+					if(freed.not) {
+						groundView.refresh;
+						birdViews[i].refresh;
+						shellViews[i].refresh;
+					};
+				});
 		};
 		5.do { |k|
 			gui.widgets.register(("c" ++ (k + 1) ++ "Range").asSymbol, { |value|
@@ -1533,6 +1593,20 @@ CQGuiNightMap {
 		if(geometry.isNil) { ^this };
 		this.prDrawCompass;
 		CQInkNight.drawSprout(geometry[\sprout], sproutState, \night);
+		geometry[\birds].do { |bird, i|
+			var deck = if(i == 0) { \deckA } { \deckB };
+			if(birdHover[i] and: { deckSlotNorms[i] > 0 }) {
+				CQInkNight.drawBirdRoute(
+					bird[\directRoute], deckSlotNorms[i], \direct, \night)
+			};
+			2.do { |r|
+				if(this.prRevealedPreampSource(r) == deck
+					and: { birdHover[i] or: { this.prPreampRevealed(r) } }) {
+					CQInkNight.drawBirdRoute(
+						bird[\rootRoutes][r], 1, \preamp, \night)
+				};
+			};
+		};
 		// §16.7's border rings the bird AND its name, so it is drawn on the
 		// full-stage ground rather than inside the bird's own 44x32 layer —
 		// a view cannot paint outside its bounds, and this rect is bigger than
@@ -1570,17 +1644,33 @@ CQGuiNightMap {
 	}
 
 	prDrawPreamp { |i|
-		var root, source, reveal;
+		var root, source, revealSource, hoverIndex, reveal;
 		if(geometry.isNil) { ^this };
 		root = geometry[\roots][i];
 		source = preampSources[i];
-		reveal = preampHover[i] or: { preampActive[i] };
+		hoverIndex = preampSourceHover[i];
+		revealSource = this.prRevealedPreampSource(i);
+		reveal = this.prPreampRevealed(i);
 		CQInkNight.drawPreampRoot(root, root[\box].leftTop,
 			preampDriveNorms[i], preampBiasNorms[i],
 			this.class.preampSourceIndex(i, source),
-			this.class.preampSourceLabel(source),
+			hoverIndex, this.class.preampSourceLabel(revealSource),
 			reveal, preampActive[i],
-			gui.auraFor(if(i == 0) { \envA } { \envB }) ? 0, \night);
+			gui.auraFor(if(i == 0) { \envA } { \envB }) ? 0,
+			preampSlotNorms[i], \night);
+	}
+
+	prPreampRevealed { |i|
+		^preampHover[i] or: { preampActive[i] }
+			or: { preampSourceHover[i].notNil }
+	}
+
+	prRevealedPreampSource { |i|
+		var hover = preampSourceHover[i];
+		if(hover.notNil and: { geometry.notNil }) {
+			^geometry[\roots][i][\sourceValues][hover]
+		};
+		^preampSources[i]
 	}
 
 	prHoverTideGate { |view, x, y|
@@ -1663,15 +1753,20 @@ CQGuiNightMap {
 	}
 
 	prDrawShell { |i|
-		var coco;
+		var coco, birdRoute;
 		if(geometry.isNil) { ^this };
 		coco = geometry[\cocos][i];
+		if(birdHover[i] and: { deckSlotNorms[i] > 0 }) {
+			birdRoute = geometry[\birds][i][\directRoute]
+		};
 		CQInkNight.drawShell(coco, coco[\shellBox].leftTop,
 			holdStates[i], this.flipMode(i), speedNorms[i], shellHover[i],
 			gui.phaseNorms[i], sparkDirs[i], skipHover[i], skipFlash[i],
 			if(struckOn[i]) { struckNorms[i] }, struckBlink[i],
 			rimHover[i], \night, geometry[\roots][i],
-			gui.auraFor(if(i == 0) { \envA } { \envB }) ? 0);
+			gui.auraFor(if(i == 0) { \envA } { \envB }) ? 0,
+			preampDriveNorms[i], preampSlotNorms[i],
+			birdRoute, deckSlotNorms[i]);
 	}
 
 	// the night half of §16.7's drop-target law; the Day deck box wears the
@@ -1679,14 +1774,23 @@ CQGuiNightMap {
 	*dropTargetName { |which| ^("night_" ++ which).asSymbol }
 
 	prDrawBird { |i|
-		var bird, which, active;
+		var bird, which, active, routes = List.new;
 		if(geometry.isNil) { ^this };
 		bird = geometry[\birds][i];
 		which = if(i == 0) { \deckA } { \deckB };
 		active = birdHover[i]
 			or: { gui.dropTargetIs(this.class.dropTargetName(which)) };
+		if(birdHover[i] and: { deckSlotNorms[i] > 0 }) {
+			routes.add([bird[\directRoute], deckSlotNorms[i], \direct])
+		};
+		2.do { |r|
+			if(this.prRevealedPreampSource(r) == which
+				and: { birdHover[i] or: { this.prPreampRevealed(r) } }) {
+				routes.add([bird[\rootRoutes][r], 1, \preamp])
+			};
+		};
 		CQInkNight.drawBird(bird, bird[\box].leftTop,
-			active, birdFlash[i], \night);
+			active, birdFlash[i], routes, \night);
 	}
 
 	prDrawDecoration { |name, spec, anchor|

@@ -239,14 +239,19 @@ CQInkNight {
 	*drawShell { |coco, origin, holdOn = false, flipMode = \forward,
 		speedNorm = 0.5, hover = false, sparkNorm, sparkDir = 1,
 		skipHover = false, skipFlash = false, struckNorm, struckTwinkle = false,
-		rimHover = false, skin = \night, preampRoot, preampAura = 0|
+		rimHover = false, skin = \night, preampRoot, preampAura = 0,
+		preampDrive = 0, preampSlot = 1, birdRoute, birdRouteGain = 0|
 		var palette = CQInk.palette(skin), notch, normal, reach, spark, tail, heart;
 		Pen.translate(origin.x.neg, origin.y.neg);
 		// This view is opaque-backed. Repaint the exact incoming audio vein
-		// beneath the winding so the fixed anatomy reaches the real spiral
+		// beneath the winding so the anatomy reaches the real spiral
 		// instead of stopping at the rectangular layer boundary.
 		preampRoot !? {
-			this.drawPreampVein(preampRoot, nil, preampAura, skin)
+			this.drawPreampVein(preampRoot, nil, preampAura,
+				preampDrive, preampSlot, skin)
+		};
+		birdRoute !? {
+			this.drawBirdRoute(birdRoute, birdRouteGain, \direct, skin)
 		};
 		// the shell's rim is its §6 body handle: hovering it draws the outline
 		// the double-click acts on, in whisper hairline so the danger-red hold
@@ -754,28 +759,33 @@ CQInkNight {
 	}
 
 	// N7 intake root. Five local, permanently unlabelled source strands gather
-	// into one preamp knot; only the selected provenance is revealed under the
-	// hand. The thick vein is fixed audio anatomy, while the smaller branch is
+	// into one preamp knot; one candidate provenance is revealed under the
+	// hand. The drive-weighted vein is audio anatomy, while the smaller branch is
 	// the post-preamp envelope follower ending at the canonical env jack.
 	*drawPreampRoot { |root, origin, drive = 0, bias = 0,
-		sourceIndex, sourceLabel = "", reveal = false, active = false,
-		aura = 0, skin = \night|
+		sourceIndex, hoverIndex, sourceLabel = "", reveal = false,
+		active = false, aura = 0, slot = 1, skin = \night|
 		var palette = CQInk.palette(skin), knot = root[\knot];
 		var radius = CQNightMeasures.rootKnotR;
 		var topScale, bottomScale, knotColor;
 		Pen.translate(origin.x.neg, origin.y.neg);
 
 		root[\sourceStrands].do { |segment, i|
-			var selected = reveal and: { sourceIndex == i };
+			var selected = sourceIndex == i;
+			var hovered = hoverIndex == i;
 			Pen.strokeColor = palette[
-				if(selected) { \input } { \whisper }
-			].copy.alpha_(if(selected) { 0.9 } { 0.30 });
+				if(selected or: { hovered }) { \input } { \whisper }
+			].copy.alpha_(if(hovered) { 0.95 } {
+				if(selected) { 0.48 } { 0.26 }
+			});
 			Pen.width = CQInk.strokes[
-				if(selected) { \normal } { \hairline }];
+				if(hovered) { \strong } {
+					if(selected) { \normal } { \hairline }
+				}];
 			this.strokeSegments([segment]);
 		};
 
-		this.drawPreampVein(root, nil, aura, skin);
+		this.drawPreampVein(root, nil, aura, drive, slot, skin);
 
 		Pen.strokeColor = palette[\line].copy.alpha_(0.74);
 		Pen.width = CQInk.strokes[\normal];
@@ -823,15 +833,37 @@ CQInkNight {
 	}
 
 	// Reused inside the shell's opaque layer. The root layer lies below that
-	// paper, so without this exact underlay the fixed audio anatomy would stop
+	// paper, so without this exact underlay the audio anatomy would stop
 	// at a rectangular view edge instead of visibly reaching its Cocoon.
-	*drawPreampVein { |root, origin, aura = 0, skin = \night|
-		var palette = CQInk.palette(skin);
+	*drawPreampVein { |root, origin, aura = 0, drive = 0, slot = 1,
+		skin = \night|
+		var palette = CQInk.palette(skin), widthKey, route;
 		origin !? { Pen.translate(origin.x.neg, origin.y.neg) };
+		drive = (drive ? 0).clip(0, 1);
+		route = (slot ? 0).clip(0, 1);
+		widthKey = if(drive < 0.42) { \normal } {
+			if(drive < 0.78) { \strong } { \state }
+		};
 		Pen.strokeColor = palette[\pre].copy.alpha_(
-			(0.68 + ((aura ? 0).clip(0, 1) * 0.28)));
-		Pen.width = CQInk.strokes[\state];
+			0.20 + (route * 0.50) + ((aura ? 0).clip(0, 1) * 0.22));
+		Pen.width = CQInk.strokes[widthKey];
 		this.strokeSegments([root[\audioVein]]);
+	}
+
+	// A route is revealed only by a bird or a root under the hand. Direct
+	// deck-slot flight follows its actual slot gain; a preamp provenance flight
+	// is a slightly warmer, stronger thread because it names a chosen source.
+	*drawBirdRoute { |segment, gain = 1, kind = \direct, skin = \night|
+		var palette = CQInk.palette(skin), amount = (gain ? 0).clip(0, 1);
+		if(amount <= 0) { ^this };
+		Pen.strokeColor = palette[
+			if(kind == \preamp) { \pre } { \whisper }
+		].copy.alpha_(
+			if(kind == \preamp) { 0.48 } { 0.12 + (amount * 0.36) });
+		Pen.width = CQInk.strokes[
+			if(kind == \preamp or: { amount > 0.65 }) { \normal } { \hairline }
+		];
+		this.strokeSegments([segment]);
 	}
 
 	// mic sprout, 3 states (§16.6): hidden / dormant whisper bud / danger-red
@@ -858,10 +890,14 @@ CQInkNight {
 
 	// deck bird: two wing béziers and a body dot (§16.6), span ≈ 30 px,
 	// drawn by the bird's own opaque layer (origin = its box corner)
-	*drawBird { |bird, origin, active = false, flash = false, skin = \night|
+	*drawBird { |bird, origin, active = false, flash = false, routes,
+		skin = \night|
 		var palette = CQInk.palette(skin), c = bird[\center], span = bird[\span];
 		var color = if(active or: { flash }) { palette[\spark] } { palette[\line] };
 		origin !? { Pen.translate(origin.x.neg, origin.y.neg) };
+		(routes ? []).do { |route|
+			this.drawBirdRoute(route[0], route[1], route[2], skin)
+		};
 		if(flash) {
 			Pen.fillColor = palette[\spark].copy.alpha_(0.13);
 			Pen.addOval(Rect.aboutPoint(c, CQNightMeasures.birdBodyR + 7,

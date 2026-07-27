@@ -635,52 +635,62 @@ composition"</b> (kept because the failure is instructive)</summary>
 
 ## 10. The roots — the intake body, not an envelope on a stick
 
-> **Status — first review build ready 2026-07-28 on
-> `nocturne-preamp-roots` (checklist N7).** The three design locks are:
-> vertical up/down drive at 120 px per normalized range; bias as the
-> outgoing/intake lobe imbalance of the knot; selected source as one
-> hover/gesture-only highlighted strand plus a transient mono provenance.
-> Unit geometry and the Qt Night smoke are green. This is not acceptance:
-> scale, vein route, knot legibility and the hand feel still require the live
-> 100/125/150 % visual/listening review.
+> **Status — second review build ready 2026-07-28 on
+> `nocturne-preamp-roots` (checklist N7).** The design locks are now direct
+> strand selection/toggle, an 8 px axis lock into 240 px vertical drive or
+> horizontal bias, drive-weighted 1.5/2/3 px audio anatomy, and transient,
+> topology-true bird flights. Unit geometry, 12,181 assertions and the Qt
+> Night smoke are green. This is not acceptance: scale, route legibility and
+> the hand feel still require the live 100/125/150 % visual/listening review.
 
 The root metaphor works only if it tells the whole signal story. In the DSP,
 each side first chooses `preASrc` / `preBSrc` (`liveL`, `liveR`, `mic`,
 `deckA`, `deckB`, `none`), passes through the drive+bias asymmetric tanh
 preamp and HPF, and that **audio** feeds its Coco input. `envA` / `envB` is
 only the post-preamp `Amplitude` side-growth used by the modulation matrix.
-The current drawing exposes the derivative and hides the blood.
+Each deck also has a parallel direct `SlotDeck` path to its own Cocoon, so a
+deck selected into a preamp may be heard through both paths.
 
 The root increment therefore does this:
 
-- Several source strands enter one **preamp knot**. Their current provenance
-  is revealed on hover/gesture, not as five permanently labelled roots.
-- A fixed, visibly thicker **audio vein** leaves that knot and joins the
+- Five wide, seeded-irregular source strands enter one **preamp knot**.
+  Hover previews one CQSpec provenance, click selects it and a second click
+  writes `none`; no strand gets a permanent label.
+- A drive-weighted **audio vein** leaves that knot and joins the
   corresponding Cocoon. This is anatomy, not a patch cable: the DSP relation
   already exists and must be drawn as such.
 - The existing `envA` / `envB` jack becomes a smaller side bud off the
   post-preamp vein. It remains the one real patchable modulation endpoint.
-- The knot gets a bodily drive gesture and shows bias/asymmetry in its shape;
-  exact source choice and less-performative setup may remain in the Drawer.
+- The knot gets one axis-locked body: vertical drive and horizontal bias;
+  its outgoing/intake lobe imbalance reads bias without a number.
+- Bird/root hover reveals the direct deck→Coco slot and any currently selected
+  bird→preamp provenance. Nothing permanent links a bird to one root, because
+  either deck may feed either preamp.
 - Do not add decorative root count without information, and do not invent
   extra patchable audio jacks. Making `preA` / `preB` audio patchable would
   expand the canonical 16×22 matrix and is a separate DSP/interface epic.
 - The mic sprout remains a truthful three-state provenance cue beside side A.
 
-The accepted implementation contract is now precise:
+The second-review implementation contract is now precise:
 
 - The five audible source values are read from `CQSpec`; `none` illuminates no
-  strand. Source selection itself remains on the setup surface.
-- A 120 px upward pull crosses the full normalized drive range; the value is
-  mapped through `CQSpec`, so the 1–40 exponential law is not duplicated.
-  Right press on the knot is inert, and cable/Alt wins before the knot.
-- The audio vein is a 3 px fixed cubic meeting the real Cocoon spiral at norm
-  0.8. It routes outside the crescent owners and is redrawn inside the
-  Cocoon's opaque paper. `envA/B` grows outward as a smaller branch so its
-  opaque 30 px jack remains clear of every lower control.
-- Root repaint is local. Drive/bias changes and env aura frames never repaint
-  the whole ground; open paper inside the transparent root layer delegates
-  back to the tide/ground grammar.
+  strand. A nearest-strand 11 px hand reach selects the exact enum; selecting
+  the active strand again writes `none`.
+- The first 8 px lock one axis. A 240 px upward pull crosses normalized drive;
+  a 240 px rightward pull crosses normalized bias. Values map through CQSpec,
+  so neither the 1–40 exponential law nor the 0–0.6 linear law is duplicated.
+  Right press is inert, and cable/Alt wins before strand or knot.
+- The audio vein meets the real Cocoon spiral at norm 0.8, routes outside the
+  crescent owners and is redrawn inside opaque Cocoon paper. Its 1.5/2/3 px
+  weight follows drive; `SlotPre` and env aura shape alpha. `envA/B` grows
+  outward as a smaller branch.
+- Bird hover reveals its direct route only while `SlotDeck` is nonzero, with
+  weight derived from that gain. Bird hover also reveals every preamp selecting
+  that deck; root hover makes the reciprocal revelation. All route ink is
+  hit-transparent and disappears with the hand.
+- Drive/bias/aura repaint remains local to roots and their shell underlay.
+  Only transient cross-landscape provenance repaints the ground; open paper
+  inside the transparent root layer delegates to the tide/ground grammar.
 
 ---
 
@@ -1059,6 +1069,24 @@ shell's heart; exhaustive exit paths; optional Shift+1/2 with the
 autorepeat rake). It is listed here only so the ear pass reads complete:
 it is the hardware player's punch-in, and it ships with the GUI plan, not
 with the DSP experiments.
+
+### 13.8 Preamp loudness compensation — later listening experiment
+
+**Recorded 2026-07-28; not part of N7 and not yet a DSP change.** The current
+drive correctly raises level before the asymmetric `tanh`, so its lower half
+can read more like gain than timbre. After the Night gesture has been played
+in real sessions, compare bypass/processed RMS and peaks on live input, mic,
+percussive decks and sustained decks at several drive/bias settings. If the
+level jump obscures the musical gesture, audition a conservative,
+drive-dependent **partial makeup attenuation** after the waveshaper rather
+than automatic full loudness normalization. The goal is to expose saturation,
+not erase the preamp's pressure.
+
+Any accepted curve must be specified in `SPEC.md`/`CQSpec`, keep peak safety
+and stereo symmetry, place the envelope follower after the audible compensated
+signal, pass the full NRT battery, and survive an equal-loudness listening
+comparison. Do not infer a curve from the GUI's normalized value alone or
+silently fold this experiment into a visual iteration.
 
 ---
 

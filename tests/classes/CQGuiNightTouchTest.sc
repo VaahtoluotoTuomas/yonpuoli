@@ -227,17 +227,29 @@ CQGuiNightTouchTest : UnitTest {
 			"the eye moves the macro pair more gently than a crescent");
 	}
 
-	test_preampDriveIsAnUpwardBodilyPull {
+	test_preampKnotLocksDriveAndBiasIntoTwoGentleAxes {
 		this.assert(CQGuiNightTouch.preampSensitivity > 0,
 			"the preamp knot increases drive when the hand pulls upward");
+		this.assertEquals(CQGuiNightTouch.preampAxis(Point(6, 4)), nil,
+			"a tap-sized wobble changes neither preamp parameter");
+		this.assertEquals(CQGuiNightTouch.preampAxis(Point(20, 4)), \bias,
+			"a horizontal pull locks bias");
+		this.assertEquals(CQGuiNightTouch.preampAxis(Point(4, -20)), \drive,
+			"a vertical pull locks drive");
 		this.assertFloatEquals(
-			CQGuiNightTouch.preampDriveNorm(0.25, 100, 70), 0.5,
-			"a 30 px upward pull adds one quarter of the drive range", 1e-9);
+			CQGuiNightTouch.preampDriveNorm(0.25, 100, 40), 0.5,
+			"a 60 px upward pull adds one quarter of the drive range", 1e-9);
 		this.assertFloatEquals(
-			CQGuiNightTouch.preampDriveNorm(0.25, 100, 130), 0,
+			CQGuiNightTouch.preampDriveNorm(0.25, 100, 160), 0,
 			"a downward pull reduces drive and clamps at the CQSpec floor", 1e-9);
 		this.assertFloatEquals(
-			CQGuiNightTouch.preampDriveNorm(0.9, 100, -100), 1,
+			CQGuiNightTouch.preampDriveNorm(0.9, 100, -200), 1,
 			"a hard upward pull clamps at the CQSpec ceiling", 1e-9);
+		this.assertFloatEquals(
+			CQGuiNightTouch.preampBiasNorm(0.25, 100, 160), 0.5,
+			"a 60 px rightward knead adds one quarter of the bias range", 1e-9);
+		this.assertFloatEquals(
+			CQGuiNightTouch.preampBiasNorm(0.1, 100, 0), 0,
+			"a leftward bias knead clamps at symmetry", 1e-9);
 	}
 }

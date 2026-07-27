@@ -218,11 +218,23 @@ CQNightGeometryTest : UnitTest {
 				"root % derives its five intake strands from CQSpec".format(i + 1));
 			this.assertEquals(root[\sourceStrands].size, sourceValues.size,
 				"root % draws one strand per audible provenance".format(i + 1));
+			root[\sourceStrands].do { |strand, s|
+				var sample = CQNightGeometry.cubicPoint(strand, 0.12);
+				this.assertEquals(
+					CQNightGeometry.preampSourceHit(root, sample), s,
+					"root % strand % is an individually selectable source"
+						.format(i + 1, s + 1));
+			};
+			this.assert(
+				(root[\sourceStrands].last.first.x
+					- root[\sourceStrands].first.first.x).abs
+					> (CQNightMeasures.rootSourceSpacing * 3),
+				"root % opens into a wide irregular delta".format(i + 1));
 			this.assert(
 				CQNightGeometry.distance(root[\audioJoin],
 					CQNightGeometry.spiralPoint(coco,
 						CQNightMeasures.rootVeinJoinNorm)) < 0.001,
-				"root %'s fixed audio vein joins the real Cocoon spiral"
+				"root %'s audio vein joins the real Cocoon spiral"
 					.format(i + 1));
 			this.assertEquals(geo[\endpoints][envName], root[\envBranch].last,
 				"root %'s canonical env jack is the post-preamp side bud"
@@ -231,7 +243,7 @@ CQNightGeometryTest : UnitTest {
 				sqrt(arrival.x.squared + arrival.y.squared), 1.0,
 				"root %'s arrival is a unit direction".format(i + 1), 0.0001);
 			this.assert((arrival.x * root[\side]) > 0,
-				"root %'s env bud grows outward from the fixed audio vein"
+				"root %'s env bud grows outward from the audio vein"
 					.format(i + 1));
 			this.assert(CQNightGeometry.preampKnotHit(root, root[\knot]),
 				"root %'s drive knot answers at its visible centre".format(i + 1));
@@ -252,6 +264,23 @@ CQNightGeometryTest : UnitTest {
 			and: { CQNightGeometry.distance(geo[\birds][0][\levelCrescent],
 				geo[\endpoints][\deckA_rate]) >= 24 },
 			"the bird box holds the bird; its crescent clears the rate moon");
+		geo[\birds].do { |bird, i|
+			this.assertEquals(bird[\directRoute].first, bird[\center],
+				"bird %'s direct deck route begins in its body".format(i + 1));
+			this.assert(
+				CQNightGeometry.spiralDistance(geo[\cocos][i],
+					bird[\directRoute].last) < 0.001,
+				"bird %'s direct deck route lands on its own Cocoon"
+					.format(i + 1));
+			this.assertEquals(bird[\rootRoutes].size, 2,
+				"bird % has conditional provenance paths to either preamp"
+					.format(i + 1));
+			bird[\rootRoutes].do { |route, r|
+				this.assertEquals(route.last, geo[\roots][r][\knot],
+					"bird %'s preamp route % lands on the real knot"
+						.format(i + 1, r + 1));
+			};
+		};
 	}
 
 	// The reel mark crosses the groove instead of riding it (G2 gate): against

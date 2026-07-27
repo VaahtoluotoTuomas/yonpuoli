@@ -25,13 +25,16 @@ public-vaihto ja oikeat kuva-/äänidemot ovat erillinen julkaisutoimi.
 
 **Seuraava askel konkreettisesti:** rakennusjärjestyksen
 (`NIGHT_STANDALONE_PLAN.md` §12) kohdat 1–6 ovat valmiit ja käyttäjän
-hyväksymät. N7 **Juuret — preamp-keho (§10)** on toteutettu ensimmäistä
-katselmointia varten `nocturne-preamp-roots`-haaralle: viisi CQSpecistä
-johdettua lähdesäiettä kokoontuu soitettavaan drive/bias-solmuun, kiinteä
-audiojuoni liittyy oikeaan Cocoon-spiraaliin ja `envA/B` on rehellinen
-post-preamp-sivukasvu. **Seuraava askel ei ole N8**, vaan N7:n live-arviointi
-checklistillä (mittakaavat, käden tuntu, biasin luettavuus, provenienssin
-löydettävyys ja audiojuonen reitti), palaute ja viimeistely. Hyväksytty N6
+hyväksymät. N7 **Juuret — preamp-keho (§10)** on toteutettu toista
+katselmointia varten `nocturne-preamp-roots`-haaralle: leveät, epäsäännölliset
+lähdesäikeet valitsevat/togglettavat CQSpec-lähteen suoraan, solmun
+akselilukittu 240 px ele soittaa drivea ja biasia, driven paine näkyy
+audiojuonen 1,5/2/3 px painona ja lintujen ehdolliset lennot paljastavat
+sekä suoran deck-slotin että valitun bird→preamp-suhteen. `envA/B` säilyy
+rehellisenä post-preamp-sivukasvuna. **Seuraava askel ei ole N8**, vaan N7:n
+live-arviointi checklistillä (lähdeklikkaus, käden tuntu, biasin
+soitettavuus, reittipaljastusten luettavuus ja juurten sommittelu), palaute ja
+viimeistely. Hyväksytty N6
 elää sen alla `nocturne-birds-fetch`-haaralla;
 `nocturne` seisoo vielä commitissa `a5e4b17` (kevättulva), eikä haaroja
 sulauteta ilman erillistä pyyntöä. §13 korvapassi voi kulkea limittäin, mutta
@@ -192,17 +195,20 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
   ensimmäisenä prioriteettina, rate-socket ja level-sirppi omina ylempinä
   sisarnäkyminään.
 - [ ] **7. Juuret — preamp-keho** (§10). Lähdesäikeet → drive/bias-solmu →
-  kiinteä audiojuoni Cocoon; `envA/B` jää post-preamp-envelope-sivusilmuksi.
-  **Ensimmäinen katselmointiversio valmis 2026-07-28
+  audiojuoni Cocoon; `envA/B` jää post-preamp-envelope-sivusilmuksi.
+  **Toinen katselmointiversio valmis 2026-07-28
   `nocturne-preamp-roots`-haaralla; ei vielä hyväksytty.** Viisi audible-
-  lähdettä luetaan `CQSpec`istä (`none` ei saa omaa säiettä); levossa kaikki
-  ovat nimettömiä, solmun hover/veto korostaa yhden ja näyttää hetkellisen
-  nimen. Pystysuora 120 px veto liikuttaa drivea CQSpecin exp-käyrällä.
-  Bias näkyy solmun ulos-/sisäänmenoloben epäsymmetriana. Paksu kiinteä juoni
-  kiertää sirpit ja liittyy spiraalin todelliseen 0,8-kohtaan; Cocoon opaakki
-  paperi piirtää saman käyrän alleen. Vihreä `envA/B` kasvaa ulospäin pienenä
-  sivusilmuna, eikä 16×22-inventaario muutu. Unit + Night Qt smoke ovat
-  vihreät; jäljellä checklist N7:n live-kuuntelu ja visuaalinen hyväksyntä.
+  lähdettä luetaan `CQSpec`istä (`none` ei saa omaa säiettä); leveä,
+  seedattu ja epäsymmetrinen säie on klikattava enum-valinta, jonka toinen
+  klikkaus kirjoittaa `none`. Solmu lukitsee 8 px jälkeen pystysuunnan driveen
+  ja vaakasuunnan biasiin; kumpikin käyttää 240 px normalisoitua matkaa.
+  Audiojuoni kiertää sirpit, liittyy spiraalin todelliseen 0,8-kohtaan ja
+  kasvaa driven mukana 1,5/2/3 px; `SlotPre` ja env-aura vaikuttavat alfaan.
+  Lintu-hover paljastaa gain-toden suoran deck→Coco-lennon ja nykyiset
+  bird→preamp-lennot, juuren hover saman provenienssin vastakkaiseen suuntaan.
+  Vihreä `envA/B` kasvaa ulospäin sivusilmuna, eikä 16×22-inventaario muutu.
+  Unit + Night Qt smoke ovat vihreät; jäljellä checklist N7:n live-kuuntelu
+  ja visuaalinen hyväksyntä.
 - [ ] **8. Drawer-workshop** (§0). Kaikki loput CQSpec-parametrit rehellisin
   ledger-säätimin drawerin sivulle. Exit-kriteeri: **SPEC §6.2:n kattavuusauditointi
   — jokainen §5-parametri saavutettavissa** pelkällä yöllä + drawerilla +
@@ -220,11 +226,15 @@ kohta on oma kuunteluiteraationsa (hypoteesi → yksi muutos → koko patteri �
 per sessio.** Suositeltu järjestys hyöty/riski: 13.1 feedback-taper → 13.4
 chaos-käyrä → 13.2 speed-lattia → 13.5 VCA-laki → 13.3 dust. Kohta 13.6
 zipper-mittaus ajetaan G3.1-tyylisen kompassivedon yhteydessä; 13.7 on punch
-(= kohta 1 yllä). Jokainen hyväksytty DSP-muutos ajaa myös `nrt_safety`n ja
+(= kohta 1 yllä). 13.8 on käyttäjän 2026-07-28 ehdottama preampin mahdollinen
+äänenvoimakkuuskompensaatio: vasta live-kuuntelun jälkeen tehtävä
+equal-loudness-koe, ei osa N7:n GUI-muutosta. Jokainen hyväksytty DSP-muutos
+ajaa myös `nrt_safety`n ja
 `nrt_hold_integrity`n ja päivittää SPEC §5:n samassa commitissa.
 
 - [ ] 13.1 feedback-taper · [ ] 13.2 speed-lattia · [ ] 13.3 dust ·
-  [ ] 13.4 chaos-käyrä · [ ] 13.5 VCA-laki · [ ] 13.6 zipper-mittaus
+  [ ] 13.4 chaos-käyrä · [ ] 13.5 VCA-laki · [ ] 13.6 zipper-mittaus ·
+  [ ] 13.8 preamp loudness compensation
 
 ## Norns-portti (§14) — vasta night-first-vaiheen jälkeen
 
@@ -363,6 +373,19 @@ myös leveässä tai toistuvassa liikkeessä. Lopullinen yksikkö- ja Night-smok
 ovat vihreät; muut GUI- ja NRT-portit kantavat saman inkrementin v1-portista,
 koska korjaukset eivät koskeneet DSP:tä tai muita näkymiä.
 `CQ_HOLD_OK` kantaa: DSP:hen ei koskettu.
+
+Haaran `nocturne-preamp-roots` toinen katselmointiportti 2026-07-28 (§10,
+**live-hyväksyntä vielä auki, checklist N7**): `CQ_COMPILE_OK`,
+**12 181 unit-passia / 0 failurea / 28/28 luokkaa**, `CQ_SAFETY_PASSED`,
+`CQ_HOLD_OK`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+`CQ_GUI_DRAWER_REENTRY_PASSED` ja `CQ_GUI_NIGHT_PASSED`. Night-smoke todistaa
+CQSpecistä johdetun säie-hoverin, lähteen valinnan ja `none`-togglen,
+akselilukitun drive/bias-kirjoituksen, slot-gainien saapumisen reittipiirtoon
+sekä cable-first-prioriteetin. Seedattu geometria testaa jokaisen säikeen
+osuma-alueen ja deck→Coco / deck→kumpi tahansa preamp -reittien todelliset
+päätepisteet. Qt-kuvapassi tarkisti levon, lähde-hoverin, juuriprovenienssin ja
+lintu-hoverin suoran deck-reitin. §13.8:n loudness-kompensaatio kirjattiin
+myöhemmäksi kuuntelukokeeksi; DSP:hen ei koskettu tässä portissa.
 
 ## Omistajuus- ja julkaisurata (kulkee Nocturnen rinnalla)
 

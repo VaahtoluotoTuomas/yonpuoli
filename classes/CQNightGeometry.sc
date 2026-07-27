@@ -497,12 +497,28 @@ CQNightGeometry {
 			<= (margin ? CQNightMeasures.rimMargin + 2)
 	}
 
-	// The knot is the only playable part of a preamp root in N7. Its visible
-	// two-lobed outline fits inside this generous hand target; source strands,
-	// the fixed audio vein and the env bud remain anatomy rather than aliases
-	// for the control.
+	// The visible two-lobed outline fits inside this generous hand target.
 	*preampKnotHit { |root, point|
 		^this.distance(root[\knot], point) <= CQNightMeasures.rootKnotHit
+	}
+
+	// Five irregular strands remain individually playable without acquiring
+	// permanent labels. Sample the exact cubic and return only the nearest
+	// provenance inside one hand-sized reach. The caller consults the knot
+	// first, so the five curves may gather naturally without stealing its drag.
+	*preampSourceHit { |root, point, reach|
+		var best = inf, found;
+		root[\sourceStrands].do { |segment, i|
+			var samples = this.sampleSegments([segment], 24) ++ [segment.last];
+			samples.doAdjacentPairs { |a, b|
+				var distance = this.prPointSegmentDistance(point, a, b);
+				if(distance < best) {
+					best = distance;
+					found = i;
+				};
+			};
+		};
+		^if(best <= (reach ? CQNightMeasures.rootSourceHit)) { found }
 	}
 
 	// ---- the whole archipelago from one stage size ----
@@ -645,8 +661,8 @@ CQNightGeometry {
 					this.clockAngle(8));
 		};
 
-		// The intake body (§10): five unlabelled source strands converge on a
-		// drive/bias knot, a fixed thick audio vein joins the corresponding
+		// The intake body (§10): five unlabelled, seeded-wild source strands
+		// converge on a drive/bias knot, an audio vein joins the corresponding
 		// Cocoon's real spiral, and envA/B grows as the one patchable side bud.
 		// The source count comes from CQSpec's enum; `none` is the honest
 		// absence of a selected strand, never a sixth decorative root.
@@ -665,12 +681,16 @@ CQNightGeometry {
 				var spacing = CQNightMeasures.rootSourceSpacing * scale;
 				var middle = (sourceValues.size - 1) * 0.5;
 				var strands = sourceValues.collect { |value, s|
-					var base = Point(knot.x + ((s - middle) * spacing), height + 2);
-					var c1 = Point(base.x + 4.0.rand2,
-						height - (CQNightMeasures.rootSourceShoulder * scale));
-					var c2 = Point(knot.x + (((s - middle) * spacing) * 0.28)
-						+ 3.0.rand2,
-						knot.y + (CQNightMeasures.rootSourceGather * scale));
+					var offset = ((s - middle) * spacing)
+						+ (8.0.rand2 * scale);
+					var base = Point(knot.x + offset, height + 2);
+					var c1 = Point(base.x + (18.0.rand2 * scale),
+						height - (CQNightMeasures.rootSourceShoulder * scale
+							* (0.72 + 0.46.rand)));
+					var c2 = Point(knot.x + (offset * 0.18)
+						+ (14.0.rand2 * scale),
+						knot.y + (CQNightMeasures.rootSourceGather * scale
+							* (0.62 + 0.70.rand)));
 					[base, c1, c2, knot]
 				};
 				var join = this.spiralPoint(cocos[i],
@@ -746,6 +766,31 @@ CQNightGeometry {
 		birds.do { |bird|
 			var pad = CQNightMeasures.birdDropPad.neg;
 			bird[\dropRect] = bird[\box].union(bird[\labelRect]).insetBy(pad, pad);
+		};
+		// Route revelations are geometry, not improvised paint. A bird has one
+		// direct deck-slot flight to its own Cocoon and may feed either preamp;
+		// the latter two paths are revealed only when state says so.
+		birds.do { |bird, i|
+			var side = if(i == 0) { -1 } { 1 };
+			var directJoin = this.spiralPoint(cocos[i], 0.62);
+			bird[\directRoute] = [
+				bird[\center],
+				bird[\center] + Point(side * 34 * scale, 76 * scale),
+				directJoin + Point(side * 42 * scale, -72 * scale),
+				directJoin
+			];
+			bird[\rootRoutes] = roots.collect { |root, r|
+				var bow = if(r == i) { side * 74 } {
+					if(r == 0) { -1 } { 1 } * 118
+				};
+				[
+					bird[\center],
+					bird[\center] + Point(bow * scale, 92 * scale),
+					root[\knot] + Point(root[\side] * 70 * scale,
+						-98 * scale),
+					root[\knot]
+				]
+			};
 		};
 		endpoints[\deckA_rate] = birds[0][\rateSocket];
 		endpoints[\deckB_rate] = birds[1][\rateSocket];

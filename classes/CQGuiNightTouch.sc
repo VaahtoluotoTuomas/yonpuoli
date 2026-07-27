@@ -28,13 +28,23 @@ CQGuiNightTouch {
 	// px of drag for the full range of a crescent / the eye's axes
 	*crescentSensitivity { ^1 / 120 }
 	*eyeSensitivity { ^1 / 220 }
-	// The intake knot uses the crescent's already learned vertical travel, but
-	// speaks an exponential CQSpec range: the normalized hand motion is mapped
-	// only after it reaches the state funnel.
-	*preampSensitivity { ^1 / 120 }
+	// The intake knot is a slower, two-axis knead. The first 8 px lock the
+	// dominant axis; 240 px then spans either normalized CQSpec range.
+	*preampSensitivity { ^1 / 240 }
 
 	*preampDriveNorm { |start, startY, y|
 		^(start + ((startY - y) * this.preampSensitivity)).clip(0, 1)
+	}
+
+	*preampBiasNorm { |start, startX, x|
+		^(start + ((x - startX) * this.preampSensitivity)).clip(0, 1)
+	}
+
+	*preampAxis { |delta|
+		if(CQNightGeometry.distance(Point(0, 0), delta) <= this.tapTravel) {
+			^nil
+		};
+		^if(delta.x.abs >= delta.y.abs) { \bias } { \drive }
 	}
 
 	// the sowing moon's one threshold (§6.1): a press that travels less than the
@@ -170,10 +180,10 @@ CQGuiNightTouch {
 	// §16.9 the elastic return's short glide, ~3 frames
 	*elasticFrames { ^3 }
 
-	// ---- roots: the preamp knot (§10) ----
+	// ---- roots: clickable provenance + drive/bias knot (§10) ----
 
 	preampDown { |index, view, x, y, modifiers = 0, button = 0, clicks = 1|
-		var point = this.prPoint(view, x, y), root, name;
+		var point = this.prPoint(view, x, y), root, sourceIndex, sourceName;
 		if(map.geometry.isNil) { ^this };
 		root = map.geometry[\roots][index];
 		// Cable-first remains absolute; Alt is likewise the shared banana
@@ -183,12 +193,29 @@ CQGuiNightTouch {
 		};
 		if(CQNightGeometry.preampKnotHit(root, point)) {
 			// The knot owns its paper, so a right press cannot accidentally
-			// begin a harvest lasso from a body. N7 gives it one act only.
+			// begin a harvest lasso from a body.
 			if(button != 0) { ^this };
-			name = CQGuiNightMap.preampParamName(index, \Drive);
-			preampDrag = (index: index, name: name,
-				startY: point.y, start: this.prNorm(name));
+			preampDrag = (
+				index: index, startPoint: point, axis: nil,
+				driveName: CQGuiNightMap.preampParamName(index, \Drive),
+				biasName: CQGuiNightMap.preampParamName(index, \Bias)
+			);
+			preampDrag[\driveStart] = this.prNorm(preampDrag[\driveName]);
+			preampDrag[\biasStart] = this.prNorm(preampDrag[\biasName]);
 			map.setPreampActive(index, true);
+			^this
+		};
+		sourceIndex = CQNightGeometry.preampSourceHit(root, point);
+		if(sourceIndex.notNil) {
+			// A strand is a direct enum choice. Clicking the selected one again
+			// closes the intake honestly with `none`.
+			if(button != 0) { ^this };
+			sourceName = root[\sourceValues][sourceIndex];
+			if(state.get(CQGuiNightMap.preampParamName(index, \Src))
+				== sourceName) {
+				sourceName = \none
+			};
+			state.set(CQGuiNightMap.preampParamName(index, \Src), sourceName);
 			^this
 		};
 		// The transparent layer's rectangle is larger than the anatomy. Its
@@ -197,15 +224,29 @@ CQGuiNightTouch {
 	}
 
 	preampMove { |index, view, x, y, modifiers = 0|
-		var point, norm;
+		var point, delta, norm, name;
 		if(preampDrag.isNil or: { preampDrag[\index] != index }) {
 			^this.landscapeMove(view, x, y, modifiers)
 		};
 		point = this.prPoint(view, x, y);
-		norm = this.class.preampDriveNorm(preampDrag[\start],
-			preampDrag[\startY], point.y);
-		this.prSet(preampDrag[\name], norm);
-		map.paintPreampDrive(index, this.prNorm(preampDrag[\name]));
+		delta = point - preampDrag[\startPoint];
+		if(preampDrag[\axis].isNil) {
+			preampDrag[\axis] = this.class.preampAxis(delta)
+		};
+		if(preampDrag[\axis] == \drive) {
+			name = preampDrag[\driveName];
+			norm = this.class.preampDriveNorm(preampDrag[\driveStart],
+				preampDrag[\startPoint].y, point.y);
+			this.prSet(name, norm);
+			map.paintPreampDrive(index, this.prNorm(name));
+		};
+		if(preampDrag[\axis] == \bias) {
+			name = preampDrag[\biasName];
+			norm = this.class.preampBiasNorm(preampDrag[\biasStart],
+				preampDrag[\startPoint].x, point.x);
+			this.prSet(name, norm);
+			map.paintPreampBias(index, this.prNorm(name));
+		};
 		^this
 	}
 

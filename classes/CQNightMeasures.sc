@@ -112,9 +112,12 @@ CQNightMeasures {
 
 	*rootFractions { ^#[0.17, 0.83] }
 	*rootKnotReach { ^110 }                 // body — intake knot above the waterline
-	*rootSourceSpacing { ^18 }              // body — five unlabelled intake strands
+	// A root is a delta, not a comb: the seeded geometry perturbs this wide
+	// nominal spacing independently on both sides.
+	*rootSourceSpacing { ^27 }              // body — five unlabelled intake strands
 	*rootSourceShoulder { ^54 }             // body — first bend above the waterline
 	*rootSourceGather { ^32 }               // body — final bend before the knot
+	*rootSourceHit { ^11 }                  // px — nearest strand chooses provenance
 	*rootVeinOutset { ^46 }                 // body — route around the Coco crescents
 	*rootVeinLift { ^34 }                   // body — first audio-vein control point
 	*rootVeinDrop { ^58 }                   // body — final control point below the shell
@@ -122,7 +125,7 @@ CQNightMeasures {
 	*rootBudX { ^38 }                       // body — env follower side-growth
 	*rootBudY { ^-4 }                       // body
 	*rootKnotR { ^13 }                      // body — drawn two-lobed preamp knot
-	*rootKnotHit { ^20 }                    // px — drive gesture / provenance hover
+	*rootKnotHit { ^20 }                    // px — axis-locked drive / bias gesture
 	*rootBoxPad { ^12 }                     // px — transparent local repaint layer
 	*rootLabelExtent { ^Point(72, 14) }      // px — transient provenance only
 	*rootLabelDrop { ^18 }                  // body — below the knot

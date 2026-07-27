@@ -1112,34 +1112,39 @@ the shell's exact curved spiral segment and radial stem beneath the jack. A
 generic vertical stub is not the same path and may not replace it.
 The spiral's stroke alpha breathes 0.55 → 1.0 with the coco's out level.
 
-**Roots (inputs; N7 first review 2026-07-28).** Each side is the whole intake
+**Roots (inputs; N7 second review 2026-07-28).** Each side is the whole intake
 body, not an envelope on a stick:
 
-- Five unlabelled source strands grow from the lower waterline into one
+- Five unlabelled source strands grow as a wide, seeded-irregular delta from
+  the lower waterline into one
   preamp knot. Their order comes from that side's `preASrc` / `preBSrc`
-  `CQSpec` enum with `none` omitted. At rest they are equally quiet. Hovering
-  or holding the knot brightens only the selected strand and shows one
+  `CQSpec` enum with `none` omitted. The selected strand remains subtly
+  stronger at rest. Hovering a strand brightens that candidate and shows one
   transient 10 px mono provenance (`live l`, `live r`, `mic`, `deck a`,
-  `deck b`); `none` shows its name but brightens no strand. There are no
-  permanently labelled roots.
-- The two-lobed knot is the drive body. Left-drag up/down traverses normalized
-  `preADrive` / `preBDrive` at 120 px for the full range and then maps through
-  the exponential `CQSpec`; up increases. Drive deepens the knot's living
-  centre. `preABias` / `preBBias` remains setup rather than a second night
-  gesture: its normalized value swells the outgoing lobe and pinches the
-  intake lobe, so zero is symmetric and increasing asymmetry is shape-first.
-  Non-left presses on the knot are inert. Cable/Alt priority remains absolute.
-- A fixed 3 px preamp-colored audio vein leaves the knot, bends outside the
+  `deck b`); left-click selects it, and clicking the selected strand again
+  writes `none`. Hovering or holding the knot reveals the current selection;
+  `none` shows its name but lights no strand. There are no permanent labels.
+- The two-lobed knot is an axis-locked drive/bias body. The first 8 px choose
+  one act for the whole drag: vertical up/down traverses normalized
+  `preADrive` / `preBDrive`, while horizontal right/left traverses normalized
+  `preABias` / `preBBias`. Both use 240 px for the full range and map only
+  afterwards through their CQSpec curves. Drive deepens the living centre;
+  bias swells the outgoing lobe and pinches the intake lobe, so zero is
+  symmetric and increasing asymmetry is shape-first. A tap changes neither.
+  Non-left presses are inert. Cable/Alt priority remains absolute.
+- A preamp-colored audio vein leaves the knot, bends outside the
   Coco's tide crescents and terminates on an actual outer turn of the
   corresponding spiral. It is anatomy, never a cable or hit target. The
   Cocoon's opaque view redraws the exact final cubic under its own spiral;
-  no rectangular layer edge may cut the vein. Its alpha follows the existing
-  post-preamp env aura at telemetry rate, in a local transparent root layer.
+  no rectangular layer edge may cut the vein. Drive gives it quantized
+  1.5 / 2 / 3 px pressure, so the default rests below cable weight and a hard
+  preamp visibly thickens. Its alpha combines the corresponding
+  `cocoNSlotPre` opening with the existing post-preamp env aura, in a local
+  transparent root layer.
 - The canonical green `envA` / `envB` jack is a smaller outward side-growth
   from that same post-preamp vein. It remains the only patchable endpoint;
   the inventory is still exactly 16×22. Its opaque endpoint view redraws the
-  side-growth's final passage under its dot. Source choice and bias remain
-  reachable on the setup/workshop surface.
+  side-growth's final passage under its dot.
 
 Beside side A grows the existing small **mic sprout** — display only, never a
 jack: the mic is not one of the 16 sources but an optional input feeding the
@@ -1172,6 +1177,13 @@ for the shared 120 ms momentary interval and updates the one filename truth.
 Flutter = 1 px wing bob at ambient rate while the deck's level > 0.05
 (client-side state, no polling). Ordinary hover statically brightens the bird;
 file-drag hover adds the existing whole bird+name drop-target border (§16.7).
+Ordinary bird hover also reveals a faint, hit-transparent flight from that deck
+to its own Cocoon, weighted by `cocoNSlotDeck` and absent at zero. If either
+preamp currently selects that deck, the same hover additionally reveals a
+warmer flight to the true preamp knot. Conversely, hovering a deck source
+strand or a deck-fed knot reveals that bird-to-root provenance. These paths
+exist only under the hand: deck A/B may feed either preamp, so a permanent
+bird-root line would falsely hard-code a relationship the DSP does not have.
 
 **The moon and the tide field** (accepted for the next visual iteration with
 the user 2026-07-27). The weather machine is integrated by *gesture and
