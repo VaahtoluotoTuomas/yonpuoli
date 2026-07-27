@@ -682,9 +682,9 @@ CQNightGeometry {
 				var middle = (sourceValues.size - 1) * 0.5;
 				var strands = sourceValues.collect { |value, s|
 					var offset = ((s - middle) * spacing)
-						+ (8.0.rand2 * scale);
+						+ (5.0.rand2 * scale);
 					var base = Point(knot.x + offset, height + 2);
-					var c1 = Point(base.x + (18.0.rand2 * scale),
+					var c1 = Point(base.x + (14.0.rand2 * scale),
 						height - (CQNightMeasures.rootSourceShoulder * scale
 							* (0.72 + 0.46.rand)));
 					var c2 = Point(knot.x + (offset * 0.18)
@@ -704,24 +704,39 @@ CQNightGeometry {
 					join
 				];
 				var budBase = this.cubicPoint(vein, 0.2);
+				var budAhead = this.cubicPoint(vein, 0.24);
 				var envTip = budBase + Point(
 					side * CQNightMeasures.rootBudX * scale,
 					CQNightMeasures.rootBudY * scale);
-				var envReach = max(0.001, this.distance(budBase, envTip));
+				var budTangentReach = max(0.001,
+					this.distance(budBase, budAhead));
+				var budTangent = (budAhead - budBase) / budTangentReach;
+				var envBranch = [
+					budBase,
+					budBase + (budTangent
+						* (CQNightMeasures.rootBudX * scale * 0.34)),
+					envTip - Point(side
+						* (CQNightMeasures.rootBudX * scale * 0.28), 0),
+					envTip
+				];
+				var envReach = max(0.001,
+					this.distance(envBranch[2], envTip));
 				var labelExtent = CQNightMeasures.rootLabelExtent;
-				var labelRect = Rect(knot.x - (labelExtent.x * 0.5),
+				var labelCenterX = knot.x - (side
+					* CQNightMeasures.rootLabelInward * scale);
+				var labelRect = Rect(labelCenterX - (labelExtent.x * 0.5),
 					knot.y + (CQNightMeasures.rootLabelDrop * scale),
 					labelExtent.x, labelExtent.y);
 				var allPoints = strands.flat
-					++ vein ++ [budBase, envTip, labelRect.leftTop,
+					++ vein ++ envBranch ++ [labelRect.leftTop,
 						labelRect.rightBottom];
 				(side: side, sourceValues: sourceValues,
 					sourceStrands: strands, knot: knot,
 					audioVein: vein, audioJoin: join,
-					envBranch: [budBase, envTip],
-					// the env jack's opaque owner redraws this real side-growth
-					// under its paper, preserving the courtesy law.
-					arrival: (envTip - budBase) / envReach,
+					envBranch: envBranch,
+					// The env jack uses transparent paper, so this exact cubic
+					// remains continuous beneath its dot without a repair seam.
+					arrival: (envTip - envBranch[2]) / envReach,
 					labelRect: labelRect,
 					box: this.prBoundsOf(allPoints,
 						CQNightMeasures.rootBoxPad))

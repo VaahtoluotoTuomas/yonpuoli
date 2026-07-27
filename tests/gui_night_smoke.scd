@@ -603,6 +603,11 @@ punchChecks = { |map|
 					and: { map.overlay.skin == \night }
 					and: { map.overlay.view.acceptsMouse.not },
 					"night owns a hit-transparent phosphor cable overlay");
+				check.value(map.routeView.acceptsMouse.not,
+					"route provenance owns one hit-transparent topological overlay");
+				check.value(#[envA, envB].every { |name|
+					map.endpoints[name][\view].background.alpha == 0
+				}, "env output dots keep transparent paper over the exact curved branch");
 				check.value(map.tideGestureView.acceptsMouse.not
 					and: { CQNightGeometry.compute(1280, 570)[\castles]
 						.every { |castle|

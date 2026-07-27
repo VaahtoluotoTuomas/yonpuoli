@@ -692,6 +692,7 @@ CQ.hold(1, 0);
 //    ja pieni vihreään env-jakkiin päättyvä sivusilmu. Audiojuonen pitää
 //    liittyä Cocoon viivaan — ei pysähtyä suorakulmaiseen näkymärajaan.
 // 2. HOVER jokaisella säikeellä: vain ehdokas kirkastuu ja sen nimi ilmestyy.
+//    Nimen pitää erottua vaaleana myös kirkkaan vihreän juuren vieressä.
 //    Klikkaa deck a; sen pitää jäädä hienovaraisesti aktiiviseksi. Klikkaa
 //    samaa uudelleen: kaikki säikeet lepäävät ja solmun hover sanoo "none".
 // 3. Valitse deck a ja vedä vasenta solmua YLÖS. Driven pitää nousta
@@ -703,6 +704,8 @@ CQ.hold(1, 0);
 // 5. Hoveroi lintu A: himmeä reitti menee sen omaan Cocoon ja katoaa, jos
 //    coco1SlotDeck = 0. Kun deck A on preamp A/B:n lähde, hover paljastaa myös
 //    lennon oikeaan juureen. Deck-säikeen hover tekee saman juuresta käsin.
+//    Reitin pitää kulkea katkeamatta jokaisen linnun, Cocon ja muun elementin
+//    näkymättömän piirtoalueen yli.
 // 6. Patchaa vihreä sivusilmu. Vain env-jakista lähtee tavallinen kaapeli;
 //    solmusta, tulosäikeistä tai paksusta audiojuonesta ei voi tarttua.
 CQ.patch(\envA, \coco1_spaf, 0.7);
@@ -726,9 +729,12 @@ CQ.patch(\envA, \coco1_spaf, 0.7);
 7. Paljastuuko bird→Coco vain lintu-hoverissa ja häviääkö se `SlotDeck = 0`:ssa?
    Seuraako bird→root aina todellista valintaa myös ristiin A→B / B→A?
 8. Ovatko juuret riittävän leveät, epäsymmetriset ja levottomat mutta jokainen
-   säie silti seurattavissa ja klikattavissa?
+   säie silti seurattavissa ja klikattavissa? Erottuvatko erityisesti vasemman
+   puolen `deck a` ja `mic` toisistaan?
 9. Kuuluuko drive/bias-muutos selvästi deckillä/live-inputilla eikä muuta
    DSP-reittiä tai env-patchin toimintaa?
+10. Jatkuvatko kaikki hover-reitit ilman suorakulmaisia aukkoja ja piirtyykö
+    vihreä output-sivuhaara yhtenä pyöreänä käyränä jakille asti?
 
 - [ ] N7 hyväksytty (pvm: ______ — lähdeklikkaus, drive/bias-käden tuntu,
       viivapaine, bird/Coco/root-reitit, env-sivusilmu, kaapeliprioriteetti,

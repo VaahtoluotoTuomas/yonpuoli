@@ -218,6 +218,14 @@ CQNightGeometryTest : UnitTest {
 				"root % derives its five intake strands from CQSpec".format(i + 1));
 			this.assertEquals(root[\sourceStrands].size, sourceValues.size,
 				"root % draws one strand per audible provenance".format(i + 1));
+			root[\sourceStrands].doAdjacentPairs { |left, right|
+				this.assert(
+					(right.first.x - left.first.x)
+						> (CQNightMeasures.rootSourceSpacing
+							* geo[\scale] * 0.65),
+					"root % keeps adjacent source mouths separately readable"
+						.format(i + 1));
+			};
 			root[\sourceStrands].do { |strand, s|
 				var sample = CQNightGeometry.cubicPoint(strand, 0.12);
 				this.assertEquals(
@@ -238,6 +246,23 @@ CQNightGeometryTest : UnitTest {
 					.format(i + 1));
 			this.assertEquals(geo[\endpoints][envName], root[\envBranch].last,
 				"root %'s canonical env jack is the post-preamp side bud"
+					.format(i + 1));
+			this.assertEquals(root[\envBranch].size, 4,
+				"root %'s env output is one smooth cubic, not a repaired stub"
+					.format(i + 1));
+			this.assert(
+				((root[\envBranch][1] - root[\envBranch][0]).x
+					* (CQNightGeometry.cubicPoint(root[\audioVein], 0.24)
+						- CQNightGeometry.cubicPoint(root[\audioVein], 0.2)).x)
+				+ ((root[\envBranch][1] - root[\envBranch][0]).y
+					* (CQNightGeometry.cubicPoint(root[\audioVein], 0.24)
+						- CQNightGeometry.cubicPoint(root[\audioVein], 0.2)).y)
+				> 0,
+				"root %'s env output leaves in the audio vein's direction"
+					.format(i + 1));
+			this.assert(((root[\labelRect].center.x - root[\knot].x)
+				* root[\side]) < 0,
+				"root %'s provenance rests inward beside the knot, off the strands"
 					.format(i + 1));
 			this.assertFloatEquals(
 				sqrt(arrival.x.squared + arrival.y.squared), 1.0,

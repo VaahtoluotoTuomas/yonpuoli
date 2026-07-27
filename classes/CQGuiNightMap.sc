@@ -12,7 +12,8 @@
 
 CQGuiNightMap {
 	var gui, state, matrix, config;
-	var <stageView, <container, <overlay, <controller, <touch, <endpoints, <bodies;
+	var <stageView, <container, <overlay, <routeView;
+	var <controller, <touch, <endpoints, <bodies;
 	var <groundView, <rootViews, <ringView, <eyeView, <castleViews, <shellViews, <birdViews;
 	var <birdHover, <birdFlash, birdFlashGeneration, fileDialog, deckAction;
 	var <almanacView, <moonHover = false, <moonFlash = false;
@@ -662,8 +663,7 @@ CQGuiNightMap {
 		preampActive[i] = flag == true;
 		if(freed.not) {
 			rootViews[i].refresh;
-			groundView.refresh;
-			birdViews.do(_.refresh);
+			routeView.refresh;
 		};
 		^this
 	}
@@ -823,6 +823,14 @@ CQGuiNightMap {
 		tideGateView.drawFunc = { this.prSafeDraw { this.prDrawTideGate } };
 		overlay = CQGuiCableOverlay(matrix, endpoints, gui.bananaGrammar,
 			{ |src| gui.auraFor(src) }).skin_(\night);
+		// Provenance must cross every invisible Qt paper edge. It lives above
+		// the landscape but below real patch cables and accepts no mouse.
+		routeView = UserView()
+			.background_(night[\clear])
+			.acceptsMouse_(false);
+		routeView.drawFunc = {
+			this.prSafeDraw { this.prDrawRoutes }
+		};
 		// Gesture ink must cross every opaque landscape rectangle. This view is
 		// the topmost stage sibling and never accepts the mouse.
 		tideGestureView = UserView()
@@ -855,7 +863,8 @@ CQGuiNightMap {
 		this.prBindTideGate;
 		this.prBindDrops;
 		stageView = View().background_(night[\ground]).layout_(
-			StackLayout(tideGestureView, overlay.view, container).mode_(\stackAll));
+			StackLayout(tideGestureView, overlay.view, routeView, container)
+				.mode_(\stackAll));
 		container.onResize = { this.prLayout };
 		this.prRegisterUpdaters;
 		{ this.prLayout }.defer;
@@ -878,9 +887,10 @@ CQGuiNightMap {
 		var castleDetail = name.asString.beginsWith("tri")
 			or: { name.asString.beginsWith("cas") }
 			or: { name.asString.beginsWith("castle") };
+		var rootTip = #[envA, envB].includes(name);
 		var view = UserView(container, Rect(0, 0, width, height))
 			.background_(CQInk.palette(\night)[
-				if(castleDetail) { \clear } { \ground }]);
+				if(castleDetail or: { rootTip }) { \clear } { \ground }]);
 		view.drawFunc = {
 			this.prSafeDraw {
 				spec[\decoration] !? { this.prDrawDecoration(name, spec, anchor) };
@@ -1151,8 +1161,7 @@ CQGuiNightMap {
 			preampSourceHover[i] = nextSource;
 			if(freed.not) {
 				rootViews[i].refresh;
-				groundView.refresh;
-				birdViews.do(_.refresh);
+				routeView.refresh;
 			};
 		};
 	}
@@ -1279,8 +1288,7 @@ CQGuiNightMap {
 			birdHover[i] = next;
 			if(freed.not) {
 				birdViews[i].refresh;
-				shellViews[i].refresh;
-				groundView.refresh;
+				routeView.refresh;
 			};
 		};
 	}
@@ -1493,8 +1501,7 @@ CQGuiNightMap {
 				preampSources[i] = value;
 				if(freed.not) {
 					rootViews[i].refresh;
-					groundView.refresh;
-					birdViews.do(_.refresh);
+					routeView.refresh;
 				};
 			});
 			gui.widgets.register(driveName, { |value|
@@ -1522,9 +1529,7 @@ CQGuiNightMap {
 					deckSlotNorms[i] = CQSpec.unmap(
 						("coco" ++ (i + 1) ++ "SlotDeck").asSymbol, value);
 					if(freed.not) {
-						groundView.refresh;
-						birdViews[i].refresh;
-						shellViews[i].refresh;
+						routeView.refresh;
 					};
 				});
 		};
@@ -1593,6 +1598,22 @@ CQGuiNightMap {
 		if(geometry.isNil) { ^this };
 		this.prDrawCompass;
 		CQInkNight.drawSprout(geometry[\sprout], sproutState, \night);
+		// §16.7's border rings the bird AND its name, so it is drawn on the
+		// full-stage ground rather than inside the bird's own 44x32 layer —
+		// a view cannot paint outside its bounds, and this rect is bigger than
+		// the bird on purpose (it is what accepts the file). Ground is the
+		// bottom layer, but the border runs outside every opaque layer it
+		// encloses, so nothing covers it.
+		geometry[\birds].do { |bird, i|
+			var which = if(i == 0) { \deckA } { \deckB };
+			if(gui.dropTargetIs(this.class.dropTargetName(which))) {
+				CQInk.drawDropTarget(bird[\dropRect], \night)
+			};
+		};
+	}
+
+	prDrawRoutes {
+		if(geometry.isNil) { ^this };
 		geometry[\birds].do { |bird, i|
 			var deck = if(i == 0) { \deckA } { \deckB };
 			if(birdHover[i] and: { deckSlotNorms[i] > 0 }) {
@@ -1607,16 +1628,12 @@ CQGuiNightMap {
 				};
 			};
 		};
-		// §16.7's border rings the bird AND its name, so it is drawn on the
-		// full-stage ground rather than inside the bird's own 44x32 layer —
-		// a view cannot paint outside its bounds, and this rect is bigger than
-		// the bird on purpose (it is what accepts the file). Ground is the
-		// bottom layer, but the border runs outside every opaque layer it
-		// encloses, so nothing covers it.
-		geometry[\birds].do { |bird, i|
-			var which = if(i == 0) { \deckA } { \deckB };
-			if(gui.dropTargetIs(this.class.dropTargetName(which))) {
-				CQInk.drawDropTarget(bird[\dropRect], \night)
+		2.do { |i|
+			if(this.prPreampRevealed(i)) {
+				CQInkNight.drawPreampLabel(
+					geometry[\roots][i],
+					this.class.preampSourceLabel(
+						this.prRevealedPreampSource(i)), \night)
 			};
 		};
 	}
@@ -1644,18 +1661,15 @@ CQGuiNightMap {
 	}
 
 	prDrawPreamp { |i|
-		var root, source, revealSource, hoverIndex, reveal;
+		var root, source, hoverIndex;
 		if(geometry.isNil) { ^this };
 		root = geometry[\roots][i];
 		source = preampSources[i];
 		hoverIndex = preampSourceHover[i];
-		revealSource = this.prRevealedPreampSource(i);
-		reveal = this.prPreampRevealed(i);
 		CQInkNight.drawPreampRoot(root, root[\box].leftTop,
 			preampDriveNorms[i], preampBiasNorms[i],
 			this.class.preampSourceIndex(i, source),
-			hoverIndex, this.class.preampSourceLabel(revealSource),
-			reveal, preampActive[i],
+			hoverIndex, preampActive[i],
 			gui.auraFor(if(i == 0) { \envA } { \envB }) ? 0,
 			preampSlotNorms[i], \night);
 	}
@@ -1753,20 +1767,16 @@ CQGuiNightMap {
 	}
 
 	prDrawShell { |i|
-		var coco, birdRoute;
+		var coco;
 		if(geometry.isNil) { ^this };
 		coco = geometry[\cocos][i];
-		if(birdHover[i] and: { deckSlotNorms[i] > 0 }) {
-			birdRoute = geometry[\birds][i][\directRoute]
-		};
 		CQInkNight.drawShell(coco, coco[\shellBox].leftTop,
 			holdStates[i], this.flipMode(i), speedNorms[i], shellHover[i],
 			gui.phaseNorms[i], sparkDirs[i], skipHover[i], skipFlash[i],
 			if(struckOn[i]) { struckNorms[i] }, struckBlink[i],
 			rimHover[i], \night, geometry[\roots][i],
 			gui.auraFor(if(i == 0) { \envA } { \envB }) ? 0,
-			preampDriveNorms[i], preampSlotNorms[i],
-			birdRoute, deckSlotNorms[i]);
+			preampDriveNorms[i], preampSlotNorms[i]);
 	}
 
 	// the night half of §16.7's drop-target law; the Day deck box wears the
@@ -1774,23 +1784,14 @@ CQGuiNightMap {
 	*dropTargetName { |which| ^("night_" ++ which).asSymbol }
 
 	prDrawBird { |i|
-		var bird, which, active, routes = List.new;
+		var bird, which, active;
 		if(geometry.isNil) { ^this };
 		bird = geometry[\birds][i];
 		which = if(i == 0) { \deckA } { \deckB };
 		active = birdHover[i]
 			or: { gui.dropTargetIs(this.class.dropTargetName(which)) };
-		if(birdHover[i] and: { deckSlotNorms[i] > 0 }) {
-			routes.add([bird[\directRoute], deckSlotNorms[i], \direct])
-		};
-		2.do { |r|
-			if(this.prRevealedPreampSource(r) == which
-				and: { birdHover[i] or: { this.prPreampRevealed(r) } }) {
-				routes.add([bird[\rootRoutes][r], 1, \preamp])
-			};
-		};
 		CQInkNight.drawBird(bird, bird[\box].leftTop,
-			active, birdFlash[i], routes, \night);
+			active, birdFlash[i], \night);
 	}
 
 	prDrawDecoration { |name, spec, anchor|
@@ -1805,10 +1806,9 @@ CQGuiNightMap {
 				}
 			},
 			\root, {
-				geometry !? { |geo|
-					CQInkNight.drawRootStub(anchor,
-						geo[\roots][if(name == \envA) { 0 } { 1 }][\arrival], \night)
-				}
+				// envA/B paper is transparent: the one exact curved branch
+				// already reaches the anchor beneath this jack without a seam.
+				nil
 			}
 		);
 	}

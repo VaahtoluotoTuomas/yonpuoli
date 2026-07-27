@@ -51,6 +51,12 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Fixed
 
+- Kept Night bird/root provenance flights continuous across the landscape by
+  moving them and their high-contrast transient labels to one hit-transparent
+  layer above all local Qt drawing rectangles.
+- Smoothed each preamp's green output side-growth into one cubic under a
+  transparent `envA/B` endpoint, removing the midpoint repair seam, and spread
+  the five source mouths farther apart for clearer individual roots.
 - Made the Night bird ruffle reliable in the live Windows/Qt window: the bird
   now claims its drag, follows the global cursor while held, and keeps a clear
   reversal valid even after repeated or broad movement.

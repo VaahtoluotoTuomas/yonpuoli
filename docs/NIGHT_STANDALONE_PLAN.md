@@ -639,7 +639,7 @@ composition"</b> (kept because the failure is instructive)</summary>
 > `nocturne-preamp-roots` (checklist N7).** The design locks are now direct
 > strand selection/toggle, an 8 px axis lock into 240 px vertical drive or
 > horizontal bias, drive-weighted 1.5/2/3 px audio anatomy, and transient,
-> topology-true bird flights. Unit geometry, 12,181 assertions and the Qt
+> topology-true bird flights. Unit geometry, 12,199 assertions and the Qt
 > Night smoke are green. This is not acceptance: scale, route legibility and
 > the hand feel still require the live 100/125/150 % visual/listening review.
 
@@ -683,14 +683,18 @@ The second-review implementation contract is now precise:
 - The audio vein meets the real Cocoon spiral at norm 0.8, routes outside the
   crescent owners and is redrawn inside opaque Cocoon paper. Its 1.5/2/3 px
   weight follows drive; `SlotPre` and env aura shape alpha. `envA/B` grows
-  outward as a smaller branch.
+  outward as one smaller cubic branch under transparent endpoint paper, with
+  no straight repair stub or midpoint seam.
 - Bird hover reveals its direct route only while `SlotDeck` is nonzero, with
   weight derived from that gain. Bird hover also reveals every preamp selecting
-  that deck; root hover makes the reciprocal revelation. All route ink is
-  hit-transparent and disappears with the hand.
+  that deck; root hover makes the reciprocal revelation. All route ink and
+  provenance text share one hit-transparent layer above the landscape and below
+  patch cables, so Qt view rectangles cannot clip them. They disappear with the
+  hand; bone text over a small ground wash stays legible beside a lit root.
 - Drive/bias/aura repaint remains local to roots and their shell underlay.
-  Only transient cross-landscape provenance repaints the ground; open paper
-  inside the transparent root layer delegates to the tide/ground grammar.
+  Transient cross-landscape provenance repaints only its shared route overlay;
+  open paper inside the transparent root layer delegates to the tide/ground
+  grammar.
 
 ---
 

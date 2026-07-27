@@ -114,7 +114,7 @@ CQNightMeasures {
 	*rootKnotReach { ^110 }                 // body — intake knot above the waterline
 	// A root is a delta, not a comb: the seeded geometry perturbs this wide
 	// nominal spacing independently on both sides.
-	*rootSourceSpacing { ^27 }              // body — five unlabelled intake strands
+	*rootSourceSpacing { ^32 }              // body — five unlabelled intake strands
 	*rootSourceShoulder { ^54 }             // body — first bend above the waterline
 	*rootSourceGather { ^32 }               // body — final bend before the knot
 	*rootSourceHit { ^11 }                  // px — nearest strand chooses provenance
@@ -128,7 +128,8 @@ CQNightMeasures {
 	*rootKnotHit { ^20 }                    // px — axis-locked drive / bias gesture
 	*rootBoxPad { ^12 }                     // px — transparent local repaint layer
 	*rootLabelExtent { ^Point(72, 14) }      // px — transient provenance only
-	*rootLabelDrop { ^18 }                  // body — below the knot
+	*rootLabelInward { ^52 }                // body — beside, not over, the delta
+	*rootLabelDrop { ^5 }                   // body — slight settling below knot
 	// The mic sprout still grows beside envA, but on root A's far side: the
 	// tide pool took the water it used to stand in (§9), and a reed rising from
 	// the waterline at the bay's left edge is where it belongs anyway.

@@ -1124,6 +1124,8 @@ body, not an envelope on a stick:
   `deck b`); left-click selects it, and clicking the selected strand again
   writes `none`. Hovering or holding the knot reveals the current selection;
   `none` shows its name but lights no strand. There are no permanent labels.
+  The transient name sits inward beside the knot in bone ink over a small
+  ground wash, so a highlighted green strand cannot swallow its text.
 - The two-lobed knot is an axis-locked drive/bias body. The first 8 px choose
   one act for the whole drag: vertical up/down traverses normalized
   `preADrive` / `preBDrive`, while horizontal right/left traverses normalized
@@ -1143,8 +1145,9 @@ body, not an envelope on a stick:
   transparent root layer.
 - The canonical green `envA` / `envB` jack is a smaller outward side-growth
   from that same post-preamp vein. It remains the only patchable endpoint;
-  the inventory is still exactly 16×22. Its opaque endpoint view redraws the
-  side-growth's final passage under its dot.
+  the inventory is still exactly 16×22. The side-growth is one tangent-led
+  cubic all the way to the dot; the endpoint view uses transparent paper, so
+  no straight repair stub or rectangular seam interrupts it.
 
 Beside side A grows the existing small **mic sprout** — display only, never a
 jack: the mic is not one of the 16 sources but an optional input feeding the
@@ -1184,6 +1187,10 @@ warmer flight to the true preamp knot. Conversely, hovering a deck source
 strand or a deck-fed knot reveals that bird-to-root provenance. These paths
 exist only under the hand: deck A/B may feed either preamp, so a permanent
 bird-root line would falsely hard-code a relationship the DSP does not have.
+All transient flights and their provenance names share one hit-transparent
+topological overlay above every landscape body and below actual patch cables.
+They therefore remain continuous across otherwise invisible Qt view
+rectangles instead of being repaired separately inside each object.
 
 **The moon and the tide field** (accepted for the next visual iteration with
 the user 2026-07-27). The weather machine is integrated by *gesture and

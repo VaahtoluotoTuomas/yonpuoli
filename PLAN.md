@@ -376,16 +376,20 @@ koska korjaukset eivät koskeneet DSP:tä tai muita näkymiä.
 
 Haaran `nocturne-preamp-roots` toinen katselmointiportti 2026-07-28 (§10,
 **live-hyväksyntä vielä auki, checklist N7**): `CQ_COMPILE_OK`,
-**12 181 unit-passia / 0 failurea / 28/28 luokkaa**, `CQ_SAFETY_PASSED`,
+**12 199 unit-passia / 0 failurea / 28/28 luokkaa**, `CQ_SAFETY_PASSED`,
 `CQ_HOLD_OK`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
 `CQ_GUI_DRAWER_REENTRY_PASSED` ja `CQ_GUI_NIGHT_PASSED`. Night-smoke todistaa
 CQSpecistä johdetun säie-hoverin, lähteen valinnan ja `none`-togglen,
 akselilukitun drive/bias-kirjoituksen, slot-gainien saapumisen reittipiirtoon
-sekä cable-first-prioriteetin. Seedattu geometria testaa jokaisen säikeen
-osuma-alueen ja deck→Coco / deck→kumpi tahansa preamp -reittien todelliset
-päätepisteet. Qt-kuvapassi tarkisti levon, lähde-hoverin, juuriprovenienssin ja
-lintu-hoverin suoran deck-reitin. §13.8:n loudness-kompensaatio kirjattiin
-myöhemmäksi kuuntelukokeeksi; DSP:hen ei koskettu tässä portissa.
+sekä cable-first-prioriteetin. Yksi hiiriläpäisevä topologiataso pitää kaikki
+hover-reitit ja vaaleat provenienssitekstit yhtenäisinä paikallisten Qt-paperien
+yli; vihreä env-output on yksi tangentiaalinen cubic läpinäkyvän jakin alla.
+Seedattu geometria testaa jokaisen väljemmän säiesuun osuma-alueen,
+deck→Coco / deck→kumpi tahansa preamp -reittien todelliset päätepisteet ja
+output-haaran jatkuvuuden. Qt-kuvapassi tarkisti levon, lähde-hoverin,
+juuriprovenienssin ja lintu-hoverin suoran deck-reitin. §13.8:n
+loudness-kompensaatio kirjattiin myöhemmäksi kuuntelukokeeksi; DSP:hen ei
+koskettu tässä portissa.
 
 ## Omistajuus- ja julkaisurata (kulkee Nocturnen rinnalla)
 

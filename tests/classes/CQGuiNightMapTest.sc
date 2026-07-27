@@ -89,7 +89,7 @@ CQGuiNightMapTest : UnitTest {
 		this.assertEquals(CQGuiNightMap.endpointSpec(\org1)[\decoration], \stem,
 			"org jacks keep their stem tip");
 		this.assertEquals(CQGuiNightMap.endpointSpec(\envA)[\decoration], \root,
-			"a root tip redraws its own arrival under its opaque view");
+			"a root tip keeps its semantic while transparent paper preserves its curve");
 	}
 
 	test_preampProvenanceComesFromCQSpec {
