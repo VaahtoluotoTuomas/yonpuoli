@@ -31,6 +31,11 @@ tagged. Earlier tags describe internal development baselines.
   ruffle for a random sibling, all sharing the filename truth and 120 ms
   successful-load flash. The complete bird interaction passed live review on
   2026-07-28.
+- First-review Night intake bodies: five CQSpec-derived source strands converge
+  on a playable drive/bias knot, a fixed thick audio vein reaches the real
+  Cocoon spiral, and `envA/B` remains the smaller patchable post-preamp branch.
+  Source provenance is revealed only under the hand; live visual/listening
+  acceptance remains open.
 
 ### In progress
 

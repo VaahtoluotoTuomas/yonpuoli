@@ -226,4 +226,18 @@ CQGuiNightTouchTest : UnitTest {
 			< CQGuiNightTouch.crescentSensitivity,
 			"the eye moves the macro pair more gently than a crescent");
 	}
+
+	test_preampDriveIsAnUpwardBodilyPull {
+		this.assert(CQGuiNightTouch.preampSensitivity > 0,
+			"the preamp knot increases drive when the hand pulls upward");
+		this.assertFloatEquals(
+			CQGuiNightTouch.preampDriveNorm(0.25, 100, 70), 0.5,
+			"a 30 px upward pull adds one quarter of the drive range", 1e-9);
+		this.assertFloatEquals(
+			CQGuiNightTouch.preampDriveNorm(0.25, 100, 130), 0,
+			"a downward pull reduces drive and clamps at the CQSpec floor", 1e-9);
+		this.assertFloatEquals(
+			CQGuiNightTouch.preampDriveNorm(0.9, 100, -100), 1,
+			"a hard upward pull clamps at the CQSpec ceiling", 1e-9);
+	}
 }

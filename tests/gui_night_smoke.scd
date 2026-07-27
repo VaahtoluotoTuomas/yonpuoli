@@ -12,6 +12,7 @@ var matrix = CQMatrix(nil);
 var compassDir = Cocoquantus.repoDir +/+ "tests" +/+ "tmp" +/+ "cqcompass_smoke";
 var config;
 var gui, ok = true, abort, compassChecks, weatherAsync, punchChecks, birdChecks;
+var preampChecks;
 var check = { |condition, message|
 	if(condition) { ("ok:   " ++ message).postln } {
 		ok = false;
@@ -143,6 +144,76 @@ birdChecks = { |map|
 		view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
 		check.value(gui.bananaGrammar.isInHand and: { routes.size == before },
 			"a crossing cable takes the press before fetch/ruffle");
+		gui.bananaGrammar.escape;
+	};
+	matrix.load(savedMatrix);
+	map.overlay.invalidate;
+};
+
+// ---- §10 intake roots: source provenance · drive knot · fixed audio body ----
+preampChecks = { |map|
+	var view = map.rootViews[0], root = map.geometry[\roots][0];
+	var local = root[\knot] - root[\box].leftTop;
+	var before, after, savedMatrix, cable, cablePoint;
+	var check = { |condition, message|
+		if(condition) { ("ok:   " ++ message).postln } {
+			ok = false;
+			("FAIL: " ++ message).postln;
+		};
+	};
+	view.mouseOverAction.value(view, local.x, local.y);
+	check.value(map.preampHover[0],
+		"hovering the knot reveals the current preamp provenance");
+	check.value(CQGuiNightMap.preampSourceIndex(0, state.get(\preASrc)) == 0,
+		"the revealed live-l strand follows CQSpec's source order");
+	before = state.get(\preADrive);
+	view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
+	check.value(map.touch.preampGestureActive and: { map.preampActive[0] },
+		"the preamp knot owns one bodily drive gesture");
+	view.mouseMoveAction.value(view, local.x, local.y - 30, 0);
+	after = state.get(\preADrive);
+	check.value(after > before
+		and: { map.preampDriveNorms[0]
+			== CQSpec.unmap(\preADrive, after) },
+		"pulling the knot upward raises exponential drive through CQState");
+	view.mouseUpAction.value(view, local.x, local.y - 30, 0, 0);
+	check.value(map.touch.preampGestureActive.not
+		and: { map.preampActive[0].not },
+		"release rests the knot without reverting its continuous setting");
+	view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
+	map.cancelGestures;
+	check.value(map.touch.preampGestureActive.not
+		and: { map.preampActive[0].not },
+		"the shared Esc/Tab/panic/free choke point releases a held drive knot");
+	view.mouseLeaveAction.value(view);
+	check.value(map.preampHover[0].not,
+		"leaving the root hides its transient provenance");
+
+	// As with the bird fixture, feed an exact planted path point through this
+	// body handler. It proves §4.5 independently of where a review patch happens
+	// to cross the knot in this particular layout.
+	savedMatrix = matrix.asArray;
+	matrix.patch(\tri1, \coco1_spaf, 0.5);
+	map.overlay.invalidate;
+	cable = map.overlay.cableRecords.detect { |record|
+		record[\src] == \tri1 and: { record[\dest] == \coco1_spaf }
+	};
+	cablePoint = cable !? { |record|
+		record[\points].at(record[\points].size div: 2)
+	};
+	check.value(cablePoint.notNil,
+		"the preamp priority fixture has an exact planted cable point");
+	if(cablePoint.notNil) {
+		local = cablePoint - root[\box].leftTop;
+		view.mouseOverAction.value(view, local.x, local.y);
+		check.value(map.preampHover[0].not
+			and: { gui.bananaGrammar.hoverCable.notNil },
+			"a crossing cable takes hover before the preamp provenance");
+		before = state.get(\preADrive);
+		view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
+		check.value(gui.bananaGrammar.isInHand
+			and: { state.get(\preADrive) == before },
+			"a crossing cable takes the press before the drive knot");
 		gui.bananaGrammar.escape;
 	};
 	matrix.load(savedMatrix);
@@ -982,6 +1053,7 @@ punchChecks = { |map|
 																"a cable crossing the shell wins the press (4.5)");
 															gui.bananaGrammar.escape;
 															birdChecks.value(map);
+															preampChecks.value(map);
 															check.value(map.birdViews.every { |bird|
 																bird.canReceiveDragHandler.notNil
 															}, "both birds accept the file drop");

@@ -111,10 +111,21 @@ CQNightMeasures {
 	// ---- the roots ----
 
 	*rootFractions { ^#[0.17, 0.83] }
-	*rootReach { ^110 }                     // body — how high the tip climbs
-	*rootSpread { ^40 }                     // body — base offset from the tip
-	*rootTwigX { ^28 }                      // body
-	*rootTwigY { ^20 }                      // body
+	*rootKnotReach { ^110 }                 // body — intake knot above the waterline
+	*rootSourceSpacing { ^18 }              // body — five unlabelled intake strands
+	*rootSourceShoulder { ^54 }             // body — first bend above the waterline
+	*rootSourceGather { ^32 }               // body — final bend before the knot
+	*rootVeinOutset { ^46 }                 // body — route around the Coco crescents
+	*rootVeinLift { ^34 }                   // body — first audio-vein control point
+	*rootVeinDrop { ^58 }                   // body — final control point below the shell
+	*rootVeinJoinNorm { ^0.8 }              // body fraction — a real outer spiral point
+	*rootBudX { ^38 }                       // body — env follower side-growth
+	*rootBudY { ^-4 }                       // body
+	*rootKnotR { ^13 }                      // body — drawn two-lobed preamp knot
+	*rootKnotHit { ^20 }                    // px — drive gesture / provenance hover
+	*rootBoxPad { ^12 }                     // px — transparent local repaint layer
+	*rootLabelExtent { ^Point(72, 14) }      // px — transient provenance only
+	*rootLabelDrop { ^18 }                  // body — below the knot
 	// The mic sprout still grows beside envA, but on root A's far side: the
 	// tide pool took the water it used to stand in (§9), and a reed rising from
 	// the waterline at the bay's left edge is where it belongs anyway.

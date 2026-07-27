@@ -13,7 +13,7 @@
 CQGuiNightMap {
 	var gui, state, matrix, config;
 	var <stageView, <container, <overlay, <controller, <touch, <endpoints, <bodies;
-	var <groundView, <ringView, <eyeView, <castleViews, <shellViews, <birdViews;
+	var <groundView, <rootViews, <ringView, <eyeView, <castleViews, <shellViews, <birdViews;
 	var <birdHover, <birdFlash, birdFlashGeneration, fileDialog, deckAction;
 	var <almanacView, <moonHover = false, <moonFlash = false;
 	// The tide is the full ground itself: four seeds, no pool body or outline.
@@ -29,6 +29,8 @@ CQGuiNightMap {
 	var <eyeFreqNorm = 0.5, <eyeChaosNorm = 0.15;
 	var <speedNorms, <shellHover, <dialHover, <rangeHover, <bodyHover;
 	var <rimHover, <ringHover = false;
+	var <preampHover, <preampActive, <preampDriveNorms, <preampBiasNorms;
+	var <preampSources, preampPainted;
 	var <sparkDirs, <skipHover, <skipFlash, sparkPainted, flipPainted;
 	var struckCount, <struckOn, <struckNorms, <struckBlink;
 	var <fireflyPhase = 0.0, lastFireflyTime, castlePainted;
@@ -98,6 +100,35 @@ CQGuiNightMap {
 				("coco" ++ n ++ "_skip").asSymbol]
 		};
 		^[]
+	}
+
+	// N7 source truth. Membership and order are never copied into the view;
+	// each side reads its own CQSpec enum.
+	*preampParamName { |index, suffix|
+		var side = if(index == 0) { "A" } { "B" };
+		^("pre" ++ side ++ suffix.asString).asSymbol
+	}
+
+	*preampSourceValues { |index|
+		^CQSpec.enumValues(this.preampParamName(index, \Src))
+	}
+
+	*preampSourceIndex { |index, value|
+		var name = this.preampParamName(index, \Src);
+		var audible = this.preampSourceValues(index)
+			.reject { |candidate| candidate == \none };
+		^audible.indexOf(CQSpec.clamp(name, value))
+	}
+
+	*preampSourceLabel { |value|
+		^switch(value,
+			\liveL, { "live l" },
+			\liveR, { "live r" },
+			\deckA, { "deck a" },
+			\deckB, { "deck b" },
+			\mic, { "mic" },
+			{ "none" }
+		)
 	}
 
 	// §6.1 crescent inventory: three continuous coco moons per shell plus one
@@ -497,6 +528,7 @@ CQGuiNightMap {
 	cancelGestures {
 		touch !? {
 			touch.cancelPunch;
+			touch.cancelPreamp;
 			touch.cancelBird;
 			touch.cancelWeather;
 		};
@@ -625,6 +657,18 @@ CQGuiNightMap {
 		if(freed.not) { crescentViews[name] !? { |view| view.refresh } };
 	}
 
+	setPreampActive { |i, flag|
+		preampActive[i] = flag == true;
+		if(freed.not) { rootViews[i].refresh };
+		^this
+	}
+
+	paintPreampDrive { |i, norm|
+		preampDriveNorms[i] = norm;
+		if(freed.not) { rootViews[i].refresh };
+		^this
+	}
+
 	// One /cq_aura frame that actually moved (CQGui gates the stream and the
 	// visible view). Fireflies ride exactly these frames — §16.6 stillness
 	// law: the river flows while the island sounds.
@@ -645,6 +689,14 @@ CQGuiNightMap {
 				or: { (value - castlePainted[k]).abs >= 0.04 }) {
 				castlePainted[k] = value;
 				castleViews[k].refresh;
+			};
+		};
+		2.do { |i|
+			var value = auraValues[10 + i] ? 0; // envA/envB, post-preamp truth
+			if(preampPainted[i].isNil
+				or: { (value - preampPainted[i]).abs >= 0.04 }) {
+				preampPainted[i] = value;
+				rootViews[i].refresh;
 			};
 		};
 		if(overlay.cableCount > 0 and: { overlay.auraPulses }) {
@@ -672,6 +724,12 @@ CQGuiNightMap {
 		dialHover = Array.fill(5, false);
 		rangeHover = Array.fill(5, false);
 		bodyHover = Array.fill(5, false);
+		preampHover = [false, false];
+		preampActive = [false, false];
+		preampDriveNorms = [0, 0];
+		preampBiasNorms = [0, 0];
+		preampSources = [\none, \none];
+		preampPainted = Array.newClear(2);
 		sparkDirs = [1, 1];
 		skipHover = [false, false];
 		skipFlash = [false, false];
@@ -686,6 +744,13 @@ CQGuiNightMap {
 		container = View().background_(night[\ground]);
 		groundView = this.prLayer;
 		groundView.drawFunc = { this.prSafeDraw { this.prDrawGround } };
+		// Transparent local layers keep drive/bias and env telemetry repaints
+		// off the whole bay. Shell paper later redraws the exact final vein.
+		rootViews = 2.collect { |i|
+			var view = this.prLayer(false);
+			view.drawFunc = { this.prSafeDraw { this.prDrawPreamp(i) } };
+			view
+		};
 		// Public compatibility name; the tide is now painted by, and receives
 		// open-water gestures through, the full-stage ground.
 		compassView = groundView;
@@ -848,6 +913,27 @@ CQGuiNightMap {
 	// the §6.1 gesture pass sits on the touch bodies before the controller
 	// binds the remaining paper; everything unclaimed falls through
 	prBindTouch {
+		rootViews.do { |view, i|
+			view.mouseDownAction = { |v, x, y, mods, button, clicks|
+				touch.preampDown(i, v, x, y, mods ? 0, button ? 0, clicks ? 1)
+			};
+			view.mouseMoveAction = { |v, x, y, mods|
+				touch.preampMove(i, v, x, y, mods ? 0)
+			};
+			view.mouseUpAction = { |v, x, y, mods, button|
+				touch.preampUp(i, v, x, y, mods ? 0, button ? 0)
+			};
+			view.mouseWheelAction = { |v, x, y, mods, xd, yd|
+				touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
+			};
+			view.acceptsMouseOver = true;
+			view.mouseOverAction = { |v, x, y|
+				this.prHoverPreamp(i, v, x, y)
+			};
+			view.mouseLeaveAction = {
+				this.prHoverPreamp(i, nil, nil, nil)
+			};
+		};
 		shellViews.do { |view, i|
 			view.mouseDownAction = { |v, x, y, mods, button, clicks|
 				touch.shellDown(i, v, x, y, mods ? 0, button ? 0, clicks ? 1)
@@ -1026,6 +1112,19 @@ CQGuiNightMap {
 
 	prStagePoint { |view, x, y|
 		^view.mapToGlobal(Point(x, y)) - container.mapToGlobal(0@0)
+	}
+
+	prHoverPreamp { |i, view, x, y|
+		var next = false, point;
+		if(geometry.notNil and: { view.notNil }) {
+			point = this.prStagePoint(view, x, y);
+			next = CQNightGeometry.preampKnotHit(geometry[\roots][i], point)
+				and: { overlay.patchAt(point).isNil };
+		};
+		if(next != preampHover[i]) {
+			preampHover[i] = next;
+			if(freed.not) { rootViews[i].refresh };
+		};
 	}
 
 	prHoverShell { |i, view, x, y|
@@ -1284,6 +1383,7 @@ CQGuiNightMap {
 		if(bounds.width < 200 or: { bounds.height < 200 }) { ^this };
 		geometry = CQNightGeometry.compute(bounds.width, bounds.height);
 		groundView.bounds = Rect(0, 0, bounds.width, bounds.height);
+		rootViews.do { |view, i| view.bounds = geometry[\roots][i][\box] };
 		almanacView.bounds = geometry[\almanac][\box];
 		tideGateView.bounds = geometry[\tideGateBox];
 		ringView.bounds = geometry[\ringBox];
@@ -1351,6 +1451,23 @@ CQGuiNightMap {
 	}
 
 	prRegisterUpdaters {
+		2.do { |i|
+			var srcName = this.class.preampParamName(i, \Src);
+			var driveName = this.class.preampParamName(i, \Drive);
+			var biasName = this.class.preampParamName(i, \Bias);
+			gui.widgets.register(srcName, { |value|
+				preampSources[i] = value;
+				if(freed.not) { rootViews[i].refresh };
+			});
+			gui.widgets.register(driveName, { |value|
+				preampDriveNorms[i] = CQSpec.unmap(driveName, value);
+				if(freed.not) { rootViews[i].refresh };
+			});
+			gui.widgets.register(biasName, { |value|
+				preampBiasNorms[i] = CQSpec.unmap(biasName, value);
+				if(freed.not) { rootViews[i].refresh };
+			});
+		};
 		5.do { |k|
 			gui.widgets.register(("c" ++ (k + 1) ++ "Range").asSymbol, { |value|
 				rangeStates[k] = value;
@@ -1415,7 +1532,6 @@ CQGuiNightMap {
 	prDrawGround {
 		if(geometry.isNil) { ^this };
 		this.prDrawCompass;
-		geometry[\roots].do { |root| CQInkNight.drawRoot(root, \night) };
 		CQInkNight.drawSprout(geometry[\sprout], sproutState, \night);
 		// §16.7's border rings the bird AND its name, so it is drawn on the
 		// full-stage ground rather than inside the bird's own 44x32 layer —
@@ -1451,6 +1567,20 @@ CQGuiNightMap {
 				almanac[\weatherPreview][name], false, true,
 				weatherFlash == name, false, \night, weatherIntensity)
 		};
+	}
+
+	prDrawPreamp { |i|
+		var root, source, reveal;
+		if(geometry.isNil) { ^this };
+		root = geometry[\roots][i];
+		source = preampSources[i];
+		reveal = preampHover[i] or: { preampActive[i] };
+		CQInkNight.drawPreampRoot(root, root[\box].leftTop,
+			preampDriveNorms[i], preampBiasNorms[i],
+			this.class.preampSourceIndex(i, source),
+			this.class.preampSourceLabel(source),
+			reveal, preampActive[i],
+			gui.auraFor(if(i == 0) { \envA } { \envB }) ? 0, \night);
 	}
 
 	prHoverTideGate { |view, x, y|
@@ -1540,7 +1670,8 @@ CQGuiNightMap {
 			holdStates[i], this.flipMode(i), speedNorms[i], shellHover[i],
 			gui.phaseNorms[i], sparkDirs[i], skipHover[i], skipFlash[i],
 			if(struckOn[i]) { struckNorms[i] }, struckBlink[i],
-			rimHover[i], \night);
+			rimHover[i], \night, geometry[\roots][i],
+			gui.auraFor(if(i == 0) { \envA } { \envB }) ? 0);
 	}
 
 	// the night half of §16.7's drop-target law; the Day deck box wears the

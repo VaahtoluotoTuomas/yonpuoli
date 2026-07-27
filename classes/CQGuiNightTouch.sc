@@ -9,7 +9,7 @@
 CQGuiNightTouch {
 	var map, state, overlay;
 	var <>controller;   // set after construction — the controller binds later
-	var wind, punch, eyeDrag, crescentDrag, moonDrag;
+	var wind, punch, eyeDrag, crescentDrag, moonDrag, preampDrag;
 	var compassDrag, weatherHold, birdDrag, birdWheelAt;
 
 	*new { |map, state, overlay| ^super.newCopyArgs(map, state, overlay) }
@@ -28,6 +28,14 @@ CQGuiNightTouch {
 	// px of drag for the full range of a crescent / the eye's axes
 	*crescentSensitivity { ^1 / 120 }
 	*eyeSensitivity { ^1 / 220 }
+	// The intake knot uses the crescent's already learned vertical travel, but
+	// speaks an exponential CQSpec range: the normalized hand motion is mapped
+	// only after it reaches the state funnel.
+	*preampSensitivity { ^1 / 120 }
+
+	*preampDriveNorm { |start, startY, y|
+		^(start + ((startY - y) * this.preampSensitivity)).clip(0, 1)
+	}
 
 	// the sowing moon's one threshold (§6.1): a press that travels less than the
 	// harvest lasso's own 8 px is a **tap** — the throw — and anything longer
@@ -161,6 +169,63 @@ CQGuiNightTouch {
 
 	// §16.9 the elastic return's short glide, ~3 frames
 	*elasticFrames { ^3 }
+
+	// ---- roots: the preamp knot (§10) ----
+
+	preampDown { |index, view, x, y, modifiers = 0, button = 0, clicks = 1|
+		var point = this.prPoint(view, x, y), root, name;
+		if(map.geometry.isNil) { ^this };
+		root = map.geometry[\roots][index];
+		// Cable-first remains absolute; Alt is likewise the shared banana
+		// grammar's polarity gesture even where a cable crosses the knot.
+		if(modifiers.isAlt or: { overlay.patchAt(point).notNil }) {
+			^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
+		};
+		if(CQNightGeometry.preampKnotHit(root, point)) {
+			// The knot owns its paper, so a right press cannot accidentally
+			// begin a harvest lasso from a body. N7 gives it one act only.
+			if(button != 0) { ^this };
+			name = CQGuiNightMap.preampParamName(index, \Drive);
+			preampDrag = (index: index, name: name,
+				startY: point.y, start: this.prNorm(name));
+			map.setPreampActive(index, true);
+			^this
+		};
+		// The transparent layer's rectangle is larger than the anatomy. Its
+		// untouched paper remains the bay and keeps the tide/ground grammar.
+		^this.compassDown(view, x, y, modifiers, button, clicks)
+	}
+
+	preampMove { |index, view, x, y, modifiers = 0|
+		var point, norm;
+		if(preampDrag.isNil or: { preampDrag[\index] != index }) {
+			^this.landscapeMove(view, x, y, modifiers)
+		};
+		point = this.prPoint(view, x, y);
+		norm = this.class.preampDriveNorm(preampDrag[\start],
+			preampDrag[\startY], point.y);
+		this.prSet(preampDrag[\name], norm);
+		map.paintPreampDrive(index, this.prNorm(preampDrag[\name]));
+		^this
+	}
+
+	preampUp { |index, view, x, y, modifiers = 0, button = 0|
+		if(preampDrag.notNil and: { preampDrag[\index] == index }) {
+			preampDrag = nil;
+			map.setPreampActive(index, false);
+			^this
+		};
+		^this.landscapeUp(view, x, y, modifiers, button)
+	}
+
+	cancelPreamp {
+		var drag = preampDrag;
+		preampDrag = nil;
+		drag !? { map.setPreampActive(drag[\index], false) };
+		^this
+	}
+
+	preampGestureActive { ^preampDrag.notNil }
 
 	// ---- birds: tap fetch · wheel folder · horizontal ruffle random (§11) ----
 

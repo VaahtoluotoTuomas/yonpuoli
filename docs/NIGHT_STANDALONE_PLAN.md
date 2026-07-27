@@ -635,6 +635,15 @@ composition"</b> (kept because the failure is instructive)</summary>
 
 ## 10. The roots — the intake body, not an envelope on a stick
 
+> **Status — first review build ready 2026-07-28 on
+> `nocturne-preamp-roots` (checklist N7).** The three design locks are:
+> vertical up/down drive at 120 px per normalized range; bias as the
+> outgoing/intake lobe imbalance of the knot; selected source as one
+> hover/gesture-only highlighted strand plus a transient mono provenance.
+> Unit geometry and the Qt Night smoke are green. This is not acceptance:
+> scale, vein route, knot legibility and the hand feel still require the live
+> 100/125/150 % visual/listening review.
+
 The root metaphor works only if it tells the whole signal story. In the DSP,
 each side first chooses `preASrc` / `preBSrc` (`liveL`, `liveR`, `mic`,
 `deckA`, `deckB`, `none`), passes through the drive+bias asymmetric tanh
@@ -642,7 +651,7 @@ preamp and HPF, and that **audio** feeds its Coco input. `envA` / `envB` is
 only the post-preamp `Amplitude` side-growth used by the modulation matrix.
 The current drawing exposes the derivative and hides the blood.
 
-The next root increment therefore does this:
+The root increment therefore does this:
 
 - Several source strands enter one **preamp knot**. Their current provenance
   is revealed on hover/gesture, not as five permanently labelled roots.
@@ -657,6 +666,21 @@ The next root increment therefore does this:
   extra patchable audio jacks. Making `preA` / `preB` audio patchable would
   expand the canonical 16×22 matrix and is a separate DSP/interface epic.
 - The mic sprout remains a truthful three-state provenance cue beside side A.
+
+The accepted implementation contract is now precise:
+
+- The five audible source values are read from `CQSpec`; `none` illuminates no
+  strand. Source selection itself remains on the setup surface.
+- A 120 px upward pull crosses the full normalized drive range; the value is
+  mapped through `CQSpec`, so the 1–40 exponential law is not duplicated.
+  Right press on the knot is inert, and cable/Alt wins before the knot.
+- The audio vein is a 3 px fixed cubic meeting the real Cocoon spiral at norm
+  0.8. It routes outside the crescent owners and is redrawn inside the
+  Cocoon's opaque paper. `envA/B` grows outward as a smaller branch so its
+  opaque 30 px jack remains clear of every lower control.
+- Root repaint is local. Drive/bias changes and env aura frames never repaint
+  the whole ground; open paper inside the transparent root layer delegates
+  back to the tide/ground grammar.
 
 ---
 

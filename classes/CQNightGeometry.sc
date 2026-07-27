@@ -97,6 +97,17 @@ CQNightGeometry {
 		^sqrt((b.x - a.x).squared + (b.y - a.y).squared)
 	}
 
+	// One point on a cubic [p0, c1, c2, p1]. Root anatomy uses this to grow
+	// the env follower from the actual post-preamp audio vein, not from a
+	// nearby decorative approximation.
+	*cubicPoint { |segment, t|
+		var u = 1 - t;
+		^((segment[0] * (u * u * u))
+			+ (segment[1] * (3 * u * u * t))
+			+ (segment[2] * (3 * u * t * t))
+			+ (segment[3] * (t * t * t)))
+	}
+
 	*prPointSegmentDistance { |point, a, b|
 		var dx, dy, lengthSq, t, projection;
 		dx = b.x - a.x;
@@ -486,6 +497,14 @@ CQNightGeometry {
 			<= (margin ? CQNightMeasures.rimMargin + 2)
 	}
 
+	// The knot is the only playable part of a preamp root in N7. Its visible
+	// two-lobed outline fits inside this generous hand target; source strands,
+	// the fixed audio vein and the env bud remain anatomy rather than aliases
+	// for the control.
+	*preampKnotHit { |root, point|
+		^this.distance(root[\knot], point) <= CQNightMeasures.rootKnotHit
+	}
+
 	// ---- the whole archipelago from one stage size ----
 	// Bodies scale with the window (§16.10); stroke widths and text stay in px
 	// at the draw sites. The minimum stage (1280x570 under the toolbar and the
@@ -626,37 +645,70 @@ CQNightGeometry {
 					this.clockAngle(8));
 		};
 
-		// inputs as roots at the bottom, envA left, envB right; the mic sprout
-		// grows beside envA (display only — the mic is not one of the 16)
+		// The intake body (§10): five unlabelled source strands converge on a
+		// drive/bias knot, a fixed thick audio vein joins the corresponding
+		// Cocoon's real spiral, and envA/B grows as the one patchable side bud.
+		// The source count comes from CQSpec's enum; `none` is the honest
+		// absence of a selected strand, never a sixth decorative root.
+		//
+		// The audio vein bows outward before it reaches the 0.8 point of the
+		// spiral. That is the one lane around the three tide crescents below
+		// each shell; the collision matrix pins it at both reference scales.
 		roots = this.prSeeded(4407, {
 			CQNightMeasures.rootFractions.collect { |fraction, i|
-				var side = if(i == 0) { -1 } { 1 };
-				var tip = Point(width * fraction,
-					height - (CQNightMeasures.rootReach * scale));
-				var base = Point(tip.x
-					+ (side * CQNightMeasures.rootSpread * scale), height + 2);
-				var mid1 = Point(base.x + ((tip.x - base.x) * 0.35) + 6.0.rand2,
-					base.y + ((tip.y - base.y) * 0.4) + 4.0.rand2);
-				var mid2 = Point(base.x + ((tip.x - base.x) * 0.7) + 6.0.rand2,
-					base.y + ((tip.y - base.y) * 0.75) + 4.0.rand2);
-				var reach = max(0.001, this.distance(mid2, tip));
-				// the side twig grows AWAY from the tip and leaves low on the
-				// stem. Aimed the other way it ran the length of the tip jack's
-				// opaque box and all but vanished — visibly so on the left root,
-				// whose twig lay almost exactly along the box (fixed 2026-07-21)
-				(points: [base, mid1, mid2, tip],
-					// the unit vector the root arrives on: the tip jack's opaque
-					// view redraws this short passage under its own box, exactly
-					// as a castle redraws the river's (§16.6) — otherwise the
-					// root visibly stops a jack-radius short of its own tip
-					arrival: (tip - mid2) / reach,
-					branch: [mid1, mid1 + Point(
-						side * CQNightMeasures.rootTwigX * scale,
-						(CQNightMeasures.rootTwigY * scale).neg + 3.0.rand2)])
+				var side = if(i == 0) { -1 } { 1 }; // outward from the bay
+				var srcName = if(i == 0) { \preASrc } { \preBSrc };
+				var sourceValues = CQSpec.enumValues(srcName)
+					.reject { |value| value == \none };
+				var knot = Point(width * fraction,
+					height - (CQNightMeasures.rootKnotReach * scale));
+				var spacing = CQNightMeasures.rootSourceSpacing * scale;
+				var middle = (sourceValues.size - 1) * 0.5;
+				var strands = sourceValues.collect { |value, s|
+					var base = Point(knot.x + ((s - middle) * spacing), height + 2);
+					var c1 = Point(base.x + 4.0.rand2,
+						height - (CQNightMeasures.rootSourceShoulder * scale));
+					var c2 = Point(knot.x + (((s - middle) * spacing) * 0.28)
+						+ 3.0.rand2,
+						knot.y + (CQNightMeasures.rootSourceGather * scale));
+					[base, c1, c2, knot]
+				};
+				var join = this.spiralPoint(cocos[i],
+					CQNightMeasures.rootVeinJoinNorm);
+				var vein = [
+					knot,
+					knot + Point(side * CQNightMeasures.rootVeinOutset * scale,
+						CQNightMeasures.rootVeinLift.neg * scale),
+					join + Point(side * CQNightMeasures.rootVeinOutset * scale,
+						CQNightMeasures.rootVeinDrop * scale),
+					join
+				];
+				var budBase = this.cubicPoint(vein, 0.2);
+				var envTip = budBase + Point(
+					side * CQNightMeasures.rootBudX * scale,
+					CQNightMeasures.rootBudY * scale);
+				var envReach = max(0.001, this.distance(budBase, envTip));
+				var labelExtent = CQNightMeasures.rootLabelExtent;
+				var labelRect = Rect(knot.x - (labelExtent.x * 0.5),
+					knot.y + (CQNightMeasures.rootLabelDrop * scale),
+					labelExtent.x, labelExtent.y);
+				var allPoints = strands.flat
+					++ vein ++ [budBase, envTip, labelRect.leftTop,
+						labelRect.rightBottom];
+				(side: side, sourceValues: sourceValues,
+					sourceStrands: strands, knot: knot,
+					audioVein: vein, audioJoin: join,
+					envBranch: [budBase, envTip],
+					// the env jack's opaque owner redraws this real side-growth
+					// under its paper, preserving the courtesy law.
+					arrival: (envTip - budBase) / envReach,
+					labelRect: labelRect,
+					box: this.prBoundsOf(allPoints,
+						CQNightMeasures.rootBoxPad))
 			}
 		});
-		endpoints[\envA] = roots[0][\points].last;
-		endpoints[\envB] = roots[1][\points].last;
+		endpoints[\envA] = roots[0][\envBranch].last;
+		endpoints[\envB] = roots[1][\envBranch].last;
 		sprout = (
 			base: Point((width * CQNightMeasures.rootFractions[0])
 				+ (CQNightMeasures.sproutOffset * scale), height + 2),

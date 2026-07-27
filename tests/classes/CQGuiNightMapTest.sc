@@ -92,6 +92,25 @@ CQGuiNightMapTest : UnitTest {
 			"a root tip redraws its own arrival under its opaque view");
 	}
 
+	test_preampProvenanceComesFromCQSpec {
+		var values = CQSpec.enumValues(\preASrc);
+		this.assertEquals(CQGuiNightMap.preampSourceValues(0), values,
+			"preamp A reveals CQSpec's source order verbatim");
+		this.assertEquals(CQGuiNightMap.preampSourceValues(1),
+			CQSpec.enumValues(\preBSrc),
+			"preamp B reveals its own CQSpec vocabulary");
+		values.reject { |value| value == \none }.do { |value, i|
+			this.assertEquals(CQGuiNightMap.preampSourceIndex(0, value), i,
+				"% selects its one unlabelled intake strand".format(value));
+		};
+		this.assert(CQGuiNightMap.preampSourceIndex(0, \none).isNil,
+			"`none` honestly lights no intake strand");
+		this.assertEquals(CQGuiNightMap.preampSourceLabel(\liveL), "live l",
+			"camel-case live provenance is readable only when revealed");
+		this.assertEquals(CQGuiNightMap.preampSourceLabel(\deckB), "deck b",
+			"deck provenance uses the bird's learned name");
+	}
+
 	// The night has no presets (decided with the user 2026-07-22, superseding
 	// the sower constellation): a preset is a recipe, not a body, and it was
 	// the night's only control that could not be used without reading text

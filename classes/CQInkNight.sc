@@ -239,9 +239,15 @@ CQInkNight {
 	*drawShell { |coco, origin, holdOn = false, flipMode = \forward,
 		speedNorm = 0.5, hover = false, sparkNorm, sparkDir = 1,
 		skipHover = false, skipFlash = false, struckNorm, struckTwinkle = false,
-		rimHover = false, skin = \night|
+		rimHover = false, skin = \night, preampRoot, preampAura = 0|
 		var palette = CQInk.palette(skin), notch, normal, reach, spark, tail, heart;
 		Pen.translate(origin.x.neg, origin.y.neg);
+		// This view is opaque-backed. Repaint the exact incoming audio vein
+		// beneath the winding so the fixed anatomy reaches the real spiral
+		// instead of stopping at the rectangular layer boundary.
+		preampRoot !? {
+			this.drawPreampVein(preampRoot, nil, preampAura, skin)
+		};
 		// the shell's rim is its §6 body handle: hovering it draws the outline
 		// the double-click acts on, in whisper hairline so the danger-red hold
 		// seal on the very same circle can never be mistaken for it
@@ -747,18 +753,85 @@ CQInkNight {
 		Pen.stroke;
 	}
 
-	// input root: wobbled three-segment polyline with one side branch;
-	// the green tip is the env jack itself (drawn by its endpoint view)
-	*drawRoot { |root, skin = \night|
-		var palette = CQInk.palette(skin), points = root[\points];
-		Pen.strokeColor = palette[\line].copy.alpha_(0.75);
+	// N7 intake root. Five local, permanently unlabelled source strands gather
+	// into one preamp knot; only the selected provenance is revealed under the
+	// hand. The thick vein is fixed audio anatomy, while the smaller branch is
+	// the post-preamp envelope follower ending at the canonical env jack.
+	*drawPreampRoot { |root, origin, drive = 0, bias = 0,
+		sourceIndex, sourceLabel = "", reveal = false, active = false,
+		aura = 0, skin = \night|
+		var palette = CQInk.palette(skin), knot = root[\knot];
+		var radius = CQNightMeasures.rootKnotR;
+		var topScale, bottomScale, knotColor;
+		Pen.translate(origin.x.neg, origin.y.neg);
+
+		root[\sourceStrands].do { |segment, i|
+			var selected = reveal and: { sourceIndex == i };
+			Pen.strokeColor = palette[
+				if(selected) { \input } { \whisper }
+			].copy.alpha_(if(selected) { 0.9 } { 0.30 });
+			Pen.width = CQInk.strokes[
+				if(selected) { \normal } { \hairline }];
+			this.strokeSegments([segment]);
+		};
+
+		this.drawPreampVein(root, nil, aura, skin);
+
+		Pen.strokeColor = palette[\line].copy.alpha_(0.74);
 		Pen.width = CQInk.strokes[\normal];
-		Pen.moveTo(points.first);
-		points.drop(1).do { |point| Pen.lineTo(point) };
+		Pen.line(root[\envBranch][0], root[\envBranch][1]);
 		Pen.stroke;
+
+		drive = drive.clip(0, 1);
+		bias = bias.clip(0, 1);
+		topScale = 1 + (bias * 0.48);
+		bottomScale = 1 - (bias * 0.30);
+		knotColor = palette[\pre];
+		// Drive darkens the living centre without turning a setting into a
+		// numeric display. Bias swells the outgoing lobe and pinches the intake
+		// lobe; at zero the two are exactly balanced.
+		Pen.fillColor = palette[\input].copy.alpha_(0.04 + (drive * 0.16));
+		Pen.addOval(Rect.aboutPoint(
+			knot + Point(0, radius * -0.42),
+			radius * 0.72 * topScale, radius * 0.48 * topScale));
+		Pen.fill;
+		Pen.addOval(Rect.aboutPoint(
+			knot + Point(0, radius * 0.42),
+			radius * 0.72 * bottomScale, radius * 0.48 * bottomScale));
+		Pen.fill;
+		Pen.strokeColor = knotColor.copy.alpha_(if(active) { 1 } { 0.88 });
+		Pen.width = CQInk.strokes[if(active) { \state } { \strong }];
+		Pen.addOval(Rect.aboutPoint(
+			knot + Point(0, radius * -0.42),
+			radius * 0.72 * topScale, radius * 0.48 * topScale));
+		Pen.addOval(Rect.aboutPoint(
+			knot + Point(0, radius * 0.42),
+			radius * 0.72 * bottomScale, radius * 0.48 * bottomScale));
+		Pen.stroke;
+		Pen.strokeColor = palette[\line].copy.alpha_(0.7);
 		Pen.width = CQInk.strokes[\hairline];
-		Pen.line(root[\branch][0], root[\branch][1]);
+		Pen.line(knot + Point(radius * -0.52, radius * -0.10),
+			knot + Point(radius * 0.52, radius * 0.10));
+		Pen.line(knot + Point(radius * 0.52, radius * -0.10),
+			knot + Point(radius * -0.52, radius * 0.10));
 		Pen.stroke;
+		if(reveal) {
+			Pen.stringCenteredIn(sourceLabel.asString, root[\labelRect],
+				CQInk.font(\number), palette[
+					if(sourceIndex.isNil) { \whisper } { \input }]);
+		};
+	}
+
+	// Reused inside the shell's opaque layer. The root layer lies below that
+	// paper, so without this exact underlay the fixed audio anatomy would stop
+	// at a rectangular view edge instead of visibly reaching its Cocoon.
+	*drawPreampVein { |root, origin, aura = 0, skin = \night|
+		var palette = CQInk.palette(skin);
+		origin !? { Pen.translate(origin.x.neg, origin.y.neg) };
+		Pen.strokeColor = palette[\pre].copy.alpha_(
+			(0.68 + ((aura ? 0).clip(0, 1) * 0.28)));
+		Pen.width = CQInk.strokes[\state];
+		this.strokeSegments([root[\audioVein]]);
 	}
 
 	// mic sprout, 3 states (§16.6): hidden / dormant whisper bud / danger-red

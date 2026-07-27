@@ -204,23 +204,47 @@ CQNightGeometryTest : UnitTest {
 			this.assert(bird[\labelRect].top > (bird[\rateSocket].y + 10),
 				"bird %'s filename clears the rate socket's own view".format(i + 1));
 		};
-		// the root arrives on a unit vector, so its tip jack can redraw the
-		// passage that its opaque view would otherwise swallow — and the side
-		// twig must not disappear under that same box
+		// N7 roots expose the whole intake story: the CQSpec source vocabulary
+		// enters one knot, audio joins a real Cocoon turn, and the canonical env
+		// jack is only the smaller side-growth.
 		geo[\roots].do { |root, i|
 			var arrival = root[\arrival];
-			var tipBox = CQNightGeometry.endpointBox(root[\points].last, \jack);
+			var srcName = if(i == 0) { \preASrc } { \preBSrc };
+			var envName = if(i == 0) { \envA } { \envB };
+			var sourceValues = CQSpec.enumValues(srcName)
+				.reject { |value| value == \none };
+			var coco = geo[\cocos][i];
+			this.assertEquals(root[\sourceValues], sourceValues,
+				"root % derives its five intake strands from CQSpec".format(i + 1));
+			this.assertEquals(root[\sourceStrands].size, sourceValues.size,
+				"root % draws one strand per audible provenance".format(i + 1));
+			this.assert(
+				CQNightGeometry.distance(root[\audioJoin],
+					CQNightGeometry.spiralPoint(coco,
+						CQNightMeasures.rootVeinJoinNorm)) < 0.001,
+				"root %'s fixed audio vein joins the real Cocoon spiral"
+					.format(i + 1));
+			this.assertEquals(geo[\endpoints][envName], root[\envBranch].last,
+				"root %'s canonical env jack is the post-preamp side bud"
+					.format(i + 1));
 			this.assertFloatEquals(
 				sqrt(arrival.x.squared + arrival.y.squared), 1.0,
 				"root %'s arrival is a unit direction".format(i + 1), 0.0001);
-			this.assert(arrival.y < 0,
-				"root % arrives climbing toward its tip".format(i + 1));
-			this.assert(tipBox.containsPoint(root[\branch][0]).not
-				and: { tipBox.containsPoint(root[\branch][1]).not }
-				and: { (root[\branch][0].y > tipBox.bottom)
-					and: { root[\branch][1].y > tipBox.bottom } },
-				"root %'s twig stays clear of its tip jack's opaque box"
+			this.assert((arrival.x * root[\side]) > 0,
+				"root %'s env bud grows outward from the fixed audio vein"
 					.format(i + 1));
+			this.assert(CQNightGeometry.preampKnotHit(root, root[\knot]),
+				"root %'s drive knot answers at its visible centre".format(i + 1));
+			this.assert(CQNightGeometry.preampKnotHit(root,
+				root[\knot] + Point(CQNightMeasures.rootKnotHit + 2, 0)).not,
+				"root %'s drive target ends outside its promised hand radius"
+					.format(i + 1));
+			(root[\sourceStrands].flat ++ root[\audioVein]
+				++ root[\envBranch]).do { |point|
+				this.assert(root[\box].containsPoint(point),
+					"root %'s transparent local layer holds its anatomy"
+						.format(i + 1));
+			};
 		};
 		this.assertEquals(geo[\eye], geo[\ringCenter],
 			"the ring's eye sits at the ring's center");
@@ -366,7 +390,8 @@ CQNightGeometryTest : UnitTest {
 							.format(pair[0], name, *size));
 				};
 				geo[\roots].do { |root, i|
-					(root[\points] ++ root[\branch]).do { |point|
+					(root[\sourceStrands].flat ++ root[\audioVein]
+						++ root[\envBranch]).do { |point|
 						this.assert(rect.containsPoint(point).not,
 							"root % keeps out of the almanac % (%x%)"
 								.format(i + 1, pair[0], *size));
@@ -477,7 +502,8 @@ CQNightGeometryTest : UnitTest {
 						.format(name, *size));
 			};
 			geo[\roots].do { |root, i|
-				(root[\points] ++ root[\branch]).do { |point|
+				(root[\sourceStrands].flat ++ root[\audioVein]
+					++ root[\envBranch]).do { |point|
 					this.assert(box.containsPoint(point).not,
 						"root % keeps out of the compass water (%x%)"
 							.format(i + 1, *size));
@@ -1093,28 +1119,41 @@ CQNightGeometryTest : UnitTest {
 			var stage = Rect(0, 0, size[0], size[1]);
 			var half = CQNightMeasures.crescentExtent * 0.5;
 			geo[\roots].do { |root, i|
-				var tipBox = CQNightGeometry.endpointBox(root[\points].last, \jack);
+				var envName = if(i == 0) { \envA } { \envB };
+				var tipBox = CQNightGeometry.endpointBox(
+					geo[\endpoints][envName], \jack);
+				var sourceInk = root[\sourceStrands].collect { |segment|
+					CQNightGeometry.sampleSegments([segment], 12)
+				}.flat;
+				var veinInk = CQNightGeometry.sampleSegments(
+					[root[\audioVein]], 32) ++ [root[\audioJoin]];
+				var rootInk = sourceInk ++ veinInk ++ root[\envBranch];
 				this.assert(stage.contains(tipBox),
 					"root %'s tip jack stays on the stage (%x%)"
 						.format(i + 1, *size));
 				geo[\cocos].do { |coco, c|
 					coco[\crescents].do { |point, m|
 						var box = Rect.aboutPoint(point, half, half);
-						(root[\points] ++ root[\branch]).doAdjacentPairs { |a, b|
-							this.assert(box.containsPoint(a).not
-								and: { box.containsPoint(b).not },
-								"root % misses coco % crescent % (%x%)"
-									.format(i + 1, c + 1, m, *size));
-						};
+						this.assert(rootInk.every { |sample|
+							box.containsPoint(sample).not },
+							"root % misses coco % crescent % (%x%)"
+								.format(i + 1, c + 1, m, *size));
 					};
-					this.assert(root[\points].every { |point|
-						coco[\shellBox].containsPoint(point).not },
-						"root % grows clear of coco %'s shell (%x%)"
-							.format(i + 1, c + 1, *size));
+					if(c == i) {
+						this.assert(CQNightGeometry.spiralDistance(coco,
+							root[\audioJoin]) < 0.001,
+							"root % terminates on its own Coco, not beside it (%x%)"
+								.format(i + 1, *size));
+					} {
+						this.assert(rootInk.every { |point|
+							coco[\shellBox].containsPoint(point).not },
+							"root % keeps clear of the other Coco (%x%)"
+								.format(i + 1, *size));
+					};
 				};
-				this.assert(root[\points].every { |point|
+				this.assert(rootInk.every { |point|
 					geo[\ringBox].containsPoint(point).not },
-					"root % stops below the river's layer (%x%)"
+					"root % stays outside the river's layer (%x%)"
 						.format(i + 1, *size));
 			};
 		};

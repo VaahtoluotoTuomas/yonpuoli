@@ -1112,24 +1112,42 @@ the shell's exact curved spiral segment and radial stem beneath the jack. A
 generic vertical stub is not the same path and may not replace it.
 The spiral's stroke alpha breathes 0.55 → 1.0 with the coco's out level.
 
-**Roots (inputs).** Two branching wobbled polylines (3 segments) growing from
-the bottom edge, envA left, envB right; tips = green Ø 7 dots with radial
-glow ∝ follower aura. The tip jack's opaque view **redraws the root's last
-stretch under its own box**, exactly as a castle redraws the river's passage
-(fixed 2026-07-21: without it the root visibly stopped a jack-radius short of
-its own tip). Any opaque endpoint view laid over a drawn line owes that line
-the same courtesy — or the line must be routed clear of the box, which is what
-the **side twig** now does: it leaves low on the stem and grows *away* from
-the tip. Aimed the other way it ran the length of the tip jack's box and all
-but vanished, which is how the left root came to look broken while the right
-one did not (fixed 2026-07-21). Beside them grows a small **mic sprout** — display
-only, never a jack: the mic is not one of the 16 sources but an optional
-input feeding the preamps, so nothing on the sprout can be grabbed or
-patched. Three states: not drawn at all when no mic is configured; a dormant
-whisper-colored bud when configured (`micChan` set) with `micGain` = 0; bud
-and tip ring danger-red while `micChan` is set **and** `micGain` > 0 — the
-existing warning made flesh. The day panel's mic control keeps its own
-warning-color law unchanged.
+**Roots (inputs; N7 first review 2026-07-28).** Each side is the whole intake
+body, not an envelope on a stick:
+
+- Five unlabelled source strands grow from the lower waterline into one
+  preamp knot. Their order comes from that side's `preASrc` / `preBSrc`
+  `CQSpec` enum with `none` omitted. At rest they are equally quiet. Hovering
+  or holding the knot brightens only the selected strand and shows one
+  transient 10 px mono provenance (`live l`, `live r`, `mic`, `deck a`,
+  `deck b`); `none` shows its name but brightens no strand. There are no
+  permanently labelled roots.
+- The two-lobed knot is the drive body. Left-drag up/down traverses normalized
+  `preADrive` / `preBDrive` at 120 px for the full range and then maps through
+  the exponential `CQSpec`; up increases. Drive deepens the knot's living
+  centre. `preABias` / `preBBias` remains setup rather than a second night
+  gesture: its normalized value swells the outgoing lobe and pinches the
+  intake lobe, so zero is symmetric and increasing asymmetry is shape-first.
+  Non-left presses on the knot are inert. Cable/Alt priority remains absolute.
+- A fixed 3 px preamp-colored audio vein leaves the knot, bends outside the
+  Coco's tide crescents and terminates on an actual outer turn of the
+  corresponding spiral. It is anatomy, never a cable or hit target. The
+  Cocoon's opaque view redraws the exact final cubic under its own spiral;
+  no rectangular layer edge may cut the vein. Its alpha follows the existing
+  post-preamp env aura at telemetry rate, in a local transparent root layer.
+- The canonical green `envA` / `envB` jack is a smaller outward side-growth
+  from that same post-preamp vein. It remains the only patchable endpoint;
+  the inventory is still exactly 16×22. Its opaque endpoint view redraws the
+  side-growth's final passage under its dot. Source choice and bias remain
+  reachable on the setup/workshop surface.
+
+Beside side A grows the existing small **mic sprout** — display only, never a
+jack: the mic is not one of the 16 sources but an optional input feeding the
+preamps, so nothing on the sprout can be grabbed or patched. Three states:
+not drawn at all when no mic is configured; a dormant whisper-colored bud
+when configured (`micChan` set) with `micGain` = 0; bud and tip ring danger-red
+while `micChan` is set **and** `micGain` > 0. The day panel's mic control keeps
+its own warning-color law unchanged.
 
 **Birds (decks).** Three strokes each — two wing béziers + a body dot,
 span ≈ 30 px; filename in 10 px mono whisper beneath, in a line box of at
@@ -1188,10 +1206,10 @@ relation*, not collected into a panel:
   right is elastic. Outside focus, right remains harvest. A captured voyage
   continues across the organism until release.
 
-The two roots remain in their pre-existing form in this review increment.
-Their next pass must expose the actual preamp→Coco audio path as well as its
-envelope side-growth; merely multiplying decorative roots is explicitly not
-the solution.
+The N3 landscape review deliberately left the two roots in their then-existing
+form. N7 has since replaced them with the normative intake bodies in the
+**Roots (inputs)** paragraph above: actual preamp→Coco audio anatomy plus its
+envelope side-growth, never multiplied decorative roots.
 
 <details>
 <summary><b>Superseded almanac/pool experiments (2026-07-22—27)</b></summary>

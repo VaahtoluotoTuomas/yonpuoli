@@ -25,12 +25,14 @@ public-vaihto ja oikeat kuva-/äänidemot ovat erillinen julkaisutoimi.
 
 **Seuraava askel konkreettisesti:** rakennusjärjestyksen
 (`NIGHT_STANDALONE_PLAN.md` §12) kohdat 1–6 ovat valmiit ja käyttäjän
-hyväksymät. N6 **Linnut hakevat (§11)** hyväksyttiin 2026-07-28
-`nocturne-birds-fetch`-haaralla. **Seuraava inkrementti on kohta 7, Juuret —
-preamp-keho (§10):** lähdesäikeet kokoontuvat drive/bias-solmuun, kiinteä
-audiojuoni tekee preamp→Coco-reitin näkyväksi ja `envA/B` jää rehelliseksi
-post-preamp-sivukasvuksi. Hyväksytty N5 elää sen alla
-`nocturne-dolby-oysters`-haaralla;
+hyväksymät. N7 **Juuret — preamp-keho (§10)** on toteutettu ensimmäistä
+katselmointia varten `nocturne-preamp-roots`-haaralle: viisi CQSpecistä
+johdettua lähdesäiettä kokoontuu soitettavaan drive/bias-solmuun, kiinteä
+audiojuoni liittyy oikeaan Cocoon-spiraaliin ja `envA/B` on rehellinen
+post-preamp-sivukasvu. **Seuraava askel ei ole N8**, vaan N7:n live-arviointi
+checklistillä (mittakaavat, käden tuntu, biasin luettavuus, provenienssin
+löydettävyys ja audiojuonen reitti), palaute ja viimeistely. Hyväksytty N6
+elää sen alla `nocturne-birds-fetch`-haaralla;
 `nocturne` seisoo vielä commitissa `a5e4b17` (kevättulva), eikä haaroja
 sulauteta ilman erillistä pyyntöä. §13 korvapassi voi kulkea limittäin, mutta
 Norns-portti (§14) on vasta night-first-vaiheen jälkeen.
@@ -69,11 +71,12 @@ korvata teknisesti helpommalla ratkaisulla ilman käyttäjän päätöstä.
   aina checklist-rivin rasti käyttäjältä.
 - Lähdekoodi, testit ja dokumentit pidetään samassa commitissa silloin, kun ne
   yhdessä muodostavat yhden todennettavan käyttäytymismuutoksen.
-- Nocturnen nykyiset N3→N4→N5→N6-haarat ovat **pinottu ketju**, eivät neljä
+- Nocturnen nykyiset N3→N4→N5→N6→N7-haarat ovat **pinottu ketju**, eivät viisi
   toisistaan riippumatonta toteutusta: `nocturne-nightscape` pohjautuu
   `nocturne`en, `nocturne-range-ripples` sen päälle ja
   `nocturne-dolby-oysters` edelleen N4:n päälle; hyväksytty
-  `nocturne-birds-fetch` jatkaa N5:stä. Oma haara ei ole jokaisen N-vaiheen
+  `nocturne-birds-fetch` jatkaa N5:stä ja katselmoitava
+  `nocturne-preamp-roots` N6:sta. Oma haara ei ole jokaisen N-vaiheen
   itseisarvo; sitä käytetään nyt hyväksytyn checkpointin säilyttämiseen samalla
   kun seuraava näkyvä inkrementti voidaan arvioida erikseen. Ketju sulautetaan
   `nocturne`-integraatiohaaraan erillisellä pyynnöllä.
@@ -190,16 +193,16 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
   sisarnäkyminään.
 - [ ] **7. Juuret — preamp-keho** (§10). Lähdesäikeet → drive/bias-solmu →
   kiinteä audiojuoni Cocoon; `envA/B` jää post-preamp-envelope-sivusilmuksi.
-  Ei koristeellista juurimäärää eikä tekaistuja audiojakkeja. Toteutetaan
-  vasta vuorovesikentän sommittelupalautteen jälkeen omana porttinaan.
-  **Haastavuus: keskikorkea (4/5), selvästi N4–N6:ta suurempi mutta N3:n
-  almanakkauudistusta rajatumpi.** DSP-reitti on jo olemassa eikä sitä ole
-  tarkoitus muuttaa; työ osuu kuitenkin yhtä aikaa mittoihin, geometriaan,
-  piirtoon, tilapeilaukseen, kosketuskielioppiin ja törmäystesteihin. Ennen
-  toteutusta lukitaan kolme asiaa: drive-ele, bias/asymmetrian luettava muoto
-  ja lähdeprovenienssin hetkellinen näyttötapa. Suurin riski on tehdä
-  alareunasta taas ohjauspaneeli tai sekoittaa kiinteä audioanatomia
-  patchattavaan vihreään `envA/B`-jakkiin.
+  **Ensimmäinen katselmointiversio valmis 2026-07-28
+  `nocturne-preamp-roots`-haaralla; ei vielä hyväksytty.** Viisi audible-
+  lähdettä luetaan `CQSpec`istä (`none` ei saa omaa säiettä); levossa kaikki
+  ovat nimettömiä, solmun hover/veto korostaa yhden ja näyttää hetkellisen
+  nimen. Pystysuora 120 px veto liikuttaa drivea CQSpecin exp-käyrällä.
+  Bias näkyy solmun ulos-/sisäänmenoloben epäsymmetriana. Paksu kiinteä juoni
+  kiertää sirpit ja liittyy spiraalin todelliseen 0,8-kohtaan; Cocoon opaakki
+  paperi piirtää saman käyrän alleen. Vihreä `envA/B` kasvaa ulospäin pienenä
+  sivusilmuna, eikä 16×22-inventaario muutu. Unit + Night Qt smoke ovat
+  vihreät; jäljellä checklist N7:n live-kuuntelu ja visuaalinen hyväksyntä.
 - [ ] **8. Drawer-workshop** (§0). Kaikki loput CQSpec-parametrit rehellisin
   ledger-säätimin drawerin sivulle. Exit-kriteeri: **SPEC §6.2:n kattavuusauditointi
   — jokainen §5-parametri saavutettavissa** pelkällä yöllä + drawerilla +
