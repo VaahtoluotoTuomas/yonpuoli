@@ -37,8 +37,8 @@ tagged. Earlier tags describe internal development baselines.
   Cocoon-bound audio vein at 1.5/2/3 px, while pre/deck slot gains inform route
   visibility. Transient bird flights reveal the direct deck-to-Cocoon path and
   any current bird-to-preamp provenance without hard-wiring a false landscape
-  relation. `envA/B` remains the smaller patchable post-preamp branch; live
-  visual/listening acceptance remains open.
+  relation. `envA/B` remains the smaller patchable post-preamp branch. The
+  complete intake body passed live review on 2026-07-28.
 - Recorded preamp loudness compensation as a later equal-loudness DSP
   experiment; N7 deliberately changes only interaction and route drawing.
 
@@ -51,6 +51,10 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Fixed
 
+- Kept the Night provenance label's ground erasure off the intake strands it
+  names: the erasure now measures the seeded delta inside its own band and
+  gives way outward, instead of trusting a constant inset that cut the tops
+  off two strands at the minimum stage size.
 - Kept Night bird/root provenance flights continuous across the landscape by
   moving them and their high-contrast transient labels to one hit-transparent
   layer above all local Qt drawing rectangles.

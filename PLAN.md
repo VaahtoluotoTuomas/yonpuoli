@@ -24,17 +24,19 @@ case study / development process -dokumenteissa. Etärepon uudelleennimeäminen,
 public-vaihto ja oikeat kuva-/äänidemot ovat erillinen julkaisutoimi.
 
 **Seuraava askel konkreettisesti:** rakennusjärjestyksen
-(`NIGHT_STANDALONE_PLAN.md` §12) kohdat 1–6 ovat valmiit ja käyttäjän
-hyväksymät. N7 **Juuret — preamp-keho (§10)** on toteutettu toista
-katselmointia varten `nocturne-preamp-roots`-haaralle: leveät, epäsäännölliset
+(`NIGHT_STANDALONE_PLAN.md` §12) kohdat 1–7 ovat valmiit ja käyttäjän
+hyväksymät. N7 **Juuret — preamp-keho (§10)** hyväksyttiin 2026-07-28
+`nocturne-preamp-roots`-haaralla: leveät, epäsäännölliset
 lähdesäikeet valitsevat/togglettavat CQSpec-lähteen suoraan, solmun
 akselilukittu 240 px ele soittaa drivea ja biasia, driven paine näkyy
 audiojuonen 1,5/2/3 px painona ja lintujen ehdolliset lennot paljastavat
 sekä suoran deck-slotin että valitun bird→preamp-suhteen. `envA/B` säilyy
-rehellisenä post-preamp-sivukasvuna. **Seuraava askel ei ole N8**, vaan N7:n
-live-arviointi checklistillä (lähdeklikkaus, käden tuntu, biasin
-soitettavuus, reittipaljastusten luettavuus ja juurten sommittelu), palaute ja
-viimeistely. Hyväksytty N6
+rehellisenä post-preamp-sivukasvuna. Katselmointi toi yhden korjauksen:
+provenienssitekstin taustan pyyhkäisy leikkasi oikean juuren kahta
+vasemmanpuoleisinta säiettä, joten se mittaa nyt siemenetyn deltan omalta
+kaistaltaan ja väistyy ulospäin (`rootLabelInward` on nimellinen lepo, ei
+lupaus). **Seuraava askel on N8**, drawer-workshop (§12.1) — sen sopimus,
+kattavuusauditointi ja portit ovat valmiit. Hyväksytty N6
 elää sen alla `nocturne-birds-fetch`-haaralla;
 `nocturne` seisoo vielä commitissa `a5e4b17` (kevättulva), eikä haaroja
 sulauteta ilman erillistä pyyntöä. §13 korvapassi voi kulkea limittäin, mutta
@@ -194,10 +196,10 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
   (dialogi, rulla, pörhistys, drop, code); kaapeli säilyy lintuhandlerin
   ensimmäisenä prioriteettina, rate-socket ja level-sirppi omina ylempinä
   sisarnäkyminään.
-- [ ] **7. Juuret — preamp-keho** (§10). Lähdesäikeet → drive/bias-solmu →
+- [x] **7. Juuret — preamp-keho** (§10). Lähdesäikeet → drive/bias-solmu →
   audiojuoni Cocoon; `envA/B` jää post-preamp-envelope-sivusilmuksi.
-  **Toinen katselmointiversio valmis 2026-07-28
-  `nocturne-preamp-roots`-haaralla; ei vielä hyväksytty.** Viisi audible-
+  **Hyväksytty 2026-07-28 `nocturne-preamp-roots`-haaralla (checklist
+  N7).** Viisi audible-
   lähdettä luetaan `CQSpec`istä (`none` ei saa omaa säiettä); leveä,
   seedattu ja epäsymmetrinen säie on klikattava enum-valinta, jonka toinen
   klikkaus kirjoittaa `none`. Solmu lukitsee 8 px jälkeen pystysuunnan driveen
@@ -207,12 +209,26 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
   Lintu-hover paljastaa gain-toden suoran deck→Coco-lennon ja nykyiset
   bird→preamp-lennot, juuren hover saman provenienssin vastakkaiseen suuntaan.
   Vihreä `envA/B` kasvaa ulospäin sivusilmuna, eikä 16×22-inventaario muutu.
-  Unit + Night Qt smoke ovat vihreät; jäljellä checklist N7:n live-kuuntelu
-  ja visuaalinen hyväksyntä.
-- [ ] **8. Drawer-workshop** (§0). Kaikki loput CQSpec-parametrit rehellisin
-  ledger-säätimin drawerin sivulle. Exit-kriteeri: **SPEC §6.2:n kattavuusauditointi
-  — jokainen §5-parametri saavutettavissa** pelkällä yöllä + drawerilla +
-  masterilla. Oma porttinsa.
+  Livekatselmus toi yhden korjauksen: provenienssitekstin ground-pyyhkäisy
+  leikkasi juuren B kahta vasemmanpuoleisinta säiettä 1280×570:ssä. Nyt
+  labelin sijainti mitataan säikeiden omista käyristä pyyhkäisyn kaistalla ja
+  väistyy ulospäin, kunnes 6 px vapaa väli toteutuu; erasuren mitat elävät
+  yhtenä `CQNightMeasures`-arvona sekä musteessa että geometriassa.
+- [ ] **8. Drawer-workshop** (§12.1). Kattavuusauditointi on tehty
+  2026-07-28 ja toteutussopimus täsmennetty: Night omistaa 31 interaktiivista
+  CQSpec-parametria, pysyvä Master 5 ja uusi Workshop-sivu täsmälleen 43
+  nimettyä loppuparametria; dynaamisen testin on todistettava niiden
+  erillinen unioni samaksi kuin `CQSpec.names` (nyt 79). Drawerin sisäinen
+  järjestys muuttuu muotoon `inspector · workshop · spellbook · memory`.
+  `micGain` **siirretään** Day/Sourcesista Workshopiin eikä kopioida, jotta
+  SPEC §6.2:n yhden interaktiivisen mic-polun laki säilyy. Ei DSP-, CQSpec-,
+  Day-poisto- tai undo-muutoksia. Visuaalinen auditointi täsmensi Workshopin
+  Nightin hiljaiseksi fosfori-mittapöydäksi: 1128 px kiinteä ledger-raili,
+  huoltorivi ja sen alla `coco 1 · quantussy · coco 2`, ei korttidashboardia,
+  Day-miniatyyriä tai koristeellista Night-kuvastoa. Exit-kriteerit,
+  tiedostokartta, smoke- ja live-portti ovat kokonaan
+  `NIGHT_STANDALONE_PLAN.md` §12.1:ssä. N8 alkaa
+  vasta N7:n käyttäjähyväksynnän jälkeen.
 - [ ] **9. Day-tuomio** (§0). Vasta kun kohtia 1–8 on *soitettu* oikeissa
   sessioissa. Dayn poisto, jos valitaan, on oma peruutettava porttinsa —
   ja tarvitsee ensin kodin (tai kirjatun kuoleman) Dayn kahdelle
@@ -374,9 +390,9 @@ ovat vihreät; muut GUI- ja NRT-portit kantavat saman inkrementin v1-portista,
 koska korjaukset eivät koskeneet DSP:tä tai muita näkymiä.
 `CQ_HOLD_OK` kantaa: DSP:hen ei koskettu.
 
-Haaran `nocturne-preamp-roots` toinen katselmointiportti 2026-07-28 (§10,
-**live-hyväksyntä vielä auki, checklist N7**): `CQ_COMPILE_OK`,
-**12 199 unit-passia / 0 failurea / 28/28 luokkaa**, `CQ_SAFETY_PASSED`,
+Haaran `nocturne-preamp-roots` **hyväksytty portti 2026-07-28** (§10,
+checklist N7): `CQ_COMPILE_OK`,
+**12 219 unit-passia / 0 failurea / 28/28 luokkaa**, `CQ_SAFETY_PASSED`,
 `CQ_HOLD_OK`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
 `CQ_GUI_DRAWER_REENTRY_PASSED` ja `CQ_GUI_NIGHT_PASSED`. Night-smoke todistaa
 CQSpecistä johdetun säie-hoverin, lähteen valinnan ja `none`-togglen,
@@ -390,6 +406,13 @@ output-haaran jatkuvuuden. Qt-kuvapassi tarkisti levon, lähde-hoverin,
 juuriprovenienssin ja lintu-hoverin suoran deck-reitin. §13.8:n
 loudness-kompensaatio kirjattiin myöhemmäksi kuuntelukokeeksi; DSP:hen ei
 koskettu tässä portissa.
+
+Hyväksyntäportin +20 passia ovat provenienssin pyyhkäisyn törmäysmatriisi
+(`test_inkClearances`, 2 kokoa × 2 juurta × 5 säiettä). Se kirjoitettiin ensin
+vanhoilla vakioilla ja kaatui täsmälleen käyttäjän näkemiin kohtiin — juuri B,
+säikeet 1 ja 2 (0,0 ja 0,55 px) — sekä yhteen 0,8 px:n peilitapaukseen
+juuressa A, jota kukaan ei ollut huomannut. **Vakio inset ei voi luvata
+väljyyttä siemenetystä kehosta:** väljyys on mitattava.
 
 ## Omistajuus- ja julkaisurata (kulkee Nocturnen rinnalla)
 

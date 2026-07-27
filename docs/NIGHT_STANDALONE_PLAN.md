@@ -18,6 +18,9 @@
 > **active roadmap for the `nocturne` branch** — `PLAN.md` is its status view.
 > Where this plan supersedes a GUI_SPEC recipe (it does, in §9), the spec edit
 > is part of the increment that lands it, as always.
+> The N8 Drawer-workshop handoff was coverage- and visual-audited on
+> 2026-07-28 and is specified in §12.1. That section, rather than the old
+> one-paragraph sketch below, is the implementation contract for N8.
 
 ---
 
@@ -28,19 +31,20 @@ more itself as a **night-only instrument**, with the drawer holding the
 menu-like remainder. This document does not decide that. It matters here for
 one reason: **these three additions are prerequisites for even evaluating
 night-only.** Ranges, dolby and the punch are the last musically load-bearing
-things a player cannot do at night. Once they land, night-only can be
-evaluated by selecting Night in the toolbar and staying there for a few
-sessions — no code, no
-feature flag (PLAN.md forbids runtime flags), no deletion. If the verdict is
-night-only, the follow-up work (its own gate, not this one) is:
+things a player cannot do at night. Once they land, the *playing surface*
+can be evaluated by selecting Night in the toolbar and staying there for a
+few sessions — no code, no feature flag (PLAN.md forbids runtime flags), no
+deletion. A conclusive night-only verdict still waits for these gates:
 
 - a drawer **workshop page** carrying every remaining CQSpec parameter with
   honest ledger-style controls (the drawer is where "the ledger look is
-  honest" — §16.7): coco slots, dust, organ level, bits/wrap/interp,
-  level/pan/send, preamp src/drive/bias, castle sends and detunes, qShLag,
-  deck rate/loop, micGain with its warning color. SPEC §6.2's obligation —
+  honest" — §16.7): live/mic trims, deck rate/loop, coco slots,
+  bits/wrap/interp, dust/organ/level/pan/send, castle sends and detunes,
+  qShLag and Space size/damping. `micGain` keeps its warning color.
+  SPEC §6.2's obligation —
   *every* §5 parameter reachable without code — must be re-verified against
-  night + drawer + master strip alone before any Day deletion;
+  night + drawer + master strip alone before any Day deletion. The exact
+  inventory and the single-`micGain`-path consequence are in §12.1;
 - a new home (or a recorded death) for Day's two overview surfaces: the
   spesal constellation (the whole-network coupling view; night shows chords
   only under the hand) and the static coco memory-path map (already on the
@@ -635,13 +639,17 @@ composition"</b> (kept because the failure is instructive)</summary>
 
 ## 10. The roots — the intake body, not an envelope on a stick
 
-> **Status — second review build ready 2026-07-28 on
-> `nocturne-preamp-roots` (checklist N7).** The design locks are now direct
-> strand selection/toggle, an 8 px axis lock into 240 px vertical drive or
-> horizontal bias, drive-weighted 1.5/2/3 px audio anatomy, and transient,
-> topology-true bird flights. Unit geometry, 12,199 assertions and the Qt
-> Night smoke are green. This is not acceptance: scale, route legibility and
-> the hand feel still require the live 100/125/150 % visual/listening review.
+> **Status — accepted 2026-07-28 on `nocturne-preamp-roots`
+> (checklist N7).** The accepted design is direct strand selection/toggle, an
+> 8 px axis lock into 240 px vertical drive or horizontal bias,
+> drive-weighted 1.5/2/3 px audio anatomy, and transient, topology-true bird
+> flights. The live review carried one correction: the transient provenance's
+> ground erasure was cutting the tops off root B's two leftmost strands. The
+> erasure now measures the seeded delta inside its own band and gives way
+> outward — `rootLabelInward` is a nominal rest, not a promise. The clearance
+> matrix was written against the old constants first and failed on exactly
+> the two strands the user saw, plus a 0.8 px mirror case on root A that no
+> eye had caught.
 
 The root metaphor works only if it tells the whole signal story. In the DSP,
 each side first chooses `preASrc` / `preBSrc` (`liveL`, `liveR`, `mic`,
@@ -772,23 +780,394 @@ its own visual/listening review stop, its own commit.
 6. **The birds fetch** (§11).
 7. **The roots** (§10) — a functional preamp/intake-body pass after the tide
    composition is accepted; it no longer rides as decoration with the birds.
-8. **The drawer workshop page** (§0) — its own gate; completeness audit
+8. **The drawer workshop page** (§12.1) — its own gate; completeness audit
    against SPEC §6.2 (every CQSpec parameter reachable) is its exit
    criterion.
 9. **The day verdict** (§0) — only after 1–8 have been *played* for real
    sessions. Deletion, if chosen, is its own reversible gate.
 
-After steps 1–7 the night map is, deliberately, a complete instrument:
+After steps 1–7 the night map is, deliberately, a complete **performance
+surface**:
 every hardware-panel gesture (speed, in, fb, spaf, hold+punch, flip, skip,
 dolby, ranges, master freq, chaos, spesal, patching) plus the machine's own
 gifts (the moon, the tide field, the weather, the birds) — playable from one
-landscape, with the drawer as its workshop and the master strip as its
-spine.
+landscape with the master strip as its spine. It is not yet the complete
+code-free GUI promised by SPEC §6.2: step 8 supplies the remaining tuning and
+configuration controls in the Drawer. Only after step 8 does night + drawer +
+master form the complete GUI instrument whose Day verdict can be trusted.
 
 The **ear pass** (§13) is independent of this GUI order and can interleave
 with it — each of its items is its own listening iteration. Its natural
 start is right after the G3.1 review, whose script already carries the
 zipper measurement (§13.6).
+
+---
+
+## 12.1 The Drawer workshop — N8 implementation contract
+
+### 12.1.1 Coverage-audit verdict
+
+The old N8 sketch named examples but did not define “remaining”, a count, a
+machine-checkable partition, the fourth-page shell work, or the one-GUI-path
+rule for `micGain`. It was not sufficient handoff for implementation.
+
+`CQSpec` currently contains **79** parameters. “Reachable” in this gate means
+all of the following:
+
+- the player starts in Night and uses only Night, the Drawer and the
+  persistent Master strip — Day, code and 16n do not count;
+- a persistent parameter has a visible, labelled, enabled control at the
+  1280×720 minimum, and the control both writes through `CQState.set` and
+  follows writes from code, MIDI, snapshots and the other GUI surface;
+- a read-only mark does not count (the night's mic sprout is an indicator),
+  and a matrix destination does not count as its base parameter (the bird's
+  `deckA_rate` socket is not a `deckARate` control);
+- numeric curves, ranges, integer steps and enum membership come from
+  `CQSpec`; the page owns no copied ControlSpec, default or enum array;
+- “reachable” includes an exact current-value reading. A rail with no value
+  display is not enough for this ledger page.
+
+The intended partition is exact and disjoint:
+
+| Surface | Count | CQSpec parameters |
+|---|---:|---|
+| Night | 31 | `deckALevel`, `deckBLevel`; `preASrc`, `preBSrc`, `preADrive`, `preBDrive`, `preABias`, `preBBias`; for each Coco: `In`, `Fb`, `Speed`, `Spaf`, `DolbyIn`, `DolbyFb`, `Hold`, `Flip`; `qFreq`, `qChaos`; `c1Range`…`c5Range` |
+| Master | 5 | `masterVol`, `masterDry`, `spaceMix`, `patchDepth`, `monitorMute` (the PANIC/resume control) |
+| Workshop | 43 | the explicit inventory below |
+| **Total** | **79** | must equal `CQSpec.names`, with no missing or duplicate owner |
+
+This partition describes the night-first GUI, not every observer. For
+example, Night may keep reading `micGain` to draw its sprout without becoming
+an interactive owner.
+
+The **43 Workshop parameters** are:
+
+| Ledger island | Count | Exact names |
+|---|---:|---|
+| Inputs, decks and Space | 8 | `liveGain`, `micGain`, `deckARate`, `deckBRate`, `deckALoop`, `deckBLoop`, `spaceSize`, `spaceDamp` |
+| Coco 1 remainder | 12 | `coco1Bits`, `coco1Wrap`, `coco1Interp`, `coco1Dust`, `coco1Organ`, `coco1Level`, `coco1Pan`, `coco1Send`, `coco1SlotPre`, `coco1SlotDeck`, `coco1SlotQ`, `coco1SlotX` |
+| Quantussy remainder | 11 | `qShLag`, `c1Off`…`c5Off`, `c1Send`…`c5Send` |
+| Coco 2 remainder | 12 | `coco2Bits`, `coco2Wrap`, `coco2Interp`, `coco2Dust`, `coco2Organ`, `coco2Level`, `coco2Pan`, `coco2Send`, `coco2SlotPre`, `coco2SlotDeck`, `coco2SlotQ`, `coco2SlotX` |
+
+The other SPEC §6.2 obligations are already owned, but the N8 exit audit must
+name them too: Night owns hold/flip/skip, spesal step, dolby, ranges, patching
+and deck loading/navigation; Inspector owns patch presets and the full
+16×22 signed matrix; Memory owns snapshots and A→B morph; Night/Master show
+the required hold, spesal/activity, filename, meters, REC/elapsed and notice
+state. A CQSpec-only test is therefore necessary but not sufficient.
+
+### 12.1.2 Preconditions and non-goals
+
+Do not begin N8 until N7 has the user's checklist acceptance. Build N8 on the
+accepted tip of the current stacked Nocturne chain, not on the older
+`nocturne` integration tip. Record a clean baseline from `compile_check`,
+`run_all`, `nrt_safety` and all four GUI smokes before changing classes.
+
+N8 changes presentation and GUI bindings only. It does **not**:
+
+- change a SynthDef, DSP route, CQSpec name/range/default/curve/lag, matrix
+  inventory, snapshot policy, keyboard map or safety threshold;
+- remove Day, add a runtime feature flag, or decide the fate of Day's spesal
+  constellation or memory-path diagrams (N9 owns that verdict);
+- add parameter undo or parameter lines to Spellbook — those remain matrix
+  facilities;
+- duplicate performance controls already honest in Night or Master merely to
+  make the Workshop look comprehensive.
+
+There is one deliberate Day-side relocation. SPEC §6.2 says the GUI never
+grows a second `micGain` path, while the night-first completeness gate
+requires `micGain` without Day. Therefore N8 must **move**, not copy, the
+interactive mic control and its warning owner from Day/Sources to Workshop.
+Day may retain a passive pointer such as “mic · drawer/workshop” if the
+composition needs it, but no second enabled mic control. The night's
+read-only mic sprout remains valid.
+
+### 12.1.3 Stable page, visual concept and layout contract
+
+The global toolbar destination remains named `drawer`. Inside it the tab
+order becomes:
+
+`inspector · workshop · spellbook · memory`
+
+`workshop` is a fourth persistent page, not a replacement for Inspector and
+not a mode inside Memory. The existing close/reopen persistence law applies
+to it. Selecting Day or Night while the Drawer is open still returns to that
+instrument, and Master remains visible and live.
+
+#### Artistic relation to Night
+
+The Workshop is **the same instrument in the opposite grammar**:
+
+- Night is the living bay: open water, asymmetric bodies, topology, gesture,
+  almost no text and no numbers.
+- Workshop is the bay's quiet measurement table: recessed slate, straight
+  rules, exact names and values, stable coordinates and no uninvited motion.
+
+This contrast is the point. Do not transplant Night's shells, roots, birds,
+wobble or weather into the Drawer, and do not shrink the Day panel into it.
+The relation comes from the shared Ink kit, palette, type, line weights,
+semantic family colors and hover language — not from decorative biology. In
+Night skin it should read as a phosphor-lit field ledger beside the bay, not
+as a generic settings dashboard. In Day skin the identical geometry becomes
+ink on recessed paper. The hard cut changes the light, never the information
+architecture.
+
+Night's lights remain informational here too. The Workshop has no aura,
+glowing panel borders, cable animation, starfield, texture, gradients used as
+decoration, or organism wobble. Only a changing parameter, hover/press,
+`micGain` danger, or another real state may brighten a mark. The page is
+otherwise perfectly still.
+
+#### Fixed composition
+
+At the 1280×720 minimum, center one **1128 px content rail**, exactly matching
+the accepted Inspector loom rail. Keep that rail fixed at larger sizes:
+larger windows buy surrounding slate, not stretched controls. The whole page
+uses one continuous `ground recess`; it is not a board of rounded cards.
+Inside the rail, use hairline separators and 16 px gutters on the established
+8 px grid. The only shadow remains the Drawer stage's existing soft edge —
+no island casts one.
+
+The page has one shallow service band over a three-ledger body:
+
+```text
+┌──────── deck a ────────┬────── input trims ──────┬──────── space ─────────┬──────── deck b ────────┐
+│ rate · loop            │ live gain · mic gain    │ size · damping         │ rate · loop            │
+└────────────────────────┴──────────────────────────┴────────────────────────┴────────────────────────┘
+
+┌──────────────── coco 1 ────────────────┬──────────────── quantussy ───────────────┬──────────────── coco 2 ────────────────┐
+│ converter · material · output · slots  │ s&h slew · detunes · castle sends       │ converter · material · output · slots  │
+└────────────────────────────────────────┴───────────────────────────────────────────┴────────────────────────────────────────┘
+```
+
+This is a restrained echo of Night's real geography: deck A and B hold the
+two outer ends, while the main body reads `coco 1 · quantussy · coco 2`.
+It is topology as ordering, not a picture. Space stays a neutral service
+module and gains no invented Night body; GUI_SPEC §14's deferred Space
+identity remains deferred.
+
+Use four equal 270 px service modules with three 16 px gutters
+(`4 × 270 + 3 × 16 = 1128`). Below a 16 px gap, use main widths
+`365 · 366 · 365` with two 16 px gutters. Pair symmetry is structural:
+both Coco ledgers are built by the same helper with only the index changed.
+The service band is 72 px high. Budget each main ledger at 392 px maximum:
+a 20 px title, 16 px subgroup labels and 24 px parameter rows put a
+12-parameter Coco at 372 px before its remaining bottom air. With 12 px
+top/bottom page margins, the complete rail is 504 px high and fits the
+minimum Drawer workspace without a scroll view.
+
+Group rows by signal meaning, never alphabetically:
+
+- each Coco: **converter** (`bits`, `wrap`, `interp`), **material** (`dust`,
+  `organ`), **output** (`level`, `pan`, `send`), **input mix** (`pre`,
+  `deck`, `q`, `x`);
+- Quantussy: **s&h** (`qShLag`), **detune** (`c1Off`…`c5Off`), **audio
+  sends** (`c1Send`…`c5Send`). Castle numbers run 1→5 in both groups, so the
+  two lists can be compared without hunting;
+- the service band uses the exact pairs shown in the wireframe. Do not move
+  `spaceSize`/`spaceDamp` into Master: the persistent strip intentionally
+  keeps only performance `spaceMix`.
+
+Island titles and ordinary row labels are lowercase 10 px sans; subgroup
+labels are 9 px whisper; exact values are 10 px mono. Labels sit close to
+their rail and are never boxed or rendered as pills. The main three titles
+share one baseline, both Coco subgroup baselines match exactly, and spare
+vertical room collects below the ledgers as slate rather than stretching
+rows apart.
+
+#### The ledger control
+
+The final Workshop must not be forty-three miniature Day knobs. Add one clean
+Ink **ledger-row** control through `CQInkControl` + `CQGuiWidgets`; the
+existing slider does not carry this exact-value contract:
+
+- one row is 24 px high and owns one rectangular hit area;
+- label at left, a hairline value rail in the middle, exact mono value at
+  right; the value never overlaps the rail;
+- unipolar numeric fill grows from the left; bipolar fill grows away from a
+  visible centre tick; integer rails snap and print an integer;
+- a toggle uses two stable `off · on` seats; an enum uses one labelled seat
+  per value, in `CQSpec.enumValues` order;
+- press/drag on the rail maps its own x-coordinate to normalized 0…1 and then
+  calls `CQSpec.map`; wheel uses the existing normalized fine nudge. No
+  literal range, step, default or enum lives in the control;
+- hover brightens only that row's rail, handle and value; press adds the
+  existing stronger outline. Cue and action use the same row/rail geometry;
+- external state and snapshot morphs move the handle/value through the
+  existing paced updater stream. That real change is the only motion.
+
+Use semantic phosphor sparingly. In Night skin, slate is `recess`, rules and
+ordinary values are bone/whisper, and established families accent only their
+own facts (`organ`, `dust`, input, Quantussy family, danger). Do not rainbow
+whole columns or invent a family for neutral slots, levels, pan, sends or
+Space. Day uses the same marks re-inked through the Day palette. No color is
+inlined at the Workshop draw site.
+
+`bits` uses the integer ledger; `wrap` and deck loops use the toggle ledger;
+`interp` uses the enum ledger. All other Workshop parameters are numeric
+ledgers, including slots and sends: an unlabeled slider with no exact value
+is insufficient for this precision page. Labels may be shortened only inside
+their already-named group (`pre`, `deck`, `q`, `x` under **input mix**);
+the full parameter ownership remains in the manifest.
+
+The `micGain` control uses the warning family, gains the existing danger
+outline when live, and drives the existing persistent `MIC LIVE` notice. Its
+row may brighten red, but its surrounding service module does not glow.
+That warning subscription must exist while the GUI exists, even when the
+Workshop page is hidden; closing the Drawer may not silence the warning.
+
+Do not make the page scroll merely to avoid layout work. At the minimum size,
+the service band, all three main ledgers, the last Coco slot row and the fifth
+castle-send row must lie inside the Workshop page's actual bounds. A
+1920×1005 content-window review (the
+existing 1920×855 workspace reference) must add breathing room rather than
+stretching controls into a different hierarchy.
+
+Reject the first runnable visual if it reads as any of these: four rounded
+settings cards; a dense native control panel; a miniature Day; Night scenery
+used as decoration; independently glowing sections; evenly distributed
+controls filling every available pixel. At the review stop, the squint read
+must be **service band above · Coco / Quantussy / Coco below · one red mic
+exception**, while the close read gives every exact value.
+
+### 12.1.4 Code-shape handoff
+
+Keep the new composition out of the already large `CQGui.sc`. The expected
+shape is:
+
+- add `classes/CQGuiWorkshop.sc` (under the project's ~400-line limit);
+  its one explicit `parameterGroups`/manifest drives both layout construction
+  and `paramNames`, so the audit never tests a second hand-copied list;
+- make that manifest list the 43 names above explicitly. **Do not** compute
+  Workshop ownership as `CQSpec.names - night - master`: that would silently
+  make a newly added parameter “covered” without drawing a control;
+- expose semantic interactive inventories for Night and Master (for example
+  `CQGuiNightMap.reachableParamNames` and
+  `CQGuiPanels.masterParamNames`). They may compose existing semantic helpers,
+  but they must not derive from the Workshop complement;
+- extend `CQGuiDrawer` to own, skin and free the Workshop and to publish
+  `#[inspector, workshop, spellbook, memory]`;
+- extend `CQGuiShellState`, `CQGuiShell`, and `CQGui.prBuild` through the same
+  fourth-page order. Update every whitelist, page array and selected-index
+  lookup together; the queued `prSwapStage` law is unchanged;
+- move the Day `micGain` control/warning registration from
+  `CQGuiPanels.sources` into `CQGuiWorkshop`; keep the existing central
+  `CQGui.micNotice` composition and the Night sprout observer;
+- reuse `CQGuiWidgets` for all parameter writes and updater registration;
+  implement §12.1.3's ledger row in `CQInkControl` and bind its
+  num/int/toggle/enum variants through `CQGuiWidgets`. Do not make a second
+  state-binding factory inside Workshop, and do not ship standard Day knobs
+  as the Workshop's final visual form.
+
+Use this green implementation sequence:
+
+1. Synchronize the proposed GUI contract in `GUI_SPEC.md`/`ARCHITECTURE.md`,
+   add the three explicit owner inventories and their dynamic coverage unit
+   test. No rendered layout is claimed yet.
+2. Add `CQGuiWorkshop` and build all 43 controls directly from its manifest.
+   Test it serverlessly before putting it in the live shell. Because it is
+   not constructed by `CQGui` yet, its mic control is not a second live GUI
+   path.
+3. In one atomic, green change, wire the fourth page through Drawer/Shell and
+   remove the Day mic control/warning owner. Never commit or hand off an
+   intermediate live GUI with two `micGain` controls.
+4. Extend the Qt smokes, run the full gate, add the N8 manual block, then
+   present the first runnable Workshop at the review stop. Polish only from
+   the user's feedback; do not drift into N9.
+
+The implementation increment must update `GUI_SPEC.md` (§2 and §8 tab/page
+contract, §13 gate, and the mic relocation), `ARCHITECTURE.md` (new class and
+Drawer composition), `tests/manual_checklist.md` (N8 block), `PLAN.md` status
+and, after acceptance, `CLAUDE.md`/`CHANGELOG.md`. SPEC §6.2 already states
+the required behavior and needs no semantic weakening.
+
+### 12.1.5 Test-first contract
+
+Add the following contracts before calling the page complete:
+
+1. **Dynamic coverage unit test** (`CQGuiVisualContractTest` or a narrowly
+   named new unit class):
+   - Workshop manifest has 43 unique real `CQSpec` names;
+   - Night has 31, Master 5, and the three interactive-owner sets are
+     disjoint;
+   - their union equals `CQSpec.names` exactly and has the same size.
+   Keep the current 79 as a diagnostic assertion if useful, but the equality
+   to `CQSpec.names` is the future-proof gate.
+2. **Ownership tests**:
+   - all four Drawer tabs appear in the normative order;
+   - `\workshop` is accepted, persists across close/reopen and rejects no
+     global key behavior;
+   - `micGain` occurs in Workshop's interactive manifest and not Day's,
+     while Night's mic mark remains explicitly read-only.
+3. **Binding tests**:
+   - every manifest entry constructs exactly one enabled control;
+   - representative num, bipolar num, int, toggle and enum controls write the
+     expected clamped value through `CQState`;
+   - an external `state.set` repaints representative controls without firing
+     a write echo; enum order and numeric mapping come from `CQSpec`;
+   - all 43 final controls are ledger rows, not native widgets or Day knobs,
+     and bipolar/int/toggle/enum variants expose their required secondary
+     shape channel.
+4. **Drawer Qt smoke**:
+   - open Night → Drawer → Workshop at 1280×720 and assert the real page is
+     visible; the 1128 px rail is centred; the four service modules and three
+     main ledgers have their specified widths; the last slot/send rows are
+     contained; Master is visible; and `CQInkControl.drawErrors == 0`;
+   - repeat in both Day and Night skins and in a 1920×1005 content window
+     (the 1920×855 workspace reference);
+   - set `micGain` above zero and back to zero: the one Workshop control,
+     danger treatment and persistent notice agree even after switching pages;
+   - close/free and preview re-entry leave no duplicate controller, task or
+     resurrected window.
+5. **Regression gates after the class changes**:
+   `CQ_COMPILE_OK`, `CQ_TESTS_PASSED`, `CQ_SAFETY_PASSED`,
+   `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+   `CQ_GUI_DRAWER_REENTRY_PASSED`, and `CQ_GUI_NIGHT_PASSED`. Run them through
+   `tests/run_sclang_gate.ps1`. N8 has no DSP change, so Hold NRT is not a new
+   obligation; an unexpected audio/SynthDef edit expands the gate and is a
+   scope alarm.
+
+Do not satisfy the coverage test with a test-only array, hidden controls,
+disabled controls, clipped rows or a complement computed from `CQSpec`. The
+rendered controls and the audited manifest must be the same data.
+
+### 12.1.6 Review stop and exit criteria
+
+Add an N8 block to the live checklist with two passes:
+
+- **visual/behavior pass:** Night → Drawer → Workshop at 1280×720 and the
+  user's maximized laptop size. First squint: one quiet service band over the
+  `coco 1 · quantussy · coco 2` triptych, same phosphor species as Night but
+  no copied organisms, card dashboard or miniature Day. Then check Coco
+  symmetry, exact values, semantic color restraint, hover, page persistence,
+  no scroll/clipping, fixed-rail breathing room, Master/PANIC visibility,
+  external state following, and the single mic warning path;
+- **short listening pass:** with conservative master level, exercise one
+  representative from every Workshop subgroup (deck rate/loop, Coco
+  converter/material/output/slot, castle detune/send, qShLag, Space
+  size/damp), reset to a known snapshot, then play a real session without
+  opening Day. This is a control-provenance check, not permission to retune
+  DSP.
+
+Stop for the user's visual and playing review before polish or N9. N8 exits
+only when:
+
+- the dynamic 31 + 5 + 43 partition proves all current CQSpec names reachable
+  from Night + Drawer + Master and all other SPEC §6.2 obligations have a
+  named owner;
+- all 43 Workshop controls are visible, enabled, exact-value-following and
+  funnel-bound at the minimum size;
+- the accepted visual reads as Night's still measurement table — shared Ink
+  species, deliberately different grammar — and passes §12.1.3's explicit
+  cheapness/rejection list at both review sizes;
+- there is exactly one interactive `micGain` GUI path, with warning and
+  persistent notice intact;
+- the four-page Drawer lifecycle, focus, queued swap, skin and cleanup laws
+  hold;
+- the full automated gate is green and the N8 checklist is accepted by the
+  user.
+
+Only then may N9 ask whether Day lives or dies.
 
 ---
 

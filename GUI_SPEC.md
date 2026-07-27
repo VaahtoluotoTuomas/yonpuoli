@@ -1112,8 +1112,8 @@ the shell's exact curved spiral segment and radial stem beneath the jack. A
 generic vertical stub is not the same path and may not replace it.
 The spiral's stroke alpha breathes 0.55 → 1.0 with the coco's out level.
 
-**Roots (inputs; N7 second review 2026-07-28).** Each side is the whole intake
-body, not an envelope on a stick:
+**Roots (inputs; accepted 2026-07-28, checklist N7).** Each side is the whole
+intake body, not an envelope on a stick:
 
 - Five unlabelled source strands grow as a wide, seeded-irregular delta from
   the lower waterline into one
@@ -1125,7 +1125,13 @@ body, not an envelope on a stick:
   writes `none`. Hovering or holding the knot reveals the current selection;
   `none` shows its name but lights no strand. There are no permanent labels.
   The transient name sits inward beside the knot in bone ink over a small
-  ground wash, so a highlighted green strand cannot swallow its text.
+  ground wash, so a highlighted green strand cannot swallow its text. That
+  wash erases whatever it covers, so it may never reach the delta: the label
+  keeps a measured clearance from the strands' own curves and gives way
+  outward wherever the seeded delta needs the room. **A constant inset cannot
+  promise clearance from a seeded body** — the geometry has to measure it
+  (the accepted N7 review found the erasure cutting the tops off root B's two
+  leftmost strands at 1280×570).
 - The two-lobed knot is an axis-locked drive/bias body. The first 8 px choose
   one act for the whole drag: vertical up/down traverses normalized
   `preADrive` / `preBDrive`, while horizontal right/left traverses normalized

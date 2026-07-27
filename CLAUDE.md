@@ -135,8 +135,20 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   ripples (§3), was accepted on `nocturne-range-ripples` on 2026-07-27
   (checklist N4). Build-order step 5, the Dolby oysters (§4), was accepted on
   `nocturne-dolby-oysters` the same day (checklist N5). Build-order step 6,
-  the fetching birds (§11), has its first green review version on
-  `nocturne-birds-fetch`; checklist N6 is still open.**
+  the fetching birds (§11), was accepted on `nocturne-birds-fetch` on
+  2026-07-28 (checklist N6), and build-order step 7, the preamp roots (§10),
+  was accepted on `nocturne-preamp-roots` the same day (checklist N7).
+  The next step is N8, the Drawer workshop, whose implementation contract,
+  coverage audit and exact 31/5/43 parameter partition are written out in
+  `NIGHT_STANDALONE_PLAN.md` §12.1.**
+  N7's review found one defect worth remembering: the transient provenance
+  label's ground erasure was cutting the tops off root B's two leftmost
+  intake strands. **A constant inset cannot promise clearance from a seeded
+  body** — the geometry now measures the strands inside the erasure's own
+  band and gives way outward, and `rootLabelInward` is documented as a
+  nominal rest rather than a promise. The clearance matrix was written
+  against the old constants first: it failed on exactly the two strands the
+  user saw, plus a 0.8 px mirror case on root A that no eye had caught.
   The review confirmed the sound and GUI write path with `\quantumDrone`.
   The user removed the inherited i/b/a captions; the accepted v2 gives every
   ripple a common keel, a path-only river knockout and an anchor 13 px below
@@ -354,6 +366,12 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
   `CQ_GUI_DRAWER_REENTRY_PASSED` and `CQ_GUI_NIGHT_PASSED`; `CQ_HOLD_OK`
   carries because the increment did not touch DSP.
+- Accepted N7 preamp-root gate on `nocturne-preamp-roots` (2026-07-28,
+  checklist N7): `CQ_COMPILE_OK`, **12,219 unit passes / 0 failures / 28/28
+  classes**, `CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`,
+  `CQ_GUI_DRAWER_PASSED`, `CQ_GUI_DRAWER_REENTRY_PASSED` and
+  `CQ_GUI_NIGHT_PASSED`; `CQ_HOLD_OK` carries because the accepted increment
+  did not touch DSP.
 - The four former `GUI_SPEC.md` seams were resolved by the user on 2026-07-19 and are
   recorded in the spec and `PLAN.md`: nine charge channels, the G1 harvest lasso,
   display-only mic sprout and static REC transition/error states. Do not reopen or

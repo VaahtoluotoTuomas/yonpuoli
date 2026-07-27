@@ -736,9 +736,14 @@ CQ.patch(\envA, \coco1_spaf, 0.7);
 10. Jatkuvatko kaikki hover-reitit ilman suorakulmaisia aukkoja ja piirtyykö
     vihreä output-sivuhaara yhtenä pyöreänä käyränä jakille asti?
 
-- [ ] N7 hyväksytty (pvm: ______ — lähdeklikkaus, drive/bias-käden tuntu,
+- [x] N7 hyväksytty (pvm: 2026-07-28 — lähdeklikkaus, drive/bias-käden tuntu,
       viivapaine, bird/Coco/root-reitit, env-sivusilmu, kaapeliprioriteetti,
-      juurten epäsymmetria, 100/125/150 % ja kuuntelu)
+      juurten epäsymmetria, 100/125/150 % ja kuuntelu. Katselmoinnissa yksi
+      korjaus: oikean juuren provenienssitekstin näkymätön taustalaatikko
+      pyyhki kahden vasemmanpuoleisimman säikeen yläosan. Erasure mittaa nyt
+      siemenetyn deltan omalta kaistaltaan ja väistyy ulospäin; törmäysmatriisi
+      kirjoitettiin ensin vanhoilla vakioilla ja kaatui juuri noihin kahteen
+      säikeeseen sekä 0,8 px:n peilitapaukseen juuressa A.)
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>
