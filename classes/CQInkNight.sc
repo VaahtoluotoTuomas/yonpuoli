@@ -859,11 +859,14 @@ CQInkNight {
 
 	// Provenance lives on the same topological overlay as its route, above
 	// invisible widget paper. A small ground erasure and bone text keep it
-	// legible where the selected green strand gathers into the knot.
+	// legible where the selected green strand gathers into the knot. The
+	// erasure's own size is a measure, because CQNightGeometry has to keep
+	// exactly this rectangle off the seeded strands (see rootLabelClear).
 	*drawPreampLabel { |root, label = "", skin = \night|
 		var palette = CQInk.palette(skin);
+		var pad = CQNightMeasures.rootLabelWashPad;
 		Pen.fillColor = palette[\ground].copy.alpha_(0.92);
-		Pen.addRect(root[\labelRect].insetBy(-3, -1));
+		Pen.addRect(root[\labelRect].insetBy(pad.x.neg, pad.y.neg));
 		Pen.fill;
 		Pen.stringCenteredIn(label.asString, root[\labelRect],
 			CQInk.font(\number), palette[\spark]);

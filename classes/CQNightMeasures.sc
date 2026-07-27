@@ -128,8 +128,13 @@ CQNightMeasures {
 	*rootKnotHit { ^20 }                    // px — axis-locked drive / bias gesture
 	*rootBoxPad { ^12 }                     // px — transparent local repaint layer
 	*rootLabelExtent { ^Point(72, 14) }      // px — transient provenance only
-	*rootLabelInward { ^52 }                // body — beside, not over, the delta
+	// "Beside, not over, the delta" is a promise a fixed inset cannot keep: the
+	// strands are seeded, so this is only the nominal rest, and the geometry
+	// pushes further inward until the ground erasure clears the actual curves.
+	*rootLabelInward { ^52 }                // body — nominal, minimum inward rest
 	*rootLabelDrop { ^5 }                   // body — slight settling below knot
+	*rootLabelClear { ^6 }                  // px — erasure never touches a strand
+	*rootLabelWashPad { ^Point(3, 1) }      // px — CQInkNight's ground erasure
 	// The mic sprout still grows beside envA, but on root A's far side: the
 	// tide pool took the water it used to stand in (§9), and a reed rising from
 	// the waterline at the bay's left edge is where it belongs anyway.

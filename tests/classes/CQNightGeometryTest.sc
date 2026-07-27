@@ -368,6 +368,26 @@ CQNightGeometryTest : UnitTest {
 					"coco % chevron touch box stays inside the shell (%x%)"
 						.format(i + 1, *size));
 			};
+			// "Beside, not over, the delta" is not a claim a constant inset can
+			// make about a seeded delta: at 1280x570 the ground erasure behind
+			// root B's provenance ran straight through its leftmost strand
+			// (found live, 2026-07-28). The label gives way to the strands it
+			// names; this pins the exact rectangle CQInkNight fills.
+			geo[\roots].do { |root, i|
+				var wash = root[\labelRect].insetBy(
+					CQNightMeasures.rootLabelWashPad.x.neg,
+					CQNightMeasures.rootLabelWashPad.y.neg);
+				root[\sourceStrands].do { |strand, s|
+					var gap = (0, 0.002 .. 1).collect { |t|
+						this.prRectDistance(
+							CQNightGeometry.cubicPoint(strand, t), wash)
+					}.minItem;
+					this.assert(gap >= CQNightMeasures.rootLabelClear,
+						"root % strand % is never cut by the provenance "
+						"erasure (gap % px, %x%)"
+							.format(i + 1, s + 1, gap.round(0.01), *size));
+				};
+			};
 			geo[\castles].do { |castle, k|
 				var n = k + 1, center = castle[\center];
 				var names = [("tri" ++ n).asSymbol, ("cas" ++ n).asSymbol,

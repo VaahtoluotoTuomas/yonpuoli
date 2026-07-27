@@ -722,11 +722,37 @@ CQNightGeometry {
 				var envReach = max(0.001,
 					this.distance(envBranch[2], envTip));
 				var labelExtent = CQNightMeasures.rootLabelExtent;
-				var labelCenterX = knot.x - (side
-					* CQNightMeasures.rootLabelInward * scale);
+				var labelTop = knot.y + (CQNightMeasures.rootLabelDrop * scale);
+				// The provenance rests inward, and its ground erasure has to
+				// stay off the delta — but the delta is seeded, so a constant
+				// inset cannot promise that (at 1280x570 root B's leftmost
+				// strand ran straight through the wash). Measure the strands
+				// inside the erasure's own band and give way to them.
+				var washPad = CQNightMeasures.rootLabelWashPad;
+				var inward = side.neg;
+				// The band is the erasure's own height grown by the clearance,
+				// so a strand is either pushed aside horizontally or already
+				// that far above or below it: the gap holds in every direction.
+				var bandTop = labelTop - washPad.y
+					- CQNightMeasures.rootLabelClear;
+				var bandBottom = labelTop + labelExtent.y + washPad.y
+					+ CQNightMeasures.rootLabelClear;
+				var reach = strands.collect { |strand|
+					(0, 0.01 .. 1).collect { |t| this.cubicPoint(strand, t) }
+						.select { |p|
+							(p.y >= bandTop) and: { p.y <= bandBottom }
+						}
+						.collect { |p| p.x * inward }
+				}.flat;
+				var restU = (knot.x * inward)
+					+ (CQNightMeasures.rootLabelInward * scale);
+				var clearU = if(reach.isEmpty) { restU } {
+					reach.maxItem + CQNightMeasures.rootLabelClear
+						+ washPad.x + (labelExtent.x * 0.5)
+				};
+				var labelCenterX = max(restU, clearU) * inward;
 				var labelRect = Rect(labelCenterX - (labelExtent.x * 0.5),
-					knot.y + (CQNightMeasures.rootLabelDrop * scale),
-					labelExtent.x, labelExtent.y);
+					labelTop, labelExtent.x, labelExtent.y);
 				var allPoints = strands.flat
 					++ vein ++ envBranch ++ [labelRect.leftTop,
 						labelRect.rightBottom];
