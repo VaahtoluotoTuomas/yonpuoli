@@ -90,6 +90,50 @@ CQGuiNightTouchTest : UnitTest {
 			"the dead tap costs a sliver of the moon's range, never a jump");
 	}
 
+	// A bird has three acts but no new glyphs: a still press fetches, two
+	// deliberate horizontal reversals choose random, and an ordinary drag is
+	// inert. Recognition is distance-based, never timer-based.
+	test_birdTapRuffleAndInertDrag {
+		var tap = CQGuiNightTouch.newRuffle(Point(0, 0));
+		var edge = CQGuiNightTouch.newRuffle(Point(0, 0));
+		var ruffle = CQGuiNightTouch.newRuffle(Point(0, 0));
+		var long = CQGuiNightTouch.newRuffle(Point(0, 0));
+		CQGuiNightTouch.advanceRuffle(tap, Point(7, 0));
+		this.assertEquals(CQGuiNightTouch.birdGestureAction(tap), \fetch,
+			"less than the shared 8 px threshold is a fetch tap");
+		CQGuiNightTouch.advanceRuffle(edge, Point(8, 0));
+		this.assert(CQGuiNightTouch.birdGestureAction(edge).isNil,
+			"the exact boundary is already a drag, not a tap");
+		[Point(7, 0), Point(0, 0), Point(7, 0)].do { |point|
+			CQGuiNightTouch.advanceRuffle(ruffle, point)
+		};
+		this.assertEquals(ruffle[\reversals], 2,
+			"two swings of at least 6 px are counted as two reversals");
+		this.assertEquals(CQGuiNightTouch.birdGestureAction(ruffle), \random,
+			"the ruffle wins even when its compact shape stays inside the tap radius");
+		[Point(101, 0), Point(0, 0), Point(101, 0)].do { |point|
+			CQGuiNightTouch.advanceRuffle(long, point)
+		};
+		this.assert(long[\total] > CQGuiNightTouch.ruffleTravelMax
+			and: { CQGuiNightTouch.birdGestureAction(long).isNil },
+			"a >300 px thrash is neither a ruffle nor a tap");
+	}
+
+	test_birdWheelDirectionAndMomentumGate {
+		this.assertEquals(CQGuiNightTouch.birdWheelAction(-1), \next,
+			"wheel down walks to the next file");
+		this.assertEquals(CQGuiNightTouch.birdWheelAction(1), \prev,
+			"wheel up walks to the previous file");
+		this.assert(CQGuiNightTouch.birdWheelAction(0).isNil,
+			"a zero wheel delta has no deck action");
+		this.assert(CQGuiNightTouch.birdWheelReady(nil, 12),
+			"the first wheel event always lands");
+		this.assert(CQGuiNightTouch.birdWheelReady(12, 12.1).not,
+			"trackpad momentum inside 150 ms cannot skip another file");
+		this.assert(CQGuiNightTouch.birdWheelReady(12, 12.16),
+			"a later deliberate step is accepted");
+	}
+
 	// One moon, three acts. The first 8 px still belong to a tap; after that
 	// the dominant axis locks for the rest of the gesture. Horizontal pours
 	// phase, down brings rain/grow and up brings sun/wither.

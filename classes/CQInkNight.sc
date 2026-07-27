@@ -785,11 +785,19 @@ CQInkNight {
 
 	// deck bird: two wing béziers and a body dot (§16.6), span ≈ 30 px,
 	// drawn by the bird's own opaque layer (origin = its box corner)
-	*drawBird { |bird, origin, skin = \night|
+	*drawBird { |bird, origin, active = false, flash = false, skin = \night|
 		var palette = CQInk.palette(skin), c = bird[\center], span = bird[\span];
+		var color = if(active or: { flash }) { palette[\spark] } { palette[\line] };
 		origin !? { Pen.translate(origin.x.neg, origin.y.neg) };
-		Pen.strokeColor = palette[\line];
-		Pen.width = CQInk.strokes[\normal];
+		if(flash) {
+			Pen.fillColor = palette[\spark].copy.alpha_(0.13);
+			Pen.addOval(Rect.aboutPoint(c, CQNightMeasures.birdBodyR + 7,
+				CQNightMeasures.birdBodyR + 7));
+			Pen.fill;
+		};
+		Pen.strokeColor = color;
+		Pen.width = CQInk.strokes[
+			if(flash) { \state } { if(active) { \strong } { \normal } }];
 		Pen.moveTo(Point(c.x - (span * 0.5), c.y - (span * 0.12)));
 		Pen.curveTo(c, Point(c.x - (span * 0.34), c.y - (span * 0.4)),
 			Point(c.x - (span * 0.1), c.y - (span * 0.28)));
@@ -798,7 +806,7 @@ CQInkNight {
 		Pen.curveTo(c, Point(c.x + (span * 0.34), c.y - (span * 0.4)),
 			Point(c.x + (span * 0.1), c.y - (span * 0.28)));
 		Pen.stroke;
-		Pen.fillColor = palette[\line];
+		Pen.fillColor = color;
 		Pen.addOval(Rect.aboutPoint(c, CQNightMeasures.birdBodyR,
 			CQNightMeasures.birdBodyR));
 		Pen.fill;

@@ -11,7 +11,7 @@ var matrix = CQMatrix(nil);
 // never overwrite the player's own corners (config gui.compassDir)
 var compassDir = Cocoquantus.repoDir +/+ "tests" +/+ "tmp" +/+ "cqcompass_smoke";
 var config;
-var gui, ok = true, abort, compassChecks, weatherAsync, punchChecks;
+var gui, ok = true, abort, compassChecks, weatherAsync, punchChecks, birdChecks;
 var check = { |condition, message|
 	if(condition) { ("ok:   " ++ message).postln } {
 		ok = false;
@@ -40,6 +40,101 @@ abort = { |error|
 	gui !? { gui.free };
 	"CQ_GUI_NIGHT_FAILED".postln;
 	1.exit;
+};
+
+// ---- §11 deck birds: native-dialog routing is injected because a headless
+// smoke must never open an OS panel. The deck dispatcher is injected too, so
+// the real view handlers prove which deck act they requested while unbooted.
+birdChecks = { |map|
+	var view = map.birdViews[0], bird = map.geometry[\birds][0];
+	var local = bird[\center] - bird[\box].leftTop;
+	var routes = List.new, dialogCount = 0, before, cable, cablePoint, savedMatrix;
+	var check = { |condition, message|
+		if(condition) { ("ok:   " ++ message).postln } {
+			ok = false;
+			("FAIL: " ++ message).postln;
+		};
+	};
+	map.deckAction = { |which, action, value|
+		routes.add([which, action, value])
+	};
+	map.fileDialog = { |callback|
+		dialogCount = dialogCount + 1;
+		callback.value("stub-bird.wav")
+	};
+	view.mouseOverAction.value(view, local.x, local.y);
+	check.value(map.birdHover[0],
+		"hovering a clear bird brightens the act it promises");
+	view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
+	view.mouseUpAction.value(view, local.x, local.y, 0, 0);
+	check.value(dialogCount == 1
+		and: { routes.last == [\deckA, \load, "stub-bird.wav"] },
+		"a bird tap routes the async dialog result to its own deck");
+	map.fileDialog = { |callback| dialogCount = dialogCount + 1 };
+	before = routes.size;
+	view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
+	view.mouseUpAction.value(view, local.x, local.y, 0, 0);
+	check.value(dialogCount == 2 and: { routes.size == before },
+		"cancelling the file dialog is a harmless no-op");
+	view.mouseWheelAction.value(view, local.x, local.y, 0, 0, -1);
+	view.mouseWheelAction.value(view, local.x, local.y, 0, 0, -1);
+	check.value(routes.last == [\deckA, \next, nil]
+		and: { routes.size == (before + 1) },
+		"wheel-down routes one next step and suppresses immediate momentum");
+	before = routes.size;
+	view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
+	view.mouseMoveAction.value(view, local.x + 7, local.y, 0);
+	view.mouseMoveAction.value(view, local.x, local.y, 0);
+	view.mouseMoveAction.value(view, local.x + 7, local.y, 0);
+	view.mouseUpAction.value(view, local.x + 7, local.y, 0, 0);
+	check.value(routes.size == (before + 1)
+		and: { routes.last == [\deckA, \random, nil] },
+		"a two-reversal ruffle routes random on release");
+	before = routes.size;
+	view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
+	view.mouseMoveAction.value(view, local.x + 10, local.y, 0);
+	view.mouseUpAction.value(view, local.x + 10, local.y, 0, 0);
+	check.value(routes.size == before,
+		"a plain non-tap, non-ruffle drag does nothing");
+	view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
+	check.value(map.touch.birdGestureActive,
+		"a pressed bird owns transient gesture state");
+	map.cancelGestures;
+	view.mouseUpAction.value(view, local.x, local.y, 0, 0);
+	check.value(map.touch.birdGestureActive.not and: { routes.size == before },
+		"the shared exit choke point cancels a half-finished bird gesture");
+	map.deckLoaded(\deckA);
+	check.value(map.birdFlash[0] and: { map.birdFlash[1].not },
+		"a successful deck notification flashes only its own bird");
+
+	// Plant a deterministic cable into the wing socket and feed one of its
+	// exact path points through the bird handler. (At this reviewed layout the
+	// endpoint's higher sibling view owns the final 6 px below the bird, so a
+	// literal on-screen overlap is not guaranteed.) The handler must still
+	// preserve §4.5 if a future cable/layout crosses its paper.
+	savedMatrix = matrix.asArray;
+	matrix.patch(\tri1, \deckA_rate, 0.5);
+	map.overlay.invalidate;
+	cable = map.overlay.cableRecords.detect { |record|
+		record[\src] == \tri1 and: { record[\dest] == \deckA_rate }
+	};
+	cablePoint = cable !? { |record| record[\points].at(record[\points].size div: 2) };
+	check.value(cablePoint.notNil,
+		"the bird priority fixture has an exact planted cable point");
+	if(cablePoint.notNil) {
+		local = cablePoint - bird[\box].leftTop;
+		view.mouseOverAction.value(view, local.x, local.y);
+		check.value(map.birdHover[0].not
+			and: { gui.bananaGrammar.hoverCable.notNil },
+			"a crossing cable takes hover before the bird");
+		before = routes.size;
+		view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
+		check.value(gui.bananaGrammar.isInHand and: { routes.size == before },
+			"a crossing cable takes the press before fetch/ruffle");
+		gui.bananaGrammar.escape;
+	};
+	matrix.load(savedMatrix);
+	map.overlay.invalidate;
 };
 
 // ---- §7.1 the compass water (G3): seeds, voyages, weather — the synchronous
@@ -874,6 +969,7 @@ punchChecks = { |map|
 																	== speedBefore },
 																"a cable crossing the shell wins the press (4.5)");
 															gui.bananaGrammar.escape;
+															birdChecks.value(map);
 															check.value(map.birdViews.every { |bird|
 																bird.canReceiveDragHandler.notNil
 															}, "both birds accept the file drop");

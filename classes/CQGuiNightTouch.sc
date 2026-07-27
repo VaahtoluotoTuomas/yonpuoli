@@ -10,7 +10,7 @@ CQGuiNightTouch {
 	var map, state, overlay;
 	var <>controller;   // set after construction — the controller binds later
 	var wind, punch, eyeDrag, crescentDrag, moonDrag;
-	var compassDrag, weatherHold;
+	var compassDrag, weatherHold, birdDrag, birdWheelAt;
 
 	*new { |map, state, overlay| ^super.newCopyArgs(map, state, overlay) }
 
@@ -34,6 +34,68 @@ CQGuiNightTouch {
 	// pours the phase instead. One body, two acts, told apart by the hand alone,
 	// and told apart by the same number the lasso already teaches.
 	*tapTravel { ^CQBananaGrammar.lassoTravel }
+
+	// The fetch birds use the same tap boundary, plus a deliberately small
+	// horizontal swing. A ruffle is recognized from direction changes rather
+	// than time, so a slow deliberate shake and a quick one are the same act.
+	*ruffleSwing { ^6 }
+	*ruffleTravelMax { ^300 }
+	*birdWheelCooldown { ^0.15 }
+
+	*newRuffle { |point, index = 0|
+		^(index: index, start: point, last: point, extremeX: point.x,
+			direction: 0, reversals: 0, total: 0, maxTravel: 0)
+	}
+
+	*advanceRuffle { |gesture, point|
+		var direction = gesture[\direction], dx;
+		gesture[\total] = gesture[\total]
+			+ CQNightGeometry.distance(gesture[\last], point);
+		gesture[\maxTravel] = max(gesture[\maxTravel],
+			CQNightGeometry.distance(gesture[\start], point));
+		gesture[\last] = point;
+		dx = point.x - gesture[\extremeX];
+		if(direction == 0) {
+			if(dx.abs >= this.ruffleSwing) {
+				gesture[\direction] = dx.sign;
+				gesture[\extremeX] = point.x;
+			};
+		} {
+			if((dx * direction) > 0) {
+				gesture[\extremeX] = point.x;
+			} {
+				if((dx * direction) <= this.ruffleSwing.neg) {
+					gesture[\direction] = direction.neg;
+					gesture[\reversals] = gesture[\reversals] + 1;
+					gesture[\extremeX] = point.x;
+				};
+			};
+		};
+		^gesture
+	}
+
+	// Ruffle wins the deliberately tiny overlap where a careful 6 px
+	// left-right-left stays inside the 8 px tap radius: the reversals prove the
+	// hand asked for "anything", while a tap contains no such evidence.
+	*birdGestureAction { |gesture|
+		if(gesture[\reversals] >= 2
+			and: { gesture[\total] <= this.ruffleTravelMax }) {
+			^\random
+		};
+		if(gesture[\maxTravel] < this.tapTravel) { ^\fetch };
+		^nil
+	}
+
+	// Qt reports positive y for wheel-up and negative for wheel-down.
+	*birdWheelAction { |delta|
+		if(delta > 0) { ^\prev };
+		if(delta < 0) { ^\next };
+		^nil
+	}
+
+	*birdWheelReady { |last, now|
+		^last.isNil or: { (now - last) >= this.birdWheelCooldown }
+	}
 
 	// the tap's px belong to the tap: a throw must never nudge the phase, and a
 	// pour must not jump the moment it engages
@@ -103,6 +165,68 @@ CQGuiNightTouch {
 
 	// §16.9 the elastic return's short glide, ~3 frames
 	*elasticFrames { ^3 }
+
+	// ---- birds: tap fetch · wheel folder · horizontal ruffle random (§11) ----
+
+	birdDown { |index, view, x, y, modifiers = 0, button = 0, clicks = 1|
+		var point = this.prPoint(view, x, y);
+		// The bird's own rate socket and level crescent are higher sibling views
+		// and keep their own geometry. Inside the bird view a cable remains the
+		// first consultation, exactly like every other night body.
+		if(button != 0 or: { modifiers.isAlt }
+			or: { overlay.patchAt(point).notNil }) {
+			^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
+		};
+		birdDrag = this.class.newRuffle(point, index);
+		^this
+	}
+
+	birdMove { |index, view, x, y, modifiers = 0|
+		if(birdDrag.isNil or: { birdDrag[\index] != index }) {
+			^this.forwardMove(view, x, y, modifiers)
+		};
+		this.class.advanceRuffle(birdDrag, this.prPoint(view, x, y));
+		^this
+	}
+
+	birdUp { |index, view, x, y, modifiers = 0, button = 0|
+		var gesture = birdDrag, action;
+		if(gesture.isNil or: { gesture[\index] != index }) {
+			^this.forwardUp(view, x, y, modifiers, button)
+		};
+		birdDrag = nil;
+		this.class.advanceRuffle(gesture, this.prPoint(view, x, y));
+		action = this.class.birdGestureAction(gesture);
+		switch(action,
+			\fetch, { map.fetchDeck(index) },
+			\random, { map.randomDeck(index) }
+		);
+		^this
+	}
+
+	birdWheel { |index, view, x, y, modifiers = 0, delta = 0|
+		var point = this.prPoint(view, x, y), action, now, last;
+		if(overlay.patchAt(point).notNil) {
+			^this.forwardWheel(view, x, y, modifiers, delta)
+		};
+		action = this.class.birdWheelAction(delta);
+		if(action.isNil) { ^this };
+		birdWheelAt ?? { birdWheelAt = Array.newClear(2) };
+		now = Main.elapsedTime;
+		last = birdWheelAt[index];
+		if(this.class.birdWheelReady(last, now)) {
+			birdWheelAt[index] = now;
+			map.stepDeck(index, action);
+		};
+		^this
+	}
+
+	cancelBird {
+		birdDrag = nil;
+		^this
+	}
+
+	birdGestureActive { ^birdDrag.notNil }
 
 	// ---- shell: wind (speed) · heart (hold) · chevron (flip) · mark (skip) ----
 

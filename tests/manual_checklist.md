@@ -609,6 +609,55 @@ saapumisviiva saa leikkautua oman 30 px leveän paperinsa reunaan.
       org-outputin opaakin laatikon katkaisema playhead-spiraali palautettiin
       aidolla käyrä-underlaylla. Automaatio varmistaa overlap-prioriteetin.)
 
+### N6 — Linnut hakevat (§11)
+
+Lintu on nyt deckin oma tekstittämätön transportti. Napautus hakee tiedoston,
+rulla kävelee ladatun tiedoston kansiota ja lyhyt vaakasuuntainen
+vasen–oikea–vasen-pörhistys arpoo sisaruksista yhden. Uusia nappeja, nuolia tai
+glyyfejä ei lisätty. Kaikki onnistuneet latauspolut päivittävät saman
+tiedostonimen ja väläyttävät linnun 120 ms ajan.
+
+```supercollider
+// N6 — Ctrl+Shift+L, sitten CQ.boot ja toolbarista Night.
+CQ.boot;
+CQ.set(\deckALevel, 0.7);
+CQ.set(\coco1PreSlot, 1);
+CQ.set(\coco1In, 0.8);
+CQ.set(\masterVol, -24);
+// 1. NAPAUTA vasenta lintua liikkumatta yli 8 px. Valitse samples/-kansiosta
+//    jokin wav-tiedosto. Nimen pitää vaihtua linnun alle, linnun välähtää ja
+//    materiaalin kuulua coco1:n läpi. Avaa dialogi uudelleen ja peruuta:
+//    nimi ja ääni eivät saa muuttua.
+// 2. RULLAA linnun päällä alas: seuraava tiedosto aakkosjärjestyksessä.
+//    Rullaa ylös: edellinen. Nimen ja äänen pitää seurata. Yksi tavallinen
+//    pykälä = yksi tiedosto; touchpadin momentum ei saa hypätä viittä kerralla.
+// 3. PÖRHISTÄ lintua vaakaan: vähintään 6 px yhteen suuntaan, takaisin ja vielä
+//    kerran toiseen suuntaan (kaksi suunnanvaihtoa), sitten irrota. Satunnaisen
+//    sisarustiedoston pitää latautua ja näkyä nimessä. Tee viisi kertaa:
+//    valintojen ei tarvitse olla eri, mutta jokaisen onnistumisen pitää välähtää.
+// 4. Vedä lintua kerran suoraan yli 8 px ja irrota. Tämä ei ole napautus eikä
+//    pörhistys: dialogia ei aukea eikä tiedosto vaihdu.
+// 5. Vie osoitin linnun päälle: lintu kirkastuu staattisesti. Kokeile myös
+//    tiedoston pudotusta ja koodipolkua; molemmat käyttävät samaa nimi+välähdys-
+//    palautetta:
+CQ.deckA.load("123681__aidenfry__cricket-and-bird-field-recording.wav");
+// 6. Varmista, että siiven rate-socket ja linnun level-sirppi vastaavat yhä
+//    omiin vanhoihin eleisiinsä eivätkä avaa dialogia tai pörhistystä.
+```
+
+**Visuaalinen ja soitettava portti:** kokeile 1280×720 ja maksimoituna sekä
+100/125/150 % käyttöjärjestelmäskaalaus. Hoverin pitää olla selvä mutta
+staattinen, onnistumisvälähdyksen erotuttava tavallisesta hoverista, eikä
+siipien muodon tai tiedostonimen pidä hypätä. Jos kaapeli osuu linnun paperille,
+kaapeli voittaa hoverin ja painalluksen; automaatio syöttää tämän prioriteetin
+myös suoraan lintuhandlerille, koska nykyisessä hyväksytyssä sommittelussa
+rate-socketin ylempi sisarnäkymä omistaa tavallisesti linnun alapuolisen
+kaapelin viimeiset pikselit.
+
+- [ ] N6 hyväksytty (pvm: ______ — napautuksen dialogi/peruutus, kansion
+      rullaus ja momentum, pörhistyksen satunnaislataus, suoran vedon inerttiys,
+      nimi+120 ms välähdys, hover sekä molemmat ikkunakoot/skaalaukset)
+
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>
 

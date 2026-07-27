@@ -133,7 +133,10 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   N3).** It is ready for an explicitly requested merge; do not merge branches
   merely because the review is closed. **Build-order step 4, the castle range
   ripples (§3), was accepted on `nocturne-range-ripples` on 2026-07-27
-  (checklist N4). Build-order step 5, Dolby oysters (§4), is next.**
+  (checklist N4). Build-order step 5, the Dolby oysters (§4), was accepted on
+  `nocturne-dolby-oysters` the same day (checklist N5). Build-order step 6,
+  the fetching birds (§11), has its first green review version on
+  `nocturne-birds-fetch`; checklist N6 is still open.**
   The review confirmed the sound and GUI write path with `\quantumDrone`.
   The user removed the inherited i/b/a captions; the accepted v2 gives every
   ripple a common keel, a path-only river knockout and an anchor 13 px below

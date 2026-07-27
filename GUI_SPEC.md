@@ -279,9 +279,12 @@ eye but must keep the topology truths):
   gate/trigs).
 - **Inputs as roots** at the bottom: envA left, envB right; root tips glow
   with follower level (aura).
-- **Decks as birds** at the top: deckA / deckB. **Dropping an audio file on a
-  bird loads it** (existing drop plumbing); the wing socket is the rate moon;
-  the filename is written small under the bird.
+- **Decks as birds** at the top: deckA / deckB. The bird itself fetches:
+  **tap opens the system file dialog**, wheel down/up walks to the next/previous
+  file in the loaded folder, and a short horizontal two-reversal ruffle chooses
+  a random file. Dropping an audio file on the bird remains an equal loading
+  path; the wing socket is the rate moon, and the filename is written small
+  under the bird.
 - Cables follow the same grammar (§4), arcing around bodies, pulsing with
   their source's aura. Solo-light on a body lights everything touching it.
   The night's bodies (landed 2026-07-21): each **castle** (its two buds, its
@@ -339,7 +342,9 @@ below; it does not silently grant priority to any other control.
 | **the ring's eye** | the storm iris at the ring's center (§16.6); grab and drag — vertical = pitch, horizontal = chaos, and the iris itself answers on both axes. The weather of five castles from one fingertip | `qFreq` (y) + `qChaos` (x), relative |
 | **dial tap** | press a castle's inner clock — the dial face inside the body (§16.6): one step (same act as the day step button and keys 3..7). Hovering the castle first shows **which castle it reads** as an inner chord (§16.6's coupling chords), so the step's consequence is visible in the gesture that makes it | `spesal(k)` step |
 | **range ripple** | tap the drawn rate at a castle's 6 o'clock: one slow swell → one full cycle → five tight half-waves → one slow swell. The form is the whole regime display; no legacy `i/b/a` caption remains. Cable-first remains absolute, and ripple/clock/body hover cues are exclusive | `cNRange`: `infra → balcium → audio → infra` (CQSpec enum order) |
-| **bird drop + wing crescent** | dropping an audio file on a bird loads that deck (pulled forward from the G2 toolbar step — loading is core); the crescent under the wing is the deck's level | deck load · `deckN level` |
+| **bird fetch + drop + wing crescent** | tap the bird with < 8 px travel to open the asynchronous system file dialog; cancelling is inert. Dropping an audio file remains an equal load path, and the crescent under the wing remains the deck's level | deck load · `deckN level` |
+| **bird folder walk** | wheel down = next file, wheel up = previous. Qt momentum is gated to one sign-step per 150 ms so one flick cannot skip a handful of perches; before a load, the deck's own guard scans the samples folder | `deckN.next / prev` |
+| **bird ruffle** | horizontal drag reverses direction at least twice, each swing ≥ 6 px and total path ≤ 300 px; release chooses a random file. A drag that is neither a tap nor a ruffle is inert | `deckN.random` |
 | **the sowing moon** | the bone moon in the top-right sky (§16.6). It opens as a small 0.22 crescent. A press that travels < 8 px — the lasso's own threshold — throws a shake at the moon's current phase, with a 120 ms bone flash on *any* shake from any layer (`p` key, Day button, code: one state, three layers, one light). A **horizontal** drag pours the phase fuller (right) or darker (left), the way the terminator itself travels; the lit fraction is **how much gets sown**, through the slow-first quadratic fertility curve in §10, no number | `shake` (matrix op — one undo, one spellbook entry) · `shakeAmount` (GUI constant, no undo) |
 
 Skip's night home moved at the G2 gate (2026-07-22, replacing the read-head
@@ -1131,9 +1136,17 @@ type size, so the box gives way first). A name too long for even that box is
 trimmed **from its tail only** and marked with an ellipsis: it is centered, so
 an untrimmed overflow would lose the head and the extension both; the rate socket under
 the wing, and beside it the deck-level tide crescent (§6.1). Dropping an
-audio file on the bird loads its deck (§6.1). Flutter = 1 px wing bob at
-ambient rate while the deck's level > 0.05 (client-side state, no polling).
-On file-drag hover the bird brightens (drop target law, §16.7).
+audio file on the bird loads its deck (§6.1). The same body now carries three
+captionless hand acts: tap (< 8 px) opens `Dialog.openPanel`; wheel sign walks
+the loaded folder with a 150 ms momentum gate; two ≥ 6 px horizontal reversals
+within a ≤ 300 px path ruffle to random. A different drag is inert. Cable
+hit-testing remains first inside the bird view, while the rate socket and level
+crescent keep their higher sibling views and own geometry. Any successful
+`\file` notification — dialog, wheel, ruffle, drop or code — flashes that bird
+for the shared 120 ms momentary interval and updates the one filename truth.
+Flutter = 1 px wing bob at ambient rate while the deck's level > 0.05
+(client-side state, no polling). Ordinary hover statically brightens the bird;
+file-drag hover adds the existing whole bird+name drop-target border (§16.7).
 
 **The moon and the tide field** (accepted for the next visual iteration with
 the user 2026-07-27). The weather machine is integrated by *gesture and

@@ -14,6 +14,7 @@ CQGuiNightMap {
 	var gui, state, matrix, config;
 	var <stageView, <container, <overlay, <controller, <touch, <endpoints, <bodies;
 	var <groundView, <ringView, <eyeView, <castleViews, <shellViews, <birdViews;
+	var <birdHover, <birdFlash, birdFlashGeneration, fileDialog, deckAction;
 	var <almanacView, <moonHover = false, <moonFlash = false;
 	// The tide is the full ground itself: four seeds, no pool body or outline.
 	var <compassView, <compassHover, <compassDragState;
@@ -496,6 +497,7 @@ CQGuiNightMap {
 	cancelGestures {
 		touch !? {
 			touch.cancelPunch;
+			touch.cancelBird;
 			touch.cancelWeather;
 		};
 		tideFocusRequested = false;
@@ -708,6 +710,12 @@ CQGuiNightMap {
 			view.drawFunc = { this.prSafeDraw { this.prDrawBird(i) } };
 			view
 		};
+		birdHover = [false, false];
+		birdFlash = [false, false];
+		birdFlashGeneration = [0, 0];
+		// Dialog.openPanel is asynchronous. Keeping the launcher injectable
+		// lets the headless smoke prove the tap route without opening native UI.
+		fileDialog = { |callback| Dialog.openPanel(callback) };
 		// the almanac corner sits above the bodies in z but on water none of
 		// them reach, so its opaque layer covers nothing (§16.6, pinned by the
 		// geometry's clearance tests)
@@ -881,6 +889,23 @@ CQGuiNightMap {
 			view.mouseWheelAction = { |v, x, y, mods, xd, yd|
 				touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
 			};
+		};
+		birdViews.do { |view, i|
+			view.mouseDownAction = { |v, x, y, mods, button, clicks|
+				touch.birdDown(i, v, x, y, mods ? 0, button ? 0, clicks ? 1)
+			};
+			view.mouseMoveAction = { |v, x, y, mods|
+				touch.birdMove(i, v, x, y, mods ? 0)
+			};
+			view.mouseUpAction = { |v, x, y, mods, button|
+				touch.birdUp(i, v, x, y, mods ? 0, button ? 0)
+			};
+			view.mouseWheelAction = { |v, x, y, mods, xd, yd|
+				touch.birdWheel(i, v, x, y, mods ? 0, yd ? 0)
+			};
+			view.acceptsMouseOver = true;
+			view.mouseOverAction = { |v, x, y| this.prHoverBird(i, v, x, y) };
+			view.mouseLeaveAction = { this.prHoverBird(i, nil, nil, nil) };
 		};
 		almanacView.mouseDownAction = { |v, x, y, mods, button, clicks|
 			touch.almanacDown(v, x, y, mods ? 0, button ? 0, clicks ? 1)
@@ -1109,6 +1134,84 @@ CQGuiNightMap {
 		};
 	}
 
+	prHoverBird { |i, view, x, y|
+		var next = false, point;
+		if(geometry.notNil and: { view.notNil }) {
+			point = this.prStagePoint(view, x, y);
+			next = overlay.patchAt(point).isNil;
+		};
+		if(next != birdHover[i]) {
+			birdHover[i] = next;
+			if(freed.not) { birdViews[i].refresh };
+		};
+	}
+
+	// Test seams for the one native dialog and for serverless route assertions.
+	// Production leaves deckAction nil, which reaches the real CQDeck facade.
+	fileDialog_ { |func| fileDialog = func; ^this }
+	deckAction_ { |func| deckAction = func; ^this }
+
+	fetchDeck { |index|
+		var which = if(index == 0) { \deckA } { \deckB };
+		fileDialog.value({ |path|
+			if(freed.not and: { path.notNil }) {
+				this.prDeckAction(which, \load, path)
+			};
+		});
+		^this
+	}
+
+	stepDeck { |index, action|
+		var which = if(index == 0) { \deckA } { \deckB };
+		if(#[next, prev].includes(action)) {
+			this.prDeckAction(which, action)
+		};
+		^this
+	}
+
+	randomDeck { |index|
+		this.prDeckAction(if(index == 0) { \deckA } { \deckB }, \random);
+		^this
+	}
+
+	prDeckAction { |which, action, value|
+		var deck;
+		if(freed) { ^this };
+		if(deckAction.notNil) {
+			deckAction.value(which, action, value);
+			^this
+		};
+		deck = this.prDeckFor(which);
+		deck !? {
+			switch(action,
+				\load, { deck.load(value) },
+				\next, { deck.next },
+				\prev, { deck.prev },
+				\random, { deck.random }
+			);
+		};
+		^this
+	}
+
+	// The deck's \file notice is the success authority shared by dialog, wheel,
+	// ruffle, drop and code. One 120 ms light therefore covers all five paths.
+	deckLoaded { |which|
+		var i = if(which == \deckA) { 0 } { 1 }, generation;
+		if(freed) { ^this };
+		birdFlashGeneration[i] = birdFlashGeneration[i] + 1;
+		generation = birdFlashGeneration[i];
+		birdFlash[i] = true;
+		birdViews[i].refresh;
+		AppClock.sched(CQInk.momentaryFlash, {
+			if(freed.not and: { birdFlashGeneration[i] == generation }) {
+				birdFlash[i] = false;
+				birdViews[i].refresh;
+			};
+			nil
+		});
+		^this
+	}
+
 	// §6.1 bird drop: same plumbing as the Day deck box — every view of the
 	// bird accepts the file, and the deck guards its own unbooted state
 	prBindDrops {
@@ -1134,7 +1237,7 @@ CQGuiNightMap {
 					// cue and action share one rect, in the coordinates the
 					// cursor poll speaks (§16.7)
 					if(accepted) {
-						gui.dropTargetHover(name, groundView, {
+						gui.dropTargetHover(name, [groundView, birdViews[i]], {
 							this.prGlobalRect(
 								geometry !? { |geo| geo[\birds][i][\dropRect] })
 						})
@@ -1155,7 +1258,7 @@ CQGuiNightMap {
 	}
 
 	prDeckFor { |which|
-		if(Cocoquantus.graph.isNil) { ^nil };
+		if(freed or: { Cocoquantus.graph.isNil }) { ^nil };
 		^if(which == \deckA) { Cocoquantus.deckA } { Cocoquantus.deckB }
 	}
 
@@ -1430,10 +1533,14 @@ CQGuiNightMap {
 	*dropTargetName { |which| ^("night_" ++ which).asSymbol }
 
 	prDrawBird { |i|
-		var bird;
+		var bird, which, active;
 		if(geometry.isNil) { ^this };
 		bird = geometry[\birds][i];
-		CQInkNight.drawBird(bird, bird[\box].leftTop, \night);
+		which = if(i == 0) { \deckA } { \deckB };
+		active = birdHover[i]
+			or: { gui.dropTargetIs(this.class.dropTargetName(which)) };
+		CQInkNight.drawBird(bird, bird[\box].leftTop,
+			active, birdFlash[i], \night);
 	}
 
 	prDrawDecoration { |name, spec, anchor|

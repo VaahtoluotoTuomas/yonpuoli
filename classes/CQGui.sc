@@ -236,8 +236,8 @@ CQGui {
 			var previous = dropTargetView;
 			dropTarget = name;
 			dropTargetView = view;
-			previous !? { |v| v.refresh };
-			view !? { |v| v.refresh };
+			this.prRefreshDropTarget(previous);
+			this.prRefreshDropTarget(view);
 		};
 		dropTargetRect = rectFunc;
 		dropTargetArmed = Main.elapsedTime;
@@ -251,7 +251,16 @@ CQGui {
 			dropTarget = nil;
 			dropTargetView = nil;
 			dropTargetRect = nil;
-			if(cleaned.not) { previous !? { |v| v.refresh } };
+			if(cleaned.not) { this.prRefreshDropTarget(previous) };
+		};
+		^this
+	}
+
+	prRefreshDropTarget { |target|
+		if(target.isKindOf(SequenceableCollection)) {
+			target.do { |view| view !? { |v| v.refresh } };
+		} {
+			target !? { |view| view.refresh };
 		};
 		^this
 	}
@@ -488,7 +497,10 @@ CQGui {
 				var ctl = SimpleController(deck);
 				deck.path !? { this.prPaintDeckLabel(which, deck.path) };
 				ctl.put(\file, { |obj, what, path|
-					{ this.prPaintDeckLabel(which, path) }.defer;
+					{
+						this.prPaintDeckLabel(which, path);
+						nightMap !? { |map| map.deckLoaded(which) };
+					}.defer;
 				});
 				deckCtls = deckCtls.add(ctl);
 			};
