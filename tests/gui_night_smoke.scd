@@ -48,7 +48,8 @@ abort = { |error|
 birdChecks = { |map|
 	var view = map.birdViews[0], bird = map.geometry[\birds][0];
 	var local = bird[\center] - bird[\box].leftTop;
-	var routes = List.new, dialogCount = 0, before, cable, cablePoint, savedMatrix;
+	var routes = List.new, dialogCount = 0, dialogPath;
+	var before, cable, cablePoint, savedMatrix;
 	var check = { |condition, message|
 		if(condition) { ("ok:   " ++ message).postln } {
 			ok = false;
@@ -58,8 +59,9 @@ birdChecks = { |map|
 	map.deckAction = { |which, action, value|
 		routes.add([which, action, value])
 	};
-	map.fileDialog = { |callback|
+	map.fileDialog = { |callback, path|
 		dialogCount = dialogCount + 1;
+		dialogPath = path;
 		callback.value("stub-bird.wav")
 	};
 	view.mouseOverAction.value(view, local.x, local.y);
@@ -70,7 +72,13 @@ birdChecks = { |map|
 	check.value(dialogCount == 1
 		and: { routes.last == [\deckA, \load, "stub-bird.wav"] },
 		"a bird tap routes the async dialog result to its own deck");
-	map.fileDialog = { |callback| dialogCount = dialogCount + 1 };
+	check.value(dialogPath.tr($\\, $/) ==
+		(Cocoquantus.repoDir +/+ "samples").tr($\\, $/),
+		"the native fetch dialog starts in the configured project samples folder");
+	map.fileDialog = { |callback, path|
+		dialogCount = dialogCount + 1;
+		dialogPath = path
+	};
 	before = routes.size;
 	view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
 	view.mouseUpAction.value(view, local.x, local.y, 0, 0);
@@ -85,11 +93,10 @@ birdChecks = { |map|
 	view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
 	view.mouseMoveAction.value(view, local.x + 7, local.y, 0);
 	view.mouseMoveAction.value(view, local.x, local.y, 0);
-	view.mouseMoveAction.value(view, local.x + 7, local.y, 0);
-	view.mouseUpAction.value(view, local.x + 7, local.y, 0, 0);
+	view.mouseUpAction.value(view, local.x, local.y, 0, 0);
 	check.value(routes.size == (before + 1)
 		and: { routes.last == [\deckA, \random, nil] },
-		"a two-reversal ruffle routes random on release");
+		"one natural out-and-back ruffle routes random on release");
 	before = routes.size;
 	view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
 	view.mouseMoveAction.value(view, local.x + 10, local.y, 0);

@@ -26,9 +26,10 @@ tagged. Earlier tags describe internal development baselines.
   audible infra/balcium/audio stepping and cable-first interaction.
 - Captionless Dolby oysters beneath the Night input/feedback crescents, with
   posture-led off/gate/duck stepping and unchanged cable-first interaction.
-- Captionless Night deck-bird gestures: tap to fetch, wheel to walk the loaded
-  folder, and a short two-reversal ruffle for a random sibling, all sharing the
-  filename truth and 120 ms successful-load flash.
+- Captionless Night deck-bird gestures: tap to fetch from the configured
+  samples folder, wheel to walk the loaded folder, and a short out-and-back
+  ruffle for a random sibling, all sharing the filename truth and 120 ms
+  successful-load flash.
 
 ### In progress
 

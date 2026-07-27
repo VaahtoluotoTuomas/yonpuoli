@@ -669,21 +669,23 @@ glyphs at all:
 
 - **Tap the bird (< 8 px travel — the lasso's own threshold) = go fetch.**
   Opens the system file dialog (async `Dialog.openPanel` →
-  `CQ.deckX.load`; rake 14). The bird is the obvious "this is the deck"
-  body, it already brightens for a file drag, and a cancelled dialog is a
-  harmless no-op.
+  `CQ.deckX.load`; rake 14) at the configured samples folder. The bird is the
+  obvious "this is the deck" body, it already brightens for a file drag, and a
+  cancelled dialog is a harmless no-op.
 - **Wheel over the bird = the next perch.** Wheel down = next file, wheel
   up = previous (`CQ.deckX.next/prev` — the folder must be loaded; the
   facade's own guards answer otherwise). The wheel already means "step
   through an ordered neighborhood" everywhere in the app (weight nudges);
   here the neighborhood is the folder. Rake 15 (momentum) applies.
-- **Ruffle the bird = bring me anything.** A drag that starts on the bird
-  and reverses horizontal direction at least twice (swings ≥ 6 px, total
-  travel ≤ ~300 px) is a *ruffle* — on release the startled bird returns
-  with a random file (`CQ.deckX.random`). Travel-based, no timer, and
-  surreal in exactly the way this instrument means it: you shake the tree,
-  the bird brings what it brings. A drag that is neither a tap nor a
-  ruffle does nothing.
+- **Ruffle the bird = bring me anything.** A drag that starts on the bird,
+  travels horizontally ≥ 6 px and returns ≥ 6 px in the opposite direction
+  (one reversal, total travel ≤ ~300 px) is a *ruffle* — on release the
+  startled bird returns with a random file (`CQ.deckX.random`). The first
+  implementation required two reversals; live review showed that a natural
+  out-and-back contains one, so that stricter recognizer was corrected.
+  Travel-based, no timer, and surreal in exactly the way this instrument means
+  it: you shake the tree, the bird brings what it brings. A drag that is neither
+  a tap nor a ruffle does nothing.
 - **Feedback is the existing truth**: the filename label updates from the
   deck's own `\file` notification on every path (dialog, wheel, ruffle,
   drop, code), and the bird gets the §16.7 120 ms momentary flash on any

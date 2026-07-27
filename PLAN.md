@@ -180,9 +180,10 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
   valmis `nocturne-birds-fetch`-haaralla 2026-07-27; checklist N6 odottaa
   käyttäjän visuaalista ja soitettavaa hyväksyntää.** Deckin lataus ja
   kansionavigointi ilman ainuttakaan nuolta: napautus = hakee (asynkroninen
-  tiedostodialogi, peruutus on no-op), rulla alas/ylös = seuraava/edellinen
-  150 ms momentum-portilla, kaksi vähintään 6 px vaakasuunnanvaihtoa =
-  satunnainen. Muu veto on inertti. Onnistunut `\file`-ilmoitus päivittää yhden
+  tiedostodialogi avautuu konfiguroidussa samples-kansiossa, peruutus on no-op),
+  rulla alas/ylös = seuraava/edellinen 150 ms momentum-portilla, vähintään 6 px
+  vaakaveto ja 6 px paluu = satunnainen. Muu veto on inertti. Onnistunut
+  `\file`-ilmoitus päivittää yhden
   nimilähteen ja väläyttää oman linnun 120 ms kaikilla viidellä polulla
   (dialogi, rulla, pörhistys, drop, code); kaapeli säilyy lintuhandlerin
   ensimmäisenä prioriteettina, rate-socket ja level-sirppi omina ylempinä
@@ -340,9 +341,10 @@ Haaran `nocturne-birds-fetch` v1-portti 2026-07-27 (§11,
 `CQ_GUI_DRAWER_REENTRY_PASSED` ja `CQ_GUI_NIGHT_PASSED`. Yösmoke käyttää
 injektoitua dialogia ja deck-dispatcheria, joten se avaa oikean natiivipaneelin
 sijaan testipolun ja varmistaa dialogin tuloksen/peruutuksen, pyörän
-momentum-portin, kahden suunnanvaihdon pörhistyksen, muun vedon inerttiyden,
-exit-keskeytyksen, `\file`-auktoriteetin 120 ms välähdyksen sekä lintuhandlerin
-cable-first-hoverin ja -painalluksen. `CQ_HOLD_OK` kantaa: DSP:hen ei koskettu.
+aloituskansion, momentum-portin, yhden luontevan ulos–takaisin-pörhistyksen,
+muun vedon inerttiyden, exit-keskeytyksen, `\file`-auktoriteetin 120 ms
+välähdyksen sekä lintuhandlerin cable-first-hoverin ja -painalluksen.
+`CQ_HOLD_OK` kantaa: DSP:hen ei koskettu.
 
 ## Omistajuus- ja julkaisurata (kulkee Nocturnen rinnalla)
 

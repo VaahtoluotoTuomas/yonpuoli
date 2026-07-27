@@ -36,7 +36,7 @@ CQGuiNightTouch {
 	*tapTravel { ^CQBananaGrammar.lassoTravel }
 
 	// The fetch birds use the same tap boundary, plus a deliberately small
-	// horizontal swing. A ruffle is recognized from direction changes rather
+	// horizontal swing. A ruffle is recognized from a direction change rather
 	// than time, so a slow deliberate shake and a quick one are the same act.
 	*ruffleSwing { ^6 }
 	*ruffleTravelMax { ^300 }
@@ -74,11 +74,13 @@ CQGuiNightTouch {
 		^gesture
 	}
 
-	// Ruffle wins the deliberately tiny overlap where a careful 6 px
-	// left-right-left stays inside the 8 px tap radius: the reversals prove the
-	// hand asked for "anything", while a tap contains no such evidence.
+	// Ruffle wins the deliberately tiny overlap where a careful 6 px out-and-
+	// back stays inside the 8 px tap radius: the reversal proves the hand asked
+	// for "anything", while a tap contains no such evidence. One reversal is
+	// the natural hand act; the first version required two and made an ordinary
+	// left-right ruffle look like an inert drag in live review.
 	*birdGestureAction { |gesture|
-		if(gesture[\reversals] >= 2
+		if(gesture[\reversals] >= 1
 			and: { gesture[\total] <= this.ruffleTravelMax }) {
 			^\random
 		};

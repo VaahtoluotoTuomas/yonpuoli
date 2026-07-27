@@ -90,8 +90,8 @@ CQGuiNightTouchTest : UnitTest {
 			"the dead tap costs a sliver of the moon's range, never a jump");
 	}
 
-	// A bird has three acts but no new glyphs: a still press fetches, two
-	// deliberate horizontal reversals choose random, and an ordinary drag is
+	// A bird has three acts but no new glyphs: a still press fetches, one
+	// deliberate horizontal reversal chooses random, and an ordinary drag is
 	// inert. Recognition is distance-based, never timer-based.
 	test_birdTapRuffleAndInertDrag {
 		var tap = CQGuiNightTouch.newRuffle(Point(0, 0));
@@ -104,14 +104,14 @@ CQGuiNightTouchTest : UnitTest {
 		CQGuiNightTouch.advanceRuffle(edge, Point(8, 0));
 		this.assert(CQGuiNightTouch.birdGestureAction(edge).isNil,
 			"the exact boundary is already a drag, not a tap");
-		[Point(7, 0), Point(0, 0), Point(7, 0)].do { |point|
+		[Point(7, 0), Point(0, 0)].do { |point|
 			CQGuiNightTouch.advanceRuffle(ruffle, point)
 		};
-		this.assertEquals(ruffle[\reversals], 2,
-			"two swings of at least 6 px are counted as two reversals");
+		this.assertEquals(ruffle[\reversals], 1,
+			"one 6 px out-and-back is counted as the natural ruffle");
 		this.assertEquals(CQGuiNightTouch.birdGestureAction(ruffle), \random,
 			"the ruffle wins even when its compact shape stays inside the tap radius");
-		[Point(101, 0), Point(0, 0), Point(101, 0)].do { |point|
+		[Point(151, 0), Point(0, 0)].do { |point|
 			CQGuiNightTouch.advanceRuffle(long, point)
 		};
 		this.assert(long[\total] > CQGuiNightTouch.ruffleTravelMax

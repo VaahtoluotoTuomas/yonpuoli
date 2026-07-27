@@ -613,7 +613,7 @@ saapumisviiva saa leikkautua oman 30 px leveän paperinsa reunaan.
 
 Lintu on nyt deckin oma tekstittämätön transportti. Napautus hakee tiedoston,
 rulla kävelee ladatun tiedoston kansiota ja lyhyt vaakasuuntainen
-vasen–oikea–vasen-pörhistys arpoo sisaruksista yhden. Uusia nappeja, nuolia tai
+ulos–takaisin-pörhistys arpoo sisaruksista yhden. Uusia nappeja, nuolia tai
 glyyfejä ei lisätty. Kaikki onnistuneet latauspolut päivittävät saman
 tiedostonimen ja väläyttävät linnun 120 ms ajan.
 
@@ -624,16 +624,16 @@ CQ.set(\deckALevel, 0.7);
 CQ.set(\coco1PreSlot, 1);
 CQ.set(\coco1In, 0.8);
 CQ.set(\masterVol, -24);
-// 1. NAPAUTA vasenta lintua liikkumatta yli 8 px. Valitse samples/-kansiosta
-//    jokin wav-tiedosto. Nimen pitää vaihtua linnun alle, linnun välähtää ja
-//    materiaalin kuulua coco1:n läpi. Avaa dialogi uudelleen ja peruuta:
-//    nimi ja ääni eivät saa muuttua.
+// 1. NAPAUTA vasenta lintua liikkumatta yli 8 px. Dialogin pitää avautua
+//    suoraan konfiguroituun samples/-kansioon. Valitse jokin wav-tiedosto:
+//    nimen pitää vaihtua linnun alle, linnun välähtää ja materiaalin kuulua
+//    coco1:n läpi. Avaa dialogi uudelleen ja peruuta: nimi ja ääni eivät muutu.
 // 2. RULLAA linnun päällä alas: seuraava tiedosto aakkosjärjestyksessä.
 //    Rullaa ylös: edellinen. Nimen ja äänen pitää seurata. Yksi tavallinen
 //    pykälä = yksi tiedosto; touchpadin momentum ei saa hypätä viittä kerralla.
-// 3. PÖRHISTÄ lintua vaakaan: vähintään 6 px yhteen suuntaan, takaisin ja vielä
-//    kerran toiseen suuntaan (kaksi suunnanvaihtoa), sitten irrota. Satunnaisen
-//    sisarustiedoston pitää latautua ja näkyä nimessä. Tee viisi kertaa:
+// 3. PÖRHISTÄ lintua vaakaan: vähintään 6 px ulos ja vähintään 6 px takaisin
+//    (yksi luonteva suunnanvaihto), sitten irrota. Satunnaisen sisarustiedoston
+//    pitää latautua ja näkyä nimessä. Tee viisi kertaa:
 //    valintojen ei tarvitse olla eri, mutta jokaisen onnistumisen pitää välähtää.
 // 4. Vedä lintua kerran suoraan yli 8 px ja irrota. Tämä ei ole napautus eikä
 //    pörhistys: dialogia ei aukea eikä tiedosto vaihdu.
@@ -654,9 +654,9 @@ myös suoraan lintuhandlerille, koska nykyisessä hyväksytyssä sommittelussa
 rate-socketin ylempi sisarnäkymä omistaa tavallisesti linnun alapuolisen
 kaapelin viimeiset pikselit.
 
-- [ ] N6 hyväksytty (pvm: ______ — napautuksen dialogi/peruutus, kansion
-      rullaus ja momentum, pörhistyksen satunnaislataus, suoran vedon inerttiys,
-      nimi+120 ms välähdys, hover sekä molemmat ikkunakoot/skaalaukset)
+- [ ] N6 hyväksytty (pvm: ______ — dialogin samples-aloituskansio/peruutus,
+      kansion rullaus ja momentum, pörhistyksen satunnaislataus, suoran vedon
+      inerttiys, nimi+120 ms välähdys, hover sekä molemmat ikkunakoot/skaalaukset)
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>

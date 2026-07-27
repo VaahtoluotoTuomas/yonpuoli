@@ -715,7 +715,9 @@ CQGuiNightMap {
 		birdFlashGeneration = [0, 0];
 		// Dialog.openPanel is asynchronous. Keeping the launcher injectable
 		// lets the headless smoke prove the tap route without opening native UI.
-		fileDialog = { |callback| Dialog.openPanel(callback) };
+		fileDialog = { |callback, path|
+			Dialog.openPanel(callback, nil, false, path)
+		};
 		// the almanac corner sits above the bodies in z but on water none of
 		// them reach, so its opaque layer covers nothing (§16.6, pinned by the
 		// geometry's clearance tests)
@@ -1153,12 +1155,21 @@ CQGuiNightMap {
 
 	fetchDeck { |index|
 		var which = if(index == 0) { \deckA } { \deckB };
-		fileDialog.value({ |path|
-			if(freed.not and: { path.notNil }) {
-				this.prDeckAction(which, \load, path)
+		fileDialog.value({ |chosen|
+			if(freed.not and: { chosen.notNil }) {
+				this.prDeckAction(which, \load, chosen)
 			};
-		});
+		}, this.prSamplesDir);
 		^this
+	}
+
+	prSamplesDir {
+		var path = config[\folders][\samples].asString;
+		^if(PathName(path).isAbsolutePath) {
+			path
+		} {
+			Cocoquantus.repoDir +/+ path
+		}
 	}
 
 	stepDeck { |index, action|
