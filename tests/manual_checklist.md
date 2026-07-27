@@ -455,3 +455,77 @@ katselmoinnissa: (a) hyväksy kielioppi sellaisenaan, (b) kutista `shellOuterR` 
       (kaapeli voittaa osoittimen alla) jää voimaan, merkin koti ei liiku.
       Kokoihin palataan vielä §9:n uuden sommitelman yhteydessä.)
 
+### N3 — Kuu taivaalle, lampi veteen (§9, uudelleensuunniteltu 2026-07-27)
+
+Ensimmäinen §9-versio piti kuun, padon ja säärivin yhdessä oikeassa yläkulmassa
+(niin kuin suunnitelmateksti sanoi) eikä ratkaissut valikkomaisuutta. Tämä
+versio **hajottaa ryppään**: osat eivät ole yhtä asiaa, joten ne eivät ole
+yhdessä paikassa. Kukin meni sinne missä se **toimii**:
+
+- **Kuu taivaalle** lintujen korkeudelle, castle 1:n ja linnun B väliin — se
+  jonka ali linnut lentävät. Ø 64.
+- **Sade ja aurinko kuun seuraksi taivaalle.** Ne kasvattavat ja harventavat
+  *elävää lahtea*, eivät lammen muisteja — ne ovat koko lahden sääilmiöitä
+  aivan kuten kuun kylvö. Almanakan taivas on sään paikka.
+- **Lampi veteen**, lahden pohjukkaan, **tangentiksi alareunaan**. Juuret
+  kulkevat jo sen reunan ali, joten reuna lukee vesirajana — mitään ei tarvitse
+  piirtää sanomaan että kasvit ja lampi ovat samassa vedessä. Ellipsi 200 × 118,
+  siemenillä sahattu ranta joka kurkottaa vesirajan yli.
+- **Oksastus jäi lammelle**, koska se ottaa kaksi vanhempaa siemennapautuksina:
+  merkki jonka ele päättyy siemeniin ei saa asua lahden toisella puolella.
+- **Mikroverso** siirtyi juuri A:n toiselle puolelle (lampi otti sen vanhan
+  veden) — kaisla vesirajassa.
+
+**Tila: testi-commit haarassa `nocturne-nightscape`, ei hyväksytty.** `nocturne`
+seisoo commitissa `a5e4b17` (kevättulva) eikä sisällä tästä riviäkään. Työ tulee
+esiin komennolla `git switch nocturne-nightscape` ja katoaa komennolla
+`git switch nocturne`.
+
+**Korjaus aiempaan arviooni koosta.** Sanoin että pohjukka antaisi lammelle
+~1.8× padin pinta-alan. Se oli väärin: Qt-kerros on **suorakaide**, joten lampi
+saa käyttöönsä suurimman vapaan suorakaiteen eikä kiekkoa, ja pohjukkaa rajaavat
+coco 1:n sirpit, joen kerros, envA:n jakki ja vesiraja. Lopputulos 18 535 px²
+vastaan G3-padin 19 600 — siirto ostaa **kuulumisen, ei kokoa**. Jos lampi
+tuntuu liian pieneltä käyttää, vipu on minimi-ikkunan koko (§15), ei sijainti.
+
+```supercollider
+// N3 — Kuu ja lampi. Vaatii GUI:n; Ctrl+Shift+L ennen tätä.
+CQ.boot;                       // 1. avaa GUI, Tab -> yökartta
+// 2. Katso KOKO lahtea, älä yhtä kulmaa: onko oikea yläkulma nyt tyhjä vettä?
+//    Lukeeko taivas maisemana (lintu — castle — kuu+sää — lintu) ja pohjukka
+//    vetenä johon lampi ja juuret kuuluvat? Vai näyttääkö jompikumpi yhä
+//    ryppäältä?
+// 3. Vedä kuuta VAAKAAN (vaihe täyttyy vasemmalta), napauta = kylvö.
+// 4. Pidä sadetta pohjassa taivaalla -> johtoja kasvaa 2.5 Hz. Aurinko harventaa.
+CQ.patch(\tri1, \coco1_spaf, 0.55);
+CQ.patch(\envB, \castle3_fm, -0.45);
+// 5. Napauta lammen YLÄVASENTA siementä: leimaa nykyisen kentän.
+CQ.clearPatch;
+// 6. Napauta rantaa sen siemenen suunnassa (siemenen ULKOPUOLELLA): kentän
+//    pitää palata täsmälleen. Puhdas kulma asuu nyt rannalla, ei neliön
+//    nurkassa; kokeile myös hieman rannan ulkopuolelta (kiinnikaista).
+// 7. Vedä lammen poikki = matka; oikea nappi = kuminauha.
+// 8. Oksastus (lammen oikea alaranta): aseistuu, ottaa kaksi vanhempaa.
+```
+
+**Mitä katsoa erityisesti:** (a) onko rypäs oikeasti purkautunut vai vaihtoiko
+se vain paikkaa, (b) kuuluuko lampi pohjukkaan vai näyttääkö se pudotetulta,
+(c) toimiiko kuun ja sään yhdistelmä taivaalla vai lukeeko sekin ryppäänä,
+(d) **kokojen jälkitarkastus koko lahdesta** — kerro mitkä elementit haluat
+vielä isommiksi.
+
+**Avoin päätös, jonka mittasin (tärkeä).** Lampi on nyt lahden omassa vedessä,
+joten **kaapelit kulkevat sen siementen yli** ja §4.5:n mukaan kaapeli voittaa
+painalluksen. Mittasin 60 satunnaisella kentällä: puolen kuun kourallisella
+(35 johtoa) oikeanpuoleiset siemenet ovat kaapelin alla **17 % ja 35 %**
+kentistä, oksastus 17 %; 70 johdolla 32 % / 48 % / 25 %. Vasemmat siemenet ja
+koko taivas (kuu, sade, aurinko) **0 %**. Tämä on raskaampi kauppa kuin
+skip-merkin, koska siemenet ovat padin koko käyttöliittymä. Vaihtoehdot:
+(a) hyväksy, (b) paikallinen §4.5-poikkeus "lammen rannan sisällä lampi voittaa"
+(hinta: lammen yli makaavaa johtoa ei voi repiä juuri siitä kohtaa), tai
+(c) lampi takaisin vedelle jonka yli johdot eivät kulje.
+
+- [ ] N3 hyväksytty (pvm: ______ — rypään purku, lammen paikka ja koko,
+      taivaan sää, siementen kaapelivarjo, kokojen jälkitarkastus)
+
+

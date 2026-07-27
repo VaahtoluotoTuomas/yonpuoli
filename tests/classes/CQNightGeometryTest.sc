@@ -15,6 +15,14 @@ CQNightGeometryTest : UnitTest {
 		^CQNightGeometry.endpointBox(center, spec[\kind], spec[\lamp])
 	}
 
+	// how far out a point lies in the pool's own elliptical frame: 1 is exactly
+	// on the mean shore, so every reach assert reads the same at any scale
+	prPoolReach { |pool, point|
+		var u = (point.x - pool[\center].x) / pool[\rx];
+		var v = (point.y - pool[\center].y) / pool[\ry];
+		^sqrt((u * u) + (v * v))
+	}
+
 	prRectDistance { |point, rect|
 		var dx = max(max(rect.left - point.x, point.x - rect.right), 0);
 		var dy = max(max(rect.top - point.y, point.y - rect.bottom), 0);
@@ -329,25 +337,23 @@ CQNightGeometryTest : UnitTest {
 	// The almanac corner (§16.6) lives on water the bodies leave free: right of
 	// coco 2's own box, past bird B's name box, inside the stage at every
 	// scale. The sowing moon must be takeable by the same rim it draws — flash
-	// halo included, or the layer would clip its own light — and G3's compass
-	// water must already be empty and clear: the home is pinned now so the
-	// corner cannot grow into it later, but nothing is drawn there, because a
-	// dead control breaks §4.5 and §16.12 at once.
+	// halo included, or the layer would clip its own light. Since §9 the moon
+	// rides the birds' own altitude band and the tide pool hangs below it, so
+	// the two are a composition rather than a column, and their layers still
+	// have to keep off each other: a moon flash may never re-ink the water.
 	test_almanacCorner {
 		[[1280, 570], [1920, 855]].do { |size|
 			var geo = CQNightGeometry.compute(size[0], size[1]);
 			var almanac = geo[\almanac];
-			var box = almanac[\box], compass = almanac[\compass];
+			var box = almanac[\box], compass = almanac[\compassBox];
 			var moon = almanac[\moon], moonR = almanac[\moonR];
+			var pool = almanac[\pool];
 			var names = CQMatrix.sourceNames ++ CQMatrix.destNames;
-			[[\corner, box], [\water, compass]].do { |pair|
+			[[\sky, box], [\water, compass]].do { |pair|
 				var rect = pair[1];
 				this.assert(rect.left >= 0 and: { rect.right <= size[0] }
 					and: { rect.top >= 0 } and: { rect.bottom <= size[1] },
 					"the almanac % stays on the stage (%x%)"
-						.format(pair[0], *size));
-				this.assert(rect.left > geo[\cocos][1][\shellBox].right,
-					"the almanac % opens right of coco 2's own box (%x%)"
 						.format(pair[0], *size));
 				geo[\birds].do { |bird, i|
 					this.assert(rect.intersects(bird[\dropRect]).not,
@@ -367,12 +373,37 @@ CQNightGeometryTest : UnitTest {
 					};
 				};
 			};
-			this.assert(box.intersects(compass).not
-				and: { compass.top >= box.bottom },
-				"G3's compass water waits below the constellation (%x%)"
+			this.assert(box.intersects(compass).not,
+				"the sky and the water are two places, not one corner (%x%)"
 					.format(*size));
-			this.assertFloatEquals(compass.width, 140 * geo[\scale],
-				"the reserved pad is §7.1's own 140 px (%x%)".format(*size), 0.001);
+			this.assertFloatEquals(pool[\rx],
+				CQNightMeasures.poolRx * geo[\scale],
+				"the pool carries §7.1's water at this scale (%x%)"
+					.format(*size), 0.001);
+			// the pool is TANGENT to the stage's lower edge — that edge is the
+			// waterline the roots already run past, and it is what says the
+			// plants and the pool are in one water without drawing a thing
+			this.assertFloatEquals(pool[\center].y + pool[\ry], size[1],
+				"the pool sits on the waterline (%x%)".format(*size), 0.001);
+			// ...and the shore's own wobble crosses it, so the water reads as
+			// continuing under the frame rather than stopping at a rim
+			this.assert(CQNightGeometry.sampleSegments(pool[\segments], 8)
+				.any { |p| p.y > size[1] },
+				"the shore runs past the waterline (%x%)".format(*size));
+			// the bodies are far apart, which is the whole point of §9's move
+			this.assert(CQNightGeometry.distance(moon, pool[\center])
+				> (size[1] * 0.5),
+				"the moon and the pool are two features, not a cluster (%x%)"
+					.format(*size));
+			this.assertFloatEquals(moon.y,
+				CQNightMeasures.birdAltitude * geo[\scale],
+				"the moon rides the birds' own altitude band (%x%)"
+					.format(*size), 0.001);
+			geo[\birds].do { |bird, i|
+				this.assertFloatEquals(moon.y, bird[\center].y,
+					"the sky reads bird — bird — moon (bird %, %x%)"
+						.format(i + 1, *size), 0.001);
+			};
 			// the moon is a body: the disc it draws is the disc it answers on,
 			// and its own layer holds the 120 ms flash halo whole
 			this.assert(box.contains(Rect.aboutPoint(moon,
@@ -396,23 +427,45 @@ CQNightGeometryTest : UnitTest {
 		};
 	}
 
-	// The compass water at G3: the §7.1 pad is drawn now, with its corner
-	// seeds and the weather row beneath — all inside their own layer box, all
-	// on water no body reaches, at both reference stage sizes.
+	// The tide pool since §9: the §7.1 water is a seeded, wobbled shore with
+	// its four memories seated on it at the diagonal winds and the weather
+	// scattered around it — all inside their own layer box, all on water no
+	// body reaches, at both reference stage sizes.
 	test_compassWater {
 		[[1280, 570], [1920, 855]].do { |size|
 			var geo = CQNightGeometry.compute(size[0], size[1]);
 			var almanac = geo[\almanac];
-			var pad = almanac[\compass], box = almanac[\compassBox];
+			var pool = almanac[\pool], box = almanac[\compassBox];
 			var names = CQMatrix.sourceNames ++ CQMatrix.destNames;
 			var marks = #[grow, breed, wither].collect { |n| almanac[\weather][n] };
+			var shore = CQNightGeometry.sampleSegments(pool[\segments], 8);
 			this.assert(box.left >= 0 and: { box.right <= size[0] }
 				and: { box.top >= 0 } and: { box.bottom <= size[1] },
 				"the compass layer stays on the stage (%x%)".format(*size));
-			this.assert(box.contains(pad),
-				"the layer holds the whole pad (%x%)".format(*size));
-			this.assert(box.left > geo[\cocos][1][\shellBox].right,
-				"the compass water opens right of coco 2's box (%x%)".format(*size));
+			// the layer holds every stretch of shore that is ON the stage; the
+			// lowest stretch runs past the waterline on purpose and Qt cutting
+			// it there IS the drawing (§9)
+			this.assert(shore.every { |point|
+				(point.y > size[1]) or: { box.containsPoint(point) } },
+				"the layer holds the shore down to the waterline (%x%)"
+					.format(*size));
+			// the pool's real neighbours in the bay's bottom pocket — every one
+			// of these is an opaque layer or an opaque view, so touching any of
+			// them means one body eating another's ink
+			this.assert(box.left > CQNightGeometry
+				.endpointBox(geo[\endpoints][\envA], \jack).right,
+				"the pool opens right of envA's own jack (%x%)".format(*size));
+			this.assert(box.right < geo[\ringBox].left,
+				"the pool stops before the river's own layer (%x%)".format(*size));
+			this.assert(box.top > geo[\cocos][0][\shellBox].bottom,
+				"the pool lies below coco 1's shell (%x%)".format(*size));
+			geo[\cocos][0][\crescents].do { |point, m|
+				var half = CQNightMeasures.crescentExtent * 0.5;
+				this.assert(box.intersects(
+					Rect.aboutPoint(point, half, half)).not,
+					"the pool clears coco 1's tide crescent % (%x%)"
+						.format(m, *size));
+			};
 			geo[\birds].do { |bird, i|
 				this.assert(box.intersects(bird[\dropRect]).not,
 					"bird %'s drop rect keeps clear of the compass (%x%)"
@@ -430,11 +483,15 @@ CQNightGeometryTest : UnitTest {
 							.format(i + 1, *size));
 				};
 			};
-			// the four seeds sit inside the pad in bilinear order TL TR BL BR,
-			// and each seed answers at its own point
+			// the four memories are seated ON the shore at the diagonal winds,
+			// in bilinear order TL TR BL BR, and each answers at its own point
 			almanac[\stamps].do { |stamp, c|
-				this.assert(pad.containsPoint(stamp),
-					"seed % sits inside the pad (%x%)".format(c, *size));
+				var reach = this.prPoolReach(pool, stamp);
+				this.assert(reach < 1,
+					"seed % is seated inside its own shore (%x%)".format(c, *size));
+				this.assert(reach > 0.6,
+					"seed % is ON the shore, not adrift in the pool (%x%)"
+						.format(c, *size));
 				this.assertEquals(CQNightGeometry.stampHit(almanac, stamp), c,
 					"seed % answers at its own point (%x%)".format(c, *size));
 			};
@@ -442,31 +499,96 @@ CQNightGeometryTest : UnitTest {
 				and: { almanac[\stamps][0].y < almanac[\stamps][2].y },
 				"seed order is TL TR BL BR — the bilinear's own frame (%x%)"
 					.format(*size));
-			// the weather marks hang below the field, inside the layer, apart
-			// (the 24 px hit law), and answer as themselves
-			marks.do { |mark, i|
-				this.assert(mark.y > pad.bottom,
-					"weather mark % hangs below the field (%x%)".format(i, *size));
-				this.assert(box.containsPoint(mark),
-					"weather mark % lives inside the layer (%x%)".format(i, *size));
+			// The weather row is gone and the marks did not stay together: they
+			// went where each one ACTS (§9). Rain and sun grow and wither the
+			// live bay, so they are sky weather and they keep the moon company.
+			// The graft breeds two stamped memories and takes its parents as
+			// seed taps, so it stays on the water where those parents are.
+			#[grow, wither].do { |name|
+				var mark = almanac[\weather][name];
+				this.assertEquals(almanac[\skyMarks][name], mark,
+					"% is sky weather, on the moon's own layer (%x%)"
+						.format(name, *size));
+				this.assert(almanac[\box].containsPoint(mark),
+					"% lives inside the sky layer (%x%)".format(name, *size));
+				this.assert(CQNightGeometry.distance(mark, almanac[\moon])
+					< (almanac[\moonR] * 3),
+					"% keeps the moon company rather than drifting (%x%)"
+						.format(name, *size));
+				this.assert(this.prPoolReach(pool, mark) > 3,
+					"% is nowhere near the water (%x%)".format(name, *size));
 			};
-			marks.doAdjacentPairs { |a, b|
-				this.assert(CQNightGeometry.distance(a, b) >= 24,
-					"weather marks keep the 24 px hit law apart (%x%)".format(*size));
+			this.assert(almanac[\skyMarks][\breed].isNil,
+				"the graft did not follow them into the sky (%x%)".format(*size));
+			// the graft stands off the DRAWN shore, not the mean ellipse: the
+			// shore wobbles ±6 %, so a mark placed off the average can still
+			// land on the line it is supposed to stand beside
+			block { |done|
+				var mark = almanac[\weather][\breed];
+				var reach = shore.collect { |point|
+					CQNightGeometry.distance(mark, point) }.minItem;
+				this.assert(this.prPoolReach(pool, mark) > 1,
+					"the graft stands off the shore (%x%)".format(*size));
+				this.assert(reach >= 8,
+					"the graft keeps clear of the drawn shore (%x%)".format(*size));
+				this.assert(reach <= (40 * geo[\scale]),
+					"...but still belongs to this pool (%x%)".format(*size));
+				this.assert(box.containsPoint(mark),
+					"the graft lives inside the water's layer (%x%)".format(*size));
+				this.assert(mark.y > pool[\center].y
+					and: { mark.x > almanac[\stamps][2].x }
+					and: { mark.x > almanac[\stamps][3].x },
+					"the graft waits at the lower shore past its parents (%x%)"
+						.format(*size));
+			};
+			marks.do { |a, i|
+				marks.drop(i + 1).do { |b|
+					this.assert(CQNightGeometry.distance(a, b) >= 24,
+						"weather marks keep the 24 px hit law apart (%x%)"
+							.format(*size));
+				};
+			};
+			// A row is a row whatever you call it: leaving it means no weather
+			// mark may line up with another mark, with a seed or with the moon
+			// on either axis. This is the whole reason §9 scattered them.
+			#[grow, breed, wither].do { |name|
+				var mark = almanac[\weather][name];
+				(almanac[\stamps] ++ [almanac[\moon]]
+					++ marks.reject { |m| m == mark }).do { |other|
+					this.assert((mark.x - other.x).abs >= 6
+						or: { (mark.y - other.y).abs >= 6 },
+						"% shares no axis with % (%x%)"
+							.format(name, other, *size));
+				};
 			};
 			this.assertEquals(
 				CQNightGeometry.weatherHit(almanac, almanac[\weather][\breed]),
 				\breed, "the graft answers at its own mark (%x%)".format(*size));
-			// pad coordinates are the bilinear's 0..1 frame
+			// The tide is bilinear in a square poured on a round body: the shore
+			// at a diagonal wind IS a corner, and every corner is reachable —
+			// bit-exact, which is what makes a stamp recallable (rake 13).
+			4.do { |c|
+				var corner = Point(c % 2, c div: 2);
+				var place = CQNightGeometry.compassPointAt(almanac, corner);
+				var beyond = pool[\center]
+					+ ((place - pool[\center]) * 1.08);   // in the catch band
+				this.assertFloatEquals(this.prPoolReach(pool, place), 1.0,
+					"corner % lives on the shore (%x%)".format(c, *size), 0.001);
+				this.assertEquals(CQNightGeometry.compassNorm(almanac, place),
+					corner, "the shore at corner % is that corner (%x%)"
+						.format(c, *size));
+				this.assert(CQNightGeometry.compassHit(almanac, beyond),
+					"the catch band answers past corner % (%x%)".format(c, *size));
+				this.assertEquals(CQNightGeometry.compassNorm(almanac, beyond),
+					corner, "...and holds exactly at that corner (%x%)"
+						.format(c, *size));
+			};
 			this.assertEquals(
-				CQNightGeometry.compassNorm(almanac, pad.leftTop), Point(0, 0),
-				"pad TL is the norm origin (%x%)".format(*size));
-			this.assertEquals(
-				CQNightGeometry.compassNorm(almanac,
-					Point(pad.right, pad.bottom)), Point(1, 1),
-				"pad BR is norm (1,1) (%x%)".format(*size));
-			// the moon's sky layer and the compass layer never overlap: a moon
-			// flash may not re-ink the field, nor a voyage the moon
+				CQNightGeometry.compassNorm(almanac, pool[\center]),
+				Point(0.5, 0.5), "the pool's middle is the tide's middle (%x%)"
+					.format(*size));
+			// the moon's sky layer and the water's layer never overlap: a moon
+			// flash may not re-ink the pool, nor a voyage the moon
 			this.assert(box.intersects(almanac[\box]).not,
 				"the sky and the water are separate layers (%x%)".format(*size));
 		};
@@ -543,6 +665,75 @@ CQNightGeometryTest : UnitTest {
 		this.assert(CQGuiCastleConstellation.trackMode(5)
 			and: { CQGuiCastleConstellation.trackMode(1).not },
 			"states 4..7 are track-and-hold, 0..3 sample-and-hold");
+	}
+
+	// The tide is bilinear in a square; the pool it is poured on is round (§9).
+	// The elliptical grid mapping carries one into the other, and the whole
+	// reason to use it instead of a radial squash is that **the rim at a
+	// diagonal is exactly a corner** — a stamped memory that cannot be reached
+	// bit-exact is a memory the pad has lost (rake 13). These fixed points are
+	// asserted on the pure math, with no window and no almanac anywhere near.
+	test_poolMappingKeepsItsCorners {
+		var root = 1 / 2.sqrt;
+		var corners = [Point(-1, -1), Point(1, -1), Point(-1, 1), Point(1, 1)];
+		this.assertEquals(CQNightGeometry.squareToDisc(Point(0, 0)), Point(0, 0),
+			"the pool's centre is the square's centre");
+		this.assertEquals(CQNightGeometry.discToSquare(Point(0, 0)), Point(0, 0),
+			"...and back again");
+		corners.do { |corner|
+			// the corner leaves the square at the diagonal rim of the disc
+			var rim = CQNightGeometry.squareToDisc(corner);
+			var back = CQNightGeometry.discToSquare(rim);
+			this.assertFloatEquals(rim.x, corner.x * root,
+				"corner % sits on the rim at its own diagonal (x)"
+					.format(corner), 1e-9);
+			this.assertFloatEquals(rim.y, corner.y * root,
+				"corner % sits on the rim at its own diagonal (y)"
+					.format(corner), 1e-9);
+			this.assertFloatEquals(sqrt(rim.x.squared + rim.y.squared), 1.0,
+				"corner % lands exactly ON the shore, not inside it"
+					.format(corner), 1e-9);
+			// and the round trip is exact, which is what makes a corner recall
+			// bit-exact rather than nearly
+			this.assertFloatEquals(back.x, corner.x,
+				"the diagonal rim maps back to corner % (x)".format(corner), 1e-9);
+			this.assertFloatEquals(back.y, corner.y,
+				"the diagonal rim maps back to corner % (y)".format(corner), 1e-9);
+		};
+		// the axes are fixed points too: the rim on an axis is an edge midpoint
+		[[Point(1, 0), Point(1, 0)], [Point(-1, 0), Point(-1, 0)],
+			[Point(0, 1), Point(0, 1)], [Point(0, -1), Point(0, -1)]].do { |pair|
+			var square = CQNightGeometry.discToSquare(pair[0]);
+			this.assertFloatEquals(square.x, pair[1].x,
+				"the rim at % is an edge, not a corner (x)".format(pair[0]), 1e-9);
+			this.assertFloatEquals(square.y, pair[1].y,
+				"the rim at % is an edge, not a corner (y)".format(pair[0]), 1e-9);
+		};
+		// interior round trip: the geography has to be one-to-one, or the same
+		// place on the pool would grow two different patches
+		[-0.9, -0.4, 0, 0.3, 0.75, 1].do { |x|
+			[-1, -0.6, -0.1, 0.5, 0.95].do { |y|
+				var square = Point(x, y);
+				var back = CQNightGeometry.discToSquare(
+					CQNightGeometry.squareToDisc(square));
+				this.assertFloatEquals(back.x, x,
+					"(%, %) survives the round trip (x)".format(x, y), 1e-6);
+				this.assertFloatEquals(back.y, y,
+					"(%, %) survives the round trip (y)".format(x, y), 1e-6);
+			};
+		};
+		// nothing inside the disc may map outside the square, at any angle
+		36.do { |i|
+			var angle = i / 36 * 2pi;
+			[0.25, 0.6, 0.99, 1.0].do { |r|
+				var square = CQNightGeometry.discToSquare(
+					Point(cos(angle) * r, sin(angle) * r));
+				this.assert(square.x.abs <= (1 + 1e-9)
+					and: { square.y.abs <= (1 + 1e-9) },
+					"the disc at angle % radius % stays in the square"
+						.format(i, r));
+			};
+		};
 	}
 
 	// ---- §8's collision matrix (NIGHT_STANDALONE_PLAN §8) ----

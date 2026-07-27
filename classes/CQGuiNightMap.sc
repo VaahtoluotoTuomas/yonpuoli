@@ -368,19 +368,26 @@ CQGuiNightMap {
 		^this
 	}
 
+	// the three weather marks live on two layers since §9 (rain and sun in the
+	// sky with the moon, the graft on the water with its parents), so both
+	// repaint — each still only when its own state changes
+	prRefreshWeather {
+		if(freed.not) { compassView.refresh; almanacView.refresh };
+	}
+
 	weatherActive_ { |mark|
 		weatherActive = mark;
-		if(freed.not) { compassView.refresh };
+		this.prRefreshWeather;
 	}
 
 	prFlashWeather { |mark|
 		if(freed) { ^this };
 		weatherFlash = mark;
-		compassView.refresh;
+		this.prRefreshWeather;
 		AppClock.sched(CQInk.momentaryFlash, {
 			if(freed.not and: { weatherFlash == mark }) {
 				weatherFlash = nil;
-				compassView.refresh;
+				this.prRefreshWeather;
 			};
 			nil
 		});
@@ -878,15 +885,23 @@ CQGuiNightMap {
 	// cable crossing the sky wins the press (§4.5), so it wins the cue too, and
 	// a repaint happens only when the boolean actually flips.
 	prHoverAlmanac { |view, x, y|
-		var moon = false, point;
+		var moon = false, point, sky, free = false;
 		if(geometry.notNil and: { view.notNil }) {
 			point = this.prStagePoint(view, x, y);
-			moon = CQNightGeometry.moonHit(geometry[\almanac], point)
-				and: { overlay.patchAt(point).isNil };
+			free = overlay.patchAt(point).isNil;
+			moon = CQNightGeometry.moonHit(geometry[\almanac], point) and: { free };
+			// the same order almanacDown runs: the moon's own rim, then the two
+			// sky marks beside it (§4.5 — one cue, and it never lies)
+			if(moon.not and: { free }) {
+				sky = CQNightGeometry.weatherHit(geometry[\almanac], point);
+				if(sky.notNil
+					and: { geometry[\almanac][\skyMarks][sky].isNil }) { sky = nil };
+			};
 		};
-		if(moon != moonHover) {
+		if((moon != moonHover) or: { sky != compassHover }) {
 			moonHover = moon;
-			if(freed.not) { almanacView.refresh };
+			compassHover = sky;
+			if(freed.not) { almanacView.refresh; compassView.refresh };
 		};
 	}
 
@@ -899,11 +914,14 @@ CQGuiNightMap {
 			point = this.prStagePoint(view, x, y);
 			almanac = geometry[\almanac];
 			if(overlay.patchAt(point).isNil) {
+				// the same order the press runs (CQGuiNightTouch.compassDown):
+				// seed, then weather mark, then the water they stand on. A cue
+				// computed in any other order would advertise an act the next
+				// press does not give (§4.5).
 				seed = CQNightGeometry.stampHit(almanac, point);
 				next = if(seed.notNil) { [\stamp, seed] } {
-					if(CQNightGeometry.compassHit(almanac, point)) { \pad } {
-						CQNightGeometry.weatherHit(almanac, point)
-					}
+					CQNightGeometry.weatherHit(almanac, point)
+						?? { if(CQNightGeometry.compassHit(almanac, point)) { \pad } }
 				};
 			};
 		};
@@ -1090,6 +1108,12 @@ CQGuiNightMap {
 		Pen.translate(almanac[\box].left.neg, almanac[\box].top.neg);
 		CQInkNight.drawSowingMoon(almanac[\moon], almanac[\moonR],
 			gui.shakeAmount, moonHover, moonFlash, \night);
+		// the rain and the sun keep the moon company: all three are whole-bay
+		// weather, and the sky is where an almanac keeps its weather (§9)
+		almanac[\skyMarks].keysValuesDo { |name, point|
+			CQInkNight.drawWeatherMark(name, point, compassHover == name,
+				weatherActive == name, weatherFlash == name, false, \night)
+		};
 	}
 
 	// the compass water (§7.1, drawn since G3): pad, corner seeds, the weather

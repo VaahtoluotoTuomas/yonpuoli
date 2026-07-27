@@ -25,13 +25,13 @@ public-vaihto ja oikeat kuva-/äänidemot ovat erillinen julkaisutoimi.
 
 **Seuraava askel konkreettisesti:** rakennusjärjestyksen (`NIGHT_STANDALONE_PLAN.md
 §12`) kohdat 1 **punch (§2)** ja 2 **kevättulva (§8)** ovat valmiit ja hyväksytyt
-(2026-07-23 ja 2026-07-26). Seuraavana on kohta 3 **almanakka maisemaksi (§9)**:
-kuu nousee, pato muuttuu vuorovesilammikoksi ja säärivi sirotellaan rannoille.
-Sama matematiikka, uusi ruumiinkieli. **Kokoihin palataan §9:n katselmoinnissa:**
-käyttäjä hyväksyi tulvan mutta arvioi, että osa elementeistä voi vielä kasvaa —
-ja koska koot ovat suhteellisia (§8), ne katsotaan uudessa sommitelmassa
-kerralla eikä yksi kerrallaan. §13 korvapassi voi kulkea limittäin (se on
-pelkkää kuuntelua). Norns-portti (§14) on vasta night-first-vaiheen jälkeen.
+(2026-07-23 ja 2026-07-26). Kohta 3 **almanakka maisemaksi (§9)** on **rakennettu
+kahdesti, ei kummallakaan kerralla hyväksytty, ja odottaa käyttäjän harkintaa.**
+Se ei ole `nocturne`ssa: `nocturne` seisoo commitissa `a5e4b17` (kevättulva) ja
+§9:n toinen versio on omalla haarallaan `nocturne-nightscape`. Katselmointi on
+checklistin lohko **N3**. §13 korvapassi voi kulkea limittäin (se on pelkkää
+kuuntelua) ja on turvallinen paikka jatkaa, jos §9:n suunta ottaa aikaa.
+Norns-portti (§14) on vasta night-first-vaiheen jälkeen.
 
 ## Auktoriteettijärjestys
 
@@ -58,7 +58,14 @@ korvata teknisesti helpommalla ratkaisulla ilman käyttäjän päätöstä.
 - Vanhaa GUI:ta ei kopioida rinnakkaiseksi tuotteeksi eikä runtime-feature-flagia
   lisätä. Night-only arvioidaan yksinkertaisesti **olemalla painamatta Tabia**
   muutaman session ajan — ei koodia, ei lippua, ei poistoa ennen päätöstä.
-- Erillisiä lyhytikäisiä työhaaroja tarvitaan vain todellisessa rinnakkaistyössä.
+- Erillisiä lyhytikäisiä työhaaroja tarvitaan vain todellisessa rinnakkaistyössä
+  **tai kun valmis inkrementti jää käyttäjän harkintaan.** Näin on nyt: §9
+  (almanakka maisemaksi) elää haarassa `nocturne-nightscape`, jotta `nocturne`n
+  kärki pysyy viimeisessä *hyväksytyssä* tilassa `a5e4b17`. Työn saa esiin
+  komennolla `git switch nocturne-nightscape` ja pois komennolla
+  `git switch nocturne`; hyväksytty se sulautuu `nocturne`en, hylätty haara
+  poistetaan. **Testi-commit ei ole hyväksyntä** — hyväksyntä on aina
+  checklist-rivin rasti käyttäjältä.
 - Lähdekoodi, testit ja dokumentit pidetään samassa commitissa silloin, kun ne
   yhdessä muodostavat yhden todennettavan käyttäytymismuutoksen.
 
@@ -100,13 +107,35 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
   renkaasta kuoren kuihin menevät kaapelit kulkevat sen kaistan läpi (mitattu
   `tri1 → coco1_spaf` 6.0 px, ennen tulvaa 17.5 px). §4.5 pätee: kaapeli
   voittaa osoittimen alla. Merkin kotia ei siirretty.
-- [ ] **3. Almanakka maisemaksi** (§9). Kuu nousee, pato muuttuu
-  vuorovesilammikoksi (kuun heijastukseksi), säärivi sirotellaan rannoille.
-  Sama matematiikka, uusi ruumiinkieli. Pidettiin tulvasta erillisenä, jottei
-  padon muodosta erimielisyys panttaisi kokopassia. **Kokojen jälkitarkastus
-  kulkee tämän mukana** (ks. yllä). Reunaehto mitattu tulvassa: 156 px:n allas
-  mahtuu kuorta vasten (marginaali 16 → 8 px) mutta menisi lavan oikeasta
-  reunasta yli 6 px:llä — `moonAxis` on siirrettävä sisäänpäin.
+- [ ] **3. Almanakka maisemaksi** (§9). **Rakennettu, portit vihreät, EI
+  hyväksytty — käyttäjän harkinnassa (2026-07-27).** Työ on haaran
+  `nocturne-nightscape` kärjessä; `nocturne` seisoo `a5e4b17`:ssä eikä sisällä
+  tästä riviäkään. Katselmointi = checklist **N3**.
+  - *Versio 1 (hylätty).* Toteutettiin suunnitelmatekstin mukaan: kaikki kolme
+    osaa pysyivät oikeassa yläkulmassa, vain akseli rikottiin. Käyttäjä hylkäsi
+    näkemältä — "valikkomainen alue sivussa" ei korjaannu järjestelemällä.
+    Suunnitelmateksti itse oli väärä; §7.2 ja §9 on nyt korjattu ja vanha versio
+    säilytetty niissä varoituksena.
+  - *Versio 2 (nykyinen).* **Rypäs hajotettiin.** Kuu (Ø 64) nousi lintujen
+    korkeudelle taivaalle ja **sade + aurinko sen seuraksi** (ne kasvattavat ja
+    harventavat elävää lahtea, eivät lammen muisteja). **Lampi meni lahden
+    pohjukan veteen**, tangentiksi alareunaan, ellipsi 200 × 118 sahatulla
+    rannalla; **oksastus jäi lammelle**, koska se ottaa vanhempansa
+    siemennapautuksina. Mikroverso siirtyi juuri A:n toiselle puolelle. Oikea
+    yläkulma on nyt tyhjää vettä. Vuoroveden matematiikka säilyi: ellipsi↔neliö
+    -kuvaus, jonka käänteisfunktion kulmasingulariteetti korjattiin lähteessä
+    (`cornerSnap` 1e-6), joten leimattu kulma palautuu bittitarkasti.
+  - **Kaksi mitattua hintaa, kumpikaan ei piilossa.** (1) Väitin ensin että
+    pohjukka antaa lammelle ~1.8× pinta-alan — **väärin**, koska Qt-kerros on
+    suorakaide eikä kiekko: lopputulos 18 535 px² vastaan G3-padin 19 600.
+    Siirto ostaa **kuulumisen, ei kokoa**; kokoon on enää yksi vipu, minimi-ikkuna.
+    (2) Lampi on lahden vedessä, joten **kaapelit varjostavat sen siemeniä**:
+    60 satunnaisella kentällä, 35 johtoa → lahteen päin olevat siemenet 17 % ja
+    35 %, oksastus 17 %; 70 johtoa → 32 % / 48 % / 25 %; maan puoleiset siemenet
+    ja koko taivas 0 %. Avoin käyttäjäpäätös N3:ssa (hyväksy / paikallinen
+    §4.5-poikkeus / lampi takaisin vapaalle vedelle) — **ei ratkaista koodissa.**
+  - **Kokojen jälkitarkastus koko lahdesta kuuluu tähän katselmointiin** (§8:n
+    laki: koot ovat suhteellisia, ne katsotaan sommitelmassa kerralla).
 - [ ] **4. Range-väreet** (§3). Castlen 6-suunnan piirretty väre, jonka *muoto
   on regime* (infra/balcium/audio); napautus askeltaa. Yön suurin
   soitettavuusaukko. Kasvaneeseen maisemaan, jotta clearance tehdään kerran.
@@ -180,10 +209,22 @@ Lisäksi neljä GUI-smokea (`gui_shell_smoke`, `gui_drawer_smoke`,
 `GUI_SPEC.md` §13:n serverless interaction-testit, manuaalinen kuuntelu,
 visuaalinen tarkastus 100/125/150 % skaalauksilla ja CPU/resource-soak.
 G-porttia ei merkitä valmiiksi pelkän toteutuscommitin perusteella.
-Lähtötaso 2026-07-26 (kevättulvan portti): `CQ_COMPILE_OK`, **11 175
-unit-passia / 0 failurea** (oli 6 611 — §8:n törmäysmatriisi tuo ~4 560
-assertia molemmilla referenssikoolla), `CQ_SAFETY_PASSED` ja kaikki neljä
-GUI-markkeria. `CQ_HOLD_OK` kantaa edellisestä portista: DSP:hen ei koskettu.
+Lähtötaso 2026-07-26 (kevättulvan portti, `nocturne` = `a5e4b17`):
+`CQ_COMPILE_OK`, **11 175 unit-passia / 0 failurea** (oli 6 611 — §8:n
+törmäysmatriisi tuo ~4 560 assertia molemmilla referenssikoolla),
+`CQ_SAFETY_PASSED` ja kaikki neljä GUI-markkeria. `CQ_HOLD_OK` kantaa
+edellisestä portista: DSP:hen ei koskettu.
+
+Haaran `nocturne-nightscape` portti 2026-07-27 (§9 v2, **vihreä mutta ei
+hyväksytty**): `CQ_COMPILE_OK`, **11 525 unit-passia / 0 failurea / 28/28
+luokkaa**, `CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+`CQ_GUI_DRAWER_REENTRY_PASSED`, `CQ_GUI_NIGHT_PASSED`; `CQ_HOLD_OK` kantaa.
+Samalla haaralla on **`run_all.scd`:n porttikorjaus**: kesken kaatunut ajo
+tulosti ennen sekä `CQ_TESTS_FAILED`in että `CQ_TESTS_PASSED`in (sclangin
+`try` ei kestä rutiinin `0.1.wait`-yieldiä), joten summary kertoo nyt myös
+suoritettujen luokkien määrän eikä passed-markeri lähde ilman sitä. Se on oma
+committinsa ja kelpaa `nocturne`en riippumatta §9:n kohtalosta
+(`git cherry-pick`).
 
 ## Omistajuus- ja julkaisurata (kulkee Nocturnen rinnalla)
 
@@ -313,6 +354,14 @@ uudelleenohjattuna (yösmoken watchdog-exit huuhtoo evidenssin); opaakit
 endpoint-laatikot peittävät viivoja ja merkkejä (piirrä ne omistavaan
 näkymään tai testaa clearance); Qt-näkymänvaihto pysyy jonossa; kustannus
 mitataan Qt:n paint-eventistä (`tests/gui_paint_profile.scd`), ei arvata.
+§9:stä kolme lisää: **Qt-kerros on suorakaide**, joten uuden kappaleen tilaa
+arvioidaan suurimmasta vapaasta *suorakaiteesta*, ei kiekosta (tämä teki
+"1.8× pinta-alaa" -väitteestä väärän); **kappaleen siirto varatusta vedestä
+lahteen vie sen kaapelikentän alle** ja §4.5 antaa painalluksen kaapelille —
+varjostus mitataan monella satunnaisella kentällä ja tuodaan käyttäjälle
+kauppana, ei löydetä jälkikäteen; ja **suunnitelmateksti voi olla väärässä** —
+jos toteutus sen mukaan tuntuu väärältä, epäile diagnoosia äläkä vain
+sommittelua (§7.2 korjattiin vasta hylätyn buildin jälkeen).
 
 ## Myöhemmin, ei tämän vaiheen scopea
 

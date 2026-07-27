@@ -229,7 +229,7 @@ CQGuiNightTouch {
 	// ---- the almanac corner: the sowing moon ----
 
 	almanacDown { |view, x, y, modifiers = 0, button = 0, clicks = 1|
-		var point = this.prPoint(view, x, y), geo = map.geometry;
+		var point = this.prPoint(view, x, y), geo = map.geometry, mark;
 		if(geo.isNil) { ^this };
 		// §4.5 again: a cable crossing the sky is grabbed, never sown through
 		if(button != 0 or: { modifiers.isAlt }
@@ -239,6 +239,12 @@ CQGuiNightTouch {
 		if(CQNightGeometry.moonHit(geo[\almanac], point)) {
 			moonDrag = (start: point, amount: map.shakeAmount, travel: 0);
 			^this
+		};
+		// the rain and the sun share the moon's sky since §9 — same hold, same
+		// 2.5 Hz, same one-undo-per-hold as when they hung under the pad
+		mark = CQNightGeometry.weatherHit(geo[\almanac], point);
+		if(mark.notNil and: { geo[\almanac][\skyMarks][mark].notNil }) {
+			^this.beginWeatherHold(mark)
 		};
 		// the rest of the corner is open water: harvest, solo and hover behave
 		// exactly as they do on any other night paper
@@ -263,6 +269,7 @@ CQGuiNightTouch {
 	}
 
 	almanacUp { |view, x, y, modifiers = 0, button = 0|
+		if(weatherHold.notNil) { ^this.endWeatherHold };
 		if(moonDrag.isNil) { ^this.forwardUp(view, x, y, modifiers, button) };
 		if(moonDrag[\travel] <= this.class.tapTravel) { map.throwShake };
 		moonDrag = nil;
@@ -291,6 +298,17 @@ CQGuiNightTouch {
 				before: map.matrixCopy);
 			^this
 		};
+		// The weather is consulted BEFORE the water it stands on, exactly as a
+		// seed is (§4.5's most-specific-mark-first rule). It used to be the
+		// other way round only because the marks hung in a row far from the pad;
+		// §9 scattered them onto the pool's own shores, inside the catch band,
+		// so the order has to say which one the hand means — and a mark is a
+		// mark, while the water around it is ground.
+		mark = CQNightGeometry.weatherHit(almanac, point);
+		if(mark.notNil and: { button == 0 }) {
+			if(mark == \breed) { ^map.armBreed };
+			^this.beginWeatherHold(mark)
+		};
 		if(CQNightGeometry.compassHit(almanac, point)) {
 			if(map.breedArmed) { map.disarmBreed };   // a stray pad press disarms
 			if(#[0, 1].includes(button).not) { ^this };
@@ -299,11 +317,6 @@ CQGuiNightTouch {
 			compassDrag = (mode: if(button == 1) { \elastic } { \blend },
 				start: point, travel: 0, before: map.matrixCopy);
 			^this
-		};
-		mark = CQNightGeometry.weatherHit(almanac, point);
-		if(mark.notNil and: { button == 0 }) {
-			if(mark == \breed) { ^map.armBreed };
-			^this.beginWeatherHold(mark)
 		};
 		// the rest of the corner is open water: harvest, solo and hover behave
 		// exactly as on any other night paper

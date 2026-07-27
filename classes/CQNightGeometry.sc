@@ -205,64 +205,200 @@ CQNightGeometry {
 	// night's only control that could not be used without reading text. Presets
 	// live in the Inspector, one toolbar click away in either view.
 
-	// Ø 52 (grown from 44 at the user's second review: the corner carried it
-	// easily once the constellation left, and the phase reads better big)
+	// Ø 64 since §9 (the moon rose into the birds' altitude band, and a body
+	// that reads as a moon at a glance has to carry a phase the eye can judge)
 	*moonRadius { |scale = 1| ^CQNightMeasures.moonRadius * scale }
 
-	*almanac { |width, scale = 1, freeFrom = 0|
-		var pad2 = CQNightMeasures.padExtent * scale;
-		var left = freeFrom + (CQNightMeasures.almanacInset * scale);
-		var axis = width - (CQNightMeasures.moonAxis * scale);
+	// the pool's shore: a seeded, wobbled closed blob — the castle blob's
+	// cousin (§16.3's organism language), never a circle and never a widget.
+	// The wobble deliberately carries the lowest stretch past the waterline;
+	// the layer clips it there, which is what reads as water continuing under
+	// the frame, exactly as the roots already do.
+	*poolShore { |center, rx, ry|
+		^this.prSeeded(3311, {
+			var count = CQNightMeasures.poolAnchors;
+			this.smoothClosedSegments(count.collect { |i|
+				var angle = (i / count * 2pi) + 0.10.rand2;
+				var jitter = 1 + CQNightMeasures.poolWobble.rand2;
+				Point(center.x + (cos(angle) * rx * jitter),
+					center.y + (sin(angle) * ry * jitter))
+			})
+		})
+	}
+
+	*prBoundsOf { |points, pad = 0|
+		var xs = points.collect { |p| p.x }, ys = points.collect { |p| p.y };
+		^Rect(xs.minItem - pad, ys.minItem - pad,
+			xs.maxItem - xs.minItem + (2 * pad),
+			ys.maxItem - ys.minItem + (2 * pad))
+	}
+
+	*almanac { |width, height, scale = 1|
 		var moonR = this.moonRadius(scale);
-		var moon = Point(axis, (CQNightMeasures.moonTop * scale) + moonR);
-		var box = Rect(left, 0, width - left,
-			moon.y + moonR + max(CQNightMeasures.moonBoxSlack * scale,
-				CQNightMeasures.moonHalo + 4));
-		var pad = Rect(axis - (pad2 * 0.5),
-			box.bottom + (CQNightMeasures.padGap * scale), pad2, pad2);
-		var inset = CQNightMeasures.stampInset * scale;
-		var weatherY = pad.bottom + (CQNightMeasures.weatherGap * scale);
-		^(box: box, moon: moon, moonR: moonR,
-			compass: pad,
-			// corner seeds in pad order TL TR BL BR — the same order
-			// CQCompass.bilinear speaks, so no view ever re-maps them
-			stamps: [
-				Point(pad.left + inset, pad.top + inset),
-				Point(pad.right - inset, pad.top + inset),
-				Point(pad.left + inset, pad.bottom - inset),
-				Point(pad.right - inset, pad.bottom - inset)
-			],
-			// the weather row under the field: rain (grow), the graft (breed),
-			// the sun (wither) — §7.2's own words, "the rain and the drought"
-			weather: (
-				grow: Point(pad.left + (pad.width * 0.22), weatherY),
-				breed: Point(pad.center.x, weatherY),
-				wither: Point(pad.left + (pad.width * 0.78), weatherY)
-			),
-			// the compass layer's own opaque box: pad, stamp halos and the
-			// weather row whole, so no mark can clip against its layer edge
-			compassBox: Rect(pad.left - CQNightMeasures.compassBoxPad,
-				pad.top - CQNightMeasures.compassBoxPad,
-				pad.width + (2 * CQNightMeasures.compassBoxPad),
-				weatherY + CQNightMeasures.compassBoxFoot - pad.top
-					+ CQNightMeasures.compassBoxPad))
+		var halo = moonR + CQNightMeasures.moonHalo;
+		var mark = CQNightMeasures.markHitReach;
+		// the moon in the open sky at the birds' own altitude, between castle
+		// 1's box and bird B's name — the thing the birds fly under (§9)
+		var moon = Point(width * CQNightMeasures.moonFraction,
+			CQNightMeasures.birdAltitude * scale);
+		// ...with the rain and the sun beside it, because they act on the whole
+		// bay exactly as the moon's sowing does. The sky is the weather's place.
+		var skyMarks = ();
+		// ...and the pool in the water at the bottom of the bay, tangent to the
+		// waterline the roots already run past. An ellipse: the pocket the bay
+		// leaves free is wider than it is tall, and a disc would waste it.
+		var rx = CQNightMeasures.poolRx * scale;
+		var ry = CQNightMeasures.poolRy * scale;
+		var pool = Point(width * CQNightMeasures.poolFraction, height - ry);
+		var shore = this.poolShore(pool, rx, ry);
+		var inset = 1 - (CQNightMeasures.stampInset * scale / min(rx, ry));
+		var weather = (), extents, box;
+		// corner seeds in bilinear order TL TR BL BR — the same order
+		// CQCompass.bilinear speaks, so no view ever re-maps them — seated on
+		// the shore at the four diagonal winds, which is where the ellipse→
+		// square mapping puts the tide's own corners
+		var stamps = [225, 315, 135, 45].collect { |degrees|
+			var angle = degrees.degrad;
+			Point(pool.x + (cos(angle) * rx * inset),
+				pool.y + (sin(angle) * ry * inset))
+		};
+		CQNightMeasures.skyWeatherPlaces.do { |place|
+			skyMarks[place[0]] = moon
+				+ Point(place[1] * scale, place[2] * scale)
+		};
+		box = this.prBoundsOf([moon + Point(halo, halo), moon - Point(halo, halo)]
+			++ skyMarks.values.collect { |p| p + Point(mark, mark) }
+			++ skyMarks.values.collect { |p| p - Point(mark, mark) },
+			CQNightMeasures.moonBoxSlack);
+		CQNightMeasures.poolWeatherPlaces.do { |place|
+			var angle = place[1].degrad, factor = place[2];
+			weather[place[0]] = Point(pool.x + (cos(angle) * rx * factor),
+				pool.y + (sin(angle) * ry * factor))
+		};
+		skyMarks.keysValuesDo { |name, point| weather[name] = point };
+		// the layer holds the drawn shore, the seeds with their breed rings and
+		// every weather mark's own touch box — read off the bodies themselves,
+		// so moving one can never leave it clipping against the layer's edge.
+		// It is then clipped to the stage: the shore's lowest stretch runs past
+		// the waterline on purpose, and Qt cutting it there IS the drawing.
+		extents = this.sampleSegments(shore, 8)
+			++ stamps.collect { |p| p + Point(9, 9) }
+			++ stamps.collect { |p| p - Point(9, 9) }
+			++ CQNightMeasures.poolWeatherPlaces.collect { |place|
+				weather[place[0]] + Point(mark, mark) }
+			++ CQNightMeasures.poolWeatherPlaces.collect { |place|
+				weather[place[0]] - Point(mark, mark) };
+		^(box: box, moon: moon, moonR: moonR, skyMarks: skyMarks,
+			// the tide's own frame stays a square: the bilinear has four
+			// corners whatever body it is poured on (§7.1). Its half-sides are
+			// the pool's radii, so the square's corners are the ellipse's
+			// diagonals — see compassNorm.
+			compass: Rect.aboutPoint(pool, rx, ry),
+			pool: (center: pool, rx: rx, ry: ry, segments: shore),
+			stamps: stamps,
+			weather: weather,
+			compassBox: this.prBoundsOf(extents, CQNightMeasures.compassBoxPad)
+				.sect(Rect(0, 0, width, height)))
 	}
 
 	*moonHit { |almanac, point|
 		^this.distance(point, almanac[\moon]) <= almanac[\moonR]
 	}
 
-	// ---- §7.1 compass hit tests (pure) ----
+	// ---- §7.1 the pool's coordinate frame (pure) ----
+	// The tide's math is a bilinear square (four corners, §7.1) but the body it
+	// is poured on is a round pool (§9). The elliptical grid mapping carries one
+	// into the other, and it is chosen over the cheap radial squash for exactly
+	// one reason: **the rim at a diagonal maps to exactly a corner**. A stamped
+	// memory that cannot be reached bit-exact is a memory the pad has lost, so
+	// the fixed points are unit-tested before either direction touches a view.
+	//
+	// square -> disc:  u = x·sqrt(1 - y²/2),  v = y·sqrt(1 - x²/2)
+	// disc -> square:  the closed-form inverse below
+	// Both speak the centred frame [-1, 1]², not the 0..1 bilinear frame.
 
-	*compassHit { |almanac, point|
-		^almanac[\compass].containsPoint(point)
+	*squareToDisc { |point|
+		^Point(point.x * sqrt(max(0, 1 - (point.y.squared * 0.5))),
+			point.y * sqrt(max(0, 1 - (point.x.squared * 0.5))))
 	}
 
-	// a stage point as pad coordinates 0..1 (TL = origin, the bilinear's frame)
+	// On the rim the second root collapses to zero, so the inverse has a
+	// square-root singularity exactly at the boundary: an error of ε in the
+	// point becomes an error of ~2·sqrt(ε) in the square. Float dust of 1e-16
+	// therefore lands a corner at 1 − 2e-8 instead of 1, and a corner that is
+	// not exactly a corner is a stamp that comes back *nearly* — the tide would
+	// crossfade shared cells by a hair instead of returning them (§7.1's
+	// bit-exact recall, rake 13). The snap is tied to that square root: a
+	// deviation big enough to matter is ~2.4e-13 of the radius, so this can
+	// only ever catch the dust and never a hand.
+	*cornerSnap { ^1e-6 }
+
+	*prSnapEdge { |value|
+		if((value - 1).abs < this.cornerSnap) { ^1.0 };
+		if((value + 1).abs < this.cornerSnap) { ^-1.0 };
+		^value
+	}
+
+	*discToSquare { |point|
+		var u = point.x, v = point.y;
+		var uu = u.squared, vv = v.squared;
+		var root2 = 2.sqrt;
+		// the max(0, ...) guards are that same dust at the rim, not a clamp:
+		// the terms are non-negative for every point of the closed unit disc
+		var x = (sqrt(max(0, 2 + uu - vv + (2 * root2 * u)))
+			- sqrt(max(0, 2 + uu - vv - (2 * root2 * u)))) * 0.5;
+		var y = (sqrt(max(0, 2 - uu + vv + (2 * root2 * v)))
+			- sqrt(max(0, 2 - uu + vv - (2 * root2 * v)))) * 0.5;
+		^Point(this.prSnapEdge(x).clip(-1, 1), this.prSnapEdge(y).clip(-1, 1))
+	}
+
+	// ---- §7.1 compass hit tests (pure) ----
+
+	// The pool answers inside its drawn shore plus the catch band — the same
+	// idiom the castle blob's `bodyMargin` uses, and here it earns its keep
+	// twice: it answers the approaching hand, and it is what makes the tide's
+	// pure corners reachable at all (see compassNorm). The mean radius stands
+	// in for the wobbled shore exactly as the castle's ellipse stands in for
+	// its blob — a few px of hand-drawn irregularity is not a hit boundary.
+	*prPoolNorm { |almanac, point|
+		var pool = almanac[\pool];
+		^Point((point.x - pool[\center].x) / max(1, pool[\rx]),
+			(point.y - pool[\center].y) / max(1, pool[\ry]))
+	}
+
+	*compassHit { |almanac, point|
+		var pool = almanac[\pool];
+		// the catch band in the ellipse's own normalized frame, measured off
+		// the shorter radius so it is never thinner than `poolCatch` px
+		var band = 1 + (CQNightMeasures.poolCatch / max(1, min(pool[\rx], pool[\ry])));
+		var n = this.prPoolNorm(almanac, point);
+		^((n.x * n.x) + (n.y * n.y)) <= (band * band)
+	}
+
+	// A stage point as the tide's own 0..1 coordinates (TL = origin, the
+	// bilinear's frame). The body is round and the math is square, so the
+	// elliptical grid mapping carries one into the other; a press outside the
+	// shore holds at the nearest place ON it, which is why aiming past the
+	// shore at a seed's diagonal lands exactly on that corner (rake 13).
 	*compassNorm { |almanac, point|
-		var pad = almanac[\compass];
-		^Point(((point.x - pad.left) / max(1, pad.width)).clip(0, 1),
-			((point.y - pad.top) / max(1, pad.height)).clip(0, 1))
+		var n = this.prPoolNorm(almanac, point);
+		var u = n.x, v = n.y;
+		var length = sqrt((u * u) + (v * v)), square;
+		if(length > 1) { u = u / length; v = v / length };
+		square = this.discToSquare(Point(u, v));
+		^Point(((square.x + 1) * 0.5).clip(0, 1),
+			((square.y + 1) * 0.5).clip(0, 1))
+	}
+
+	// ...and back: where on the pool a given place in the tide lives. The cross
+	// a voyage draws rides this, and so does anything that has to point AT a
+	// corner rather than merely near it.
+	*compassPointAt { |almanac, norm|
+		var pool = almanac[\pool];
+		var disc = this.squareToDisc(Point((norm.x.clip(0, 1) * 2) - 1,
+			(norm.y.clip(0, 1) * 2) - 1));
+		^Point(pool[\center].x + (disc.x * pool[\rx]),
+			pool[\center].y + (disc.y * pool[\ry]))
 	}
 
 	// which corner seed the point lands on, or nil — consulted before the pad
@@ -605,9 +741,9 @@ CQNightGeometry {
 		endpoints[\deckA_rate] = birds[0][\rateSocket];
 		endpoints[\deckB_rate] = birds[1][\rateSocket];
 
-		// the almanac corner takes the water coco 2's own box leaves free, so
-		// the sky's only tools can never land on a body (§16.6)
-		almanac = this.almanac(width, scale, cocos[1][\shellBox].right);
+		// the moon in the sky, the tide pool in the water — two features of the
+		// landscape rather than one corner of tools (§9, decided 2026-07-26)
+		almanac = this.almanac(width, height, scale);
 
 		^(scale: scale, width: width, height: height,
 			ringCenter: ringCenter, ringR: ringR,

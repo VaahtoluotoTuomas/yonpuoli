@@ -48,8 +48,16 @@ compassChecks = { |map|
 	var almanac = map.geometry[\almanac];
 	var cView = map.compassView;
 	var boxOrigin = almanac[\compassBox].leftTop;
-	var pad = almanac[\compass];
+	var aView = map.almanacView;
+	var skyOrigin = almanac[\box].leftTop;
+	var pool = almanac[\pool];
 	var at = { |stagePoint| stagePoint - boxOrigin };
+	// the pool is addressed through the tide's own frame (§9): a norm goes in,
+	// the place on the water comes out. Rect arithmetic would be a second,
+	// silently drifting model of the same geography.
+	var atNorm = { |nx, ny|
+		CQNightGeometry.compassPointAt(almanac, Point(nx, ny))
+	};
 	var press = { |stagePoint, button = 0|
 		var p = at.value(stagePoint);
 		cView.mouseDownAction.value(cView, p.x, p.y, 0, button, 1);
@@ -83,7 +91,8 @@ compassChecks = { |map|
 	// a tap on the pad is a jump: one committed step to that weather
 	matrix.clearPatch;
 	undoBefore = gui.bananaGrammar.undoCount;
-	press.value(pad.leftTop);
+	// the shore at the TL seed's own diagonal wind IS the tide's TL corner
+	press.value(atNorm.value(0, 0));
 	check.value(matrix.getPatch(\tri1, \coco1_spaf) == 0.55
 		and: { matrix.getPatch(\envB, \castle3_fm) == -0.45 }
 		and: { matrix.asArray.size == 2 },
@@ -101,8 +110,8 @@ compassChecks = { |map|
 	mark = CQCompass.tideMarks[di][si];
 	xEnd = (1 - mark) * 0.5;
 	undoBefore = gui.bananaGrammar.undoCount;
-	local = at.value(Point(pad.left + (xEnd * pad.width), pad.top + 30));
-	local2 = at.value(Point(pad.left + (xEnd * pad.width), pad.top + 2));
+	local = at.value(atNorm.value(xEnd, 0.32));
+	local2 = at.value(atNorm.value(xEnd, 0.02));
 	cView.mouseDownAction.value(cView, local.x, local.y, 0, 0, 1);
 	cView.mouseMoveAction.value(cView, local2.x, local2.y, 0);
 	check.value(map.overlay.stormMode,
@@ -117,24 +126,32 @@ compassChecks = { |map|
 		"a cable standing above its tide mark keeps its stamped weight");
 	check.value(gui.bananaGrammar.undoCount == (undoBefore + 1),
 		"the whole voyage is one undo op");
+	// The rain and the sun are sky weather since §9: they act on the live bay
+	// exactly as the moon's sowing does, so they keep the moon company and
+	// their presses arrive through the sky's own layer. Same hold, same 2.5 Hz,
+	// same one-undo-per-hold as when they hung under the pad.
+	check.value(almanac[\skyMarks][\grow].notNil
+		and: { almanac[\skyMarks][\wither].notNil }
+		and: { almanac[\skyMarks][\breed].isNil },
+		"rain and sun went to the sky; the graft stayed with its parents");
 	// grow: the first raindrop lands on the press itself
 	matrix.clearPatch;
 	undoBefore = gui.bananaGrammar.undoCount;
-	local = at.value(almanac[\weather][\grow]);
-	cView.mouseDownAction.value(cView, local.x, local.y, 0, 0, 1);
+	local = almanac[\weather][\grow] - skyOrigin;
+	aView.mouseDownAction.value(aView, local.x, local.y, 0, 0, 1);
 	check.value(matrix.asArray.size == 1,
 		"grow plants one banana on the press itself");
 	growWeight = matrix.asArray.first[2];
 	check.value(growWeight.abs >= 0.15 and: { growWeight.abs <= 0.4 },
 		"the raindrop weighs §7.2's ±U(0.15, 0.4)");
-	cView.mouseUpAction.value(cView, local.x, local.y, 0, 0);
+	aView.mouseUpAction.value(aView, local.x, local.y, 0, 0);
 	check.value(gui.bananaGrammar.undoCount == (undoBefore + 1),
 		"one rain hold is one undo op");
 	// wither thins what stands
 	undoBefore = gui.bananaGrammar.undoCount;
-	local = at.value(almanac[\weather][\wither]);
-	cView.mouseDownAction.value(cView, local.x, local.y, 0, 0, 1);
-	cView.mouseUpAction.value(cView, local.x, local.y, 0, 0);
+	local = almanac[\weather][\wither] - skyOrigin;
+	aView.mouseDownAction.value(aView, local.x, local.y, 0, 0, 1);
+	aView.mouseUpAction.value(aView, local.x, local.y, 0, 0);
 	check.value(matrix.asArray.size == 1
 		and: { (matrix.asArray.first[2].abs - (growWeight.abs * 0.7)).abs < 1e-9 },
 		"the sun decays its pick ×0.7");
@@ -164,7 +181,20 @@ compassChecks = { |map|
 	check.value(map.breedArmed, "the graft re-arms");
 	gui.window.view.keyDownAction.value(gui.window.view, 27.asAscii, 0);
 	check.value(map.breedArmed.not, "Esc forgets the armed graft");
-	// a right press on a seed clears that memory, and it stays cleared on disk
+	// a right press on a seed clears that memory, and it stays cleared on disk.
+	// NOTE (§9, open for review): the pool now sits in the bay's own water, so
+	// the offspring this breeding just planted lies ACROSS its seeds, and §4.5
+	// gives a cable under the pointer the press — a right press there rips the
+	// cable instead of clearing the memory. That is the grammar working, but it
+	// is a much heavier cost than the skip mark's: the four seeds are the pad's
+	// whole interface, and a patched bay shadows them most of the time. The
+	// clear is exercised on free water so this gate tests the act rather than
+	// the luck of a patch; the decision itself is the user's.
+	matrix.clearPatch;
+	map.overlay.invalidate;
+	check.value(CQNightGeometry.stampHit(almanac, almanac[\stamps][1]) == 1
+		and: { map.overlay.patchAt(almanac[\stamps][1]).isNil },
+		"precondition: seed 1 is free water before the clear");
 	press.value(almanac[\stamps][1], 1);
 	check.value(gui.compass.stampedMask == [true, false, false, false],
 		"a right press on a seed clears its memory");
@@ -173,8 +203,17 @@ compassChecks = { |map|
 		"stamps and clears survive on disk (versioned file)");
 	// the water around the marks acts on nothing
 	countBefore = matrix.asArray.size;
-	press.value(Point(pad.left + (pad.width * 0.05),
-		almanac[\compassBox].bottom - 2));
+	// the layer's own lower-left corner: well outside the shore's catch band
+	// and nowhere near a scattered mark, so it is ground like any other
+	press.value(almanac[\compassBox].leftTop
+		+ Point(3, almanac[\compassBox].height - 3));
+	check.value(CQNightGeometry.compassHit(almanac,
+		almanac[\compassBox].leftTop
+			+ Point(3, almanac[\compassBox].height - 3)).not
+		and: { CQNightGeometry.weatherHit(almanac,
+			almanac[\compassBox].leftTop
+				+ Point(3, almanac[\compassBox].height - 3)).isNil },
+		"precondition: the layer's corner is neither pool nor weather");
 	check.value(matrix.asArray.size == countBefore
 		and: { gui.bananaGrammar.isInHand.not },
 		"the open water around the marks acts on nothing");
@@ -185,8 +224,10 @@ compassChecks = { |map|
 weatherAsync = { |map, done|
 	var almanac = map.geometry[\almanac];
 	var cView = map.compassView;
-	var pad = almanac[\compass];
 	var boxOrigin = almanac[\compassBox].leftTop;
+	var atNorm = { |nx, ny|
+		CQNightGeometry.compassPointAt(almanac, Point(nx, ny))
+	};
 	var check = { |condition, message|
 		if(condition) { ("ok:   " ++ message).postln } {
 			ok = false;
@@ -197,8 +238,8 @@ weatherAsync = { |map, done|
 	matrix.load([[\tri1, \coco1_spaf, 0.55]]);
 	beforeString = matrix.fullMatrix.asCompileString;
 	undoBefore = gui.bananaGrammar.undoCount;
-	local = Point(pad.center.x, pad.top + 30) - boxOrigin;
-	local2 = Point(pad.center.x, pad.bottom - 10) - boxOrigin;
+	local = atNorm.value(0.5, 0.16) - boxOrigin;
+	local2 = atNorm.value(0.5, 0.9) - boxOrigin;
 	cView.mouseDownAction.value(cView, local.x, local.y, 0, 1, 1);
 	cView.mouseMoveAction.value(cView, local2.x, local2.y, 0);
 	check.value(map.overlay.stormMode, "the elastic pours in storm form too");

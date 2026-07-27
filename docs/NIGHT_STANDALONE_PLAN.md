@@ -344,7 +344,22 @@ hear the silence close), PLAN.
     corners *reachable* (rim at the diagonals maps to exactly (0,0)…(1,1)),
     or a stamped corner can never be recalled bit-exact and the smoke's
     corner-recall assert fails. Unit-test the mapping's fixed points before
-    wiring it to the view.
+    wiring it to the view. Built: the elliptical grid mapping, whose
+    **inverse has a square-root singularity at exactly those corners** — it
+    returned 1±2e-8, not 1. Fix it at the source with an edge snap
+    (`CQNightGeometry.cornerSnap`, 1e-6 ≈ 2.4e-13 of the radius), never by
+    loosening the assert: the assert was measuring the real thing.
+13b. **(pool)** **A Qt layer is a rectangle.** When judging how much room a
+    new body has, measure the largest free *rect*, not the largest free
+    disc — the disc overstates it, and an area claim made from one is
+    wrong. This is what made "the bottom water gives the pool ~1.8× the
+    area" false; the true figure was 0.95×.
+13c. **(pool)** Moving an interactive body out of reserved water and into the
+    bay puts it **under the cable field**, and §4.5 hands the cable the
+    press. Before proposing such a move, measure the shadowing over many
+    random bays at the real cable densities (see the N3 numbers) and put it
+    to the user as a trade — do not discover it after the build, and do not
+    invent a local priority exception to hide it.
 14. **(birds)** `Dialog.openPanel` is asynchronous and cannot run in a
     headless smoke. The tap handler must route through an injectable
     function (default = the real dialog) so the smoke can stub it and
@@ -384,10 +399,23 @@ two things:
    The moon, the compass and the weather row are each individually right,
    but together they sit in a right-edge column — moon over pad over row,
    all on one axis — and a column of aligned tools is a toolbar wearing a
-   costume, exactly the smell the sower constellation died of. The fix is
-   not to move them somewhere else (the sky is where an almanac lives, and
-   the bottom band has no room at the minimum stage); it is to break the
-   axis and let the sky compose them as bodies. §9 does that.
+   costume, exactly the smell the sower constellation died of. §9 fixes it.
+
+   **Corrected 2026-07-27 — this paragraph used to end "the fix is not to
+   move them somewhere else (the sky is where an almanac lives, and the
+   bottom band has no room at the minimum stage); it is to break the axis
+   and let the sky compose them as bodies."** That was written from the
+   wrong diagnosis and it cost a whole rejected build: an implementer who
+   follows it keeps all three parts in the same patch of right-hand sky and
+   only rearranges them, which was tried and does not work. The axis is a
+   symptom. **The fault is that the three parts are a cluster of unlike
+   things grouped by function** — a shake control, a matrix blend, three
+   matrix ops — sitting in reserved water and touching no body around them.
+   That is the definition of a toolbar, and re-composing a toolbar leaves a
+   toolbar. Everything else at night is grouped by **body**: this castle's
+   controls are on this castle. So the fix is to break the cluster and send
+   each part where it *acts*, into the landscape, and to accept that the
+   parts then live far apart. §9 (rewritten) does that.
 
 Everything the reviews already fought for is **invariant** under this plan:
 the touch grammar's semantics and thresholds, the cable grammar, the
@@ -464,43 +492,94 @@ surface at the review, not something the implementer decides.
 
 ---
 
-## 9. The almanac becomes landscape — the moon and its reflection
+## 9. The almanac becomes landscape — the cluster is broken
 
-The right-sky column becomes a composition. Same region, same functions,
-same math — different body language.
+**Rewritten 2026-07-27, after the first build of this section was rejected.**
+The version below the line is the history; read it, because the way it was
+wrong is the useful part.
 
-- **The moon rises.** Ø 52 → ~64, placed higher and slightly inboard, in
-  the same altitude band as the birds, so the sky reads as one field:
-  bird — bird — moon. It stops being the top item of a sidebar and becomes
-  the thing the birds fly under. All its behavior (phase = density, tap =
-  throw, horizontal pour, flash from every layer) is untouched.
-- **The pad becomes the tide pool — the moon's reflection.** The §16.6
-  round-cornered square (the app's one widget-shaped body at night) is
-  superseded by a **pool**: a seeded, wobbled closed blob (§16.3's own
-  organism language, the castle blob's cousin) of Ø ≈ 156, hanging below
-  and inboard of the moon like its widening reflection on the water. The
-  four **corner seeds sit on the pool's shore at the diagonal winds**
-  (NE/NW/SE/SW). The tide's math is untouched: `compassNorm` gains a
-  disc→square mapping (elliptical mapping; rim at a diagonal = exactly a
-  bilinear corner — rake 13), and stamp/tap/voyage/elastic/undo semantics,
-  the cross, the ≤ 8 % pull gradients (now radiating from the shores) all
-  carry over. A pool is what the eye already believes about this landscape;
-  a rounded rectangle never was.
-- **The weather leaves the row.** The three marks scatter to the pool's
-  shore, hand-placed with seeded jitter, each where its meaning stands:
-  the **rain** over the upper-left shore (rain falls into the pool), the
-  **sun** over the upper-right (sun over water — the drought), the
-  **graft** at the lower shore between the planting seeds. No two marks on
-  a shared axis with anything. Same taps, same holds, same 2.5 Hz, same
-  120 ms landing flashes, same one-undo-per-hold.
-- Clearance: the whole constellation (moon + pool + marks) keeps the
-  existing laws — right of coco 2's box, clear of bird B's dropRect, on
-  the stage at every size — with the asserts rewritten for the new forms
-  (the pool asserts on its bounding box). The moon and the pool keep
-  separate opaque layers (a flash never re-inks the field).
+The three parts are not one thing, so they do not go in one place. Each goes
+where it **acts**, into the landscape, and they end up far apart. Same
+functions, same math, same gestures — new homes and new bodies.
 
-This section supersedes GUI_SPEC §16.6's pad recipe and amends §7.1's
-"140 px round-cornered square" line; those edits ride the increment.
+- **The moon rises into the sky**, Ø 52 → ~64, up to the birds' own
+  altitude between castle 1's box and bird B's name: the thing the birds fly
+  under. Behavior (phase = density, tap = throw, horizontal pour, flash from
+  every layer) is untouched.
+- **The rain and the sun follow it there.** This is the part the first build
+  got wrong by leaving them beside the pad. They grow and wither the **live
+  bay**, not the pool's stamped memories — they are whole-bay weather in
+  exactly the way the moon's sowing is, and an almanac's sky is where weather
+  belongs. Sky-side placement also costs nothing: measured, the sky is never
+  under a cable.
+- **The pad becomes the tide pool, and goes to the water** — the bay's own
+  bottom pocket, **tangent to the stage's lower edge**, not a reflection
+  hanging under the moon. The roots already run past that edge, so it reads
+  as the waterline and nothing has to be drawn to say the plants and the pool
+  share one water. Body: a seeded, wobbled closed shore (§16.3's organism
+  language, the castle blob's cousin) whose wobble kisses and crosses the
+  waterline. **It is an ellipse, ≈ 200 × 118**, because a Qt layer is a
+  rectangle and the pocket is bounded by coco 1's crescents, the river's
+  layer, envA's jack and the edge; an ellipse uses that pocket, a disc wastes
+  half of it. The four **corner seeds sit on the shore at the diagonal
+  winds** (NW NE SW SE = bilinear TL TR BL BR). Tide math is untouched:
+  `compassNorm` gains an elliptical grid mapping between disc and square
+  (shore at a diagonal = exactly a bilinear corner — rake 13; its inverse
+  needs a corner snap), and stamp/tap/voyage/elastic/undo, the cross and the
+  ≤ 8 % pull gradients (now radiating from the shores) carry over.
+- **The graft stays on the pool**, off its lower-right shore. It takes its
+  two parents as **seed taps**, so a mark whose gesture ends on the seeds may
+  not live a bay away from them.
+- On the water a mark is consulted **before** the water it stands on — §4.5's
+  most-specific-first order, which the row never needed and a shore does.
+- Clearance: the moon keeps its own opaque layer and the pool keeps its own
+  (a flash never re-inks the other), and the asserts are rewritten for the new
+  forms and the two new neighbourhoods — sky: castle 1's box, bird B's label
+  and dropRect, the stage top; water: envA's jack, the river's layer, coco 1's
+  crescents, the waterline.
+
+**Two honest costs, both measured, neither hidden:**
+
+1. **The move buys belonging, not size.** An early estimate of ~1.8× the pad's
+   area was wrong: it compared free *discs* when a Qt layer is a *rect*. The
+   pool ends at 18 535 px² against the G3 pad's 19 600. Size has one real
+   lever left and it is the minimum window (§15).
+2. **The pool is in the bay, so cables cross it**, and §4.5 gives the cable
+   under the pointer the press. Over 60 random bays at the half moon's 35
+   cables the two bay-facing seeds are shadowed **17 % and 35 %** of the time
+   and the graft 17 %; at 70 cables 32 % / 48 % / 25 %; the two landward seeds
+   and the entire sky are **0 %** at every density. This is a heavier trade
+   than the skip mark's, because the seeds are the pad's whole interface. It
+   is an open user decision, recorded in checklist N3: (a) accept, (b) a local
+   §4.5 exception "inside the pool's shore the pool wins" (cost: a cable lying
+   across the pool cannot be ripped at that spot), or (c) move the pool back
+   to water no cable crosses. Do not decide it in code.
+
+This section supersedes GUI_SPEC §16.6's almanac-corner and pad recipes and
+§7.1's "140 px round-cornered square" line; those edits ride the increment.
+
+---
+
+<details>
+<summary><b>Superseded 2026-07-22 version — "the right-sky column becomes a
+composition"</b> (kept because the failure is instructive)</summary>
+
+> The right-sky column becomes a composition. Same region, same functions,
+> same math — different body language: the moon rises to the birds' band, the
+> pad becomes a Ø 156 pool hanging below it "like its widening reflection",
+> and the three weather marks scatter onto that pool's shore with seeded
+> jitter so no two marks share an axis.
+>
+> **Why it failed.** It was built as written and rejected on sight. Breaking
+> the *axis* while keeping the *region* leaves the three parts exactly as
+> related as they were — a reserved patch of right-hand sky, touching no body,
+> read by the user as "valikkomainen alue sivussa". Two further lessons came
+> out of the wreck: the reflection metaphor forced the pool into the same
+> corner it needed to leave, and scattering all three weather marks onto the
+> pool quietly claimed that rain, sun and graft act on the same thing, which
+> is false — only the graft touches the memories.
+
+</details>
 
 ---
 
@@ -576,9 +655,13 @@ its own visual/listening review stop, its own commit.
    everything below.
 2. **The spring flood** (§8) — sizes only, no new forms; collision matrix
    first, one composition review at two window sizes.
-3. **The almanac becomes landscape** (§9) — moon rises, pool replaces pad,
-   weather scatters; one review. (Kept separate from the flood so a
-   disagreement about the pool's form cannot hold the size pass hostage.)
+3. **The almanac becomes landscape** (§9) — the cluster breaks: moon + rain
+   + sun rise into the sky, the pool goes to the bay's bottom water with the
+   graft, the corner empties. (Kept separate from the flood so a disagreement
+   about the pool's form cannot hold the size pass hostage — which is exactly
+   what happened: the first build of this step was rejected and rebuilt, and
+   §8 was already safe on `main`'s line.) The **size re-check of the whole bay
+   rides this step's review**, because sizes are relational (§8).
 4. **Range ripples** (§3) and 5. **dolby oysters** (§4) — into the grown
    landscape, so their clearances are done once.
 6. **The birds fetch** (§11).

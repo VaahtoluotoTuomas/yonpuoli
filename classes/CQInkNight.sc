@@ -396,32 +396,39 @@ CQInkNight {
 		Pen.stroke;
 	}
 
-	// ---- the compass water (§7.1, drawn since G3) ----
-	// The §16.6 recipe made law: a round-cornered hairline square on the water
-	// under the sowing moon, corner seeds for the four matrix memories, a small
-	// cross while a voyage is being poured, and four faint corner pulls
-	// (≤ 8 % alpha) that exist only under the hand. No numbers, no labels: a
-	// stamped corner is a seated seed, empty water is a hollow ring, and the
-	// weather row beneath speaks §16.5's glyph language. At rest this layer
-	// asks for no repaints at all — nothing on it moves without the hand.
+	// ---- the tide pool (§7.1, §9) ----
+	// G3 drew this as a round-cornered hairline square — the app's one
+	// widget-shaped body at night, and it always looked like one. §9 made it a
+	// **pool**: a seeded, wobbled closed shore (the castle blob's cousin,
+	// §16.3's own organism language) hanging below the sowing moon like its
+	// widening reflection on the water. Nothing about the tide changed: the
+	// same four memories, the same corner seeds — now seated on the shore at
+	// the four diagonal winds, where the disc→square mapping puts the
+	// bilinear's corners — the same cross while a voyage is poured, the same
+	// four faint pulls (≤ 8 % alpha) that exist only under the hand, and the
+	// same weather glyphs, scattered onto the shores instead of lined up in a
+	// row. No numbers, no labels: a stamped memory is a seated seed and empty
+	// water is a hollow ring. At rest this layer asks for no repaints at all —
+	// nothing on it moves without the hand.
 	//
 	// drag = nil, or (pos: Point(0..1), pull: [4 bilinear weights])
 	// hover = nil | \pad | [\stamp, i] | \grow | \breed | \wither
 	// held  = nil | \grow | \wither      flash = the same, for 120 ms
 	*drawCompass { |almanac, stamped, drag, breedArmed = false, breedFirst,
 		hover, held, flash, skin = \night|
-		var palette = CQInk.palette(skin), pad = almanac[\compass];
+		var palette = CQInk.palette(skin), pool = almanac[\pool];
 		var stampHover = hover.isKindOf(SequenceableCollection);
+		var reach = max(pool[\rx], pool[\ry]) * 0.9;
 		var cross;
-		// the four pulls, only while the hand is pouring (§16.6: if a gradient
-		// is visible as a gradient, it is too strong)
+		// the four pulls, only while the hand is pouring, radiating from the
+		// shores the memories sit on (§16.6: if a gradient is visible as a
+		// gradient, it is too strong)
 		drag !? {
 			almanac[\stamps].do { |corner, c|
 				var strength = (drag[\pull][c] ? 0).clip(0, 1);
 				if(strength > 0.02) {
-					Pen.addOval(Rect.aboutPoint(corner,
-						pad.width * 0.55, pad.width * 0.55));
-					Pen.fillRadialGradient(corner, corner, 0, pad.width * 0.55,
+					Pen.addOval(Rect.aboutPoint(corner, reach, reach));
+					Pen.fillRadialGradient(corner, corner, 0, reach,
 						palette[\spark].copy.alpha_(strength * 0.08),
 						palette[\spark].copy.alpha_(0));
 				};
@@ -430,8 +437,7 @@ CQInkNight {
 		Pen.strokeColor = palette[\whisper].copy
 			.alpha_(if(hover == \pad or: { drag.notNil }) { 0.9 } { 0.55 });
 		Pen.width = CQInk.strokes[\hairline];
-		Pen.addRoundedRect(pad, 6, 6);
-		Pen.stroke;
+		this.strokeSegments(pool[\segments]);
 		// corner seeds: a stamped memory is a seated seed in line ink, empty
 		// water a hollow whisper ring — settings, so never spark ink (§16.6)
 		almanac[\stamps].do { |corner, c|
@@ -458,22 +464,21 @@ CQInkNight {
 				Pen.stroke;
 			};
 		};
-		// the voyage's own cross, at the position being poured
+		// the voyage's own cross, at the place on the pool being poured — read
+		// through the same mapping the pour itself speaks, never re-derived
 		drag !? {
-			cross = Point(pad.left + (drag[\pos].x * pad.width),
-				pad.top + (drag[\pos].y * pad.height));
+			cross = CQNightGeometry.compassPointAt(almanac, drag[\pos]);
 			Pen.strokeColor = palette[\line];
 			Pen.width = CQInk.strokes[\hairline];
 			Pen.line(cross + Point(-4, 0), cross + Point(4, 0));
 			Pen.line(cross + Point(0, -4), cross + Point(0, 4));
 			Pen.stroke;
 		};
-		this.drawWeatherMark(\grow, almanac[\weather][\grow],
-			hover == \grow, held == \grow, flash == \grow, false, skin);
+		// only the graft lives on the water: it takes its two parents as seed
+		// taps, so it may not stand a bay away from them. The rain and the sun
+		// went to the sky with the moon, where whole-bay weather belongs (§9).
 		this.drawWeatherMark(\breed, almanac[\weather][\breed],
 			hover == \breed, breedArmed, flash == \breed, breedArmed, skin);
-		this.drawWeatherMark(\wither, almanac[\weather][\wither],
-			hover == \wither, held == \wither, flash == \wither, false, skin);
 	}
 
 	// §7.2/§7.3 in the almanac's own pictures: the rain (grow), the graft

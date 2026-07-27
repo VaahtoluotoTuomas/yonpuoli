@@ -103,8 +103,7 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   momentarily inverts `cocoNHold`, restored on release and on every exit path
   through one choke point (`CQGuiNightMap.cancelGestures`; mouse-up via
   `CQGuiNightTouch.shellUp`), captured-and-restored so a stuck punch can never
-  leave a loop recording; the night smoke asserts each exit path. **Next step:
-  build-order step 3, the almanac becomes landscape (§9).** Step 2, the spring
+  leave a loop recording; the night smoke asserts each exit path. Step 2, the spring
   flood (§8), **is done and accepted (2026-07-26, checklist N2)**: the night's
   measures now live in one table, `CQNightMeasures`, and `CQNightGeometry` is
   the math that composes them, holding no size literal. The collision matrix was
@@ -125,6 +124,47 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   "improve" accepted G1/G2/G3 surface on your own initiative.** The bullets
   below record what that accepted surface is and the laws it taught — historical
   reference, not a to-do list.
+- **Build-order step 3, the almanac becomes landscape (§9), is built and green
+  but NOT accepted (2026-07-27). It is not on `nocturne`.** `nocturne` stands at
+  `a5e4b17` (the flood) and the §9 work lives on branch `nocturne-nightscape`;
+  the user is thinking it over and said so plainly ("en ole ihan varma tästä,
+  tämä ei oikein toimi"). Review = checklist **N3**. Do not merge it, do not
+  build step 4 on top of it, and do not treat its `GUI_SPEC.md` block as
+  accepted surface — that block carries its own provisional status note, and if
+  N3 is rejected the block is deleted rather than amended. If work continues
+  while the user thinks, prefer §13's ear pass, which touches none of this.
+  What the two attempts taught, all of it now in the plan:
+  1. **Version 1 was built exactly as `NIGHT_STANDALONE_PLAN.md` said and was
+     rejected on sight.** The plan text was wrong, not the implementation: §7.2
+     said "the fix is not to move them somewhere else … break the axis", which
+     keeps all three parts in one reserved patch of right-hand sky. **A plan
+     paragraph can be the defect.** §7.2 and §9 are now corrected in place with
+     the old text kept as a warning; read the corrected §9 before touching this.
+  2. The real fault was **grouping by function instead of by body** — a shake
+     control, a matrix blend and three matrix ops sitting together touch no body
+     around them, which is what a toolbar is, and re-composing a toolbar leaves
+     a toolbar. Version 2 breaks the cluster: moon + rain + sun to the sky at
+     the birds' altitude (they act on the *live bay*), pool + graft to the bay's
+     bottom water tangent to the lower edge (the graft takes its parents as seed
+     taps, so it may not live a bay away from them), right corner left as empty
+     water. The tide's math survives via an elliptical disc↔square mapping whose
+     inverse singularity is snapped at the source (`cornerSnap`), so a stamped
+     corner still recalls bit-exact.
+  3. Two costs, both measured, neither hidden — and the first was **my wrong
+     claim, corrected**: the move buys *belonging, not size* (18 535 px² vs the
+     G3 pad's 19 600 — a Qt layer is a **rectangle**, so free-*disc* comparisons
+     overstate room), and the pool now lies under the cable field, so §4.5 gives
+     cables the press on its bay-facing seeds (17 % / 35 % of random 35-cable
+     bays, 0 % for the landward seeds and the whole sky). That last one is an
+     **open user decision** in N3 — accept, a local "inside the shore the pool
+     wins" exception, or move the pool back to free water. **Do not settle it in
+     code.**
+- `tests/run_all.scd` gained a `completed`/`aborted` guard (on the same branch,
+  its own commit, cherry-pickable): an uncaught error inside a test class used
+  to print `CQ_TESTS_FAILED` and then let the run reach `CQ_TESTS_PASSED`,
+  because sclang's `try` does not survive the routine's `0.1.wait` yield. The
+  summary now reports completed/total classes and the pass marker requires all
+  of them. **The marker is the gate — treat a gate that can lie as a defect.**
 - G3's built surface (accepted 2026-07-22): the §7.1
   compass in the almanac's water (corner seeds stamp/clear, tap = jump,
   left-drag = voyage, right-drag = elastic), the weather row beneath it

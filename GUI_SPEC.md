@@ -362,13 +362,22 @@ CQSpec parameter is ever touched by compass, grow, wither, breed or shake
 `docs/history/PLAN_v1.0.md` (KUUNTELU 4): a landscape can be *deaf* if its depth-knobs are down —
 aura and charge lamps make that visible instead of mysterious.
 
-### 7.1 Compass — the 2D patch-blend pad (~140 px, the almanac corner's water, §16.6)
+### 7.1 Compass — the 2D patch-blend pad (the tide pool in the bay's water, §16.6)
 
 - Four corners = four **matrix memories** (weights only; never params, never
   spesal). The night has no buttons, so each corner is a **seed** (§16.6): a
   tap on a seed stamps the current matrix into it, a right press clears it.
   An empty corner = the zero matrix (all unpatched) — traveling toward it is
-  a wither-by-travel, documented behavior.
+  a wither-by-travel, documented behavior. Since §9 — **provisional, see the
+  status note in §16.6** — the pad is a **tide pool
+  in the bay's own bottom water**, so the corners live on its shore at the
+  four diagonal winds and a seed marks the direction of its own corner; the
+  water just past that seed's shore *is* the pure corner (§16.6's mapping
+  paragraph). Being in the bay rather than in reserved water has a cost that
+  is measured, not guessed: cables cross the pool, and §4.5 gives a cable
+  under the pointer the press, so a patched bay shadows the seeds on the
+  bay-facing side (17 % and 35 % of random 35-cable bays; 0 % for the two
+  landward seeds and for everything in the sky).
 - **The tide** (amended at G3, superseding the first bilinear-amplitude
   sketch — this is the blend law): a position on the pad pulls on the four
   corners bilinearly, but the pull decides **which cables stand, not how loud
@@ -1053,8 +1062,44 @@ almanac holds exactly what this corner holds: the weather, and the sowing
 calendar read from the moon. Nothing else — the recipes are not almanac
 material, and they left with the sower constellation below.
 
-**The sowing moon**: a bone-ink circle Ø ≈ 52 (44 in the first build; grown
-at the second review, where the corner turned out to carry it easily), its lit phase =
+> **Status — provisional, built but NOT accepted (2026-07-27).** Everything
+> from here to the end of the weather paragraph describes the §9 rebuild that
+> is on the `nocturne-nightscape` branch and awaiting the user's visual review
+> (checklist N3). It is written as spec text because that is the only honest
+> way to describe what the code does, but **the accepted night surface is
+> still the 2026-07-22 almanac corner above**, and that is what `nocturne`
+> carries. If N3 is rejected, this block is deleted rather than amended.
+> One decision inside it is explicitly open: the cable shadowing of the pool's
+> seeds (see the pool paragraph).
+
+**There is no almanac corner** (proposed 2026-07-27). Keeping the three parts
+together in one patch of right-hand sky was tried twice — first as a column,
+then re-composed to break the axis — and neither fixed what was wrong, because
+the fault was not the arrangement. They were a **cluster of unlike things**
+(a shake control, a matrix blend, three matrix ops) grouped by FUNCTION and
+touching no body around them, which is what a toolbar is. Everything else at
+night is grouped by body: this castle's controls are on this castle.
+
+So the parts were separated and each sent where it **acts**:
+
+- **The moon goes to the sky**, at the birds' own altitude, between castle 1's
+  box and bird B's name — the thing the birds fly under.
+- **The rain and the sun keep it company there.** They grow and wither the
+  *live bay*, not the pool's memories, so they are whole-bay weather exactly as
+  the moon's sowing is, and an almanac's sky is where weather belongs.
+- **The pool goes to the water** at the bottom of the bay (below), **tangent to
+  the stage's lower edge**. The roots already run past that edge, so it reads
+  as the waterline, and nothing has to be drawn to say the plants and the pool
+  share one water.
+- **The graft stays on the pool**, because it takes its two parents as seed
+  taps: a mark whose gesture ends on the seeds may not live a bay away from them.
+
+No mark may line up with another mark, with a corner seed or with the moon on
+either axis, and the clearance tests hold all of it at both reference stage
+sizes.
+
+**The sowing moon**: a bone-ink circle Ø ≈ 64 (44 in the first build, 52 at
+the second review, 64 when §9 raised it into the sky), its lit phase =
 `shakeAmount` — the terminator drawn as one arc, the lit fraction is the
 value, no number (the tide crescents' law in the sky).
 
@@ -1103,22 +1148,57 @@ a body; the night's grammar is bodies, bananas and weather, and the
 Inspector's menu is one toolbar click away from either view. Nothing about
 G3 depended on it: the compass stamps its corners from the live matrix.
 
-**The compass water** (drawn since G3, on its own opaque layer so a moon
-flash never re-inks the field and a voyage never re-inks the moon): the
-§7.1 pad as a 140 px round-cornered hairline square, its four **corner
-seeds** inset 13 px in bilinear order TL TR BL BR — a stamped memory is a
-seated line-ink seed, empty water a hollow whisper ring, and the drawn
-mark is the tap target (§4.5, cue and act one geometry). While a voyage is
-being poured, a small line-ink cross rides the position and four faint
-corner gradients ≤ 8 % alpha show the pull; at rest the water carries no
-moving ink at all, so the layer costs a still bay zero repaints. No
-numbers, no labels — the pad's geography is read by ear and by the bay.
+**The tide pool** (drawn since G3, on its own opaque layer so a moon flash
+never re-inks the water and a voyage never re-inks the moon). G3 drew the
+§7.1 pad as a 140 px round-cornered hairline square — the app's one
+widget-shaped body at night, and it always read as one. §9 made it a
+**pool**: a seeded, wobbled closed shore (the castle blob's cousin, §16.3's
+own organism language) lying in the bay's bottom water, **tangent to the
+waterline**, with its own wobble kissing and crossing that edge so the water
+reads as continuing under the frame. A tide pool is literally the memory of a
+tide, which is what this control is.
 
-**The weather row** hangs under the field, three §16.5-style drawn marks
-in the almanac's own pictures — §7.2's words made glyphs: the **rain**
-(three slanted strokes) is grow, the **sun** (disc and four rays — in a
-farmer's almanac the sun is the drought) is wither, and between them the
-**graft** (two overlapping rings — two parents sharing flesh) is breed.
+It is an **ellipse** (≈ 200 × 118 at the minimum stage), and that is not
+taste either. A Qt layer is a rectangle, so what the pool may occupy is the
+largest free *rect*, not the largest free disc, and the bottom pocket is
+bounded by coco 1's tide crescents above, the river's own layer to the right,
+envA's jack to the left and the waterline below. An ellipse uses that pocket;
+a disc would waste half of it. Measured honestly, the move to the water buys
+about the area the G3 pad already had: it buys **belonging, not size**. Size
+has one real lever left and it is the minimum window (§15).
+
+The four **corner seeds** sit *on the shore at the diagonal winds*
+(NW NE SW SE = bilinear TL TR BL BR) — a stamped memory is a seated line-ink
+seed, empty water a hollow whisper ring, and the drawn mark is the tap
+target (§4.5, cue and act one geometry). While a voyage is being poured, a
+small line-ink cross rides the position and four faint gradients ≤ 8 % alpha
+radiate from the shores to show the pull; at rest the water carries no
+moving ink at all, so the layer costs a still bay zero repaints. No numbers,
+no labels — the pool's geography is read by ear and by the bay.
+
+**The tide's frame stays square on a round body.** The blend has four
+corners whatever it is poured on (§7.1), so a stage point becomes a 0..1
+position through the **elliptical grid mapping** between the disc and the
+square. That mapping is chosen over a cheap radial squash for one reason
+that is normative, not aesthetic: **the shore at a diagonal maps to exactly
+a corner**, so a stamped memory can still be recalled bit-exact. Its inverse
+has a square-root singularity at those corners, so the implementation snaps
+edge values within 1e-6 — a deviation ~2.4e-13 of the radius, float dust and
+never a hand. The pool also answers a little past its drawn shore (the same
+idiom as a castle body's margin), and a press in that band holds at the
+nearest place *on* the shore: that is what makes the pure corners reachable
+by aiming past a seed rather than at a single pixel.
+
+**The weather left the row, and did not stay together.** Three §16.5-style
+drawn marks, each sent where it acts. The **rain** (three slanted strokes,
+grow) and the **sun** (disc and four rays — in a farmer's almanac the sun is
+the drought, wither) act on the live bay, so they are sky weather beside the
+moon. The **graft** (two overlapping rings — two parents sharing flesh,
+breed) acts on two stamped memories and takes its parents as seed taps, so it
+stands off the pool's lower-right shore, clear of the drawn line rather than
+on it. On the water a mark is consulted **before** the water it stands on
+(§4.5's most-specific-mark-first rule, the same order a corner seed already
+had) — which the row never needed and a shore does.
 Whisper at rest, line ink under the hand or while held. Grow and wither
 are hold-marks at §7.2's 2.5 Hz, and the mark flashes 120 ms bone on
 **each seed that actually lands** — §16.7's momentary law at the weather's
