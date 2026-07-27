@@ -1096,6 +1096,12 @@ press; its tap box and the crescent's original drag square are disjoint.
 `off / gate / duck` are readable as open / nearly shut / partner-pressed shut,
 and the duck arrival stroke enters from the other channel's direction. Spaf
 and deck crescents carry no oyster. Cable-first priority remains absolute.
+Because these crescents are native controls, the shared controller must publish
+the crossing cable's hover *after* the oyster/crescent cue yields; clearing both
+cues is forbidden. The same cable must then receive the press.
+The yellow org fruit jack keeps its opaque 30×30 owner, but that owner repaints
+the shell's exact curved spiral segment and radial stem beneath the jack. A
+generic vertical stub is not the same path and may not replace it.
 The spiral's stroke alpha breathes 0.55 → 1.0 with the coco's out level.
 
 **Roots (inputs).** Two branching wobbled polylines (3 segments) growing from

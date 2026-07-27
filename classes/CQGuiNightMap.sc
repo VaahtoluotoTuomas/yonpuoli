@@ -742,7 +742,12 @@ CQGuiNightMap {
 		touch = CQGuiNightTouch(this, state, overlay);
 		this.prBindTouch;
 		crescentControls = List.new;
-		crescentViews.values.do { |view| crescentControls.add((view: view)) };
+		// These are controls for gesture binding, but unlike Day knobs their
+		// own touch grammar is cable-first. Let the shared controller publish
+		// the cable hover after the crescent/oyster cue has yielded.
+		crescentViews.values.do { |view|
+			crescentControls.add((view: view, cableHover: true))
+		};
 		// The night bodies own their own first gesture pass (§6.1), so they
 		// register members only — no view for the controller to re-bind, or it
 		// would overwrite the touch handlers installed just above.
@@ -1435,7 +1440,13 @@ CQGuiNightMap {
 		switch(spec[\decoration],
 			\leaf, { CQInkNight.drawLeaf(anchor, \night) },
 			\crown, { CQInkNight.drawCrown(anchor, \night) },
-			\stem, { CQInkNight.drawStemStub(anchor, \night) },
+			\stem, {
+				geometry !? { |geo|
+					CQInkNight.drawOrganUnderlay(
+						geo[\cocos][if(name == \org1) { 0 } { 1 }],
+						anchor, \night)
+				}
+			},
 			\root, {
 				geometry !? { |geo|
 					CQInkNight.drawRootStub(anchor,

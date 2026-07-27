@@ -1089,15 +1089,21 @@ CQInkNight {
 		Pen.stroke;
 	}
 
-	// the org fruit's stem tip entering its view from the spiral side: from the
-	// box's own top edge down to the jack dot's rim, both read off the measures
-	*drawStemStub { |anchor, skin = \night|
+	// The org jack owns an opaque 30 px box over the shell. Repaint the exact
+	// spiral curve and its radial fruit stem inside that clipped view before
+	// the yellow jack is drawn; a generic vertical stub lies about both.
+	*drawOrganUnderlay { |coco, anchor, skin = \night|
 		var palette = CQInk.palette(skin);
-		var top = (CQNightMeasures.jackExtent * 0.5) - 1;
+		var delta = anchor - coco[\orgCenter];
+		var segments = coco[\segments].collect { |segment|
+			segment.collect { |point| point + delta }
+		};
+		Pen.strokeColor = palette[\line].copy.alpha_(0.8);
+		Pen.width = CQInk.strokes[\normal];
+		this.strokeSegments(segments);
 		Pen.strokeColor = palette[\organ].copy.alpha_(0.8);
 		Pen.width = CQInk.strokes[\hairline];
-		Pen.line(anchor + Point(0, top.neg),
-			anchor + Point(0, CQNightMeasures.jackDotRim.neg));
+		Pen.line(coco[\orgSpiralPoint] + delta, anchor);
 		Pen.stroke;
 	}
 }

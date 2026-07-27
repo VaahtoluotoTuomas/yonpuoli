@@ -26,11 +26,11 @@ public-vaihto ja oikeat kuva-/äänidemot ovat erillinen julkaisutoimi.
 **Seuraava askel konkreettisesti:** rakennusjärjestyksen (`NIGHT_STANDALONE_PLAN.md
 §12`) kohdat 1 **punch (§2)**, 2 **kevättulva (§8)** ja 3 **almanakka maisemaksi
 (§9)** ja 4 **range-väreet (§3)** ovat valmiit ja hyväksytyt (2026-07-23,
-2026-07-26 ja 2026-07-27). Kohdan 5 **Dolby-osterit (§4)** ensimmäinen ajettava
-versio on valmis `nocturne-dolby-oysters`-haaralla ja odottaa käyttäjän
-visuaalista/kuuntelupalautetta: kummankin Cocon in/fb-kanavan off/gate/duck-tila
-on sirpin alla omana tekstittömänä osterina ja napautus askeltaa CQSpec-järjestyksessä.
-Hyväksytty N4 elää `nocturne-range-ripples`-haaralla; `nocturne` seisoo vielä
+2026-07-26 ja 2026-07-27), samoin kohta 5 **Dolby-osterit (§4)** on valmis ja
+hyväksytty 2026-07-27. Seuraava inkrementti on kohta 6 **Linnut hakevat (§11)**:
+lintua napautetaan tiedostodialogiin, rullataan kansion seuraavaan/edelliseen
+tiedostoon ja pörhistetään satunnaiseen tiedostoon ilman nuoli- tai tekstinappeja.
+Hyväksytty N5 elää `nocturne-dolby-oysters`-haaralla; `nocturne` seisoo vielä
 commitissa `a5e4b17` (kevättulva), eikä haaroja sulauteta ilman erillistä
 pyyntöä. §13 korvapassi voi kulkea limittäin, mutta Norns-portti (§14) on vasta
 night-first-vaiheen jälkeen.
@@ -69,6 +69,13 @@ korvata teknisesti helpommalla ratkaisulla ilman käyttäjän päätöstä.
   aina checklist-rivin rasti käyttäjältä.
 - Lähdekoodi, testit ja dokumentit pidetään samassa commitissa silloin, kun ne
   yhdessä muodostavat yhden todennettavan käyttäytymismuutoksen.
+- Nocturnen nykyiset N3→N4→N5-haarat ovat **pinottu ketju**, eivät kolme
+  toisistaan riippumatonta toteutusta: `nocturne-nightscape` pohjautuu
+  `nocturne`en, `nocturne-range-ripples` sen päälle ja
+  `nocturne-dolby-oysters` edelleen N4:n päälle. Oma haara ei ole jokaisen
+  N-vaiheen itseisarvo; sitä käytetään nyt hyväksytyn checkpointin säilyttämiseen
+  samalla kun seuraava näkyvä inkrementti voidaan arvioida erikseen. Ketju
+  sulautetaan `nocturne`-integraatiohaaraan erillisellä pyynnöllä.
 
 ## Nocturne-vaiheen rakennusjärjestys
 
@@ -156,11 +163,16 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
   poistettiin käyttäjän päätöksellä; yhteinen köli erottaa väreen fm-kuun
   vapaasta aallosta, 3 px vektoriura erottaa sen takana kulkevasta joesta ja
   ankkuri seuraa linnan todellista alareunaa 13 px etäisyydellä.
-- [ ] **5. Dolby-osterit** (§4). **Ensimmäinen ajettava versio valmis
-  `nocturne-dolby-oysters`-haaralla 2026-07-27; odottaa N5-katselmointia.**
+- [x] **5. Dolby-osterit** (§4). **Valmis ja hyväksytty
+  `nocturne-dolby-oysters`-haaralla 2026-07-27 (checklist N5).**
   In/fb-kanavien dolby-kytkin on sirpin alla osterina, jonka asento on regime
   (off/gate/duck). Napautus askeltaa; osterin ja sirpin hit/hover ovat erilliset,
-  kaapeli voittaa molemmat ja enum-järjestys tulee CQSpecistä.
+  kaapeli voittaa molemmat ja enum-järjestys tulee CQSpecistä. Hyväksyntäkierros
+  löysi ja sulki kaksi kerrosvikaa: osterin väistäessä kaapelia yhteinen
+  controller nollasi myös kaapelin hoverin, ja org-outputin opaakki 30×30-laatikko
+  katkaisi kuoren spiraalin. Night-crescentit julkaisevat nyt risteävän kaapelin
+  hoverin, ja org-laatikko piirtää sisäänsä aidon kaartuvan spiraalisegmentin
+  sekä säteittäisen varren ennen keltaista jakkia.
 - [ ] **6. Linnut hakevat** (§11). Deckin lataus ja kansionavigointi ilman
   ainuttakaan nuolta: napautus = hakee (tiedostodialogi), rulla = seuraava/
   edellinen, pörhistys = satunnainen.
@@ -293,14 +305,18 @@ Kirjaimeton köli/aalto-perhe, 13 px todellisen kehonreunan hengitys ja joen
 ylityksen paikallinen vektoriura hyväksyttiin toimiviksi.
 `CQ_HOLD_OK` kantaa: DSP:hen ei koskettu.
 
-Haaran `nocturne-dolby-oysters` ensimmäinen portti 2026-07-27 (§4,
-**vihreä mutta ei hyväksytty; odottaa checklist N5:tä**): `CQ_COMPILE_OK`,
+Haaran `nocturne-dolby-oysters` hyväksytty portti 2026-07-27 (§4,
+**visuaalinen ja kuuntelukatselmus hyväksytty, checklist N5**): `CQ_COMPILE_OK`,
 **12 162 unit-passia / 0 failurea / 28/28 luokkaa**, `CQ_SAFETY_PASSED`,
 `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
 `CQ_GUI_DRAWER_REENTRY_PASSED` ja `CQ_GUI_NIGHT_PASSED`. Yösmoke askeltaa
 osterin koko off/gate/duck-kierroksen, varmistaa ettei osterista alkava veto
 liikuta VCA-sirppiä, ja istuttaa oikean kaapelin osterin yli todistaakseen
 cable-first-hoverin ja -painalluksen. `CQ_HOLD_OK` kantaa: DSP:hen ei koskettu.
+Hyväksynnässä havaittu päällekkäisen kaapelin tyhjä hover korjattiin: smoke
+varmistaa nyt myös, että osterin väistyessä `hoverCable` saa risteävän kaapelin.
+Samassa portissa org-jakin opaakin laatikon alle jäänyt playhead-spiraali
+palautettiin piirtämällä laatikkoon täsmälleen kuoren oma käyrä ja varsi.
 Ensimmäinen compile-ajo paljasti myös pysyvän dev-runner-aukon: luokkakirjaston
 parse-virheessä sclang ei suorita `compile_check.scd`:n `exit`iä vaan jää
 interaktiiviseksi. `tests/run_sclang_gate.ps1` antaa porteille nyt ulkoisen

@@ -602,9 +602,12 @@ CQ.clearPatch;
 naapurisirppien ja kuun osuma-alueiden pitää säilyä erillään, eikä partnerin
 saapumisviiva saa leikkautua oman 30 px leveän paperinsa reunaan.
 
-- [ ] N5 hyväksytty (pvm: ______ — off/gate/duck luettavuus, input/feedbackin
-      oikea ristikkäinen artikulaatio, VCA-vedon säilyminen, kaapeli-etusija,
-      molemmat ikkunakoot)
+- [x] N5 hyväksytty (pvm: 2026-07-27 — off/gate/duck luettavuus,
+      input/feedbackin oikea ristikkäinen artikulaatio ja VCA-vedon säilyminen
+      hyväksytty. Katselmuksessa löytynyt kaapeli×osteri-hoverin tyhjä tila
+      korjattiin niin, että kaapeli saa sekä hoverin että painalluksen; samalla
+      org-outputin opaakin laatikon katkaisema playhead-spiraali palautettiin
+      aidolla käyrä-underlaylla. Automaatio varmistaa overlap-prioriteetin.)
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>

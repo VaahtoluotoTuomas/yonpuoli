@@ -4,6 +4,7 @@
 
 CQGuiBananaController {
 	var grammar, endpoints, bodies, overlay, controls, controlViews;
+	var cableHoverControlViews;
 	var gestureCtl, matrixCtl;
 	// With one grammar feeding two stages (Day and Night), the hidden stage's
 	// per-gesture endpoint refreshes are pure language-to-Qt bridge waste: Qt
@@ -48,7 +49,14 @@ CQGuiBananaController {
 
 	prInit {
 		controlViews = IdentitySet.new;
-		controls.do { |control| controlViews.add(control.view) };
+		cableHoverControlViews = IdentitySet.new;
+		controls.do { |control|
+			controlViews.add(control.view);
+			if(control.respondsTo(\at)
+				and: { control[\cableHover] == true }) {
+				cableHoverControlViews.add(control.view)
+			};
+		};
 		this.prBindEndpoints;
 		this.prBindBodies;
 		gestureCtl = SimpleController(grammar);
@@ -141,7 +149,9 @@ CQGuiBananaController {
 	// behavior; otherwise a cable crossing a knob or label can never be focused.
 	prBindHoverView { |view|
 		var previousOver = view.mouseOverAction, previousEnter = view.mouseEnterAction;
-		if(controlViews.includes(view)) {
+		var controlWins = controlViews.includes(view)
+			and: { cableHoverControlViews.includes(view).not };
+		if(controlWins) {
 			view.mouseEnterAction = { |v|
 				previousEnter.value(v);
 				grammar.hoverCable = nil
@@ -149,7 +159,7 @@ CQGuiBananaController {
 		};
 		view.mouseOverAction = { |v, x, y|
 			previousOver.value(v, x, y);
-			if(controlViews.includes(v)) {
+			if(controlWins) {
 				grammar.hoverCable = nil
 			} {
 				this.prHover(v, x, y)

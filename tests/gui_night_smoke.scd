@@ -665,6 +665,8 @@ punchChecks = { |map|
 																check.value(map.dolbyHover
 																	.includes(\coco1In).not,
 																	"a cable suppresses the oyster hover cue");
+																check.value(gui.bananaGrammar.hoverCable.notNil,
+																	"the crossing cable receives the hover the oyster yielded");
 																dolbyView.mouseDownAction.value(dolbyView,
 																	local.x, local.y, 0, 0, 1);
 																check.value(state.get(\coco1DolbyIn)

@@ -34,6 +34,14 @@ tagged. Earlier tags describe internal development baselines.
 - Public-beta screenshots, short performance video, and audio examples.
 - Live stem verification on an interface with at least four outputs.
 
+### Fixed
+
+- Preserved cable hover and cable-first presses where a planted cable crosses
+  a Night Dolby oyster.
+- Repainted the real shell spiral and radial stem beneath each opaque yellow
+  organ-output view, removing the invisible rectangular break in the playhead
+  spiral.
+
 ## archipelago-1.0 — 2026-07-22
 
 - Completed and accepted the Archipelago G1–G3 GUI epic.
