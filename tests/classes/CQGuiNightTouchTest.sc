@@ -150,6 +150,19 @@ CQGuiNightTouchTest : UnitTest {
 			"focused right is the explicit elastic voyage");
 	}
 
+	test_enumCycleReadsCQSpecAndWraps {
+		this.assertEquals(CQGuiNightTouch.nextEnum(\c1Range, \infra), \balcium,
+			"the range ripple advances to CQSpec's next regime");
+		this.assertEquals(CQGuiNightTouch.nextEnum(\c1Range, \balcium), \audio,
+			"the middle regime advances to audio");
+		this.assertEquals(CQGuiNightTouch.nextEnum(\c1Range, \audio), \infra,
+			"the final regime wraps to CQSpec's first choice");
+		this.assertEquals(CQGuiNightTouch.nextEnum(\c1Range, \broken), \balcium,
+			"a malformed current value clamps to the spec default before stepping");
+		this.assert(CQGuiNightTouch.nextEnum(\qFreq, 4).isNil,
+			"a non-enum cannot be stepped");
+	}
+
 	test_sensitivities {
 		this.assert(
 			((4pi * CQGuiNightTouch.windSensitivity) - 1).abs < 1e-9,

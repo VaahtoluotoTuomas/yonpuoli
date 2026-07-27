@@ -14,11 +14,6 @@ CQNightGeometry {
 	// coco spiral turns (§16.6)
 	*turns { ^2.5 }
 
-	// range letters shown in whisper at the castle's 6 o'clock (§16.6)
-	*rangeLetter { |range|
-		^switch(range, \infra, { "i" }, \balcium, { "b" }, \audio, { "a" }, { "" })
-	}
-
 	// mic sprout (§16.6): display only, never a jack. \hidden when no mic is
 	// configured, \dormant while micGain sits at its safe 0, \live once audible.
 	*sproutState { |micConfigured = false, micGain = 0|
@@ -156,6 +151,17 @@ CQNightGeometry {
 	*markHit { |anchor, point|
 		var reach = CQNightMeasures.markHitReach;
 		^Rect.aboutPoint(anchor, reach, reach).containsPoint(point)
+	}
+
+	// The castle's 6-o'clock rate ripple: its fixed-pixel touch rectangle is
+	// also the hover cue's geometry. The drawn 14x8 mark fits wholly inside it.
+	*rangeBox { |castle|
+		^Rect.aboutPoint(castle[\rangeMark],
+			CQNightMeasures.rangeHitX, CQNightMeasures.rangeHitY)
+	}
+
+	*rangeHit { |castle, point|
+		^this.rangeBox(castle).containsPoint(point)
 	}
 
 	// the spesal dial annulus around a castle (a tap = one step)
@@ -476,16 +482,18 @@ CQNightGeometry {
 					Point(center.x + (cos(blobAngle) * bodyRx * jitter),
 						center.y + (sin(blobAngle) * bodyRy * jitter))
 				};
+				var blobBottom = blobAnchors.collect { |point| point.y }.maxItem;
 				// the spesal dial is the castle's inner clock: it lives inside
 				// the body, where the opaque endpoint views can never cover its
 				// hand — pinned by test_inkClearances, not by eye
 				var reach = (CQNightMeasures.castleBoxReach * scale)
 					+ CQNightMeasures.castleBoxSlack;
 				(center: center, bodyRx: bodyRx, bodyRy: bodyRy,
+					blobBottom: blobBottom,
 					blobSegments: this.smoothClosedSegments(blobAnchors),
 					dialR: CQNightMeasures.clockRadius * scale,
-					letterAnchor: Point(center.x,
-						center.y + (CQNightMeasures.rangeLetterDrop * scale)),
+					rangeMark: Point(center.x,
+						blobBottom + CQNightMeasures.rangeBodyGap),
 					box: Rect.aboutPoint(center, reach, reach))
 			}
 		});

@@ -127,9 +127,15 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 - **Build-order step 3, the almanac becomes landscape (§9), reached v3.2 on
   `nocturne-nightscape` and was accepted by the user on 2026-07-27 (checklist
   N3).** It is ready for an explicitly requested merge; do not merge branches
-  merely because the review is closed. Build-order step 4, the castle range
-  ripples (§3), is next. The accepted increment stops at tide+moon; the
-  functional root/preamp body remains its own later step.
+  merely because the review is closed. **Build-order step 4, the castle range
+  ripples (§3), was accepted on `nocturne-range-ripples` on 2026-07-27
+  (checklist N4). Build-order step 5, Dolby oysters (§4), is next.**
+  The review confirmed the sound and GUI write path with `\quantumDrone`.
+  The user removed the inherited i/b/a captions; the accepted v2 gives every
+  ripple a common keel, a path-only river knockout and an anchor 13 px below
+  the actual seeded blob edge.
+  The accepted N3 increment stops at tide+moon; the functional root/preamp body
+  remains its own later step.
   What the three attempts taught, all of it now in the plan:
   1. **Version 1 was built exactly as `NIGHT_STANDALONE_PLAN.md` said and was
      rejected on sight.** The plan text was wrong, not the implementation: §7.2
@@ -332,6 +338,13 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 - Accepted N3 v3.2 gate on `nocturne-nightscape` (2026-07-27):
   `CQ_COMPILE_OK`, **11,269 unit passes / 0 failures / 28/28 classes**,
   `CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+  `CQ_GUI_DRAWER_REENTRY_PASSED` and `CQ_GUI_NIGHT_PASSED`; `CQ_HOLD_OK`
+  carries because the increment did not touch DSP.
+- Accepted §3 range-ripple v2 gate on `nocturne-range-ripples` (2026-07-27,
+  checklist N4):
+  `CQ_COMPILE_OK`, **11,365 unit passes / 0 failures / 28/28 classes**,
+  `CQ_SAFETY_PASSED`,
+  `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
   `CQ_GUI_DRAWER_REENTRY_PASSED` and `CQ_GUI_NIGHT_PASSED`; `CQ_HOLD_OK`
   carries because the increment did not touch DSP.
 - The four former `GUI_SPEC.md` seams were resolved by the user on 2026-07-19 and are

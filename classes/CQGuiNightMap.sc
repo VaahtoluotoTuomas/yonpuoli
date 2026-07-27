@@ -25,11 +25,12 @@ CQGuiNightMap {
 	var <crescentViews, crescentNorms, activeCrescents, hoverCrescents, labels;
 	var <geometry, <eyeActive = false;
 	var <eyeFreqNorm = 0.5, <eyeChaosNorm = 0.15;
-	var <speedNorms, <shellHover, <dialHover, <bodyHover, <rimHover, <ringHover = false;
+	var <speedNorms, <shellHover, <dialHover, <rangeHover, <bodyHover;
+	var <rimHover, <ringHover = false;
 	var <sparkDirs, <skipHover, <skipFlash, sparkPainted, flipPainted;
 	var struckCount, <struckOn, <struckNorms, <struckBlink;
 	var <fireflyPhase = 0.0, lastFireflyTime, castlePainted;
-	var <holdStates, <flipStates, <rangeLetters, <sproutState;
+	var <holdStates, <flipStates, <rangeStates, <sproutState;
 	var freed = false;
 
 	*new { |gui, state, matrix, config|
@@ -647,6 +648,7 @@ CQGuiNightMap {
 		shellHover = [false, false];
 		rimHover = [false, false];
 		dialHover = Array.fill(5, false);
+		rangeHover = Array.fill(5, false);
 		bodyHover = Array.fill(5, false);
 		sparkDirs = [1, 1];
 		skipHover = [false, false];
@@ -657,7 +659,7 @@ CQGuiNightMap {
 		struckBlink = [false, false];
 		sparkPainted = Array.newClear(2);
 		flipPainted = Array.newClear(2);
-		rangeLetters = ["", "", "", "", ""];
+		rangeStates = Array.newClear(5);
 		sproutState = CQNightGeometry.sproutState(config[\micChan].notNil, 0);
 		container = View().background_(night[\ground]);
 		groundView = this.prLayer;
@@ -998,21 +1000,25 @@ CQGuiNightMap {
 		};
 	}
 
-	// two cues on one body, told apart by where the hand is: the inner clock's
-	// face brightens for the step tap, the body wears the §4.5 outer echo for
-	// its §6 solo. A cable under the pointer wins both (§4.5), and a repaint
-	// happens only when a boolean actually flips.
+	// Three exclusive cues on one body: inner clock, 6-o'clock rate ripple, or
+	// flesh/body. Their order mirrors castleDown exactly after cable priority,
+	// so the cue always promises the action the next press will receive.
 	prHoverCastle { |k, view, x, y|
-		var near = false, body = false, point, free = true;
+		var dial = false, range = false, body = false, point, free = true;
 		if(geometry.notNil and: { view.notNil }) {
 			point = this.prStagePoint(view, x, y);
 			free = overlay.patchAt(point).isNil;
-			near = CQNightGeometry.dialHit(geometry[\castles][k], point) and: { free };
-			body = free and: { near.not }
+			range = CQNightGeometry.rangeHit(geometry[\castles][k], point)
+				and: { free };
+			dial = free and: { range.not }
+				and: { CQNightGeometry.dialHit(geometry[\castles][k], point) };
+			body = free and: { range.not } and: { dial.not }
 				and: { CQNightGeometry.bodyHit(geometry[\castles][k], point) };
 		};
-		if((near != dialHover[k]) or: { body != bodyHover[k] }) {
-			dialHover[k] = near;
+		if((dial != dialHover[k]) or: { range != rangeHover[k] }
+			or: { body != bodyHover[k] }) {
+			dialHover[k] = dial;
+			rangeHover[k] = range;
 			bodyHover[k] = body;
 			if(freed.not) {
 				castleViews[k].refresh;
@@ -1158,7 +1164,7 @@ CQGuiNightMap {
 	prRegisterUpdaters {
 		5.do { |k|
 			gui.widgets.register(("c" ++ (k + 1) ++ "Range").asSymbol, { |value|
-				rangeLetters[k] = CQNightGeometry.rangeLetter(value);
+				rangeStates[k] = value;
 				if(freed.not) { castleViews[k].refresh };
 			});
 		};
@@ -1299,8 +1305,8 @@ CQGuiNightMap {
 		castle = geometry[\castles][k];
 		CQInkNight.drawCastle(castle, castle[\box].leftTop,
 			gui.auraFor(("cas" ++ (k + 1)).asSymbol),
-			(gui.spesalStates[k] ? 0).asInteger, rangeLetters[k],
-			dialHover[k], bodyHover[k], \night);
+			(gui.spesalStates[k] ? 0).asInteger, rangeStates[k],
+			dialHover[k], rangeHover[k], bodyHover[k], \night);
 	}
 
 	// The read direction is what the loop is actually doing, and the FLIP param

@@ -44,6 +44,15 @@ CQSpec {
 		^if(e.isNil) { nil } { e[\kind] }
 	}
 
+	// Public enum vocabulary for controls that step rather than choose from a
+	// menu. Callers never keep their own symbol list: CQSpec remains the one
+	// source for both order and membership.
+	*enumValues { |name|
+		var e = this.specs[name];
+		if(e.isNil or: { e[\kind] != \enum }) { ^nil };
+		^e[\values]
+	}
+
 	// the funnel: every write path passes its value through here (SPEC §8.3)
 	*clamp { |name, value|
 		var e = this.specs[name];

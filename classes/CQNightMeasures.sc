@@ -36,7 +36,9 @@ CQNightMeasures {
 	*castleBoxReach { ^45 }                 // body — transparent castle paper
 	*castleBoxSlack { ^4 }                  // px, hairline room inside that box
 	*clockRadius { ^14 }                    // body — the inner spesal dial
-	*rangeLetterDrop { ^41 }                // body — the whisper letter at 6 o'clock
+	// The ripple follows each seeded blob's actual bottom, not its mean ellipse,
+	// so every castle gives the control the same visual breath.
+	*rangeBodyGap { ^13 }                   // px — blob edge to playable ripple
 
 	// the four castle endpoints on their clock face (body radii from the centre)
 	*castleJackOrbit { ^40 }                // tri at 1:30, cas at 10:30
@@ -182,6 +184,10 @@ CQNightMeasures {
 	*clockBeadR { ^3.2 }                    // the spesal state's lit bead
 	*clockBeadHaloR { ^4.6 }
 	*clockTickReach { ^3.5 }                // the eight tick marks' half-length
+	*rangeRippleWidth { ^14 }               // px — drawn slow/mid/fast mark
+	*rangeRippleHeight { ^8 }               // px
+	*rangeHitX { ^10 }                      // px — cue and act around the ripple
+	*rangeHitY { ^8 }                       // px
 	*cometR { ^2.75 }                       // the read head
 	*fireflyR { ^1.6 }                      // the river's direction carriers
 	*chordLightR { ^2.2 }                   // the coupling's travelling light

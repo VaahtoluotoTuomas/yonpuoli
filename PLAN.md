@@ -25,14 +25,14 @@ public-vaihto ja oikeat kuva-/äänidemot ovat erillinen julkaisutoimi.
 
 **Seuraava askel konkreettisesti:** rakennusjärjestyksen (`NIGHT_STANDALONE_PLAN.md
 §12`) kohdat 1 **punch (§2)**, 2 **kevättulva (§8)** ja 3 **almanakka maisemaksi
-(§9)** ovat valmiit ja hyväksytyt (2026-07-23, 2026-07-26 ja 2026-07-27).
-Seuraava inkrementti on kohta 4 **range-väreet (§3)**: linnojen nykyiset
-display-only `i/b/a`-kirjaimet saavat soitettavat, muodoltaan eri tahtia
-kuvaavat väreet. §9:n hyväksytty commit elää ensin
-`nocturne-nightscape`-haaralla; `nocturne` seisoo vielä commitissa `a5e4b17`
-(kevättulva), eikä haaroja sulauteta ilman erillistä pyyntöä. §13 korvapassi
-voi kulkea limittäin, mutta Norns-portti (§14) on vasta night-first-vaiheen
-jälkeen.
+(§9)** ja 4 **range-väreet (§3)** ovat valmiit ja hyväksytyt (2026-07-23,
+2026-07-26 ja 2026-07-27). Seuraava inkrementti on kohta 5
+**Dolby-osterit (§4)**: kummankin Cocon in/fb-kanavan off/gate/duck-tila saa
+sirpin alle oman tekstittömän osterimuodon ja napautuksella askeltavan eleen.
+Hyväksytty N4 elää `nocturne-range-ripples`-haaralla; `nocturne` seisoo vielä
+commitissa `a5e4b17` (kevättulva), eikä haaroja sulauteta ilman erillistä
+pyyntöä. §13 korvapassi voi kulkea limittäin, mutta Norns-portti (§14) on vasta
+night-first-vaiheen jälkeen.
 
 ## Auktoriteettijärjestys
 
@@ -146,9 +146,15 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
     kaapelien alta. Tämä on tietoinen, vain kidusta koskeva poikkeus §4.5:n
     cable-first-kieleen; tarkka top-layer/knockout-muoto ratkaistaan omassa
     polish-passissa eikä avaa N3:a uudelleen.
-- [ ] **4. Range-väreet** (§3). Castlen 6-suunnan piirretty väre, jonka *muoto
+- [x] **4. Range-väreet** (§3). **Valmis ja hyväksytty 2026-07-27 (checklist
+  N4).** Castlen 6-suunnan piirretty väre, jonka *muoto
   on regime* (infra/balcium/audio); napautus askeltaa. Yön suurin
   soitettavuusaukko. Kasvaneeseen maisemaan, jotta clearance tehdään kerran.
+  Muoto on 1/2/5 puoliaaltoa; hover-järjestys on kaapeli → väre → sisäkello →
+  keho, ja enum-järjestys luetaan CQSpecistä. Vanhat i/b/a-kirjaimet
+  poistettiin käyttäjän päätöksellä; yhteinen köli erottaa väreen fm-kuun
+  vapaasta aallosta, 3 px vektoriura erottaa sen takana kulkevasta joesta ja
+  ankkuri seuraa linnan todellista alareunaa 13 px etäisyydellä.
 - [ ] **5. Dolby-osterit** (§4). In/fb-kanavien dolby-kytkin sirpin alle
   osterina, jonka asento on regime (off/gate/duck). Napautus askeltaa.
 - [ ] **6. Linnut hakevat** (§11). Deckin lataus ja kansionavigointi ilman
@@ -271,6 +277,17 @@ ovat eri tilat. Tavallinen klikkaus ei kirjoita tyhjään kuoreen: Shift-klikkau
 tallentaa, ja avoin Tab/kidus sallii saman ilman näppäimistöä. Topologiaa
 ymmärtävä “sweet spot” -shake jäi tietoisesti myöhemmäksi musiikilliseksi
 työksi. `CQ_HOLD_OK` kantaa: DSP:hen ei koskettu.
+
+Haaran `nocturne-range-ripples` v2-portti 2026-07-27 (§3, **ääni,
+GUI-kirjoitus ja visuaalinen v2 käyttäjän hyväksymät, checklist N4**):
+`CQ_COMPILE_OK`, **11 365 unit-passia / 0 failurea / 28/28 luokkaa**,
+`CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+`CQ_GUI_DRAWER_REENTRY_PASSED` ja `CQ_GUI_NIGHT_PASSED`. Yösmoke askeltaa
+väreen koko enum-kierroksen, tarkistaa funnel-päivityksen ja istuttaa oikean
+kaapelin väreen yli todistaakseen cable-first-hoverin ja -painalluksen.
+Kirjaimeton köli/aalto-perhe, 13 px todellisen kehonreunan hengitys ja joen
+ylityksen paikallinen vektoriura hyväksyttiin toimiviksi.
+`CQ_HOLD_OK` kantaa: DSP:hen ei koskettu.
 
 ## Omistajuus- ja julkaisurata (kulkee Nocturnen rinnalla)
 

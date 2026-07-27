@@ -108,6 +108,13 @@ CQGuiNightMapTest : UnitTest {
 		}, "no sowing door survives on the night map");
 	}
 
+	test_theNightCarriesNoLegacyRangeLetters {
+		this.assert(CQGuiNightMap.instVarNames.includes(\rangeLetters).not,
+			"the playable ripple needs no i/b/a state beside its regime");
+		this.assert(CQNightGeometry.respondsTo(\rangeLetter).not,
+			"night geometry no longer translates current state into legacy text");
+	}
+
 	test_crescentInventory {
 		this.assertEquals(CQGuiNightMap.crescentNames(0),
 			[\coco1Spaf, \coco1In, \coco1Fb],

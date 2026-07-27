@@ -90,6 +90,17 @@ CQGuiNightTouch {
 		^lo + ((hi - lo) * t)
 	}
 
+	// One enum stepper for the range ripples and the later dolby oysters.
+	// Membership and order come only from CQSpec; malformed current values are
+	// clamped by the same authority before the next choice is selected.
+	*nextEnum { |name, current|
+		var values = CQSpec.enumValues(name), clamped, index;
+		if(values.isNil or: { values.isEmpty }) { ^nil };
+		clamped = CQSpec.clamp(name, current);
+		index = values.indexOf(clamped) ? 0;
+		^values.wrapAt(index + 1)
+	}
+
 	// §16.9 the elastic return's short glide, ~3 frames
 	*elasticFrames { ^3 }
 
@@ -268,11 +279,30 @@ CQGuiNightTouch {
 
 	castleDown { |k, view, x, y, modifiers = 0, button = 0, clicks = 1|
 		var point = this.prPoint(view, x, y), geo = map.geometry;
+		var body = ("castle" ++ (k + 1)).asSymbol;
+		var rangeName = ("c" ++ (k + 1) ++ "Range").asSymbol;
 		if(geo.isNil) { ^this };
+		// The ordinary priority law: cable, then the body's small controls,
+		// then body solo / open-water ground.
+		if(overlay.patchAt(point).notNil) {
+			^this.forwardDown(view, x, y, modifiers, button, clicks, body)
+		};
+		// Alt belongs to the ground grammar's cable polarity, never to a small
+		// control. Preserve the body's identity only where its drawn cue owns
+		// the point; transparent castle paper remains ordinary water.
+		if(modifiers.isAlt) {
+			if(CQNightGeometry.bodyHit(geo[\castles][k], point)) {
+				^this.forwardDown(view, x, y, modifiers, button, clicks, body)
+			};
+			^this.compassDown(view, x, y, modifiers, button, clicks)
+		};
+		if(button == 0
+			and: { CQNightGeometry.rangeHit(geo[\castles][k], point) }) {
+			^this.prCycleEnum(rangeName)
+		};
 		// the inner clock owns its area at every click count (§4.5), so two fast
 		// taps are two steps — never one step plus a body solo behind it
-		if(button == 0 and: { modifiers.isAlt.not }
-			and: { overlay.patchAt(point).isNil }
+		if(button == 0
 			and: { CQNightGeometry.dialHit(geo[\castles][k], point) }) {
 			Cocoquantus.spesal(k + 1);
 			^this
@@ -281,7 +311,7 @@ CQGuiNightTouch {
 		// (§4.5): the flesh plus its margin, not the whole layer box
 		if(CQNightGeometry.bodyHit(geo[\castles][k], point)) {
 			^this.forwardDown(view, x, y, modifiers, button, clicks,
-				("castle" ++ (k + 1)).asSymbol)
+				body)
 		};
 		^this.compassDown(view, x, y, modifiers, button, clicks)
 	}
@@ -601,6 +631,12 @@ CQGuiNightTouch {
 
 	prToggle { |name|
 		state.set(name, 1 - ((state.get(name) ? 0) > 0.5).binaryValue);
+		^this
+	}
+
+	prCycleEnum { |name|
+		var next = this.class.nextEnum(name, state.get(name));
+		next !? { state.set(name, next) };
 		^this
 	}
 

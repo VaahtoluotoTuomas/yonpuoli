@@ -22,6 +22,8 @@ tagged. Earlier tags describe internal development baselines.
 - Source and interpretation bibliography.
 - Portfolio case study and AI-assisted development/ownership policy.
 - Contribution guide, GPL-3.0-or-later license, and Windows CI gates.
+- Playable, captionless castle range ripples on the Night landscape, with
+  audible infra/balcium/audio stepping and cable-first interaction.
 
 ### In progress
 

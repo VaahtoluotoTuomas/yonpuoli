@@ -25,8 +25,9 @@ CQInkNight {
 	// brightening (§4.5) so the face reads as pressable. Origin = the castle
 	// layer's own box corner. The paper is transparent and the blob fills only
 	// its irregular flesh with ground, so no rectangular edge can cut the river.
-	*drawCastle { |castle, origin, aura, spesalState = 0, rangeLetter = "",
-		dialHover = false, bodyHover = false, skin = \night|
+	*drawCastle { |castle, origin, aura, spesalState = 0, range,
+		dialHover = false, rangeHover = false,
+		bodyHover = false, skin = \night|
 		var palette = CQInk.palette(skin), center = castle[\center];
 		var tickAngle, bead;
 		Pen.translate(origin.x.neg, origin.y.neg);
@@ -86,9 +87,51 @@ CQInkNight {
 		Pen.addOval(Rect.aboutPoint(bead, CQNightMeasures.clockBeadHaloR,
 			CQNightMeasures.clockBeadHaloR));
 		Pen.stroke;
-		Pen.stringCenteredIn(rangeLetter.asString,
-			Rect.aboutPoint(castle[\letterAnchor], 7, 6),
-			CQInk.font(\range), palette[\whisper]);
+		this.drawRangeRipple(castle[\rangeMark], range, rangeHover, skin);
+	}
+
+	// A regime drawn as rate, not a transplanted switch: one long half-wave for
+	// infra, one full cycle for balcium, five tight half-waves for audio. The
+	// fm socket's glyph is always one cycle inside a ring; this mark changes
+	// density on open flesh and needs no legacy letter caption.
+	*drawRangeRipple { |anchor, range, hover = false, skin = \night|
+		var palette = CQInk.palette(skin);
+		var halves = switch(range,
+			\infra, { 1 }, \balcium, { 2 }, \audio, { 5 }, { 0 });
+		if(halves <= 0) { ^this };
+		// A narrow vector knockout follows only the control's own marks. It
+		// separates the ripple from the river where those paths cross without
+		// restoring the rectangular castle-paper erasure removed in §9.
+		Pen.strokeColor = palette[\ground];
+		Pen.width = CQInk.strokes[\state];
+		this.addRangeRipple(anchor, halves);
+		Pen.stroke;
+		Pen.strokeColor = palette[if(hover) { \line } { \whisper }]
+			.copy.alpha_(if(hover) { 1.0 } { 0.72 });
+		Pen.width = CQInk.strokes[\hairline];
+		this.addRangeRipple(anchor, halves);
+		Pen.stroke;
+	}
+
+	// One shared keel distinguishes this regime mark from the fm moon's free
+	// single-cycle wave. The waveform crosses the keel; density alone carries
+	// infra/balcium/audio, with no legacy i/b/a caption.
+	*addRangeRipple { |anchor, halves|
+		var width = CQNightMeasures.rangeRippleWidth;
+		var height = CQNightMeasures.rangeRippleHeight;
+		var left = anchor.x - (width * 0.5), base = anchor.y;
+		var segment = width / halves;
+		Pen.moveTo(Point(left, base));
+		Pen.lineTo(Point(left + width, base));
+		Pen.moveTo(Point(left, base));
+		halves.do { |i|
+			var x0 = left + (i * segment);
+			var x1 = x0 + segment;
+			var crest = base + (if(i.even) { -1 } { 1 } * height);
+			Pen.curveTo(Point(x1, base),
+				Point(x0 + (segment * 0.35), crest),
+				Point(x0 + (segment * 0.65), crest));
+		};
 	}
 
 	// the irregular hairline circle through the five castles, with the

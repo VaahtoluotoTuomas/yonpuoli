@@ -1160,12 +1160,56 @@ CQNightGeometryTest : UnitTest {
 		};
 	}
 
-	test_rangeLetter {
-		this.assertEquals(CQNightGeometry.rangeLetter(\infra), "i", "infra = i");
-		this.assertEquals(CQNightGeometry.rangeLetter(\balcium), "b", "balcium = b");
-		this.assertEquals(CQNightGeometry.rangeLetter(\audio), "a", "audio = a");
-		this.assertEquals(CQNightGeometry.rangeLetter(nil), "",
-			"an unknown range stays silent");
+	test_rangeRippleGeometryAndClearance {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			geo[\castles].do { |castle, k|
+				var n = k + 1;
+				var hit = CQNightGeometry.rangeBox(castle);
+				var drawn = Rect.aboutPoint(castle[\rangeMark],
+					CQNightMeasures.rangeRippleWidth * 0.5,
+					CQNightMeasures.rangeRippleHeight);
+				var fmName = ("castle" ++ n ++ "_fm").asSymbol;
+				var spesalName = ("castle" ++ n ++ "_spesal").asSymbol;
+				var fm = this.prEndpointBox(fmName, geo[\endpoints][fmName]);
+				var spesal = this.prEndpointBox(spesalName,
+					geo[\endpoints][spesalName]);
+				this.assert(CQNightGeometry.rangeHit(castle, castle[\rangeMark]),
+					"castle % ripple answers on its drawn centre (%x%)"
+						.format(n, *size));
+				this.assert(CQNightGeometry.rangeHit(castle,
+					castle[\rangeMark]
+						+ Point(CQNightMeasures.rangeHitX + 1, 0)).not,
+					"castle % ripple answers no wider than its cue (%x%)"
+						.format(n, *size));
+				this.assert(hit.contains(drawn),
+					"castle % ripple ink fits inside its touch cue (%x%)"
+						.format(n, *size));
+				this.assert(castle[\box].contains(hit),
+					"castle % ripple fits its transparent paper (%x%)"
+						.format(n, *size));
+				this.assertFloatEquals(castle[\rangeMark].y
+					- castle[\blobBottom], CQNightMeasures.rangeBodyGap,
+					"castle % ripple breathes from its actual seeded edge (%x%)"
+						.format(n, *size), 0.0001);
+				this.assert(hit.intersects(fm).not,
+					"castle % ripple clears the fm socket (%x%)"
+						.format(n, *size));
+				this.assert(hit.intersects(spesal).not,
+					"castle % ripple clears the lamped spesal socket (%x%)"
+						.format(n, *size));
+				this.assert(
+					CQNightGeometry.distance(castle[\center], castle[\rangeMark])
+						- CQNightMeasures.rangeHitY
+						> (castle[\dialR] + CQNightMeasures.clockHit),
+					"castle % ripple clears the clock annulus (%x%)"
+						.format(n, *size));
+				this.assert(CQNightGeometry.bodyHit(castle,
+					castle[\rangeMark] - Point(0, CQNightMeasures.rangeHitY)),
+					"castle % ripple overlaps the body's cue and therefore needs priority (%x%)"
+						.format(n, *size));
+			};
+		};
 	}
 
 	test_sproutState {

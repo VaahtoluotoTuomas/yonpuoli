@@ -156,43 +156,44 @@ checklist block, PLAN.md log.
 
 ## 3. Feature B — range marks (the ripple)
 
+> **Status — accepted 2026-07-27 (checklist N4).** The final reviewed form is
+> the captionless keel/ripple v2 described below.
+
 **What it is musically.** The castle range switch (\infra ×0.02 / \balcium
 ×1 / \audio ×40) is how a castle stops being a modulator and starts being a
-voice. On the hardware it is a front-panel switch; at night it is currently
-display-only (the i/b/a whisper letter). This is the single biggest gap in
+voice. On the hardware it is a front-panel switch; before N4 the night only
+showed a display-only i/b/a whisper. This is the single biggest gap in
 night-as-instrument.
 
 **Design — a drawn rate, not a widget and not a letter.** §6 forbids
 anything that looks like a knob or transplanted widget; §16.4 forbids a
 control that requires reading text (the sower constellation died of this).
 So the control is a **rate ripple**: a small drawn mark (~14×8 px box, §16.5
-style) at the castle's 6 o'clock anchor (the current `letterAnchor`,
-r ≈ 33·scale), whose *form is the regime*:
+style) at the castle's 6 o'clock anchor, whose *form is the regime*:
 
 - `\infra` — one long shallow swell (a single half-wave);
 - `\balcium` — two half-waves (one full cycle);
 - `\audio` — five tight half-waves (a dense ripple).
 
 Slow/mid/fast reads pre-verbally — it is §16.6's "show the regime" law made
-into a control. The existing i/b/a letter stays as the whisper caption
-*under* the ripple (approved night text, §16.4) — the mark carries the
-control, the letter only confirms. Note the deliberate distance from the
-§16.5 `wave` glyph (castle-fm sockets): the fm wave is always exactly one
-cycle inside a socket ring; the ripple varies its density and lives on the
-body. If review finds them confusable, thicken the distinction by form
-(e.g. give the ripple a baseline stroke), never by hue alone (§16.2).
+into a control. **N4 review amendment, 2026-07-27:** the user removed the
+existing i/b/a caption as unnecessary inherited Cocoquantus vocabulary; form
+alone carries the regime. The same review found balcium's one free cycle too
+close to the §16.5 `wave` glyph in castle-fm sockets, so every ripple gained a
+short common keel. The fm wave remains a free cycle inside a socket ring; the
+rate ripple varies its density against the keel and lives on the body. The
+distinction is form, never hue alone (§16.2).
 
 **Interaction.** Tap cycles `\infra → \balcium → \audio → \infra` — the
 night's established idiom for stepping an enum is the tap (the spesal dial).
 Hover brightens the ripple to line ink (static, §4.5). No flash: a range is
 a setting, and the mark itself redraws to the new density instantly via the
-already-registered `cNRange` updater in `CQGuiNightMap.prRegisterUpdaters`
-(extend the callback that today only updates `rangeLetters`).
+already-registered `cNRange` updater in `CQGuiNightMap.prRegisterUpdaters`.
 
 **Geometry and its traps.**
-- Anchor exists (`letterAnchor`); add a `rangeMark` anchor + a
-  `rangeHit(castle, point)` class method (markHit-style 10 px box, but
-  verify it against the ripple's drawn extent — cue and act, one geometry).
+- `rangeMark` follows the seeded blob's actual lowest point with a fixed
+  13 px breath; `rangeHit(castle, point)` is a markHit-style 10 px box,
+  verified against the ripple's drawn extent — cue and act, one geometry.
 - **Clearance asserts needed at both sizes**: the mark's hit box versus
   (a) the spesal endpoint's opaque 34 px lamped box at 8 o'clock r = 40 —
   this is the crowded neighbor; (b) the fm socket box at 4 o'clock r = 28;
@@ -203,11 +204,10 @@ already-registered `cNRange` updater in `CQGuiNightMap.prRegisterUpdaters`
   (three exclusive cues on one castle now: clock, ripple, body — never two
   lit at once).
 - The ripple is drawn by the castle's own transparent view (`prDrawCastle` →
-  `CQInkNight`), so its repaint stays local; it must still *fit inside the
-  view box* (`box` = ±(36·scale + 4)) — at scale 1 the letter anchor sits at
-  +33 with the caption below it. If the caption clips, grow the box and
-  re-run every clearance test. The view's clear paper must stay clear: only
-  the irregular flesh painted by `drawCastle` may mask the river.
+  `CQInkNight`), so its repaint stays local and must fit inside the view box.
+  Two crossings were found within 1.55 px of the river in N4 review. A 3 px
+  ground under-stroke now follows only the ripple's vector paths before its
+  visible hairline; no rectangle, caption or synthetic river stub returns.
 
 **Funnel.** `state.set(\cNRange, next)` via the shared enum-cycle helper
 (law 1.2). CQState/CQSpec clamp malformed enums already; the GUI never
@@ -219,7 +219,8 @@ the drawer workshop inherits a switch — not this gate's problem.)
 **Spec/docs to edit:** GUI_SPEC §6 (strike "display only; ranges are set in
 day"), §6.1 table row, §16.5 (ripple recipe), §16.6 castle anatomy, manual
 checklist block (tap each castle through all six steps *by ear*: an infra
-castle stepping to audio must be immediately audible in `\classic`), PLAN.
+castle stepping to audio must be immediately audible in the isolated
+`\quantumDrone` listening setup), PLAN.
 
 ---
 

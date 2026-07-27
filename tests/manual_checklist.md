@@ -514,6 +514,55 @@ CQ.patch(\envB, \castle3_fm, -0.45);
       kulkeva kaapeli hoverissa ja painalluksessa sekä pysyä löydettävänä
       kaapeli-inkistä huolimatta. Tämä ei avaa N3-porttia uudelleen.)
 
+### N4 — Range-väreet (§3)
+
+Jokaisen linnan 6-suunnassa on nyt pieni soitettava väre. Yksi pitkä
+puoliaalto = infra, kaksi puoliaaltoa = balcium, viisi tiheää puoliaaltoa =
+audio. Vanhoja `i/b/a`-kirjaimia ei enää ole: käyttäjän N4-päätöksellä muoto
+riittää ja peritty Cocoquantus-nimistö poistui yöstä. Yhteinen vaakaköli erottaa
+väreen fm-kuun vapaasta yhden syklin aallosta. Napautus askeltaa; sisäkello
+askeltaa edelleen spesalia ja linnan liha on edelleen body-solo. Kolmen
+hover-vihjeen pitää olla toisensa poissulkevia.
+
+```supercollider
+// N4 — Vaatii GUI:n; Ctrl+Shift+L ennen tätä. \classic yksin ei takaa
+// kuultavaa range-eroa: ilman samplea/live-inputtia se käyttää linnoja vain
+// Coco-modulaattoreina. Tämä eristää yhden Quantussy-linnan omaksi ääneksi.
+CQ.boot; CQ.set(\masterVol, -24); CQ.patchPreset(\quantumDrone);
+[\c2Send, \c3Send, \c4Send, \c5Send].do { |n| CQ.set(n, 0) };
+CQ.set(\c1Send, 0.7); CQ.set(\qChaos, 0); CQ.set(\qFreq, 4);
+CQ.set(\coco2Level, 0); CQ.set(\coco1Fb, 0.2); CQ.hold(1, 0);
+CQ.set(\c1Range, \infra);            // 1. valitse toolbarista Night
+// 2. Napauta castle 1:n ALAPUOLISTA VÄRETTÄ kolme kertaa:
+//    infra (1 puoliaalto) -> balcium (2) -> audio (5) -> infra (1).
+//    Äänessä linnan pitää nousta lähes kuulumattomasta hitaasta liikkeestä
+//    noin 4 Hz sykkeeksi ja sitten selväksi noin 160 Hz ääneksi.
+// 3. Valitse kuultava linna ja nollaa muut yhdellä apurilla:
+~hearCastle = { |n| (1..5).do { |k|
+    CQ.set(("c" ++ k ++ "Send").asSymbol, if(k == n) { 0.7 } { 0 })
+} };
+//    Aja ~hearCastle.(2), napauta castle 2; sitten 3, 4 ja 5.
+//    Toista halutessasi kaksi kierrosta / 6 askelta.
+//    Napauta myös sisäkelloa ja linnan lihaa: väre ei saa varastaa niiden eleitä.
+// 4. Vie osoitin vuorotellen väreen, sisäkellon ja lihan päälle. Vain yksi vihje
+//    saa kirkastua kerrallaan. Vie kaapeli väreen yli: kaapelin pitää voittaa
+//    hoverissa ja painalluksessa, eikä range saa silloin vaihtua.
+// 5. Katso 1280×720-koossa ja maksimoituna: kaikilla linnanreuna -> väre -raon
+//    pitää näyttää samalta. Kölin pitää erottaa balcium fm-kuun aallosta.
+//    Kun jokirengas kulkee väreen alta, kapea muotoa seuraava ura erottaa ne:
+//    ei yhteistä samanväristä sotkua eikä suorakulmaista aukkoa joessa.
+```
+
+**Katselmointikysymys:** erottaako yhteinen köli nyt 1/2/5-puoliaaltoisen
+hidas/keskinopea/nopea-perheen linnan `fm`-kuun vapaasta wave-glyyfistä?
+Pysyvätkö joen ylitykset ehjinä mutta yksiselitteisinä, vai näyttääkö kapea
+erotusura joen katkolta?
+
+- [x] N4 hyväksytty (pvm: 2026-07-27 — `\quantumDrone` varmisti
+      infra/balcium/audio-muutoksen ja GUI-kirjoituksen; kirjaimeton
+      köli/aalto-perhe erottuu fm-kuusta, 13 px kehorako ja joen paikallinen
+      vektoriura toimivat, hover-prioriteetti ja molemmat ikkunakoot hyväksytty)
+
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>
 

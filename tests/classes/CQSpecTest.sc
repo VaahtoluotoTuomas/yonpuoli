@@ -91,6 +91,16 @@ CQSpecTest : UnitTest {
 		this.assertEquals(CQSpec.clamp(\c1Range, \audio), \audio, "range symbol passes");
 	}
 
+	test_enumValues {
+		this.assertEquals(CQSpec.enumValues(\c1Range),
+			#[infra, balcium, audio],
+			"enum controls read their ordered vocabulary from CQSpec");
+		this.assert(CQSpec.enumValues(\qFreq).isNil,
+			"a numeric parameter advertises no enum vocabulary");
+		this.assert(CQSpec.enumValues(\bogus).isNil,
+			"an unknown parameter advertises no enum vocabulary");
+	}
+
 	test_unknownParam {
 		this.assert(CQSpec.clamp(\notAParam, 1).isNil, "unknown parameter clamps to nil");
 		this.assert(CQSpec.default(\notAParam).isNil, "unknown parameter has nil default");

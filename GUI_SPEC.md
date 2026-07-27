@@ -267,8 +267,10 @@ eye but must keep the topology truths):
   ring). Each castle: triangle bud (orange source), crenellated bud (gray
   source), inner moon `fm` (blue ring), outer moon `spesal` (green ring +
   charge lamp), an **8-notch spesal dial** with the current state lit (data:
-  the existing `/cq_spesal` cache), body glow = its aura (§9). A tiny `i/b/a`
-  glyph shows the range switch state — display only; ranges are set in day.
+  the existing `/cq_spesal` cache), body glow = its aura (§9). A playable rate
+  ripple at the castle's 6 o'clock carries range without text:
+  one/two/five half-waves mean infra/balcium/audio, and a tap steps the regime
+  (§6.1, §16.6).
 - **Coco 1 left, Coco 2 right: spiral shells** (the delay RAM as a coconut
   cross-section). A **read-head spark travels the spiral** (loop-phase
   telemetry, §9); hold = the spiral ring solidifies red; flip = the spark
@@ -335,6 +337,7 @@ below; it does not silently grant priority to any other control.
 | **tide crescents** | a small crescent below each spaf / inVca / fbVca moon, luminous fill = value; vertical drag pours more or less. Socket beside its control — §1's proximity law, reborn at night. spaf wears purple | `cocoN spaf / in / fb` |
 | **the ring's eye** | the storm iris at the ring's center (§16.6); grab and drag — vertical = pitch, horizontal = chaos, and the iris itself answers on both axes. The weather of five castles from one fingertip | `qFreq` (y) + `qChaos` (x), relative |
 | **dial tap** | press a castle's inner clock — the dial face inside the body (§16.6): one step (same act as the day step button and keys 3..7). Hovering the castle first shows **which castle it reads** as an inner chord (§16.6's coupling chords), so the step's consequence is visible in the gesture that makes it | `spesal(k)` step |
+| **range ripple** | tap the drawn rate at a castle's 6 o'clock: one slow swell → one full cycle → five tight half-waves → one slow swell. The form is the whole regime display; no legacy `i/b/a` caption remains. Cable-first remains absolute, and ripple/clock/body hover cues are exclusive | `cNRange`: `infra → balcium → audio → infra` (CQSpec enum order) |
 | **bird drop + wing crescent** | dropping an audio file on a bird loads that deck (pulled forward from the G2 toolbar step — loading is core); the crescent under the wing is the deck's level | deck load · `deckN level` |
 | **the sowing moon** | the bone moon in the top-right sky (§16.6). It opens as a small 0.22 crescent. A press that travels < 8 px — the lasso's own threshold — throws a shake at the moon's current phase, with a 120 ms bone flash on *any* shake from any layer (`p` key, Day button, code: one state, three layers, one light). A **horizontal** drag pours the phase fuller (right) or darker (left), the way the terminator itself travels; the lit fraction is **how much gets sown**, through the slow-first quadratic fertility curve in §10, no number | `shake` (matrix op — one undo, one spellbook entry) · `shakeAmount` (GUI constant, no undo) |
 
@@ -862,17 +865,18 @@ Laws:
 - Two faces only, via generic constructors (code-only, platform-safe):
   `Font.sansSerif` for labels, `Font.monospace` for numbers, the spellbook
   and filenames.
-- Sizes: **10 px labels and values, 11 px spellbook/notice line, 9 px range
-  letters**. These are the laptop-legibility values approved after the first
+- Sizes: **10 px labels and values, 11 px spellbook/notice line, 9 px dense-map
+  annotations**. These are the laptop-legibility values approved after the first
   real Day-skin review; do not shrink them back to the earlier 9/10/8 sketch.
   Lowercase everywhere; only PANIC, REC and HOLD may shout.
 - Labels are whispers: whisper color, close to their object, never boxed.
   The project's own words — spaf, spesal, verso, balcium — are decoration
   enough.
-- The night map carries almost no text: the sower stars' whispered preset
-  names (§16.6), filenames under the birds, i/b/a range letters. **Numbers
-  never appear at night** — weights are read as depth and width; precision
-  lives in the inspector.
+- The night map carries almost no text: filenames under the birds are its only
+  resting labels. **Numbers never appear at night** — weights are read as depth
+  and width; precision lives in the inspector. The range ripples deliberately
+  carry their three regimes by form alone; the old `i/b/a` vocabulary was
+  removed at the user's N4 review.
 
 ### 16.5 Glyphs — drawn, never typed
 
@@ -885,6 +889,7 @@ fonts (their rendering varies across platforms; paths don't).
 | opposed chevrons | flip | mirrored ‹ › pair |
 | spark | skip; fired lamps | 4-point star: two crossed strokes, long/short arms |
 | wave | castle fm | one sine cycle from two béziers |
+| rate ripple | castle range | a short common keel plus one long half-wave (`infra`), two half-waves / one full cycle (`balcium`), or five tight half-waves (`audio`), in a nominal 14×8 px box. A 3 px ground under-stroke follows the vector paths exactly where the river crosses; never a rectangular knockout |
 | tick-ring | spesal dial | 8 radial ticks, current one lit |
 | pendulum | deck rate | small wedge + off-vertical line |
 
@@ -912,7 +917,22 @@ The two cues are exclusive — clock or body, never both. Cue and action share
 one geometry: the drawn blob grown by `bodyMargin` (10 px, so the body answers
 the approaching hand), and the echo is stroked exactly on that boundary. A cue
 that covers more or less ground than its action is a cue that lies.
-Range letter i/b/a in whisper at 6 o'clock below (r ≈ 33, its own anchor).
+At 6 o'clock, a **rate ripple** is the playable range switch. Its form is the
+regime: one long shallow half-wave = `infra`, two half-waves / one full cycle =
+`balcium`, five tight half-waves = `audio`. Tap cycles in CQSpec's enum order;
+**this captionless keel/ripple v2 was accepted 2026-07-27 (checklist N4).**
+static hover brightens the ripple to line ink. **No `i/b/a` caption remains:**
+the user judged the shape sufficient and the letters unnecessary inherited
+Cocoquantus vocabulary at the N4 review. A short common horizontal keel makes
+the regime family distinct from the fm moon's free single-cycle wave. Where a
+ripple crosses the river, a 3 px ground under-stroke follows only the keel and
+wave paths before the visible hairline is drawn; it is a local vector
+separation, never the rectangular paper erasure §9 removed. Each anchor sits
+13 px below its seeded blob's actual lowest point, so irregular castles breathe
+equally. The ripple, inner clock and body have exclusive cues and press priority
+in that order after the cable layer: a cable under the pointer still wins. The
+14×8 px drawn mark, its fixed-pixel touch rectangle and all endpoint/clock
+clearances are pinned at both reference sizes by `CQNightGeometryTest`.
 
 **Layer amendment, 2026-07-27.** Castle paper and its four endpoint-detail
 views are transparent. The blob first fills only its own irregular flesh with

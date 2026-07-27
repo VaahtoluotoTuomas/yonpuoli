@@ -515,8 +515,8 @@ punchChecks = { |map|
 													try {
 														check.value(map.holdStates[0] == false,
 															"releasing hold unseals the spiral");
-														check.value(map.rangeLetters[1] == "i",
-															"the castle range letter follows its param");
+														check.value(map.rangeStates[1] == \infra,
+															"the castle range ripple follows its param");
 														check.value(gui.spesalStates[0] == 3,
 															"spesal OSC lights the night dial state");
 														// harvest on night paper, one batch undo
@@ -557,6 +557,8 @@ punchChecks = { |map|
 															var speedBefore, freqBefore, chaosBefore;
 															var samples, cablePoint, cableRecord;
 															var castleTwo, castleView, dialPoint;
+															var rangePoint, rangeBefore, rangeBox, rangeCable;
+															var matrixBeforeRange;
 															var sparkPoint, holdBefore, flipBefore, blinkBefore;
 															var savedPatches;
 																// the crescent view's own centre, so a flooded
@@ -889,6 +891,86 @@ punchChecks = { |map|
 															// ---- §6 body solo-light ----
 															castleView = map.castleViews[1];
 															castleTwo = map.geometry[\castles][1];
+															rangePoint = castleTwo[\rangeMark]
+																- castleTwo[\box].leftTop;
+															check.value(map.overlay.patchAt(
+																castleTwo[\rangeMark]).isNil,
+																"precondition: no cable crosses castle 2's range ripple");
+															state.set(\c2Range, \infra);
+															gui.prFlushParams;
+															rangeBefore = state.get(\c2Range);
+															castleView.mouseDownAction.value(castleView,
+																rangePoint.x, rangePoint.y, 0, 0, 1);
+															check.value(state.get(\c2Range) == \balcium,
+																"tapping the range ripple steps infra to balcium through CQState");
+															gui.prFlushParams;
+															check.value(map.rangeStates[1] == \balcium,
+																"the ripple repaints from funnel truth without a legacy caption");
+															castleView.mouseDownAction.value(castleView,
+																rangePoint.x, rangePoint.y, 0, 0, 1);
+															castleView.mouseDownAction.value(castleView,
+																rangePoint.x, rangePoint.y, 0, 0, 1);
+															check.value(state.get(\c2Range) == rangeBefore,
+																"three ripple taps wrap through all CQSpec choices to the start");
+															castleView.mouseOverAction.value(castleView,
+																rangePoint.x, rangePoint.y);
+															check.value(map.rangeHover[1]
+																and: { map.dialHover[1].not }
+																and: { map.bodyHover[1].not },
+																"the range ripple owns one exclusive hover cue");
+															castleView.mouseLeaveAction.value(castleView);
+
+															// Put one real cable across the ripple. The route is
+															// chosen from the live endpoint geometry, never assumed,
+															// so future layout changes keep testing §4.5 itself.
+															rangeBox = CQNightGeometry.rangeBox(castleTwo);
+															CQMatrix.sourceNames.do { |src|
+																CQMatrix.destNames.do { |dest|
+																	if(rangeCable.isNil) {
+																		var start = map.overlay.pointFor(src);
+																		var finish = map.overlay.pointFor(dest);
+																		var points = CQInk.cablePoints(start,
+																			finish, 400);
+																		var crossing = points.detect { |p|
+																			rangeBox.containsPoint(p)
+																		};
+																		crossing !? {
+																			rangeCable = (src: src,
+																				dest: dest, point: crossing)
+																		};
+																	};
+																};
+															};
+															check.value(rangeCable.notNil,
+																"precondition: endpoint geometry offers a cable across the ripple");
+															if(rangeCable.notNil) {
+																matrixBeforeRange = matrix.fullMatrix;
+																matrix.patch(rangeCable[\src],
+																	rangeCable[\dest], 0.5,
+																	\test, false, \rangePriority);
+																map.overlay.invalidate;
+																check.value(map.overlay.patchAt(
+																	rangeCable[\point]).notNil,
+																	"precondition: the planted crossing is inside cable hit width");
+																rangeBefore = state.get(\c2Range);
+																local = rangeCable[\point]
+																	- castleTwo[\box].leftTop;
+																castleView.mouseOverAction.value(castleView,
+																	local.x, local.y);
+																check.value(map.rangeHover[1].not
+																	and: { map.dialHover[1].not }
+																	and: { map.bodyHover[1].not },
+																	"a cable crossing suppresses every castle hover cue");
+																castleView.mouseDownAction.value(castleView,
+																	local.x, local.y, 0, 0, 1);
+																check.value(state.get(\c2Range) == rangeBefore,
+																	"a cable crossing the ripple wins the press; range does not step");
+																castleView.mouseUpAction.value(castleView,
+																	local.x, local.y, 0, 0);
+																matrix.writeMatrix(matrixBeforeRange,
+																	\test, false, \rangePriorityRestore);
+																map.overlay.invalidate;
+															};
 															local = castleTwo[\center]
 																- castleTwo[\box].leftTop;
 															check.value(map.overlay.patchAt(
@@ -929,17 +1011,20 @@ punchChecks = { |map|
 															castleView.mouseOverAction.value(castleView,
 																local.x, local.y);
 															check.value(map.bodyHover[1]
-																and: { map.dialHover[1].not },
+																and: { map.dialHover[1].not }
+																and: { map.rangeHover[1].not },
 																"hovering a castle's flesh lights the body's press cue");
 															castleView.mouseOverAction.value(castleView,
 																dialPoint.x, dialPoint.y);
 															check.value(map.dialHover[1]
+																and: { map.rangeHover[1].not }
 																and: { map.bodyHover[1].not },
-																"the clock's cue and the body's cue never light together");
+																"the clock, ripple and body cues never light together");
 															castleView.mouseLeaveAction.value(castleView);
 															check.value(map.bodyHover[1].not
-																and: { map.dialHover[1].not },
-																"leaving the castle rests both cues");
+																and: { map.dialHover[1].not }
+																and: { map.rangeHover[1].not },
+																"leaving the castle rests all three cues");
 															// ---- §16.6 the spesal coupling chords ----
 															// structure, so it is drawn only where the hand
 															// asks: nothing at rest, one chord under a
