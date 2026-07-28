@@ -172,7 +172,10 @@ buffers filled with dust and loop-locked, master faded in muted-to-nominal over 
 
 Conventions: all parameters listed here exist in `CQSpec` with exactly these names,
 ranges, curves, defaults. All setters clamp to range. `exp` = exponential mapping,
-`lin` = linear, `bipolar` = linear centered on 0. Toggles are 0/1. Enums are Symbols.
+`lin` = linear, `bipolar` = linear centered on 0. `fb taper` is the exactly
+invertible piecewise-linear control map
+`(0.00→0.00, 0.50→0.85, 0.90→1.10, 1.00→1.25)`; it changes hand resolution,
+not stored parameter values or DSP. Toggles are 0/1. Enums are Symbols.
 
 ### 5.1 Sources
 
@@ -213,7 +216,7 @@ Per Coco `n` ∈ {1,2} (names shown for n=1):
 | Param | Range | Default | Curve | Notes |
 |---|---|---|---|---|
 | `coco1In` | 0–2 | 0.8 | lin | input level into converter; >1 overdrives. Matrix VCA dest `coco1_inVca` |
-| `coco1Fb` | 0–1.25 | 0.35 | lin | feedback/loop level; 1.0 = unity looper; >1 = saturating growth (bounded by clip). Matrix VCA dest `coco1_fbVca` |
+| `coco1Fb` | 0–1.25 | 0.35 | fb taper | feedback/loop level; 1.0 = unity looper; >1 = saturating growth (bounded by clip). Matrix VCA dest `coco1_fbVca` |
 | `coco1Speed` | 3000–48000 Hz | 24000 | exp | RAM clock. Loop length = bufFrames/clock (default buffer 2^17 ⇒ 2.7 s @48 k, 43.7 s @3 k). Post-modulation hard clamp: 1500 Hz – server SR (modulation may push an octave below the knob floor — the "ground jack" trick). Matrix dest `coco1_spaf` |
 | `coco1Spaf` | −4.0–4.0 oct | 0 | bipolar | the `^` knob: depth/direction of speed modulation from the matrix |
 | `coco1DolbyIn` | enum | `\off` | — | `\off \gate \duck` — gate = downward expander on input; duck = input attenuated by feedback-channel envelope |

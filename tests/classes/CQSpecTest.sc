@@ -141,4 +141,28 @@ CQSpecTest : UnitTest {
 		this.assertEquals(CQSpec.map(\coco1Bits, 1), 12, "int map lands on integer max");
 		this.assertEquals(CQSpec.map(\coco1Hold, 0.9), 1, "toggle map thresholds at 0.5");
 	}
+
+	test_feedbackTaperIsExactAndInvertible {
+		var norms = [0, 0.1, 0.499999, 0.5, 0.7, 0.899999, 0.9, 0.95, 1];
+		[\coco1Fb, \coco2Fb].do { |name|
+			this.assertFloatEquals(CQSpec.map(name, 0.0), 0.0,
+				"% taper starts at silence".format(name), 1e-12);
+			this.assertFloatEquals(CQSpec.map(name, 0.5), 0.85,
+				"% taper enters the riding band at mid-fader".format(name), 1e-12);
+			this.assertFloatEquals(CQSpec.map(name, 0.9), 1.10,
+				"% taper leaves the riding band at 90%".format(name), 1e-12);
+			this.assertFloatEquals(CQSpec.map(name, 1.0), 1.25,
+				"% taper keeps the old maximum".format(name), 1e-12);
+			this.assertFloatEquals(CQSpec.map(name, 0.7), 0.975,
+				"% taper is piecewise linear between its breakpoints".format(name), 1e-12);
+			this.assertFloatEquals(CQSpec.unmap(name, 1.0), 0.74,
+				"% puts unity at a broad, repeatable fader position".format(name), 1e-12);
+			norms.do { |norm|
+				var back = CQSpec.unmap(name, CQSpec.map(name, norm));
+				this.assert((back - norm).abs <= 1e-9,
+					"% map/unmap roundtrip at % has error %"
+						.format(name, norm, (back - norm).abs));
+			};
+		};
+	}
 }

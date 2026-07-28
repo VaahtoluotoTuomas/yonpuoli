@@ -908,6 +908,37 @@ CQ.free;
       yhden käyttöliittymän selkeys, spesal-tähdistön kirjattu kuolema ja
       muistipolkukartan kirjattu kuolema)
 
+### 13.1 — Feedback-taperin korvaportti
+
+Ensimmäinen kuuntelukandidaatti elää `nocturne-feedback-taper`-haaralla.
+Feedbackin arvoalue, oletus, snapshotit ja DSP ovat ennallaan; vain käden
+normalisoitu kartta muuttui. 16n:n `takeover: \pickup` on suositeltava, jos
+snapshot-palautuksen jälkeinen fyysisen faderin hyppy häiritsee.
+
+```supercollider
+// 13.1 — Ctrl+Shift+L ensin, koska CQSpec muuttui.
+CQ.free;
+CQ.boot;
+CQ.patchPreset(\empty);
+CQ.set(\masterVol, -24);
+CQ.deckA.load("<perkussiivinen kenttä-äänite>");
+CQ.set(\coco1SlotDeck, 1);
+CQ.set(\coco1In, 0.8);
+CQ.hold(1, 0);
+// 1. Aja vasemman Cocon feedback-sirppiä tai 16n:n F4:ää hitaasti alhaalta
+//    ylös ja takaisin. Kaiku → luuppi → rouhe ei saa enää ryöpsähtää faderin
+//    viimeisessä kuudenneksessa: 0.85→1.10 on nyt leveä 50→90 % kaista.
+// 2. Etsi ikuinen looppi (~1.0). Löytyykö se ilman mikrometriliikettä, ja
+//    pystyykö käsi palaamaan siihen luotettavasti?
+// 3. Ratsasta 0.95↔1.15 edestakaisin. Onko bloom-kynnys ennustettava, vai
+//    tuntuuko yläpään 1.10→1.25 viimeinen 10 % liian jyrkältä?
+// 4. Toista Coco 2:lla / F8:lla. Molempien pitää tuntua samalta.
+CQ.free;
+```
+
+- [ ] 13.1 hyväksytty (pvm: ______ — ikuinen looppi löytyy, bloom-kynnys on
+      soitettava, mayhem-tail ei ole liian jyrkkä)
+
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>
 

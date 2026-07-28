@@ -87,7 +87,7 @@ CQSpec {
 		if(e.isNil) { ^nil };
 		norm = (this.prNumOrNil(norm) ? 0).clip(0, 1);
 		^switch(e[\kind],
-			\num,    { e[\spec].map(norm) },
+			\num,    { this.prMapNum(e, norm) },
 			\int,    { e[\spec].map(norm).round.asInteger },
 			\toggle, { if(norm > 0.5) { 1 } { 0 } },
 			\enum,   { e[\values].at((norm * (e[\values].size - 1)).round.asInteger) }
@@ -99,7 +99,7 @@ CQSpec {
 		if(e.isNil) { ^nil };
 		value = this.clamp(name, value);
 		^switch(e[\kind],
-			\num,    { e[\spec].unmap(value) },
+			\num,    { this.prUnmapNum(e, value) },
 			\int,    { e[\spec].unmap(value) },
 			\toggle, { value },
 			\enum,   { e[\values].indexOf(value) / (e[\values].size - 1) }
@@ -149,9 +149,31 @@ CQSpec {
 		^e[\default]
 	}
 
-	*prNum { |name, lo, hi, warp, default, lag = 0.03|
+	// An optional monotonic breakpoint table keeps a hand mapping honest and
+	// exactly invertible while ControlSpec remains the owner of range/clamping.
+	// Each point is [normalizedPosition, parameterValue]; the table itself lives
+	// only in this registry, never in a GUI or MIDI call site.
+	*prMapNum { |e, norm|
+		var points = e[\breakpoints], i;
+		if(points.isNil) { ^e[\spec].map(norm) };
+		i = (0 .. (points.size - 2)).detect { |j| norm <= points[j + 1][0] };
+		^norm.linlin(
+			points[i][0], points[i + 1][0],
+			points[i][1], points[i + 1][1])
+	}
+
+	*prUnmapNum { |e, value|
+		var points = e[\breakpoints], i;
+		if(points.isNil) { ^e[\spec].unmap(value) };
+		i = (0 .. (points.size - 2)).detect { |j| value <= points[j + 1][1] };
+		^value.linlin(
+			points[i][1], points[i + 1][1],
+			points[i][0], points[i + 1][0])
+	}
+
+	*prNum { |name, lo, hi, warp, default, lag = 0.03, breakpoints|
 		all[name] = (kind: \num, spec: ControlSpec(lo, hi, warp, 0, default),
-			default: default, lag: lag);
+			default: default, lag: lag, breakpoints: breakpoints);
 	}
 
 	*prInt { |name, lo, hi, default|
@@ -192,7 +214,8 @@ CQSpec {
 		[1, 2].do { |n|
 			var p = { |suffix| ("coco" ++ n ++ suffix).asSymbol };
 			this.prNum(p.value("In"), 0, 2, \lin, 0.8);
-			this.prNum(p.value("Fb"), 0, 1.25, \lin, 0.35);
+			this.prNum(p.value("Fb"), 0, 1.25, \lin, 0.35, 0.03,
+				[[0.0, 0.0], [0.5, 0.85], [0.9, 1.10], [1.0, 1.25]]);
 			this.prNum(p.value("Speed"), 3000, 48000, \exp, 24000);
 			this.prNum(p.value("Spaf"), -4.0, 4.0, \lin, 0);
 			this.prEnum(p.value("DolbyIn"), #[off, gate, duck], \off);

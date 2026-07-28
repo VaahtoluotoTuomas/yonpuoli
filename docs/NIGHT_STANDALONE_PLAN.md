@@ -1198,6 +1198,12 @@ with 13.6 running inside the G3.1 review and 13.7 already planned as §2.
 
 ### 13.1 The feedback taper — more fader where the music lives
 
+**Implementation status (2026-07-28).** The first listening candidate is
+implemented on `nocturne-feedback-taper` as the generic CQSpec-owned
+breakpoint map described below. The automatic gate is green; the experiment
+is not accepted until the user completes the ear protocol and judges the
+unity/bloom band and the final mayhem tail.
+
 **Hypothesis.** The instrument's juiciest zone is fb ≈ 0.95–1.15
 (echo → looper → blooming crunch), but the linear 0–1.25 spec gives it
 ~15 % of the fader. Densifying resolution around unity is likely the

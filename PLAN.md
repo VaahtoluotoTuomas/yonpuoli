@@ -33,7 +33,10 @@ spesalin seurauksen tekopaikassa, ja Workshopin täsmäkontrollit sekä Nightin
 kuoret tekevät passiivisesta muistipolkukartasta ylläpitokustannustaan
 heikomman. N9:n jälkeinen rajattu polish-portti — kiduksen
 kaapeliprioriteetti ja snapshot-kansion erotus — valmistui 2026-07-28.
-**Seuraava askel on 13.1 feedback-taper.** Sen jälkeen etenemisjärjestys on
+**13.1 feedback-taperin ensimmäinen kuuntelukandidaatti on toteutettu
+`nocturne-feedback-taper`-haaralle ja odottaa käyttäjän korvaporttia.**
+Sitä ei hyväksytä eikä seuraavaa muuttujaa aloiteta ennen kuuntelutuomiota.
+Hyväksynnän jälkeen etenemisjärjestys on
 **13.4 chaos-käyrä → Space/reverbin
 konseptipäätös ja kuuntelu → 13.2 speed-lattia → 13.5 VCA-laki → 13.3 dust
 → 13.6 zipper-mittaus + 13.8 preampin equal-loudness-koe → jäljellä olevat
@@ -267,7 +270,16 @@ stem-gate ennen Norns-porttia. Jokainen hyväksytty DSP-muutos ajaa myös
 `nrt_safety`n ja
 `nrt_hold_integrity`n ja päivittää SPEC §5:n samassa commitissa.
 
-- [ ] 13.1 feedback-taper · [ ] 13.2 speed-lattia · [ ] 13.3 dust ·
+`nocturne-feedback-taper`-haaran 13.1-kandidaatin automaattinen portti
+2026-07-28: `CQ_COMPILE_OK`, **13 071 unit-passia / 0 failurea / 32/32
+luokkaa**, `CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`,
+`CQ_GUI_DRAWER_PASSED`, `CQ_GUI_DRAWER_REENTRY_PASSED` ja
+`CQ_GUI_NIGHT_PASSED`. `CQ_HOLD_OK` kantaa, koska muutos koskee vain
+normalisoidun käden map/unmap-karttaa, ei DSP:tä tai tallennettuja arvoja.
+Korvaportti on edelleen avoin.
+
+- [ ] 13.1 feedback-taper (**kandidaatti toteutettu, korvaportti avoin**) ·
+  [ ] 13.2 speed-lattia · [ ] 13.3 dust ·
   [ ] 13.4 chaos-käyrä · [ ] 13.5 VCA-laki · [ ] 13.6 zipper-mittaus ·
   [ ] 13.8 preamp loudness compensation
 
