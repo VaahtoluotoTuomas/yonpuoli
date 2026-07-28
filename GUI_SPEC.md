@@ -210,6 +210,10 @@ funnel like any other client.
   click. Styling only the collapsed box or only the currently selected row is
   incomplete. Persistent selectable lists, including Memory's saved snapshots,
   likewise highlight the row under the pointer without changing selection.
+  Row paint, hover and click must resolve through the same geometry. If a
+  platform-native list does not expose its real row bounds, do not estimate
+  them from a Drawer metric: use an Ink-painted list whose row height is owned
+  by the application.
   In Qt this binds ordinary `mouseOverAction`; `mouseMoveAction` alone covers
   only movement while a button is held.
 
@@ -677,8 +681,12 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
   experiment adds no delete control or implicit write/recall gesture. The
   “outlined knots differ…” line is a tiny side note with two row gaps of
   clearance above the destination headings, never heading-sized or attached
-  to the `decks` heading below it. Both Morph Bridge choice boxes share the
-  Inspector preset box's closed and opened Ink hover language.
+  to the `decks` heading below it. It is Pen-drawn inside an explicitly roomy
+  band rather than entrusted to a native label's opaque content rectangle.
+  The saved-snapshot list is likewise an Ink-painted field: row drawing,
+  pointer hover and selection use one exact row height. Both Morph Bridge
+  choice boxes share the Inspector preset box's closed and opened Ink hover
+  language.
 
 ---
 
@@ -1044,7 +1052,9 @@ Laws:
   (`CQGuiScale.textBandHeight` in the Drawer). After any type-rank or font-size
   change, the visual and Qt-smoke review checks both horizontal fit and that
   glyph tops/descenders are not clipped. A smaller side note may use a smaller
-  face; it may not use a guessed face-size-plus-a-few-pixels box.
+  face; it may not use a guessed face-size-plus-a-few-pixels box. If native
+  label metrics still crop a short, read-only annotation, draw it with Pen in
+  an explicit band and gate the measured glyph bounds against that band.
 - Tool-box titles keep a small reviewed top inset between the border and the
   glyphs. Memory's `saved snapshots`, `patch fingerprint` and `morph bridge`
   use the same step-aware inset; none sits directly against the top stroke.

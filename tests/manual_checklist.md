@@ -819,10 +819,12 @@ CQGuiScale.minimumHeight(\roomy) + CQGuiScale.comfort;    // vaadittu korkeus
 // 12. FONTIN LEIKKAUSPORTTI. Aina kun fontin kokoa tai arvorankia muutetaan,
 //    tarkista sekä vaakasuuntainen mahtuminen että yläreuna, alareuna ja
 //    laskevat kirjaimet (g, j, p, q, y). Pienempi fontti ei saa pienentää
-//    StaticText-laatikkoa ilman ascent/descent-ilmaa. Tässä passissa tarkista
-//    erityisesti koko "outlined knots differ from the live patch" -rivi.
+//    tekstikaistaa ilman ascent/descent-ilmaa. Tässä passissa tarkista
+//    erityisesti koko "outlined knots differ from the live patch" -rivi:
+//    Pen-kaistan pitää näyttää l-kirjaimen laki sekä p-kirjaimen alapidennys.
 // 13. MEMORY-LISTA JA OTSIKOT. Hoveroi saved snapshots -listan eri rivejä:
-//    kevyt highlight seuraa osoitinta muuttamatta valittua snapshotia.
+//    kevyt highlight seuraa täsmälleen osoittimen riviä, ei yhtä riviä sen
+//    yläpuolella, ja klikkaus valitsee juuri saman rivin.
 //    `saved snapshots`, `patch fingerprint` ja `morph bridge` -otsikoiden
 //    yläpuolella pitää olla sama pieni ilmatila laatikon reunaan.
 ```

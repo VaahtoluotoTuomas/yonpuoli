@@ -13,7 +13,7 @@ CQGuiMemory {
 
 	var gui, state, matrix, snapshots, matrixCtl, morphCtl;
 	var skin = \day, snapshotNames, selectedData, labels, menus, panels;
-	var <snapshotHover;
+	var detailHintText;
 	var nameField, <aMenu, <bMenu, durationBox, detailTitle, <detailHint;
 	var <view, <snapshotList, <fingerprint, <morphMeter, <selectedName, <header;
 	// the seed bank shares the workbench's content rail and size step
@@ -28,6 +28,15 @@ CQGuiMemory {
 	// live rail is `railWidth` and follows CQGuiScale
 	*contentWidth { ^contentW }
 	*detailMargins { ^[8, 0, 8, 0] }
+	*detailHintTexts {
+		^[
+			"select a saved snapshot to compare it with the live patch",
+			"outlined knots differ from the live patch",
+			"start the instrument before saving a snapshot",
+			"select a saved snapshot before recall",
+			"choose two saved snapshots before morph"
+		]
+	}
 
 	// The saved-snapshot column is a fixed reading width; the fingerprint takes
 	// whatever the rail has left, so a wider window buys patch detail rather
@@ -59,7 +68,9 @@ CQGuiMemory {
 			};
 		};
 		snapshotList.font = CQInk.font(\spellbook, m[\mono]);
+		snapshotList.rowHeight = m[\listRow];
 		snapshotList.fixedWidth = column - 14;
+		detailHint.fixedSize = Size(this.prDetailHintWidth(m), m[\barHeight]);
 		nameField.font = CQInk.font(\number, m[\mono]);
 		nameField.fixedSize = Size(column - 14 - CQGuiScale.buttonWidth(step,
 			"save snapshot") - 6, m[\boxHeight]);
@@ -83,7 +94,7 @@ CQGuiMemory {
 		topPad.fixedHeight = m[\vMargin];
 		bottomPad.fixedHeight = m[\vMargin];
 		panels.do { |panel| panel.refresh };
-		this.prRefreshSnapshotHover;
+		detailHint.refresh;
 		^this
 	}
 
@@ -105,11 +116,7 @@ CQGuiMemory {
 			record[\view].stringColor = palette[record[\color]]
 				?? { palette[\whisper] };
 		};
-		snapshotList.background = palette[\ground];
-		snapshotList.stringColor = palette[\line];
-		snapshotList.selectedStringColor = palette[\line];
-		snapshotList.hiliteColor = palette[\spaf].copy.alpha_(0.28);
-		this.prRefreshSnapshotHover;
+		snapshotList.skin = skin;
 		menus.do { |menu| menu.skin = skin };
 		nameField.background = palette[\ground];
 		nameField.stringColor = palette[\line];
@@ -117,6 +124,8 @@ CQGuiMemory {
 		durationBox.stringColor = palette[\line];
 		fingerprint.background = palette[\ground];
 		morphMeter.background = palette[\ground];
+		detailHint.background = palette[\ground];
+		detailHint.refresh;
 		fingerprint.refresh;
 		morphMeter.refresh;
 		^this
@@ -126,7 +135,6 @@ CQGuiMemory {
 		var index;
 		snapshotNames = if(snapshots.isNil) { [] } { snapshots.list };
 		snapshotList.items = ["live patch · now"] ++ snapshotNames;
-		this.prRefreshSnapshotHover;
 		menus.do { |menu| menu.items = snapshotNames };
 		index = if(selectedName.isNil) { 0 } {
 			snapshotNames.indexOf(selectedName.asString)
@@ -159,23 +167,11 @@ CQGuiMemory {
 			.stringColor_(palette[\line]).background_(palette[\ground])
 			.fixedSize_(Size(column - 14 - saveW - 6, m[\boxHeight]))
 			.action_({ |field| field.focus(false) });
-		snapshotList = ListView().selectionMode_(\single)
+		snapshotList = CQInkList([], skin, m[\listRow])
 			.font_(CQInk.font(\spellbook, m[\mono]))
-			.stringColor_(palette[\line]).selectedStringColor_(palette[\line])
-			.hiliteColor_(palette[\spaf].copy.alpha_(0.28))
-			.background_(palette[\ground])
 			.fixedWidth_(column - 14);
 		snapshotList.action = { this.prSelectSnapshot };
 		snapshotList.selectionAction = { this.prSelectSnapshot };
-		snapshotList.mouseOverAction = { |list, x, y|
-			this.prHoverSnapshotAt(y)
-		};
-		snapshotList.mouseLeaveAction = {
-			if(snapshotHover.notNil) {
-				snapshotHover = nil;
-				this.prRefreshSnapshotHover
-			}
-		};
 		saveButton = this.prButton("save snapshot", saveW, \line, { this.prSave });
 		recallButton = this.prButton("recall",
 			CQGuiScale.buttonWidth(step, "recall"), \line, { this.prRecall });
@@ -192,16 +188,23 @@ CQGuiMemory {
 		snapshotPanel.layout = VLayout(
 			View().fixedHeight_(m[\barHeight] - 4),
 			HLayout(nameField, saveButton.view).spacing_(6),
-			snapshotList,
+			snapshotList.view,
 			HLayout(recallButton.view, refreshButton.view, nil).spacing_(6)
 		).margins_(7).spacing_(6);
 
 		detailTitle = this.prLabel("live patch · now", \line, \notice);
 		// explanatory info, not a heading: it sits one rank below the title it
 		// shares a row with (the user's N8 note)
-		detailHint = this.prLabel(
-			"select a saved snapshot to compare it with the live patch",
-			\whisper, \tiny);
+		detailHintText = "select a saved snapshot to compare it with the live patch";
+		detailHint = UserView()
+			.fixedSize_(Size(this.prDetailHintWidth(m), m[\barHeight]))
+			.background_(palette[\ground]);
+		detailHint.drawFunc = {
+			var rect = detailHint.bounds.moveTo(0, 0).insetBy(2, 2);
+			Pen.stringRightJustIn(detailHintText, rect,
+				CQInk.font(\range, CQGuiScale.metrics(step)[\tiny]),
+				CQInk.palette(skin)[\whisper])
+		};
 		fingerprint = UserView().fixedWidth_(print.width)
 			.background_(palette[\ground]);
 		fingerprint.drawFunc = {
@@ -211,8 +214,8 @@ CQGuiMemory {
 		// starts below it rather than on top of it
 		fingerprint.layout = VLayout(
 			View().fixedHeight_(m[\label] + 10),
-			// Horizontal inset only: the former scalar 8 px margins also ate
-			// 16 px vertically and clipped ascenders/descenders inside this row.
+			// Horizontal inset only. The explanatory note itself is Pen-drawn
+			// in a roomy band, so Qt label internals cannot crop its glyphs.
 			HLayout(detailTitle, nil, detailHint)
 				.margins_(this.class.detailMargins).spacing_(6),
 			nil
@@ -316,28 +319,15 @@ CQGuiMemory {
 			{ m[\label] })
 	}
 
-	prHoverSnapshotAt { |y|
-		var row = (y / CQGuiScale.metrics(step)[\listRow]).floor.asInteger;
-		if(row < 0 or: { row >= snapshotList.items.size }) { row = nil };
-		if(row != snapshotHover) {
-			snapshotHover = row;
-			this.prRefreshSnapshotHover
-		};
-		^this
+	prDetailHintWidth { |m|
+		var font = CQInk.font(\range, m[\tiny]);
+		^this.class.detailHintTexts.collect { |text| text.bounds(font).width }
+			.maxItem.ceil.asInteger + 8
 	}
 
-	prRefreshSnapshotHover {
-		var palette = CQInk.palette(skin);
-		var colors = Array.fill(snapshotList.items.size, palette[\ground]);
-		if(snapshotHover.notNil and: { snapshotHover >= colors.size }) {
-			snapshotHover = nil
-		};
-		snapshotHover !? { |index|
-			if(index < colors.size) {
-				colors[index] = palette[\ground].blend(palette[\spark], 0.16)
-			}
-		};
-		snapshotList.colors = colors;
+	prSetDetailHint { |text|
+		detailHintText = text;
+		detailHint.refresh;
 		^this
 	}
 
@@ -358,12 +348,13 @@ CQGuiMemory {
 			selectedName = nil;
 			selectedData = nil;
 			detailTitle.string = "live patch · now";
-			detailHint.string = "select a saved snapshot to compare it with the live patch";
+			this.prSetDetailHint(
+				"select a saved snapshot to compare it with the live patch");
 		} {
 			selectedName = snapshotNames.at(index - 1);
 			selectedData = snapshots !? { snapshots.read(selectedName.asSymbol) };
 			detailTitle.string = selectedName.asString;
-			detailHint.string = "outlined knots differ from the live patch";
+			this.prSetDetailHint("outlined knots differ from the live patch");
 		};
 		fingerprint.refresh;
 		^this
@@ -371,7 +362,7 @@ CQGuiMemory {
 
 	prSave {
 		if(snapshots.isNil) {
-			detailHint.string = "start the instrument before saving a snapshot";
+			this.prSetDetailHint("start the instrument before saving a snapshot");
 			^this
 		};
 		snapshots.save(nameField.string);
@@ -383,7 +374,7 @@ CQGuiMemory {
 		if(snapshots.notNil and: { selectedName.notNil }) {
 			snapshots.recall(selectedName.asSymbol)
 		} {
-			detailHint.string = "select a saved snapshot before recall";
+			this.prSetDetailHint("select a saved snapshot before recall");
 		};
 		^this
 	}
@@ -392,7 +383,7 @@ CQGuiMemory {
 		if(snapshots.notNil and: { aMenu.item.notNil } and: { bMenu.item.notNil }) {
 			snapshots.morph(aMenu.item.asSymbol, bMenu.item.asSymbol, durationBox.value)
 		} {
-			detailHint.string = "choose two saved snapshots before morph";
+			this.prSetDetailHint("choose two saved snapshots before morph");
 		};
 		^this
 	}

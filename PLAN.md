@@ -477,6 +477,19 @@ jakavat yhden kokoaskeleesta tulevan hieman syvemmän top-insetin.
 Portti: `CQ_COMPILE_OK`, **13 035 unit-passia / 0 failurea / 31/31 luokkaa**,
 `CQ_GUI_DRAWER_PASSED` ja `CQ_SAFETY_PASSED`.
 
+Viimeinen laitetarkistus osoitti, että kumpikin jäljellä ollut vika oli Qt:n
+sisäisen geometrian varassa eikä enää korjattavissa sovelluksen puolelta
+arvaamalla. `outlined knots differ…` ei ole enää `StaticText`: se piirretään
+Penillä mitattuun, väljään `UserView`-kaistaan, jonka smoke-portti vertaa
+merkkijonon todelliseen glyfikorkeuteen. Natiivi `ListView` ei puolestaan
+paljastanut todellista sisältö-/rivialkuaan, joten saved snapshots käyttää nyt
+`CQInkList`iä: sama `rowHeight` ja sama indeksifunktio määräävät piirron,
+tavallisen hoverin ja klikkauksen. Yleinen sääntö on kirjattu GUI_SPEC
+§4.5/§16.4: tuntematonta natiivigeometriaa ei soviteta visuaaliseen
+osumakohteeseen likimäärällä. Portti: `CQ_COMPILE_OK`, **13 035
+unit-passia / 0 failurea / 31/31 luokkaa**, `CQ_GUI_DRAWER_PASSED` (mukana
+hoverin ja klikkauksen sama riviosuma) ja `CQ_SAFETY_PASSED`.
+
 Saman haaran **viimeistelykierros** 2026-07-28 (N8 v5, käyttäjän neljännen
 testauskierroksen palaute; **vihreä mutta ei hyväksytty**): `CQ_COMPILE_OK`,
 **13 027 unit-passia / 0 failurea / 31/31 luokkaa**, `CQ_SAFETY_PASSED` ja

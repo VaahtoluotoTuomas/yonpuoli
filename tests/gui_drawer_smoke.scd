@@ -161,19 +161,40 @@ centred = { |inner, outer|
 								>= CQGuiScale.textBandHeight(
 									CQGuiScale.metrics(drawer.step)[\tiny]),
 								"Memory's tiny comparison note keeps vertical glyph clearance");
+							check.value(drawer.memoryGui.detailHint.isKindOf(UserView)
+								and: { drawer.memoryGui.detailHint.drawFunc.notNil }
+								and: {
+									"outlined knots differ from the live patch".bounds(
+										CQInk.font(\range,
+											CQGuiScale.metrics(drawer.step)[\tiny])
+									).height
+									<= (drawer.memoryGui.detailHint.bounds.height - 4)
+								},
+								"Memory paints the note in a measured Pen band, not a clipping QLabel");
 							check.value(CQGuiMemory.detailMargins == [8, 0, 8, 0],
 								"Memory's comparison row spends inset only horizontally");
 							drawer.memoryGui.snapshotList.items = [
 								"live patch · now", "alpha", "beta"];
-							check.value(drawer.memoryGui.snapshotList.mouseOverAction.notNil,
+							check.value(drawer.memoryGui.snapshotList.view.mouseOverAction.notNil,
 								"saved snapshots bind ordinary no-button row hover");
-							drawer.memoryGui.snapshotList.mouseOverAction.value(
-								drawer.memoryGui.snapshotList, 4,
+							drawer.memoryGui.snapshotList.view.mouseOverAction.value(
+								drawer.memoryGui.snapshotList.view, 4,
 								CQGuiScale.metrics(drawer.step)[\listRow] * 1.5);
-							check.value(drawer.memoryGui.snapshotHover == 1
-								and: { drawer.memoryGui.snapshotList.colors[1]
-									!= CQInk.palette(\day)[\ground] },
-								"saved snapshot hover highlights the row under the pointer");
+							check.value(drawer.memoryGui.snapshotList.hoverIndex == 1,
+								"saved snapshot hover and paint share the exact row geometry");
+							drawer.memoryGui.snapshotList.action = {};
+							drawer.memoryGui.snapshotList.selectionAction = {};
+							drawer.memoryGui.snapshotList.view.mouseDownAction.value(
+								drawer.memoryGui.snapshotList.view, 4,
+								CQGuiScale.metrics(drawer.step)[\listRow] * 1.5);
+							check.value(drawer.memoryGui.snapshotList.value == 1,
+								"saved snapshot click and hover resolve the same row");
+							drawer.memoryGui.snapshotList.action = {
+								drawer.memoryGui.prSelectSnapshot
+							};
+							drawer.memoryGui.snapshotList.selectionAction = {
+								drawer.memoryGui.prSelectSnapshot
+							};
 							drawer.memoryGui.refresh;
 							drawer.memoryGui.aMenu.items = ["alpha", "beta"];
 							drawer.memoryGui.aMenu.view.mouseEnterAction.value(

@@ -108,6 +108,12 @@ tagged. Earlier tags describe internal development baselines.
   below the text. Memory's saved-snapshot list now highlights the hovered row,
   and all three Memory tool titles share a slightly deeper step-aware top
   inset.
+- Replaced both platform-dependent remnants after live review. The Memory
+  comparison note is now Pen-drawn in a measured, roomy band, so native label
+  ascent/descent clipping cannot cut its glyphs. Saved snapshots now use an
+  Ink-painted persistent list whose drawing, hover and click share one exact
+  row height; the highlight can no longer land one native row above the
+  pointer.
 - Hardened every headless SuperCollider gate against a recurring Windows hang:
   the shared runner uses daemon mode, a child-only watchdog, expected-marker
   validation and per-run diagnostic logs; agents and CI now use that same
