@@ -15,9 +15,9 @@ The instrument is currently developed and tested on Windows. The v1.0 sound
 engine and the complete Archipelago GUI are implemented, audited, and accepted.
 The active `nocturne` phase has made the Night surface the whole instrument:
 Night, the persistent Master strip and the Drawer now cover every parameter
-without maintaining a second performance interface. The Night-only cut is in
-its first runnable review gate; see [`PLAN.md`](PLAN.md) for current work rather
-than reading historical checklists as open tasks.
+without maintaining a second performance interface. The Night-only instrument
+passed its live review on 2026-07-28; see [`PLAN.md`](PLAN.md) for current work
+rather than reading historical checklists as open tasks.
 
 ## What it offers
 

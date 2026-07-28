@@ -903,8 +903,8 @@ CQ.set(\masterVol, -24);
 CQ.free;
 ```
 
-- [ ] N9 hyväksytty (Night itsenäisenä soittimena, Drawer-paluu, yhden
-      käyttöliittymän selkeys, spesal-tähdistön kirjattu kuolema,
+- [x] N9 hyväksytty (2026-07-28 — Night itsenäisenä soittimena, Drawer-paluu,
+      yhden käyttöliittymän selkeys, spesal-tähdistön kirjattu kuolema ja
       muistipolkukartan kirjattu kuolema)
 
 <details>

@@ -144,8 +144,9 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   Night 31 + Master 5 + Workshop 43 partition covers all 79 `CQSpec`
   parameters without Day. The user then chose Night as the sole interface and
   asked to merge the accepted chain: local `nocturne` now points at `dc95ced`.
-  **N9's first reversible Night-only cut is on `nocturne-night-only` and
-  awaits checklist N9.** The permanent spesal constellation is recorded dead
+  **N9's reversible Night-only cut was accepted on `nocturne-night-only`
+  (2026-07-28, checklist N9) and merged locally into `nocturne`.** The
+  permanent spesal constellation is recorded dead
   in favor of Night's under-hand coupling chord; the static Coco memory-path
   diagram is recorded dead in favor of the playable shells plus Workshop.
   N7's review found one defect worth remembering: the transient provenance
@@ -384,8 +385,8 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   `CQ_GUI_DRAWER_PASSED`, `CQ_GUI_DRAWER_REENTRY_PASSED` and
   `CQ_GUI_NIGHT_PASSED`; `CQ_HOLD_OK` carries because the accepted increment
   did not touch DSP.
-- N9 Night-only first-runnable gate on `nocturne-night-only` (2026-07-28,
-  awaiting checklist N9): `CQ_COMPILE_OK`, **13,033 unit passes / 0 failures /
+- Accepted N9 Night-only gate on `nocturne-night-only` (2026-07-28,
+  checklist N9): `CQ_COMPILE_OK`, **13,033 unit passes / 0 failures /
   32/32 classes**, `CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
   `CQ_GUI_DRAWER_REENTRY_PASSED` and `CQ_GUI_NIGHT_PASSED`. The final safety
   marker and the changed Night overlay's `CQ_PAINT_PROFILE_DONE` are green;

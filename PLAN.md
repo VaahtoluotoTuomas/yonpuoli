@@ -11,10 +11,9 @@ Archipelago-GUI G1–G3 [`docs/history/PLAN_archipelago.md`](docs/history/PLAN_a
 **Tilanne yhdellä rivillä:** v1.0 (DSP + koodikerros) ja koko Archipelago-GUI
 (G1 Day · G2 Night · G3 Weather machine) ovat valmiita ja käyttäjän hyväksymiä;
 archipelago on sulautettu `main`iin (PR #1, tagi `archipelago-1.0`). **Uusi
-vaihe: Nocturne — yö koko soittimena.** N1–N8 on hyväksytty ja sulautettu
-paikalliseen `nocturne`-integraatiohaaraan. N9:n ensimmäinen ajettava versio
-poistaa Dayn ja jättää yhden ylläpidettävän soittopinnan: Night + Master +
-Drawer. Se odottaa vielä käyttäjän soitto- ja visuaalista hyväksyntää.
+vaihe: Nocturne — yö koko soittimena.** N1–N9 on hyväksytty: Night + Master +
+Drawer on nyt soittimen ainoa ylläpidettävä käyttöliittymä, ja koko hyväksytty
+Nocturne-GUI-ketju on sulautettu paikalliseen `nocturne`-integraatiohaaraan.
 
 **Julkinen identiteetti:** soittimen nimi on nyt **Yölahti**. Cocoquantus on
 lähtökohta ja avoimesti dokumentoitu sukulinja, ei tuotteen nimi eikä lupaus
@@ -24,21 +23,17 @@ Portfolio- ja julkaisupinta on `README.md`:ssä, `SOURCES.md`:ssä ja `docs/`-ka
 case study / development process -dokumenteissa. Etärepon uudelleennimeäminen,
 public-vaihto ja oikeat kuva-/äänidemot ovat erillinen julkaisutoimi.
 
-**Seuraava askel konkreettisesti:** N8 (Drawer-workshop, §12.1) hyväksyttiin
-2026-07-28 ja käyttäjän pyynnöstä koko hyväksytty N3→N8-ketju
-fast-forward-sulautettiin paikalliseen `nocturne`en commitissa `dc95ced`.
-Night 31 · Master 5 · Workshop 43 on erillinen, koneellisesti todistettu
-`CQSpec.names`-peitto. **N9:n Day-tuomio on tehty:** Day poistetaan, koska Night
-on inspiroivampi varsinainen soitin ja kahden käyttöliittymän ylläpito hajottaisi
-kehityksen. Ensimmäinen peruutettava Night-only-versio elää
-`nocturne-night-only`-haaralla. Dayn spesal-tähdistö ja staattinen
-muistipolkukartta saivat kirjatun kuoleman: Nightin osoittimen alla ilmestyvä
-suuntatotuudellinen kytkentäsointu kertoo spesalin seurauksen tekopaikassa, ja
-Workshopin täsmäkontrollit sekä Nightin kuoret tekevät passiivisesta
-muistipolkukartasta ylläpitokustannustaan heikomman. **Nyt pysähdytään N9:n
-ensimmäisen ajettavan version soitto- ja visuaaliseen katselmukseen; rasti ja
-sulautus vasta käyttäjän hyväksynnästä.** §13 korvapassi voi kulkea limittäin,
-mutta Norns-portti (§14) on vasta night-first-vaiheen jälkeen.
+**Seuraava askel konkreettisesti:** **N9 hyväksyttiin 2026-07-28.** Day on
+poistettu, koska Night on inspiroivampi varsinainen soitin ja kahden
+käyttöliittymän ylläpito hajottaisi kehityksen. Night 31 · Master 5 · Workshop
+43 on erillinen, koneellisesti todistettu `CQSpec.names`-peitto. Dayn
+spesal-tähdistö ja staattinen muistipolkukartta saivat kirjatun kuoleman:
+Nightin osoittimen alla ilmestyvä suuntatotuudellinen kytkentäsointu kertoo
+spesalin seurauksen tekopaikassa, ja Workshopin täsmäkontrollit sekä Nightin
+kuoret tekevät passiivisesta muistipolkukartasta ylläpitokustannustaan
+heikomman. **Seuraava työ on §13:n korvapassi, yksi muuttuja kerrallaan:
+ensin 13.1 feedback-taper, sitten 13.4 chaos-käyrä.** Norns-portti (§14) alkaa
+vasta tämän night-first-hienosäädön jälkeen.
 
 ## Auktoriteettijärjestys
 
@@ -67,18 +62,18 @@ korvata teknisesti helpommalla ratkaisulla ilman käyttäjän päätöstä.
   katselmointihaarallaan; palaaminen tarkoittaa commitin peruuttamista, ei
   kahden käyttöliittymän ylläpitämistä runtimessa.
 - Erillisiä lyhytikäisiä työhaaroja tarvitaan vain todellisessa rinnakkaistyössä
-  **tai kun valmis inkrementti jää käyttäjän harkintaan.** N9 on tällainen:
-  `git switch nocturne-night-only` näyttää ensimmäisen ajettavan leikkauksen
-  ja `git switch nocturne` palaa hyväksyttyyn N8-checkpointiin.
+  **tai kun valmis inkrementti jää käyttäjän harkintaan.** N9 käytti tätä mallia
+  ja hyväksyttiin 2026-07-28; sen katselmointihaara jää audit trailiksi, mutta
+  hyväksytty työ elää nyt `nocturne`ssa.
   **Testi-commit ei ole hyväksyntä** — hyväksyntä on aina checklist-rivin
   rasti käyttäjältä.
 - Lähdekoodi, testit ja dokumentit pidetään samassa commitissa silloin, kun ne
   yhdessä muodostavat yhden todennettavan käyttäytymismuutoksen.
 - Nocturnen N3→N4→N5→N6→N7→N8-haarat muodostivat **pinotun ketjun**, eivät
   kuutta toisistaan riippumatonta toteutusta. Käyttäjän 2026-07-28 pyynnöstä
-  valmis ketju on nyt paikallisessa `nocturne`-integraatiohaarassa
-  (`dc95ced`). `nocturne-night-only` jatkaa siitä N9:n erillisenä
-  katselmointiporttina; testi-commit ei edelleenkään ole hyväksyntä.
+  N3–N8-ketju sulautettiin ensin paikalliseen `nocturne`en (`dc95ced`) ja
+  hyväksytty N9 sen päälle 2026-07-28. Testi-commit ei edelleenkään yksin ole
+  hyväksyntä.
 
 ## Nocturne-vaiheen rakennusjärjestys
 
@@ -237,9 +232,9 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
   semantiikka-, Day-poisto- tai undo-muutoksia. **Valmis ja hyväksytty
   2026-07-28 (checklist N8):** viisi visuaalista palautekierrosta ja viimeinen
   hover-/valikko-/sivuhuomautuspassi ovat vihreitä.
-- [ ] **9. Day-tuomio** (§0). **Päätös tehty ja ensimmäinen ajettava
-  Night-only-versio valmis `nocturne-night-only`-haaralla 2026-07-28; odottaa
-  käyttäjän katselmusta (checklist N9).** Dayn runtime-rakenne, toolbar-vaihto,
+- [x] **9. Day-tuomio** (§0). **Valmis ja käyttäjän hyväksymä
+  `nocturne-night-only`-haaralla 2026-07-28 (checklist N9).** Dayn
+  runtime-rakenne, toolbar-vaihto,
   neljän sarakkeen rakentajat ja kaksi kuollutta yleisnäkymää on poistettu
   omana peruutettavana porttinaan. Spesal-tähdistön pysyvä yleisnäkymä kuolee,
   koska Nightin osoittimen alla näkyvä kytkentäsointu kertoo saman topologisen
@@ -248,8 +243,8 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
   täsmäkontrollit kattavat sen käytännöllisen tiedon. Automaattinen ensimmäinen
   portti: `CQ_COMPILE_OK`, **13 033 unit-passia / 0 failurea / 32/32 luokkaa**,
   `CQ_SAFETY_PASSED`, kaikki neljä GUI-marker-testia sekä
-  `CQ_PAINT_PROFILE_DONE`. N9 hyväksytään ja sulautetaan vasta oikean soitto-
-  ja visuaalisen katselmuksen jälkeen.
+  `CQ_PAINT_PROFILE_DONE`. Oikea soitto- ja visuaalinen katselmus hyväksyi
+  Nightin itsenäiseksi soittimeksi ja molempien yleisnäkymien kirjatut kuolemat.
 
 ## Korvapassi — musikaaliset hienosäädöt (§13)
 

@@ -16,8 +16,8 @@ tagged. Earlier tags describe internal development baselines.
   instrument with explicit lineage and non-affiliation.
 - Rebuilt the public README around users, architecture, safety, testing,
   authorship, and current status.
-- Made Night the sole runtime instrument surface in the first reversible N9
-  review cut. The Day stage, toolbar destination, four-column builders and its
+- Made Night the sole runtime instrument surface in the accepted N9 cut. The
+  Day stage, toolbar destination, four-column builders and its
   two read-only overview drawings are removed; Master and the four-page Drawer
   remain persistent. Night's under-hand coupling chord replaces the permanent
   spesal constellation, while the playable shells plus Workshop replace the

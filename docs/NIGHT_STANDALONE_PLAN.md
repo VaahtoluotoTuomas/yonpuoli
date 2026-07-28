@@ -21,10 +21,10 @@
 > The N8 Drawer-workshop handoff was coverage- and visual-audited on
 > 2026-07-28 and is specified in §12.1. That section, rather than the old
 > one-paragraph sketch below, is the implementation contract for N8.
-> On 2026-07-28 the user made the §0 verdict: Night is the sole instrument
-> surface. The first reversible N9 cut lives on `nocturne-night-only` and waits
-> for its live visual/playing review; this document records the decision and
-> the two overview deaths below.
+> On 2026-07-28 the user made and accepted the §0 verdict: Night is the sole
+> instrument surface. The reversible N9 cut passed its live visual/playing
+> review on `nocturne-night-only`; this document records the decision and the
+> two overview deaths below.
 
 ---
 
@@ -55,8 +55,8 @@ The prerequisites are met:
 N9 therefore removes the Day builders, its toolbar destination and its two
 overview drawings in one reversible structural gate — no runtime flag and no
 parallel product. This changes no DSP, CQSpec range, snapshot rule, keyboard
-map or safety invariant. The first runnable cut is automated-green and now
-stops for the required live visual/playing review before acceptance or merge.
+map or safety invariant. The automated gate and the required live
+visual/playing review passed on 2026-07-28; N9 is accepted.
 
 ---
 
