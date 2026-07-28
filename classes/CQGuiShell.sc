@@ -17,37 +17,59 @@ CQGuiShell {
 	prInit { |shellState, dayContent, nightContent, masterContent,
 		pages, applySkin, onDrawerShown|
 		var day = CQInk.palette(\day), tabRow, instrumentView;
+		// The toolbar is persistent chrome: one type size, not the Drawer's
+		// steps, because its height is fixed and its layout is muscle memory.
+		var chrome = CQGuiScale.chrome;
 		state = shellState;
 		skinAction = applySkin;
 		shownAction = onDrawerShown;
 		dayView = dayContent;
 		nightView = nightContent;
 		masterView = masterContent;
-		modeButton = CQInkControl.button("night", 66).surface_(\recess)
-			.action_({ this.toggleView(false) });
-		drawerButton = CQInkControl.button("drawer", 92, \day, false,
+		modeButton = CQInkControl.button("night",
+			CQGuiScale.buttonWidth(\compact, "night"))
+			.surface_(\recess).action_({ this.toggleView(false) });
+		modeButton.scale = chrome;
+		modeButton.view.fixedSize = Size(
+			CQGuiScale.buttonWidth(\compact, "night"), chrome[\buttonHeight]);
+		drawerButton = CQInkControl.button("drawer",
+			CQGuiScale.buttonWidth(\compact, "drawer", true), \day, false,
 			false, \line, \collapse).surface_(\recess)
 			.action_({ this.toggleDrawer });
+		drawerButton.scale = chrome;
+		drawerButton.view.fixedSize = Size(
+			CQGuiScale.buttonWidth(\compact, "drawer", true), chrome[\buttonHeight]);
 		toolbarTitle = StaticText().string_("cocoquantus · archipelago")
-			.font_(CQInk.font(\label)).stringColor_(day[\line])
-			.align_(\left).fixedWidth_(180);
-		toolbarView = UserView().fixedHeight_(32).background_(day[\recess]);
+			.font_(CQInk.font(\label, chrome[\label])).stringColor_(day[\line])
+			.align_(\left).fixedWidth_(
+				(CQGuiScale.textWidth("cocoquantus · archipelago", chrome[\label])
+					+ 16).ceil.asInteger);
+		toolbarView = UserView().fixedHeight_(chrome[\buttonHeight] + 10)
+			.background_(day[\recess]);
 		toolbarView.drawFunc = {
 			var palette = CQInk.palette(state.viewMode);
+			var y = toolbarView.bounds.height - 1;
 			Pen.strokeColor = palette[\whisper];
 			Pen.width = CQInk.strokes[\hairline];
-			Pen.line(Point(8, 31), Point(toolbarView.bounds.width - 8, 31));
+			Pen.line(Point(8, y), Point(toolbarView.bounds.width - 8, y));
 			Pen.stroke;
 		};
 		toolbarView.layout = HLayout(toolbarTitle, nil, modeButton.view, drawerButton.view)
-			.margins_(8).spacing_(6);
+			.margins_(5).spacing_(6);
 
 		contentStack = StackLayout(dayView, nightView).mode_(\stackOne);
 		instrumentView = View().layout_(contentStack);
 		tabButtons = IdentityDictionary.new;
+		// the page tabs belong to the workbench, so they read at the chrome's
+		// size and are measured from their own captions rather than a fixed 86
 		CQGuiDrawer.tabs.do { |tab|
-			tabButtons[tab] = CQInkControl.button(tab.asString, 86, \day, true)
+			tabButtons[tab] = CQInkControl.button(tab.asString,
+				CQGuiScale.buttonWidth(\compact, tab.asString), \day, true)
 				.surface_(\recess).action_({ this.selectDrawer(tab) });
+			tabButtons[tab].scale = chrome;
+			tabButtons[tab].view.fixedSize = Size(
+				CQGuiScale.buttonWidth(\compact, tab.asString) + 16,
+				chrome[\tabHeight]);
 		};
 		tabRow = HLayout(
 			*(CQGuiDrawer.tabs.collect { |tab| tabButtons[tab].view } ++ [nil])

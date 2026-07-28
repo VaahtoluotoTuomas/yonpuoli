@@ -63,11 +63,14 @@ CQGuiDrawer {
 	// surface (GUI_SPEC §8). The stage's own rect decides it; every page then
 	// re-measures rather than rebuilding, so a resize can never re-register a
 	// funnel binding or leave a stale control behind.
+	// Returns true when something actually moved, so the caller can settle a
+	// layout that arrives in more than one pass instead of keeping a stale size.
 	applyScale { |stageWidth, stageHeight|
 		var size = CQGuiScale.pageSizeFor(stageWidth, stageHeight);
 		var next = CQGuiScale.stepFor(size.width, size.height);
-		if(pageSize.notNil and: { next == step }
-			and: { size.width == pageSize.width }) { ^this };
+		if(pageSize.notNil and: { next == step } and: { size == pageSize }) {
+			^false
+		};
 		step = next;
 		pageSize = size;
 		grid.applyScale(step, size.width);
@@ -75,7 +78,7 @@ CQGuiDrawer {
 		workshop.applyScale(step, size.width);
 		spellbookGui.applyScale(step, grid.loomSize.width);
 		memoryGui.applyScale(step, grid.loomSize.width);
-		^this
+		^true
 	}
 
 	prScaleInspectorChrome {

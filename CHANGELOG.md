@@ -69,10 +69,22 @@ tagged. Earlier tags describe internal development baselines.
 ### Changed (Nocturne)
 
 - Gave all four Drawer pages one shared page frame: the same air between the
-  tab row and the first ink, and the same centred rail. The Inspector had been
-  on a 4 px margin while the others used 12. Memory's snapshot column and patch
-  fingerprint now reach down to the morph bridge instead of stopping at a fixed
-  height, and the fingerprint's cells and row labels grow with the room.
+  tab row and the first ink, the same centred rail, and one content inset so
+  the Workshop's labels, the loom's row names and the seed bank's boxes begin
+  on the same vertical line. The Inspector had been on a 4 px margin while the
+  others used 12, and the Workshop's ink started 8 px further right than
+  anything else. Memory's snapshot column and patch fingerprint now reach down
+  to the morph bridge instead of stopping at a fixed height — with a bottom
+  margin, so the morph bar no longer crowds the Master strip — and the
+  fingerprint's cells and row labels grow with the room.
+- Raised the persistent chrome to the workbench's floor: the toolbar title and
+  destinations, the Drawer's page tabs, and the Master strip's knob labels,
+  notice line and elapsed time. The Master strip keeps its 118 px height and
+  REC/PANIC their reviewed hit areas — only the ink inside grew. Buttons across
+  the chrome and the Drawer are now measured from their own captions.
+- Enlarged the Inspector's rotated destination headings and the Memory page's
+  box titles and morph readout, which had stayed at the old 9–10 px while
+  everything around them grew.
 - Raised the Drawer's type above the Day panel's fixed 10 px and gave all four
   pages one shared content rail — the Spellbook previously used neither.
   Subgroup headings gained their own rank (line ink, a lighter rule from the

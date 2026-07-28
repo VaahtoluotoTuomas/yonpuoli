@@ -17,7 +17,7 @@ CQGuiMemory {
 	var <view, <snapshotList, <fingerprint, <morphMeter, <selectedName;
 	// the seed bank shares the workbench's content rail and size step
 	var <step = \compact, <railWidth, buttons, body, snapshotPanel, morphPanel;
-	var topPad;
+	var topPad, bottomPad;
 
 	*new { |gui, state, matrix, snapshots|
 		^super.newCopyArgs(gui, state, matrix, snapshots).prBuild
@@ -75,6 +75,7 @@ CQGuiMemory {
 		morphMeter.fixedSize = Size(if(step == \roomy) { 380 } { 310 },
 			m[\boxHeight]);
 		topPad.fixedHeight = m[\vMargin];
+		bottomPad.fixedHeight = m[\vMargin];
 		panels.do { |panel| panel.refresh };
 		^this
 	}
@@ -168,7 +169,8 @@ CQGuiMemory {
 		snapshotPanel = UserView().fixedWidth_(column)
 			.background_(palette[\recess]);
 		snapshotPanel.drawFunc = {
-			CQInk.drawToolBox(snapshotPanel.bounds.moveTo(0, 0), "saved snapshots", skin)
+			CQInk.drawToolBox(snapshotPanel.bounds.moveTo(0, 0), "saved snapshots",
+				skin, false, CQGuiScale.metrics(step)[\label])
 		};
 		snapshotPanel.layout = VLayout(
 			View().fixedHeight_(m[\barHeight] - 4),
@@ -211,7 +213,8 @@ CQGuiMemory {
 		morphPanel = UserView().fixedSize_(Size(railWidth, m[\boxHeight] + 62))
 			.background_(palette[\recess]);
 		morphPanel.drawFunc = {
-			CQInk.drawToolBox(morphPanel.bounds.moveTo(0, 0), "morph bridge", skin)
+			CQInk.drawToolBox(morphPanel.bounds.moveTo(0, 0), "morph bridge",
+				skin, false, CQGuiScale.metrics(step)[\label])
 		};
 		morphPanel.layout = VLayout(
 			View().fixedHeight_(m[\barHeight] - 4),
@@ -229,12 +232,14 @@ CQGuiMemory {
 		// to the morph bridge instead of stopping at a fixed height — the
 		// fingerprint's own cells and type then grow with the room it gets.
 		topPad = View().fixedHeight_(m[\vMargin]);
+		bottomPad = View().fixedHeight_(m[\vMargin]);
 		view = View().background_(palette[\recess]).layout_(VLayout(
 			topPad,
 			HLayout(nil, header, nil),
 			HLayout(nil, body, nil),
-			HLayout(nil, morphPanel, nil)
-		).margins_(0).spacing_(8));
+			HLayout(nil, morphPanel, nil),
+			bottomPad
+		).margins_(0).spacing_(m[\rowGap]));
 
 		matrixCtl = SimpleController(matrix);
 		#[patch, matrix, clear].do { |what|
@@ -352,7 +357,8 @@ CQGuiMemory {
 		// with the cells rather than staying at the page's smallest size
 		var rowSize = (cellH - 4).clip(m[\tiny], m[\label]);
 		var groups;
-		CQInk.drawToolBox(box, "patch fingerprint", skin, selectedName.notNil);
+		CQInk.drawToolBox(box, "patch fingerprint", skin, selectedName.notNil,
+			m[\label]);
 		groups = [(start: 0, count: 5, title: "coco 1"),
 			(start: 5, count: 5, title: "coco 2"),
 			(start: 10, count: 5, title: "castle fm"),
@@ -411,8 +417,10 @@ CQGuiMemory {
 
 	prDrawMorphMeter {
 		var palette = CQInk.palette(skin), progress, label, rail;
+		var m = CQGuiScale.metrics(step), box = morphMeter.bounds.moveTo(0, 0);
+		var readout = (CQGuiScale.textWidth("100%", m[\mono], true) + 12).ceil;
 		progress = if(snapshots.isNil) { 0.0 } { snapshots.morphProgress ? 0.0 };
-		rail = Rect(5, 7, morphMeter.bounds.width - 70, 10);
+		rail = Rect(5, (box.height / 2) - 5, box.width - readout - 12, 10);
 		Pen.fillColor = palette[\recess];
 		Pen.fillRect(rail);
 		Pen.fillColor = palette[\spaf].copy.alpha_(0.72);
@@ -425,8 +433,10 @@ CQGuiMemory {
 		} {
 			if(progress >= 1) { "arrived" } { "ready" }
 		};
-		Pen.stringRightJustIn(label, Rect(rail.right + 6, 4, 54, 14),
-			CQInk.font(\number), palette[\line]);
+		Pen.stringRightJustIn(label,
+			Rect(rail.right + 6, (box.height / 2) - (m[\mono] / 2) - 2,
+				readout, m[\mono] + 4),
+			CQInk.font(\number, m[\mono]), palette[\line]);
 	}
 
 	prSourceLabel { |src|

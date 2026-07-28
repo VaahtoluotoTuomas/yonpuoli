@@ -422,11 +422,16 @@ CQGui {
 	prSyncDrawerScale {
 		if(cleaned or: { drawer.isNil } or: { shell.isNil }) { ^this };
 		AppClock.sched(0, {
-			var stage;
+			var stage, moved = false;
 			if(cleaned.not and: { drawer.notNil } and: { shell.notNil }) {
 				stage = shell.drawerView.bounds;
-				drawer.applyScale(stage.width, stage.height);
+				moved = drawer.applyScale(stage.width, stage.height);
 			};
+			// Qt can settle a layout over more than one pass — re-measuring the
+			// stage may itself change it — so a step that moved asks once more
+			// and stops as soon as nothing does. It converges by construction:
+			// the second pass returns false unless the size really changed again.
+			if(moved) { this.prSyncDrawerScale };
 			nil
 		});
 		^this

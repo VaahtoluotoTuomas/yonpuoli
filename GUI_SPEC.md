@@ -560,9 +560,11 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     spare room collects below as slate, and there is **no scroll view** at any
     size. Space stays a neutral service module and gains no invented Night body.
   - **One shared page frame.** All four Drawer pages open with exactly the same
-    air between the tab row and their first ink, and centre exactly the same
-    rail, so the workbench reads as one surface rather than four adjacent
-    layouts. The bottom is deliberately free — the pages hold different amounts
+    air between the tab row and their first ink, centre exactly the same rail,
+    and begin their first ink at one **content inset** inside it — the
+    Workshop's labels, the loom's row names and the seed bank's boxes all start
+    on the same vertical line. The workbench reads as one surface rather than
+    four adjacent layouts. The bottom is deliberately free — the pages hold different amounts
     of content — and a page whose body can use extra height (Memory's
     snapshot column and patch fingerprint) takes it rather than stopping at a
     constant. Added 2026-07-28 after the N8 review found the Inspector on a
@@ -1011,6 +1013,17 @@ Laws:
   up again when the window has the room. Every Drawer size is still a whole
   number of px chosen at a reviewed step — never a scale factor applied to a
   base size, which is how type turns to mush.
+- **The persistent chrome shares that floor but not those steps** (added
+  2026-07-28 at the user's request: beside a 12 px workbench the toolbar and
+  Master strip read as an oversight). The toolbar title, the Day/Night and
+  Drawer destinations, the Drawer's page tabs, and the Master strip's knob
+  labels, notice line and elapsed time all take **one chrome size**
+  (`CQGuiScale.chrome`), matching the Drawer's compact step. It does not follow
+  the window: the strip's height is fixed by §12's permanent-visibility rule and
+  its layout is muscle memory in both skins, so only the ink inside it grew —
+  the strip is still 118 px and REC/PANIC keep their §16.7 hit areas. Buttons in
+  the chrome and the Drawer are **measured from their own captions**, so growing
+  the type can never crop one.
 - Labels are whispers: whisper color, close to their object, never boxed.
   The project's own words — spaf, spesal, verso, balcium — are decoration
   enough.

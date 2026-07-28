@@ -426,6 +426,35 @@ juuriprovenienssin ja lintu-hoverin suoran deck-reitin. §13.8:n
 loudness-kompensaatio kirjattiin myöhemmäksi kuuntelukokeeksi; DSP:hen ei
 koskettu tässä portissa.
 
+Saman haaran **kehys- ja kromikierros** 2026-07-28 (N8 v4, käyttäjän kolmannen
+testauskierroksen palaute; **vihreä mutta ei hyväksytty**): `CQ_COMPILE_OK`,
+**13 014 unit-passia / 0 failurea / 31/31 luokkaa**, `CQ_SAFETY_PASSED` ja
+kaikki neljä GUI-markkeria; `CQ_HOLD_OK` kantaa. Kokoruudun skaalaus todettiin
+toimivaksi (käyttäjän läppäri 2880×1800 @ 200 %). Loput:
+
+- **Yksi jaettu sisennys.** Railit olivat jo samassa x:ssä (mitattu 28/42),
+  mutta Workshopin muste alkoi 12 px sisempää kuin muiden. Sisennys on nyt
+  yksi arvo (`contentInset` 4/6), jota noudattavat Workshopin nimet, loomin
+  rivinimet ja Memoryn laatikot.
+- **Memory ei enää vuoda sivultaan.** Morph-palkki piirtyi sivun alarajan
+  alapuolelle (mitattu alaväli 20 px); nyt sivulla on alapehmuste ja väli on
+  38/42 px. Body venyy morph-palkkiin asti, joten fingerprintin solut ja
+  rivinimien koko kasvavat saamansa tilan mukana.
+- **Liian pieneksi jääneet tekstit kasvoivat**: loomin vinot sarakenimet
+  (9 → 11 / 13 px), Memoryn laatikko-otsikot ja morphin lukema.
+- **Kromi (`CQGuiScale.chrome`) nostettiin työpöydän lattiaan**: toolbarin
+  otsikko ja kohteet, drawerin välilehdet sekä master-strippi. Master-strippi
+  pysyy 118 px korkeana ja REC/PANIC pitävät §16.7:n osumalaatikkonsa — vain
+  muste kasvoi. Napit mitataan nyt omasta tekstistään, joten kasvava fontti
+  ei voi leikata kuvausta. Kromi **ei** seuraa ikkunan kokoa: sen korkeus on
+  kiinteä ja sen sommittelu on lihasmuistia (§16.1).
+- Sivun inset johdetaan nyt kromista (`pageInset`), joten välilehtirivin
+  korkeuden muutos ei enää siirrä hiljaa sitä, mihin kokoaskeleeseen ikkuna
+  kelpaa. Sama kierros paljasti, että Qt voi asetella lavan **useammalla kuin
+  yhdellä läpimenolla**: `applyScale` palauttaa nyt tiedon siitä liikkuiko
+  mikään, ja synkronointi kysyy vielä kerran ja pysähtyy heti kun mikään ei
+  liiku.
+
 Saman haaran **marginaali- ja kokoaskelkorjaus** 2026-07-28 (N8 v3, käyttäjän
 toisen testauskierroksen palaute; **vihreä mutta ei hyväksytty**):
 `CQ_COMPILE_OK`, **13 012 unit-passia / 0 failurea / 31/31 luokkaa**,

@@ -814,6 +814,11 @@ CQGuiScale.minimumHeight(\roomy) + CQGuiScale.comfort;    // vaadittu korkeus
 1. **Luettavuus ensin (2026-07-28 palautteen ydin):** onko teksti nyt
    riittävän suurta windowed-tilassa? Entä maksimoituna? Jos ei, kerro
    kumpi askel jää pieneksi — ne ovat erikseen säädettävissä.
+1b. **Kromi:** ovatko toolbarin otsikko ja napit, drawerin välilehdet sekä
+   master-stripin tekstit (vol/dry/space/depth, out/gr, notice, REC-aika)
+   nyt linjassa drawerin tekstin kanssa? Master-strippi ei kasvanut
+   korkeussuunnassa — vain muste. Jos jokin niistä on yhä pieni tai
+   päinvastoin liian iso, nimeä se.
 2. Lukeeko sivu Nightin *mittapöytänä* — sama lajityyppi, tietoisesti eri
    kielioppi — vai geneerisenä settings-paneelina?
 3. **Väliotsikot** (converter · material · output · input mix): erottuvatko

@@ -191,8 +191,10 @@ CQGuiMatrix {
 			var y = (si * cellH) + (cellH / 2), familyColor;
 			var labelColor = if(si == focusSi) { colors[\line] } { colors[\whisper] };
 			familyColor = colors[this.prSourceFamily(src)];
+			// the shared content inset: the loom's row names begin on the same
+			// vertical line as every other Drawer page's first ink
 			Pen.stringAtPoint(this.prSourceLabel(src),
-				4@(y - (metrics[\loomLabelSize] / 2) - 1),
+				metrics[\contentInset]@(y - (metrics[\loomLabelSize] / 2) - 1),
 				CQInk.font(\label, metrics[\loomLabelSize]), labelColor);
 			Pen.fillColor = familyColor;
 			Pen.fillOval(Rect(labW - 15, y - 3, 6, 6));

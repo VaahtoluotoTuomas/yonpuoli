@@ -193,7 +193,8 @@ centred = { |inner, outer|
 											check.value(gui.shell.masterView.visible,
 												"the persistent Master strip stays visible beside it");
 											check.value(drawer.step == \compact
-												and: { drawer.pageSize == Size(1272, 526) },
+												and: { drawer.pageSize == CQGuiScale.pageSizeFor(gui.shell.drawerView.bounds.width,
+														gui.shell.drawerView.bounds.height) },
 												"the 1280x720 minimum is the compact step on a 1272x526 page");
 											// the page's top pad sits outside the rail now
 											// (one shared frame), so the budget is both
@@ -374,7 +375,8 @@ centred = { |inner, outer|
 																	AppClock.sched(0.35, {
 																		try {
 																			check.value(drawer.step == \compact
-																				and: { drawer.pageSize == Size(1272, 526) }
+																				and: { drawer.pageSize == CQGuiScale.pageSizeFor(gui.shell.drawerView.bounds.width,
+														gui.shell.drawerView.bounds.height) }
 																				and: { workshop.rail.bounds.width
 																					== CQGuiScale.railWidth(\compact, 1272) },
 																				"and reopening it re-measures rather than keeping a stale size");

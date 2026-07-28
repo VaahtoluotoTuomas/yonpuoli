@@ -218,16 +218,21 @@ CQGuiPanels {
 
 	*master { |gui|
 		var w = gui.widgets, c = CQGuiWidgets.colors;
+		// The persistent strip is chrome, not content: one type size, and its
+		// 118 px height is unchanged — only the ink inside it grows.
+		var chrome = CQGuiScale.chrome;
 		var meterL = this.prMeter(gui, false, false, \recess);
 		var meterR = this.prMeter(gui, false, false, \recess);
 		var grMeter = this.prMeter(gui, true, true, \recess);
-		var notice = this.prLabel("", \whisper, \left, \notice)
-			.fixedSize_(Size(310, 20));
+		var notice = this.prLabel("", \whisper, \left, \notice, chrome[\notice])
+			.fixedSize_(Size(420, chrome[\notice] + 8));
 		var recBtn = this.prButton(gui, "REC", 58, true, false, \danger, \rec, \recess);
-		var recTime = this.prLabel("", \danger, \left, \number).fixedWidth_(48);
+		var recTime = this.prLabel("", \danger, \left, \number, chrome[\mono])
+			.fixedWidth_(56);
 		var panicBtn = this.prButton(gui, "PANIC", 82, true, false,
 			\danger, \panic, \recess);
 		var panel;
+		[recBtn, panicBtn].do { |button| button.scale = chrome };
 		gui.setMeter(\master, { |pkL, pkR|
 			meterL.value = this.ampMeter(pkL);
 			meterR.value = this.ampMeter(pkR);
@@ -248,19 +253,22 @@ CQGuiPanels {
 		gui.widgets.register(\monitorMute, { |v| panicBtn.value = (v ? 0).clip(0, 1) });
 		panel = UserView().fixedHeight_(118).background_(c[\recess]);
 		panel.drawFunc = {
-			CQInk.drawToolHeader(panel.bounds.moveTo(0, 0), "master", gui.currentSkin)
+			CQInk.drawToolHeader(panel.bounds.moveTo(0, 0), "master",
+				gui.currentSkin, chrome[\label])
 		};
 		panel.layout = VLayout(
-			View().fixedHeight_(18),
+			View().fixedHeight_(chrome[\label] + 8),
 			HLayout(
 				VLayout(HLayout(meterL.view, meterR.view).spacing_(2),
-					this.prLabel("out", \whisper, \center, \range)).spacing_(0),
+					this.prLabel("out", \whisper, \center, \range, chrome[\label] - 2))
+					.spacing_(0),
 				VLayout(grMeter.view,
-					this.prLabel("gr", \whisper, \center, \range)).spacing_(0),
-				w.knob(\masterVol, "vol", nil, \primary, \recess),
-				w.knob(\masterDry, "dry", nil, \standard, \recess),
-				w.knob(\spaceMix, "space", nil, \standard, \recess),
-				w.knob(\patchDepth, "depth", c[\spaf], \standard, \recess),
+					this.prLabel("gr", \whisper, \center, \range, chrome[\label] - 2))
+					.spacing_(0),
+				w.knob(\masterVol, "vol", nil, \primary, \recess, chrome),
+				w.knob(\masterDry, "dry", nil, \standard, \recess, chrome),
+				w.knob(\spaceMix, "space", nil, \standard, \recess, chrome),
+				w.knob(\patchDepth, "depth", c[\spaf], \standard, \recess, chrome),
 				nil,
 				VLayout(notice,
 					HLayout(recBtn.view, recTime, panicBtn.view, nil).spacing_(8)).spacing_(6)
@@ -354,10 +362,11 @@ CQGuiPanels {
 		^row
 	}
 
-	*prLabel { |text, color = \whisper, align = \left, role = \label|
+	*prLabel { |text, color = \whisper, align = \left, role = \label, size|
 		var palette = CQInk.palette(\day), label;
-		label = StaticText().string_(text).font_(CQInk.font(role)).align_(align)
-			.stringColor_(palette[color] ?? { palette[\whisper] }).fixedHeight_(12);
+		label = StaticText().string_(text).font_(CQInk.font(role, size)).align_(align)
+			.stringColor_(palette[color] ?? { palette[\whisper] })
+			.fixedHeight_((size ? 10) + 2);
 		^label
 	}
 

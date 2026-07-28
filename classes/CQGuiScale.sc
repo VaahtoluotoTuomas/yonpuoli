@@ -20,11 +20,26 @@
 CQGuiScale {
 	*steps { ^#[compact, roomy] }
 
+	// The persistent chrome — the toolbar and the Master strip — is a *frame*,
+	// not content: its height is fixed (SPEC §6.2 keeps PANIC and the notice
+	// line permanently visible, and the strip's layout is muscle memory in both
+	// skins), so it does not follow the Drawer's steps. It does share their
+	// floor, because the same eye reads both and 10 px beside a 12 px workbench
+	// reads as an oversight rather than a hierarchy.
+	*chrome {
+		^(label: 12, mono: 12, notice: 12, buttonHeight: 26, tabHeight: 26)
+	}
+
 	// A Drawer page's own rect is the drawer stage minus its tab row and
 	// margins — measured on the real Qt composition 2026-07-28 at 1280×720
 	// (stage 1280×570 → page 1272×526) and again on a maximized window
 	// (stage 1442×730 → page 1434×686). Both agree, so the inset is a constant.
-	*pageInset { ^Point(8, 44) }
+	// Derived from the chrome it actually sits under (the drawer stage's own
+	// 4 px margins plus the tab row), so a change to the tab height cannot
+	// silently shift which step a window qualifies for.
+	*pageInset {
+		^Point(8, 4 + this.chrome[\tabHeight] + 8 + 4)
+	}
 
 	*pageSizeFor { |stageWidth, stageHeight|
 		var inset = this.pageInset;
@@ -69,7 +84,11 @@ CQGuiScale {
 			mono: 12, tiny: 9,
 			// ledger row
 			rowHeight: 24, titleHeight: 22, groupHeight: 18,
-			ledgerLabel: 96, ledgerValue: 58, ledgerInset: 12, ledgerGap: 10,
+			// one inset for every page's first ink, so the Workshop's labels,
+			// the loom's row names and the seed bank's boxes all begin on the
+			// same vertical line inside the shared rail
+			contentInset: 4, rowGap: 6,
+			ledgerLabel: 96, ledgerValue: 58, ledgerGap: 10,
 			// inspector loom: the compact page has no spare height, so the
 			// header and cell height stay exactly as reviewed and only the
 			// row labels and status text grow. The cell cap is deliberately
@@ -77,7 +96,10 @@ CQGuiScale {
 			// but too short for the roomy step still spends its width on the
 			// rail instead of turning all of it into slate.
 			loomLabel: 80, cellMin: 44, cellMax: 64, cellHeight: 24,
-			headerHeight: 64, loomLabelSize: 11, loomDestSize: 9,
+			// the rotated destination names are the loom's own column headings
+			// and were the smallest type on the page; the header band has the
+			// room for them because they hang from its bottom edge
+			headerHeight: 64, loomLabelSize: 11, loomDestSize: 11,
 			// list rows and small boxes
 			listRow: 20, boxHeight: 24, barHeight: 26
 		)
@@ -95,9 +117,10 @@ CQGuiScale {
 			// at would never get the bigger type. The row and band heights are
 			// therefore kept as tight as 15 px type allows.
 			rowHeight: 28, titleHeight: 26, groupHeight: 22,
-			ledgerLabel: 120, ledgerValue: 72, ledgerInset: 16, ledgerGap: 12,
+			contentInset: 6, rowGap: 8,
+			ledgerLabel: 120, ledgerValue: 72, ledgerGap: 12,
 			loomLabel: 104, cellMin: 54, cellMax: 76, cellHeight: 28,
-			headerHeight: 74, loomLabelSize: 13, loomDestSize: 11,
+			headerHeight: 74, loomLabelSize: 13, loomDestSize: 13,
 			listRow: 26, boxHeight: 28, barHeight: 30
 		)
 	}

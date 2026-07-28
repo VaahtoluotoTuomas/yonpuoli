@@ -259,7 +259,7 @@ CQInkControl {
 		switch(kind,
 			\knob, {
 				CQInk.drawKnob(bounds, value, label, display, family, skin,
-					pressed or: { hover }, diameter)
+					pressed or: { hover }, diameter, scale !? { |m| m[\label] })
 			},
 			\slider, { CQInk.drawSlider(bounds, value, skin, family, pressed or: { hover }) },
 			\button, {

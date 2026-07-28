@@ -8,17 +8,25 @@
 // than the step it was chosen for actually has.
 
 CQGuiScaleTest : UnitTest {
-	// the real Drawer page rect at both review sizes, measured on the Qt
-	// composition 2026-07-28 (stage 1280x570 -> page 1272x526,
-	// stage 1442x730 -> page 1434x686)
-	prMinPage { ^Size(1272, 526) }
-	prBigPage { ^Size(1434, 686) }
+	// The real Drawer page rect at both review sizes, verified against the Qt
+	// composition (2026-07-28): a 1280x720 window gives a stage of 1280x566 and
+	// a maximized window here 1442x726. The inset is derived from the tab row
+	// the pages sit under, so these follow the chrome rather than a constant.
+	prMinPage { ^CQGuiScale.pageSizeFor(1280, 566) }
+	prBigPage { ^CQGuiScale.pageSizeFor(1442, 726) }
 
-	test_thePageRectComesFromTheMeasuredStageInset {
-		this.assertEquals(CQGuiScale.pageSizeFor(1280, 570), this.prMinPage,
-			"a 1280x720 window gives the Drawer page 1272x526");
-		this.assertEquals(CQGuiScale.pageSizeFor(1442, 730), this.prBigPage,
-			"a maximized window gives it 1434x686");
+	test_thePageRectComesFromTheChromeAboveIt {
+		var inset = CQGuiScale.pageInset;
+		this.assertEquals(inset.x, 8,
+			"the drawer stage's own 4 px margins take 8 px of width");
+		this.assertEquals(inset.y,
+			4 + CQGuiScale.chrome[\tabHeight] + 8 + 4,
+			"and the tab row plus its margins take the height — derived, not fixed");
+		this.assertEquals(CQGuiScale.pageSizeFor(1280, 566),
+			Size(1280 - inset.x, 566 - inset.y),
+			"a page is exactly its stage minus that inset");
+		this.assertEquals(CQGuiScale.pageSizeFor(4, 4), Size(0, 0),
+			"a stage smaller than its own chrome reports no page, never a negative one");
 	}
 
 	test_theStepFollowsTheRoomThePageHas {

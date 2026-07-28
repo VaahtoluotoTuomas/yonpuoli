@@ -293,8 +293,9 @@ CQInk {
 	}
 
 	*drawKnob { |rect, value = 0, label = "", display = "", family,
-		skin = \day, active = false, diameter|
+		skin = \day, active = false, diameter, labelSize|
 		var palette = this.palette(skin), m = this.metrics;
+		var size = labelSize ? m[\labelSize];
 		var radius = (diameter ? m[\knobDiameter]) / 2;
 		var center = Point(rect.center.x, rect.top + 14 + radius);
 		var start = 0.75pi, sweep = 1.5pi, angle, pointer, accent;
@@ -306,8 +307,9 @@ CQInk {
 			Pen.addOval(Rect.aboutPoint(center, radius + 6, radius + 6));
 			Pen.stroke;
 		};
-		Pen.stringCenteredIn(label.asString, Rect(rect.left, rect.top, rect.width, 11),
-			this.font(\label), palette[\whisper]);
+		Pen.stringCenteredIn(label.asString,
+			Rect(rect.left, rect.top, rect.width, size + 2),
+			this.font(\label, labelSize), palette[\whisper]);
 		Pen.strokeColor = palette[\line];
 		Pen.width = this.strokes[\normal];
 		Pen.addOval(Rect.aboutPoint(center, radius, radius));
@@ -323,8 +325,8 @@ CQInk {
 		Pen.line(center, pointer);
 		Pen.stroke;
 		Pen.stringCenteredIn(if(skin == \night) { "" } { display.asString },
-			Rect(rect.left, rect.bottom - 11, rect.width, 10),
-			this.font(\number), palette[\whisper]);
+			Rect(rect.left, rect.bottom - size - 2, rect.width, size + 1),
+			this.font(\number, labelSize), palette[\whisper]);
 	}
 
 	*drawButton { |rect, label, skin = \day, active = false, pressed = false,
@@ -460,7 +462,7 @@ CQInk {
 	// caller that has no opinion still gets a reviewed geometry.
 	*ledgerMetrics { |scale|
 		var m = scale ?? { CQGuiScale.metrics(\compact) };
-		^(height: m[\rowHeight], inset: m[\ledgerInset],
+		^(height: m[\rowHeight], inset: m[\contentInset],
 			labelWidth: m[\ledgerLabel], valueWidth: m[\ledgerValue],
 			gap: m[\ledgerGap],
 			// the grab band and the seat bead follow the row, so the whole
@@ -815,25 +817,34 @@ CQInk {
 		Pen.stroke;
 	}
 
-	*drawToolHeader { |rect, title, skin = \day|
-		var palette = this.palette(skin), y = rect.top + 18;
+	// `labelSize` lets a surface with its own type step (the Drawer's pages, the
+	// persistent chrome) title its boxes at the size the rest of that surface
+	// reads at; nil keeps the kit's fixed px. The title rect is measured from
+	// the box rather than fixed at 80/90 px, which clipped a longer caption the
+	// moment the type grew.
+	*drawToolHeader { |rect, title, skin = \day, labelSize|
+		var palette = this.palette(skin), size = labelSize ? this.metrics[\labelSize];
+		var y = rect.top + size + 8;
 		Pen.strokeColor = palette[\whisper];
 		Pen.width = this.strokes[\hairline];
 		Pen.line(Point(rect.left + 8, y), Point(rect.right - 8, y));
 		Pen.stroke;
-		Pen.stringLeftJustIn(title.asString, Rect(rect.left + 8, rect.top + 3, 90, 11),
-			this.font(\label), palette[\line]);
+		Pen.stringLeftJustIn(title.asString,
+			Rect(rect.left + 8, rect.top + 3, (rect.width - 16).max(20), size + 3),
+			this.font(\label, labelSize), palette[\line]);
 	}
 
-	*drawToolBox { |rect, title, skin = \day, active = false|
+	*drawToolBox { |rect, title, skin = \day, active = false, labelSize|
 		var palette = this.palette(skin), body = rect.insetBy(1, 1);
+		var size = labelSize ? this.metrics[\labelSize];
 		Pen.fillColor = palette[\ground];
 		Pen.strokeColor = if(active) { palette[\line] } { palette[\whisper] };
 		Pen.width = this.strokes[\hairline];
 		Pen.addRoundedRect(body, this.metrics[\buttonRadius], this.metrics[\buttonRadius]);
 		Pen.fillStroke;
-		Pen.stringLeftJustIn(title.asString, Rect(body.left + 6, body.top + 3, 80, 11),
-			this.font(\label), palette[\line]);
+		Pen.stringLeftJustIn(title.asString,
+			Rect(body.left + 6, body.top + 3, (body.width - 12).max(20), size + 3),
+			this.font(\label, labelSize), palette[\line]);
 	}
 
 	// §16.7's only dashed rectangle in the whole app: a file drag is hovering a
