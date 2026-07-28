@@ -1,7 +1,8 @@
 // Headless UnitTest runner (A2). Runs every CQ*Test class in the library
 // (they live in tests/classes/, on the include path via sclang_conf_dev.yaml).
 // Prints CQ_TESTS_PASSED / CQ_TESTS_FAILED as its last line.
-// Run: "<sclang.exe>" -l tests/sclang_conf_dev.yaml -i none tests/run_all.scd
+// Run only through tests/run_sclang_gate.ps1; direct sclang may strand a shell
+// after a class-library parse error (AGENTS.md).
 
 (
 var runner;

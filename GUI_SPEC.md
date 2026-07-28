@@ -640,7 +640,11 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
   until release, same bookkeeping and revert law as §4.1; double-click =
   plant 0.3; vertical drag = fine edit (current behavior); right-click =
   clear (current behavior). This is the precision path: everything the
-  gestural surfaces do must remain exactly doable here.
+  gestural surfaces do must remain exactly doable here. Hovering a valid cell
+  gives that exact cell a light `spark` wash and outline, in addition to the
+  quiet row/column focus, so the selectable target is visible before press.
+  The preset choice box uses the same cue. Its opened choices are Ink-painted
+  ground/line rows with a `spark` hover, not an unstyled native Qt menu.
 - **Spellbook**: an append-only log of *committed* matrix ops from **all
   layers** (GUI gestures, code, presets, shake, compass commits — never
   auditions or per-frame compass writes), each as a copyable line in the
@@ -663,7 +667,11 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
   counts and outlines every knot that differs from the live matrix. A and B remain
   explicit saved seeds joined by the duration-controlled morph bridge; its meter
   follows real `CQSnapshots` progress. Selection never recalls by itself, and this
-  experiment adds no delete control or implicit write/recall gesture.
+  experiment adds no delete control or implicit write/recall gesture. The
+  “outlined knots differ…” line is a tiny side note with two row gaps of
+  clearance above the destination headings, never heading-sized or attached
+  to the `decks` heading below it. Both Morph Bridge choice boxes share the
+  Inspector preset box's closed and opened Ink hover language.
 
 ---
 

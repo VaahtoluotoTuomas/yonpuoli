@@ -70,40 +70,16 @@ jobs:
 
       - name: Compile check
         shell: pwsh
-        run: |
-          $output = & $env:SC_LANG -l $env:SC_CONF -i none tests/compile_check.scd 2>&1
-          $exitCode = $LASTEXITCODE
-          $output | ForEach-Object { Write-Host $_ }
-          if (($exitCode -ne 0) -or -not ($output -match 'CQ_COMPILE_OK')) {
-            throw "Compile gate failed: exit=$exitCode, marker CQ_COMPILE_OK missing"
-          }
+        run: tests/run_sclang_gate.ps1 tests/compile_check.scd -Sclang $env:SC_LANG -Conf $env:SC_CONF
 
       - name: Unit tests
         shell: pwsh
-        run: |
-          $output = & $env:SC_LANG -l $env:SC_CONF -i none tests/run_all.scd 2>&1
-          $exitCode = $LASTEXITCODE
-          $output | ForEach-Object { Write-Host $_ }
-          if (($exitCode -ne 0) -or -not ($output -match 'CQ_TESTS_PASSED')) {
-            throw "Unit gate failed: exit=$exitCode, marker CQ_TESTS_PASSED missing"
-          }
+        run: tests/run_sclang_gate.ps1 tests/run_all.scd -Sclang $env:SC_LANG -Conf $env:SC_CONF
 
       - name: NRT output safety
         shell: pwsh
-        run: |
-          $output = & $env:SC_LANG -l $env:SC_CONF -i none tests/nrt_safety.scd 2>&1
-          $exitCode = $LASTEXITCODE
-          $output | ForEach-Object { Write-Host $_ }
-          if (($exitCode -ne 0) -or -not ($output -match 'CQ_SAFETY_PASSED')) {
-            throw "Safety gate failed: exit=$exitCode, marker CQ_SAFETY_PASSED missing"
-          }
+        run: tests/run_sclang_gate.ps1 tests/nrt_safety.scd -Sclang $env:SC_LANG -Conf $env:SC_CONF
 
       - name: NRT hold integrity
         shell: pwsh
-        run: |
-          $output = & $env:SC_LANG -l $env:SC_CONF -i none tests/nrt_hold_integrity.scd 2>&1
-          $exitCode = $LASTEXITCODE
-          $output | ForEach-Object { Write-Host $_ }
-          if (($exitCode -ne 0) -or -not ($output -match 'CQ_HOLD_OK')) {
-            throw "Hold gate failed: exit=$exitCode, marker CQ_HOLD_OK missing"
-          }
+        run: tests/run_sclang_gate.ps1 tests/nrt_hold_integrity.scd -Sclang $env:SC_LANG -Conf $env:SC_CONF

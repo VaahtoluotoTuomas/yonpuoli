@@ -91,6 +91,16 @@ tagged. Earlier tags describe internal development baselines.
   crowded top — its box title, the snapshot name and the explanatory line now
   occupy their own rows, and that line is set one rank smaller because it is
   information rather than a heading.
+- Finished the Drawer selection cues: the Inspector matrix now gives the exact
+  hovered knot a light spark wash and outline, while the Inspector preset and
+  Memory Morph Bridge choice boxes use the same hover. Their opened lists are
+  drawn in the Ink palette instead of falling back to native Qt chrome.
+  Memory's fingerprint comparison note is now the page's tiny type rank with
+  explicit clearance from the `decks` heading.
+- Hardened every headless SuperCollider gate against a recurring Windows hang:
+  the shared runner uses daemon mode, a child-only watchdog, expected-marker
+  validation and per-run diagnostic logs; agents and CI now use that same
+  entry point.
 - Raised the Drawer's type above the Day panel's fixed 10 px and gave all four
   pages one shared content rail — the Spellbook previously used neither.
   Subgroup headings gained their own rank (line ink, a lighter rule from the

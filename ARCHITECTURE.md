@@ -48,6 +48,7 @@ yolahti/
 │   ├── CQGuiDrawer.sc          // Inspector / Workshop / Spellbook / Memory composition
 │   ├── CQGuiWorkshop.sc        // Drawer ledger page: the 43 remaining parameters
 │   ├── CQGuiScale.sc           // the Drawer's two reviewed size steps (pure arithmetic)
+│   ├── CQInkMenu.sc            // Ink-painted Drawer choice box + opened list
 │   ├── CQSnapshots.sc          // save/recall/morph
 │   ├── CQRecorder.sc           // disk recording (master + stems)
 │   ├── CQDeck.sc               // transactional file player control
@@ -291,7 +292,8 @@ Language side on `\cq_hot`: engage −6 dB trim (a lagged synth arg), GUI notice
 | `CQInspector` | Drawer precision gesture state | Shares `CQAudition`; press previews ±0.3, vertical frames are transient, and release publishes one committed fine-edit plus one shared GUI-undo entry; lifecycle cancellation restores the pre-gesture cell |
 | `CQGuiScale` | the Drawer's two size steps | Pure arithmetic, no Qt and no state: the measured page inset, the `compact`/`roomy` thresholds, both type/metric records, the shared rail width (derived from the Inspector loom's clamped cell), the column split that keeps the Coco pair equal, and caption measurement for buttons. Every Drawer page asks it rather than holding a literal; `CQGui` feeds it the drawer stage's own resize callback |
 | `CQGuiWorkshop` | Drawer ledger page (GUI_SPEC §8) | One explicit manifest of the 43 parameters Night and Master do not own drives **both** the built layout and `paramNames`, so the coverage audit and the rendered page are the same data — Workshop ownership is never computed as `CQSpec.names` minus the other surfaces. Fixed 1128 px rail: a 72 px service band of four 270 px modules over a `365 · 366 · 365` coco/quantussy/coco body, one `islandLayout` score feeding both the Qt layout and the island's own painted titles. Owns the GUI's single interactive `micGain` row and its persistent warning subscription; builds with the GUI, not on demand. Pure view: every row writes through `CQGuiWidgets` → `CQState` |
-| `CQGuiMatrix` | experimental Inspector patch loom | Exact canonical 16×22 single-`UserView` field with 48×24 px hit cells, grouped destination islands, family-marked rows, weighted/polarity-shaped knots, persistent route selection and hover row/column focus; no inner scroll or new state funnel |
+| `CQGuiMatrix` | experimental Inspector patch loom | Exact canonical 16×22 single-`UserView` field with 48×24 px hit cells, grouped destination islands, family-marked rows, weighted/polarity-shaped knots, persistent route selection, quiet hover row/column focus and an exact-cell spark cue; no inner scroll or new state funnel |
+| `CQInkMenu` | Drawer choice box | Replaces Qt's only-partly-styleable `PopUpMenu` for Inspector presets and Memory's Morph Bridge. The collapsed box and temporary borderless choice list are both painted from the active Ink palette; rows use the shared spark hover, the list opens upward near the screen edge, and teardown owns the temporary window |
 | `CQSpellbook` | read-only committed patch journal | Hooks `CQMatrix` notifications below every client, diffs against the last committed full matrix, excludes `committed:false` frames, exposes row→batch metadata for persistent GUI selection, and exports copyable `CQ.patch(...)` lines or preset data; it does not execute or edit code |
 | `CQMidi16n` | controller layer | `MIDIdef.cc` per fader from config map, 0–127 → spec map, optional `\pickup` takeover, hot-plug via `MIDIClient` device watch; all writes via `CQState` |
 | `CQGui` | panel | pure view: renders from `CQState`/`CQMatrix` dependant notifications, sends via funnel; composes the Day/Night shell and `CQGuiDrawer`; meters/LEDs come from namespaced OSCdefs; `/cq_aura` magnitudes stay `nil` until the server reports, repaint only the jack views and cable layer, and are skipped entirely when nothing moved; `/cq_charge`'s nine slots follow the same law and repaint one lamp view at a time, only when that lamp's own charge moved; everything UI inside `{ }.defer`; closes cleanly on `*free`. The Drawer's page list is published once by `CQGuiDrawer.tabs` and consumed by the shell's tab row, its stack index and `CQGuiShellState`'s whitelist, so a page cannot exist in one place and be refused in another |
@@ -364,8 +366,11 @@ Loading: unknown keys warn + skip; every value passes `CQSpec.clamp` / matrix cl
 
 ## 8. Testing architecture
 
-All runnable headless from a local shell, CI, or a coding agent; each prints a single machine-readable marker as
-its last line and sets exit code.
+All are runnable headless from a local shell, CI, or a coding agent through
+`tests/run_sclang_gate.ps1`; never invoke `sclang` directly. The wrapper uses
+daemon mode, owns and times out only its child PID, validates the expected
+machine-readable marker, and leaves a diagnostic log under
+`tests/tmp/gate-logs/`, including for failed runs.
 
 | Script | What | Marker |
 |---|---|---|
@@ -399,7 +404,8 @@ the real preset data — the safety proof covers the actual shipped graph.
   After editing `classes/*.sc`, the IDE needs a class-lib recompile (Ctrl+Shift+L);
   headless test runs always compile fresh.
 - Headless runs (local shell, CI, or coding agent):
-  `"<sclang.exe path>" -l tests/sclang_conf_dev.yaml -i none <script>` — the dev conf
+  `powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 <script>`
+  — the dev conf
   (gitignored, machine-specific) adds `<repo>/classes` and `<repo>/tests/classes` to
   includePaths so runs never depend on the user's global conf; sclang path stored in
   a dev-local file (`tests/dev_paths.scd`, gitignored) after first session with the user.

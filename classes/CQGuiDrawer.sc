@@ -4,7 +4,7 @@
 
 CQGuiDrawer {
 	var gui, state, matrix, grammar;
-	var <spellbookGui, <memoryGui, <workshop, presetMenu;
+	var <spellbookGui, <memoryGui, <workshop, <presetMenu;
 	var <inspector, <grid, <spellbook;
 	var <inspectorView, <workshopView, <spellbookView, <memoryView;
 	// the Drawer's shared size step (CQGuiScale) and the Inspector chrome that
@@ -28,6 +28,7 @@ CQGuiDrawer {
 	escape { inspector.cancel; grammar.escape; ^this }
 
 	free {
+		presetMenu !? { presetMenu.free };
 		grid !? { grid.free };
 		spellbookGui !? { spellbookGui.free };
 		memoryGui !? { memoryGui.free };
@@ -42,6 +43,7 @@ CQGuiDrawer {
 		spellbookGui.applySkin(skin);
 		memoryGui.applySkin(skin);
 		workshop.applySkin(skin);
+		presetMenu.skin = skin;
 		inspectorView.background = palette[\recess];
 		^this
 	}
@@ -117,9 +119,8 @@ CQGuiDrawer {
 		// may not silence that (NIGHT_STANDALONE_PLAN §12.1.3).
 		workshop = CQGuiWorkshop(gui, state);
 		workshopView = workshop.view;
-		presetMenu = PopUpMenu().items_(presetNames.collect { |name| name.asString })
-			.font_(CQInk.font(\number, m[\mono])).stringColor_(palette[\line])
-			.background_(palette[\ground])
+		presetMenu = CQInkMenu(presetNames.collect { |name| name.asString })
+			.font_(CQInk.font(\number, m[\mono]))
 			.fixedSize_(Size(
 				(CQGuiScale.textWidth("apply preset", m[\mono], true) + 40)
 					.ceil.asInteger,
@@ -133,7 +134,7 @@ CQGuiDrawer {
 			.font_(CQInk.font(\label, m[\label])).stringColor_(palette[\whisper])
 			.align_(\right).fixedSize_(Size(loomWidth, m[\barHeight]));
 		topRail = View().fixedWidth_(loomWidth).layout_(
-			HLayout(grid.status, nil, presetMenu, applyButton.view)
+			HLayout(grid.status, nil, presetMenu.view, applyButton.view)
 				.margins_(0).spacing_(6));
 		footerRail = View().fixedWidth_(loomWidth).layout_(
 			HLayout(gestureHelp).margins_(0).spacing_(0));

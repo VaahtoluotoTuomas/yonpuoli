@@ -4,13 +4,38 @@ param(
 
     [int]$TimeoutSeconds = 0,
 
-    [string]$Sclang = "C:\Program Files\SuperCollider-3.13.0\sclang.exe"
+    [string]$Sclang = "C:\Program Files\SuperCollider-3.13.0\sclang.exe",
+
+    [string]$Conf = ""
 )
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $scriptPath = Join-Path $repoRoot $Script
-$confPath = Join-Path $PSScriptRoot "sclang_conf_dev.yaml"
+$confPath = if ([string]::IsNullOrWhiteSpace($Conf)) {
+    Join-Path $PSScriptRoot "sclang_conf_dev.yaml"
+} elseif ([System.IO.Path]::IsPathRooted($Conf)) {
+    $Conf
+} else {
+    Join-Path $repoRoot $Conf
+}
+$leaf = Split-Path -Leaf $Script
+$requiredMarker = switch -Wildcard ($leaf) {
+    "compile_check.scd" { "CQ_COMPILE_OK"; break }
+    "run_all.scd" { "CQ_TESTS_PASSED"; break }
+    "nrt_safety.scd" { "CQ_SAFETY_PASSED"; break }
+    "nrt_hold_integrity.scd" { "CQ_HOLD_OK"; break }
+    "gui_shell_smoke.scd" { "CQ_GUI_SHELL_PASSED"; break }
+    "gui_drawer_smoke.scd" { "CQ_GUI_DRAWER_PASSED"; break }
+    "gui_drawer_preview_reentry_smoke.scd" { "CQ_GUI_DRAWER_REENTRY_PASSED"; break }
+    "gui_night_smoke.scd" { "CQ_GUI_NIGHT_PASSED"; break }
+    default { $null }
+}
+$logDir = Join-Path $PSScriptRoot "tmp\gate-logs"
+[System.IO.Directory]::CreateDirectory($logDir) | Out-Null
+$stamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
+$safeLeaf = [System.IO.Path]::GetFileNameWithoutExtension($leaf)
+$logPath = Join-Path $logDir "$stamp-$safeLeaf.log"
 
 if (-not (Test-Path -LiteralPath $Sclang)) {
     throw "sclang not found: $Sclang"
@@ -18,9 +43,11 @@ if (-not (Test-Path -LiteralPath $Sclang)) {
 if (-not (Test-Path -LiteralPath $scriptPath)) {
     throw "gate script not found: $scriptPath"
 }
+if (-not (Test-Path -LiteralPath $confPath)) {
+    throw "sclang config not found: $confPath"
+}
 
 if ($TimeoutSeconds -le 0) {
-    $leaf = Split-Path -Leaf $Script
     $TimeoutSeconds = switch -Wildcard ($leaf) {
         "compile_check.scd" { 15; break }
         "run_all.scd" { 60; break }
@@ -32,7 +59,9 @@ if ($TimeoutSeconds -le 0) {
 
 $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
 $startInfo.FileName = $Sclang
-$startInfo.Arguments = "-l `"$confPath`" -i none `"$scriptPath`""
+# -D is essential: if class-library compilation fails before the .scd file can
+# call exit, sclang must not fall back to an interactive prompt.
+$startInfo.Arguments = "-D -l `"$confPath`" -i none `"$scriptPath`""
 $startInfo.WorkingDirectory = $repoRoot
 $startInfo.UseShellExecute = $false
 $startInfo.CreateNoWindow = $true
@@ -48,14 +77,43 @@ $stderr = $process.StandardError.ReadToEndAsync()
 if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
     $process.Kill()
     $process.WaitForExit()
+    $combined = $stdout.Result + $stderr.Result
+    [System.IO.File]::WriteAllText($logPath, $combined)
     [Console]::Out.Write($stdout.Result)
     [Console]::Error.Write($stderr.Result)
     [Console]::Error.WriteLine(
         "CQ_GATE_WATCHDOG_TIMEOUT: $Script exceeded ${TimeoutSeconds}s (PID $($process.Id) terminated)."
     )
+    [Console]::Error.WriteLine("CQ_GATE_LOG: $logPath")
     exit 124
 }
 
+$combined = $stdout.Result + $stderr.Result
+[System.IO.File]::WriteAllText($logPath, $combined)
 [Console]::Out.Write($stdout.Result)
 [Console]::Error.Write($stderr.Result)
-exit $process.ExitCode
+$markerMatches = [regex]::Matches($combined, "(?m)^CQ_[A-Z0-9_]+\s*$")
+$lastMarker = if ($markerMatches.Count -gt 0) {
+    $markerMatches[$markerMatches.Count - 1].Value.Trim()
+} else {
+    $null
+}
+
+if ($process.ExitCode -ne 0) {
+    [Console]::Error.WriteLine(
+        "CQ_GATE_PROCESS_FAILED: $Script exited with code $($process.ExitCode)."
+    )
+    [Console]::Error.WriteLine("CQ_GATE_LOG: $logPath")
+    exit $process.ExitCode
+}
+if (($null -ne $requiredMarker) -and ($lastMarker -ne $requiredMarker)) {
+    [Console]::Error.WriteLine(
+        "CQ_GATE_MARKER_MISSING: $Script exited 0 but its final marker was " +
+        "'$lastMarker', expected '$requiredMarker'."
+    )
+    [Console]::Error.WriteLine("CQ_GATE_LOG: $logPath")
+    exit 125
+}
+
+[Console]::Out.WriteLine("CQ_GATE_LOG: $logPath")
+exit 0

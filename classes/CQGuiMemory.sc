@@ -13,7 +13,7 @@ CQGuiMemory {
 
 	var gui, state, matrix, snapshots, matrixCtl, morphCtl;
 	var skin = \day, snapshotNames, selectedData, labels, menus, panels;
-	var nameField, aMenu, bMenu, durationBox, detailTitle, detailHint;
+	var nameField, <aMenu, <bMenu, durationBox, detailTitle, <detailHint;
 	var <view, <snapshotList, <fingerprint, <morphMeter, <selectedName, <header;
 	// the seed bank shares the workbench's content rail and size step
 	var <step = \compact, <railWidth, buttons, body, snapshotPanel, morphPanel;
@@ -49,8 +49,12 @@ CQGuiMemory {
 		print = this.class.fingerprintSize(step, railWidth);
 		labels.do { |record|
 			record[\view].font = CQInk.font(record[\role],
-				m[if(record[\role] == \notice) { \notice } { \label }]);
-			record[\view].fixedHeight = m[\barHeight];
+				this.prRoleSize(record[\role], m));
+			record[\view].fixedHeight = if(record[\role] == \tiny) {
+				m[\tiny] + 5
+			} {
+				m[\barHeight]
+			};
 		};
 		snapshotList.font = CQInk.font(\spellbook, m[\mono]);
 		snapshotList.fixedWidth = column - 14;
@@ -81,6 +85,7 @@ CQGuiMemory {
 	}
 
 	free {
+		menus.do { |menu| menu.free };
 		matrixCtl !? { matrixCtl.remove };
 		morphCtl !? { morphCtl.remove };
 		matrixCtl = nil;
@@ -101,10 +106,7 @@ CQGuiMemory {
 		snapshotList.stringColor = palette[\line];
 		snapshotList.selectedStringColor = palette[\line];
 		snapshotList.hiliteColor = palette[\spaf].copy.alpha_(0.28);
-		menus.do { |menu|
-			menu.background = palette[\ground];
-			menu.stringColor = palette[\line];
-		};
+		menus.do { |menu| menu.skin = skin };
 		nameField.background = palette[\ground];
 		nameField.stringColor = palette[\line];
 		durationBox.background = palette[\ground];
@@ -184,7 +186,7 @@ CQGuiMemory {
 		// shares a row with (the user's N8 note)
 		detailHint = this.prLabel(
 			"select a saved snapshot to compare it with the live patch",
-			\whisper, \range);
+			\whisper, \tiny);
 		fingerprint = UserView().fixedWidth_(print.width)
 			.background_(palette[\ground]);
 		fingerprint.drawFunc = {
@@ -225,8 +227,8 @@ CQGuiMemory {
 		};
 		morphPanel.layout = VLayout(
 			View().fixedHeight_(m[\barHeight] - 4),
-			HLayout(this.prLabel("a", \whisper, \label).fixedWidth_(10), aMenu,
-				this.prLabel("→", \whisper, \label).fixedWidth_(12), bMenu,
+			HLayout(this.prLabel("a", \whisper, \label).fixedWidth_(10), aMenu.view,
+				this.prLabel("→", \whisper, \label).fixedWidth_(12), bMenu.view,
 				durationBox,
 				this.prLabel("seconds", \whisper, \label).fixedWidth_(58),
 				morphButton.view,
@@ -266,10 +268,8 @@ CQGuiMemory {
 	}
 
 	prMenu {
-		var palette = CQInk.palette(skin), m = CQGuiScale.metrics(step);
-		^PopUpMenu().font_(CQInk.font(\number, m[\mono]))
-			.stringColor_(palette[\line])
-			.background_(palette[\ground])
+		var m = CQGuiScale.metrics(step);
+		^CQInkMenu([], skin).font_(CQInk.font(\number, m[\mono]))
 			.fixedSize_(Size(if(step == \roomy) { 210 } { 170 }, m[\boxHeight]))
 	}
 
@@ -277,12 +277,20 @@ CQGuiMemory {
 		var palette = CQInk.palette(skin), label;
 		var m = CQGuiScale.metrics(step);
 		label = StaticText().string_(text)
-			.font_(CQInk.font(role, m[if(role == \notice) { \notice } { \label }]))
+			.font_(CQInk.font(role, this.prRoleSize(role, m)))
 			.align_(\left)
 			.stringColor_(palette[color] ?? { palette[\whisper] })
-			.fixedHeight_(m[\barHeight]);
+			.fixedHeight_(if(role == \tiny) { m[\tiny] + 5 } { m[\barHeight] });
 		labels.add((view: label, role: role, color: color));
 		^label
+	}
+
+	prRoleSize { |role, m|
+		^switch(role,
+			\notice, { m[\notice] },
+			\range, { m[\tiny] },
+			\tiny, { m[\tiny] },
+			{ m[\label] })
 	}
 
 	// returns the control: the page re-measures it when the size step changes
@@ -357,7 +365,8 @@ CQGuiMemory {
 		var left = if(step == \roomy) { 112 } { 92 };
 		// clear of the box title AND the title/hint row under it, so the column
 		// group names never crowd the explanatory text
-		var top = (m[\label] + 10) + m[\notice] + 16 + m[\tiny] + 8;
+		var top = (m[\label] + 10) + m[\notice] + 16
+			+ m[\tiny] + 8 + (m[\rowGap] * 2);
 		// the fingerprint fills whatever the rail leaves it, so a wider window
 		// buys patch detail rather than a small picture in a big box
 		var cellW = ((box.width - left - 24) / CQMatrix.destNames.size)

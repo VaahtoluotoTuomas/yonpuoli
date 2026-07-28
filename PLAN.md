@@ -35,13 +35,17 @@ rehellisenä post-preamp-sivukasvuna. Katselmointi toi yhden korjauksen:
 provenienssitekstin taustan pyyhkäisy leikkasi oikean juuren kahta
 vasemmanpuoleisinta säiettä, joten se mittaa nyt siemenetyn deltan omalta
 kaistaltaan ja väistyy ulospäin (`rootLabelInward` on nimellinen lepo, ei
-lupaus). **N8:n (drawer-workshop, §12.1) ensimmäinen ajettava versio on
-valmis ja koko portti vihreä `nocturne-drawer-workshop`-haaralla
-2026-07-28** — Night 31 · Master 5 · Workshop 43, unioni todistettu
+lupaus). **N8 (drawer-workshop, §12.1) on valmis ja käyttäjän hyväksymä
+`nocturne-drawer-workshop`-haaralla 2026-07-28** — Night 31 · Master 5 ·
+Workshop 43, unioni todistettu
 `CQSpec.names`iksi, uusi ledger-rivi, neljäs Drawer-sivu ja `micGain`
-siirrettynä Daystä. **Seuraava askel on käyttäjän visuaalinen ja soitettava
-katselmus (checklist N8)** ennen viimeistelyä tai N9:ää. Hyväksytty N6
-elää sen alla `nocturne-birds-fetch`-haaralla;
+siirrettynä Daystä. Viimeinen hyväksyntäkierros pienensi Memoryn
+fingerprint-sivuhuomautuksen ja irrotti sen `decks`-otsikosta sekä antoi
+Inspectorin soluille, preset-valitsimelle ja Morph Bridge -valitsimille yhden
+Ink-tyylisen hoverin ja avatun listan. **Seuraava askel on N9 Day-tuomio
+(§0): ensin oikeat Night-only-soittosessiot, sitten erillinen päätös Dayn
+säilyttämisestä tai poistamisesta.** Hyväksytty N6
+elää ketjussa sen alla `nocturne-birds-fetch`-haaralla;
 `nocturne` seisoo vielä commitissa `a5e4b17` (kevättulva), eikä haaroja
 sulauteta ilman erillistä pyyntöä. §13 korvapassi voi kulkea limittäin, mutta
 Norns-portti (§14) on vasta night-first-vaiheen jälkeen.
@@ -246,8 +250,9 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
   Drawerin järjestys on nyt `inspector · workshop · spellbook · memory`, ja
   sivulista julkaistaan kerran (`CQGuiDrawer.tabs`) shellin välilehtiriville,
   pinoindeksille ja `CQGuiShellState`in valkolistalle. Ei DSP-, CQSpec-
-  semantiikka-, Day-poisto- tai undo-muutoksia. **Avoin:** käyttäjän
-  katselmuspysähdys ennen viimeistelyä tai N9:ää.
+  semantiikka-, Day-poisto- tai undo-muutoksia. **Valmis ja hyväksytty
+  2026-07-28 (checklist N8):** viisi visuaalista palautekierrosta ja viimeinen
+  hover-/valikko-/sivuhuomautuspassi ovat vihreitä.
 - [ ] **9. Day-tuomio** (§0). Vasta kun kohtia 1–8 on *soitettu* oikeissa
   sessioissa. Dayn poisto, jos valitaan, on oma peruutettava porttinsa —
   ja tarvitsee ensin kodin (tai kirjatun kuoleman) Dayn kahdelle
@@ -389,6 +394,11 @@ Ensimmäinen compile-ajo paljasti myös pysyvän dev-runner-aukon: luokkakirjast
 parse-virheessä sclang ei suorita `compile_check.scd`:n `exit`iä vaan jää
 interaktiiviseksi. `tests/run_sclang_gate.ps1` antaa porteille nyt ulkoisen
 aikarajan, säilyttää virhetulosteen ja lopettaa vain itse käynnistämänsä PID:n.
+N8:n viimeistelyssä 2026-07-28 sama virhe toistui suoralla agenttikomennolla,
+joten suojaus tehtiin rakenteelliseksi: `AGENTS.md` kieltää agentilta suoran
+ajon, wrapper käyttää aina sclangin daemon-tilaa, validoi skriptikohtaisen
+markerinsa ja kirjoittaa jokaisesta ajosta diagnostiikkalokin
+`tests/tmp/gate-logs/`-hakemistoon. Myös CI kulkee nyt saman wrapperin kautta.
 
 Haaran `nocturne-birds-fetch` hyväksytty portti 2026-07-28 (§11,
 **visuaalinen ja soitettava katselmus hyväksytty, checklist N6**):
@@ -425,6 +435,26 @@ output-haaran jatkuvuuden. Qt-kuvapassi tarkisti levon, lähde-hoverin,
 juuriprovenienssin ja lintu-hoverin suoran deck-reitin. §13.8:n
 loudness-kompensaatio kirjattiin myöhemmäksi kuuntelukokeeksi; DSP:hen ei
 koskettu tässä portissa.
+
+Saman haaran **hyväksytty loppupassi** 2026-07-28 (N8 v6, käyttäjän viidennen
+testauskierroksen palaute; **valmis ja hyväksytty**): `CQ_COMPILE_OK`,
+**13 027 unit-passia / 0 failurea / 31/31 luokkaa**,
+`CQ_GUI_DRAWER_PASSED` ja `CQ_SAFETY_PASSED`; DSP:tä ei muutettu.
+Memoryn `outlined knots differ…` käyttää nyt 9/11 px tiny-rankia ja sen sekä
+`decks`-otsikon välissä on kaksi eksplisiittistä riviväliä. Inspectorin
+matriisi antaa täsmäsolulle kevyen spark-pesun ja ääriviivan. Inspectorin
+preset ja Memoryn kaksi Morph Bridge -valitsinta jakavat uuden `CQInkMenu`-
+kontrollin: sekä suljettu laatikko että borderless-avattu lista piirretään
+soittimen paletilla, rivillä on spark-hover ja alareunan lista aukeaa
+tarvittaessa ylöspäin.
+
+Samassa portissa suljettiin neljästi toistunut dev-runner-aukko. Suora
+`sclang` saattoi luokkakirjastovirheessä jäädä interaktiiviseen promptiin ja
+puskuroida juuri sen virheen, jota agentti odotti. `AGENTS.md` kieltää suoran
+agenttiajon, `run_sclang_gate.ps1` käyttää `-D`:tä, lapsikohtaista watchdogia,
+viimeisen markerin validointia ja pysyvää lokia, ja CI käyttää samaa runneria.
+Korjaus todistettiin oikealla compile-virheellä: koko diagnoosi palautui,
+vain runnerin oma PID lopetettiin ja seuraava korjattu ajo meni vihreäksi.
 
 Saman haaran **viimeistelykierros** 2026-07-28 (N8 v5, käyttäjän neljännen
 testauskierroksen palaute; **vihreä mutta ei hyväksytty**): `CQ_COMPILE_OK`,

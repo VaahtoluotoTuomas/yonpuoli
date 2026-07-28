@@ -805,7 +805,15 @@ CQGuiScale.minimumHeight(\roomy) + CQGuiScale.comfort;    // vaadittu korkeus
 //    loomin rivinimet ja vinot sarakenimet, spellbookin monoteksti,
 //    memoryn nimilista ja patch-fingerprint. Memoryn saved snapshots-
 //    ja patch fingerprint -laatikoiden pitää nyt yltää alas morph-palkkiin
-//    asti, ja fingerprintin rivinimien kasvaa sen mukana.
+//    asti, ja fingerprintin rivinimien kasvaa sen mukana. Valitse snapshot:
+//    "outlined knots differ..." on pieni sivuhuomautus ja sen sekä alapuolisen
+//    decks-otsikon välissä on selvä ilma.
+// 11. HOVER. Liikuta Inspectorissa osoitinta eri matriisipisteiden yli:
+//    täsmäsolu saa kevyen spark-pesun ja ääriviivan ennen klikkausta.
+//    Hoveroi ja avaa Inspectorin preset-valitsin sekä Memoryn molemmat
+//    Morph Bridge -valitsimet. Suljetun laatikon ja jokaisen avatun listan
+//    rivin pitää käyttää samaa Ink-spark-kieltä — ei Windowsin sinistä
+//    natiivivalikkoa.
 ```
 
 **Visuaalinen ja soitettava portti:** tarkista 1280×720 ja maksimoituna sekä
@@ -843,10 +851,11 @@ CQGuiScale.minimumHeight(\roomy) + CQGuiScale.comfort;    // vaadittu korkeus
    oikein — eli kirjoittaako jokainen rivi sitä parametria jonka se nimeää?
 12. Pystyykö koko session soittamaan avaamatta Daytä kertaakaan?
 
-- [ ] N8 hyväksytty (pvm: ______ — luettavuus molemmissa kokoaskeleissa,
+- [x] N8 hyväksytty (2026-07-28 — luettavuus molemmissa kokoaskeleissa,
       väliotsikoiden erottuvuus, neljän sivun yhdenmukaisuus, siristystesti,
-      coco-symmetria, tarkat arvot, ledger-ele, väririiisto, mic-siirto ja
-      pysyvä varoitus, molemmat skinit, kuuntelupassi)
+      coco-symmetria, tarkat arvot, ledger-ele, väririisto, mic-siirto ja
+      pysyvä varoitus, molemmat skinit, kuuntelupassi sekä viimeinen
+      sivuhuomautus-/hover-/valikkopassi)
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>

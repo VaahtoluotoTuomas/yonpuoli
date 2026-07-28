@@ -90,6 +90,18 @@ centred = { |inner, outer|
 					check.value(grid.grid.mouseDownAction.notNil
 						and: { grid.grid.mouseUpAction.notNil },
 						"Inspector grid exposes touch-and-listen mouse actions");
+					grid.grid.mouseMoveAction.value(grid.grid, 96, 12, 0);
+					check.value(grid.hoverSi == 0 and: { grid.hoverDi == 0 },
+						"Inspector hover identifies the exact selectable matrix knot");
+					drawer.presetMenu.view.mouseEnterAction.value(drawer.presetMenu.view);
+					check.value(drawer.presetMenu.hover,
+						"Inspector preset box carries the shared spark hover cue");
+					drawer.presetMenu.open;
+					drawer.presetMenu.view.refresh;
+					check.value(drawer.presetMenu.isOpen
+						and: { CQInkControl.drawErrors == 0 },
+						"Inspector preset choices open as an Ink-painted list");
+					drawer.presetMenu.close;
 					grid.grid.mouseDownAction.value(grid.grid, 96, 12, 0, 0, 1);
 					check.value(matrix.getPatch(\tri1, \coco1_spaf) == 0.3,
 						"large knot press auditions +0.3 through the shared funnel");
@@ -138,6 +150,17 @@ centred = { |inner, outer|
 								"toolbar action keeps the stable global Drawer name");
 							check.value(drawer.memoryGui.snapshotList.items.first == "live patch · now",
 								"Memory always exposes the live patch above the saved snapshots");
+							drawer.memoryGui.aMenu.items = ["alpha", "beta"];
+							drawer.memoryGui.aMenu.view.mouseEnterAction.value(
+								drawer.memoryGui.aMenu.view);
+							check.value(drawer.memoryGui.aMenu.hover,
+								"Morph Bridge choice boxes carry the shared spark hover cue");
+							drawer.memoryGui.aMenu.open;
+							drawer.memoryGui.aMenu.view.refresh;
+							check.value(drawer.memoryGui.aMenu.isOpen
+								and: { CQInkControl.drawErrors == 0 },
+								"Morph Bridge choices open as an Ink-painted list");
+							drawer.memoryGui.aMenu.close;
 							// width is the rail's remainder; height now stretches to
 							// the morph bridge, so the matrix gets the page's room
 							check.value(drawer.memoryGui.fingerprint.bounds.width

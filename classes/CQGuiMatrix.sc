@@ -4,7 +4,7 @@
 
 CQGuiMatrix {
 	var matrix, inspector, <view, <grid, <header, <status, ctl;
-	var <selectedSrc, <selectedDest, hoverSi, hoverDi;
+	var <selectedSrc, <selectedDest, <hoverSi, <hoverDi;
 	var skin = \day;
 	// the loom's own measurements, taken from the Drawer's size step. The
 	// cell width sets the shared content rail every Drawer page aligns to, so
@@ -240,8 +240,20 @@ CQGuiMatrix {
 			Pen.stroke;
 		};
 		if(selected or: { hovered }) {
-			Pen.strokeColor = colors[\line].copy.alpha_(if(selected) { 0.9 } { 0.48 });
-			Pen.width = if(selected) { CQInk.strokes[\strong] } { CQInk.strokes[\hairline] };
+			if(hovered and: { selected.not }) {
+				Pen.fillColor = colors[\spark].copy.alpha_(0.08);
+				Pen.addRoundedRect(Rect(cx - (cellW / 2) + 3,
+					cy - (cellH / 2) + 2, cellW - 6, cellH - 4), 4, 4);
+				Pen.fill;
+			};
+			Pen.strokeColor = if(hovered and: { selected.not }) {
+				colors[\spark].copy.alpha_(0.72)
+			} {
+				colors[\line].copy.alpha_(0.9)
+			};
+			Pen.width = if(selected) { CQInk.strokes[\strong] } {
+				CQInk.strokes[\normal]
+			};
 			Pen.addRoundedRect(Rect(cx - (cellW / 2) + 4, cy - (cellH / 2) + 3,
 				cellW - 8, cellH - 6), 3, 3);
 			Pen.stroke;
