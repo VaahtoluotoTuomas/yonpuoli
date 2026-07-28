@@ -20,6 +20,7 @@ CQGuiNightMap {
 	// The tide is the full ground itself: four seeds, no pool body or outline.
 	var <compassView, <compassHover, <compassDragState;
 	var <tideGestureView, <tideGateView, <tideGateHover = false;
+	var <tideGesturePaintCount = 0;
 	var <tideFocus = false, <tideFocusLatched = false;
 	var <tideFocusRequested = false;
 	var <weatherActive, <weatherFlash, <weatherIntensity = 0;
@@ -1485,6 +1486,10 @@ CQGuiNightMap {
 		labels.do { |label, i| label.bounds = geometry[\birds][i][\labelRect] };
 		gui.refreshDeckLabels;   // the boxes just changed: re-fit the names
 		container.refresh;
+		// The top sibling may have painted once before geometry existed. Repaint
+		// it after every successful layout so the resting gill is visible on open,
+		// without waiting for the first hover or tide gesture.
+		tideGestureView.refresh;
 	}
 
 	prPlaceCrescent { |name, center|
@@ -1745,6 +1750,7 @@ CQGuiNightMap {
 
 	prDrawTideGesture {
 		if(geometry.isNil) { ^this };
+		tideGesturePaintCount = tideGesturePaintCount + 1;
 		CQInkNight.drawTideGesture(geometry[\almanac],
 			compassDragState, \night);
 		// Draw the gill on the hit-transparent topological layer. Its event view

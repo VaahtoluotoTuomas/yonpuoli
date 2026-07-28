@@ -675,6 +675,8 @@ punchChecks = { |map|
 						var sourceView, destView, destPoint, dragPoint, sourceAnchor;
 						var before, triView, target, movePoint, triAnchor;
 						check.value(geo.notNil, "night geometry is laid out");
+						check.value(map.tideGesturePaintCount > 0,
+							"the top tide layer paints the resting gill before any hover");
 						expected = geo[\endpoints][\tri1];
 						view = map.endpoints[\tri1][\view];
 						// the anchor is read, never assumed: a flooded view size
