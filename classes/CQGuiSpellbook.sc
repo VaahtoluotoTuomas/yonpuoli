@@ -5,7 +5,7 @@
 CQGuiSpellbook {
 	var gui, model, ctl, copyHelper, operationStatus;
 	var <listView;
-	var <view, <rail, header, copyLine, copyPreset;
+	var <view, <rail, header, copyLine, copyPreset, topPad;
 	var <step = \compact;
 
 	*new { |gui, model| ^super.newCopyArgs(gui, model).prBuild }
@@ -26,7 +26,7 @@ CQGuiSpellbook {
 			button.resizeTo(CQGuiScale.buttonWidth(step, button.label),
 				m[\boxHeight]);
 		};
-		view.layout.margins = m[\vMargin];
+		topPad.fixedHeight = m[\vMargin];
 		^this
 	}
 
@@ -87,8 +87,12 @@ CQGuiSpellbook {
 			operationStatus,
 			copyHelper
 		).margins_(0).spacing_(6));
-		view = View().background_(palette[\recess]).layout_(
-			HLayout(nil, rail, nil).margins_(m[\vMargin]).spacing_(0));
+		// the shared page frame (CQGuiScale.pageFrame)
+		topPad = View().fixedHeight_(m[\vMargin]);
+		view = View().background_(palette[\recess]).layout_(VLayout(
+			topPad,
+			HLayout(nil, rail, nil).margins_(0).spacing_(0)
+		).margins_(0).spacing_(0));
 		ctl = SimpleController(model);
 		ctl.put(\entry, {
 			{

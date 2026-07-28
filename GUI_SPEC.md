@@ -559,16 +559,36 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     trailing stretch, so the rail asks for exactly the height its content needs,
     spare room collects below as slate, and there is **no scroll view** at any
     size. Space stays a neutral service module and gains no invented Night body.
+  - **One shared page frame.** All four Drawer pages open with exactly the same
+    air between the tab row and their first ink, and centre exactly the same
+    rail, so the workbench reads as one surface rather than four adjacent
+    layouts. The bottom is deliberately free — the pages hold different amounts
+    of content — and a page whose body can use extra height (Memory's
+    snapshot column and patch fingerprint) takes it rather than stopping at a
+    constant. Added 2026-07-28 after the N8 review found the Inspector on a
+    4 px margin and the others on 12.
   - **Two reviewed size steps, never a continuous zoom** (added 2026-07-28 at
     the user's N8 review; `CQGuiScale`). This page is *only* text, rules and
     rails, so legibility is its whole job, and a maximized window that spends
     its extra room on empty slate has wasted it. The Drawer therefore has two
     measured compositions — **compact** for the 1280×720 minimum (page
-    1272×526) and **roomy** once a page reaches 1400×640 — differing in type
-    size, row height, gutters and rail width. Qt reports the stage's new rect
-    into the language, so the step follows the window with no timer and no
-    polling, and every page **re-measures rather than rebuilding**: a resize can
-    never re-register a funnel binding or resurrect a stale control. Two
+    1272×526) and **roomy** for anything large enough to hold it — differing in
+    type size, row height, gutters and rail width. Both thresholds are
+    **derived from the roomy step's own metrics**, never written down beside
+    them: a fixed threshold silently stops matching the moment a metric moves,
+    and this one decides whether a maximized window gets bigger type at all.
+    Windows laptops are commonly run at 125 % or 150 % scaling and sclang works
+    in logical px, so a 1080p panel can report a page of only ~1528×630 — the
+    step floors must clear that, or the one window size the instrument is
+    actually played at never grows. At 150 % the logical window *is* the
+    1280×720 minimum, and staying compact there is correct rather than a fault.
+    Qt reports a new rect into the language, so the step follows the window with
+    no timer and no polling, and every page **re-measures rather than
+    rebuilding**: a resize can never re-register a funnel binding or resurrect a
+    stale control. It needs **two hooks, not one** — the drawer stage is a
+    StackLayout page and a hidden page is not laid out, so resizing with the
+    Drawer closed would otherwise leave a stale size behind; the window's own
+    view always resizes, and reopening the Drawer re-asks. Two
     discrete steps keep coordinates stable inside a step and keep type at sizes
     that were actually looked at. The rail grows with the page until the loom
     cell reaches its cap, after which the surplus becomes slate — a knot grid

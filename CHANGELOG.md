@@ -68,6 +68,11 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Changed (Nocturne)
 
+- Gave all four Drawer pages one shared page frame: the same air between the
+  tab row and the first ink, and the same centred rail. The Inspector had been
+  on a 4 px margin while the others used 12. Memory's snapshot column and patch
+  fingerprint now reach down to the morph bridge instead of stopping at a fixed
+  height, and the fingerprint's cells and row labels grow with the room.
 - Raised the Drawer's type above the Day panel's fixed 10 px and gave all four
   pages one shared content rail — the Spellbook previously used neither.
   Subgroup headings gained their own rank (line ink, a lighter rule from the
@@ -90,6 +95,14 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Fixed
 
+- Made the Drawer's bigger size step actually reachable on a real laptop. Its
+  thresholds had been written by hand instead of derived from the step's own
+  metrics, and a 1080p screen at Windows' common 125 % scaling reports a
+  logical page about two pixels too short to qualify — so maximizing only
+  widened the margins and never grew the type. The floors are now derived, the
+  roomy rows are tightened to match, a wide-but-short page spends its width on
+  the rail rather than on slate, and the step is re-read from two resize hooks
+  so a window resized while the Drawer was closed cannot leave a stale size.
 - Kept the Night provenance label's ground erasure off the intake strands it
   names: the erasure now measures the seeded delta inside its own band and
   gives way outward, instead of trusting a constant inset that cut the tops

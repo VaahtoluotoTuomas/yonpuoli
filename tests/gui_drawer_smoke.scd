@@ -6,7 +6,7 @@ var state = CQState(nil);
 var matrix = CQMatrix(nil);
 var config = CQConfig.validate((headless: true));
 var gui, ok = true, abort;
-var workshop, rowOf, railOf, pressRow, centred, beforeRow, beforeRail;
+var workshop, rowOf, railOf, pressRow, centred, beforeRow, beforeRail, pages;
 var check = { |condition, message|
 	if(condition) { ("ok:   " ++ message).postln } {
 		ok = false;
@@ -138,14 +138,14 @@ centred = { |inner, outer|
 								"toolbar action keeps the stable global Drawer name");
 							check.value(drawer.memoryGui.snapshotList.items.first == "live patch · now",
 								"Memory always exposes the live patch above the saved snapshots");
-							check.value(drawer.memoryGui.fingerprint.bounds
-								== Rect(0, 0,
-									CQGuiMemory.fingerprintSize(drawer.step,
-										drawer.memoryGui.railWidth).width,
-									CQGuiMemory.fingerprintSize(drawer.step,
-										drawer.memoryGui.railWidth).height)
-									.moveTo(drawer.memoryGui.fingerprint.bounds.left,
-										drawer.memoryGui.fingerprint.bounds.top),
+							// width is the rail's remainder; height now stretches to
+							// the morph bridge, so the matrix gets the page's room
+							check.value(drawer.memoryGui.fingerprint.bounds.width
+								== CQGuiMemory.fingerprintSize(drawer.step,
+									drawer.memoryGui.railWidth).width
+								and: { drawer.memoryGui.fingerprint.bounds.height
+									>= CQGuiMemory.fingerprintSize(drawer.step,
+										drawer.memoryGui.railWidth).height },
 								"Memory gives the live/selected patch a substantial fingerprint");
 							check.value(drawer.memoryGui.railWidth
 								== CQGuiScale.railWidth(drawer.step,
@@ -195,11 +195,14 @@ centred = { |inner, outer|
 											check.value(drawer.step == \compact
 												and: { drawer.pageSize == Size(1272, 526) },
 												"the 1280x720 minimum is the compact step on a 1272x526 page");
+											// the page's top pad sits outside the rail now
+											// (one shared frame), so the budget is both
 											check.value(workshop.rail.bounds.width
 												== CQGuiScale.railWidth(\compact, 1272)
-												and: { workshop.rail.bounds.height
+												and: { (workshop.view.children.first.bounds.height
+													+ workshop.rail.bounds.height)
 													>= CQGuiScale.minimumHeight(\compact) }
-												and: { workshop.rail.bounds.height
+												and: { workshop.rail.bounds.bottom
 													<= workshop.view.bounds.height }
 												and: { centred.value(workshop.rail, workshop.view) },
 												"the shared content rail is centred and fits its page");
@@ -347,13 +350,49 @@ centred = { |inner, outer|
 																"the loom grows too and all four pages keep one rail");
 															check.value(CQInkControl.drawErrors == 0,
 																"both skins and both size steps paint cleanly");
-															gui.free;
-															AppClock.sched(0.2, {
-																if(ok) { "CQ_GUI_DRAWER_PASSED".postln; 0.exit } {
-																	"CQ_GUI_DRAWER_FAILED".postln; 1.exit
-																};
+															// The user's N8 round: all four pages
+															// must open with the same air under the
+															// tab row. Each page's first child is its
+															// own top pad, so one height means one frame.
+															pages = [drawer.inspectorView, drawer.workshopView,
+																drawer.spellbookView, drawer.memoryView];
+															check.value(pages.collect { |page|
+																page.children.first.bounds.height
+															}.as(Set).size == 1,
+																"every Drawer page opens with the same top margin (%)"
+																	.format(pages.collect { |page|
+																		page.children.first.bounds.height }));
+															// a resize that happened while the Drawer
+															// was hidden must not leave a stale step
+															gui.shell.toggleDrawer;
+															gui.window.setInnerExtent(1280, 720);
+															AppClock.sched(0.35, {
+																try {
+																	check.value(drawer.step == \compact,
+																		"shrinking with the Drawer closed still reaches the step");
+																	gui.shell.toggleDrawer;
+																	AppClock.sched(0.35, {
+																		try {
+																			check.value(drawer.step == \compact
+																				and: { drawer.pageSize == Size(1272, 526) }
+																				and: { workshop.rail.bounds.width
+																					== CQGuiScale.railWidth(\compact, 1272) },
+																				"and reopening it re-measures rather than keeping a stale size");
+																			check.value(CQInkControl.drawErrors == 0,
+																				"the round trip paints cleanly");
+																				gui.free;
+																				AppClock.sched(0.2, {
+																					if(ok) { "CQ_GUI_DRAWER_PASSED".postln; 0.exit } {
+																						"CQ_GUI_DRAWER_FAILED".postln; 1.exit
+																					};
+																					nil
+																				});
+																} { |error| abort.value(error) };
 																nil
 															});
+														} { |error| abort.value(error) };
+														nil
+													});
 														} { |error| abort.value(error) };
 														nil
 													});

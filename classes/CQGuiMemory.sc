@@ -17,6 +17,7 @@ CQGuiMemory {
 	var <view, <snapshotList, <fingerprint, <morphMeter, <selectedName;
 	// the seed bank shares the workbench's content rail and size step
 	var <step = \compact, <railWidth, buttons, body, snapshotPanel, morphPanel;
+	var topPad;
 
 	*new { |gui, state, matrix, snapshots|
 		^super.newCopyArgs(gui, state, matrix, snapshots).prBuild
@@ -52,7 +53,7 @@ CQGuiMemory {
 			record[\view].fixedHeight = m[\barHeight];
 		};
 		snapshotList.font = CQInk.font(\spellbook, m[\mono]);
-		snapshotList.fixedSize = Size(column - 14, print.height - 106);
+		snapshotList.fixedWidth = column - 14;
 		nameField.font = CQInk.font(\number, m[\mono]);
 		nameField.fixedSize = Size(column - 14 - CQGuiScale.buttonWidth(step,
 			"save snapshot") - 6, m[\boxHeight]);
@@ -67,12 +68,13 @@ CQGuiMemory {
 			button.resizeTo(CQGuiScale.buttonWidth(step, button.label),
 				m[\boxHeight]);
 		};
-		snapshotPanel.fixedSize = Size(column, print.height);
-		fingerprint.fixedSize = print;
-		body.fixedSize = Size(railWidth, print.height);
+		snapshotPanel.fixedWidth = column;
+		fingerprint.fixedWidth = print.width;
+		body.fixedWidth = railWidth;
 		morphPanel.fixedSize = Size(railWidth, m[\boxHeight] + 62);
 		morphMeter.fixedSize = Size(if(step == \roomy) { 380 } { 310 },
 			m[\boxHeight]);
+		topPad.fixedHeight = m[\vMargin];
 		panels.do { |panel| panel.refresh };
 		^this
 	}
@@ -154,7 +156,7 @@ CQGuiMemory {
 			.stringColor_(palette[\line]).selectedStringColor_(palette[\line])
 			.hiliteColor_(palette[\spaf].copy.alpha_(0.28))
 			.background_(palette[\ground])
-			.fixedSize_(Size(column - 14, print.height - 106));
+			.fixedWidth_(column - 14);
 		snapshotList.action = { this.prSelectSnapshot };
 		snapshotList.selectionAction = { this.prSelectSnapshot };
 		saveButton = this.prButton("save snapshot", saveW, \line, { this.prSave });
@@ -163,7 +165,7 @@ CQGuiMemory {
 		refreshButton = this.prButton("refresh",
 			CQGuiScale.buttonWidth(step, "refresh"), \line, { this.refresh });
 
-		snapshotPanel = UserView().fixedSize_(Size(column, print.height))
+		snapshotPanel = UserView().fixedWidth_(column)
 			.background_(palette[\recess]);
 		snapshotPanel.drawFunc = {
 			CQInk.drawToolBox(snapshotPanel.bounds.moveTo(0, 0), "saved snapshots", skin)
@@ -178,7 +180,7 @@ CQGuiMemory {
 		detailTitle = this.prLabel("live patch · now", \line, \notice);
 		detailHint = this.prLabel(
 			"select a saved snapshot to compare it with the live patch", \whisper, \label);
-		fingerprint = UserView().fixedSize_(print)
+		fingerprint = UserView().fixedWidth_(print.width)
 			.background_(palette[\ground]);
 		fingerprint.drawFunc = {
 			try { this.prDrawFingerprint } { |error| CQInkControl.noteDrawError(error) }
@@ -187,7 +189,9 @@ CQGuiMemory {
 			HLayout(detailTitle, nil, detailHint).margins_(8).spacing_(6), nil
 		).margins_(0).spacing_(0);
 
-		body = View().fixedSize_(Size(railWidth, print.height)).layout_(
+		// width fixed to the rail, height free: the body takes the page's
+		// remaining room instead of a constant
+		body = View().fixedWidth_(railWidth).layout_(
 			HLayout(snapshotPanel, fingerprint).margins_(0).spacing_(8));
 
 		aMenu = this.prMenu;
@@ -220,12 +224,17 @@ CQGuiMemory {
 		).margins_(7).spacing_(4);
 
 		panels = [snapshotPanel, fingerprint, morphPanel, morphMeter];
+		// the shared page frame (CQGuiScale.pageFrame). The body carries the
+		// stretch, so the saved-snapshot column and the fingerprint reach down
+		// to the morph bridge instead of stopping at a fixed height — the
+		// fingerprint's own cells and type then grow with the room it gets.
+		topPad = View().fixedHeight_(m[\vMargin]);
 		view = View().background_(palette[\recess]).layout_(VLayout(
+			topPad,
 			HLayout(nil, header, nil),
 			HLayout(nil, body, nil),
-			HLayout(nil, morphPanel, nil),
-			nil
-		).margins_(m[\vMargin]).spacing_(8));
+			HLayout(nil, morphPanel, nil)
+		).margins_(0).spacing_(8));
 
 		matrixCtl = SimpleController(matrix);
 		#[patch, matrix, clear].do { |what|
@@ -335,10 +344,13 @@ CQGuiMemory {
 		var cellW = ((box.width - left - 24) / CQMatrix.destNames.size)
 			.floor.clip(24, 48);
 		var cellH = ((box.height - top - 34) / CQMatrix.sourceNames.size)
-			.floor.clip(11, 24);
+			.floor.clip(11, 26);
 		var width = CQMatrix.destNames.size * cellW;
 		var height = CQMatrix.sourceNames.size * cellH;
 		var active = 0, verso = 0, inverso = 0, changed = 0;
+		// the row labels are the fingerprint's own readable text, so they grow
+		// with the cells rather than staying at the page's smallest size
+		var rowSize = (cellH - 4).clip(m[\tiny], m[\label]);
 		var groups;
 		CQInk.drawToolBox(box, "patch fingerprint", skin, selectedName.notNil);
 		groups = [(start: 0, count: 5, title: "coco 1"),
@@ -367,8 +379,8 @@ CQGuiMemory {
 			var y = top + (si * cellH) + (cellH / 2);
 			var family = this.prSourceFamily(src);
 			Pen.stringAtPoint(this.prSourceLabel(src),
-				8@(y - (m[\tiny] / 2) - 1),
-				CQInk.font(\range, m[\tiny]), palette[\whisper]);
+				8@(y - (rowSize / 2) - 1),
+				CQInk.font(\range, rowSize), palette[\whisper]);
 			Pen.fillColor = palette[family];
 			Pen.fillOval(Rect(left - 12, y - 2.5, 5, 5));
 			CQMatrix.destNames.do { |dest, di|

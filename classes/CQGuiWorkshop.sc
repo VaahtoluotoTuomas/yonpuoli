@@ -230,17 +230,20 @@ CQGuiWorkshop {
 		mainLayout = HLayout(*this.mainLedgers).margins_(0)
 			.spacing_(metrics[\gutter]);
 		mainView = View().layout_(mainLayout);
-		topPad = View().fixedHeight_(metrics[\vMargin]);
 		gapPad = View().fixedHeight_(metrics[\bandGap]);
 		bottomPad = View().fixedHeight_(metrics[\vMargin]);
 		// no height constant anywhere: the rail asks for exactly what its
 		// islands need, and the page's trailing stretch turns the rest into slate
-		railLayout = VLayout(topPad, bandView, gapPad, mainView, bottomPad)
+		railLayout = VLayout(bandView, gapPad, mainView, bottomPad)
 			.margins_(0).spacing_(0);
 		rail = View().fixedWidth_(railW).background_(palette[\recess])
 			.layout_(railLayout);
+		// the shared page frame: every Drawer page opens with the same air
+		// under the tab row and centres the same rail (CQGuiScale.pageFrame)
+		topPad = View().fixedHeight_(metrics[\vMargin]);
 		view = View().background_(palette[\recess]);
 		view.layout = VLayout(
+			topPad,
 			HLayout(nil, rail, nil).margins_(0).spacing_(0),
 			nil
 		).margins_(0).spacing_(0);

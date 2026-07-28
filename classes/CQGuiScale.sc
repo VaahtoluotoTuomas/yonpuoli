@@ -31,10 +31,24 @@ CQGuiScale {
 		^Size((stageWidth - inset.x).max(0), (stageHeight - inset.y).max(0))
 	}
 
-	// The roomy step must never be chosen for a page that cannot hold it: the
-	// height floor is `minimumHeight(\roomy)` plus a margin of comfort.
+	// A little room to breathe above the bare minimum, so the bigger step is
+	// never chosen for a page that would be full to its last pixel.
+	*comfort { ^16 }
+
+	// The narrowest and shortest page a step can actually be drawn on. Both are
+	// DERIVED from the step's own metrics rather than written down beside them:
+	// a magic threshold silently stops matching the moment a metric moves, and
+	// this one decides whether a maximized window gets bigger type at all.
+	*minimumWidth { |step|
+		var m = this.metrics(step);
+		^m[\loomLabel] + (m[\cellMin] * CQMatrix.destNames.size)
+			+ (2 * m[\pageMargin])
+	}
+
 	*stepFor { |pageWidth, pageHeight|
-		^if(pageWidth >= 1400 and: { pageHeight >= 640 }) { \roomy } { \compact }
+		^if(pageWidth >= this.minimumWidth(\roomy)
+			and: { pageHeight >= (this.minimumHeight(\roomy) + this.comfort) })
+			{ \roomy } { \compact }
 	}
 
 	*metrics { |step|
@@ -58,8 +72,11 @@ CQGuiScale {
 			ledgerLabel: 96, ledgerValue: 58, ledgerInset: 12, ledgerGap: 10,
 			// inspector loom: the compact page has no spare height, so the
 			// header and cell height stay exactly as reviewed and only the
-			// row labels and status text grow
-			loomLabel: 80, cellMin: 44, cellMax: 52, cellHeight: 24,
+			// row labels and status text grow. The cell cap is deliberately
+			// well above the minimum window's own 52, so a page that is wide
+			// but too short for the roomy step still spends its width on the
+			// rail instead of turning all of it into slate.
+			loomLabel: 80, cellMin: 44, cellMax: 64, cellHeight: 24,
 			headerHeight: 64, loomLabelSize: 11, loomDestSize: 9,
 			// list rows and small boxes
 			listRow: 20, boxHeight: 24, barHeight: 26
@@ -72,12 +89,29 @@ CQGuiScale {
 			pageMargin: 32, vMargin: 16, gutter: 20, bandGap: 20,
 			title: 16, label: 15, value: 15, subgroup: 13, notice: 15,
 			mono: 15, tiny: 11,
-			rowHeight: 30, titleHeight: 28, groupHeight: 24,
+			// A 1080p laptop at 125 % Windows scaling reports a maximized page
+			// around 1528x630 logical px, and that page must reach this step —
+			// otherwise the one window size the instrument is actually played
+			// at would never get the bigger type. The row and band heights are
+			// therefore kept as tight as 15 px type allows.
+			rowHeight: 28, titleHeight: 26, groupHeight: 22,
 			ledgerLabel: 120, ledgerValue: 72, ledgerInset: 16, ledgerGap: 12,
-			loomLabel: 104, cellMin: 54, cellMax: 72, cellHeight: 30,
-			headerHeight: 78, loomLabelSize: 13, loomDestSize: 11,
-			listRow: 26, boxHeight: 28, barHeight: 32
+			loomLabel: 104, cellMin: 54, cellMax: 76, cellHeight: 28,
+			headerHeight: 74, loomLabelSize: 13, loomDestSize: 11,
+			listRow: 26, boxHeight: 28, barHeight: 30
 		)
+	}
+
+	// ---- the shared page frame ----
+
+	// Every Drawer page opens with exactly this much air between the tab row
+	// and its first ink, and centres the same rail, so the four pages read as
+	// one workbench rather than four layouts that happen to be adjacent. The
+	// bottom is deliberately free: the pages hold different amounts of content.
+	*pageFrame { |step, railWidth, pageWidth|
+		var m = this.metrics(step);
+		^(top: m[\vMargin], side: ((pageWidth - railWidth) / 2).max(m[\pageMargin]),
+			gap: m[\bandGap])
 	}
 
 	// ---- the shared content rail ----

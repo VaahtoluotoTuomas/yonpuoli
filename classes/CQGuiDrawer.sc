@@ -10,6 +10,7 @@ CQGuiDrawer {
 	// the Drawer's shared size step (CQGuiScale) and the Inspector chrome that
 	// follows the loom's rail
 	var <step = \compact, <pageSize, applyButton, gestureHelp, topRail, footerRail;
+	var inspectorTop;
 
 	*new { |gui, state, matrix, audition, grammar|
 		^super.newCopyArgs(gui, state, matrix, grammar).prBuild(audition)
@@ -79,6 +80,7 @@ CQGuiDrawer {
 
 	prScaleInspectorChrome {
 		var m = CQGuiScale.metrics(step), width = grid.loomSize.width;
+		inspectorTop.fixedHeight = m[\vMargin];
 		topRail.fixedWidth = width;
 		footerRail.fixedWidth = width;
 		gestureHelp.font = CQInk.font(\label, m[\label]);
@@ -131,13 +133,17 @@ CQGuiDrawer {
 				.margins_(0).spacing_(6));
 		footerRail = View().fixedWidth_(loomWidth).layout_(
 			HLayout(gestureHelp).margins_(0).spacing_(0));
+		// the shared page frame (CQGuiScale.pageFrame): the same air under the
+		// tab row as every other Drawer page, and the same centred rail
+		inspectorTop = View().fixedHeight_(m[\vMargin]);
 		inspectorView = View().background_(palette[\recess]).layout_(VLayout(
+			inspectorTop,
 			HLayout(nil, topRail, nil),
 			HLayout(nil, grid.header, nil),
 			HLayout(nil, grid.view, nil),
 			HLayout(nil, footerRail, nil),
 			nil
-		).margins_(4).spacing_(2));
+		).margins_(0).spacing_(2));
 		^this
 	}
 

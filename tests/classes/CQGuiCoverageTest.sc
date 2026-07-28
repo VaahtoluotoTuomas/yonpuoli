@@ -191,8 +191,13 @@ CQGuiCoverageTest : UnitTest {
 	// would be proving controls nobody can see.
 	test_theManifestFitsTheRoomThePageActuallyHas {
 		CQGuiScale.steps.do { |step|
-			// the page rect this step is chosen for, at its own floor
-			var page = if(step == \roomy) { Size(1400, 640) } { Size(1272, 526) };
+			// the page rect this step is chosen for, at its own derived floor
+			var page = if(step == \roomy) {
+				Size(CQGuiScale.minimumWidth(\roomy),
+					CQGuiScale.minimumHeight(\roomy) + CQGuiScale.comfort)
+			} {
+				Size(1272, 526)
+			};
 			var rail = CQGuiScale.railWidth(step, page.width);
 			var service = CQGuiWorkshop.serviceWidths(rail, step);
 			var main = CQGuiWorkshop.mainWidths(rail, step);

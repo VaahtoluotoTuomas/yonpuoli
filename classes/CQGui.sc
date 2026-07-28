@@ -372,20 +372,19 @@ CQGui {
 		shellState.audition = drawer;
 		gridPanel = drawer.grid;
 		shell = CQGuiShell(shellState, dayView, nightMap.stageView, masterView,
-			drawer.pages, { |skin| this.prApplySkin(skin) });
+			drawer.pages, { |skin| this.prApplySkin(skin) },
+			{ this.prSyncDrawerScale });
 		// The workbench reads at two reviewed sizes (CQGuiScale): a windowed
 		// 1280x720 gives a Drawer page 1272x526, a maximized window far more,
 		// and a page that is nothing but text should spend that on legibility
-		// rather than on slate. Qt reports the stage's new rect straight into
-		// the language, so the step follows the window with no timer and no
-		// polling — and each page re-measures rather than rebuilding.
-		shell.drawerView.onResize = { |resized|
-			if(cleaned.not) {
-				drawer !? { |d|
-					d.applyScale(resized.bounds.width, resized.bounds.height)
-				};
-			};
-		};
+		// rather than on slate. Qt reports a new rect straight into the
+		// language, so the step follows the window with no timer and no polling.
+		//
+		// Two hooks, not one, because either alone has a hole: the drawer stage
+		// is a StackLayout page, and a hidden page is not laid out — maximizing
+		// with the Drawer closed would otherwise leave a stale size behind. The
+		// window's own view always resizes, and reopening the Drawer re-asks.
+		shell.drawerView.onResize = { this.prSyncDrawerScale };
 		this.prApplySkin(shellState.viewMode);
 		window = Window("Cocoquantus · Archipelago",
 			Rect(50, 50, minimum[0], minimum[1]));
@@ -401,6 +400,9 @@ CQGui {
 			var ascii = char !? { char.ascii };
 			if(ascii == 9 or: { unicode == 9 }) { tabHeld = false };
 		};
+		// the window's own view always resizes, even when the drawer stage is
+		// the hidden StackLayout page (see the two-hook note above)
+		window.view.onResize = { this.prSyncDrawerScale };
 		window.view.keyModifiersChangedAction = { |v, modifiers|
 			nightMap !? { |map|
 				map.modifierTideFocus_(
@@ -412,6 +414,27 @@ CQGui {
 		window.view.children.do { |ch| this.prDefocus(ch) };
 		window.front;
 	}
+
+	// Re-ask the Drawer which size step its stage now deserves. Deferred by one
+	// GUI tick because a resize callback can arrive before Qt has finished
+	// laying the stage out, and the stale bounds would pick the wrong step.
+	// `applyScale` early-outs when nothing moved, so calling this often is free.
+	prSyncDrawerScale {
+		if(cleaned or: { drawer.isNil } or: { shell.isNil }) { ^this };
+		AppClock.sched(0, {
+			var stage;
+			if(cleaned.not and: { drawer.notNil } and: { shell.notNil }) {
+				stage = shell.drawerView.bounds;
+				drawer.applyScale(stage.width, stage.height);
+			};
+			nil
+		});
+		^this
+	}
+
+	// the Drawer became visible (or changed page): its stage may have been
+	// resized while it was hidden and therefore never laid out
+	drawerShown { this.prSyncDrawerScale; ^this }
 
 	prDrawerPlaceholder { |label|
 		var palette = CQInk.palette(\day);

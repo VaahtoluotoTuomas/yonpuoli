@@ -784,17 +784,28 @@ CQ.set(\micGain, 0.5);
 CQ.set(\micGain, 0);
 // 8. KOKOASKEL. Suurenna ikkuna maksimiin: koko drawerin pitää vaihtaa
 //    isompaan kokoaskeleeseen — teksti kasvaa (12 -> 15 px), rivit
-//    24 -> 30 px, raili levenee ja loomin solut kasvavat. Reunoille pitää
+//    24 -> 28 px, raili levenee ja loomin solut kasvavat. Reunoille pitää
 //    silti jäädä marginaali; sivu ei saa mennä kiinni reunoihin.
 //    Pienennä takaisin 1280x720:een: askel palaa, mitään ei leikkaudu eikä
 //    sivu vierity. Viimeisen `input mix · x` -rivin ja `castle 5` -sendin
 //    pitää näkyä kokonaan molemmissa koissa.
+// 8b. JOS teksti EI kasva maksimoitaessa, aja tämä ja kerro tulos — se
+//    kertoo suoraan kummasta on kyse, liian pienestä sivusta vai bugista:
+CQ.gui.drawer.pageSize;   // sivun todellinen koko, esim. Size(1528, 630)
+CQ.gui.drawer.step;       // \compact tai \roomy
+CQGuiScale.minimumWidth(\roomy);                          // vaadittu leveys
+CQGuiScale.minimumHeight(\roomy) + CQGuiScale.comfort;    // vaadittu korkeus
+//    Huom: Windowsin 150 % skaalauksella maksimoitu 1080p-näyttö ON
+//    looginen 1280x720, jolloin compact on oikea eikä vika.
 // 9. Vaihda DAY: saman geometrian pitää piirtyä musteena paperille.
 // 10. Käy KAIKKI neljä välilehteä läpi molemmissa koissa: inspector,
 //    workshop, spellbook, memory. Niiden pitää jakaa sama railin leveys
-//    (sama vasen ja oikea reuna), sama tekstikoko ja sama tyyli. Tarkista
-//    erityisesti: loomin rivinimet ja vinot sarakenimet, spellbookin
-//    monoteksti, memoryn nimilista ja patch-fingerprint.
+//    (sama vasen ja oikea reuna), **sama ylämarginaali** välilehtirivin ja
+//    sisällön välissä, sama tekstikoko ja sama tyyli. Tarkista erityisesti:
+//    loomin rivinimet ja vinot sarakenimet, spellbookin monoteksti,
+//    memoryn nimilista ja patch-fingerprint. Memoryn saved snapshots-
+//    ja patch fingerprint -laatikoiden pitää nyt yltää alas morph-palkkiin
+//    asti, ja fingerprintin rivinimien kasvaa sen mukana.
 ```
 
 **Visuaalinen ja soitettava portti:** tarkista 1280×720 ja maksimoituna sekä

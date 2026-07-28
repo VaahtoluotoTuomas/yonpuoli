@@ -7,18 +7,19 @@ CQGuiShell {
 	var <view, <dayView, <nightView, <masterView, <drawerView;
 	var <workspaceStack, <drawerButton;
 	var contentStack, drawerStack, drawerPages, toolbarView, toolbarTitle;
-	var modeButton, tabButtons, skinAction;
+	var modeButton, tabButtons, skinAction, shownAction;
 
-	*new { |state, dayView, nightView, masterView, pages, skinAction|
+	*new { |state, dayView, nightView, masterView, pages, skinAction, shownAction|
 		^super.new.prInit(state, dayView, nightView, masterView,
-			pages, skinAction)
+			pages, skinAction, shownAction)
 	}
 
 	prInit { |shellState, dayContent, nightContent, masterContent,
-		pages, applySkin|
+		pages, applySkin, onDrawerShown|
 		var day = CQInk.palette(\day), tabRow, instrumentView;
 		state = shellState;
 		skinAction = applySkin;
+		shownAction = onDrawerShown;
 		dayView = dayContent;
 		nightView = nightContent;
 		masterView = masterContent;
@@ -101,6 +102,9 @@ CQGuiShell {
 			button.value = (tab == state.drawerTab).binaryValue;
 		};
 		skinAction !? { skinAction.value(skin) };
+		// A hidden StackLayout page is not laid out, so a Drawer opened after a
+		// resize would carry the stage size it had when it was last visible.
+		if(state.drawerOpen) { shownAction !? { shownAction.value } };
 		toolbarView.refresh;
 		drawerView.refresh;
 		masterView.refresh;

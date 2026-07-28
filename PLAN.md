@@ -426,6 +426,33 @@ juuriprovenienssin ja lintu-hoverin suoran deck-reitin. §13.8:n
 loudness-kompensaatio kirjattiin myöhemmäksi kuuntelukokeeksi; DSP:hen ei
 koskettu tässä portissa.
 
+Saman haaran **marginaali- ja kokoaskelkorjaus** 2026-07-28 (N8 v3, käyttäjän
+toisen testauskierroksen palaute; **vihreä mutta ei hyväksytty**):
+`CQ_COMPILE_OK`, **13 012 unit-passia / 0 failurea / 31/31 luokkaa**,
+`CQ_SAFETY_PASSED` ja kaikki neljä GUI-markkeria; `CQ_HOLD_OK` kantaa.
+Kaksi vikaa:
+
+1. **Sivumarginaalit eivät olleet samat.** Inspector käytti `margins_(4)`,
+   Spellbook ja Memory 12:ta ja Workshop omaa sisäistä paddiaan. Kaikilla
+   neljällä on nyt **yksi jaettu sivukehys** (`CQGuiScale.pageFrame`): sama
+   ilma välilehtirivin ja ensimmäisen musteen välissä, sama keskitetty raili.
+   Alamarginaali saa vaihdella, koska sisällöt ovat eri. Memoryn body
+   venyy nyt morph-palkkiin asti, ja fingerprintin solut **ja rivinimien
+   koko** kasvavat sen mukana.
+2. **Kokoaskel ei lauennut maksimoitaessa — ja se oli oikea bugi.** Roomyn
+   kynnys oli kirjoitettu käsin (1400×640) samalla kun askeleen oma
+   minimikorkeus oli 624. Windows-läppärit ajetaan yleisesti 125 %:n
+   skaalauksella ja sclang laskee loogisia pikseleitä, joten maksimoitu
+   1080p-näyttö raportoi sivun ~1528×**630** — kaksi pikseliä liian matala.
+   Kynnykset **johdetaan nyt askeleen omista mitoista**
+   (`minimumWidth`/`minimumHeight` + `comfort`), ja roomyn rivit tiivistettiin
+   30 → 28 px, jolloin vaatimus on 1356×600 ja 125 % yltää siihen. Käsin
+   kirjoitettu kynnys lakkaa vastaamasta heti kun mitta liikkuu. Lisäksi
+   compactin solukatto nostettiin 52 → 64, jotta leveä mutta matala sivu
+   käyttää leveytensä railiin eikä pelkkään liuskekiveen, ja resize-koukkuja
+   on nyt **kaksi**: piilotettua StackLayout-sivua ei asetella, joten
+   suljettuna tehty koon muutos jäisi muuten vanhaan mittaan.
+
 Saman haaran **luettavuuskierros** 2026-07-28 (N8 v2, käyttäjän ensimmäisen
 testauskierroksen palaute; **vihreä mutta ei hyväksytty**): `CQ_COMPILE_OK`,
 **13 001 unit-passia / 0 failurea / 31/31 luokkaa**, `CQ_SAFETY_PASSED` ja

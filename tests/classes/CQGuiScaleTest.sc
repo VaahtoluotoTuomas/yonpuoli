@@ -29,25 +29,49 @@ CQGuiScaleTest : UnitTest {
 			CQGuiScale.stepFor(this.prBigPage.width, this.prBigPage.height),
 			\roomy, "a maximized window earns the roomy step");
 		this.assertEquals(CQGuiScale.stepFor(1912, 846), \roomy,
-			"so does a 1080p maximized window");
+			"so does a 1080p window maximized at 100 % scaling");
 		this.assertEquals(CQGuiScale.stepFor(1600, 500), \compact,
 			"a wide but short page stays compact — height is a real constraint");
 		this.assertEquals(CQGuiScale.stepFor(1200, 900), \compact,
 			"and so does a tall but narrow one");
 	}
 
+	// The case the first version got wrong (found by the user, 2026-07-28):
+	// Windows laptops are commonly run at 125 % or 150 % scaling, and sclang
+	// works in logical px, so a 1080p laptop maximized reports a far smaller
+	// page than its panel suggests. A threshold that misses 125 % means the one
+	// window size the instrument is actually played at never gets bigger type.
+	test_aScaledLaptopStillReachesTheRoomyStep {
+		// 1920x1080 at 125 % -> 1536x824 logical window -> 1528x630 page
+		this.assertEquals(CQGuiScale.stepFor(1528, 630), \roomy,
+			"a 1080p laptop at 125 % scaling reaches the roomy step");
+		// at 150 % the logical window IS the 1280x720 minimum: there is
+		// genuinely no room, and staying compact is correct, not a bug
+		this.assertEquals(CQGuiScale.stepFor(1272, 526), \compact,
+			"at 150 % scaling the page really is the minimum and stays compact");
+	}
+
 	// The whole point of the roomy step: it must never be chosen for a page that
-	// cannot hold it, or the ledger would clip instead of growing.
+	// cannot hold it, or the ledger would clip instead of growing. Both floors
+	// are derived from the step's own metrics, so this cannot drift.
 	test_neitherStepCanBeChosenForAPageItDoesNotFit {
+		var floorW = CQGuiScale.minimumWidth(\roomy);
+		var floorH = CQGuiScale.minimumHeight(\roomy) + CQGuiScale.comfort;
+		this.assertEquals(CQGuiScale.stepFor(floorW, floorH), \roomy,
+			"roomy is chosen at exactly its own derived floor");
+		this.assertEquals(CQGuiScale.stepFor(floorW - 1, floorH), \compact,
+			"and not one pixel narrower");
+		this.assertEquals(CQGuiScale.stepFor(floorW, floorH - 1), \compact,
+			"nor one pixel shorter");
 		CQGuiScale.steps.do { |step|
-			var floorW = if(step == \roomy) { 1400 } { 1272 };
-			var floorH = if(step == \roomy) { 640 } { 526 };
-			this.assertEquals(CQGuiScale.stepFor(floorW, floorH), step,
-				"% is chosen at its own floor".format(step));
-			this.assert(CQGuiScale.minimumHeight(step) <= floorH,
-				"% needs % px and its floor gives % px"
-					.format(step, CQGuiScale.minimumHeight(step), floorH));
+			this.assert(CQGuiScale.minimumHeight(step)
+				<= (if(step == \roomy) { floorH } { 526 }),
+				"% fits the page it is chosen for".format(step));
 		};
+		// the compact step must fit the app's own minimum window, always
+		this.assert(CQGuiScale.minimumHeight(\compact) <= this.prMinPage.height,
+			"compact fits the 1280x720 minimum with room to spare (% <= %)"
+				.format(CQGuiScale.minimumHeight(\compact), this.prMinPage.height));
 	}
 
 	test_theRoomyStepIsBiggerEverywhereThatMatters {
@@ -136,11 +160,13 @@ CQGuiScaleTest : UnitTest {
 		this.assertEquals(CQGuiScale.loomCell(\roomy, 3000),
 			CQGuiScale.metrics(\roomy)[\cellMax],
 			"the cap is the loom cell's own maximum");
+		// a page that is wide but too short for the roomy step must still spend
+		// its width on the rail rather than turning all of it into slate
+		this.assert(CQGuiScale.railWidth(\compact, 1528)
+			> CQGuiScale.railWidth(\compact, 1272),
+			"a wide compact page widens its rail too");
 		// below the app's own 1280 minimum the floor yields rather than pushing
 		// the rail off the page — a minimum that overflows is not a minimum
-		this.assertEquals(CQGuiScale.loomCell(\compact, 1272),
-			CQGuiScale.metrics(\compact)[\cellMax],
-			"at the minimum window the compact cell is already at its cap");
 		this.assert(CQGuiScale.loomCell(\compact, 900)
 			< CQGuiScale.metrics(\compact)[\cellMin],
 			"a narrower page yields the floor instead of breaking the margin");
@@ -179,6 +205,32 @@ CQGuiScaleTest : UnitTest {
 			this.assertEquals(widths[0], widths[2],
 				"rail % : the two Coco ledgers are the same width".format(rail));
 		};
+	}
+
+	// ---- the shared page frame ----
+
+	// All four Drawer pages open with the same air under the tab row and centre
+	// the same rail, so the workbench reads as one surface rather than four
+	// adjacent layouts (the user's N8 feedback: Inspector and Workshop had
+	// different margins from Spellbook and Memory).
+	test_everyPageSharesOneFrame {
+		CQGuiScale.steps.do { |step|
+			var page = if(step == \roomy) { 1434 } { 1272 };
+			var rail = CQGuiScale.railWidth(step, page);
+			var frame = CQGuiScale.pageFrame(step, rail, page);
+			this.assertEquals(frame[\top], CQGuiScale.metrics(step)[\vMargin],
+				"% : the top margin is the step's own vertical margin"
+					.format(step));
+			this.assertFloatEquals(frame[\side], (page - rail) / 2,
+				"% : the rail is centred".format(step), 1e-9);
+			this.assert(frame[\side] >= CQGuiScale.metrics(step)[\pageMargin],
+				"% : and never closer to the edge than the page margin"
+					.format(step));
+		};
+		// a rail somehow wider than its page still reports a usable margin
+		this.assert(CQGuiScale.pageFrame(\compact, 2000, 1272)[\side]
+			>= CQGuiScale.metrics(\compact)[\pageMargin],
+			"an over-wide rail cannot produce a negative margin");
 	}
 
 	// ---- buttons ----
