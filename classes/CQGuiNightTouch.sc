@@ -334,7 +334,7 @@ CQGuiNightTouch {
 	// ---- shell: wind (speed) · heart (hold) · chevron (flip) · mark (skip) ----
 
 	shellDown { |index, view, x, y, modifiers = 0, button = 0, clicks = 1|
-		var point = this.prPoint(view, x, y), geo = map.geometry, coco, n;
+		var point = this.prPoint(view, x, y), geo = map.geometry, coco, n, target;
 		var body = ("coco" ++ (index + 1)).asSymbol;
 		if(geo.isNil) { ^this };
 		coco = geo[\cocos][index];
@@ -347,13 +347,15 @@ CQGuiNightTouch {
 		if(modifiers.isAlt or: { overlay.patchAt(point).notNil }) {
 			^this.forwardDown(view, x, y, modifiers, button, clicks, body)
 		};
+		// One geometric answer, shared with the hover cue (§4.5) — the press may
+		// never act on a body the cue did not just promise.
+		target = CQNightGeometry.shellTargetAt(coco, point);
 		// the shell's heart. Left tap: seal / crack the loop (hold toggle).
 		// Right press held: the PUNCH — momentarily invert the hold, restored on
 		// release and on every exit path (§2). Checked before the generic
 		// non-left forward so a right press on the heart can never fall through
 		// to a harvest/rip on the shell body.
-		if(CQNightGeometry.distance(point, coco[\center])
-			<= coco[\heartRadius]) {
+		if(target == \heart) {
 			if(button == 0) { ^this.prToggle(("coco" ++ n ++ "Hold").asSymbol) };
 			if(button == 1) { ^this.prPunchDown(index) };
 		};
@@ -368,27 +370,26 @@ CQGuiNightTouch {
 			};
 			^this.forwardDown(view, x, y, modifiers, button, clicks, body)
 		};
-		if(CQNightGeometry.markHit(coco[\chevron], point)) {
-			^this.prToggle(("coco" ++ n ++ "Flip").asSymbol)
-		};
-		// skip's own stationary mark above the mouth jack. It replaced the tap
-		// on the read-head comet at the G2 gate: the comet is the only target
-		// in the night that moves, and past a crawl it cannot be hit at all.
-		if(CQNightGeometry.markHit(coco[\skipMark], point)) {
-			^Cocoquantus.skip(n)
-		};
-		if(CQNightGeometry.spiralDistance(coco, point)
-			<= CQNightMeasures.windGrab) {
-			wind = (index: index,
-				angle: this.class.angleAt(coco[\center], point));
-			^this
-		};
-		// The drawn rim is body. Empty paper inside this large opaque shell
-		// view is still bay water, so it must reach the tide instead of being
-		// lost merely because Qt's rectangle is larger than the organism.
-		if(CQNightGeometry.shellRimHit(coco, point)) {
-			^this.forwardDown(view, x, y, modifiers, button, clicks, body)
-		};
+		switch(target,
+			\chevron, { ^this.prToggle(("coco" ++ n ++ "Flip").asSymbol) },
+			// skip's own stationary mark under the mouth jack. It replaced the
+			// tap on the read-head comet at the G2 gate: the comet is the only
+			// target in the night that moves, and past a crawl it cannot be
+			// hit at all.
+			\skip,    { ^Cocoquantus.skip(n) },
+			\wind,    {
+				wind = (index: index,
+					angle: this.class.angleAt(coco[\center], point));
+				^this
+			},
+			// The drawn rim is body. Empty paper inside this large opaque shell
+			// view is still bay water, so it must reach the tide instead of
+			// being lost merely because Qt's rectangle is larger than the
+			// organism — hence the fall-through to the compass below.
+			\rim,     {
+				^this.forwardDown(view, x, y, modifiers, button, clicks, body)
+			}
+		);
 		^this.compassDown(view, x, y, modifiers, button, clicks)
 	}
 

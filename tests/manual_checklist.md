@@ -1012,9 +1012,47 @@ CQ.set(\coco1Speed, 24000);
 CQ.free;
 ```
 
-- [ ] 13.2 hyväksytty (pvm: ______ — pohjan soitettavuus, urkujen alapää,
-      ground jackin syvin pää, keskialueen tarkkuus ja M1-regressio) — TAI
-      kirjattu siirtymä vaihtoehtoon B
+- [x] 13.2 hyväksytty (2026-07-29 — äänialueet paikoin äärimmäisiä mutta
+      kokeelliseen musiikkiin sopivia; mahdollinen hienosäätö myöhemmin)
+
+### N10 — Kuoren sydän omistaa oman kiekkonsa (§4.5)
+
+Käyttäjän löytämä vika 2026-07-29: hitailla nopeuksilla kelan helmi on
+sydämen osuma-alueen sisällä, ja **hover lupasi kelauksen samalla kun
+painallus kytki loopin**. Osoitinkysymys kysytään nyt kerran
+(`CQNightGeometry.shellTargetAt`), joten vihje ja teko eivät voi enää erota.
+Sydän voittaa oman kiekkonsa, koska se on pieni, kiinteä ja seurauksiltaan
+raskas; kelaus on kulmaele ja onnistuu koko viisikierroksisen uran matkalta.
+Sydän sai myös oman hover-kehän — **piirretty sen todelliseen 22 px
+osumasäteeseen**, ei nupin ympärille, jotta vihje kertoo myös missä kela
+loppuu.
+
+```supercollider
+// N10 — Ctrl+Shift+L ensin. Riittää katsoa ja kokeilla, ei tarvitse ääntä.
+CQ.free;
+CQ.boot;
+CQ.set(\masterVol, -40);
+CQ.set(\coco1Speed, 1500);     // helmi kelan sisimpään päähän
+// 1. Vie osoitin uralle keskivaiheille: koko spiraali kirkastuu ja lovi
+//    kasvaa. Sydämen kehää EI näy. Raahaa: nopeus muuttuu.
+// 2. Vie osoitin nyt helmen päälle (aivan keskellä). Nyt pitää näkyä
+//    sydämen ohut kehä, ja spiraalin kirkastuksen pitää sammua.
+//    Lupaus on siis "sydän", ei "kela".
+// 3. Napauta siinä: hold-sinetti vaihtuu — juuri se minkä kehä lupasi.
+//    Raahaa napautuksen jälkeen ulospäin: nopeus EI saa muuttua.
+// 4. Pidä oikeaa nappia samassa kohdassa: punchin pitää toimia entiseen
+//    tapaan, ja irrotuksen palauttaa hold ennalleen.
+// 5. Kelaa nopeus takaisin ylös uran ULOMMALTA kierrokselta. Tämä on koko
+//    ratkaisun hinta: hitaimmassa päässä kelaus aloitetaan kierros ulompaa.
+//    Tuntuuko se luontevalta vai kiusalliselta?
+// 6. Tee sama coco2:lla. Tarkista myös 1280x570 ja maksimoituna: sydämen
+//    kiekko on kiinteä 22 px, ura skaalautuu, joten päällekkäisyys on eri
+//    kokoinen eri koossa — kehän pitää silti aina kertoa totuus.
+CQ.free;
+```
+
+- [ ] N10 hyväksytty (pvm: ______ — vihje ja teko samaa mieltä, sydämen kehä
+      luettava, kelaus ulomman kierroksen kautta hyväksyttävä)
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>

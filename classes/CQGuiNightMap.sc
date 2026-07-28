@@ -32,7 +32,7 @@ CQGuiNightMap {
 	var <geometry, <eyeActive = false, <eyeHover = false;
 	var <eyeFreqNorm = 0.5, <eyeChaosNorm = 0.15;
 	var <speedNorms, <shellHover, <dialHover, <rangeHover, <bodyHover;
-	var <rimHover, <ringHover = false;
+	var <rimHover, <heartHover, <ringHover = false;
 	var <preampHover, <preampSourceHover, <preampActive;
 	var <preampDriveNorms, <preampBiasNorms, <preampSlotNorms, <deckSlotNorms;
 	var <preampSources, preampPainted;
@@ -806,6 +806,7 @@ CQGuiNightMap {
 		speedNorms = [0.5, 0.5];
 		shellHover = [false, false];
 		rimHover = [false, false];
+		heartHover = [false, false];
 		dialHover = Array.fill(5, false);
 		rangeHover = Array.fill(5, false);
 		bodyHover = Array.fill(5, false);
@@ -1264,28 +1265,31 @@ CQGuiNightMap {
 		};
 	}
 
+	// The cue asks CQNightGeometry.shellTargetAt — the SAME question the press
+	// asks (§4.5). It used to re-derive its own chain and left the heart out of
+	// it entirely, so the innermost turn of the groove lit the wind cue while
+	// the press toggled the loop. Deriving all four cues from one answer also
+	// makes them mutually exclusive by construction rather than by three
+	// hand-written `.not`s.
 	prHoverShell { |i, view, x, y|
-		var near = false, mark = false, rim = false, point, free = true;
+		var target, heart, near, mark, rim, point;
 		if(geometry.notNil and: { view.notNil }) {
 			point = this.prStagePoint(view, x, y);
-			free = overlay.patchAt(point).isNil;
-			near = (CQNightGeometry.spiralDistance(geometry[\cocos][i], point)
-				<= CQNightMeasures.windGrab) and: { free };
-			// the skip mark sits off the winding surface, above the mouth
-			// jack, so it answers the hand on its own account
-			mark = free and: {
-				CQNightGeometry.markHit(geometry[\cocos][i][\skipMark], point)
+			// §4.5 cable-first: a cable inside its own hit path owns the pointer
+			if(overlay.patchAt(point).isNil) {
+				target = CQNightGeometry.shellTargetAt(geometry[\cocos][i], point);
 			};
-			// the winding surface and the mark are consulted first, so the rim
-			// cue never advertises a body solo where the next press would wind
-			rim = free and: { near.not } and: { mark.not }
-				and: { CQNightGeometry.shellRimHit(geometry[\cocos][i], point) };
 		};
+		heart = target == \heart;
+		near = target == \wind;
+		mark = target == \skip;
+		rim = target == \rim;
 		if((near != shellHover[i]) or: { mark != skipHover[i] }
-			or: { rim != rimHover[i] }) {
+			or: { rim != rimHover[i] } or: { heart != heartHover[i] }) {
 			shellHover[i] = near;
 			skipHover[i] = mark;
 			rimHover[i] = rim;
+			heartHover[i] = heart;
 			if(freed.not) { shellViews[i].refresh };
 		};
 	}
@@ -1892,7 +1896,8 @@ CQGuiNightMap {
 		coco = geometry[\cocos][i];
 		CQInkNight.drawShell(coco, coco[\shellBox].leftTop,
 			holdStates[i], this.flipMode(i), speedNorms[i], shellHover[i],
-			skipHover[i], skipFlash[i], rimHover[i], \night, geometry[\roots][i],
+			skipHover[i], skipFlash[i], rimHover[i], heartHover[i],
+			\night, geometry[\roots][i],
 			gui.auraFor(if(i == 0) { \envA } { \envB }) ? 0,
 			preampDriveNorms[i], preampSlotNorms[i]);
 	}

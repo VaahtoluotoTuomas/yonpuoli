@@ -832,7 +832,7 @@ punchChecks = { |map|
 														block { |touchDone|
 															var shell, coco, local, crescent, dolbyView;
 															var speedBefore, freqBefore, chaosBefore;
-															var samples, cablePoint, cableRecord;
+															var samples, cablePoint, cableRecord, heartPoint;
 															var castleTwo, castleView, dialPoint;
 															var rangePoint, rangeBefore, rangeBox, rangeCable;
 															var matrixBeforeRange;
@@ -1002,9 +1002,53 @@ punchChecks = { |map|
 																samples[30].y - local.y);
 															check.value(map.shellHover[0],
 																"hovering the spiral lights the wind cue");
+															check.value(map.heartHover[0].not,
+																"and the heart stays dark out on the groove");
 															shell.mouseLeaveAction.value(shell);
 															check.value(map.shellHover[0].not,
 																"leaving the shell rests the cue");
+															// The slow end of the reel lies inside the
+															// heart's disc. Found in the user's hands
+															// 2026-07-29: the cue promised a wind there
+															// and the press toggled the loop instead.
+															// One resolver now answers both, so the
+															// promise and the act are tested together.
+															heartPoint = CQNightGeometry
+																.spiralPoint(coco, 0);
+															check.value(CQNightGeometry.distance(
+																heartPoint, coco[\center])
+																	<= coco[\heartRadius],
+																"precondition: the slowest reel pearl really "
+																"sits inside the heart");
+															shell.mouseOverAction.value(shell,
+																heartPoint.x - local.x,
+																heartPoint.y - local.y);
+															check.value(map.heartHover[0],
+																"the heart owns the cue where it owns the press");
+															check.value(map.shellHover[0].not,
+																"and the wind cue no longer lies over the heart");
+															speedBefore = state.get(\coco1Speed);
+															holdBefore = state.get(\coco1Hold);
+															shell.mouseDownAction.value(shell,
+																heartPoint.x - local.x,
+																heartPoint.y - local.y, 0, 0, 1);
+															shell.mouseMoveAction.value(shell,
+																samples[34].x - local.x,
+																samples[34].y - local.y, 0);
+															shell.mouseUpAction.value(shell,
+																samples[34].x - local.x,
+																samples[34].y - local.y, 0, 0);
+															check.value(state.get(\coco1Hold)
+																!= holdBefore,
+																"a press there does what the cue promised: hold");
+															check.value(state.get(\coco1Speed)
+																== speedBefore,
+																"and dragging off it never winds the reel behind "
+																"the cue's back");
+															state.set(\coco1Hold, holdBefore);
+															shell.mouseLeaveAction.value(shell);
+															check.value(map.heartHover[0].not,
+																"leaving rests the heart's ring too");
 															castleTwo = map.geometry[\castles][1];
 															castleView = map.castleViews[1];
 															dialPoint = CQNightGeometry.polar(

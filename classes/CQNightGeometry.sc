@@ -490,6 +490,35 @@ CQNightGeometry {
 			<= (margin ? CQNightMeasures.rimMargin)
 	}
 
+	// §4.5 made structural: ONE answer for what a point on a shell belongs to,
+	// asked by the hover cue and by the press alike. The two chains used to be
+	// written out separately and had drifted — the press consulted the heart,
+	// the cue did not — so at slow speeds the groove lit up under the hand and
+	// the press toggled the loop instead of winding. Measured before the fix:
+	// the norm-0 reel pearl sits 14 px from centre at the minimum stage and
+	// 21 px at 1920x855, both inside the heart's 22 px.
+	//
+	// The heart wins its own disc on purpose. It is small, central and fixed,
+	// and its act is consequential (a stray toggle starts or ends a recording),
+	// while winding is an ANGULAR gesture available along the whole five-turn
+	// groove — so giving the spiral's eye to the heart costs the reel nothing
+	// that cannot be done one turn out.
+	//
+	// Geometry only: cables, modifiers and buttons are NOT decided here.
+	// CQGuiNightTouch keeps §4.5's cable-first check ahead of this call.
+	*shellTargetAt { |coco, point|
+		if(this.distance(point, coco[\center]) <= coco[\heartRadius]) {
+			^\heart
+		};
+		if(this.markHit(coco[\chevron], point)) { ^\chevron };
+		if(this.markHit(coco[\skipMark], point)) { ^\skip };
+		if(this.spiralDistance(coco, point) <= CQNightMeasures.windGrab) {
+			^\wind
+		};
+		if(this.shellRimHit(coco, point)) { ^\rim };
+		^nil
+	}
+
 	// distance from a point to the ring's drawn line (the river itself)
 	*ringDistance { |geometry, point|
 		var samples = geometry[\ringSamples], best = inf;

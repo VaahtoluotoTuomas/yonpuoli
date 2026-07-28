@@ -230,6 +230,17 @@ funnel like any other client.
   by the application.
   In Qt this binds ordinary `mouseOverAction`; `mouseMoveAction` alone covers
   only movement while a button is held.
+- **One resolver per body, not two chains.** Where several marks share one view,
+  the cue and the press must not each walk their own list of hit tests: they ask
+  a single pure function which mark owns the point (the night shell's
+  `CQNightGeometry.shellTargetAt`), and the caller decides only what buttons and
+  modifiers mean. Two hand-written chains drift — the shell's press consulted the
+  hold heart and its cue did not, so at slow speeds the groove lit under the hand
+  while the press toggled the loop (found 2026-07-29). Deriving every cue from one
+  answer also makes them mutually exclusive by construction instead of by a
+  growing set of `.not`s. When marks overlap, the smaller, fixed, more
+  consequential one wins its own area, and its hover cue is drawn at that area's
+  real boundary so the hand can learn it.
 
 Deferred dense-patch escape hatches, recorded but **not current gestures**:
 
@@ -365,7 +376,7 @@ below; it does not silently grant priority to any other control.
 | touch | gesture | writes |
 |---|---|---|
 | **wind the shell** | left-drag along the spiral's drawn line (≤ 8 px); turning toward the mouth winds faster, against it slower — the two shells mirror like their spirals. The reel notch rides the line as the live hand, and hover brightens the grab (§16.6) | `cocoN speed` (relative, ~2 turns = full range) |
-| **the shell's heart** | **left tap** the small mark at the spiral's innermost eye: seal / crack the loop; red while sealed (one law with the outer seal and HOLD) | `cocoN hold` toggle |
+| **the shell's heart** | **left tap** the small mark at the spiral's innermost eye: seal / crack the loop; red while sealed (one law with the outer seal and HOLD). The heart owns its whole disc, including the innermost turn of the groove that runs through it, and says so: on hover it wears §4.5's quiet outer ring **at its true hit radius**, so the cue also draws where the reel stops. Winding is angular and available along the whole groove, so the eye of the spiral costs the reel nothing | `cocoN hold` toggle |
 | **the heart's punch** | **right press held** on the same heart mark: momentarily *invert* the seal for as long as it is held — a looper's punch-in (sealed → material drops into the ring; open → a fragment freezes), restored on release. The exact prior value is captured and restored on **every** exit path — mouse-up, Esc, Tab, panic, window close, GUI free, CmdPeriod — because a stuck punch leaves a loop recording over itself (a right press on a *cable* crossing the heart still rips, §4.5). No timer: the split from the left tap is the button, not the clock | `cocoN hold` (momentary invert, no undo) |
 | **the mouth chevron** | press the read-direction chevron at the mouth | `cocoN flip` toggle |
 | **the mouth's skip mark** | press the spark glyph hanging under the chevron (10 px box, stationary). Momentary: 120 ms ink flash on *any* skip (§16.7) | `skip(n)` — the loop restarts from the eye |

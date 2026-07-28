@@ -450,6 +450,69 @@ CQNightGeometryTest : UnitTest {
 		};
 	}
 
+	// The defect this was written against (found in the user's hands, 2026-07-29):
+	// at slow speeds the reel pearl sits inside the heart's disc, and the hover
+	// cue lit the winding surface there while the press toggled the loop. Both
+	// chains now ask one question, so the assert that matters is that the answer
+	// is single and heart-first everywhere the two bodies overlap.
+	test_shellTargetIsOneAnswer {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			geo[\cocos].do { |coco, i|
+				var n = i + 1, center = coco[\center];
+				var heartR = coco[\heartRadius];
+				var slow = CQNightGeometry.spiralPoint(coco, 0);
+				var overlapped = 0;
+				this.assertEquals(CQNightGeometry.shellTargetAt(coco, center),
+					\heart,
+					"coco % centre is the heart (%x%)".format(n, *size));
+				// the regression itself: the slowest reel position belongs to
+				// the heart, so the cue may not offer a wind there
+				this.assertEquals(CQNightGeometry.shellTargetAt(coco, slow),
+					\heart,
+					"coco % slowest reel pearl answers as heart, not wind (%x%)"
+						.format(n, *size));
+				// ...and the groove is still fully playable one turn out
+				this.assertEquals(
+					CQNightGeometry.shellTargetAt(coco,
+						CQNightGeometry.spiralPoint(coco, 0.5)),
+					\wind,
+					"coco % mid-groove still winds (%x%)".format(n, *size));
+				this.assertEquals(CQNightGeometry.shellTargetAt(coco,
+					coco[\chevron]), \chevron,
+					"coco % chevron answers as itself (%x%)".format(n, *size));
+				this.assertEquals(CQNightGeometry.shellTargetAt(coco,
+					coco[\skipMark]), \skip,
+					"coco % skip mark answers as itself (%x%)".format(n, *size));
+				this.assertEquals(CQNightGeometry.shellTargetAt(coco,
+					coco[\mouth]), \wind,
+					"coco % mouth end of the groove still winds, and the rim "
+					"band never steals it (%x%)".format(n, *size));
+				this.assert(CQNightGeometry.shellTargetAt(coco,
+					center + Point(coco[\outerR] * 3, 0)).isNil,
+					"coco % open water past the shell claims nothing (%x%)"
+						.format(n, *size));
+				// no point inside the heart's disc may ever answer as anything
+				// else — this is the exact class of drift that produced the bug
+				201.do { |k|
+					var norm = k / 200;
+					var p = CQNightGeometry.spiralPoint(coco, norm);
+					if(CQNightGeometry.distance(p, center) <= heartR) {
+						overlapped = overlapped + 1;
+						this.assertEquals(CQNightGeometry.shellTargetAt(coco, p),
+							\heart,
+							"coco % groove at norm % is inside the heart and "
+							"answers heart (%x%)".format(n, norm, *size));
+					};
+				};
+				this.assert(overlapped > 0,
+					"coco % really has groove inside the heart at this size — "
+					"the overlap the assert above guards is not hypothetical (%x%)"
+						.format(n, *size));
+			};
+		};
+	}
+
 	// The almanac corner (§16.6) lives on water the bodies leave free: right of
 	// coco 2's own box, past bird B's name box, inside the stage at every
 	// scale. The sowing moon must be takeable by the same rim it draws — flash

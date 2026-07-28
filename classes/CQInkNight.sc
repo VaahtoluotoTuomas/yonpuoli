@@ -235,8 +235,8 @@ CQInkNight {
 	// difference is form first).
 	*drawShell { |coco, origin, holdOn = false, flipMode = \forward,
 		speedNorm = 0.5, hover = false, skipHover = false, skipFlash = false,
-		rimHover = false, skin = \night, preampRoot, preampAura = 0,
-		preampDrive = 0, preampSlot = 1|
+		rimHover = false, heartHover = false, skin = \night, preampRoot,
+		preampAura = 0, preampDrive = 0, preampSlot = 1|
 		var palette = CQInk.palette(skin), notch, notchNorm, normal, reach;
 		var heart;
 		Pen.translate(origin.x.neg, origin.y.neg);
@@ -265,6 +265,19 @@ CQInkNight {
 			Pen.strokeColor = palette[\danger].copy.alpha_(0.6);
 			Pen.width = CQInk.strokes[\strong];
 			Pen.addOval(Rect.aboutPoint(coco[\center], coco[\outerR], coco[\outerR]));
+			Pen.stroke;
+		};
+		// §4.5's quiet outer ring, the mark every pressable control wears — but
+		// drawn at the heart's TRUE hit radius rather than snug around its dot,
+		// because here the cue has a second job: it is the only thing that says
+		// where the reel stops and the loop seal begins. The spiral's innermost
+		// turn lies inside this ring by design (§8), so seeing the ring swallow
+		// it is exactly the truth the hand needs.
+		if(heartHover) {
+			Pen.strokeColor = palette[\whisper].copy.alpha_(0.55);
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.addOval(Rect.aboutPoint(coco[\center],
+				CQNightMeasures.heartHit, CQNightMeasures.heartHit));
 			Pen.stroke;
 		};
 		// the heart: hollow whisper eye while open, danger-red while sealed

@@ -37,10 +37,9 @@ kaapeliprioriteetti ja snapshot-kansion erotus — valmistui 2026-07-28.
 **13.1 feedback-taper sekä 13.4 chaos-käyrä ja sen sääkehät hyväksyttiin
 käyttäjän kuuntelu- ja näkökatselmuksessa 2026-07-28. Space-kuuntelupäätös,
 tuotantoketjun hallittu eläköitys ja Nightin täyden mittakaavan GUI-passi
-hyväksyttiin 2026-07-28–29.** Avoin portti on **13.2 speed-lattia**, jonka
-vaihtoehto A:n kandidaatti on toteutettu 2026-07-29 ja odottaa käyttäjän
-korvaa (checklist 13.2).
-Sen jälkeen järjestys on **13.5 VCA-laki → 13.3 dust → 13.6 zipper-mittaus +
+hyväksyttiin 2026-07-28–29. 13.2 speed-lattia (vaihtoehto A) hyväksyttiin
+2026-07-29.** Seuraava avoin portti on **13.5 VCA-laki**.
+Sen jälkeen järjestys on **13.3 dust → 13.6 zipper-mittaus +
 13.8 preampin equal-loudness-koe → Audio I/O Setup Drawerissa (AIO, alla) →
 nelikanavainen laitteisto-/resource-soak → kolme huokoista soittotilaa →
 Norns-portti (§14).** Yksi musiikillinen muuttuja käsitellään edelleen
@@ -327,6 +326,36 @@ soitettavuuden, mutta sen ratkaiseva kohta on keskialue — fader kattaa nyt
 viisi oktaavia neljän sijasta, ja jos tarkkuus katosi käyttökaistalta,
 kirjataan vaihtoehto B (lattia 2000, rajoitin jää 1500:aan).
 
+**Käyttäjä hyväksyi 13.2:n vaihtoehto A:n 2026-07-29.** Äänialueet ovat
+paikoin äärimmäisiä, mutta se sopii kokeelliseen musiikkiin; mahdollinen
+hienosäätö jää myöhemmäksi eikä vaihtoehto B:tä tarvittu.
+
+Saman katselmuksen löytämä vika korjattiin heti erillisenä porttinaan
+(checklist **N10**): **kuoren sydämen ja kelan hover/painallus olivat eri
+mieltä.** Hitailla nopeuksilla kelan helmi on sydämen osuma-alueen sisällä
+(mitattu ennen korjausta: norm-0-helmi 14 px keskipisteestä minimilavalla,
+21 px koossa 1920×855, sydämen osumasäde 22 px), joten hover kirkasti
+spiraalin mutta painallus kytki holdin. Syy oli rakenteellinen: osumaketju
+oli kirjoitettu kahdesti — `shellDown` kysyi sydäntä, `prHoverShell` ei
+kysynyt sitä lainkaan. Nyt molemmat kysyvät saman puhtaan funktion
+`CQNightGeometry.shellTargetAt`, joka on §4.5:n laki rakenteena eikä
+konventiona; neljä vihjettä ovat samalla toisensa poissulkevia ilman
+käsin kirjoitettuja `.not`-ehtoja. **Sydän voittaa oman kiekkonsa**, koska
+se on pieni, kiinteä ja seurauksiltaan raskas (harhanapautus aloittaa tai
+lopettaa äänityksen), kun taas kelaus on kulmaele ja onnistuu koko
+viisikierroksisen uran matkalta — spiraalin silmän luovuttaminen ei siis
+maksa kelalle mitään. Sydän sai käyttäjän luvalla oman hover-kehän, joka
+piirretään sen **todelliseen 22 px osumasäteeseen** eikä nupin ympärille:
+vihje kertoo silloin myös sen, mihin kela loppuu. Portti:
+`CQ_COMPILE_OK`, **13 217 unit-passia / 0 failurea / 32/32 luokkaa** ja
+kaikki neljä GUI-markkeria; `CQ_SAFETY_PASSED` ja `CQ_HOLD_OK` kantavat
+saman päivän 13.2-portista, koska tämä inkrementti ei koske DSP:hen.
+**Löydetty mutta korjaamatta jätetty:** mouth-chevronilla ei ole lainkaan
+hover-vihjettä (§4.5 lupaa sellaisen jokaiselle painettavalle
+kontrollille). Se ei ole osa tätä konfliktia — chevron ei osu uraan
+(mitattu 38/57 px) — eikä hyväksyttyyn pintaan lisätä uutta vihjettä
+omasta aloitteesta; odottaa käyttäjän päätöstä.
+
 Space-keskustelun ensimmäinen päätös 2026-07-28: Silhouette hylättiin tämän
 soittimen sisältä. Tuotanto-FDN:ään, `CQSpec`iin tai GUI:hin koskematon
 `prototypes/space_lab.scd` rakensi yhden vertailtavan kuuntelusession. Neljä
@@ -350,7 +379,7 @@ säilytetään tutkimusmateriaalina tulevalle muistilukutilalle, ei hyväksyttyn
 efektinä. Nykyistä Space/FDN-linjaa ei jatketa.
 
 - [x] 13.1 feedback-taper (**hyväksytty 2026-07-28, myös asteikkolisäykset**) ·
-  [ ] 13.2 speed-lattia (*A-kandidaatti vihreä 2026-07-29, odottaa korvaa*) ·
+  [x] 13.2 speed-lattia (**hyväksytty 2026-07-29, vaihtoehto A**) ·
   [ ] 13.3 dust ·
   [x] 13.4 chaos-käyrä (**hyväksytty 2026-07-28, myös sääkehät**) ·
   [ ] 13.5 VCA-laki · [ ] 13.6 zipper-mittaus ·
