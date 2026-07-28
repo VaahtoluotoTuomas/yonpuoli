@@ -29,6 +29,17 @@ CQSpec {
 
 	*at { |name| ^this.specs[name] }
 
+	// A semantic control may draw the same normalized regions its hand map
+	// actually uses. Return a copy: CQSpec owns the table and no view may
+	// mutate range truth while decorating itself.
+	*mapBreakpoints { |name|
+		var e = this.specs[name], points;
+		if(e.isNil) { ^nil };
+		points = e[\breakpoints];
+		if(points.isNil) { ^nil };
+		^points.collect { |point| point.copy }
+	}
+
 	*default { |name|
 		var e = this.specs[name];
 		^if(e.isNil) { nil } { e[\default] }

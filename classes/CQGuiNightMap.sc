@@ -944,12 +944,18 @@ CQGuiNightMap {
 		var view = UserView(container, Rect(0, 0, extent, height))
 			.background_(CQInk.palette(\night)[\ground]);
 		var family = if(name.asString.endsWith("Spaf")) { \spaf } { nil };
+		var breakpoints = if(name.asString.endsWith("Fb")) {
+			CQSpec.mapBreakpoints(name)
+		} { nil };
+		var regionEdges = if(breakpoints.notNil) {
+			breakpoints.collect { |point| point[0] }
+		} { nil };
 		view.drawFunc = {
 			this.prSafeDraw {
 				CQInkNight.drawCrescent(Point(extent * 0.5, extent * 0.5),
 					crescentNorms[name] ? 0,
 					family, activeCrescents.includes(name)
-						or: { hoverCrescents.includes(name) }, \night);
+						or: { hoverCrescents.includes(name) }, \night, regionEdges);
 				if(carriesDolby) {
 					CQInkNight.drawDolbyOyster(
 						Point(extent * 0.5, (extent * 0.5)

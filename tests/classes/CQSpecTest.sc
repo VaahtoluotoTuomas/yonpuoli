@@ -165,4 +165,16 @@ CQSpecTest : UnitTest {
 			};
 		};
 	}
+
+	test_feedbackTaperPublishesItsVisualRegionsWithoutLeakingOwnership {
+		var points = CQSpec.mapBreakpoints(\coco1Fb);
+		this.assertEquals(points,
+			[[0.0, 0.0], [0.5, 0.85], [0.9, 1.10], [1.0, 1.25]],
+			"the visual scale reads the exact registry-owned taper");
+		this.assert(CQSpec.mapBreakpoints(\coco1In).isNil,
+			"a linear control advertises no invented regions");
+		points[1][0] = 0.25;
+		this.assertEquals(CQSpec.mapBreakpoints(\coco1Fb)[1][0], 0.5,
+			"a caller cannot mutate CQSpec's breakpoint table");
+	}
 }

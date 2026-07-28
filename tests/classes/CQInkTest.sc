@@ -108,4 +108,17 @@ CQInkTest : UnitTest {
 		this.assert(points.collect(_.y).maxItem > 18,
 			"gravity sag carries long cables into the open paper field");
 	}
+
+	test_feedbackCrescentRegionsSpeakInThreeSemanticColours {
+		var edges = CQSpec.mapBreakpoints(\coco1Fb).collect { |point| point[0] };
+		this.assertEquals(CQInkNight.feedbackCrescentFamilies,
+			#[input, warning, danger],
+			"feedback reads as echo green, bloom amber, mayhem red");
+		this.assertEquals(CQInkNight.feedbackCrescentFamilyAt(0.2, edges), \input,
+			"the fading echo country is green");
+		this.assertEquals(CQInkNight.feedbackCrescentFamilyAt(0.74, edges), \warning,
+			"unity and the broad riding band are amber");
+		this.assertEquals(CQInkNight.feedbackCrescentFamilyAt(0.95, edges), \danger,
+			"the compressed mayhem tail is red");
+	}
 }

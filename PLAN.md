@@ -271,12 +271,16 @@ stem-gate ennen Norns-porttia. Jokainen hyväksytty DSP-muutos ajaa myös
 `nrt_hold_integrity`n ja päivittää SPEC §5:n samassa commitissa.
 
 `nocturne-feedback-taper`-haaran 13.1-kandidaatin automaattinen portti
-2026-07-28: `CQ_COMPILE_OK`, **13 071 unit-passia / 0 failurea / 32/32
+2026-07-28: `CQ_COMPILE_OK`, **13 078 unit-passia / 0 failurea / 32/32
 luokkaa**, `CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`,
 `CQ_GUI_DRAWER_PASSED`, `CQ_GUI_DRAWER_REENTRY_PASSED` ja
 `CQ_GUI_NIGHT_PASSED`. `CQ_HOLD_OK` kantaa, koska muutos koskee vain
 normalisoidun käden map/unmap-karttaa, ei DSP:tä tai tallennettuja arvoja.
-Korvaportti on edelleen avoin.
+Ensimmäisen korvakokeen jälkeen feedback-sirppi sai samojen CQSpec-
+breakpointien diskreetin vihreä/meripihka/punainen asteikon ja nykykohdan
+helmen; muut jatkuvat kädet odottavat kirjattua semanttista asteikkoauditia,
+eivät peri vaara-asteikkoa automaattisesti. Korva- ja visuaalinen portti on
+edelleen avoin.
 
 - [ ] 13.1 feedback-taper (**kandidaatti toteutettu, korvaportti avoin**) ·
   [ ] 13.2 speed-lattia · [ ] 13.3 dust ·

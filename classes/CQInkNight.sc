@@ -378,7 +378,7 @@ CQInkNight {
 	// §6.1 tide crescent: an open arc whose luminous fill is the value —
 	// the night's only continuous hand, never a knob, never a number
 	*drawCrescent { |center, norm = 0, family = \line, active = false,
-		skin = \night|
+		skin = \night, regionEdges|
 		var palette = CQInk.palette(skin);
 		var accent = palette[family] ?? { palette[\whisper] };
 		var start = 0.75pi, sweep = 1.5pi, arcR = CQNightMeasures.crescentArcR;
@@ -387,12 +387,72 @@ CQInkNight {
 		Pen.width = CQInk.strokes[\hairline];
 		Pen.addArc(center, arcR, start, sweep);
 		Pen.stroke;
-		if(norm > 0.001) {
-			Pen.strokeColor = accent.copy.alpha_(if(active) { 1.0 } { 0.85 });
-			Pen.width = CQInk.strokes[\strong];
-			Pen.addArc(center, arcR, start, sweep * norm.clip(0, 1));
+		if(regionEdges.notNil) {
+			this.prDrawFeedbackCrescent(center, norm, active, palette,
+				start, sweep, arcR, regionEdges)
+		} {
+			if(norm > 0.001) {
+				Pen.strokeColor = accent.copy.alpha_(if(active) { 1.0 } { 0.85 });
+				Pen.width = CQInk.strokes[\strong];
+				Pen.addArc(center, arcR, start, sweep * norm.clip(0, 1));
+				Pen.stroke;
+			};
+		};
+	}
+
+	// Feedback has three audible countries rather than one continuous warning
+	// temperature. The dim complete scale says where they are; the strong
+	// travelled ink and its small pearl say where the hand is now.
+	*feedbackCrescentFamilies { ^#[input, warning, danger] }
+
+	*feedbackCrescentFamilyAt { |norm, regionEdges|
+		norm = (norm ? 0).clip(0, 1);
+		if(norm >= regionEdges[2]) { ^this.feedbackCrescentFamilies[2] };
+		if(norm >= regionEdges[1]) { ^this.feedbackCrescentFamilies[1] };
+		^this.feedbackCrescentFamilies[0]
+	}
+
+	*prDrawFeedbackCrescent { |center, norm, active, palette,
+		start, sweep, arcR, regionEdges|
+		var value = (norm ? 0).clip(0, 1);
+		var families = this.feedbackCrescentFamilies;
+		var angle, pearl, pearlFamily;
+		families.do { |family, i|
+			var lo = regionEdges[i], hi = regionEdges[i + 1];
+			var filled = min(value, hi);
+			Pen.strokeColor = palette[family].copy
+				.alpha_(if(active) { 0.58 } { 0.36 });
+			Pen.width = CQInk.strokes[\normal];
+			Pen.addArc(center, arcR, start + (sweep * lo), sweep * (hi - lo));
+			Pen.stroke;
+			if(filled > lo) {
+				Pen.strokeColor = palette[family].copy
+					.alpha_(if(active) { 1.0 } { 0.9 });
+				Pen.width = CQInk.strokes[\strong];
+				Pen.addArc(center, arcR, start + (sweep * lo),
+					sweep * (filled - lo));
+				Pen.stroke;
+			};
+		};
+		// Two ground-coloured notches keep the regions legible without hue:
+		// discrete means discrete even in grayscale or reduced colour vision.
+		regionEdges.copyRange(1, regionEdges.size - 2).do { |edge|
+			var edgeAngle = start + (sweep * edge);
+			var direction = Point(cos(edgeAngle), sin(edgeAngle));
+			Pen.strokeColor = palette[\ground];
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.line(center + (direction * (arcR - 2.5)),
+				center + (direction * (arcR + 2.5)));
 			Pen.stroke;
 		};
+		angle = start + (sweep * value);
+		pearl = center + (Point(cos(angle), sin(angle)) * arcR);
+		pearlFamily = this.feedbackCrescentFamilyAt(value, regionEdges);
+		Pen.fillColor = palette[pearlFamily].copy
+			.alpha_(if(active) { 1.0 } { 0.94 });
+		Pen.addOval(Rect.aboutPoint(pearl, if(active) { 2.5 } { 2.0 },
+			if(active) { 2.5 } { 2.0 }));
+		Pen.fill;
 	}
 
 	// §16.6 the sowing moon: shake and how much it sows, in ONE body. The lit

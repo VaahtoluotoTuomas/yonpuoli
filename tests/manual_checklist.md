@@ -933,11 +933,15 @@ CQ.hold(1, 0);
 // 3. Ratsasta 0.95↔1.15 edestakaisin. Onko bloom-kynnys ennustettava, vai
 //    tuntuuko yläpään 1.10→1.25 viimeinen 10 % liian jyrkältä?
 // 4. Toista Coco 2:lla / F8:lla. Molempien pitää tuntua samalta.
+// 5. Katso samalla kummankin feedback-sirpin asteikkoa: koko vihreä /
+//    meripihka / punainen rata näkyy himmeänä, kuljettu osuus kirkkaana ja
+//    helmi nykykohdassa. Vaihtojen pitää osua kuultuihin 0.85- ja 1.10-rajoihin,
+//    eikä jälkimmäisen Dolby-osterin pidä hukkua värin alle.
 CQ.free;
 ```
 
 - [ ] 13.1 hyväksytty (pvm: ______ — ikuinen looppi löytyy, bloom-kynnys on
-      soitettava, mayhem-tail ei ole liian jyrkkä)
+      soitettava, mayhem-tail ei ole liian jyrkkä ja värirata luetaan oikein)
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>

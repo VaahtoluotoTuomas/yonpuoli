@@ -1202,7 +1202,21 @@ with 13.6 running inside the G3.1 review and 13.7 already planned as §2.
 implemented on `nocturne-feedback-taper` as the generic CQSpec-owned
 breakpoint map described below. The automatic gate is green; the experiment
 is not accepted until the user completes the ear protocol and judges the
-unity/bloom band and the final mayhem tail.
+unity/bloom band and the final mayhem tail. The user's first ear pass found
+the regimes at their expected positions and requested a readable scale on
+the hand itself. The feedback crescent now draws the same three CQSpec-owned
+regions discretely — echo green, unity/bloom amber, mayhem red — with a
+current-position pearl. A continuous hue ramp was rejected because it would
+claim a uniform continuum across a deliberately piecewise musical map.
+
+**Adjacent-control scale audit.** Do not spread green→red to every continuous
+hand: colour must name a consequence, not merely magnitude. After this
+feedback scale is reviewed in the full Night map, the next justified
+candidates are (1) a zero/polarity centre mark for bipolar SP.AF, which is
+not a danger scale, and (2) a quiet unity/overdrive boundary for input.
+The bird level could gain a unity tick later. Speed, the storm iris and the
+root gestures have no honest discrete region boundaries today and remain
+continuous. Dolby and range already state their discrete modes by shape.
 
 **Hypothesis.** The instrument's juiciest zone is fb ≈ 0.95–1.15
 (echo → looper → blooming crunch), but the linear 0–1.25 spec gives it
