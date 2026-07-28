@@ -1221,8 +1221,8 @@ only — never at a call site). Range, default (0.35) and every stored
 snapshot value are unchanged: only the hand's mapping moves. Unit-test the
 map/unmap roundtrip to ≤ 1e-9 across the breakpoints (the morph
 interpolates in normalized space, so an inexact inverse would make morphs
-drift). Day knob arcs and night crescents follow automatically — they draw
-from `unmap`.
+drift). Night crescents, Workshop ledger rails and 16n pickup all follow
+automatically — they draw or compare through `unmap`.
 
 **Consequences to check.** NRT A5 (unity looper) sets fb by *value* — no
 change. After a snapshot recall the 16n fader position no longer matches
@@ -1283,7 +1283,7 @@ CQ.set(\coco1SlotDeck, 1); CQ.set(\coco1In, 0.8); CQ.hold(1, 1);
 // 1. Kelaa F2 pohjaan asti. Uusi pohja: tumma, rakeinen, ~87 s luuppi.
 //    Kysymys korvalle: onko 1500-3000 Hz -kaista SOITETTAVAA pimeyttä vai
 //    mutaa? Missä kohtaa siitä tulee mutaa?
-// 2. Nosta organ (Day/workshop: coco1Organ 0.5) ja kelaa pohjilla:
+// 2. Nosta organ (Workshop: coco1Organ 0.5) ja kelaa pohjilla:
 //    urkupilli laskeutuu oktaavin entistä alemmas - onko se ääni?
 // 3. Istuta tri1 -> coco1_spaf painolla 0.8, spaf-syvyys ylös: modulaatio
 //    saa nyt painaa kellon 750 Hz:iin asti. Kuuntele ground jack -tempun
@@ -1347,7 +1347,7 @@ the DSP stay bit-identical; only the hand's mapping stretches. With
 hyperchaos region 0.6–1.0 compresses into the last quarter.
 
 **Technique.** One curve field in CQSpec + SPEC §5.4 row note. The eye's
-horizontal axis at night and the Day knob both read through `unmap` —
+horizontal axis at Night, the Workshop ledger and 16n all read through `unmap` —
 they follow. M3's sweep is the acceptance ear.
 
 **Listening protocol:**

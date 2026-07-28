@@ -357,7 +357,8 @@ Vaiheen kuvaus ja rakennusjärjestys: [`PLAN.md`](../PLAN.md) ja
 [`docs/NIGHT_STANDALONE_PLAN.md`](../docs/NIGHT_STANDALONE_PLAN.md) §12.
 Jokaisen inkrementin oma kuuntelu-/välitarkastuslohko lisätään tähän sitä
 mukaa kun se rakennetaan (punch → kevättulva → almanakan maisemointi → ranget
-→ dolby → linnut → juuret → drawer-workshop). Korvapassin (§13) lohkot samoin.
+→ dolby → linnut → juuret → drawer-workshop → Night-only). Korvapassin (§13)
+lohkot samoin.
 
 ### N1 — Punch (momentaarinen hold, §2)
 
