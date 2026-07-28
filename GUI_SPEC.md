@@ -208,8 +208,10 @@ funnel like any other client.
   An opened choice list is still an interactive Ink surface: **every selectable
   row under the pointer** gets the same light wash and stronger outline before
   click. Styling only the collapsed box or only the currently selected row is
-  incomplete. In Qt this binds ordinary `mouseOverAction`; `mouseMoveAction`
-  alone covers only movement while a button is held.
+  incomplete. Persistent selectable lists, including Memory's saved snapshots,
+  likewise highlight the row under the pointer without changing selection.
+  In Qt this binds ordinary `mouseOverAction`; `mouseMoveAction` alone covers
+  only movement while a button is held.
 
 Deferred dense-patch escape hatches, recorded but **not current gestures**:
 
@@ -1043,6 +1045,9 @@ Laws:
   change, the visual and Qt-smoke review checks both horizontal fit and that
   glyph tops/descenders are not clipped. A smaller side note may use a smaller
   face; it may not use a guessed face-size-plus-a-few-pixels box.
+- Tool-box titles keep a small reviewed top inset between the border and the
+  glyphs. Memory's `saved snapshots`, `patch fingerprint` and `morph bridge`
+  use the same step-aware inset; none sits directly against the top stroke.
 - Labels are whispers: whisper color, close to their object, never boxed.
   The project's own words — spaf, spesal, verso, balcium — are decoration
   enough.

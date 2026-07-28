@@ -103,6 +103,11 @@ tagged. Earlier tags describe internal development baselines.
   matrix cue and list-row wash/outline were strengthened for Day visibility.
   Short text bands now derive vertical ascent/descender clearance from
   `CQGuiScale`, preventing the Memory comparison note from clipping.
+- Removed the remaining vertical clipping source from that comparison note:
+  its layout inset is horizontal-only instead of consuming 8 px above and
+  below the text. Memory's saved-snapshot list now highlights the hovered row,
+  and all three Memory tool titles share a slightly deeper step-aware top
+  inset.
 - Hardened every headless SuperCollider gate against a recurring Windows hang:
   the shared runner uses daemon mode, a child-only watchdog, expected-marker
   validation and per-run diagnostic logs; agents and CI now use that same

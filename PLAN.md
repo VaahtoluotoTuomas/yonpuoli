@@ -468,6 +468,14 @@ ascent/descent-ilman, yksikkötesti lukitsee sen ja GUI_SPEC §16.4 määrää
 vaaka- **ja pystyleikkauksen** tarkistettavaksi jokaisen fonttimuutoksen jälkeen.
 Korjausportti: `CQ_COMPILE_OK`, **13 031 unit-passia / 0 failurea / 31/31
 luokkaa**, `CQ_GUI_DRAWER_PASSED` ja `CQ_SAFETY_PASSED`.
+Seuraava live-tarkistus jäljitti huomautuksen viimeisen leikkauksen sen
+ympäröivään `HLayout`iin: scalar `margins_(8)` vei myös 8 px ylhäältä ja
+alhaalta, joten fontin oma suurempi view ei saanut tilaansa. Rivi käyttää nyt
+vain vaakainsettiä `[8, 0, 8, 0]`. Saved snapshots -lista sai valintaa
+muuttamattoman rivikohtaisen hoverin, ja Memoryn kolme laatikko-otsikkoa
+jakavat yhden kokoaskeleesta tulevan hieman syvemmän top-insetin.
+Portti: `CQ_COMPILE_OK`, **13 035 unit-passia / 0 failurea / 31/31 luokkaa**,
+`CQ_GUI_DRAWER_PASSED` ja `CQ_SAFETY_PASSED`.
 
 Saman haaran **viimeistelykierros** 2026-07-28 (N8 v5, käyttäjän neljännen
 testauskierroksen palaute; **vihreä mutta ei hyväksytty**): `CQ_COMPILE_OK`,

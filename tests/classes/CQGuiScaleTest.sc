@@ -304,6 +304,7 @@ CQGuiScaleTest : UnitTest {
 	// Windows when fixedHeight was guessed from the nominal font size.
 	test_aShortTextBandAlwaysKeepsVerticalGlyphClearance {
 		CQGuiScale.steps.do { |step|
+			var m = CQGuiScale.metrics(step);
 			var size = CQGuiScale.metrics(step)[\tiny];
 			var height = CQGuiScale.textBandHeight(size);
 			this.assert(height >= (size + 8),
@@ -312,6 +313,12 @@ CQGuiScaleTest : UnitTest {
 			this.assert(height <= CQGuiScale.metrics(step)[\barHeight],
 				"% : the side note still fits inside the shared reading row"
 					.format(step));
+			this.assert(m[\toolTitleTop] > 3,
+				"% : Memory tool titles keep reviewed air above their glyphs"
+					.format(step));
+			this.assert((m[\toolTitleTop] + m[\label] + 3)
+				<= (m[\barHeight] - 4),
+				"% : padded tool titles still fit their header band".format(step));
 		};
 	}
 }

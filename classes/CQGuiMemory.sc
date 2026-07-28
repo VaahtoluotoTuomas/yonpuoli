@@ -13,6 +13,7 @@ CQGuiMemory {
 
 	var gui, state, matrix, snapshots, matrixCtl, morphCtl;
 	var skin = \day, snapshotNames, selectedData, labels, menus, panels;
+	var <snapshotHover;
 	var nameField, <aMenu, <bMenu, durationBox, detailTitle, <detailHint;
 	var <view, <snapshotList, <fingerprint, <morphMeter, <selectedName, <header;
 	// the seed bank shares the workbench's content rail and size step
@@ -26,6 +27,7 @@ CQGuiMemory {
 	// the historical reference width, kept so older contracts still read; the
 	// live rail is `railWidth` and follows CQGuiScale
 	*contentWidth { ^contentW }
+	*detailMargins { ^[8, 0, 8, 0] }
 
 	// The saved-snapshot column is a fixed reading width; the fingerprint takes
 	// whatever the rail has left, so a wider window buys patch detail rather
@@ -81,6 +83,7 @@ CQGuiMemory {
 		topPad.fixedHeight = m[\vMargin];
 		bottomPad.fixedHeight = m[\vMargin];
 		panels.do { |panel| panel.refresh };
+		this.prRefreshSnapshotHover;
 		^this
 	}
 
@@ -106,6 +109,7 @@ CQGuiMemory {
 		snapshotList.stringColor = palette[\line];
 		snapshotList.selectedStringColor = palette[\line];
 		snapshotList.hiliteColor = palette[\spaf].copy.alpha_(0.28);
+		this.prRefreshSnapshotHover;
 		menus.do { |menu| menu.skin = skin };
 		nameField.background = palette[\ground];
 		nameField.stringColor = palette[\line];
@@ -122,6 +126,7 @@ CQGuiMemory {
 		var index;
 		snapshotNames = if(snapshots.isNil) { [] } { snapshots.list };
 		snapshotList.items = ["live patch · now"] ++ snapshotNames;
+		this.prRefreshSnapshotHover;
 		menus.do { |menu| menu.items = snapshotNames };
 		index = if(selectedName.isNil) { 0 } {
 			snapshotNames.indexOf(selectedName.asString)
@@ -162,6 +167,15 @@ CQGuiMemory {
 			.fixedWidth_(column - 14);
 		snapshotList.action = { this.prSelectSnapshot };
 		snapshotList.selectionAction = { this.prSelectSnapshot };
+		snapshotList.mouseOverAction = { |list, x, y|
+			this.prHoverSnapshotAt(y)
+		};
+		snapshotList.mouseLeaveAction = {
+			if(snapshotHover.notNil) {
+				snapshotHover = nil;
+				this.prRefreshSnapshotHover
+			}
+		};
 		saveButton = this.prButton("save snapshot", saveW, \line, { this.prSave });
 		recallButton = this.prButton("recall",
 			CQGuiScale.buttonWidth(step, "recall"), \line, { this.prRecall });
@@ -172,7 +186,8 @@ CQGuiMemory {
 			.background_(palette[\recess]);
 		snapshotPanel.drawFunc = {
 			CQInk.drawToolBox(snapshotPanel.bounds.moveTo(0, 0), "saved snapshots",
-				skin, false, CQGuiScale.metrics(step)[\label])
+				skin, false, CQGuiScale.metrics(step)[\label],
+				CQGuiScale.metrics(step)[\toolTitleTop])
 		};
 		snapshotPanel.layout = VLayout(
 			View().fixedHeight_(m[\barHeight] - 4),
@@ -196,7 +211,10 @@ CQGuiMemory {
 		// starts below it rather than on top of it
 		fingerprint.layout = VLayout(
 			View().fixedHeight_(m[\label] + 10),
-			HLayout(detailTitle, nil, detailHint).margins_(8).spacing_(6),
+			// Horizontal inset only: the former scalar 8 px margins also ate
+			// 16 px vertically and clipped ascenders/descenders inside this row.
+			HLayout(detailTitle, nil, detailHint)
+				.margins_(this.class.detailMargins).spacing_(6),
 			nil
 		).margins_(0).spacing_(0);
 
@@ -223,7 +241,8 @@ CQGuiMemory {
 			.background_(palette[\recess]);
 		morphPanel.drawFunc = {
 			CQInk.drawToolBox(morphPanel.bounds.moveTo(0, 0), "morph bridge",
-				skin, false, CQGuiScale.metrics(step)[\label])
+				skin, false, CQGuiScale.metrics(step)[\label],
+				CQGuiScale.metrics(step)[\toolTitleTop])
 		};
 		morphPanel.layout = VLayout(
 			View().fixedHeight_(m[\barHeight] - 4),
@@ -295,6 +314,31 @@ CQGuiMemory {
 			\range, { m[\tiny] },
 			\tiny, { m[\tiny] },
 			{ m[\label] })
+	}
+
+	prHoverSnapshotAt { |y|
+		var row = (y / CQGuiScale.metrics(step)[\listRow]).floor.asInteger;
+		if(row < 0 or: { row >= snapshotList.items.size }) { row = nil };
+		if(row != snapshotHover) {
+			snapshotHover = row;
+			this.prRefreshSnapshotHover
+		};
+		^this
+	}
+
+	prRefreshSnapshotHover {
+		var palette = CQInk.palette(skin);
+		var colors = Array.fill(snapshotList.items.size, palette[\ground]);
+		if(snapshotHover.notNil and: { snapshotHover >= colors.size }) {
+			snapshotHover = nil
+		};
+		snapshotHover !? { |index|
+			if(index < colors.size) {
+				colors[index] = palette[\ground].blend(palette[\spark], 0.16)
+			}
+		};
+		snapshotList.colors = colors;
+		^this
 	}
 
 	// returns the control: the page re-measures it when the size step changes
@@ -385,7 +429,7 @@ CQGuiMemory {
 		var rowSize = (cellH - 4).clip(m[\tiny], m[\label]);
 		var groups;
 		CQInk.drawToolBox(box, "patch fingerprint", skin, selectedName.notNil,
-			m[\label]);
+			m[\label], m[\toolTitleTop]);
 		groups = [(start: 0, count: 5, title: "coco 1"),
 			(start: 5, count: 5, title: "coco 2"),
 			(start: 10, count: 5, title: "castle fm"),

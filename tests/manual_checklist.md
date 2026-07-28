@@ -821,6 +821,10 @@ CQGuiScale.minimumHeight(\roomy) + CQGuiScale.comfort;    // vaadittu korkeus
 //    laskevat kirjaimet (g, j, p, q, y). Pienempi fontti ei saa pienentää
 //    StaticText-laatikkoa ilman ascent/descent-ilmaa. Tässä passissa tarkista
 //    erityisesti koko "outlined knots differ from the live patch" -rivi.
+// 13. MEMORY-LISTA JA OTSIKOT. Hoveroi saved snapshots -listan eri rivejä:
+//    kevyt highlight seuraa osoitinta muuttamatta valittua snapshotia.
+//    `saved snapshots`, `patch fingerprint` ja `morph bridge` -otsikoiden
+//    yläpuolella pitää olla sama pieni ilmatila laatikon reunaan.
 ```
 
 **Visuaalinen ja soitettava portti:** tarkista 1280×720 ja maksimoituna sekä

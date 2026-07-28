@@ -850,7 +850,8 @@ CQInk {
 			this.font(\label, labelSize), palette[\line]);
 	}
 
-	*drawToolBox { |rect, title, skin = \day, active = false, labelSize|
+	*drawToolBox { |rect, title, skin = \day, active = false, labelSize,
+		titleTop = 3|
 		var palette = this.palette(skin), body = rect.insetBy(1, 1);
 		var size = labelSize ? this.metrics[\labelSize];
 		Pen.fillColor = palette[\ground];
@@ -859,7 +860,8 @@ CQInk {
 		Pen.addRoundedRect(body, this.metrics[\buttonRadius], this.metrics[\buttonRadius]);
 		Pen.fillStroke;
 		Pen.stringLeftJustIn(title.asString,
-			Rect(body.left + 6, body.top + 3, (body.width - 12).max(20), size + 3),
+			Rect(body.left + 6, body.top + titleTop,
+				(body.width - 12).max(20), size + 3),
 			this.font(\label, labelSize), palette[\line]);
 	}
 

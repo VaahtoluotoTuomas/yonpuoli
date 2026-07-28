@@ -109,7 +109,7 @@ CQGuiScale {
 			// room for them because they hang from its bottom edge
 			headerHeight: 64, loomLabelSize: 11, loomDestSize: 11,
 			// list rows and small boxes
-			listRow: 20, boxHeight: 24, barHeight: 26
+			listRow: 20, boxHeight: 24, barHeight: 26, toolTitleTop: 5
 		)
 	}
 
@@ -129,7 +129,7 @@ CQGuiScale {
 			ledgerLabel: 120, ledgerValue: 72, ledgerGap: 12,
 			loomLabel: 104, cellMin: 54, cellMax: 76, cellHeight: 28,
 			headerHeight: 74, loomLabelSize: 13, loomDestSize: 13,
-			listRow: 26, boxHeight: 28, barHeight: 30
+			listRow: 26, boxHeight: 28, barHeight: 30, toolTitleTop: 6
 		)
 	}
 
