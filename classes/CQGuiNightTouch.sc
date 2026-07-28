@@ -637,14 +637,13 @@ CQGuiNightTouch {
 		^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
 	}
 
-	// The gill and Tab toggle one persistent focus state. While closed, a cable
-	// crossing the organ keeps §4.5 priority; while open, cable spans are below
-	// the water and the gill remains available to close the field.
+	// The gill and Tab toggle one persistent focus state. The gill's exact hit
+	// shape is the one reviewed exception to cable-first priority; outside it,
+	// the ordinary landscape forwarding law remains unchanged.
 	tideGateDown { |view, x, y, modifiers = 0, button = 0, clicks = 1|
 		var point = this.prPoint(view, x, y);
 		if(button == 0 and: { clicks == 1 }
-			and: { CQNightGeometry.tideGateHit(map.geometry, point) }
-			and: { overlay.patchAt(point).isNil }) {
+			and: { CQNightGeometry.tideGateHit(map.geometry, point) }) {
 			map.toggleTideFocus;
 			^this
 		};

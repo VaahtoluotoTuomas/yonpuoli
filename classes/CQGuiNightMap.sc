@@ -481,7 +481,7 @@ CQGuiNightMap {
 		overlay !? { overlay.backgrounded = next };
 		if(freed.not) {
 			compassView.refresh;
-			tideGateView !? { tideGateView.refresh };
+			tideGestureView !? { tideGestureView.refresh };
 		};
 		^this
 	}
@@ -851,7 +851,6 @@ CQGuiNightMap {
 			label
 		};
 		tideGateView = this.prLayer(false);
-		tideGateView.drawFunc = { this.prSafeDraw { this.prDrawTideGate } };
 		overlay = CQGuiCableOverlay(matrix, endpoints, gui.bananaGrammar,
 			{ |src| gui.auraFor(src) }).skin_(\night);
 		// Provenance must cross every invisible Qt paper edge. It lives above
@@ -1142,15 +1141,18 @@ CQGuiNightMap {
 		^this
 	}
 
-	// The gill is the GUI entrance to the same state Tab latches. A cable still
-	// wins while the bay is closed; once open, spans are deliberately behind
-	// the water and the organ itself remains available to close it again.
+	// The gill is the GUI entrance to the same state Tab latches. It is the one
+	// narrow exception to cable-first priority: its exact hit shape owns hover
+	// and press even beneath a span, while the rest of this layer still yields.
 	prBindTideGate {
 		tideGateView.mouseDownAction = { |v, x, y, mods, button, clicks|
 			touch.tideGateDown(v, x, y, mods ? 0, button ? 0, clicks ? 1)
 		};
 		tideGateView.mouseMoveAction = { |v, x, y, mods|
-			touch.landscapeMove(v, x, y, mods ? 0)
+			this.prHoverTideGate(v, x, y);
+			if(tideGateHover.not) {
+				touch.landscapeMove(v, x, y, mods ? 0)
+			}
 		};
 		tideGateView.mouseUpAction = { |v, x, y, mods, button|
 			touch.landscapeUp(v, x, y, mods ? 0, button ? 0)
@@ -1722,12 +1724,12 @@ CQGuiNightMap {
 		var next = false, point;
 		if(geometry.notNil and: { view.notNil }) {
 			point = this.prStagePoint(view, x, y);
-			next = CQNightGeometry.tideGateHit(geometry, point)
-				and: { overlay.patchAt(point).isNil };
+			next = CQNightGeometry.tideGateHit(geometry, point);
+			if(next) { gui.bananaGrammar.hoverCable = nil };
 		};
 		if(next != tideGateHover) {
 			tideGateHover = next;
-			if(freed.not) { tideGateView.refresh };
+			if(freed.not) { tideGestureView.refresh };
 		};
 	}
 
@@ -1745,12 +1747,9 @@ CQGuiNightMap {
 		if(geometry.isNil) { ^this };
 		CQInkNight.drawTideGesture(geometry[\almanac],
 			compassDragState, \night);
-	}
-
-	prDrawTideGate {
-		if(geometry.isNil) { ^this };
-		CQInkNight.drawTideGate(geometry[\tideGate],
-			geometry[\tideGateBox].leftTop,
+		// Draw the gill on the hit-transparent topological layer. Its event view
+		// stays below, but no planted cable can erase the cue it promises.
+		CQInkNight.drawTideGate(geometry[\tideGate], Point(0, 0),
 			tideFocus, tideGateHover, \night);
 	}
 

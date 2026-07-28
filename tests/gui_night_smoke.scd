@@ -272,7 +272,7 @@ compassChecks = { |map|
 	var undoBefore, local, local2;
 	var di, si, mark, xEnd;
 	var savedRand, expected, countBefore;
-	var record, cablePoint;
+	var record, cablePoint, crossing, savedMatrix;
 	check.value(cView.notNil
 		and: { (cView.bounds.left - almanac[\compassBox].left).abs < 1 },
 		"the tide is the full-stage ground, not a pool layer");
@@ -345,10 +345,43 @@ compassChecks = { |map|
 		local.x, local.y, 0, 0, 1);
 	check.value(map.tideFocus.not and: { map.tideFocusLatched.not },
 		"the closed gill toggles the same persistent focus off");
+	// The gill is the one deliberate exception to cable-first priority. Find a
+	// real endpoint pair whose rendered curve crosses its exact hit shape, then
+	// prove hover and press still belong to the visible gill.
+	CQMatrix.sourceNames.do { |src|
+		CQMatrix.destNames.do { |dest|
+			var start, finish, points, segments, hit;
+			if(crossing.isNil) {
+				start = map.overlay.pointFor(src);
+				finish = map.overlay.pointFor(dest);
+				segments = max(8,
+					(CQNightGeometry.distance(start, finish) / 12).ceil.asInteger);
+				points = CQInk.cablePoints(start, finish, segments);
+				hit = points.detect { |point|
+					CQNightGeometry.tideGateHit(map.geometry, point)
+				};
+				if(hit.notNil) { crossing = [src, dest, hit] };
+			};
+		};
+	};
+	check.value(crossing.notNil,
+		"the canonical endpoint field contains a cable that crosses the gill");
+	savedMatrix = matrix.asArray;
+	matrix.patch(crossing[0], crossing[1], 0.7);
+	map.overlay.invalidate;
+	check.value(map.overlay.patchAt(crossing[2]).notNil,
+		"the regression point really belongs to the crossing cable");
+	local = crossing[2] - map.geometry[\tideGateBox].leftTop;
+	map.tideGateView.mouseOverAction.value(map.tideGateView, local.x, local.y);
+	check.value(map.tideGateHover
+		and: { gui.bananaGrammar.hoverCable.isNil },
+		"the gill owns hover and clears cable focus at their crossing");
 	map.tideGateView.mouseDownAction.value(map.tideGateView,
 		local.x, local.y, 0, 0, 1);
 	check.value(map.tideFocus and: { map.tideFocusLatched },
-		"the gill opens the playable water again");
+		"the gill owns press through a crossing cable and opens the water");
+	matrix.load(savedMatrix);
+	map.overlay.invalidate;
 	// a voyage: pour through the field, commit on release. The end position is
 	// derived from the cell's own tide mark, so the assertion is
 	// deterministic geography, not luck.
