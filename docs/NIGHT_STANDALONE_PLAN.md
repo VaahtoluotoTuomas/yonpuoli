@@ -1200,14 +1200,13 @@ with 13.6 running inside the G3.1 review and 13.7 already planned as §2.
 
 **Implementation status (2026-07-28).** The first listening candidate is
 implemented on `nocturne-feedback-taper` as the generic CQSpec-owned
-breakpoint map described below. The automatic gate is green; the experiment
-is not accepted until the user completes the ear protocol and judges the
-unity/bloom band and the final mayhem tail. The user's first ear pass found
-the regimes at their expected positions and requested a readable scale on
-the hand itself. The feedback crescent now draws the same three CQSpec-owned
-regions discretely — echo green, unity/bloom amber, mayhem red — with a
-current-position pearl. A continuous hue ramp was rejected because it would
-claim a uniform continuum across a deliberately piecewise musical map.
+breakpoint map described below. The automatic gate is green. The user
+accepted the taper and its full visual follow-up on 2026-07-28: the audible
+regimes land at their expected positions, and the feedback crescent draws the
+same three CQSpec-owned regions discretely — echo green, unity/bloom amber,
+mayhem red — with a current-position pearl. A continuous hue ramp was rejected
+because it would claim a uniform continuum across a deliberately piecewise
+musical map.
 
 **Adjacent-control scale audit (implemented 2026-07-28).** Green→red was not
 spread to every continuous hand: colour must name a consequence, not merely

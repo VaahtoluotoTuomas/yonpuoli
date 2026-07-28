@@ -33,10 +33,9 @@ spesalin seurauksen tekopaikassa, ja Workshopin täsmäkontrollit sekä Nightin
 kuoret tekevät passiivisesta muistipolkukartasta ylläpitokustannustaan
 heikomman. N9:n jälkeinen rajattu polish-portti — kiduksen
 kaapeliprioriteetti ja snapshot-kansion erotus — valmistui 2026-07-28.
-**13.1 feedback-taperin ensimmäinen kuuntelukandidaatti on toteutettu
-`nocturne-feedback-taper`-haaralle ja odottaa käyttäjän korvaporttia.**
-Sitä ei hyväksytä eikä seuraavaa muuttujaa aloiteta ennen kuuntelutuomiota.
-Hyväksynnän jälkeen etenemisjärjestys on
+**13.1 feedback-taper sekä sen semanttiset sirppiasteikot hyväksyttiin
+käyttäjän kuuntelu- ja näkökatselmuksessa 2026-07-28.** Seuraava muuttuja on
+13.4:n chaos-käyrä. Etenemisjärjestys on
 **13.4 chaos-käyrä → Space/reverbin
 konseptipäätös ja kuuntelu → 13.2 speed-lattia → 13.5 VCA-laki → 13.3 dust
 → 13.6 zipper-mittaus + 13.8 preampin equal-loudness-koe → jäljellä olevat
@@ -282,10 +281,10 @@ breakpointien diskreetin vihreä/meripihka/punainen asteikon ja nykykohdan
 helmen. Käyttäjä vahvisti sen toimivaksi ja näkyväksi. Semanttinen
 asteikkoaudit lisäsi SP.AF:lle nollaloven ja inverso/verso-puoliskot, inputille
 unity/overdrive-rajan sekä linnun levelille neutraalin unity-viivan. Speed,
-storm iris ja juurieleet jäivät tarkoituksella ennalleen. Uusien viitteiden
-Night-katselmus sekä taperin lopullinen korvatuomio ovat edelleen avoinna.
+storm iris ja juurieleet jäivät tarkoituksella ennalleen. Käyttäjä hyväksyi
+taperin sekä kaikki nämä lisäykset 2026-07-28; 13.1 on suljettu.
 
-- [ ] 13.1 feedback-taper (**kandidaatti toteutettu, korvaportti avoin**) ·
+- [x] 13.1 feedback-taper (**hyväksytty 2026-07-28, myös asteikkolisäykset**) ·
   [ ] 13.2 speed-lattia · [ ] 13.3 dust ·
   [ ] 13.4 chaos-käyrä · [ ] 13.5 VCA-laki · [ ] 13.6 zipper-mittaus ·
   [ ] 13.8 preamp loudness compensation

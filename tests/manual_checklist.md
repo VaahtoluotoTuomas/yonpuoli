@@ -946,8 +946,8 @@ CQ.hold(1, 0);
 CQ.free;
 ```
 
-- [ ] 13.1 hyväksytty (pvm: ______ — ikuinen looppi löytyy, bloom-kynnys on
-      soitettava, mayhem-tail ei ole liian jyrkkä ja värirata luetaan oikein)
+- [x] 13.1 hyväksytty (2026-07-28 — taper sekä feedback-, SP.AF-, input- ja
+      linnun level-sirppien semanttiset lisäykset hyväksytty)
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>
