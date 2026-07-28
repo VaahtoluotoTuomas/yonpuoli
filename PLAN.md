@@ -31,9 +31,10 @@ spesal-tähdistö ja staattinen muistipolkukartta saivat kirjatun kuoleman:
 Nightin osoittimen alla ilmestyvä suuntatotuudellinen kytkentäsointu kertoo
 spesalin seurauksen tekopaikassa, ja Workshopin täsmäkontrollit sekä Nightin
 kuoret tekevät passiivisesta muistipolkukartasta ylläpitokustannustaan
-heikomman. Ennen korvapassia tehdään tämä rajattu polish-portti: kiduksen
-kaapeliprioriteetti ja snapshot-kansion erotus. Sen jälkeen etenemisjärjestys
-on **13.1 feedback-taper → 13.4 chaos-käyrä → Space/reverbin
+heikomman. N9:n jälkeinen rajattu polish-portti — kiduksen
+kaapeliprioriteetti ja snapshot-kansion erotus — valmistui 2026-07-28.
+**Seuraava askel on 13.1 feedback-taper.** Sen jälkeen etenemisjärjestys on
+**13.4 chaos-käyrä → Space/reverbin
 konseptipäätös ja kuuntelu → 13.2 speed-lattia → 13.5 VCA-laki → 13.3 dust
 → 13.6 zipper-mittaus + 13.8 preampin equal-loudness-koe → jäljellä olevat
 bugit/polish ja laitteistogate → Norns-portti (§14).** Yksi musiikillinen
