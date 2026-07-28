@@ -40,6 +40,19 @@ CQSpec {
 		^points.collect { |point| point.copy }
 	}
 
+	// Named landmarks belong to the parameter just like its range and curve.
+	// Views receive only the mapped normalized position: they never assume that
+	// unity is halfway along a rail (which is false for a curved deck level).
+	*referenceNorm { |name, reference|
+		var e = this.specs[name], references, value;
+		if(e.isNil) { ^nil };
+		references = e[\references];
+		if(references.isNil) { ^nil };
+		value = references[reference];
+		if(value.isNil) { ^nil };
+		^this.unmap(name, value)
+	}
+
 	*default { |name|
 		var e = this.specs[name];
 		^if(e.isNil) { nil } { e[\default] }
@@ -182,9 +195,10 @@ CQSpec {
 			points[i][0], points[i + 1][0])
 	}
 
-	*prNum { |name, lo, hi, warp, default, lag = 0.03, breakpoints|
+	*prNum { |name, lo, hi, warp, default, lag = 0.03, breakpoints, references|
 		all[name] = (kind: \num, spec: ControlSpec(lo, hi, warp, 0, default),
-			default: default, lag: lag, breakpoints: breakpoints);
+			default: default, lag: lag, breakpoints: breakpoints,
+			references: references);
 	}
 
 	*prInt { |name, lo, hi, default|
@@ -206,8 +220,8 @@ CQSpec {
 		// SPEC §5.1 sources
 		this.prNum(\liveGain, 0, 4, 4, 1.0);
 		this.prNum(\micGain, 0, 8, 4, 0.0);       // default 0 = muted (SPEC §7 mic safety)
-		this.prNum(\deckALevel, 0, 2, 4, 1.0);
-		this.prNum(\deckBLevel, 0, 2, 4, 1.0);
+		this.prNum(\deckALevel, 0, 2, 4, 1.0, 0.03, nil, (unity: 1.0));
+		this.prNum(\deckBLevel, 0, 2, 4, 1.0, 0.03, nil, (unity: 1.0));
 		this.prNum(\deckARate, -2.0, 2.0, \lin, 1.0);
 		this.prNum(\deckBRate, -2.0, 2.0, \lin, 1.0);
 		this.prToggle(\deckALoop, 1);
@@ -224,7 +238,7 @@ CQSpec {
 		// SPEC §5.3 cocos (identical pair, only pan default differs)
 		[1, 2].do { |n|
 			var p = { |suffix| ("coco" ++ n ++ suffix).asSymbol };
-			this.prNum(p.value("In"), 0, 2, \lin, 0.8);
+			this.prNum(p.value("In"), 0, 2, \lin, 0.8, 0.03, nil, (unity: 1.0));
 			this.prNum(p.value("Fb"), 0, 1.25, \lin, 0.35, 0.03,
 				[[0.0, 0.0], [0.5, 0.85], [0.9, 1.10], [1.0, 1.25]]);
 			this.prNum(p.value("Speed"), 3000, 48000, \exp, 24000);

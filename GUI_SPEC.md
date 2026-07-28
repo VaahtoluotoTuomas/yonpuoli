@@ -359,12 +359,12 @@ below; it does not silently grant priority to any other control.
 | **the heart's punch** | **right press held** on the same heart mark: momentarily *invert* the seal for as long as it is held — a looper's punch-in (sealed → material drops into the ring; open → a fragment freezes), restored on release. The exact prior value is captured and restored on **every** exit path — mouse-up, Esc, Tab, panic, window close, GUI free, CmdPeriod — because a stuck punch leaves a loop recording over itself (a right press on a *cable* crossing the heart still rips, §4.5). No timer: the split from the left tap is the button, not the clock | `cocoN hold` (momentary invert, no undo) |
 | **the mouth chevron** | press the read-direction chevron at the mouth | `cocoN flip` toggle |
 | **the mouth's skip mark** | press the spark glyph hanging under the chevron (10 px box, stationary). Momentary: 120 ms ink flash on *any* skip (§16.7) | `skip(n)` — the loop restarts from the eye |
-| **tide crescents** | a small crescent below each spaf / inVca / fbVca moon, luminous fill = value; vertical drag pours more or less. Socket beside its control — §1's proximity law, reborn at night. spaf wears purple. **Feedback alone carries a semantic three-band scale:** fading echo green, unity/bloom amber, mayhem red. The complete scale rests dimly behind the hand, the travelled part brightens and a small pearl marks the exact current position. Two fine ground notches keep the bands discrete without relying on colour vision. Band edges are the feedback taper's own normalized CQSpec breakpoints (0.5 / 0.9), never duplicated visual constants | `cocoN spaf / in / fb` |
+| **tide crescents** | a small crescent below each spaf / inVca / fbVca moon; vertical drag pours more or less. Socket beside its control — §1's proximity law, reborn at night. Each scale names only a real consequence. **SP.AF** splits at its CQSpec-derived zero: inverso blue to the left, verso orange to the right, with fill growing from zero and a zero notch. **Input** is green through exact unity and amber in overdrive, divided by its CQSpec-owned unity mark. **Feedback** keeps its three audible bands: fading echo green, unity/bloom amber, mayhem red. Complete regions rest dimly behind the hand; the travelled region brightens and a pearl marks the current position. Fine notches keep boundaries legible without relying on colour vision. Feedback edges are its normalized taper breakpoints (0.5 / 0.9), never duplicated visual constants | `cocoN spaf / in / fb` |
 | **Dolby oysters** | beneath each in/fb tide crescent, tap the captionless paired arcs: open = off, nearly shut = gate, shut with a partner-facing arrival stroke = duck. Oyster hover and crescent hover are exclusive; a drag may begin only on the crescent's original square | `cocoN dolbyIn / dolbyFb`: `off → gate → duck → off` (CQSpec enum order) |
 | **the ring's eye** | the storm iris at the ring's center (§16.6); grab and drag — vertical = pitch, horizontal = chaos, and the iris itself answers on both axes. The weather of five castles from one fingertip | `qFreq` (y) + `qChaos` (x), relative |
 | **dial tap** | press a castle's inner clock — the dial face inside the body (§16.6): one step (same act as the day step button and keys 3..7). Hovering the castle first shows **which castle it reads** as an inner chord (§16.6's coupling chords), so the step's consequence is visible in the gesture that makes it | `spesal(k)` step |
 | **range ripple** | tap the drawn rate at a castle's 6 o'clock: one slow swell → one full cycle → five tight half-waves → one slow swell. The form is the whole regime display; no legacy `i/b/a` caption remains. Cable-first remains absolute, and ripple/clock/body hover cues are exclusive | `cNRange`: `infra → balcium → audio → infra` (CQSpec enum order) |
-| **bird fetch + drop + wing crescent** | tap the bird with < 8 px travel to open the asynchronous system file dialog at the configured samples folder; cancelling is inert. Dropping an audio file remains an equal load path, and the crescent under the wing remains the deck's level | deck load · `deckN level` |
+| **bird fetch + drop + wing crescent** | tap the bird with < 8 px travel to open the asynchronous system file dialog at the configured samples folder; cancelling is inert. Dropping an audio file remains an equal load path. The neutral crescent under the wing remains the deck's level and carries one exact CQSpec-derived unity tick — no invented coloured regions | deck load · `deckN level` |
 | **bird folder walk** | wheel down = next file, wheel up = previous. Qt momentum is gated to one sign-step per 150 ms so one flick cannot skip a handful of perches; before a load, the deck's own guard scans the samples folder | `deckN.next / prev` |
 | **bird ruffle** | horizontal drag travels ≥ 6 px and reverses once by ≥ 6 px — one natural out-and-back; release chooses a random file. Repeated or broad ruffling remains valid once that reversal is clear. A drag that is neither a tap nor a ruffle is inert | `deckN.random` |
 | **the sowing moon** | the bone moon in the top-right sky (§16.6). It opens as a small 0.22 crescent. A press that travels < 8 px — the lasso's own threshold — throws a shake at the moon's current phase, with a 120 ms bone flash on *any* shake (`p` key, moon, code or pattern: one action notice, one light). A **horizontal** drag pours the phase fuller (right) or darker (left), the way the terminator itself travels; the lit fraction is **how much gets sown**, through the slow-first quadratic fertility curve in §10, no number | `shake` (matrix op — one undo, one spellbook entry) · `shakeAmount` (GUI constant, no undo) |
@@ -1278,7 +1278,10 @@ brightens and the notch lengthens (static ink, §4.5). Org fruit =
 yellow Ø 7 dot on a 6 px stem from the second turn. Moons spaf / inVca /
 fbVca / flip / skip sit on an arc under the spiral, glyphs per §16.5, lamps
 on flip/skip; below the three continuous moons hang their **tide crescents**
-(§6.1): open arcs ~Ø 18, luminous fill = value, family-colored, no numbers.
+(§6.1): open arcs ~Ø 18, luminous fill = value, no numbers. SP.AF's signed
+fill grows away from its zero notch; input marks unity and the overdrive side;
+feedback shows its three audible taper regions. Their notches make the
+landmarks form-readable rather than hue-only.
 The in/fb crescent owners grow only downward and carry a **Dolby oyster**
 24 px below the unchanged crescent centre. The oyster is consulted first on
 press; its tap box and the crescent's original drag square are disjoint.
@@ -1361,7 +1364,9 @@ the Qt drag and a 60 Hz global-cursor fallback preserves motion samples if the
 pointer leaves its small UserView on Windows.
 A different drag is inert. Cable
 hit-testing remains first inside the bird view, while the rate socket and level
-crescent keep their higher sibling views and own geometry. Any successful
+crescent keep their higher sibling views and own geometry. The level crescent
+has one neutral unity tick at the exact position returned by its curved CQSpec
+map; it gains no colour scale because level has no named danger regimes. Any successful
 `\file` notification — dialog, wheel, ruffle, drop or code — flashes that bird
 for the shared 120 ms momentary interval and updates the one filename truth.
 Flutter = 1 px wing bob at ambient rate while the deck's level > 0.05

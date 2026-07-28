@@ -121,4 +121,15 @@ CQInkTest : UnitTest {
 		this.assertEquals(CQInkNight.feedbackCrescentFamilyAt(0.95, edges), \danger,
 			"the compressed mayhem tail is red");
 	}
+
+	test_adjacentCrescentScalesKeepTheirOwnSemantics {
+		this.assertEquals(CQInkNight.spafCrescentFamilies,
+			#[inverso, verso],
+			"SP.AF reads as two signed directions, not a warning ramp");
+		this.assertEquals(CQInkNight.inputCrescentFamilies,
+			#[input, warning],
+			"input reads as normal gain followed by overdrive");
+		this.assertEquals(CQInkNight.levelCrescentFamily, \line,
+			"bird level keeps a neutral unity reference");
+	}
 }

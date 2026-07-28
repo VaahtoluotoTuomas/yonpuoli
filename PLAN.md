@@ -266,21 +266,24 @@ mahdollinen äänenvoimakkuuskompensaatio tehdään tämän jälkeen samassa
 mittaus-/equal-loudness-vaiheessa: ensin todetaan ongelma, vasta sitten
 auditoidaan korjaus. Kohta 13.7 on punch (= kohta 1 yllä). Lopuksi suljetaan
 siirretyt bugit ja polish-velat sekä nelikanavaista laitteistoa vaativa
-stem-gate ennen Norns-porttia. Jokainen hyväksytty DSP-muutos ajaa myös
+  stem-gate sekä alla nimetty Nightin kokomittakaavan polish-portti ennen
+  Norns-porttia. Jokainen hyväksytty DSP-muutos ajaa myös
 `nrt_safety`n ja
 `nrt_hold_integrity`n ja päivittää SPEC §5:n samassa commitissa.
 
 `nocturne-feedback-taper`-haaran 13.1-kandidaatin automaattinen portti
-2026-07-28: `CQ_COMPILE_OK`, **13 078 unit-passia / 0 failurea / 32/32
+2026-07-28: `CQ_COMPILE_OK`, **13 095 unit-passia / 0 failurea / 32/32
 luokkaa**, `CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`,
 `CQ_GUI_DRAWER_PASSED`, `CQ_GUI_DRAWER_REENTRY_PASSED` ja
 `CQ_GUI_NIGHT_PASSED`. `CQ_HOLD_OK` kantaa, koska muutos koskee vain
 normalisoidun käden map/unmap-karttaa, ei DSP:tä tai tallennettuja arvoja.
 Ensimmäisen korvakokeen jälkeen feedback-sirppi sai samojen CQSpec-
 breakpointien diskreetin vihreä/meripihka/punainen asteikon ja nykykohdan
-helmen; muut jatkuvat kädet odottavat kirjattua semanttista asteikkoauditia,
-eivät peri vaara-asteikkoa automaattisesti. Korva- ja visuaalinen portti on
-edelleen avoin.
+helmen. Käyttäjä vahvisti sen toimivaksi ja näkyväksi. Semanttinen
+asteikkoaudit lisäsi SP.AF:lle nollaloven ja inverso/verso-puoliskot, inputille
+unity/overdrive-rajan sekä linnun levelille neutraalin unity-viivan. Speed,
+storm iris ja juurieleet jäivät tarkoituksella ennalleen. Uusien viitteiden
+Night-katselmus sekä taperin lopullinen korvatuomio ovat edelleen avoinna.
 
 - [ ] 13.1 feedback-taper (**kandidaatti toteutettu, korvaportti avoin**) ·
   [ ] 13.2 speed-lattia · [ ] 13.3 dust ·
@@ -774,6 +777,27 @@ varjostus mitataan monella satunnaisella kentällä ja tuodaan käyttäjälle
 kauppana, ei löydetä jälkikäteen; ja **suunnitelmateksti voi olla väärässä** —
 jos toteutus sen mukaan tuntuu väärältä, epäile diagnoosia äläkä vain
 sommittelua (§7.2 korjattiin vasta hylätyn buildin jälkeen).
+
+## Avoin Night-kokomittakaavan polish-portti
+
+- [ ] **Nightin säätimien ja muun anatomian järjestelmällinen suurennus.**
+  N2:n yleinen väljennys ei vielä tehnyt kaikista käsistä ja merkeistä
+  riittävän suuria: erityisesti tide-sirpit, niiden asteikkolovet ja Dolby-
+  osterit ovat nyt paremmin luettavia mutta edelleen fyysisesti pieniä, ja sama
+  koskee monia muitakin Nightin osia. Tämä on koko näkymän mittakaava- ja
+  sommittelupassi, ei yksittäisten säätimien satunnainen kasvatus.
+- [ ] Inventoi ensin koko Night todellisessa käytössä ja ryhmittele kasvatukset
+  `CQNightMeasures`-mitoiksi. Aja sen jälkeen puhdas geometria/clearance-portti
+  ennen näkymien siirtämistä: crescentit, osterit, endpointit, skip/chevron,
+  range-ripplet, kidukset, linnut, juuret ja ringin kädet ovat vähintään
+  katselmuslista, eivät ennalta päätetty sama kerroin.
+- [ ] Hyväksy pienin ja suurin tuettu ikkuna sekä käyttöjärjestelmän
+  100/125/150 % skaalaus. Värilliset semanttiset asteikot parantavat lukemista,
+  mutta eivät kuittaa tätä osumakoon ja fyysisen koon velkaa.
+
+**Sijainti etenemisessä:** musiikilliset yhden muuttujan kokeet ja Space-
+päätös ensin, sitten tämä yhtenäinen koko-/layout-passi yhdessä jäljellä olevan
+polishin kanssa, ennen nelikanavaista laitteistogatea ja Norns-porttia.
 
 ## Valmistunut polish-passissa 2026-07-28
 

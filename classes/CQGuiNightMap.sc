@@ -176,6 +176,31 @@ CQGuiNightMap {
 		)
 	}
 
+	// A scale exists only where the parameter has a musically named landmark.
+	// Its positions come from CQSpec; the view receives semantics, not ranges.
+	*crescentScaleFor { |name|
+		var inventory = this.crescentNames(0) ++ this.crescentNames(1)
+			++ this.crescentNames(nil);
+		var text = name.asString, points;
+		if(inventory.includes(name).not) { ^nil };
+		if(text.endsWith("Fb")) {
+			points = CQSpec.mapBreakpoints(name);
+			^if(points.isNil) { nil } {
+				(kind: \feedback, edges: points.collect { |point| point[0] })
+			}
+		};
+		if(text.endsWith("Spaf")) {
+			^(kind: \spaf, center: CQSpec.centerNorm(name))
+		};
+		if(text.endsWith("In")) {
+			^(kind: \input, unity: CQSpec.referenceNorm(name, \unity))
+		};
+		if(#[deckALevel, deckBLevel].includes(name)) {
+			^(kind: \level, unity: CQSpec.referenceNorm(name, \unity))
+		};
+		^nil
+	}
+
 	free {
 		if(freed) { ^this };
 		freed = true;
@@ -944,18 +969,13 @@ CQGuiNightMap {
 		var view = UserView(container, Rect(0, 0, extent, height))
 			.background_(CQInk.palette(\night)[\ground]);
 		var family = if(name.asString.endsWith("Spaf")) { \spaf } { nil };
-		var breakpoints = if(name.asString.endsWith("Fb")) {
-			CQSpec.mapBreakpoints(name)
-		} { nil };
-		var regionEdges = if(breakpoints.notNil) {
-			breakpoints.collect { |point| point[0] }
-		} { nil };
+		var scale = this.class.crescentScaleFor(name);
 		view.drawFunc = {
 			this.prSafeDraw {
 				CQInkNight.drawCrescent(Point(extent * 0.5, extent * 0.5),
 					crescentNorms[name] ? 0,
 					family, activeCrescents.includes(name)
-						or: { hoverCrescents.includes(name) }, \night, regionEdges);
+						or: { hoverCrescents.includes(name) }, \night, scale);
 				if(carriesDolby) {
 					CQInkNight.drawDolbyOyster(
 						Point(extent * 0.5, (extent * 0.5)

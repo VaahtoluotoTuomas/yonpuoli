@@ -177,4 +177,16 @@ CQSpecTest : UnitTest {
 		this.assertEquals(CQSpec.mapBreakpoints(\coco1Fb)[1][0], 0.5,
 			"a caller cannot mutate CQSpec's breakpoint table");
 	}
+
+	test_semanticReferenceMarksUseTheParametersOwnMap {
+		var deckUnity = CQSpec.referenceNorm(\deckALevel, \unity);
+		this.assertFloatEquals(CQSpec.referenceNorm(\coco1In, \unity), 0.5,
+			"input unity sits at the midpoint of its own linear map");
+		this.assertFloatEquals(CQSpec.map(\deckALevel, deckUnity), 1.0,
+			"the bird mark roundtrips to exact unity through its curved map");
+		this.assert(CQSpec.referenceNorm(\coco1Fb, \unity).isNil,
+			"feedback does not invent a second scale beside its audible regions");
+		this.assert(CQSpec.referenceNorm(\bogus, \unity).isNil,
+			"an unknown parameter advertises no reference mark");
+	}
 }

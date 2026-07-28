@@ -378,55 +378,95 @@ CQInkNight {
 	// §6.1 tide crescent: an open arc whose luminous fill is the value —
 	// the night's only continuous hand, never a knob, never a number
 	*drawCrescent { |center, norm = 0, family = \line, active = false,
-		skin = \night, regionEdges|
+		skin = \night, scale|
 		var palette = CQInk.palette(skin);
-		var accent = palette[family] ?? { palette[\whisper] };
 		var start = 0.75pi, sweep = 1.5pi, arcR = CQNightMeasures.crescentArcR;
 		Pen.strokeColor = palette[\whisper].copy
 			.alpha_(if(active) { 0.9 } { 0.55 });
 		Pen.width = CQInk.strokes[\hairline];
 		Pen.addArc(center, arcR, start, sweep);
 		Pen.stroke;
-		if(regionEdges.notNil) {
-			this.prDrawFeedbackCrescent(center, norm, active, palette,
-				start, sweep, arcR, regionEdges)
+		if(scale.isNil) {
+			this.prDrawPlainCrescent(center, norm, family, active, palette,
+				start, sweep, arcR)
 		} {
-			if(norm > 0.001) {
-				Pen.strokeColor = accent.copy.alpha_(if(active) { 1.0 } { 0.85 });
-				Pen.width = CQInk.strokes[\strong];
-				Pen.addArc(center, arcR, start, sweep * norm.clip(0, 1));
-				Pen.stroke;
-			};
+			switch(scale[\kind],
+				\feedback, {
+					this.prDrawRegionCrescent(center, norm, active, palette,
+						start, sweep, arcR, scale[\edges],
+						this.feedbackCrescentFamilies)
+				},
+				\input, {
+					this.prDrawRegionCrescent(center, norm, active, palette,
+						start, sweep, arcR, [0, scale[\unity], 1],
+						this.inputCrescentFamilies);
+					this.prDrawReferenceMark(center, start, sweep, arcR,
+						scale[\unity], palette)
+				},
+				\spaf, {
+					this.prDrawSpafCrescent(center, norm, active, palette,
+						start, sweep, arcR, scale[\center])
+				},
+				\level, {
+					this.prDrawPlainCrescent(center, norm, family, active, palette,
+						start, sweep, arcR);
+					this.prDrawReferenceMark(center, start, sweep, arcR,
+						scale[\unity], palette)
+				},
+				{
+					this.prDrawPlainCrescent(center, norm, family, active, palette,
+						start, sweep, arcR)
+				}
+			);
 		};
 	}
 
-	// Feedback has three audible countries rather than one continuous warning
-	// temperature. The dim complete scale says where they are; the strong
-	// travelled ink and its small pearl say where the hand is now.
+	// Feedback and input have audible countries; SP.AF has signed directions.
+	// Colour always names a consequence, while notches keep boundaries legible
+	// without hue. Bird level stays neutral and receives only its unity mark.
 	*feedbackCrescentFamilies { ^#[input, warning, danger] }
+	*inputCrescentFamilies { ^#[input, warning] }
+	*spafCrescentFamilies { ^#[inverso, verso] }
+	*levelCrescentFamily { ^\line }
 
 	*feedbackCrescentFamilyAt { |norm, regionEdges|
-		norm = (norm ? 0).clip(0, 1);
-		if(norm >= regionEdges[2]) { ^this.feedbackCrescentFamilies[2] };
-		if(norm >= regionEdges[1]) { ^this.feedbackCrescentFamilies[1] };
-		^this.feedbackCrescentFamilies[0]
+		^this.regionFamilyAt(norm, regionEdges, this.feedbackCrescentFamilies)
 	}
 
-	*prDrawFeedbackCrescent { |center, norm, active, palette,
-		start, sweep, arcR, regionEdges|
+	*regionFamilyAt { |norm, regionEdges, families|
+		norm = (norm ? 0).clip(0, 1);
+		(families.size - 1).do { |i|
+			if(norm < regionEdges[i + 1]) { ^families[i] };
+		};
+		^families.last
+	}
+
+	*prDrawPlainCrescent { |center, norm, family, active, palette,
+		start, sweep, arcR|
+		var accent = palette[family] ?? { palette[\whisper] };
+		norm = (norm ? 0).clip(0, 1);
+		if(norm > 0.001) {
+			Pen.strokeColor = accent.copy.alpha_(if(active) { 1.0 } { 0.85 });
+			Pen.width = CQInk.strokes[\strong];
+			Pen.addArc(center, arcR, start, sweep * norm);
+			Pen.stroke;
+		};
+	}
+
+	*prDrawRegionCrescent { |center, norm, active, palette,
+		start, sweep, arcR, regionEdges, families|
 		var value = (norm ? 0).clip(0, 1);
-		var families = this.feedbackCrescentFamilies;
 		var angle, pearl, pearlFamily;
-		families.do { |family, i|
+		families.do { |regionFamily, i|
 			var lo = regionEdges[i], hi = regionEdges[i + 1];
 			var filled = min(value, hi);
-			Pen.strokeColor = palette[family].copy
+			Pen.strokeColor = palette[regionFamily].copy
 				.alpha_(if(active) { 0.58 } { 0.36 });
 			Pen.width = CQInk.strokes[\normal];
 			Pen.addArc(center, arcR, start + (sweep * lo), sweep * (hi - lo));
 			Pen.stroke;
 			if(filled > lo) {
-				Pen.strokeColor = palette[family].copy
+				Pen.strokeColor = palette[regionFamily].copy
 					.alpha_(if(active) { 1.0 } { 0.9 });
 				Pen.width = CQInk.strokes[\strong];
 				Pen.addArc(center, arcR, start + (sweep * lo),
@@ -434,8 +474,6 @@ CQInkNight {
 				Pen.stroke;
 			};
 		};
-		// Two ground-coloured notches keep the regions legible without hue:
-		// discrete means discrete even in grayscale or reduced colour vision.
 		regionEdges.copyRange(1, regionEdges.size - 2).do { |edge|
 			var edgeAngle = start + (sweep * edge);
 			var direction = Point(cos(edgeAngle), sin(edgeAngle));
@@ -447,10 +485,64 @@ CQInkNight {
 		};
 		angle = start + (sweep * value);
 		pearl = center + (Point(cos(angle), sin(angle)) * arcR);
-		pearlFamily = this.feedbackCrescentFamilyAt(value, regionEdges);
-		Pen.fillColor = palette[pearlFamily].copy
+		pearlFamily = this.regionFamilyAt(value, regionEdges, families);
+		this.prDrawCrescentPearl(pearl, pearlFamily, active, palette);
+	}
+
+	*prDrawSpafCrescent { |center, norm, active, palette,
+		start, sweep, arcR, centerNorm|
+		var value = (norm ? 0).clip(0, 1);
+		var families = this.spafCrescentFamilies;
+		var lo = min(value, centerNorm), hi = max(value, centerNorm);
+		var angle, pearl, pearlFamily;
+		families.do { |regionFamily, i|
+			var edgeLo = if(i == 0) { 0 } { centerNorm };
+			var edgeHi = if(i == 0) { centerNorm } { 1 };
+			Pen.strokeColor = palette[regionFamily].copy
+				.alpha_(if(active) { 0.58 } { 0.36 });
+			Pen.width = CQInk.strokes[\normal];
+			Pen.addArc(center, arcR, start + (sweep * edgeLo),
+				sweep * (edgeHi - edgeLo));
+			Pen.stroke;
+		};
+		if((hi - lo) > 0.001) {
+			pearlFamily = if(value < centerNorm) { families[0] } { families[1] };
+			Pen.strokeColor = palette[pearlFamily].copy
+				.alpha_(if(active) { 1.0 } { 0.9 });
+			Pen.width = CQInk.strokes[\strong];
+			Pen.addArc(center, arcR, start + (sweep * lo), sweep * (hi - lo));
+			Pen.stroke;
+		};
+		this.prDrawReferenceMark(center, start, sweep, arcR, centerNorm, palette);
+		angle = start + (sweep * value);
+		pearl = center + (Point(cos(angle), sin(angle)) * arcR);
+		pearlFamily = if(value < centerNorm) {
+			families[0]
+		} {
+			if(value > centerNorm) { families[1] } { \spaf }
+		};
+		this.prDrawCrescentPearl(pearl, pearlFamily, active, palette);
+	}
+
+	*prDrawReferenceMark { |center, start, sweep, arcR, norm, palette|
+		var angle = start + (sweep * norm);
+		var direction = Point(cos(angle), sin(angle));
+		var inner = center + (direction * (arcR - 3.5));
+		var outer = center + (direction * (arcR + 3.5));
+		Pen.strokeColor = palette[\ground];
+		Pen.width = CQInk.strokes[\normal];
+		Pen.line(inner, outer);
+		Pen.stroke;
+		Pen.strokeColor = palette[\line];
+		Pen.width = CQInk.strokes[\hairline];
+		Pen.line(inner, outer);
+		Pen.stroke;
+	}
+
+	*prDrawCrescentPearl { |point, family, active, palette|
+		Pen.fillColor = palette[family].copy
 			.alpha_(if(active) { 1.0 } { 0.94 });
-		Pen.addOval(Rect.aboutPoint(pearl, if(active) { 2.5 } { 2.0 },
+		Pen.addOval(Rect.aboutPoint(point, if(active) { 2.5 } { 2.0 },
 			if(active) { 2.5 } { 2.0 }));
 		Pen.fill;
 	}

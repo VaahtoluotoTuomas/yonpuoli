@@ -1209,14 +1209,15 @@ regions discretely — echo green, unity/bloom amber, mayhem red — with a
 current-position pearl. A continuous hue ramp was rejected because it would
 claim a uniform continuum across a deliberately piecewise musical map.
 
-**Adjacent-control scale audit.** Do not spread green→red to every continuous
-hand: colour must name a consequence, not merely magnitude. After this
-feedback scale is reviewed in the full Night map, the next justified
-candidates are (1) a zero/polarity centre mark for bipolar SP.AF, which is
-not a danger scale, and (2) a quiet unity/overdrive boundary for input.
-The bird level could gain a unity tick later. Speed, the storm iris and the
-root gestures have no honest discrete region boundaries today and remain
-continuous. Dolby and range already state their discrete modes by shape.
+**Adjacent-control scale audit (implemented 2026-07-28).** Green→red was not
+spread to every continuous hand: colour must name a consequence, not merely
+magnitude. SP.AF now has a CQSpec-derived zero notch and two signed halves
+(inverso blue / verso orange), with its live fill growing away from zero.
+Input has a CQSpec-owned unity boundary: green normal gain, amber overdrive.
+The bird level remains neutral and gains only an exact unity tick. Speed, the
+storm iris and the root gestures have no honest discrete region boundaries
+today and intentionally remain continuous. Dolby and range already state their
+discrete modes by shape.
 
 **Hypothesis.** The instrument's juiciest zone is fb ≈ 0.95–1.15
 (echo → looper → blooming crunch), but the linear 0–1.25 spec gives it

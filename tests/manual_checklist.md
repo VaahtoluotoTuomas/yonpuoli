@@ -937,6 +937,12 @@ CQ.hold(1, 0);
 //    meripihka / punainen rata näkyy himmeänä, kuljettu osuus kirkkaana ja
 //    helmi nykykohdassa. Vaihtojen pitää osua kuultuihin 0.85- ja 1.10-rajoihin,
 //    eikä jälkimmäisen Dolby-osterin pidä hukkua värin alle.
+// 6. Aja SP.AF keskikohdan molemmin puolin: nollaloven pitää pysyä paikallaan,
+//    sinisen inverso- ja oranssin verso-osuuden kasvaa keskeltä ulospäin.
+// 7. Aja input unityn yli: vihreän normaalialueen pitää vaihtua lovella
+//    meripihkaiseen overdriveen. Sen alla olevan Dolby-osterin pitää yhä erottua.
+// 8. Katso kummankin linnun level-sirppiä: neutraalin unity-viivan pitää pysyä
+//    täsmälleen samassa paikassa arvosta riippumatta; värialueita ei ole.
 CQ.free;
 ```
 

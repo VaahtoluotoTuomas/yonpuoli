@@ -151,6 +151,33 @@ CQGuiNightMapTest : UnitTest {
 		};
 	}
 
+	test_crescentScalesNameOnlyHonestSemanticBoundaries {
+		var spaf = CQGuiNightMap.crescentScaleFor(\coco1Spaf);
+		var input = CQGuiNightMap.crescentScaleFor(\coco1In);
+		var feedback = CQGuiNightMap.crescentScaleFor(\coco1Fb);
+		var level = CQGuiNightMap.crescentScaleFor(\deckALevel);
+		this.assertEquals(spaf[\kind], \spaf,
+			"SP.AF names signed direction rather than danger");
+		this.assertFloatEquals(spaf[\center], 0.5,
+			"SP.AF zero is derived from its bipolar parameter map");
+		this.assertEquals(input[\kind], \input,
+			"input names normal gain and overdrive");
+		this.assertFloatEquals(input[\unity], 0.5,
+			"input unity is derived from CQSpec");
+		this.assertEquals(feedback[\kind], \feedback,
+			"feedback retains its audible three-region scale");
+		this.assertEquals(feedback[\edges], [0.0, 0.5, 0.9, 1.0],
+			"feedback scale follows its exact taper breakpoints");
+		this.assertEquals(level[\kind], \level,
+			"bird level asks only for a quiet reference mark");
+		this.assertFloatEquals(CQSpec.map(\deckALevel, level[\unity]), 1.0,
+			"the bird reference lands on exact unity despite its curved map");
+		this.assert(CQGuiNightMap.crescentScaleFor(\qFreq).isNil,
+			"a continuous control with no semantic boundary gets no scale");
+		this.assert(CQGuiNightMap.crescentScaleFor(\coco1DolbyIn).isNil,
+			"a similarly suffixed non-crescent cannot acquire a decorative scale");
+	}
+
 	test_onlyCocoChannelCrescentsCarryDolby {
 		#[coco1In, coco1Fb, coco2In, coco2Fb].do { |name|
 			var dolby = CQGuiNightMap.dolbyNameForCrescent(name);
