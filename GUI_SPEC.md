@@ -448,13 +448,12 @@ aura and charge lamps make that visible instead of mysterious.
   spans dim to background alpha and stop hit-testing, while bodies, jacks,
   sockets and seated plugs keep priority. The four seeds breathe and the
   gill opens in blue, so the mode is visible without a label.
-- **Accepted polish debt (2026-07-27; not yet implemented):** the gill is the
-  persistent entrance to a whole-stage playing mode, so it must ultimately be
-  consulted **before** a cable span in both hover and press. A crossing cable
-  must not erase its discoverability: its cue needs a top-layer echo, local
-  knockout or another reviewed form that remains legible through the cable
-  field. This is a narrow exception for the Tab-equivalent gill only; the
-  general cable-first law remains intact everywhere else.
+- **Gill priority (implemented 2026-07-28):** the persistent entrance to the
+  whole-stage playing mode is consulted **before** a cable span in both hover
+  and press. Its exact hit shape clears cable hover, and the gill itself is
+  echoed on the topmost hit-transparent gesture layer, so a crossing cable
+  cannot erase the cue. This remains a narrow exception for the Tab-equivalent
+  gill only; the general cable-first law is intact everywhere else.
 - **Focused right-drag**: **elastic** — the same pour, but release snaps back to
   the pre-gesture matrix (short glide, ~3 frames; no undo entry, no
   spellbook entry — transient all the way). The whole matrix becomes a

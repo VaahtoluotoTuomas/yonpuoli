@@ -539,10 +539,10 @@ an act of the moon and the compass becomes a property of the bay.
   paths while leaving bodies/endpoints/plugs alive; left commits and right is
   elastic. Outside focus, right remains harvest. Capture continues across
   bodies once the tide has begun.
-- **Deferred polish accepted with N3:** the gill must always win a crossing
-  cable in matching hover/press priority and remain discoverable through the
-  cable ink (top-layer echo, local knockout or another reviewed form). This is
-  one narrow exception to cable-first, not a new general control law.
+- **Polish completed 2026-07-28:** the gill always wins a crossing cable in
+  matching hover/press priority. Its exact hit clears cable hover and its mark
+  is echoed on the top hit-transparent gesture layer. This is one narrow
+  exception to cable-first, not a new general control law.
 - Castle and castle-endpoint paper is transparent. The irregular flesh masks
   the river and coupling chords only inside its real shape, so no rectangular
   blank bites the body and no synthetic ring stub protrudes from it.

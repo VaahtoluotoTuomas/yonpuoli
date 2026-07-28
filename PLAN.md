@@ -31,9 +31,13 @@ spesal-tähdistö ja staattinen muistipolkukartta saivat kirjatun kuoleman:
 Nightin osoittimen alla ilmestyvä suuntatotuudellinen kytkentäsointu kertoo
 spesalin seurauksen tekopaikassa, ja Workshopin täsmäkontrollit sekä Nightin
 kuoret tekevät passiivisesta muistipolkukartasta ylläpitokustannustaan
-heikomman. **Seuraava työ on §13:n korvapassi, yksi muuttuja kerrallaan:
-ensin 13.1 feedback-taper, sitten 13.4 chaos-käyrä.** Norns-portti (§14) alkaa
-vasta tämän night-first-hienosäädön jälkeen.
+heikomman. Ennen korvapassia tehdään tämä rajattu polish-portti: kiduksen
+kaapeliprioriteetti ja snapshot-kansion erotus. Sen jälkeen etenemisjärjestys
+on **13.1 feedback-taper → 13.4 chaos-käyrä → Space/reverbin
+konseptipäätös ja kuuntelu → 13.2 speed-lattia → 13.5 VCA-laki → 13.3 dust
+→ 13.6 zipper-mittaus + 13.8 preampin equal-loudness-koe → jäljellä olevat
+bugit/polish ja laitteistogate → Norns-portti (§14).** Yksi musiikillinen
+muuttuja käsitellään edelleen kerrallaan.
 
 ## Auktoriteettijärjestys
 
@@ -252,12 +256,14 @@ Riippumaton yllä olevasta GUI-järjestyksestä, voi kulkea limittäin; kukin
 kohta on oma kuunteluiteraationsa (hypoteesi → yksi muutos → koko patteri →
 3–5 askeleen kuunteluskripti → kuvaus → säätö tai peruutus). **Yksi muuttuja
 per sessio.** Suositeltu järjestys hyöty/riski: 13.1 feedback-taper → 13.4
-chaos-käyrä → 13.2 speed-lattia → 13.5 VCA-laki → 13.3 dust. Kohta 13.6
-zipper-mittaus ajetaan G3.1-tyylisen kompassivedon yhteydessä; 13.7 on punch
-(= kohta 1 yllä). 13.8 on käyttäjän 2026-07-28 ehdottama preampin mahdollinen
-äänenvoimakkuuskompensaatio: vasta live-kuuntelun jälkeen tehtävä
-equal-loudness-koe, ei osa N7:n GUI-muutosta. Jokainen hyväksytty DSP-muutos
-ajaa myös `nrt_safety`n ja
+chaos-käyrä → Space/reverbin konseptipäätös ja kuuntelu → 13.2 speed-lattia
+→ 13.5 VCA-laki → 13.3 dust. Kohta 13.6 zipper-mittaus ja 13.8 preampin
+mahdollinen äänenvoimakkuuskompensaatio tehdään tämän jälkeen samassa
+mittaus-/equal-loudness-vaiheessa: ensin todetaan ongelma, vasta sitten
+auditoidaan korjaus. Kohta 13.7 on punch (= kohta 1 yllä). Lopuksi suljetaan
+siirretyt bugit ja polish-velat sekä nelikanavaista laitteistoa vaativa
+stem-gate ennen Norns-porttia. Jokainen hyväksytty DSP-muutos ajaa myös
+`nrt_safety`n ja
 `nrt_hold_integrity`n ja päivittää SPEC §5:n samassa commitissa.
 
 - [ ] 13.1 feedback-taper · [ ] 13.2 speed-lattia · [ ] 13.3 dust ·
@@ -752,22 +758,22 @@ kauppana, ei löydetä jälkikäteen; ja **suunnitelmateksti voi olla vääräss
 jos toteutus sen mukaan tuntuu väärältä, epäile diagnoosia äläkä vain
 sommittelua (§7.2 korjattiin vasta hylätyn buildin jälkeen).
 
-## Myöhemmin, ei tämän vaiheen scopea
+## Valmistunut polish-passissa 2026-07-28
 
-- **Johtojen piilotus/himmennys taustalle** (käyttäjän toive 2026-07-26, N2:n
-  katselmoinnissa): GUI tarvitsee todennäköisesti jonkinlaisen kytkimen, joka
-  vetää kaapelikerroksen taustalle — piiloon tai selvästi himmeämmäksi — jotta
-  täyden kentän alta näkee kehot ja merkit. Ei vielä päätetty muoto (kytkin vai
-  pidike, koko kerros vai vain ei-fokusoidut, näkyvyys vai osumat) eikä koti.
-  Huomaa kaksi rajaa jo nyt: §4.5:n mukaan kaapeli voittaa yleensä osoittimen alla,
-  joten pelkkä *näkyvyyden* himmennys ei saa muuttaa sitä kuka painalluksen saa
-  — muuten kytkin tekee valehtelevan vihjeen; ja §16.8:n johtokieli (napa,
-  paino, solo-dim) on jo hyväksyttyä pintaa. Ratkaisisi myös osan siitä, miksi
-  skip-merkin kaltaiset kohteet jäävät kaapelin alle. **Yksi rajattu poikkeus
-  päätettiin N3:n hyväksynnässä 2026-07-27:** Tab-kidus saa myöhemmässä
-  polish-passissa aina painalluksen ennen kaapelijännettä, ja sen hover-/piirto-
-  vihje nostetaan löydettäväksi johtojen alta. Poikkeusta ei yleistetä muihin
-  kontrolleihin ilman uutta päätöstä. Palataan toteutukseen erikseen.
+- [x] **Johtojen piilotus/himmennys taustalle.** N3:n Tab/kidus-vesifokus on
+  tämän toiveen valmis muoto: se himmentää kaapelijänteet tausta-alfaan ja
+  poistaa niiden osumapolut, mutta jättää kehot, endpointit ja istutetut plugit
+  eläviksi. Erillistä rinnakkaista kaapelikytkintä ei tarvita.
+- [x] **Kiduksen rajattu kaapeliprioriteetti.** Kiduksen tarkka osumamuoto
+  voittaa sen yli kulkevan kaapelin hoverissa ja painalluksessa, tyhjentää
+  kaapelihovin ja piirtyy päällimmäisellä hiiriläpäisevällä elekerroksella.
+  Muualla §4.5:n cable-first-laki säilyy.
+- [x] **Snapshotit omaan kansioonsa.** Uudet tallenteet menevät
+  `snapshots/`-kansioon. Vanha `presets/*.cqsnap.scd` on vain-lukuinen
+  yhteensopivuuspolku, joten aiemmat henkilökohtaiset snapshotit näkyvät ja
+  palautuvat ilman siirtoa; saman niminen uusi snapshot voittaa vanhan.
+
+## Myöhemmin, ei tämän vaiheen scopea
 - **Identiteetti ja sisäosien nimet** (käyttäjän havainto 2026-07-28, N8:n
   katselmoinnissa). Nightissä Cocoquantus-sukulinja näkyy *muotona* —
   castlejen anatomiana ja arkkitehtuurina — mutta se on jo selvästi eri soitin
@@ -791,8 +797,6 @@ sommittelua (§7.2 korjattiin vasta hylätyn buildin jälkeen).
   lykätty space-identiteetti), joten Workshopin space-moduuli säädetään
   uudelleen vasta kun reverbin suunnittelu etenee. Älä lukitse sen paikkaa
   tai parametrilistaa sitä ennen.
-- **Snapshotit omaan kansioonsa** (`snapshots/` vs `presets/`) — kirjattu jo
-  Archipelago-vaiheessa, tehdään omana pienenä työnään.
 - **Kosketusnäyttö-optimointi Night-modeen** (multi-touch, ele-erottelu) —
   liittyy kevättulvaan (§8 kasvattaa kohteita jo ~40 px suuntaan); oma
   työvaihe kun mittakaava on lyöty lukkoon.

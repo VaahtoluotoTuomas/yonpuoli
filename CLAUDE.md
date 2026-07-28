@@ -195,11 +195,11 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   5. Castle paper and its endpoint detail views are transparent; irregular
      ground-filled flesh masks the ring/chords at their real body edge. The
      old rectangle-repair ring stubs are forbidden.
-  6. **Accepted later polish debt:** the Tab-equivalent lower-centre gill must
-     become the one deliberate exception to cable-first priority. Hover and
-     press must find it before a crossing cable, and a top-layer echo, local
-     knockout or another reviewed cue must keep it discoverable beneath cable
-     ink. Do not generalize this exception to other controls.
+  6. **Gill polish completed 2026-07-28:** the Tab-equivalent lower-centre
+     gill is the one deliberate exception to cable-first priority. Its exact
+     hit shape owns hover and press, clears cable hover, and its cue is drawn
+     on the top hit-transparent gesture layer. Do not generalize this exception
+     to other controls.
   7. Roots are not a decoration pass. The actual DSP is source selection →
      drive/bias preamp → Coco audio, with `envA/B` only the post-preamp
      Amplitude side-growth. When the root increment arrives it must draw and
@@ -346,8 +346,9 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   compact islands, static Coco memory-path map and live spesal constellation.
 - Two memory words, no third (decided 2026-07-21, `GUI_SPEC.md` §8): a **preset** is a
   patch recipe in code, a **snapshot** is saved instrument state on disk. "Seed bank"
-  survives only as the Memory page's header metaphor. Splitting snapshots out of
-  `presets/` into their own folder is recorded in `PLAN.md` as later work.
+  survives only as the Memory page's header metaphor. New snapshots live in
+  `snapshots/`; `presets/*.cqsnap.scd` remains a read-only compatibility fallback
+  for older personal files (completed 2026-07-28).
 - `/cq_aura` law: no telemetry is not the same as zero. `CQGui.auraFor` returns `nil`
   until the server reports, and every drawing surface must keep its static reviewed
   look in that case. Focus, solo-dim and hover never pulse (`GUI_SPEC.md` §4.5).
