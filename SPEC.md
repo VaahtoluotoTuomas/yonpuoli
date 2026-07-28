@@ -485,7 +485,8 @@ gitignored):
   sixteenN: (enabled: true, ccBase: 32, chan: nil, takeover: \jump),
                               // chan nil = any MIDI channel (per-fader channels,
                               // §6.1); an integer 0..15 pins one channel
-  folders: (samples: "samples", recordings: "recordings", presets: "presets"),
+  folders: (samples: "samples", recordings: "recordings",
+            presets: "presets", snapshots: "snapshots"),
   autoTrim: false,            // watchdog notice always; true = opt-in −6 dB auto-ease
   recStems: false,            // true → CQ.rec writes 4-ch: master L/R + coco1/coco2 stems
 )

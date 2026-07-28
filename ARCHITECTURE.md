@@ -54,7 +54,8 @@ yolahti/
 │   ├── CQRecorder.sc           // disk recording (master + stems)
 │   ├── CQDeck.sc               // transactional file player control
 │   └── CQDeckPair.sc           // atomic linked-stereo coordinator
-├── presets/                    // *.cqsnap.scd snapshot files (text, versioned)
+├── presets/                    // patch recipes + legacy snapshot read fallback
+├── snapshots/                  // *.cqsnap.scd snapshot files (text, versioned)
 ├── samples/                    // user field recordings (gitignored)
 ├── recordings/                 // output (gitignored)
 └── tests/
@@ -299,7 +300,7 @@ Language side on `\cq_hot`: engage −6 dB trim (a lagged synth arg), GUI notice
 | `CQSpellbook` | read-only committed patch journal | Hooks `CQMatrix` notifications below every client, diffs against the last committed full matrix, excludes `committed:false` frames, exposes row→batch metadata for persistent GUI selection, and exports copyable `CQ.patch(...)` lines or preset data; it does not execute or edit code |
 | `CQMidi16n` | controller layer | `MIDIdef.cc` per fader from config map, 0–127 → spec map, optional `\pickup` takeover, hot-plug via `MIDIClient` device watch; all writes via `CQState` |
 | `CQGui` | panel | pure view: renders from `CQState`/`CQMatrix` dependant notifications, sends via funnel; composes the sole Night instrument stage, persistent Master strip and `CQGuiDrawer`; meters/LEDs come from namespaced OSCdefs; `/cq_aura` magnitudes stay `nil` until the server reports, repaint only Night's relevant views and cable layer, and are skipped entirely when nothing moved; `/cq_charge`'s nine slots follow the same law and repaint one Night lamp at a time, only when that lamp's own charge moved; everything UI inside `{ }.defer`; closes cleanly on `*free`. `CQGuiShellState` owns only the Night↔Drawer presentation swap — no skin or instrument-mode state. The Drawer's page list is published once by `CQGuiDrawer.tabs` and consumed by the shell's tab row, its stack index and the state's whitelist, so a page cannot exist in one place and be refused in another |
-| `CQSnapshots` | memory | `save(name)` → `(version: 1, params: state.asEvent, matrix: matrix.asArray, spesal: [..], meta: (...))` `.asCompileString` → `presets/name.cqsnap.scd`; `recall` clamps everything on load; `morph(a, b, dur)` = Routine at 30 Hz interpolating continuous params + weights, discrete switch at midpoint; mic gain never auto-recalled above 0 (SPEC §7) |
+| `CQSnapshots` | memory | `save(name)` → `(version: 1, params: state.asEvent, matrix: matrix.asArray, spesal: [..], meta: (...))` `.asCompileString` → `snapshots/name.cqsnap.scd`; reads prefer that folder and fall back to legacy `presets/*.cqsnap.scd`; `recall` clamps everything on load; `morph(a, b, dur)` = Routine at 30 Hz interpolating continuous params + weights, discrete switch at midpoint; mic gain never auto-recalled above 0 (SPEC §7) |
 | `CQRecorder` | disk | Explicit `idle/starting/recording/stopping/error` state machine; attempt-local path/buffer/synth ownership; master 2ch 24-bit wav timestamped or optional 4ch master+stems; never overwrite; `DiskOut` synth in `gMaster` tail |
 | `CQDeck` | file players | Cancellable last-request-wins buffer transaction, folder scan/next/prev/random and peak-normalize on load; stale/error paths always release their local buffer |
 | `CQDeckPair` | linked stereo | Two-phase L/R prepare and one bundled commit; rolls both sides back if either side fails or is superseded |
@@ -352,7 +353,7 @@ also terminates unrelated synths on that shared server; ordinary `CQ.free` never
 ## 7. Snapshot file format
 
 ```supercollider
-// presets/lakeDrone.cqsnap.scd — plain text, git-friendly
+// snapshots/lakeDrone.cqsnap.scd — plain text, git-friendly
 (
   version: 1,
   params: ( coco1Fb: 1.02, qChaos: 0.4, /* every CQSpec param */ ),

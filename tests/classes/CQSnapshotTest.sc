@@ -4,7 +4,7 @@
 // tests/tmp/ (gitignored), cleaned before and after every test.
 
 CQSnapshotTest : UnitTest {
-	var state, matrix, snaps, dir, spesal;
+	var state, matrix, snaps, dir, legacyDir, spesal;
 
 	setUp {
 		CQSpec.postWarnings = false;
@@ -14,9 +14,11 @@ CQSnapshotTest : UnitTest {
 		matrix = CQMatrix(nil);
 		spesal = [0, 0, 0, 0, 0];
 		dir = Cocoquantus.repoDir +/+ "tests" +/+ "tmp" +/+ "cqsnap_test";
+		legacyDir = Cocoquantus.repoDir +/+ "tests" +/+ "tmp"
+			+/+ "cqsnap_legacy_test";
 		this.prClean;
 		snaps = CQSnapshots(state, matrix, dir,
-			{ spesal.copy }, { |st| spesal = st.copy });
+			{ spesal.copy }, { |st| spesal = st.copy }, legacyDir);
 	}
 
 	tearDown {
@@ -29,11 +31,16 @@ CQSnapshotTest : UnitTest {
 
 	prClean {
 		(dir +/+ "*").pathMatch.do { |p| File.delete(p) };
+		(legacyDir +/+ "*").pathMatch.do { |p| File.delete(p) };
 	}
 
 	prWrite { |name, content|
-		if(File.exists(dir).not) { File.mkdir(dir) };
-		File.use(dir +/+ (name ++ ".cqsnap.scd"), "w", { |f| f.write(content) });
+		this.prWriteAt(dir, name, content)
+	}
+
+	prWriteAt { |base, name, content|
+		if(File.exists(base).not) { File.mkdir(base) };
+		File.use(base +/+ (name ++ ".cqsnap.scd"), "w", { |f| f.write(content) });
 	}
 
 	test_roundtripEquality {
@@ -158,6 +165,25 @@ CQSnapshotTest : UnitTest {
 		snaps.save(\alpha);
 		snaps.save(\beta);
 		this.assertEquals(snaps.list, ["alpha", "beta"], "list returns sorted names");
+	}
+
+	test_legacyPresetFolderIsReadOnlyFallback {
+		this.prWriteAt(legacyDir, "old_bank",
+			"(version: 1, params: (coco1Fb: 0.91), matrix: [])");
+		this.assertEquals(snaps.list, ["old_bank"],
+			"legacy presets-folder snapshots remain discoverable");
+		this.assert(snaps.recall(\old_bank),
+			"legacy presets-folder snapshots remain recallable");
+		this.assertFloatEquals(state.get(\coco1Fb), 0.91,
+			"legacy recall applies the old file");
+		state.set(\coco1Fb, 0.44);
+		snaps.save(\old_bank);
+		this.assert(File.exists(dir +/+ "old_bank.cqsnap.scd"),
+			"a same-name save writes only to the new snapshots folder");
+		state.set(\coco1Fb, 0.1);
+		snaps.recall(\old_bank);
+		this.assertFloatEquals(state.get(\coco1Fb), 0.44,
+			"the new snapshots folder wins over a same-name legacy file");
 	}
 
 	test_morphEndsAtTarget {

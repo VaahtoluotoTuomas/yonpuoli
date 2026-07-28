@@ -15,7 +15,8 @@
 	sixteenN: (enabled: true, ccBase: 32, chan: nil, takeover: \jump),
 	                            // chan nil = any MIDI channel (atovproject 16n
 	                            // sends each fader on its own channel); 0..15 pins one
-	folders: (samples: "samples", recordings: "recordings", presets: "presets"),
+	folders: (samples: "samples", recordings: "recordings",
+		presets: "presets", snapshots: "snapshots"),
 	autoTrim: false,            // watchdog: notice always shows; true = also auto-trim
 	                            // -6 dB on sustained hard driving (comfort, not safety —
 	                            // the limiter is the safety). Opt-in.

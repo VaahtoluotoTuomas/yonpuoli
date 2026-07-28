@@ -1,5 +1,5 @@
 // CQSnapshots — save/recall/morph (ARCHITECTURE §5/§7, SPEC §6.3/§7). File-backed
-// memory: one plain-text .cqsnap.scd per snapshot in the presets folder. Every
+// memory: one plain-text .cqsnap.scd per snapshot in the snapshots folder. Every
 // value loaded from disk re-enters the funnels (CQState.set / CQMatrix clamp) —
 // a hand-edited or malformed file degrades to warnings, never to raw values
 // (SPEC safety #3). Spesal states travel through injected get/set functions so
@@ -13,12 +13,12 @@
 
 CQSnapshots {
 	classvar <>postWarnings = true;
-	var state, matrix, <dir, getSpesal, setSpesal;
+	var state, matrix, <dir, getSpesal, setSpesal, <legacyDir;
 	var morphRoutine;
 	var <morphProgress = 0.0, <morphFrom, <morphTo;
 
-	*new { |state, matrix, dir, getSpesal, setSpesal|
-		^super.newCopyArgs(state, matrix, dir, getSpesal, setSpesal)
+	*new { |state, matrix, dir, getSpesal, setSpesal, legacyDir|
+		^super.newCopyArgs(state, matrix, dir, getSpesal, setSpesal, legacyDir)
 	}
 
 	save { |name, includeMic = false, note = ""|
@@ -128,16 +128,25 @@ CQSnapshots {
 
 	// snapshot names available on disk, sorted
 	list {
-		^(dir +/+ "*.cqsnap.scd").pathMatch
-			.collect { |p| p.basename.replace(".cqsnap.scd", "") }.sort
+		var paths = (dir +/+ "*.cqsnap.scd").pathMatch;
+		if(legacyDir.notNil and: { legacyDir != dir }) {
+			paths = paths ++ (legacyDir +/+ "*.cqsnap.scd").pathMatch;
+		};
+		^paths.collect { |p| p.basename.replace(".cqsnap.scd", "") }
+			.asSet.asArray.collect(_.asString).sort
 	}
 
 	// load + structurally validate one snapshot file -> data Event or nil
 	read { |name|
 		var safe = this.prSafeName(name);
-		var path, data;
+		var path, legacyPath, data;
 		if(safe.isNil) { ^nil };
 		path = this.prPath(safe);
+		if(File.exists(path).not
+			and: { legacyDir.notNil and: { legacyDir != dir } }) {
+			legacyPath = this.prPathIn(legacyDir, safe);
+			if(File.exists(legacyPath)) { path = legacyPath };
+		};
 		if(File.exists(path).not) {
 			this.class.prWarn("no snapshot '%' (%)".format(safe, path));
 			^nil
@@ -153,7 +162,8 @@ CQSnapshots {
 
 	// ---- private ----
 
-	prPath { |safe| ^dir +/+ (safe ++ ".cqsnap.scd") }
+	prPath { |safe| ^this.prPathIn(dir, safe) }
+	prPathIn { |base, safe| ^base +/+ (safe ++ ".cqsnap.scd") }
 
 	// filenames stay portable: letters/digits/_/- pass, anything else becomes _
 	prSafeName { |name|

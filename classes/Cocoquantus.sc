@@ -415,9 +415,10 @@ Cocoquantus {
 			deckAPlayer = CQDeck(sessionGraph, sessionState, \deckA, this.prSamplesDir);
 			deckBPlayer = CQDeck(sessionGraph, sessionState, \deckB, this.prSamplesDir);
 			deckPair = CQDeckPair(deckAPlayer, deckBPlayer, sessionServer);
-			snapshotMgr = CQSnapshots(sessionState, sessionMatrix, this.prPresetsDir,
+			snapshotMgr = CQSnapshots(sessionState, sessionMatrix, this.prSnapshotsDir,
 				{ this.spesalStates },
-				{ |states| states.do { |v, i| this.spesalSet(i + 1, v) } });
+				{ |states| states.do { |v, i| this.spesalSet(i + 1, v) } },
+				this.prPresetsDir);
 			midi16n = CQMidi16n(sessionState, sessionConfig[\sixteenN]);
 			recorder = CQRecorder(sessionGraph, sessionConfig, this.prFolder(\recordings));
 			this.prRequireSession(generation);
@@ -610,6 +611,7 @@ Cocoquantus {
 
 	*prSamplesDir { ^this.prFolder(\samples) }
 	*prPresetsDir { ^this.prFolder(\presets) }
+	*prSnapshotsDir { ^this.prFolder(\snapshots) }
 
 	*prFolder { |key|
 		var dir = config[\folders][key].asString;
