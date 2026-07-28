@@ -62,7 +62,7 @@ deferred): **GUI = the eyes + the hands. Code = the memory + the rituals.
 | **Day panel** | the current four columns + master strip, with sockets moved onto the organs' skin (§5). Knob work, switches, meters. |
 | **Night map** | the archipelago (§6): a topology-true landscape for patching and listening only — no knobs, no numbers. |
 | **Master strip** | persistent across BOTH views, never covered: vol, dry, space, depth, GR meter, notice line, REC + elapsed, PANIC. |
-| **Drawer** | slides open on demand (click, no key), never over the master strip. Tabs: **inspector** (the old grid), **spellbook** (§8), **memory** (snapshots + morph, moved here). |
+| **Drawer** | slides open on demand (click, no key), never over the master strip. Tabs: **inspector** (the old grid), **workshop** (§8 — the ledger page that completes SPEC §6.2's reachability without Day), **spellbook** (§8), **memory** (snapshots + morph, moved here). |
 
 Keyboard: the sacred map is unchanged and global in both views —
 `1/2` hold · `q/w` flip · `a/s` skip · `3..7` spesal · `r` rec · `space` panic
@@ -494,7 +494,7 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
 
 ---
 
-## 8. Drawer — inspector, spellbook, memory
+## 8. Drawer — inspector, workshop, spellbook, memory
 
 > **G1 feedback experiment, 2026-07-20 — core direction visually accepted;
 > the navigation/Memory polish below remains provisional until review.**
@@ -525,6 +525,67 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
 > from the first static prototype. Chaos belongs to the planted pattern, never to
 > unstable coordinates or decorative motion.
 
+- **Workshop** (added at N8, 2026-07-28) = the bay's quiet **measurement table**:
+  the same instrument in the opposite grammar to Night. Night is open water,
+  asymmetric bodies, topology, gesture, almost no text and no numbers; the
+  Workshop is recessed slate, straight rules, exact names and values, stable
+  coordinates and no uninvited motion. The relation comes from the shared Ink
+  kit, palette, type, line weights, family colors and hover language — never
+  from decorative biology. **Do not** transplant Night's shells, roots, birds,
+  wobble or weather into it, and do not shrink the Day panel into it. In Night
+  skin it reads as a phosphor-lit field ledger beside the bay; in Day skin the
+  identical geometry becomes ink on recessed paper. The hard cut changes the
+  light, never the information architecture. Night's lights stay informational
+  here too: no aura, glowing borders, cable animation, texture, decorative
+  gradients or organism wobble — only a changing parameter, hover/press,
+  `micGain` danger or another real state may brighten a mark.
+  - It owns the **43 parameters** Night and Master do not, so that a player who
+    starts in Night and uses only Night, the Drawer and the Master strip reaches
+    every `CQSpec` parameter (SPEC §6.2). The interactive partition is
+    **Night 31 · Master 5 · Workshop 43**, disjoint, and its union is asserted
+    against `CQSpec.names` itself rather than a copied count. Workshop ownership
+    is an **explicit manifest**, never `CQSpec.names` minus the others: a newly
+    added parameter must fail the audit instead of silently counting as covered.
+  - **Fixed composition.** One centred **1128 px content rail**, exactly the
+    Inspector loom's rail, fixed at every window size — larger windows buy
+    surrounding slate, never stretched controls. One continuous ground recess,
+    not a board of rounded cards; hairline separators and 16 px gutters on the
+    8 px grid; the Drawer's own soft edge stays the app's one shadow. A 72 px
+    service band (four equal 270 px modules: `deck a · input trims · space ·
+    deck b`) sits over a `coco 1 · quantussy · coco 2` body of `365 · 366 · 365`
+    with a 392 px budget; 12 px page margins make the whole rail 504 px, which
+    fits the minimum Drawer workspace with **no scroll view**. Space stays a
+    neutral service module and gains no invented Night body.
+  - Rows are grouped by **signal meaning**, never alphabetically: each Coco as
+    *converter* (`bits`, `wrap`, `interp`) · *material* (`dust`, `organ`) ·
+    *output* (`level`, `pan`, `send`) · *input mix* (`pre`, `deck`, `q`, `x`);
+    the Quantussy as *s&h* (`qShLag`) · *detune* (`c1Off`…`c5Off`) · *audio
+    sends* (`c1Send`…`c5Send`), castles running 1→5 in both so the lists compare
+    without hunting. **Pair symmetry is structural**: both Coco ledgers are built
+    by one helper with only the index changed, so their subgroup baselines match
+    by construction. Island titles and row labels are lowercase 10 px sans,
+    subgroup labels 9 px whisper, exact values 10 px mono; labels sit close to
+    their rail and are never boxed or rendered as pills. Spare vertical room
+    collects below the ledgers as slate rather than stretching rows apart.
+  - Semantic phosphor is used **sparingly**: slate is `recess`, rules and values
+    are bone/whisper, and only `dust`, `organ`, the live input and the mic carry
+    a family accent. Neutral slots, levels, pan, sends and Space get no family —
+    do not rainbow a column, and inline no color at the draw site.
+  - **`micGain` lives here and nowhere else.** SPEC §6.2 forbids a second
+    interactive mic path, and the night-first completeness gate needs the mic
+    without Day, so N8 **moved** the control and its warning owner out of
+    Day/Sources; Day keeps only a passive `mic · drawer / workshop` pointer and
+    the night's read-only mic sprout is unchanged. The row uses the warning
+    family, gains the danger outline while live and drives the existing
+    persistent `MIC LIVE` notice. That subscription exists for as long as the
+    GUI does: **closing the Drawer may not silence the warning**, and the row
+    may brighten red while its surrounding service module does not glow.
+  - The page is rejected if it reads as any of: four rounded settings cards; a
+    dense native control panel; a miniature Day; Night scenery used as
+    decoration; independently glowing sections; controls spread evenly to fill
+    every pixel. The squint read must be **service band above · coco / quantussy
+    / coco below · one red mic exception**; the close read must give every exact
+    value.
 - **Inspector** = the existing 16×22 grid, demoted but upgraded with
   **touch-and-listen**: press a cell = audition ± 0.3 (mouse button = sign)
   until release, same bookkeeping and revert law as §4.1; double-click =
@@ -698,9 +759,11 @@ sub-event in `config.scd`, clamped on load.
   the drawer, not by the night map, not by anything.
 - **Audition can never leak**: the revert-path list in §4.1 is normative and
   the smoke test asserts it, including the panic and CmdPeriod paths.
-- Weather tools and compass write **weights only**; `micGain` has no new GUI
-  path (only the existing preamp control with its warning color); relocating
-  snapshot controls to the drawer changes zero snapshot policy (SPEC §7).
+- Weather tools and compass write **weights only**; `micGain` has exactly **one**
+  interactive GUI path with its warning color — since N8 that path is the
+  Workshop ledger row, *moved* from Day and never duplicated there (§8), while
+  the night's mic sprout stays read-only; relocating snapshot controls to the
+  drawer changes zero snapshot policy (SPEC §7).
 - Undo is a funnel client like everything else — it can never bypass clamps.
 
 ---
@@ -732,6 +795,20 @@ gate, manual_checklist blocks in the established copy-pasteable format.
   elastic right-drag + undo polish. Listening gate: stamp two jungles in
   opposite corners and crossfade ecosystems with one finger; right-drag
   wobble snaps back cleanly; breed offspring differs but rhymes.
+- **N8 — the Workshop** (§8): the fourth Drawer page and the ledger row.
+  Tests: a **dynamic coverage gate** proving the Night 31 / Master 5 /
+  Workshop 43 interactive sets disjoint and their union equal to
+  `CQSpec.names` — the three inventories are declared independently and none
+  is a complement of the others; ownership tests for the four-tab order, page
+  persistence and the single `micGain` path; binding tests for num, bipolar
+  num, int, toggle and enum rows writing clamped through `CQState` and
+  following an external write without echoing; and the Drawer Qt smoke opening
+  Night → Drawer → Workshop at 1280×720 and again at 1920×1005 in both skins,
+  asserting the centred 1128 px rail, the module and ledger widths, the last
+  slot/send rows contained, Master visible and `CQInkControl.drawErrors == 0`.
+  The coverage test may not be satisfied by a test-only array, hidden or
+  disabled controls, clipped rows or a computed complement: the rendered
+  controls and the audited manifest must be the same data.
 
 ---
 
@@ -1405,6 +1482,31 @@ at all.
   param has a family (the spaf knob wears a purple arc). Drag brightens pointer
   and arc to full ink. No 3D, no gloss.
 - **Slider** (slots, sends): hairline rail, Ø 8 thumb, whisper value fill.
+- **Ledger row** (added at N8 for the Workshop, §8; both skins from one
+  primitive): a **24 px row owning one rectangular hit area** — label at left,
+  one hairline value rail in the middle, the exact value in 10 px mono at right,
+  and the value never overlaps the rail. Forty-three miniature Day knobs would
+  be the cheap answer; a precision page needs a row that *states* its value.
+  - A unipolar numeric fill grows from the rail's left end; a **bipolar** fill
+    grows away from a visible centre tick, so zero is a place and not a guess.
+    Where that tick sits comes from `CQSpec` (`centerNorm`), never from a bound
+    compared at the draw site. Integer rails snap and print an integer.
+  - A **toggle** is two stable `off · on` seats and an **enum** one labelled seat
+    per value, in `CQSpec.enumValues` order. A seat is a bead plus its own
+    caption, and the drawn cell is the pressed cell.
+  - Press/drag maps the **rail's own x-coordinate** to normalized 0…1 and then
+    calls `CQSpec.map`; the wheel is the existing normalized fine nudge, and a
+    seated row has no continuum to nudge along. No literal range, step, default
+    or enum lives in the control. A press outside the rail — on the label or the
+    value column — is deliberately **inert**: a mis-aimed click on a ledger may
+    not slam a parameter to the floor of its range.
+  - The handle is a **tick drawn across the rail**, the shell reel-notch's own
+    idiom (§16.6): a setting on a scale wears a scale mark. Hover brightens only
+    that row's rail, handle and value; press adds the stronger outline. Cue and
+    action share one geometry — the rail is published once, by the kit, and both
+    the drawing and the hit test ask for it (§4.5).
+  - External state and snapshot morphs move handle and value through the
+    existing paced updater stream (§10). That real change is the only motion.
 - **Meters**: 1 px ink outline, whisper fill, 1 px peak tick; the GR meter
   fills downward in danger-red.
 - **Buttons**: rounded rect (r 3), 1.5 px ink outline, paper fill; latched

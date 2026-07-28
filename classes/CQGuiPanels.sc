@@ -7,6 +7,12 @@
 CQGuiPanels {
 	*dayRegions { ^#[sources, coco1, quantussy, coco2] }
 	*masterItems { ^#[masterVol, masterDry, spaceMix, patchDepth, gr, notice, rec, panic] }
+	// The persistent strip's own interactive CQSpec inventory — `masterItems`
+	// minus the read-only marks (GR meter, notice line) and REC, which is a
+	// recorder action rather than a parameter. `monitorMute` is here because
+	// PANIC is its control (GUI_SPEC §12: PANIC is reachable in every view).
+	// Space keeps only performance `spaceMix`; size and damping are Workshop's.
+	*masterParamNames { ^#[masterVol, masterDry, spaceMix, patchDepth, monitorMute] }
 	*memoryItems { ^#[snapshotName, snapshotSave, snapshotRecall, morph] }
 	*sourceEndpointNames { ^CQMatrix.sourceNames }
 	*destEndpointNames { ^CQMatrix.destNames }
@@ -180,23 +186,15 @@ CQGuiPanels {
 
 	*sources { |gui|
 		var w = gui.widgets, c = CQGuiWidgets.colors;
-		var micLive = false;
-		var micRow = UserView().background_(c[\ground]).layout_(
-			HLayout(w.knob(\micGain, "mic", c[\warn]),
-				w.knob(\liveGain, "live", c[\input])).margins_(2));
-		micRow.drawFunc = {
-			if(micLive) {
-				Pen.strokeColor = c[\danger].copy.alpha_(0.7);
-				Pen.width = CQInk.strokes[\normal];
-				Pen.addRoundedRect(micRow.bounds.moveTo(0, 0).insetBy(1, 1), 3, 3);
-				Pen.stroke;
-			};
-		};
-		gui.widgets.register(\micGain, { |v|
-			micLive = v > 0;
-			micRow.refresh;
-			gui.micNotice(v > 0);
-		});
+		// SPEC §6.2: the GUI never grows a second `micGain` path. The interactive
+		// mic control and its warning owner MOVED to the Drawer's Workshop page
+		// at N8 (NIGHT_STANDALONE_PLAN §12.1.2) so the night-first instrument can
+		// reach the mic without Day. What remains here is a passive pointer: no
+		// control, no danger outline and no warning subscription.
+		var inputRow = View().background_(c[\ground]).layout_(
+			HLayout(w.knob(\liveGain, "live", c[\input]),
+				VLayout(nil, this.prLabel("mic · drawer / workshop"), nil),
+				nil).margins_(2));
 		^this.prPanel(gui, \sources, "sources", \input, 330, VLayout(
 			View().fixedHeight_(22),
 			VLayout(
@@ -208,7 +206,7 @@ CQGuiPanels {
 					this.prLabel("pre b"), this.prEndpoint(gui, \envB, \jack, \input),
 					w.enumSel(\preBSrc, nil, "source"),
 					w.knob(\preBDrive, "drive", c[\cas]), w.knob(\preBBias, "bias", c[\cas])),
-				micRow
+				inputRow
 			).spacing_(6),
 			this.prGap(16),
 			this.prDeck(gui, \deckA),

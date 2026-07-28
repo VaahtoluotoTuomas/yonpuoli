@@ -41,6 +41,31 @@ tagged. Earlier tags describe internal development baselines.
   complete intake body passed live review on 2026-07-28.
 - Recorded preamp loudness compensation as a later equal-loudness DSP
   experiment; N7 deliberately changes only interaction and route drawing.
+- A fourth persistent Drawer page, **workshop**: the bay's quiet measurement
+  table, carrying the 43 parameters Night and the Master strip do not own so
+  the whole instrument is reachable without the Day panel. One centred 1128 px
+  rail holds a shallow service band (`deck a · input trims · space · deck b`)
+  over a `coco 1 · quantussy · coco 2` body, with no scroll view at the
+  1280×720 minimum and surrounding slate — not stretched controls — in a
+  larger window. Awaiting the user's visual and playing review.
+- A new Ink **ledger row**: label, one hairline value rail and an exact mono
+  value, with unipolar, centre-tick bipolar, integer, toggle-seat and
+  enum-seat variants whose ranges, steps and enum order all come from
+  `CQSpec`. Both skins draw it from one primitive.
+- A machine-checkable reachability gate: Night (31), Master (5) and Workshop
+  (43) declare their interactive parameters independently, and a unit test
+  proves the three sets disjoint with their union equal to `CQSpec.names`
+  itself. Workshop ownership is an explicit manifest, never a complement, so a
+  future parameter fails the gate instead of silently counting as covered.
+
+### Changed (Nocturne)
+
+- **Moved** the interactive `micGain` control and its warning owner from the
+  Day sources column to the Workshop page, keeping SPEC §6.2's one-mic-path
+  law while making the mic reachable without Day. Day retains only a passive
+  `mic · drawer / workshop` pointer, the Night mic sprout stays read-only, and
+  the persistent `MIC LIVE` notice still cannot be silenced by closing the
+  Drawer.
 
 ### In progress
 

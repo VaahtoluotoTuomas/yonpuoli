@@ -9,14 +9,13 @@ CQGuiShell {
 	var contentStack, drawerStack, drawerPages, toolbarView, toolbarTitle;
 	var modeButton, tabButtons, skinAction;
 
-	*new { |state, dayView, nightView, masterView, inspectorView, spellbookView,
-		memoryView, skinAction|
+	*new { |state, dayView, nightView, masterView, pages, skinAction|
 		^super.new.prInit(state, dayView, nightView, masterView,
-			inspectorView, spellbookView, memoryView, skinAction)
+			pages, skinAction)
 	}
 
 	prInit { |shellState, dayContent, nightContent, masterContent,
-		inspectorView, spellbookView, memoryView, applySkin|
+		pages, applySkin|
 		var day = CQInk.palette(\day), tabRow, instrumentView;
 		state = shellState;
 		skinAction = applySkin;
@@ -45,13 +44,14 @@ CQGuiShell {
 		contentStack = StackLayout(dayView, nightView).mode_(\stackOne);
 		instrumentView = View().layout_(contentStack);
 		tabButtons = IdentityDictionary.new;
-		#[inspector, spellbook, memory].do { |tab|
+		CQGuiDrawer.tabs.do { |tab|
 			tabButtons[tab] = CQInkControl.button(tab.asString, 86, \day, true)
 				.surface_(\recess).action_({ this.selectDrawer(tab) });
 		};
-		tabRow = HLayout(tabButtons[\inspector].view, tabButtons[\spellbook].view,
-			tabButtons[\memory].view, nil).margins_(4).spacing_(4);
-		drawerPages = [inspectorView, spellbookView, memoryView];
+		tabRow = HLayout(
+			*(CQGuiDrawer.tabs.collect { |tab| tabButtons[tab].view } ++ [nil])
+		).margins_(4).spacing_(4);
+		drawerPages = pages;
 		drawerStack = StackLayout(*drawerPages).mode_(\stackOne);
 		drawerView = UserView().background_(day[\recess]);
 		drawerView.layout = VLayout(tabRow, drawerStack).margins_(4).spacing_(4);
@@ -81,7 +81,7 @@ CQGuiShell {
 
 	applyState {
 		var skin = state.viewMode, palette = CQInk.palette(skin), tabIndex;
-		tabIndex = #[inspector, spellbook, memory].indexOf(state.drawerTab) ? 0;
+		tabIndex = CQGuiDrawer.tabs.indexOf(state.drawerTab) ? 0;
 		view.background = palette[\ground];
 		toolbarView.background = palette[\recess];
 		drawerView.background = palette[\recess];

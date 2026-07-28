@@ -297,11 +297,16 @@ CQGui {
 		^chargeValues[index]
 	}
 
-	// SPEC §7: persistent warning color while the mic is live (M2 GUI part)
+	// SPEC §7: persistent warning color while the mic is live (M2 GUI part).
+	// Since N8 the one interactive mic control lives on the Workshop page, but
+	// this composition stays central: the notice belongs to the always-visible
+	// Master strip, so closing the Drawer can never silence the warning.
 	micNotice { |live|
 		micLive = live;
 		this.prUpdateNotice;
 	}
+
+	noticeText { ^noticeView !? { |view| view.string } }
 
 	// ---- private ----
 
@@ -342,7 +347,6 @@ CQGui {
 
 	prBuild {
 		var dayContent, dayView, masterView;
-		var inspectorView, spellbookView, memoryView;
 		var minimum = shellState.minSize;
 		dayContent = View().background_(CQInk.palette(\day)[\ground]).layout_(
 			HLayout(
@@ -367,12 +371,8 @@ CQGui {
 		drawer = CQGuiDrawer(this, state, matrix, audition, bananaGrammar);
 		shellState.audition = drawer;
 		gridPanel = drawer.grid;
-		inspectorView = drawer.inspectorView;
-		spellbookView = drawer.spellbookView;
-		memoryView = drawer.memoryView;
 		shell = CQGuiShell(shellState, dayView, nightMap.stageView, masterView,
-			inspectorView, spellbookView, memoryView,
-			{ |skin| this.prApplySkin(skin) });
+			drawer.pages, { |skin| this.prApplySkin(skin) });
 		this.prApplySkin(shellState.viewMode);
 		window = Window("Cocoquantus · Archipelago",
 			Rect(50, 50, minimum[0], minimum[1]));

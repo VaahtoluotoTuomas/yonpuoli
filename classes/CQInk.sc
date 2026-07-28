@@ -445,6 +445,166 @@ CQInk {
 			this.font(\number), palette[\line]);
 	}
 
+	// ---- the Workshop ledger row (GUI_SPEC §16.7, NIGHT_STANDALONE_PLAN §12.1.3)
+	// A precision page needs a control the Day kit does not have: label at left,
+	// one hairline value rail in the middle, the exact value in mono at right,
+	// and never a knob. The rail's geometry is published here so the drawing and
+	// the hit test are literally the same rectangle (§4.5: cue and action share
+	// one geometry) — no view may compute a second one.
+
+	*ledgerMetrics {
+		^(height: 24, inset: 10, labelWidth: 84, valueWidth: 52, gap: 8,
+			grab: 4, seatRadius: 3.5)
+	}
+
+	*ledgerRailRect { |rect|
+		var m = this.ledgerMetrics, body = rect.insetBy(m[\inset], 0);
+		var left = body.left + m[\labelWidth];
+		var right = body.right - m[\valueWidth] - m[\gap];
+		^Rect(left, body.top, (right - left).max(16), body.height)
+	}
+
+	// a press is answered only over the rail (plus a small grab band at each
+	// end): a mis-aimed click on the label may not slam a parameter to its floor
+	*ledgerHitsRail { |rect, x|
+		var rail = this.ledgerRailRect(rect), grab = this.ledgerMetrics[\grab];
+		^(x >= (rail.left - grab)) and: { x <= (rail.right + grab) }
+	}
+
+	*ledgerNormAt { |rect, x|
+		var rail = this.ledgerRailRect(rect);
+		if(rail.width <= 0) { ^nil };
+		^((x - rail.left) / rail.width).clip(0, 1)
+	}
+
+	*ledgerSeatAt { |rect, x, count = 2|
+		var rail = this.ledgerRailRect(rect);
+		if(count < 1 or: { rail.width <= 0 }) { ^nil };
+		^((((x - rail.left) / rail.width) * count).floor.asInteger)
+			.clip(0, count - 1)
+	}
+
+	*drawLedgerRow { |rect, mode = \num, value = 0, label = "", display = "",
+		seats, family, skin = \day, hover = false, pressed = false,
+		center, danger = false|
+		var palette = this.palette(skin), m = this.ledgerMetrics;
+		var body = rect.insetBy(m[\inset], 0), rail = this.ledgerRailRect(rect);
+		var accent = palette[family] ?? { palette[\line] };
+		var y = rail.center.y, norm, handleX, originX, reach;
+		Pen.stringLeftJustIn(label.asString,
+			Rect(body.left, body.center.y - 6, m[\labelWidth] - m[\gap], 12),
+			this.font(\label), if(hover) { palette[\line] } { palette[\whisper] });
+		Pen.strokeColor = if(hover) { palette[\line] } { palette[\whisper] };
+		Pen.width = this.strokes[\hairline];
+		Pen.line(Point(rail.left, y), Point(rail.right, y));
+		Pen.stroke;
+		if(#[\toggle, \enum].includes(mode)) {
+			this.prLedgerSeats(rail, seats ? [], (value ? 0).asInteger,
+				accent, palette, hover);
+		} {
+			// a unipolar rail fills from its left end; a bipolar one grows away
+			// from a visible centre tick, so zero is a place and not a guess
+			norm = (value ? 0).clip(0, 1);
+			handleX = rail.left + (rail.width * norm);
+			originX = rail.left + (rail.width * (center ? 0));
+			center !? {
+				Pen.strokeColor = palette[\whisper];
+				Pen.width = this.strokes[\hairline];
+				Pen.line(Point(originX, y - 5), Point(originX, y + 5));
+				Pen.stroke;
+			};
+			Pen.strokeColor = accent;
+			Pen.width = this.strokes[\strong];
+			Pen.line(Point(originX, y), Point(handleX, y));
+			Pen.stroke;
+			// the handle is a tick drawn across the rail — a setting on a scale
+			// wears a scale mark, exactly as the shell's reel notch does (§16.6)
+			reach = if(hover) { 6 } { 4.5 };
+			Pen.strokeColor = if(hover) { palette[\spark] } { accent };
+			Pen.width = this.strokes[\normal];
+			Pen.line(Point(handleX, y - reach), Point(handleX, y + reach));
+			Pen.stroke;
+		};
+		Pen.stringRightJustIn(display.asString,
+			Rect(body.right - m[\valueWidth], body.center.y - 6, m[\valueWidth], 12),
+			this.font(\number), if(hover) { palette[\spark] } { palette[\line] });
+		if(pressed) {
+			Pen.strokeColor = accent.copy.alpha_(0.55);
+			Pen.width = this.strokes[\hairline];
+			Pen.addRoundedRect(Rect(rail.left - m[\grab], rect.top + 2,
+				rail.width + (2 * m[\grab]), rect.height - 4),
+				this.metrics[\buttonRadius], this.metrics[\buttonRadius]);
+			Pen.stroke;
+		};
+		// SPEC §7: the mic row may brighten red — its module may not
+		if(danger) {
+			Pen.strokeColor = palette[\danger].copy.alpha_(0.7);
+			Pen.width = this.strokes[\normal];
+			Pen.addRoundedRect(body.insetBy(0, 2),
+				this.metrics[\buttonRadius], this.metrics[\buttonRadius]);
+			Pen.stroke;
+		};
+	}
+
+	// a toggle or enum is stable seats, never a sliding value: one labelled seat
+	// per value, in the order CQSpec gave them
+	*prLedgerSeats { |rail, seats, index, accent, palette, hover = false|
+		var m = this.ledgerMetrics, cell = rail.width / seats.size.max(1);
+		seats.do { |seat, i|
+			var left = rail.left + (cell * i);
+			var seatCenter = Point(left + (m[\seatRadius] * 2), rail.center.y);
+			var lit = i == index;
+			if(lit) {
+				Pen.fillColor = accent;
+				Pen.addOval(Rect.aboutPoint(seatCenter,
+					m[\seatRadius], m[\seatRadius]));
+				Pen.fill;
+			} {
+				Pen.strokeColor = palette[\whisper];
+				Pen.width = this.strokes[\hairline];
+				Pen.addOval(Rect.aboutPoint(seatCenter,
+					m[\seatRadius], m[\seatRadius]));
+				Pen.stroke;
+			};
+			Pen.stringLeftJustIn(seat.asString,
+				Rect(seatCenter.x + 7, rail.center.y - 6, (cell - 14).max(8), 12),
+				this.font(\range),
+				if(lit) {
+					if(hover) { palette[\spark] } { palette[\line] }
+				} {
+					palette[\whisper]
+				});
+		};
+	}
+
+	// One ledger island: its title over a hairline rule, then its subgroup
+	// whispers. The y offsets come from the caller's own layout list, so the
+	// painted labels and the laid-out rows can never drift apart.
+	*drawLedgerIsland { |rect, items, skin = \day|
+		var palette = this.palette(skin), m = this.ledgerMetrics;
+		var left = rect.left + m[\inset], right = rect.right - m[\inset];
+		items.do { |item|
+			var y = rect.top + item[\y];
+			switch(item[\kind],
+				\title, {
+					Pen.stringLeftJustIn(item[\label].asString,
+						Rect(left, y + 2, right - left, 12),
+						this.font(\label), palette[item[\family] ? \line]);
+					Pen.strokeColor = palette[\whisper];
+					Pen.width = this.strokes[\hairline];
+					Pen.line(Point(left, y + item[\height] - 3),
+						Point(right, y + item[\height] - 3));
+					Pen.stroke;
+				},
+				\group, {
+					Pen.stringLeftJustIn(item[\label].asString,
+						Rect(left, y + 3, right - left, 11),
+						this.font(\range), palette[\whisper]);
+				}
+			);
+		};
+	}
+
 	*drawOrganFrame { |rect, title, family = \line, skin = \day, seed = 0|
 		var palette = this.palette(skin), y = rect.top + 22, points;
 		points = this.wobble([Point(rect.left + 8, y), Point(rect.center.x - 42, y),

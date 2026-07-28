@@ -745,6 +745,76 @@ CQ.patch(\envA, \coco1_spaf, 0.7);
       kirjoitettiin ensin vanhoilla vakioilla ja kaatui juuri noihin kahteen
       säikeeseen sekä 0,8 px:n peilitapaukseen juuressa A.)
 
+### N8 — Drawer-workshop (§12.1)
+
+Drawerin neljäs pysyvä sivu `workshop` on **Nightin hiljainen mittapöytä**:
+sama soitin vastakkaisella kieliopilla. Kiinteä 1128 px raili, 72 px huoltorivi
+(`deck a · input trims · space · deck b`) ja sen alla `coco 1 · quantussy ·
+coco 2` (365 · 366 · 365). Kaikki 43 puuttuvaa CQSpec-parametria ovat
+ledger-rivejä: nimi vasemmalla, hiusviivaraili keskellä, **tarkka arvo**
+monolla oikealla. `micGain` **siirtyi** Daystä tänne — Dayhin jäi vain
+passiivinen osoitin, eikä koko GUI:ssa ole toista mic-kontrollia.
+
+```supercollider
+// N8 — Ctrl+Shift+L ensin. Tämän lohkon voi ajaa myös ilman serveriä:
+//   tests/gui_drawer_preview.scd  (pelkkä ulkoasu, ei ääntä)
+CQ.boot;
+CQ.set(\masterVol, -24);
+// 1. Valitse toolbarista NIGHT, sitten DRAWER ja välilehti WORKSHOP.
+//    SIRISTYSTESTI (katso 2 m päästä, älä lue): näetkö yhden matalan
+//    huoltorivin ja sen alla kolme ledgeriä — etkä neljää pyöreää korttia,
+//    natiivia asetuspaneelia, pienoiskoko-Daytä tai Nightin koristekuvastoa?
+// 2. Lue läheltä: jokaisella 43 rivillä pitää näkyä tarkka arvo. Vertaa
+//    coco 1:n ja coco 2:n ledgereitä: alaotsikoiden (converter · material ·
+//    output · input mix) pitää olla täsmälleen samalla korkeudella.
+// 3. Vedä `coco 1 · output · level` railia. Äänen pitää muuttua heti ja
+//    arvon seurata kättä. Klikkaa saman rivin NIMEÄ: mitään ei saa tapahtua.
+// 4. Rullaa `quantussy · detune · castle 3` -rivin päällä: hienosäätö.
+//    Bipolaarisella rivillä täytön pitää kasvaa keskimerkistä ulospäin.
+// 5. `coco 1 · converter · wrap` ja `read`: istuimet (off·on / zoh·smooth).
+//    Napautus istuimelle vaihtaa tilan; kuuntele ero.
+CQ.set(\coco1Level, 1.2);
+// 6. Koodikirjoitus: rivin kahvan ja arvon pitää seurata ilman että
+//    kirjoitat itse mitään takaisin.
+CQ.set(\micGain, 0.5);
+// 7. MIC: rivin pitää muuttua punaiseksi ja master-strippiin ilmestyä
+//    "MIC LIVE". Vaihda välilehteä ja SULJE drawer: varoituksen pitää
+//    JÄÄDÄ näkyviin. Tarkista myös ettei Dayn sources-sarakkeessa ole enää
+//    mic-nuppia — vain teksti "mic · drawer / workshop".
+CQ.set(\micGain, 0);
+// 8. Suurenna ikkuna maksimiin: railin pitää pysyä 1128 px:ssä ja keskellä,
+//    ja lisätila tulla ympärille liuskekivenä — rivit eivät veny.
+//    Pienennä takaisin 1280x720:een: mitään ei saa leikkautua eikä sivun
+//    pidä vierittyä. Viimeisen `input mix · x` -rivin ja `castle 5` -sendin
+//    pitää näkyä kokonaan.
+// 9. Vaihda DAY: saman geometrian pitää piirtyä musteena paperille.
+```
+
+**Visuaalinen ja soitettava portti:** tarkista 1280×720 ja maksimoituna sekä
+100/125/150 % käyttöjärjestelmäskaalaus, molemmilla skineillä. Arvioi:
+
+1. Lukeeko sivu Nightin *mittapöytänä* — sama lajityyppi, tietoisesti eri
+   kielioppi — vai geneerisenä settings-paneelina?
+2. Onko `coco 1 · quantussy · coco 2` -järjestys tunnistettavasti yön oma
+   maantiede vai pelkkä lista?
+3. Riittääkö ledger-rivin raili soitettavaksi, vai onko se liian lyhyt?
+   Erottuvatko kahva, keskimerkki ja istuimet soittoetäisyydeltä?
+4. Ovatko tarkat arvot oikealla luettavia ja onko desimaalitarkkuus
+   kussakin ryhmässä järkevä (esim. `qShLag` 0.0040, `spaceDamp` 4500)?
+5. Onko semanttista väriä liian vähän vai liikaa (vain dust · organ · live ·
+   mic saavat perheen)?
+6. Tuntuuko nimipalstan klikkauksen inerttiys turvalta vai hämäävältä?
+7. Onko huoltorivin neljä moduulia oikeassa suhteessa alempaan runkoon?
+8. Löytyykö mic Daystä ilman apua pelkän osoitintekstin perusteella?
+9. Kuuluuko jokaisen alaryhmän edustaja (deck rate/loop, converter,
+   material, output, slot, castle detune/send, qShLag, space size/damp)
+   oikein — eli kirjoittaako jokainen rivi sitä parametria jonka se nimeää?
+10. Pystyykö koko session soittamaan avaamatta Daytä kertaakaan?
+
+- [ ] N8 hyväksytty (pvm: ______ — siristystesti, coco-symmetria, tarkat
+      arvot, ledger-ele, väririiisto, mic-siirto ja pysyvä varoitus,
+      kiinteä raili molemmissa kokoluokissa, molemmat skinit, kuuntelupassi)
+
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>
 

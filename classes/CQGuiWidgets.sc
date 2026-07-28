@@ -62,6 +62,89 @@ CQGuiWidgets {
 		^b.view
 	}
 
+	// The Workshop's ledger row (GUI_SPEC §16.7): one 24 px rail carrying an
+	// exact value. Everything shape-related — seats, their order, where zero
+	// sits — is read from CQSpec here and handed to the control, so the drawn
+	// row still owns no range, step, default or enum of its own. Returns the
+	// control (not its view): the page needs the row itself for the mic's
+	// danger treatment, and the view is one accessor away.
+	ledger { |name, label, color, width = 200, surface = \recess|
+		var kind = CQSpec.kind(name), values = CQSpec.enumValues(name);
+		var family = this.prFamily(color);
+		var seats = switch(kind,
+			\enum, { values.collect { |value| value.asString } },
+			\toggle, { ["off", "on"] },
+			{ nil }
+		);
+		var mode = switch(kind, \enum, { \enum }, \toggle, { \toggle },
+			\int, { \int }, { \num });
+		var row = this.prOwn(CQInkControl.ledger(label, mode, family, \day,
+			width, seats, CQSpec.centerNorm(name)));
+		row.surface = surface;
+		switch(kind,
+			\enum, {
+				row.action = { |c| state.set(name, values[c.value.asInteger]) };
+				this.register(name, { |v|
+					row.value = values.indexOf(v) ? 0;
+					row.display = this.class.ledgerFormat(name, v);
+				});
+			},
+			\toggle, {
+				row.action = { |c| state.set(name, c.value.asInteger) };
+				this.register(name, { |v|
+					row.value = (v ? 0).asFloat.clip(0, 1).round.asInteger;
+					row.display = this.class.ledgerFormat(name, v);
+				});
+			},
+			{
+				row.action = { |c| state.set(name, CQSpec.map(name, c.value)) };
+				this.register(name, { |v|
+					row.value = CQSpec.unmap(name, v);
+					row.display = this.class.ledgerFormat(name, v);
+				});
+			}
+		);
+		^row
+	}
+
+	// How many decimals a parameter deserves on the ledger: enough for the
+	// printed number to resolve about a thousandth of its own range, so
+	// qShLag's 4 ms and spaceDamp's 4500 Hz are both readable at a glance and
+	// neither is padded with meaningless digits. Derived from CQSpec's range,
+	// never from a per-parameter table.
+	*ledgerDecimals { |name|
+		var e = CQSpec.at(name), span;
+		if(e.isNil or: { e[\kind] != \num }) { ^0 };
+		span = (e[\spec].maxval - e[\spec].minval).abs;
+		if(span <= 0) { ^2 };
+		^((span / 1000).log10.neg).ceil.asInteger.clip(0, 4)
+	}
+
+	// the ledger's exact-value reading; a rail with no value is not enough for
+	// this page (NIGHT_STANDALONE_PLAN §12.1.1)
+	*ledgerFormat { |name, value|
+		var e = CQSpec.at(name);
+		if(e.isNil) { ^(value ? "").asString };
+		^switch(e[\kind],
+			\enum, { (value ? e[\default]).asString },
+			\toggle, { if((value ? 0).asFloat > 0.5) { "on" } { "off" } },
+			\int, { (value ? 0).asFloat.round.asInteger.asString },
+			{ this.prFixed((value ? 0).asFloat, this.ledgerDecimals(name)) }
+		)
+	}
+
+	// fixed-decimal text, so a column of values keeps one width and a trailing
+	// zero does not disappear (Float.asString would print 0.8 for 0.800)
+	*prFixed { |value, decimals = 2|
+		var scale = (10 ** decimals).asInteger, negative = value < 0, scaled, text;
+		scaled = (value.abs * scale).round.asInteger;
+		text = (scaled div: scale).asString;
+		if(decimals > 0) {
+			text = text ++ "." ++ (scaled % scale).asString.padLeft(decimals, "0");
+		};
+		^if(negative and: { scaled > 0 }) { "-" ++ text } { text }
+	}
+
 	// small horizontal slider (castle sends, deck levels)
 	hslider { |name, width = 56|
 		var s = this.prOwn(CQInkControl.slider(width));
@@ -71,10 +154,15 @@ CQGuiWidgets {
 	}
 
 	// Keep every semantic color lookup in CQInk while letting older panel code
-	// pass palette colors during the migration.
+	// pass palette colors during the migration. Newer surfaces (the Workshop
+	// manifest) name their family directly, which is what §16.2 asks for: no
+	// color is inlined at a draw site.
 	prFamily { |color|
 		var palette = CQInk.palette(\day), found;
 		if(color.isNil) { ^\line };
+		if(color.isKindOf(Symbol)) {
+			^if(palette[color].notNil) { color } { \line }
+		};
 		palette.keysValuesDo { |key, value| if(value == color) { found = key } };
 		^found ? \line
 	}

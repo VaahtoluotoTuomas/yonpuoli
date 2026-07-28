@@ -53,6 +53,19 @@ CQSpec {
 		^e[\values]
 	}
 
+	// Where a parameter's zero sits on its own normalized 0..1 rail, or nil for
+	// a range that never crosses zero. A drawn control asks this instead of
+	// comparing literal bounds at its call site: bipolarity is a property of the
+	// parameter, so it is answered here like every other range fact. Used by the
+	// Workshop ledger row, whose bipolar fill grows away from a visible centre
+	// tick (GUI_SPEC §16.7).
+	*centerNorm { |name|
+		var e = this.specs[name];
+		if(e.isNil or: { #[num, int].includes(e[\kind]).not }) { ^nil };
+		if(e[\spec].minval >= 0 or: { e[\spec].maxval <= 0 }) { ^nil };
+		^this.unmap(name, 0)
+	}
+
 	// the funnel: every write path passes its value through here (SPEC §8.3)
 	*clamp { |name, value|
 		var e = this.specs[name];

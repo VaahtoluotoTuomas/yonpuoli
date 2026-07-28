@@ -42,9 +42,26 @@ CQGuiVisualContractTest : UnitTest {
 		};
 	}
 
-	test_drawerPublishesTheThreeNormativePages {
-		this.assertEquals(CQGuiDrawer.tabs, #[inspector, spellbook, memory],
-			"Drawer exposes Inspector, Spellbook and Memory in normative order");
+	// N8 added the Workshop as a fourth persistent page — not a replacement for
+	// Inspector and not a mode inside Memory (NIGHT_STANDALONE_PLAN §12.1.3).
+	test_drawerPublishesTheFourNormativePages {
+		this.assertEquals(CQGuiDrawer.tabs,
+			#[inspector, workshop, spellbook, memory],
+			"Drawer exposes Inspector, Workshop, Spellbook and Memory in order");
+	}
+
+	// A page the shell state would refuse is a page the toolbar cannot reach:
+	// the whitelist and the published list are one list.
+	test_everyPublishedPageIsSelectable {
+		var shell = CQGuiShellState(CQAudition(CQMatrix(nil)));
+		CQGuiDrawer.tabs.do { |tab|
+			shell.selectDrawer(tab);
+			this.assertEquals(shell.drawerTab, tab,
+				"the shell accepts the published page %".format(tab));
+		};
+		shell.selectDrawer(\bogus);
+		this.assertEquals(shell.drawerTab, CQGuiDrawer.tabs.last,
+			"and still refuses a page that does not exist");
 	}
 
 	test_inspectorPrototypeUsesPlayablePatchLoomCells {

@@ -59,8 +59,10 @@ CQGuiShellState {
 		^this
 	}
 
+	// the normative page list lives with the pages themselves (CQGuiDrawer.tabs),
+	// so a fourth page cannot appear in one place and be rejected in another
 	selectDrawer { |tab|
-		if(#[inspector, spellbook, memory].includes(tab)) {
+		if(CQGuiDrawer.tabs.includes(tab)) {
 			drawerTab = tab;
 			this.changed(\drawer, drawerOpen, drawerTab);
 		};

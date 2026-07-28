@@ -5,9 +5,12 @@
 CQInkControl {
 	classvar <drawErrors = 0;
 	var <view, <kind, <value = 0, <label, <skin, <family, <options, <diameter = 26;
-	var action, display = "", pressed = false, <hover = false, enabled = true;
+	var <action, <display = "", pressed = false, <hover = false, enabled = true;
 	var toggle = false, momentary = false, glyph, danger = false, downward = false;
 	var surface = \ground, startX = 0, startY = 0, startValue = 0;
+	// the Workshop ledger row's own shape channel: \num · \int · \toggle · \enum,
+	// its seat captions and where its zero sits on the rail (nil = unipolar)
+	var <ledgerMode = \num, <seats, <center;
 
 	*knob { |label, family, skin = \day, knobDiameter|
 		var control, m = CQInk.metrics;
@@ -40,6 +43,18 @@ CQInkControl {
 		^super.new.prInit(\number, label, nil, skin, Size(44, 36))
 	}
 
+	// the Workshop's exact-value row (GUI_SPEC §16.7). Width is given by the
+	// island that owns it, so the page keeps stable coordinates; the height is
+	// the kit's own 24 px. No range, step, default or enum lives here: the
+	// factory hands over seats and centre already read from CQSpec.
+	*ledger { |label, mode = \num, family, skin = \day, width = 200,
+		seats, center|
+		var control = super.new.prInit(\ledger, label, family, skin,
+			Size(width, CQInk.ledgerMetrics[\height]));
+		control.prLedgerMode(mode, seats, center);
+		^control
+	}
+
 	*meter { |skin = \day, danger = false, downward = false|
 		var control = super.new.prInit(\meter, "", nil, skin, Size(16, 72));
 		control.prMeterMode(danger, downward);
@@ -66,7 +81,10 @@ CQInkControl {
 		^this
 	}
 
-	isInteractive { ^#[knob, slider, button, switch, number].includes(kind) }
+	isInteractive { ^#[knob, slider, button, switch, number, ledger].includes(kind) }
+
+	// a ledger row whose value moves on stable seats rather than along the rail
+	isSeated { ^#[toggle, enum].includes(ledgerMode) }
 
 	prButtonMode { |isToggle, isMomentary, icon|
 		toggle = isToggle;
@@ -78,6 +96,15 @@ CQInkControl {
 	prOptions { |items| options = items; ^this }
 	prMeterMode { |isDanger, fillsDown| danger = isDanger; downward = fillsDown; ^this }
 	prKnobDiameter { |newDiameter| diameter = newDiameter; ^this }
+	prLedgerMode { |mode, seatLabels, centerNorm|
+		ledgerMode = mode ? \num;
+		seats = seatLabels;
+		center = centerNorm;
+		^this
+	}
+
+	// SPEC §7's mic row: the control brightens, its module never does
+	danger_ { |flag| danger = flag; view.refresh; ^this }
 
 	action_ { |func| action = func; ^this }
 	value_ { |newValue| value = newValue ? 0; view.refresh; ^this }
@@ -116,7 +143,12 @@ CQInkControl {
 		view.mouseLeaveAction = { hover = false; view.refresh };
 		view.mouseDownAction = { |v, x, y|
 			var index;
-			if(enabled) {
+			// a ledger answers only over its own rail: pressing the label or the
+			// value column must never slam the parameter to an end of its range
+			var accepts = enabled and: {
+				(kind != \ledger) or: { this.prLedgerOverRail(v, x) }
+			};
+			if(accepts) {
 				pressed = true;
 				startX = x;
 				startY = y;
@@ -131,7 +163,8 @@ CQInkControl {
 						index = ((x / v.bounds.width) * options.size).floor.asInteger;
 						value = index.clip(0, options.size - 1);
 						action.value(this);
-					}
+					},
+					\ledger, { this.prLedgerTouch(v, x) }
 				);
 				view.refresh;
 			};
@@ -150,7 +183,8 @@ CQInkControl {
 							value = index;
 							action.value(this)
 						}
-					}
+					},
+					\ledger, { this.prLedgerTouch(v, x) }
 				);
 				if(#[knob, number, slider].includes(kind)) { action.value(this) };
 				view.refresh;
@@ -162,12 +196,34 @@ CQInkControl {
 			view.refresh;
 		};
 		view.mouseWheelAction = { |v, x, y, modifiers, xDelta, yDelta|
-			if(enabled and: { #[knob, number, slider].includes(kind) }) {
+			// the existing normalized fine nudge; a seated ledger has no
+			// continuum to nudge along, so the wheel leaves it alone
+			var nudges = #[knob, number, slider].includes(kind)
+				or: { kind == \ledger and: { this.isSeated.not } };
+			if(enabled and: { nudges }) {
 				value = (value + (yDelta.sign * 0.01)).clip(0, 1);
 				action.value(this);
 				view.refresh;
 			};
 		};
+	}
+
+	// one geometry for cue and action (§4.5): both ask CQInk for the same rail
+	prLedgerRect { |v| ^Rect(0, 0, v.bounds.width, v.bounds.height) }
+
+	prLedgerOverRail { |v, x| ^CQInk.ledgerHitsRail(this.prLedgerRect(v), x) }
+
+	prLedgerTouch { |v, x|
+		var rect = this.prLedgerRect(v), next;
+		next = if(this.isSeated) {
+			CQInk.ledgerSeatAt(rect, x, (seats ? []).size.max(1))
+		} {
+			CQInk.ledgerNormAt(rect, x)
+		};
+		if(next.isNil or: { next == value }) { ^this };
+		value = next;
+		action.value(this);
+		^this
 	}
 
 	prDraw {
@@ -188,6 +244,10 @@ CQInkControl {
 			},
 			\number, {
 				CQInk.drawNumber(bounds, label, display, skin, pressed or: { hover }, surface)
+			},
+			\ledger, {
+				CQInk.drawLedgerRow(bounds, ledgerMode, value, label, display,
+					seats, family, skin, hover, pressed, center, danger)
 			},
 			\meter, { CQInk.drawMeter(bounds, value, skin, danger, downward) },
 			\lamp, { CQInk.drawLamp(bounds.center, value, value >= 0.5, skin) }

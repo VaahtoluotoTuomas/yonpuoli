@@ -133,6 +133,39 @@ CQGuiNightMap {
 		)
 	}
 
+	// The night's own interactive CQSpec inventory (NIGHT_STANDALONE_PLAN §12.1.1):
+	// every parameter a hand can actually play from this landscape. It is composed
+	// from the same semantic helpers the bodies are drawn from, never derived as
+	// somebody else's complement — a parameter that loses its touch point must
+	// disappear from here too, and the coverage gate must then fail.
+	// Read-only marks are deliberately absent: the mic sprout draws `micGain` and
+	// the roots read `cocoNSlotPre`, but neither is an owner here.
+	*reachableParamNames {
+		var names = List.new;
+		// the deck level crescents under the birds' wings (§6.1)
+		this.crescentNames(2).do { |name| names.add(name) };
+		// each root: the source strand delta and the drive/bias knot (§10)
+		2.do { |i|
+			#[\Src, \Drive, \Bias].do { |suffix|
+				names.add(this.preampParamName(i, suffix))
+			};
+		};
+		// each shell: three tide crescents, the winding spiral, the heart, the
+		// mouth chevron and the two dolby oysters (§6.1, §4)
+		2.do { |i|
+			this.crescentNames(i).do { |name| names.add(name) };
+			#[\Speed, \Hold, \Flip, \DolbyIn, \DolbyFb].do { |suffix|
+				names.add(("coco" ++ (i + 1) ++ suffix).asSymbol)
+			};
+		};
+		// the ring's storm iris (§16.6)
+		names.add(\qFreq);
+		names.add(\qChaos);
+		// the castles' range ripples (§3)
+		5.do { |k| names.add(("c" ++ (k + 1) ++ "Range").asSymbol) };
+		^names.asArray
+	}
+
 	// §6.1 crescent inventory: three continuous coco moons per shell plus one
 	// deck level under each wing. Pure lookup, unit-testable without Qt.
 	*crescentNames { |cocoIndex|

@@ -1,17 +1,21 @@
-// CQGuiDrawer — G1 Drawer composition: precision Inspector, notification-
-// stream Spellbook and existing snapshot/morph Memory (GUI_SPEC §8).
+// CQGuiDrawer — the Drawer composition: precision Inspector, the Workshop
+// ledger page, notification-stream Spellbook and existing snapshot/morph
+// Memory (GUI_SPEC §8).
 
 CQGuiDrawer {
 	var gui, state, matrix, grammar;
-	var <spellbookGui, <memoryGui, presetMenu;
+	var <spellbookGui, <memoryGui, <workshop, presetMenu;
 	var <inspector, <grid, <spellbook;
-	var <inspectorView, <spellbookView, <memoryView;
+	var <inspectorView, <workshopView, <spellbookView, <memoryView;
 
 	*new { |gui, state, matrix, audition, grammar|
 		^super.newCopyArgs(gui, state, matrix, grammar).prBuild(audition)
 	}
 
-	*tabs { ^#[inspector, spellbook, memory] }
+	*tabs { ^#[inspector, workshop, spellbook, memory] }
+
+	// always in `tabs` order — the shell indexes one against the other
+	pages { ^[inspectorView, workshopView, spellbookView, memoryView] }
 
 	viewToggle { inspector.cancel; grammar.viewToggle; ^this }
 	windowClose { inspector.cancel; grammar.windowClose; ^this }
@@ -23,6 +27,7 @@ CQGuiDrawer {
 		grid !? { grid.free };
 		spellbookGui !? { spellbookGui.free };
 		memoryGui !? { memoryGui.free };
+		workshop !? { workshop.free };
 		spellbook !? { spellbook.free };
 		inspector !? { inspector.free };
 	}
@@ -32,6 +37,7 @@ CQGuiDrawer {
 		grid.skin = skin;
 		spellbookGui.applySkin(skin);
 		memoryGui.applySkin(skin);
+		workshop.applySkin(skin);
 		inspectorView.background = palette[\recess];
 		^this
 	}
@@ -60,6 +66,11 @@ CQGuiDrawer {
 		spellbookView = spellbookGui.view;
 		memoryGui = CQGuiMemory(gui, state, matrix, Cocoquantus.snapshots);
 		memoryView = memoryGui.view;
+		// the bay's measurement table. Built with the GUI, never on demand: its
+		// mic row owns the persistent MIC LIVE warning, and closing the Drawer
+		// may not silence that (NIGHT_STANDALONE_PLAN §12.1.3).
+		workshop = CQGuiWorkshop(gui, state);
+		workshopView = workshop.view;
 		presetMenu = PopUpMenu().items_(presetNames.collect { |name| name.asString })
 			.font_(CQInk.font(\number)).stringColor_(palette[\line])
 			.background_(palette[\ground]).fixedSize_(Size(148, 22));
