@@ -12,7 +12,7 @@ CQGuiMemory {
 	classvar contentW = 1128;
 
 	var gui, state, matrix, snapshots, matrixCtl, morphCtl;
-	var skin = \day, snapshotNames, selectedData, labels, menus, panels;
+	var skin = \night, snapshotNames, selectedData, labels, menus, panels;
 	var detailHintText;
 	var nameField, <aMenu, <bMenu, durationBox, detailTitle, <detailHint;
 	var <view, <snapshotList, <fingerprint, <morphMeter, <selectedName, <header;
@@ -27,6 +27,7 @@ CQGuiMemory {
 	// the historical reference width, kept so older contracts still read; the
 	// live rail is `railWidth` and follows CQGuiScale
 	*contentWidth { ^contentW }
+	*ownedItems { ^#[snapshotName, snapshotSave, snapshotRecall, morph] }
 	*detailMargins { ^[8, 0, 8, 0] }
 	*detailHintTexts {
 		^[
@@ -148,7 +149,7 @@ CQGuiMemory {
 	// ---- private ----
 
 	prBuild {
-		var palette = CQInk.palette(\day);
+		var palette = CQInk.palette(\night);
 		var saveButton, recallButton, refreshButton, morphButton;
 		var m = CQGuiScale.metrics(step), column, print, saveW;
 		labels = List.new;
@@ -333,7 +334,7 @@ CQGuiMemory {
 
 	// returns the control: the page re-measures it when the size step changes
 	prButton { |label, width, accent, action|
-		var button = CQInkControl.button(label, width, \day, false, true, accent);
+		var button = CQInkControl.button(label, width, \night, false, true, accent);
 		button.surface = \recess;
 		button.action = action;
 		button.scale = CQGuiScale.metrics(step);

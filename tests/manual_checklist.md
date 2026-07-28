@@ -870,6 +870,43 @@ CQGuiScale.minimumHeight(\roomy) + CQGuiScale.comfort;    // vaadittu korkeus
       pysyvä varoitus, molemmat skinit, kuuntelupassi sekä viimeinen
       sivuhuomautus-/hover-/valikkopassi)
 
+### N9 — Night on ainoa soitin (§0)
+
+Ensimmäinen peruutettava Night-only-versio on valmis
+`nocturne-night-only`-haaralla. Tässä portissa arvioidaan kokonaisuutta, ei
+uuden osan pintakiillotusta: onko Night + Master + Drawer nyt aidosti yksi
+itsenäinen soitin, ja kaivataanko poistetuista Day-yleisnäkymistä mitään
+soitossa?
+
+```supercollider
+// N9 — Ctrl+Shift+L ensin, koska luokkarakenne muuttui.
+CQ.free;
+CQ.boot;
+CQ.set(\masterVol, -24);
+// 1. Soittimen pitää aueta suoraan Nightiin. Toolbarissa näkyy YÖLAHTI ja
+//    DRAWER, mutta ei DAY/NIGHT-vaihtoa. Master ja PANIC pysyvät alhaalla.
+// 2. Soita Nightia 10–15 minuuttia ilman Draweria: hae lintu napauttamalla,
+//    vaihda tiedostoa rullalla/rufflella, soita juurten driveä ja biasia,
+//    shellien hold/punch/flip/skip/Dolby-eleitä, castlejen rangeä ja steppejä
+//    sekä kuuta, säätä, vuorovettä, siemeniä ja kaapeleita.
+// 3. Avaa DRAWER. Käy inspector · workshop · spellbook · memory läpi ja
+//    palaa samalla DRAWER-napilla Nightiin. Master, notice ja PANIC eivät saa
+//    kadota; Nightissä kesken jääneen käden/auditionin pitää peruuntua.
+// 4. SPESAL-TÄHDISTÖN KUOLEMA: hoveroi castlea ja napauta sen sisäkelloa.
+//    Näkyykö partneri, moodi ja signaalin suunta riittävän selvästi juuri
+//    eleen alla? Kaipaatko oikeassa soitossa pysyvää koko verkon karttaa?
+// 5. MUISTIPOLKUKARTAN KUOLEMA: soita shelliä ja tarkista Workshopista
+//    slotit, bits/wrap/interp ja input mix. Jääkö pois mitään päätöstä, jonka
+//    tekisit staattisesta Coco-polun kuvasta mutta et näistä kahdesta pinnasta?
+// 6. Paina välilyöntiä: PANICin pitää toimia riippumatta siitä, missä
+//    viimeksi klikkasit. Sulje lopuksi turvallisesti.
+CQ.free;
+```
+
+- [ ] N9 hyväksytty (Night itsenäisenä soittimena, Drawer-paluu, yhden
+      käyttöliittymän selkeys, spesal-tähdistön kirjattu kuolema,
+      muistipolkukartan kirjattu kuolema)
+
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>
 

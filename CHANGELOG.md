@@ -16,6 +16,12 @@ tagged. Earlier tags describe internal development baselines.
   instrument with explicit lineage and non-affiliation.
 - Rebuilt the public README around users, architecture, safety, testing,
   authorship, and current status.
+- Made Night the sole runtime instrument surface in the first reversible N9
+  review cut. The Day stage, toolbar destination, four-column builders and its
+  two read-only overview drawings are removed; Master and the four-page Drawer
+  remain persistent. Night's under-hand coupling chord replaces the permanent
+  spesal constellation, while the playable shells plus Workshop replace the
+  static Coco memory-path diagram.
 
 ### Added
 
@@ -47,7 +53,8 @@ tagged. Earlier tags describe internal development baselines.
   rail holds a shallow service band (`deck a · input trims · space · deck b`)
   over a `coco 1 · quantussy · coco 2` body, with no scroll view at the
   1280×720 minimum and surrounding slate — not stretched controls — in a
-  larger window. Awaiting the user's visual and playing review.
+  larger window. Accepted after five visual and playing review rounds on
+  2026-07-28.
 - A new Ink **ledger row**: label, one hairline value rail and an exact mono
   value, with unipolar, centre-tick bipolar, integer, toggle-seat and
   enum-seat variants whose ranges, steps and enum order all come from

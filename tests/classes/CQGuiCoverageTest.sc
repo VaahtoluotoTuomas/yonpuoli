@@ -181,7 +181,7 @@ CQGuiCoverageTest : UnitTest {
 		this.assertEquals(CQGuiMatrix.cellSize(\compact, 1272), [52, 24],
 			"the Inspector still owns the full 16x22 signed matrix");
 		#[snapshotName, snapshotSave, snapshotRecall, morph].do { |item|
-			this.assert(CQGuiPanels.memoryItems.includes(item),
+			this.assert(CQGuiMemory.ownedItems.includes(item),
 				"Memory still owns %".format(item));
 		};
 	}

@@ -60,7 +60,7 @@ CQGuiSpellbook {
 	// ---- private ----
 
 	prBuild {
-		var palette = CQInk.palette(\day);
+		var palette = CQInk.palette(\night);
 		var m = CQGuiScale.metrics(step);
 		listView = ListView().selectionMode_(\single)
 			.font_(CQInk.font(\spellbook, m[\mono])).stringColor_(palette[\line])
@@ -119,7 +119,7 @@ CQGuiSpellbook {
 
 	// returns the control: the page re-measures it when the size step changes
 	prButton { |label, width, action|
-		var button = CQInkControl.button(label, width, \day, false, true, \line);
+		var button = CQInkControl.button(label, width, \night, false, true, \line);
 		button.surface = \recess;
 		button.action = action;
 		button.scale = CQGuiScale.metrics(step);

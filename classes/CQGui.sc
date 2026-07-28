@@ -1,36 +1,32 @@
-// CQGui — the panel window (SPEC §6.2, ARCH §5): one window, four columns
-// mirroring the hardware layout + master strip + banana-bay grid + keyboard
-// map. Pure view: it renders from CQState/CQMatrix dependant notifications
-// and server reports (OSCdefs \cq_gui_*, freed here), and every write goes
-// through the funnels (CQGuiWidgets -> CQState, grid -> CQMatrix, actions ->
-// Cocoquantus facade). All UI work happens inside { }.defer; no server polling
-// — the only language-side timer is the 2 Hz REC elapsed-time display.
+// CQGui — Yölahti's Night-only window (SPEC §6.2, ARCH §5): the Night
+// landscape, Drawer workbench, persistent Master strip and global keyboard
+// map. Pure view: CQState/CQMatrix notifications and namespaced OSC reports
+// drive it; every write returns through the funnels. All UI work happens
+// inside { }.defer; the only idle language timer is REC elapsed time.
 
 CQGui {
 	var state, matrix, config;
 	var <window, <widgets, updaters, <shellState, <shell, <drawer;
 	var stateCtl, gridPanel, meterFuncs, <audition;
-	var <bananaGrammar, <bananaController, <bananaBodies;
-	var <endpoints, <cableOverlay, <nightMap;
+	var <bananaGrammar, <nightMap;
 	var <inkControls;
-	var castleLeds, spesalView, <spesalStates, <castleValues;
+	var <spesalStates;
 	// `/cq_phase`: the read head's address and, beside it, the read direction as
 	// an audio-rate mean (§9) — ±1 settled, near 0 shuttling. Both nil until the
 	// server reports.
 	var <phaseNorms, <phaseDirs, <phaseSkipHz;
 	// GUI_SPEC §9: 16 source magnitudes, nil until the server has actually
 	// reported. No telemetry = no pulse, so serverless and headless surfaces
-	// keep exactly the reviewed static Day look.
+	// keep exactly the reviewed static Night look.
 	var <auraValues, auraPainted;
 	// GUI_SPEC §9 `/cq_charge`: the nine gate/trig sums, in three blocks (the
 	// two cocos and the castle row report their own). Same law as the aura —
 	// a slot stays nil until its synth has spoken.
 	var <chargeValues, chargePainted, <chargeNames, chargeIndex;
-	var deckLabels, deckNames, deckCtls, skipButtons;
+	var deckLabels, deckNames, deckCtls;
 	var noticeView, recBtn, recTimeView, recTask, hotTask;
 	// §16.7: which drop target a file drag is hovering, the view that draws it,
-	// and a function returning its global rect. One at a time across both
-	// skins — they are never visible together.
+	// and a function returning its global rect. One target at a time.
 	var <dropTarget, dropTargetView, dropTargetRect;
 	var dropTargetPolling = false, dropTargetArmed = 0;
 	var micLive = false, hotLive = false, cleaned = false;
@@ -113,9 +109,8 @@ CQGui {
 		^this
 	}
 
-	// One amount, three layers (GUI_SPEC §5/§6.1): the Day amount knob and the
-	// night's sowing moon are two views of this one number, so a write from
-	// either fans out to both. Every entry clamps, here as everywhere.
+	// One amount for every shake entrance: the Night moon shows it, while the
+	// p key and code may trigger it. Every entry clamps, here as everywhere.
 	shakeAmount_ { |value|
 		var next = (value ? 0).asFloat.clip(0, 1);
 		if(next == shakeAmount) { ^this };
@@ -132,32 +127,19 @@ CQGui {
 		^func
 	}
 
-	// ---- panel registration API (used by CQGuiPanels while building) ----
+	// ---- view registration API ----
 
 	setMeter { |key, func| meterFuncs[key] = func }
-	// both stages carry a filename label per deck (Day box, Night bird); each
-	// keeps its own skin's ink, so the hidden twin never wears the wrong color
 	setDeckLabel { |which, view, ink|
 		deckLabels[which] = (deckLabels[which] ?? { List.new }).add(
-			(view: view, ink: ink ?? { CQInk.palette(\day)[\line] }));
+			(view: view, ink: ink ?? { CQInk.palette(\night)[\line] }));
 	}
 	deckLabel { |which| ^deckLabels[which] !? { |list| list.first[\view] } }
-	setSkipButton { |n, btn| skipButtons[n] = btn }
-	castleLeds_ { |views| castleLeds = views }
-	spesalView_ { |view| spesalView = view }
 	notice_ { |view| noticeView = view }
 	recButton_ { |btn| recBtn = btn }
 	recTime_ { |view| recTimeView = view }
 	registerInkControl { |control| inkControls.add(control); ^control }
-	registerEndpoint { |name, kind, endpointView, anchor|
-		endpoints[name] = (name: name, kind: kind, view: endpointView, anchor: anchor);
-		^endpointView
-	}
-	registerBananaBody { |name, bodyView, members|
-		bananaBodies[name] = (name: name, view: bodyView, members: members);
-		^bodyView
-	}
-	drawEndpoint { |name, kind, center, family, glyph, lamp = false, skin = \day|
+	drawEndpoint { |name, kind, center, family, glyph, lamp = false, skin = \night|
 		var palette = CQInk.palette(skin), endpointState;
 		endpointState = if(kind == \jack) {
 			if(bananaGrammar.isSourceInHand(name)) { \inHand } {
@@ -193,7 +175,7 @@ CQGui {
 		};
 		^this
 	}
-	currentSkin { ^shellState.viewMode }
+	currentSkin { ^\night }
 
 	// One source's live magnitude, or nil while the instrument is silent about
 	// it (headless, serverless preview, unbooted). Callers decide what "no
@@ -318,9 +300,7 @@ CQGui {
 		meterFuncs = IdentityDictionary.new;
 		deckLabels = IdentityDictionary.new;
 		deckNames = IdentityDictionary.new;
-		skipButtons = IdentityDictionary.new;
 		spesalStates = Cocoquantus.spesalStates;
-		castleValues = [0, 0, 0, 0, 0];
 		phaseNorms = [nil, nil];   // nil until '/cq_phase' reports (§9: no telemetry ≠ 0)
 		phaseDirs = [nil, nil];
 		phaseSkipHz = [nil, nil];
@@ -332,8 +312,6 @@ CQGui {
 		inkControls = List.new;
 		shakeWatchers = List.new;
 		compass = CQCompass(this.prCompassDir);
-		endpoints = IdentityDictionary.new;
-		bananaBodies = IdentityDictionary.new;
 		widgets = CQGuiWidgets(state, updaters, this);
 		{
 			if(cleaned.not and: { shellState.canBuild }) {
@@ -346,32 +324,14 @@ CQGui {
 	}
 
 	prBuild {
-		var dayContent, dayView, masterView;
+		var masterView;
 		var minimum = shellState.minSize;
-		dayContent = View().background_(CQInk.palette(\day)[\ground]).layout_(
-			HLayout(
-				CQGuiPanels.sources(this),
-				CQGuiPanels.coco(this, 1),
-				CQGuiPanels.quantussy(this),
-				CQGuiPanels.coco(this, 2)
-			).margins_(8).spacing_(8));
-		cableOverlay = CQGuiCableOverlay(matrix, endpoints, bananaGrammar,
-			{ |src| this.auraFor(src) });
-		bananaController = CQGuiBananaController(
-			bananaGrammar, endpoints, bananaBodies, cableOverlay, inkControls);
-		bananaController.bindGround(dayContent);
-		dayView = View().background_(CQInk.palette(\day)[\ground]).layout_(
-			StackLayout(cableOverlay.view, dayContent).mode_(\stackAll));
 		nightMap = CQGuiNightMap(this, state, matrix, config);
-		// a hidden stage's gesture repaints are pure bridge waste; Qt repaints
-		// it in full the moment the hard cut shows it again
-		bananaController.refreshGate = { shellState.viewMode == \day };
-		nightMap.controller.refreshGate = { shellState.viewMode == \night };
 		masterView = CQGuiPanels.master(this);
 		drawer = CQGuiDrawer(this, state, matrix, audition, bananaGrammar);
 		shellState.audition = drawer;
 		gridPanel = drawer.grid;
-		shell = CQGuiShell(shellState, dayView, nightMap.stageView, masterView,
+		shell = CQGuiShell(shellState, nightMap.stageView, masterView,
 			drawer.pages, { |skin| this.prApplySkin(skin) },
 			{ this.prSyncDrawerScale });
 		// The workbench reads at two reviewed sizes (CQGuiScale): a windowed
@@ -385,8 +345,8 @@ CQGui {
 		// with the Drawer closed would otherwise leave a stale size behind. The
 		// window's own view always resizes, and reopening the Drawer re-asks.
 		shell.drawerView.onResize = { this.prSyncDrawerScale };
-		this.prApplySkin(shellState.viewMode);
-		window = Window("Cocoquantus · Archipelago",
+		this.prApplySkin(\night);
+		window = Window("Yölahti",
 			Rect(50, 50, minimum[0], minimum[1]));
 		// SuperCollider's Qt backend suppresses child mouseOverAction callbacks
 		// unless the containing window explicitly enables mouse-over delivery.
@@ -405,9 +365,7 @@ CQGui {
 		window.view.onResize = { this.prSyncDrawerScale };
 		window.view.keyModifiersChangedAction = { |v, modifiers|
 			nightMap !? { |map|
-				map.modifierTideFocus_(
-					shellState.viewMode == \night
-					and: { (modifiers ? 0).isShift })
+				map.modifierTideFocus_((modifiers ? 0).isShift)
 			}
 		};
 		window.onClose = { shellState.close; this.prCleanup };
@@ -441,12 +399,6 @@ CQGui {
 	// resized while it was hidden and therefore never laid out
 	drawerShown { this.prSyncDrawerScale; ^this }
 
-	prDrawerPlaceholder { |label|
-		var palette = CQInk.palette(\day);
-		^StaticText().string_(label).align_(\center)
-			.font_(CQInk.font(\notice)).stringColor_(palette[\whisper])
-	}
-
 	// Qt hands keyboard focus to any clicked widget, and space/tab then act on
 	// that widget instead of the SPEC §6.2 key map (space would re-toggle a
 	// clicked REC rather than panic). The panel is mouse-only: strip focus from
@@ -469,12 +421,10 @@ CQGui {
 		stateCtl.put(\param, { |obj, what, name, val|
 			{ this.prQueueParam(name, val) }.defer;
 		});
-		// momentary actions with no persistent state: skip fires a brief button flash
+		// Momentary actions with no persistent state light their Night marks.
 		stateCtl.put(\action, { |obj, what, action, n|
 			if(action == \skip) { { this.prFlashSkip(n) }.defer };
-			// any shake, from any layer (`p`, the Day button, code, a pattern),
-			// flashes the night's sowing moon — one state, three layers, one
-			// light (§6.1), exactly as skip lights both of its marks
+			// Any shake (`p`, code, pattern) flashes the sowing moon.
 			if(action == \shake) { { this.prFlashShake }.defer };
 		});
 		OSCdef(\cq_gui_meters, { |msg|
@@ -487,19 +437,6 @@ CQGui {
 			var key = ("coco" ++ msg[2].asInteger).asSymbol;
 			{ meterFuncs[key].value(msg[3], msg[5]) }.defer;
 		}, '/cq_cocometers');
-		OSCdef(\cq_gui_castle, { |msg|
-			{
-				castleValues = msg.copyRange(3, 7).collect { |value|
-					(value ? 0).clip(-1, 1)
-				};
-				castleLeds !? {
-					castleLeds.do { |led, i|
-						led.value = ((castleValues[i] + 1) * 0.5).clip(0, 1);
-					};
-				};
-				spesalView !? { spesalView.refresh };
-			}.defer;
-		}, '/cq_castle');
 		// GUI_SPEC §9 `/cq_aura`: the server's own 15 Hz rate IS the §10 ambient
 		// ceiling — no extra timer, no polling. The repaint touches only the 16
 		// small jack views and the cable layer, never the whole window.
@@ -520,7 +457,6 @@ CQGui {
 		OSCdef(\cq_gui_spesal, { |msg|
 			{
 				spesalStates = msg.copyRange(3, 7).collect { |v| v.asInteger };
-				spesalView !? { spesalView.refresh };
 				nightMap !? { nightMap.spesalChanged };
 			}.defer;
 		}, '/cq_spesal');
@@ -580,44 +516,25 @@ CQGui {
 		};
 	}
 
-	// A still instrument must not cost redraws: repaint only when some source
-	// actually moved (GUI_SPEC §16.9 — ambient motion is information, and there
-	// is none in silence). Cables repaint only when there are cables to pulse.
+	// A still instrument must not cost redraws: Night repaints only when some
+	// source actually moved (GUI_SPEC §16.9).
 	prPaintAura {
 		if(cleaned) { ^this };
 		if(auraPainted.notNil and: {
 			auraValues.every { |value, i| (value - auraPainted[i]).abs < 0.01 }
 		}) { ^this };
 		auraPainted = auraValues;
-		// only the visible stage spends the frame; the hidden twin repaints in
-		// full anyway the moment the hard cut shows it
-		if(shellState.viewMode == \night) {
-			nightMap !? { nightMap.auraFrame(auraValues) };
-			^this
-		};
-		CQMatrix.sourceNames.do { |src|
-			endpoints[src] !? { |endpoint| endpoint[\view].refresh };
-		};
-		cableOverlay !? { |overlay|
-			// a patch too dense to pulse inside the frame budget draws static ink,
-			// so an ambient frame must not repaint it either (auraCableLimit)
-			if(overlay.cableCount > 0 and: { overlay.auraPulses }) {
-				overlay.auraTick   // the alphas moved: the offscreen cache re-renders
-			};
-		};
+		nightMap !? { nightMap.auraFrame(auraValues) };
+		^this
 	}
 
-	// One '/cq_charge' block. Each lamp is repainted only when its own charge
-	// actually moved — the stillness law of §16.6 applied to the panel: an
-	// unpatched gate sums to exactly zero forever and costs nothing at all, and
-	// a steadily held gate is steady ink. Only the visible stage spends the
-	// frame; the hidden twin repaints in full at the hard cut.
+	// One '/cq_charge' block. Each Night lamp repaints only when its own charge
+	// actually moved; an unchanged gate costs nothing.
 	prChargeFrame { |replyId, values|
-		var base, night;
+		var base;
 		if(cleaned) { ^this };
 		base = this.class.chargeBlock(replyId ? 0);
 		if(base.isNil) { ^this };
-		night = shellState.viewMode == \night;
 		values.do { |value, i|
 			var slot = base + i, previous, charge;
 			if(slot < chargeValues.size) {
@@ -626,23 +543,19 @@ CQGui {
 				chargeValues[slot] = charge;
 				if(previous.isNil or: { (charge - previous).abs >= 0.02 }) {
 					chargePainted[slot] = charge;
-					this.prPaintLamp(chargeNames[slot], night);
+					this.prPaintLamp(chargeNames[slot]);
 				};
 			};
 		};
 	}
 
-	prPaintLamp { |name, night|
-		if(night) {
-			nightMap !? { |map| map.chargeChanged(name) };
-			^this
-		};
-		endpoints[name] !? { |endpoint| endpoint[\view].refresh };
+	prPaintLamp { |name|
+		nightMap !? { |map| map.chargeChanged(name) };
+		^this
 	}
 
-	// one '/cq_phase' frame: cache the clamped truth, and only the visible
-	// night stage spends a repaint (the hidden twin repaints in full at the
-	// hard cut). The night map's own delta gate thins a near-still reel.
+	// One '/cq_phase' frame: cache the clamped truth. The Night map's own
+	// delta gate thins a near-still reel.
 	prPhaseFrame { |n, value, dir, skipHz|
 		var i;
 		if(cleaned) { ^this };
@@ -651,9 +564,7 @@ CQGui {
 		// an older frame without the direction value leaves the last one alone
 		dir !? { phaseDirs[i] = dir.asFloat.clip(-1, 1) };
 		skipHz !? { phaseSkipHz[i] = (skipHz.asFloat.max(0)) };
-		if(shellState.viewMode == \night) {
-			nightMap !? { nightMap.paintPhase(i) };
-		};
+		nightMap !? { nightMap.paintPhase(i) };
 	}
 
 	prDeckPlayer { |which|
@@ -745,12 +656,10 @@ CQGui {
 			// while one physical Tab press is held.
 			if(tabHeld) { ^this };
 			tabHeld = true;
-			// Night owns Tab now: it opens/closes the same persistent water
-			// focus as the tide gill. Day/Night remains a deliberate toolbar
-			// destination, and text entry / the Drawer keep Tab to themselves.
+			// Night owns Tab: it opens/closes the same persistent water focus
+			// as the tide gill. Text entry and the Drawer keep it to themselves.
 			if(this.prTextHasFocus.not
-				and: { shellState.drawerOpen.not }
-				and: { shellState.viewMode == \night }) {
+				and: { shellState.drawerOpen.not }) {
 				nightMap !? {
 					nightMap.cancelGestures;
 					nightMap.toggleTideFocus
@@ -827,14 +736,9 @@ CQGui {
 		hotTask = Task { 12.wait; hotLive = false; this.prUpdateNotice }.play(AppClock);
 	}
 
-	// brief highlight on the SKIP button so code/pattern-driven skips are visible
-	// (skip is momentary — no lasting state like flip's toggle)
+	// A skip from any layer lights the shell's stationary mouth mark.
 	prFlashSkip { |n|
-		var b = skipButtons[n];
 		if(cleaned) { ^this };
-		b !? { b.flash };
-		// the night's mouth mark is momentary too, and hangs off this same
-		// notice — so a skip from the keys, code or a pattern shows in both
 		nightMap !? { |map| map.flashSkip(n) };
 	}
 
@@ -845,12 +749,12 @@ CQGui {
 		nightMap !? { |map| map.flashShake };
 	}
 
-	// each stage's cable overlay keeps its own fixed skin (Day ink, Night
-	// phosphor); only the shared chrome re-inks across the hard cut
+	// Night is the only runtime skin. One hook still keeps the Drawer and
+	// Master on the same palette choke point.
 	prApplySkin { |skin|
-		var palette = CQInk.palette(skin);
-		inkControls.do { |control| control.skin = skin };
-		drawer !? { drawer.applySkin(skin) };
+		var palette = CQInk.palette(\night);
+		inkControls.do { |control| control.skin = \night };
+		drawer !? { drawer.applySkin(\night) };
 		noticeView !? { noticeView.stringColor = palette[\whisper] };
 		recTimeView !? { recTimeView.stringColor = palette[\danger] };
 		shell !? {
@@ -884,10 +788,6 @@ CQGui {
 		drawer !? { drawer.free };
 		drawer = nil;
 		gridPanel = nil;
-		bananaController !? { bananaController.free };
-		bananaController = nil;
-		cableOverlay !? { cableOverlay.free };
-		cableOverlay = nil;
 		nightMap !? { nightMap.free };
 		nightMap = nil;
 		recTask !? { recTask.stop };

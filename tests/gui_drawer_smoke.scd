@@ -85,7 +85,7 @@ centred = { |inner, outer|
 					check.value(grid.grid.absoluteBounds.bottom
 						<= (drawer.inspectorView.absoluteBounds.bottom + 1),
 						"complete loom stays inside the visible Inspector workspace");
-					check.value(grid.grid.background == CQInk.palette(\day)[\recess],
+					check.value(grid.grid.background == CQInk.palette(\night)[\recess],
 						"patch loom owns the Ink recess instead of native Qt blue");
 					check.value(grid.grid.mouseDownAction.notNil
 						and: { grid.grid.mouseUpAction.notNil },
@@ -236,13 +236,13 @@ centred = { |inner, outer|
 								"same toolbar tab collapses workbench back to the instrument");
 							gui.shell.drawerButton.view.mouseDownAction.value(
 								gui.shell.drawerButton.view, 4, 4);
-							"CQ_DRAWER_BEFORE_VIEW_TOGGLE".postln;
-							gui.shell.toggleView(false);
-							"CQ_DRAWER_AFTER_VIEW_TOGGLE".postln;
+							"CQ_DRAWER_BEFORE_CLOSE".postln;
+							gui.shell.toggleDrawer;
+							"CQ_DRAWER_AFTER_CLOSE".postln;
 							check.value(gui.shellState.viewMode == \night,
-								"open workbench re-inks across the Day/Night hard cut");
+								"the one instrument destination remains Night");
 							check.value(gui.shellState.drawerOpen.not,
-								"Day/Night destination returns from Drawer to the instrument");
+								"the Drawer destination returns to the instrument");
 							// The stage swap is queued so hiding a view under the
 							// mouse can never deadlock Qt (CQGuiShell.prSwapStage):
 							// read the native stack on the next GUI tick.
@@ -356,17 +356,17 @@ centred = { |inner, outer|
 											state.set(\micGain, 2);
 											gui.shell.selectDrawer(\inspector);
 											gui.shell.selectDrawer(\workshop);
-											gui.shell.toggleView(false);
+											gui.shell.toggleDrawer;
 											gui.shell.toggleDrawer;
 											AppClock.sched(0.3, {
 												try {
-													check.value(gui.shellState.viewMode == \day
+													check.value(gui.shellState.viewMode == \night
 														and: { gui.shellState.drawerTab == \workshop }
 														and: { workshop.view.visible },
-														"the Workshop page persists across the hard cut and reopen");
+														"the Workshop page persists across close and reopen");
 													check.value(workshop.rail.background
-														== CQInk.palette(\day)[\recess],
-														"the same geometry re-inks as ink on recessed paper");
+														== CQInk.palette(\night)[\recess],
+														"the Workshop remains phosphor on recessed slate");
 													check.value(rowOf.value(\coco1Interp).display
 														== CQSpec.enumValues(\coco1Interp).last.asString
 														and: { rowOf.value(\coco1Dust).display
@@ -387,7 +387,7 @@ centred = { |inner, outer|
 													check.value(gui.inkControls.select { |control|
 														control.kind == \knob and: { control.label == "mic" }
 													}.isEmpty,
-														"Day no longer owns a second mic knob");
+														"no second mic knob remains");
 													state.set(\micGain, 0);
 													// A maximized window is read at the
 													// bigger step: the extra room buys
@@ -443,7 +443,7 @@ centred = { |inner, outer|
 																	== workshop.railWidth },
 																"the loom grows too and all four pages keep one rail");
 															check.value(CQInkControl.drawErrors == 0,
-																"both skins and both size steps paint cleanly");
+																"the Night skin paints cleanly at both size steps");
 															// The user's N8 rounds: all four pages must
 															// open with the same air under the tab row.
 															// Measure the first CONTENT row, not the top

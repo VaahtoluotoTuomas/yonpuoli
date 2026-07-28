@@ -19,7 +19,7 @@
 
 CQGuiWorkshop {
 	var gui, state;
-	var <view, <rail, <step, <metrics, skin = \day, pageWidth = 1272;
+	var <view, <rail, <step, <metrics, skin = \night, pageWidth = 1272;
 	var <rows, rowsByParam, <islandRecords, <micLive = false;
 	var bandView, mainView, bandLayout, mainLayout, railLayout;
 	var topPad, gapPad, bottomPad;
@@ -210,7 +210,7 @@ CQGuiWorkshop {
 	// ---- private ----
 
 	prBuild {
-		var palette = CQInk.palette(\day), railW, serviceWidths, mainWidths;
+		var palette = CQInk.palette(\night), railW, serviceWidths, mainWidths;
 		step = \compact;
 		metrics = CQGuiScale.metrics(step);
 		railW = CQGuiScale.railWidth(step, pageWidth);
@@ -251,7 +251,7 @@ CQGuiWorkshop {
 	}
 
 	prIsland { |island, width|
-		var palette = CQInk.palette(\day);
+		var palette = CQInk.palette(\night);
 		var record = (island: island, items: this.class.islandLayout(island, step));
 		var panel = UserView().fixedWidth_(width).background_(palette[\recess]);
 		var children = List.new, stack = List.new;

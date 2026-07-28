@@ -5,7 +5,7 @@
 CQGuiMatrix {
 	var matrix, inspector, <view, <grid, <header, <status, ctl;
 	var <selectedSrc, <selectedDest, <hoverSi, <hoverDi;
-	var skin = \day;
+	var skin = \night;
 	// the loom's own measurements, taken from the Drawer's size step. The
 	// cell width sets the shared content rail every Drawer page aligns to, so
 	// the loom is where the workbench's width is decided (CQGuiScale).
@@ -71,7 +71,7 @@ CQGuiMatrix {
 
 	prBuild { |initialStep|
 		var srcs = CQMatrix.sourceNames, dests = CQMatrix.destNames;
-		var palette = CQInk.palette(\day), size;
+		var palette = CQInk.palette(\night), size;
 		step = initialStep ? \compact;
 		metrics = CQGuiScale.metrics(step);
 		cellW = CQGuiScale.loomCell(step, 1272);

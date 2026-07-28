@@ -1,6 +1,6 @@
 // CQGuiNightMap — the Night stage (GUI_SPEC §6, §16.6): a topology-true
-// archipelago carrying the same 16 jacks, 22 sockets, cable overlay and banana
-// grammar as Day, plus the §6.1 night touch grammar (CQGuiNightTouch). Pure
+// archipelago carrying all 16 jacks, 22 sockets, the cable overlay and banana
+// grammar, plus the §6.1 night touch grammar (CQGuiNightTouch). Pure
 // view: geometry from CQNightGeometry, pixels from CQInk/CQInkNight, every
 // write through the shared grammar and funnels. Large stable bodies remain
 // opaque-backed; castles and their endpoint details use transparent paper so
@@ -43,8 +43,8 @@ CQGuiNightMap {
 		^super.newCopyArgs(gui, state, matrix, config).prBuild
 	}
 
-	// same families, glyphs and lamps as the Day skin — one learned shape
-	// (§16.7); decorations are the night homes of §3.1 (leaf, crown, fruit
+	// Shared families, glyphs and lamps form one learned shape (§16.7);
+	// decorations are the Night homes of §3.1 (leaf, crown, fruit
 	// stem — the mouth chevron lives on the shell as a §6.1 touch).
 	*endpointSpec { |name|
 		var string = name.asString, prefix = string.keep(3).asSymbol;
@@ -71,10 +71,9 @@ CQGuiNightMap {
 		^(kind: \socket, family: \line, glyph: \pendulum)
 	}
 
-	// §6 solo-light bodies at night — the anatomy's own groupings (§16.6), and
-	// deliberately the Day panel's own body names where the grouping is the
-	// same organ, so one shared grammar cannot hold two solos for one body.
-	// The castles are the night's own finer bodies. Roots and birds carry
+	// §6 solo-light bodies — the Night anatomy's own groupings (§16.6).
+	// The castles are finer bodies than the two shells and the whole ring.
+	// Roots and birds carry
 	// exactly one endpoint each: their jack/socket solo already lights the very
 	// same cables, so a body there would be a second name for one act.
 	*bodyNames {
@@ -198,8 +197,8 @@ CQGuiNightMap {
 	// §16.6: which castle each castle reads is *structure*, so it is drawn only
 	// where the hand is asking — one chord under a hovered castle, all five
 	// under the hovered river, nothing at rest. The partner and the hold mode
-	// come from the Day constellation's own adapter, so one spesal state can
-	// never mean two different couplings in two skins.
+	// come from the one semantic adapter, so state and visible coupling cannot
+	// drift apart.
 	chordCastles {
 		if(ringHover) { ^(0..4) };
 		^(0..4).select { |k| dialHover[k] or: { bodyHover[k] } }
@@ -213,7 +212,7 @@ CQGuiNightMap {
 			var partner = CQGuiCastleConstellation.partnerIndex(k, state);
 			// the chord runs the way the signal runs: the partner's triangle is
 			// sampled INTO this castle (SPEC §2.2), so the light travels
-			// partner -> k, and the Day link now points the same way
+			// partner -> k: the light travels with the signal
 			(path: CQNightGeometry.spesalChord(geometry, partner, k),
 				track: CQGuiCastleConstellation.trackMode(state))
 		}
@@ -239,17 +238,16 @@ CQGuiNightMap {
 	}
 
 	// ---- the almanac corner (§6.1, §16.6) ----
-	// shakeAmount is a GUI constant, not a CQSpec param, and it is ONE state
-	// worn by three layers: the Day knob, the `p` key and this moon. The write
-	// goes to CQGui, which clamps it and fans the new phase back out to both
-	// skins — so the moon can never disagree with the knob.
+	// shakeAmount is a GUI constant, not a CQSpec param. The write goes to
+	// CQGui, which clamps it and fans the new phase back to the moon; the `p`
+	// key and code trigger the same action without owning another value.
 	shakeAmount { ^gui.shakeAmount }
 	pourShake { |norm| gui.shakeAmount = norm; ^this }
 	throwShake { gui.shake; ^this }
 
-	// any shake flashes the moon, from any layer — `p`, the Day button and code
-	// all hang off the one `\action` notice, exactly as the skip marks do, so
-	// one state shows in three places with one light. It flashes even at the new
+	// Any shake flashes the moon — `p`, the moon, code and patterns all hang
+	// off the one `\action` notice, exactly as the skip marks do. It flashes
+	// even at the new
 	// moon, where nothing is sown: the flash says the press landed, and the dark
 	// disc says why nothing grew.
 	flashShake {
@@ -657,8 +655,8 @@ CQGuiNightMap {
 		^struckCount[i] >= this.class.struckFrames
 	}
 
-	// any skip flashes the mouth mark, exactly as it flashes the Day button —
-	// both hang off the one `\action` notice, so code and patterns show too
+	// Any skip flashes the mouth mark through the one `\action` notice, so
+	// keys, code and patterns show too.
 	flashSkip { |n|
 		var i = n.asInteger - 1;
 		if(freed or: { i < 0 } or: { i > 1 }) { ^this };
@@ -875,8 +873,8 @@ CQGuiNightMap {
 		touch = CQGuiNightTouch(this, state, overlay);
 		this.prBindTouch;
 		crescentControls = List.new;
-		// These are controls for gesture binding, but unlike Day knobs their
-		// own touch grammar is cable-first. Let the shared controller publish
+		// These are controls for gesture binding, but their own touch grammar is
+		// cable-first. Let the shared controller publish
 		// the cable hover after the crescent/oyster cue has yielded.
 		crescentViews.values.do { |view|
 			crescentControls.add((view: view, cableHover: true))
@@ -1401,8 +1399,8 @@ CQGuiNightMap {
 		^this
 	}
 
-	// §6.1 bird drop: same plumbing as the Day deck box — every view of the
-	// bird accepts the file, and the deck guards its own unbooted state
+	// §6.1 bird drop: every view of the bird accepts the file, and the deck
+	// guards its own unbooted state.
 	prBindDrops {
 		var canDrop = {
 			View.currentDrag.isString
@@ -1812,8 +1810,7 @@ CQGuiNightMap {
 			preampDriveNorms[i], preampSlotNorms[i]);
 	}
 
-	// the night half of §16.7's drop-target law; the Day deck box wears the
-	// identical mark, from the same CQInk primitive
+	// §16.7's one dashed drop-target mark, from the shared CQInk primitive.
 	*dropTargetName { |which| ^("night_" ++ which).asSymbol }
 
 	prDrawBird { |i|

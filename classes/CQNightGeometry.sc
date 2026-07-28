@@ -608,8 +608,8 @@ CQNightGeometry {
 				chevron: mouth + Point(0, max(CQNightMeasures.chevronDrop * scale,
 					CQNightMeasures.chevronDropFloor)),
 				// skip's night home, landed at the G2 gate: a stationary mark
-				// under the flip chevron — the Day panel's own FLIP/SKIP pair,
-				// hanging in the one direction that is empty. The read-head
+				// under the flip chevron, hanging in the one direction that is
+				// empty. The read-head
 				// comet lost the gesture because a moving target is not a
 				// control: past a crawl it cannot be hit at all, and a 5 Hz
 				// frame draws it stale. Above the mouth looked symmetrical and

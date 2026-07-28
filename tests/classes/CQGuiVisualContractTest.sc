@@ -1,6 +1,5 @@
-// GUI_SPEC §2/§5/§8/§16: pure layout inventory for the first Day skin.
-// The test prevents the old administrative controls from leaking back into
-// the persistent Master strip while the Qt composition evolves.
+// GUI_SPEC §2/§8/§16: pure visual and ownership contracts shared by the
+// Night-only instrument, Drawer and persistent Master.
 
 CQGuiVisualContractTest : UnitTest {
 	test_sowingMoonStartsAsACrescentAndWaxesSlowly {
@@ -18,12 +17,6 @@ CQGuiVisualContractTest : UnitTest {
 			"the second half gathers fertility");
 	}
 
-	test_dayKeepsTheFourOrganOrder {
-		this.assertEquals(CQGuiPanels.dayRegions,
-			#[sources, coco1, quantussy, coco2],
-			"Day retains the four learned organ columns");
-	}
-
 	test_masterIsPersistentPerformanceOnly {
 		var items = CQGuiPanels.masterItems;
 		#[masterVol, masterDry, spaceMix, patchDepth, gr, notice, rec, panic].do { |item|
@@ -36,7 +29,7 @@ CQGuiVisualContractTest : UnitTest {
 	}
 
 	test_snapshotToolsLiveInMemoryDrawer {
-		var items = CQGuiPanels.memoryItems;
+		var items = CQGuiMemory.ownedItems;
 		#[snapshotName, snapshotSave, snapshotRecall, morph].do { |item|
 			this.assert(items.includes(item), "Memory Drawer owns %".format(item));
 		};
@@ -199,22 +192,7 @@ CQGuiVisualContractTest : UnitTest {
 			"before layout the box has no width and nothing is cut away");
 	}
 
-	// §16.7's dashed border is one law with two homes. Day and Night must name
-	// their targets apart, because one CQGui holds the mark for both skins and
-	// a collision would light the wrong box on the stage you cannot see.
-	test_bothSkinsNameTheirDropTargetsApart {
-		#[deckA, deckB].do { |which|
-			var day = CQGuiPanels.dropTargetName(which);
-			var night = CQGuiNightMap.dropTargetName(which);
-			this.assert(day.isKindOf(Symbol) and: { night.isKindOf(Symbol) },
-				"% names its drop targets with Symbols".format(which));
-			this.assert(day != night,
-				"Day's % box and the night's % bird are distinct targets"
-					.format(which, which));
-		};
-		this.assert(CQGuiPanels.dropTargetName(\deckA)
-			!= CQGuiPanels.dropTargetName(\deckB),
-			"the two Day deck boxes are distinct targets");
+	test_nightBirdsNameTheirDropTargetsApart {
 		this.assert(CQGuiNightMap.dropTargetName(\deckA)
 			!= CQGuiNightMap.dropTargetName(\deckB),
 			"the two birds are distinct targets");
@@ -255,26 +233,4 @@ CQGuiVisualContractTest : UnitTest {
 			"an out-of-range magnitude clamps instead of overdriving alpha");
 	}
 
-	test_dayEndpointInventoryMatchesTheMatrixExactly {
-		if(CQGuiPanels.respondsTo(\sourceEndpointNames).not
-			or: { CQGuiPanels.respondsTo(\destEndpointNames).not }) {
-			this.assert(false, "Day publishes its semantic cable endpoint inventory");
-			^this
-		};
-		this.assertEquals(CQGuiPanels.sourceEndpointNames, CQMatrix.sourceNames,
-			"Day has exactly the canonical 16 source jacks");
-		this.assertEquals(CQGuiPanels.destEndpointNames, CQMatrix.destNames,
-			"Day has exactly the canonical 22 destination sockets");
-	}
-
-	test_columnsPublishFunctionalIslands {
-		this.assertEquals(CQGuiPanels.cocoIslands,
-			#[identity, performance, converter, output],
-			"Coco groups controls by signal and performance role");
-		this.assertEquals(CQGuiPanels.sourcesIslands, #[inputs, decks],
-			"Sources distinguishes live inputs from file decks");
-		this.assertEquals(CQGuiPanels.quantussyIslands,
-			#[macro, castles, topology],
-			"Quantussy gives its functional topology a deliberate region");
-	}
 }

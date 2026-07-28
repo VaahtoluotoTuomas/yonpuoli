@@ -1,5 +1,5 @@
-// G2 Qt smoke: construct the real shell, cross the hard cut into the Night
-// map, and assert the archipelago carries the full banana grammar — endpoints,
+// Night Qt smoke: construct the real Night-only shell and assert the
+// archipelago carries the full banana grammar — endpoints,
 // plant, undo, harvest, the §4.1 view-flip audition revert — plus the
 // telemetry laws (fireflies ride only moving aura frames; no telemetry = the
 // static reviewed ink). Prints CQ_GUI_NIGHT_PASSED / CQ_GUI_NIGHT_FAILED.
@@ -331,7 +331,7 @@ compassChecks = { |map|
 		and: { matrix.asArray.isEmpty },
 		"an unfocused left sweep cannot accidentally activate morph");
 	cView.mouseUpAction.value(cView, local2.x, local2.y, 0, 0);
-	// Tab latches the water without changing Day/Night. The gill is the exact
+	// Tab latches the water without changing the instrument stage. The gill is the exact
 	// same state in the landscape and can close and reopen it.
 	gui.window.view.keyDownAction.value(gui.window.view, 9.asAscii, 0);
 	gui.window.view.keyDownAction.value(gui.window.view, 9.asAscii, 0);
@@ -599,8 +599,7 @@ punchChecks = { |map|
 					and: { CQMatrix.sourceNames.every { |n| map.endpoints[n].notNil } }
 					and: { CQMatrix.destNames.every { |n| map.endpoints[n].notNil } },
 					"night registers its own canonical 16 jacks and 22 sockets");
-				check.value(map.overlay !== gui.cableOverlay
-					and: { map.overlay.skin == \night }
+				check.value(map.overlay.skin == \night
 					and: { map.overlay.view.acceptsMouse.not },
 					"night owns a hit-transparent phosphor cable overlay");
 				check.value(map.routeView.acceptsMouse.not,
@@ -628,8 +627,6 @@ punchChecks = { |map|
 						}
 					}
 				}, "castle flesh and its endpoint details have no rectangular occlusion");
-				check.value(gui.cableOverlay.skin == \day,
-					"the day overlay keeps its own fixed ink");
 				check.value(map.endpoints.values.every { |endpoint|
 					endpoint[\view].mouseDownAction.notNil
 				}, "the shared grammar controller binds every night endpoint");
@@ -637,9 +634,8 @@ punchChecks = { |map|
 					"hold seal state mirrors the power-on param");
 				check.value(map.sproutState == \hidden,
 					"no mic configured: the sprout is not drawn at all");
-				gui.shell.toggleView(false);
 				check.value(gui.shellState.viewMode == \night,
-					"hard cut reached the night map");
+					"the shell opens directly on the night map");
 				AppClock.sched(0.2, {
 					try {
 						var geo = map.geometry, expected, view, anchor;
@@ -675,7 +671,8 @@ punchChecks = { |map|
 							$z, 262144);
 						check.value(matrix.getPatch(\org2, \deckB_rate) == 0.0,
 							"window-level Ctrl+Z restores the night plant");
-						// §4.1: the view flip is a normative audition revert path
+						// §4.1: opening the workbench hides Night and must revert
+						// the audition before the queued stage swap.
 						before = matrix.fullMatrix.asCompileString;
 						triView = map.endpoints[\tri3][\view];
 						triAnchor = map.endpoints[\tri3][\anchor];
@@ -688,11 +685,11 @@ punchChecks = { |map|
 							movePoint.x, movePoint.y, 0);
 						check.value(gui.bananaGrammar.isInHand,
 							"a night banana auditions in hand");
-						gui.shell.toggleView(false);
+						gui.shell.toggleDrawer;
 						check.value(gui.bananaGrammar.isInHand.not
 							and: { matrix.fullMatrix.asCompileString == before },
-							"the view flip drops the hand and reverts — no leak");
-						gui.shell.toggleView(false);
+							"opening Drawer drops the night hand and reverts — no leak");
+						gui.shell.toggleDrawer;
 						AppClock.sched(0.15, {
 							try {
 								var records, mid, harvestPoints, localPoints;
@@ -1365,7 +1362,7 @@ punchChecks = { |map|
 																	and: { chords[0][\track]
 																		== CQGuiCastleConstellation
 																			.trackMode(state) },
-																	"the chord starts at the partner the Day constellation names, in its mode");
+																	"the chord starts at the shared spesal partner, in its mode");
 																// and it runs the way the signal runs:
 																// the partner is sampled INTO this castle
 																nearest = 0;
@@ -1517,7 +1514,7 @@ punchChecks = { |map|
 															check.value(map.shakeAmount == gui.shakeAmount
 																and: { gui.shakeAmount
 																	== CQGui.defaultShakeAmount },
-																"the moon and Day knob open on one small crescent");
+																"the moon opens on the shared small crescent");
 															// the moon's own drawn rim is its cue (§4.5)
 															local = almanac[\moon] - almanac[\box].leftTop;
 															view.mouseOverAction.value(view, local.x, local.y);

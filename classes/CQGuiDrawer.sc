@@ -103,7 +103,7 @@ CQGuiDrawer {
 	}
 
 	prBuild { |audition|
-		var palette = CQInk.palette(\day);
+		var palette = CQInk.palette(\night);
 		var loomWidth, presetNames = CQMatrix.presets.keys.asArray.sort;
 		var m = CQGuiScale.metrics(step);
 		inspector = CQInspector(matrix, audition, grammar);
@@ -119,7 +119,7 @@ CQGuiDrawer {
 		// may not silence that (NIGHT_STANDALONE_PLAN §12.1.3).
 		workshop = CQGuiWorkshop(gui, state);
 		workshopView = workshop.view;
-		presetMenu = CQInkMenu(presetNames.collect { |name| name.asString })
+		presetMenu = CQInkMenu(presetNames.collect { |name| name.asString }, \night)
 			.font_(CQInk.font(\number, m[\mono]))
 			.fixedSize_(Size(
 				(CQGuiScale.textWidth("apply preset", m[\mono], true) + 40)
@@ -162,7 +162,7 @@ CQGuiDrawer {
 	// returns the control, not its view: the chrome has to re-measure it when
 	// the Drawer's size step changes
 	prButton { |label, width, action|
-		var button = CQInkControl.button(label, width, \day, false, true, \spaf);
+		var button = CQInkControl.button(label, width, \night, false, true, \spaf);
 		button.surface = \recess;
 		button.action = action;
 		button.scale = CQGuiScale.metrics(step);

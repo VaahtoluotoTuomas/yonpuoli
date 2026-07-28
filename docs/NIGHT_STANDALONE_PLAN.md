@@ -21,35 +21,42 @@
 > The N8 Drawer-workshop handoff was coverage- and visual-audited on
 > 2026-07-28 and is specified in §12.1. That section, rather than the old
 > one-paragraph sketch below, is the implementation contract for N8.
+> On 2026-07-28 the user made the §0 verdict: Night is the sole instrument
+> surface. The first reversible N9 cut lives on `nocturne-night-only` and waits
+> for its live visual/playing review; this document records the decision and
+> the two overview deaths below.
 
 ---
 
 ## 0. Context — the day-mode question
 
-The user is considering whether the instrument would be more coherent and
-more itself as a **night-only instrument**, with the drawer holding the
-menu-like remainder. This document does not decide that. It matters here for
-one reason: **these three additions are prerequisites for even evaluating
-night-only.** Ranges, dolby and the punch are the last musically load-bearing
-things a player cannot do at night. Once they land, the *playing surface*
-can be evaluated by selecting Night in the toolbar and staying there for a
-few sessions — no code, no feature flag (PLAN.md forbids runtime flags), no
-deletion. A conclusive night-only verdict still waits for these gates:
+The user decided on 2026-07-28 that the instrument is more coherent and more
+itself as a **night-only instrument**, with the Drawer holding the precise,
+menu-like remainder. Day felt dull and uninspiring, added little that Night
+and the Drawer could not already do, and would turn every future interaction
+change into maintenance across two interfaces.
 
-- a drawer **workshop page** carrying every remaining CQSpec parameter with
-  honest ledger-style controls (the drawer is where "the ledger look is
-  honest" — §16.7): live/mic trims, deck rate/loop, coco slots,
-  bits/wrap/interp, dust/organ/level/pan/send, castle sends and detunes,
-  qShLag and Space size/damping. `micGain` keeps its warning color.
-  SPEC §6.2's obligation —
-  *every* §5 parameter reachable without code — must be re-verified against
-  night + drawer + master strip alone before any Day deletion. The exact
-  inventory and the single-`micGain`-path consequence are in §12.1;
-- a new home (or a recorded death) for Day's two overview surfaces: the
-  spesal constellation (the whole-network coupling view; night shows chords
-  only under the hand) and the static coco memory-path map (already on the
-  "Myöhemmin" list as questioned);
-- only then the deletion of the Day panel, as reversible structural commits.
+The prerequisites are met:
+
+- the Drawer **workshop** carries the 43 remaining CQSpec parameters with
+  honest ledger controls. Together, Night 31 · Master 5 · Workshop 43 are
+  disjoint and their tested union is exactly all 79 `CQSpec.names`; `micGain`
+  has one interactive home and keeps its warning;
+- Day's **spesal constellation is recorded dead**, not transplanted. Night's
+  under-hand coupling chord carries the same partner, mode and signal direction
+  exactly where the player hovers and steps the castle. A permanent
+  whole-network diagram would spend ink continuously on information whose
+  consequence is already clearer at the action point;
+- Day's **static Coco memory-path map is recorded dead**, not transplanted. It
+  was read-only and non-live; Night's shells expose the playable loop body and
+  Workshop exposes the exact slot/converter controls. Keeping another diagram
+  would add maintenance without adding an act.
+
+N9 therefore removes the Day builders, its toolbar destination and its two
+overview drawings in one reversible structural gate — no runtime flag and no
+parallel product. This changes no DSP, CQSpec range, snapshot rule, keyboard
+map or safety invariant. The first runnable cut is automated-green and now
+stops for the required live visual/playing review before acceptance or merge.
 
 ---
 

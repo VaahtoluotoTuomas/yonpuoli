@@ -1,8 +1,8 @@
 // gui_paint_profile.scd — measure the cable layer inside the REAL Qt paint
 // event (G1.3's law: a Pen call costs ~53 µs at the language/Qt boundary, so
 // a drawing's price is its call count — and the only honest place to read it
-// is the drawFunc itself). Run headless:
-//   "<sclang.exe>" -l tests/sclang_conf_dev.yaml -i none tests/gui_paint_profile.scd
+// is the drawFunc itself). Run headless through the project gate:
+//   powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_paint_profile.scd
 //
 // It answers, with numbers:
 //   1. does the Image offscreen API work on this platform (draw / clear / blit)?
@@ -70,7 +70,7 @@ var plant = { |n|
 		gui = CQGui(state, matrix, config);
 		AppClock.sched(0.4, {
 			try {
-				var overlay = gui.cableOverlay;
+				var overlay = gui.nightMap.overlay;
 				var view = overlay.view;
 				var origDraw = view.drawFunc;
 				var times, measure, step, finish;

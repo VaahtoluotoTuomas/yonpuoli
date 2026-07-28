@@ -13,10 +13,11 @@ electronic ecosystem.
 
 The instrument is currently developed and tested on Windows. The v1.0 sound
 engine and the complete Archipelago GUI are implemented, audited, and accepted.
-The active `nocturne` phase is making the Night surface the whole instrument;
-Day is still available until that playing evaluation is complete. See
-[`PLAN.md`](PLAN.md) for current work rather than reading historical checklists
-as open tasks.
+The active `nocturne` phase has made the Night surface the whole instrument:
+Night, the persistent Master strip and the Drawer now cover every parameter
+without maintaining a second performance interface. The Night-only cut is in
+its first runnable review gate; see [`PLAN.md`](PLAN.md) for current work rather
+than reading historical checklists as open tasks.
 
 ## What it offers
 
@@ -27,8 +28,8 @@ as open tasks.
   stepped wandering to audio-rate chaos.
 - A 16×22 signed routing matrix with cable-like audition, planting, moving,
   ripping, harvesting, undo, snapshots, and morphing.
-- The Ink & Phosphor GUI: a functional Day panel, the playable Night landscape,
-  and a Drawer for precise patching, history, and memory.
+- The Ink & Phosphor GUI: one playable Night landscape, a persistent Master
+  strip, and a Drawer for precise patching, tuning, history, and memory.
 - File decks, live inputs, optional 16n faderbank control, recording, optional
   stems, and a small studio reverb.
 - A fixed output-safety chain and offline render tests designed for unpredictable

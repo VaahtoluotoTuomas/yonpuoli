@@ -255,8 +255,8 @@ Cocoquantus {
 		spesal.do { |v, i| this.spesalSet(i + 1, v) };
 		// like skip, a shake is momentary and leaves no state of its own to
 		// display — so it is announced once here, and every layer's light hangs
-		// off that one notice (GUI_SPEC §6.1: the night's sowing moon flashes
-		// on a throw from the p key, the Day button, code or a pattern alike)
+		// off that one notice (GUI_SPEC §6.1: the Night's sowing moon flashes
+		// on a throw from the p key, the moon, code or a pattern alike)
 		state !? { state.changed(\action, \shake, amount) };
 	}
 

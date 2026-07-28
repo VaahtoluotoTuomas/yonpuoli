@@ -96,8 +96,9 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 - **The Archipelago GUI epic (G1 Day · G2 Night · G3 Weather) is complete,
   accepted and merged (2026-07-22).** All of G1/G2/G3 were signed off — the
   tide sings, the plan's one honest unknown resolved by ear — and merged to
-  `main` (PR #1, tag `archipelago-1.0`). **The active branch is now `nocturne`**
-  and the active roadmap is `docs/NIGHT_STANDALONE_PLAN.md` (§12 build order),
+  `main` (PR #1, tag `archipelago-1.0`). **The integration branch is `nocturne`;
+  the current review branch is `nocturne-night-only`.** The active roadmap is
+  `docs/NIGHT_STANDALONE_PLAN.md` (§12 build order),
   with `PLAN.md` as its status view. The archipelago detail is frozen at
   `docs/history/PLAN_archipelago.md` and its acceptance checklist at
   `docs/history/manual_checklist_archipelago.md`; `tests/manual_checklist.md`
@@ -130,8 +131,8 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   reference, not a to-do list.
 - **Build-order step 3, the almanac becomes landscape (§9), reached v3.2 on
   `nocturne-nightscape` and was accepted by the user on 2026-07-27 (checklist
-  N3).** It is ready for an explicitly requested merge; do not merge branches
-  merely because the review is closed. **Build-order step 4, the castle range
+  N3).** It is now part of the accepted N3→N8 chain merged locally into
+  `nocturne`. **Build-order step 4, the castle range
   ripples (§3), was accepted on `nocturne-range-ripples` on 2026-07-27
   (checklist N4). Build-order step 5, the Dolby oysters (§4), was accepted on
   `nocturne-dolby-oysters` the same day (checklist N5). Build-order step 6,
@@ -141,9 +142,12 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   **build-order step 8, the Drawer workshop (§12.1), was accepted on
   `nocturne-drawer-workshop` on 2026-07-28 (checklist N8).** Its tested
   Night 31 + Master 5 + Workshop 43 partition covers all 79 `CQSpec`
-  parameters without Day. **The next step is N9, the explicit Day verdict
-  (§0): decide the fate of Day's two overview surfaces, then make any removal
-  as its own reversible gate.**
+  parameters without Day. The user then chose Night as the sole interface and
+  asked to merge the accepted chain: local `nocturne` now points at `dc95ced`.
+  **N9's first reversible Night-only cut is on `nocturne-night-only` and
+  awaits checklist N9.** The permanent spesal constellation is recorded dead
+  in favor of Night's under-hand coupling chord; the static Coco memory-path
+  diagram is recorded dead in favor of the playable shells plus Workshop.
   N7's review found one defect worth remembering: the transient provenance
   label's ground erasure was cutting the tops off root B's two leftmost
   intake strands. **A constant inset cannot promise clearance from a seeded
@@ -269,9 +273,9 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
        Inspector's menu is one toolbar click away from either view, and G3 never
        depended on it (the compass stamps its corners from the live matrix).
     `shakeAmount` fans out through `CQGui.onShakeAmount` (default now 0.22, a
-    small crescent), so the Day knob and the moon are two views of one number, and
-    `Cocoquantus.shake` announces `\action, \shake` exactly as skip does, which
-    is what lets one light serve three layers. The current §9 body is Ø 56.
+    small crescent), and `Cocoquantus.shake` announces `\action, \shake` exactly
+    as skip does, which lets the Night moon report shakes from the GUI, key,
+    code or patterns. The current §9 body is Ø 56.
     A topology-aware “sweet spot” / ecological shake was explicitly deferred
     on 2026-07-27; do not fold that musical redesign into GUI polish.
   - **Spesal coupling chords** (accepted 2026-07-22, manual block G2.11b): the
@@ -289,8 +293,8 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
     available — barbs mean inverso polarity on the cables. In the night the
     arrowhead is gone entirely: direction is a **travelling light** on the
     chord, riding the river's own firefly phase (telemetry frames, never a clock
-    of its own), because an arrowhead there read as a flowchart. Day keeps a
-    static arrow — paper is a calm tool and grows no ambient motion. **It is shown only where
+    of its own), because an arrowhead there read as a flowchart. The retired Day
+    record used a static arrow. **The Night chord is shown only where
     the hand asks** — nothing at rest, one chord under a hovered castle, five
     under the hovered river — because the coupling is structure, not a quantity,
     and the ring's interior belongs to the iris, the fireflies, the cables and
@@ -327,19 +331,18 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 - Known and deliberately deferred, not bugs to fix on sight: the transparent cable
   overlay re-strokes every cable whenever any control beneath it repaints (Qt damage
   + no clip info in `drawFunc`), which is why a morph costs ~5–6 % against a ~3 %
-  resting figure; an offscreen buffer is the real fix and waits until after G2. The
-  static Day memory-path map's visual weight versus its information value is parked
-  in the same place. Both are recorded in `PLAN.md` "Myöhemmin".
-- Accepted G1 decisions that stay binding: the banana grammar (audition/WYHIWYG,
+  resting figure; an offscreen buffer is the real fix and waits until after G2.
+  The former static Day memory-path map is no longer deferred: N9 records its death.
+- Accepted G1 interaction decisions that stay binding: the banana grammar (audition/WYHIWYG,
   plant/move/rip/harvest, polarity/wheel, solo-light, 32-op undo including GUI SHAKE,
   40 px capture radius, controls-first hit priority, static hover); no `cable opacity`
   control; the 184 px resizable bottom-Drawer was visually **rejected** — the accepted
-  replacement is the toolbar `drawer` tab that swaps the central Day/Night stage for a
+  replacement is the toolbar `drawer` tab that swaps the central Night stage for a
   stable workbench, with no resize, instrument scroll or second window; Inspector is a
   48×24 px-cell patch loom whose header, route ribbon, grid and footer share one
   1128 px rail; Spellbook is a read-only journal using Ink paper rows; Memory is the
-  snapshot bank with truthful `CQSnapshots` morph progress. Day keeps compact islands,
-  26/34/44 px knobs, the static Coco memory-path map and the live spesal constellation.
+  snapshot bank with truthful `CQSnapshots` morph progress. N9 retired the Day-specific
+  compact islands, static Coco memory-path map and live spesal constellation.
 - Two memory words, no third (decided 2026-07-21, `GUI_SPEC.md` §8): a **preset** is a
   patch recipe in code, a **snapshot** is saved instrument state on disk. "Seed bank"
   survives only as the Memory page's header metaphor. Splitting snapshots out of
@@ -381,6 +384,12 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   `CQ_GUI_DRAWER_PASSED`, `CQ_GUI_DRAWER_REENTRY_PASSED` and
   `CQ_GUI_NIGHT_PASSED`; `CQ_HOLD_OK` carries because the accepted increment
   did not touch DSP.
+- N9 Night-only first-runnable gate on `nocturne-night-only` (2026-07-28,
+  awaiting checklist N9): `CQ_COMPILE_OK`, **13,033 unit passes / 0 failures /
+  32/32 classes**, `CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+  `CQ_GUI_DRAWER_REENTRY_PASSED` and `CQ_GUI_NIGHT_PASSED`. The final safety
+  marker and the changed Night overlay's `CQ_PAINT_PROFILE_DONE` are green;
+  DSP is unchanged and `CQ_HOLD_OK` carries from N8.
 - The four former `GUI_SPEC.md` seams were resolved by the user on 2026-07-19 and are
   recorded in the spec and `PLAN.md`: nine charge channels, the G1 harvest lasso,
   display-only mic sprout and static REC transition/error states. Do not reopen or

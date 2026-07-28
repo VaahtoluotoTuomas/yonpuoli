@@ -1,6 +1,5 @@
-// Functional contract for the Quantussy topology view. The drawing is allowed
-// to show only relationships already present in the eight spesal states:
-// state % 4 selects one of the four other castles, state div: 4 selects mode.
+// Semantic contract retained for Night's under-the-hand spesal chords after
+// N9 removed Day's permanent constellation overview.
 
 CQGuiCastleConstellationTest : UnitTest {
 	var constellationClass;
@@ -43,22 +42,5 @@ CQGuiCastleConstellationTest : UnitTest {
 					"states 4..7 are track mode");
 			};
 		};
-	}
-
-	test_constellationOwnsFiveStableNodePositions {
-		var first, second;
-		if(this.prRequireConstellation.not) { ^this };
-		first = constellationClass.normalizedPositions;
-		second = constellationClass.normalizedPositions;
-		this.assertEquals(first.size, 5, "one topology node per castle");
-		this.assertEquals(first, second, "topology does not jitter between redraws");
-		this.assert(first.every { |point|
-			point.x.inclusivelyBetween(0, 1)
-				and: { point.y.inclusivelyBetween(0, 1) }
-		}, "all normalized nodes remain inside the drawing field");
-		this.assert((first.collect(_.x).maxItem - first.collect(_.x).minItem) >= 0.9,
-			"castle nodes use nearly the full topology width");
-		this.assert((first.collect(_.y).maxItem - first.collect(_.y).minItem) >= 0.8,
-			"castle nodes use the expanded topology height");
 	}
 }

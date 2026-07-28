@@ -2,7 +2,7 @@
 // hold hearts, the mouth's flip chevron and skip mark, the tide
 // crescents, the ring's eye and the spesal dial taps. Owns only transient
 // gesture state; every write goes through the CQState funnel (params) or the
-// Cocoquantus facade (spesal step, skip), exactly like the Day widgets. On every press the cable layer is
+// Cocoquantus facade (spesal step, skip). On every press the cable layer is
 // consulted first (§4.5) and everything unclaimed falls through to the shared
 // banana controller's ground grammar.
 
@@ -457,8 +457,7 @@ CQGuiNightTouch {
 		var point = this.prPoint(view, x, y), geo = map.geometry;
 		if(geo.isNil) { ^this };
 		// the eye owns its own area at every click count (§4.5); the water
-		// inside the ring belongs to the ring body — the night home of the Day
-		// panel's own `quantussy` solo, so both stages share one solo state
+		// inside the ring belongs to the ring body's `quantussy` solo identity.
 		if(button == 0 and: { modifiers.isAlt.not }
 			and: { overlay.patchAt(point).isNil }
 			and: { CQNightGeometry.distance(point, geo[\eye])
@@ -911,7 +910,7 @@ CQGuiNightTouch {
 	}
 
 	// bodyName carries the pressed body's §6 solo identity down to the shared
-	// ground grammar; everything else about the press behaves as on Day paper
+	// ground grammar.
 	forwardDown { |view, x, y, modifiers, button, clicks, bodyName|
 		controller !? {
 			controller.groundDown(view, x, y, modifiers, button, clicks, bodyName)

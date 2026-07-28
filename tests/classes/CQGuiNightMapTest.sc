@@ -171,9 +171,7 @@ CQGuiNightMapTest : UnitTest {
 			\coco2DolbyFb, "feedback oyster controls feedback Dolby");
 	}
 
-	// GUI_SPEC §6: solo-light on a body lights everything touching it. The
-	// night's bodies are its own anatomy, but they keep the Day panel's names
-	// where the organ is the same — one grammar must not hold two solos for it.
+	// GUI_SPEC §6: solo-light on a Night body lights everything touching it.
 	test_soloBodiesAreTheNightAnatomy {
 		this.assertEquals(CQGuiNightMap.bodyNames,
 			#[castle1, castle2, castle3, castle4, castle5, coco1, coco2, quantussy],
@@ -182,11 +180,13 @@ CQGuiNightMapTest : UnitTest {
 			#[tri3, cas3, castle3_fm, castle3_spesal],
 			"a castle body owns its two buds and its two moons");
 		this.assertEquals(CQGuiNightMap.bodyEndpointNames(\coco2),
-			CQGuiPanels.bodyEndpointNames(\coco2),
-			"a shell is the Day coco panel's own body, so one solo serves both");
+			#[coco2, org2, coco2_spaf, coco2_inVca, coco2_fbVca,
+				coco2_flip, coco2_skip],
+			"a shell owns its two sources and five sockets");
 		this.assertEquals(CQGuiNightMap.bodyEndpointNames(\quantussy),
-			CQGuiPanels.bodyEndpointNames(\quantussy),
-			"the ring is the Day quantussy panel's own body");
+			CQMatrix.sourceNames.copyRange(0, 9)
+				++ CQMatrix.destNames.copyRange(10, 19),
+			"the ring owns every castle source and destination");
 		this.assert(CQGuiNightMap.bodyEndpointNames(\bogus).isEmpty,
 			"an unknown body claims no endpoints");
 	}

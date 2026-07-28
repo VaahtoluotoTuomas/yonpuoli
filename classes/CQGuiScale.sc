@@ -12,8 +12,8 @@
 // Two discrete steps, never a continuous zoom: type stays at sizes that were
 // actually looked at, coordinates stay stable inside a step, and a resize can
 // only ever move between two known layouts. §16.10's "font sizes stay in px"
-// still binds the Day panel and the Night landscape — the ink of the organism
-// does not thicken when the paper grows. This class governs the Drawer alone.
+// still binds the Night landscape — the organism's ink does not thicken when
+// the water grows. This class governs the Drawer alone.
 //
 // Everything here is pure arithmetic: no Qt, no state, fully unit-testable.
 
@@ -85,9 +85,9 @@ CQGuiScale {
 			step: \compact,
 			// page frame
 			pageMargin: 24, vMargin: 12, gutter: 16, bandGap: 16,
-			// type (§16.4's 10/11/9 were the Day panel's laptop-legibility
-			// values; this page is read at arm's length and is nothing but
-			// text, so it starts where Day ends)
+			// type (§16.4's 10/11/9 are the landscape annotation values; this
+			// page is read at arm's length and is nothing but text, so it starts
+			// above that floor)
 			title: 13, label: 12, value: 12, subgroup: 11, notice: 12,
 			mono: 12, tiny: 9,
 			// ledger row

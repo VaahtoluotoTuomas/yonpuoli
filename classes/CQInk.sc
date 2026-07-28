@@ -46,8 +46,8 @@ CQInk {
 	*palette { |skin = \day| ^palettes[skin] ?? { palettes[\day] } }
 	*strokes { ^(hairline: 1.0, normal: 1.5, strong: 2.0, state: 3.0) }
 
-	// §16.7: a momentary control shows a 120 ms ink flash. One constant, so the
-	// Day button and the night's mouth mark can never drift out of step.
+	// §16.7: a momentary control shows a 120 ms ink flash. One constant keeps
+	// every action entrance in step.
 	*momentaryFlash { ^0.12 }
 	*metrics {
 		^(grid: 8, labelSize: 10, numberSize: 10, noticeSize: 11,
@@ -77,8 +77,8 @@ CQInk {
 
 	// The face is always the kit's (§16.4: two faces, generic constructors).
 	// `size` overrides only the *size*, for the Drawer's two reviewed steps
-	// (CQGuiScale) — the Day panel and the Night landscape keep the fixed px
-	// sizes §16.10 requires and simply never pass one.
+	// (CQGuiScale) — the Night landscape keeps the fixed px sizes §16.10
+	// requires and simply never passes one.
 	*font { |role = \label, size|
 		var m = this.metrics;
 		^switch(role,
@@ -678,161 +678,6 @@ CQInk {
 			this.font(\label), palette[\line]);
 	}
 
-	// A functional overview of the normative Coco converter order. This is not
-	// a waveform: it makes the otherwise dispersed control islands read as one
-	// memory instrument, from the input mixer to the RAM output tap.
-	*drawCocoSignalPath { |rect, skin = \day, seed = 0|
-		var palette = this.palette(skin), labels, points, linePoints;
-		var left, right, topY, bottomY, xStep, last, before, delta, length, unit, normal;
-		labels = ["mix", "dolby", "vca+fb", "dust", "rail", "bits", "ram", "out"];
-		left = rect.left + 16;
-		right = rect.right - 16;
-		topY = rect.top + 29;
-		bottomY = rect.bottom - 21;
-		xStep = (right - left) / 3;
-		points = [
-			Point(left, topY), Point(left + xStep, topY),
-			Point(left + (xStep * 2), topY), Point(right, topY),
-			Point(right, bottomY), Point(left + (xStep * 2), bottomY),
-			Point(left + xStep, bottomY), Point(left, bottomY)
-		];
-		linePoints = this.wobble(points, seed, 0.65);
-		Pen.stringLeftJustIn("signal memory path",
-			Rect(rect.left + 2, rect.top + 3, rect.width - 4, 10),
-			this.font(\range), palette[\whisper]);
-		Pen.strokeColor = palette[\whisper].copy.alpha_(0.72);
-		Pen.width = this.strokes[\hairline];
-		Pen.moveTo(linePoints.first);
-		linePoints.drop(1).do { |point| Pen.lineTo(point) };
-		Pen.stroke;
-		points.do { |point, i|
-			var labelRect;
-			Pen.fillColor = if(i == 0) { palette[\input] } {
-				if(i == (points.size - 1)) { palette[\cas] } { palette[\ground] }
-			};
-			Pen.strokeColor = if(#[4, 5].includes(i)) { palette[\fm] } { palette[\line] };
-			Pen.width = this.strokes[\hairline];
-			Pen.addOval(Rect.aboutPoint(point, 3.5, 3.5));
-			Pen.fillStroke;
-			labelRect = if(i == 3) {
-				Rect(point.x - 50, point.y + 8, 42, 10)
-			} {
-				if(i == 4) {
-					Rect(point.x - 50, point.y + 8, 42, 10)
-				} {
-					Rect(point.x - (xStep * 0.48),
-						if(i < 4) { point.y + 8 } { point.y - 18 },
-						xStep * 0.96, 10)
-				}
-			};
-			Pen.stringCenteredIn(labels[i], labelRect,
-				this.font(\range), palette[\whisper]);
-		};
-		last = points.last;
-		before = points[points.size - 2];
-		delta = last - before;
-		length = sqrt(delta.x.squared + delta.y.squared).max(0.001);
-		unit = delta / length;
-		normal = Point(unit.y.neg, unit.x);
-		Pen.strokeColor = palette[\cas];
-		Pen.line(last, last - (unit * 6) + (normal * 3));
-		Pen.line(last, last - (unit * 6) - (normal * 3));
-		Pen.stroke;
-	}
-
-	// The Quantussy map receives semantic geometry from its view class. A single
-	// link means sample-and-hold; the parallel link means track-and-hold. The
-	// three beads preserve the established 15-bit display, while the small dot
-	// inside each castle reports the instantaneous /cq_castle activity sample.
-	*drawCastleConstellation { |rect, points, partners, modes, states, activity,
-		skin = \day, seed = 0|
-		var palette = this.palette(skin), map, mapped, contour;
-		map = Rect(rect.left + 20, rect.top + 23, rect.width - 40, rect.height - 46);
-		mapped = points.collect { |point|
-			Point(map.left + (point.x * map.width), map.top + (point.y * map.height))
-		};
-		Pen.stringLeftJustIn("spesal topology",
-			Rect(rect.left + 2, rect.top + 2, 90, 10),
-			this.font(\range), palette[\whisper]);
-		Pen.stringRightJustIn("S sample  T track",
-			Rect(rect.right - 105, rect.top + 2, 103, 10),
-			this.font(\range), palette[\whisper]);
-		contour = this.wobble(mapped ++ [mapped.first], seed, 0.7);
-		Pen.strokeColor = palette[\whisper].copy.alpha_(0.22);
-		Pen.width = this.strokes[\hairline];
-		Pen.moveTo(contour.first);
-		contour.drop(1).do { |point| Pen.lineTo(point) };
-		Pen.stroke;
-		// the link runs the way the signal runs: castle i samples its PARTNER's
-		// triangle into its own S&H (SPEC §2.2), so the arrow lands on the
-		// reader, not on the one being read (amended 2026-07-22 — an arrow that
-		// points against the flow is the only mark in the app that would)
-		mapped.do { |node, i|
-			this.drawDirectedLink(mapped[partners[i]], node, modes[i], skin);
-		};
-		mapped.do { |center, i|
-			var state = states[i].asInteger, act = (activity[i] ? 0).clip(-1, 1);
-			Pen.fillColor = palette[\recess];
-			Pen.strokeColor = palette[\tri];
-			Pen.width = this.strokes[\normal];
-			Pen.addOval(Rect.aboutPoint(center, 11, 11));
-			Pen.fillStroke;
-			Pen.stringCenteredIn((i + 1).asString,
-				Rect.aboutPoint(center - Point(0, 2), 8, 8),
-				this.font(\range), palette[\line]);
-			Pen.fillColor = palette[\cas];
-			Pen.addOval(Rect.aboutPoint(center + Point(act * 6, 5), 1.8, 1.8));
-			Pen.fill;
-			3.do { |bit|
-				var bitCenter = center + Point((bit - 1) * 6, 16);
-				Pen.fillColor = if(state.bitTest(2 - bit)) {
-					palette[\input]
-				} {
-					palette[\recess]
-				};
-				Pen.strokeColor = palette[\whisper];
-				Pen.width = this.strokes[\hairline];
-				Pen.addOval(Rect.aboutPoint(bitCenter, 2.1, 2.1));
-				Pen.fillStroke;
-			};
-			Pen.stringAtPoint(if(modes[i]) { "T" } { "S" }, center + Point(13, -6),
-				this.font(\range), palette[\line]);
-			Pen.stringAtPoint(state.asString, center + Point(12, 10),
-				this.font(\range), palette[\whisper]);
-		};
-	}
-
-	// `start` is the castle being read, `end` the one reading it — the arrow
-	// therefore points downstream, with the sampled signal.
-	// **Track-and-hold is drawn broken, not doubled** (amended 2026-07-22): a
-	// track-and-hold follows its input while the clock is high and freezes
-	// while it is low, so a link that is connected half the time *is* the
-	// mechanism. The old parallel line was the same fact told twice, and its
-	// second stroke ran into the arrowhead. Cross-ticks were not available:
-	// barbs already mean inverso polarity on the cables (§16.8). Pen's dash
-	// pattern is global state, so it is put back before the arrow is drawn.
-	*drawDirectedLink { |start, end, track = false, skin = \day|
-		var palette = this.palette(skin), delta, length, unit, normal;
-		var from, to, arrow, wing;
-		delta = end - start;
-		length = sqrt(delta.x.squared + delta.y.squared).max(0.001);
-		unit = delta / length;
-		normal = Point(unit.y.neg, unit.x);
-		from = start + (unit * 13);
-		to = end - (unit * 14);
-		Pen.strokeColor = palette[\input].copy.alpha_(0.58);
-		Pen.width = this.strokes[\hairline];
-		if(track) { Pen.lineDash = FloatArray[5, 5] };
-		Pen.line(from, to);
-		Pen.stroke;
-		if(track) { Pen.lineDash = FloatArray[1, 0] };
-		arrow = to - (unit * 2);
-		wing = 4;
-		Pen.line(arrow, arrow - (unit * wing) + (normal * 2.4));
-		Pen.line(arrow, arrow - (unit * wing) - (normal * 2.4));
-		Pen.stroke;
-	}
-
 	// `labelSize` lets a surface with its own type step (the Drawer's pages, the
 	// persistent chrome) title its boxes at the size the rest of that surface
 	// reads at; nil keeps the kit's fixed px. The title rect is measured from
@@ -866,8 +711,7 @@ CQInk {
 	}
 
 	// §16.7's only dashed rectangle in the whole app: a file drag is hovering a
-	// drop target. Both skins share the one mark — the Day deck box and the
-	// night's bird are the same law, so they must not drift apart. Pen's dash
+	// Night bird. Pen's dash
 	// pattern is global state, so it is put back to solid here rather than
 	// trusting every call site to remember.
 	*drawDropTarget { |rect, skin = \day|

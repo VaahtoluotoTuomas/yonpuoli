@@ -6,9 +6,8 @@ CQGuiBananaController {
 	var grammar, endpoints, bodies, overlay, controls, controlViews;
 	var cableHoverControlViews;
 	var gestureCtl, matrixCtl;
-	// With one grammar feeding two stages (Day and Night), the hidden stage's
-	// per-gesture endpoint refreshes are pure language-to-Qt bridge waste: Qt
-	// repaints the whole stage anyway when the hard cut shows it. nil = always.
+	// Presentation owners may gate per-gesture endpoint refreshes while their
+	// stage is hidden; Qt repaints it in full when shown. nil = always.
 	var <>refreshGate;
 
 	*new { |grammar, endpoints, bodies, overlay, controls|
@@ -145,8 +144,8 @@ CQGuiBananaController {
 	}
 
 	// Qt does not propagate no-button mouse moves through child widgets. Every
-	// Day descendant therefore opts into tracking while retaining its own hover
-	// behavior; otherwise a cable crossing a knob or label can never be focused.
+	// Every descendant therefore opts into tracking while retaining its own
+	// hover behavior; otherwise a cable crossing a control can never be focused.
 	prBindHoverView { |view|
 		var previousOver = view.mouseOverAction, previousEnter = view.mouseEnterAction;
 		var controlWins = controlViews.includes(view)

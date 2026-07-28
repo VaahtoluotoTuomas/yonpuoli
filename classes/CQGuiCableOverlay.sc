@@ -1,10 +1,10 @@
-// CQGuiCableOverlay — hit-transparent planted-banana renderer for the Day panel.
+// CQGuiCableOverlay — hit-transparent planted-banana renderer used by Night.
 // Endpoint geometry comes from the actual laid-out jack/socket views, while all
 // matrix reads and redraw notifications stay on CQMatrix's public contracts.
 
 CQGuiCableOverlay {
 	var matrix, endpoints, grammar, auraFunc, ctl, gestureCtl;
-	var <view, <skin = \day;
+	var <view, <skin = \night;
 	var recordCache, cacheExtent, cacheHover;
 	var refreshScheduled = false, lastRefresh = 0;
 	// The offscreen cache (measured 2026-07-22 inside the real Qt paint event:

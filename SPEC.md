@@ -382,13 +382,14 @@ macros, sources, global. Takeover mode configurable: `\jump` (default) or `\pick
 
 ### 6.2 GUI panel
 
-> **Version note (edited 2026-07-21, during G2):** GUI **structure, interaction
+> **Version note (edited 2026-07-28, during N9):** GUI **structure, interaction
 > grammar, visual language, motion and constants are normative in
-> [`GUI_SPEC.md`](GUI_SPEC.md)** — one window with a Day panel, a Night map, a
-> persistent Master strip and a Drawer (inspector · spellbook · memory). Its G1
-> gate (day skin) shipped on 2026-07-21; G2 (night map) is in progress and G3
-> (weather machine) has not started. This subsection no longer describes a
-> layout; it keeps only what the GUI owes *this* document whatever its skin.
+> [`GUI_SPEC.md`](GUI_SPEC.md)** — one window whose sole instrument surface is
+> the Night map, with a persistent Master strip and a Drawer
+> (inspector · workshop · spellbook · memory). The former Day panel is retained
+> only as design history; N9 removed its runtime stage after Night + Master +
+> Workshop proved exact coverage of every `CQSpec` parameter. This subsection
+> no longer describes a layout; it keeps only what the GUI owes *this* document.
 > Parameters, ranges, curves, DSP and all §8 safety invariants remain SPEC's,
 > and §8 wins any conflict. The retired v1.0 four-column panel is preserved in
 > this section as it stood at the `v1.0` tag; its build log is

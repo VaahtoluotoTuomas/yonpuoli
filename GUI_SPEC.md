@@ -10,6 +10,12 @@ adopted, written from the instrument-builder's chair. Frontend architecture
 implementers — but every behavior, law, constant, contract and safety edge they
 need is here.
 
+> **N9 amendment, 2026-07-28:** Night is now the sole runtime instrument
+> surface. The persistent Master strip and four-page Drawer remain; the Day
+> stage, its toolbar destination and its two read-only overview drawings are
+> retired. Sections explicitly labelled as former Day design are historical
+> rationale, not a second interface to maintain.
+
 Relationship to the other documents:
 
 - **SPEC.md stays normative** for parameters, ranges, curves, and safety (§8
@@ -55,20 +61,18 @@ deferred): **GUI = the eyes + the hands. Code = the memory + the rituals.
 
 ---
 
-## 2. Structure — one window, two views, one strip, one drawer
+## 2. Structure — one window, one instrument, one strip, one drawer
 
 | region | role |
 |---|---|
-| **Day panel** | the current four columns + master strip, with sockets moved onto the organs' skin (§5). Knob work, switches, meters. |
-| **Night map** | the archipelago (§6): a topology-true landscape for patching and listening only — no knobs, no numbers. |
-| **Master strip** | persistent across BOTH views, never covered: vol, dry, space, depth, GR meter, notice line, REC + elapsed, PANIC. |
-| **Drawer** | slides open on demand (click, no key), never over the master strip. Tabs: **inspector** (the old grid), **workshop** (§8 — the ledger page that completes SPEC §6.2's reachability without Day), **spellbook** (§8), **memory** (snapshots + morph, moved here). |
+| **Night map** | the archipelago (§6): the sole topology-true performance landscape — bodies, gestures, jacks and bananas rather than transplanted knobs or numbers. |
+| **Master strip** | persistent, never covered: vol, dry, space, depth, GR meter, notice line, REC + elapsed, PANIC. |
+| **Drawer** | replaces Night in the central stage on demand (click, no key), never covers the Master strip. Tabs: **inspector** (the exact matrix loom), **workshop** (§8 — the ledger page completing SPEC §6.2 reachability), **spellbook** (§8), **memory** (snapshots + morph). |
 
-Keyboard: the sacred map is unchanged and global in both views —
+Keyboard: the sacred map is unchanged and global —
 `1/2` hold · `q/w` flip · `a/s` skip · `3..7` spesal · `r` rec · `space` panic
-· `p` shake. Night adds **Tab** = latch/unlatch water focus (§7.1; ignored
-while text entry or the Drawer has focus). Day/Night is now a deliberate
-toolbar destination only. **Esc** = drop the banana in hand / release solo-light,
+· `p` shake. **Tab** = latch/unlatch water focus (§7.1; ignored while text
+entry or the Drawer has focus). **Esc** = drop the banana in hand / release solo-light,
 **Ctrl+Z** = matrix undo. Widgets stay non-focusable (existing focus law);
 Esc and Ctrl+Z are window-level keys.
 
@@ -93,7 +97,7 @@ one law so implementers never have to decide case by case:
 
 ### 3.1 Source inventory (16)
 
-| source | family · color | day home | night home |
+| source | family · color | former Day home (history) | Night home |
 |---|---|---|---|
 | `tri1`–`tri5` | triangle · orange | castle row *k*, Quantussy column | triangle bud on castle *k* |
 | `cas1`–`cas5` | castle out · gray | castle row *k* | crenellated bud on castle *k* |
@@ -103,7 +107,7 @@ one law so implementers never have to decide case by case:
 
 ### 3.2 Destination inventory (22)
 
-| dest | kind | socket | day home | night home |
+| dest | kind | socket | former Day home (history) | Night home |
 |---|---|---|---|---|
 | `cocoN_spaf` | continuous | purple ring | beside the spaf knob | spiral moon |
 | `cocoN_inVca` | continuous | ink ring ▷ | beside the in knob | spiral moon |
@@ -121,7 +125,7 @@ charge instead of leaving silence mysterious.
 
 ---
 
-## 4. Interaction grammar (identical in both views)
+## 4. Interaction grammar (shared by every interactive surface)
 
 | gesture | meaning | state path |
 |---|---|---|
@@ -229,7 +233,11 @@ Deferred dense-patch escape hatches, recorded but **not current gestures**:
 
 ---
 
-## 5. Day panel
+## 5. Retired Day panel — historical design record
+
+> N9 removed this runtime surface on 2026-07-28. The section remains only to
+> explain inherited interaction laws and palette decisions; it is not a build
+> requirement and must not grow in parallel with Night.
 
 The four columns stay — muscle memory, hardware mirror, nothing wrong with the
 body. What changes:
@@ -259,9 +267,9 @@ body. What changes:
 
 ## 6. Night map — the archipelago
 
-The toolbar flips the same window to night: a patch-first landscape. No transplanted
-panel widgets and no numbers — only bodies, jacks, bananas, weather, and the
-bodies' own touch points (§6.1). The master strip stays below.
+The window opens directly onto Night: a patch-first performance landscape. No
+transplanted panel widgets and no numbers — only bodies, jacks, bananas,
+weather, and the bodies' own touch points (§6.1). The Master strip stays below.
 
 > Amended 2026-07-21 at the user's direction: the night must stand alone as an
 > instrument. On the wooden box there is no day mode — the knobs are always
@@ -303,7 +311,7 @@ eye but must keep the topology truths):
   their source's aura. Solo-light on a body lights everything touching it.
   The night's bodies (landed 2026-07-21): each **castle** (its two buds, its
   fm and spesal moons), each **shell** (mouth, fruit and its five moons) and
-  the **ring** — the last three under the Day panel's own body names
+  the **ring** — the last three under the shared semantic body names
   `coco1` / `coco2` / `quantussy`, so one shared grammar never holds two
   solos for one organ, while the castles are the night's finer bodies. Roots
   and birds get no body: each carries a single endpoint whose own jack/socket
@@ -350,7 +358,7 @@ below; it does not silently grant priority to any other control.
 | **the shell's heart** | **left tap** the small mark at the spiral's innermost eye: seal / crack the loop; red while sealed (one law with the outer seal and HOLD) | `cocoN hold` toggle |
 | **the heart's punch** | **right press held** on the same heart mark: momentarily *invert* the seal for as long as it is held — a looper's punch-in (sealed → material drops into the ring; open → a fragment freezes), restored on release. The exact prior value is captured and restored on **every** exit path — mouse-up, Esc, Tab, panic, window close, GUI free, CmdPeriod — because a stuck punch leaves a loop recording over itself (a right press on a *cable* crossing the heart still rips, §4.5). No timer: the split from the left tap is the button, not the clock | `cocoN hold` (momentary invert, no undo) |
 | **the mouth chevron** | press the read-direction chevron at the mouth | `cocoN flip` toggle |
-| **the mouth's skip mark** | press the spark glyph hanging under the chevron (10 px box, stationary). Momentary: 120 ms ink flash on *any* skip, the Day button's law (§16.7) | `skip(n)` — the loop restarts from the eye |
+| **the mouth's skip mark** | press the spark glyph hanging under the chevron (10 px box, stationary). Momentary: 120 ms ink flash on *any* skip (§16.7) | `skip(n)` — the loop restarts from the eye |
 | **tide crescents** | a small crescent below each spaf / inVca / fbVca moon, luminous fill = value; vertical drag pours more or less. Socket beside its control — §1's proximity law, reborn at night. spaf wears purple | `cocoN spaf / in / fb` |
 | **Dolby oysters** | beneath each in/fb tide crescent, tap the captionless paired arcs: open = off, nearly shut = gate, shut with a partner-facing arrival stroke = duck. Oyster hover and crescent hover are exclusive; a drag may begin only on the crescent's original square | `cocoN dolbyIn / dolbyFb`: `off → gate → duck → off` (CQSpec enum order) |
 | **the ring's eye** | the storm iris at the ring's center (§16.6); grab and drag — vertical = pitch, horizontal = chaos, and the iris itself answers on both axes. The weather of five castles from one fingertip | `qFreq` (y) + `qChaos` (x), relative |
@@ -359,7 +367,7 @@ below; it does not silently grant priority to any other control.
 | **bird fetch + drop + wing crescent** | tap the bird with < 8 px travel to open the asynchronous system file dialog at the configured samples folder; cancelling is inert. Dropping an audio file remains an equal load path, and the crescent under the wing remains the deck's level | deck load · `deckN level` |
 | **bird folder walk** | wheel down = next file, wheel up = previous. Qt momentum is gated to one sign-step per 150 ms so one flick cannot skip a handful of perches; before a load, the deck's own guard scans the samples folder | `deckN.next / prev` |
 | **bird ruffle** | horizontal drag travels ≥ 6 px and reverses once by ≥ 6 px — one natural out-and-back; release chooses a random file. Repeated or broad ruffling remains valid once that reversal is clear. A drag that is neither a tap nor a ruffle is inert | `deckN.random` |
-| **the sowing moon** | the bone moon in the top-right sky (§16.6). It opens as a small 0.22 crescent. A press that travels < 8 px — the lasso's own threshold — throws a shake at the moon's current phase, with a 120 ms bone flash on *any* shake from any layer (`p` key, Day button, code: one state, three layers, one light). A **horizontal** drag pours the phase fuller (right) or darker (left), the way the terminator itself travels; the lit fraction is **how much gets sown**, through the slow-first quadratic fertility curve in §10, no number | `shake` (matrix op — one undo, one spellbook entry) · `shakeAmount` (GUI constant, no undo) |
+| **the sowing moon** | the bone moon in the top-right sky (§16.6). It opens as a small 0.22 crescent. A press that travels < 8 px — the lasso's own threshold — throws a shake at the moon's current phase, with a 120 ms bone flash on *any* shake (`p` key, moon, code or pattern: one action notice, one light). A **horizontal** drag pours the phase fuller (right) or darker (left), the way the terminator itself travels; the lit fraction is **how much gets sown**, through the slow-first quadratic fertility curve in §10, no number | `shake` (matrix op — one undo, one spellbook entry) · `shakeAmount` (GUI constant, no undo) |
 
 Skip's night home moved at the G2 gate (2026-07-22, replacing the read-head
 tap that landed 2026-07-21; the `a/s` keys remain). **A moving target is not a
@@ -372,7 +380,7 @@ empty. Not above the jack, which looks symmetrical and is wrong — the spiral
 *ends* at the mouth and arrives there from above, so that side is the groove
 itself. The comet keeps its whole job, which was always the honest one: saying
 where the loop is reading. The loop's finer diet — slots, bits and
-interpolation — remains day work: the slot defaults (pre 1,
+interpolation — lives in the Workshop: the slot defaults (pre 1,
 deck 1) make a dropped file audible at night with `in` up. Body solo-light
 and the night toolbar arrive with the later G2 steps as planned.
 
@@ -510,11 +518,10 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
 > **G1 feedback experiment, 2026-07-20 — core direction visually accepted;
 > the navigation/Memory polish below remains provisional until review.**
 > Prototype the Drawer as a stable **workbench**, not a resizable bottom dock.
-> A compact, always-labelled `drawer` tab sits beside the Day/Night control in the
-> persistent top toolbar: its down chevron opens the workbench into the central
-> area and its up chevron returns to the instrument. Inspector/Spellbook/Memory
-> remain page names only inside the workbench. Choosing Day/Night while the Drawer
-> is open also returns to that instrument destination. Master remains visible and
+> A compact, always-labelled `drawer` tab sits in the persistent top toolbar:
+> its down chevron opens the workbench into the central area and its up chevron
+> returns to Night. Inspector/Workshop/Spellbook/Memory remain page names only
+> inside the workbench. Master remains visible and
 > live; there is no Drawer resize, whole-instrument scroll, click-away close or
 > second window. The selected Drawer page persists across close/reopen.
 >
@@ -543,10 +550,8 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
   coordinates and no uninvited motion. The relation comes from the shared Ink
   kit, palette, type, line weights, family colors and hover language — never
   from decorative biology. **Do not** transplant Night's shells, roots, birds,
-  wobble or weather into it, and do not shrink the Day panel into it. In Night
-  skin it reads as a phosphor-lit field ledger beside the bay; in Day skin the
-  identical geometry becomes ink on recessed paper. The hard cut changes the
-  light, never the information architecture. Night's lights stay informational
+  wobble or weather into it, and do not rebuild the retired Day panel inside
+  it. It reads as a phosphor-lit field ledger beside the bay. Night's lights stay informational
   here too: no aura, glowing borders, cable animation, texture, decorative
   gradients or organism wobble — only a changing parameter, hover/press,
   `micGain` danger or another real state may brighten a mark.
@@ -607,8 +612,9 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     cell reaches its cap, after which the surplus becomes slate — a knot grid
     spread over two thousand pixels stops reading as a grid — but a **page
     margin is always kept**: the rail may never reach the edge. §16.10's "font
-    sizes stay in px" still binds the Day panel and the Night landscape, whose
-    ink must not thicken when the paper grows; this applies to the Drawer alone.
+    sizes stay in px" still binds the Night landscape, whose ink must not
+    thicken when the water grows; this responsive size step applies to the
+    Drawer alone.
   - Rows are grouped by **signal meaning**, never alphabetically: each Coco as
     *converter* (`bits`, `wrap`, `interp`) · *material* (`dust`, `organ`) ·
     *output* (`level`, `pan`, `send`) · *input mix* (`pre`, `deck`, `q`, `x`);
@@ -633,9 +639,9 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     do not rainbow a column, and inline no color at the draw site.
   - **`micGain` lives here and nowhere else.** SPEC §6.2 forbids a second
     interactive mic path, and the night-first completeness gate needs the mic
-    without Day, so N8 **moved** the control and its warning owner out of
-    Day/Sources; Day keeps only a passive `mic · drawer / workshop` pointer and
-    the night's read-only mic sprout is unchanged. The row uses the warning
+    without Day, so N8 **moved** the control and its warning owner out of the
+    former Day/Sources surface; N9 removed that passive surface and the Night's
+    read-only mic sprout remains unchanged. The row uses the warning
     family, gains the danger outline while live and drives the existing
     persistent `MIC LIVE` notice. That subscription exists for as long as the
     GUI does: **closing the Drawer may not silence the warning**, and the row
@@ -756,8 +762,8 @@ sub-event in `config.scd`, clamped on load.
 - **View swaps must never block the language thread.** Hiding a view under the
   mouse pointer makes Qt deliver its enter/leave events back into the language;
   if the language thread is at that moment blocked inside the same Qt write, both
-  threads wait forever (Tab over the Day panel froze the window, 2026-07-21).
-  Day/Night and Drawer stage swaps are therefore queued, not direct, and the
+  threads wait forever (Tab over the former Day panel exposed this in 2026-07-21).
+  The Night/Drawer stage swap is therefore queued, not direct, and the
   serverless shell state — not the native widget index — is the synchronous truth.
 - **Redraw discipline**: ambient animation at telemetry rate (≤ 15 Hz); 60 Hz
   only during an active drag; avoid whole-window repaints; GUI CPU ≤ ~3 % on
@@ -875,7 +881,7 @@ gate, manual_checklist blocks in the established copy-pasteable format.
   persistence and the single `micGain` path; binding tests for num, bipolar
   num, int, toggle and enum rows writing clamped through `CQState` and
   following an external write without echoing; and the Drawer Qt smoke opening
-  Night → Drawer → Workshop at 1280×720 and again at 1920×1005 in both skins,
+  Night → Drawer → Workshop at 1280×720 and again at 1920×1005 in the Night skin,
   asserting the centred 1128 px rail, the module and ledger widths, the last
   slot/send rows contained, Master visible and `CQInkControl.drawErrors == 0`.
   The coverage test may not be satisfied by a test-only array, hidden or
@@ -923,21 +929,18 @@ vector primitives — strokes, fills, arcs, béziers, radial/axial gradients,
 dash patterns, alpha, transforms, text — and nothing else. No image files, no
 icon fonts, no external assets, ever.
 
-### 16.1 The two skins
+### 16.1 The runtime skin and the retained palette history
 
-- **Day = ink on paper.** Warm cream ground, warm near-black ink, family
-  pigments. A calm tool. The paper is *flat color* — no fake grain, no
-  texture noise (simulated paper reads cheap); warmth comes from hue.
 - **Night = phosphor on deep water.** Blue-black ground, pale bone linework,
   the family colors turned luminous. **Every light is information** — nothing
   glows, twinkles or drifts decoratively. No starfields.
-- The master strip keeps one identical layout in both skins (muscle memory),
-  only re-inked: paper band by day, dark slate by night; PANIC is vermillion
-  in both.
-- The Day/Night toolbar destination is a **hard cut**, not a transition.
-  Turning your head, not a cutscene.
+- **Day = ink on paper** is retained in the shared kit as design history and
+  for reading the accepted G1 record, not as a runtime destination to maintain.
+  Its warm paper colors do not imply a second interface.
+- The Master strip uses dark slate and keeps its permanent muscle-memory
+  layout; PANIC remains vermillion.
 
-Rough night geography (day keeps the v1.0 columns):
+Rough Night geography:
 
 ```
         bird A                          bird B
@@ -1028,22 +1031,22 @@ Laws:
   real Day-skin review; do not shrink them back to the earlier 9/10/8 sketch.
   Lowercase everywhere; only PANIC, REC and HOLD may shout.
 - **The Drawer is the one exception, and it goes up, never down** (added
-  2026-07-28). Day and Night are read as *shapes* — a knob's arc, a castle's
-  ripple — with text as annotation, and their px sizes are fixed by §16.10. The
+  2026-07-28). Night is read as *shapes* — a shell's arc, a castle's ripple —
+  with text as annotation, and its px sizes are fixed by §16.10. The
   workbench is read as **prose and numbers**, so the same 10 px that works
   beside a knob is too small for forty-three rows of exact values. Its two
-  reviewed steps (§8, `CQGuiScale`) therefore start above the Day floor and step
+  reviewed steps (§8, `CQGuiScale`) therefore start above the Night annotation floor and step
   up again when the window has the room. Every Drawer size is still a whole
   number of px chosen at a reviewed step — never a scale factor applied to a
   base size, which is how type turns to mush.
 - **The persistent chrome shares that floor but not those steps** (added
   2026-07-28 at the user's request: beside a 12 px workbench the toolbar and
-  Master strip read as an oversight). The toolbar title, the Day/Night and
-  Drawer destinations, the Drawer's page tabs, and the Master strip's knob
+  Master strip read as an oversight). The toolbar title and Drawer destination,
+  the Drawer's page tabs, and the Master strip's knob
   labels, notice line and elapsed time all take **one chrome size**
   (`CQGuiScale.chrome`), matching the Drawer's compact step. It does not follow
   the window: the strip's height is fixed by §12's permanent-visibility rule and
-  its layout is muscle memory in both skins, so only the ink inside it grew —
+  its layout is muscle memory, so only the ink inside it grew —
   the strip is still 118 px and REC/PANIC keep their §16.7 hit areas. Buttons in
   the chrome and the Drawer are **measured from their own captions**, so growing
   the type can never crop one.
@@ -1150,9 +1153,9 @@ lives on its own opaque layer so a storm repaint never re-inks the ring
 **The spesal coupling chords** (added 2026-07-22 — the night's answer to
 "which castle is this one attached to?"). The inner clock shows a castle's
 *state*; the chord shows what that state **means**: which of the other four
-it reads. Drawn on the ring's own layer in spesal green, carrying the same fact and the
-same direction as the Day constellation (§16.7) so one state can never mean
-two couplings in two skins — **the chord runs the way the signal runs**, from
+it reads. Drawn on the ring's own layer in spesal green, carrying the same fact
+and direction formerly shown by the retired Day constellation (§16.7) —
+**the chord runs the way the signal runs**, from
 the castle being read into the one reading it — but told in the night's own
 language:
 
@@ -1177,10 +1180,9 @@ interior — because the coupling is **structure, not a quantity**. It changes
 only when spesal steps; it is read at the moment a hand is on a castle
 deciding whether to step it; and that interior is where the storm iris, the
 fireflies, the cables and the harvest lasso all live. A mark read two
-percent of the time has not earned permanent ink, and the whole-network
-overview already exists one hard cut away in Day's constellation. Stepping
-the clock swings the chord under the same pointer, so the act shows its own
-consequence.
+percent of the time has not earned permanent ink. N9 therefore records the
+permanent whole-network constellation's death: stepping the clock swings the
+chord under the same pointer, so the act shows its own consequence.
 
 Geometry: the chord bows toward the eye by 0.4 of the way from its own
 midpoint, so an *adjacent* pair reads as an inner chord instead of doubling
@@ -1263,7 +1265,7 @@ restored on release and on every exit path (§6.1's punch row), so the same
 crack/close the display already draws animates the momentary hold for free. The **skip mark** hangs under the mouth
 chevron: the §16.5 spark glyph in a 9 px box, whisper at rest, line ink on
 hover, a 120 ms bone-spark flash on any skip (§16.7's momentary law, one
-`CQInk.momentaryFlash` constant shared with the Day button). The spiral's line
+`CQInk.momentaryFlash` constant shared by every skip entrance). The spiral's line
 is the §6.1 winding surface; the **reel notch** (amended 2026-07-22) rides it
 at the speed's normalized position — inner eye = slowest, mouth = fastest — as
 the winding gesture's live hand and the resting speed display. It is a **tick
@@ -1340,8 +1342,8 @@ jack: the mic is not one of the 16 sources but an optional input feeding the
 preamps, so nothing on the sprout can be grabbed or patched. Three states:
 not drawn at all when no mic is configured; a dormant whisper-colored bud
 when configured (`micChan` set) with `micGain` = 0; bud and tip ring danger-red
-while `micChan` is set **and** `micGain` > 0. The day panel's mic control keeps
-its own warning-color law unchanged.
+while `micChan` is set **and** `micGain` > 0. The sole interactive `micGain`
+control is the Workshop warning row (§8).
 
 **Birds (decks).** Three strokes each — two wing béziers + a body dot,
 span ≈ 30 px; filename in 10 px mono whisper beneath, in a line box of at
@@ -1497,9 +1499,9 @@ vertical drag lost that argument the moment it was tried by hand.
 **The tap's own px are dead**: the pour starts counting past the threshold,
 so a throw can never nudge the phase it is throwing and a pour cannot jump
 the moment it engages — one body, two acts, told apart by the hand alone.
-The moon flashes 120 ms bone on *any* shake from any layer (`p` key, Day
-button, code) — §16.7's momentary law, one `CQInk.momentaryFlash` constant,
-hung off one action notice so the three layers cannot drift. Hover
+The moon flashes 120 ms bone on *any* shake (`p` key, moon, code or pattern) —
+§16.7's momentary law, one `CQInk.momentaryFlash` constant hung off one action
+notice so the entrances cannot drift. Hover
 brightens the moon's own drawn rim.
 
 **No presets at night.** A sower constellation of preset stars stood under
@@ -1575,7 +1577,7 @@ at all.
 
 </details>
 
-### 16.7 Widgets (day-panel language)
+### 16.7 Widgets (shared kit; former Day language)
 
 - **Knob**: three reviewed body sizes express breadth of consequence, never
   current value: standard Ø 26 for trims/mix/routing; featured Ø 34 for the
@@ -1585,7 +1587,7 @@ at all.
   param has a family (the spaf knob wears a purple arc). Drag brightens pointer
   and arc to full ink. No 3D, no gloss.
 - **Slider** (slots, sends): hairline rail, Ø 8 thumb, whisper value fill.
-- **Ledger row** (added at N8 for the Workshop, §8; both skins from one
+- **Ledger row** (added at N8 for the Workshop, §8; one shared
   primitive): a **24 px row owning one rectangular hit area** — label at left,
   one hairline value rail in the middle, the exact value in 10 px mono at right,
   and the value never overlaps the rail. Forty-three miniature Day knobs would
@@ -1705,7 +1707,7 @@ at all.
 | solo-light fade | 150 ms |
 | plant wobble (optional garnish) | ≤ 300 ms damped |
 | compass elastic return | ~3 frames glide |
-| Day/Night toolbar destination | hard cut |
+| Night/Drawer stage destination | hard cut via queued Qt write |
 | tide focus (Tab / gill) | immediate state change |
 | ambient (aura, fireflies, sparks, flutter) | telemetry rate, ≤ 15 Hz |
 
@@ -1729,28 +1731,21 @@ could draw would be slower than the truth.
 
 ### 16.10 Space & scale
 
-Day keeps the v1.0 column geometry; widgets align to an 8 px spacing grid.
-Controls form compact functional islands rather than being spread evenly down
-the page. Spare paper belongs to an informative instrument view: each Coco has
-a static two-row map of the normative mix → dolby → VCA/feedback → dust → rail
-→ bits → RAM → output memory path, while Quantussy devotes its lower field to
-the live spesal topology above. These are state/signal maps, not decorative
-filler or invented waveform displays. The first Quantussy range rail shares
-the exact horizontal baseline of the Coco slot rails; the remaining castle
-rows descend from it. Diagram labels must clear their paths (`dust` / `rail`
-sit beside the turn, never on its vertical stroke), and adjacent `bits` /
-`wrap` bodies share a top edge. Skin sockets sit 4–6 px from
-their control's bounding circle. Night bodies
-scale with the window (minimum 1280×720) but **stroke widths and font sizes
-stay in px** — ink does not thicken when the paper grows. Sockets never
-closer than 24 px center-to-center (hit law, §11).
+Night bodies scale with the window (minimum 1280×720) but **stroke widths and
+font sizes stay in px** — ink does not thicken when the water grows. Sockets
+are never closer than 24 px center-to-center (hit law, §11). The Drawer alone
+uses the two discrete, reviewed `CQGuiScale` steps from §8.
+
+The former Day layout used v1.0 columns on an 8 px grid and carried a static
+Coco memory-path map plus a permanent spesal topology. N9 records both diagrams
+as retired history: they are not runtime requirements and must not be rebuilt.
 
 ### 16.11 The ink kit (code-only implementation notes)
 
 - One shared drawing kit holds: the palette table (§16.2 — the single color
   source), stroke constants, the seeded wobble-path helper, blob, socket,
-  jack, banana plug, lamp, the glyphs, and the cable renderer. **Both views
-  and the drawer draw only through the kit** — that is how the organism stays
+  jack, banana plug, lamp, the glyphs, and the cable renderer. **Night, Master
+  and the Drawer draw only through the kit** — that is how the organism stays
   one species. The kit's shape is the implementers' choice; its existence is
   normative.
 - **Session seed**: one integer drawn at GUI open feeds every wobble and

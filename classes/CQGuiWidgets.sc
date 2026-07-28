@@ -19,9 +19,8 @@ CQGuiWidgets {
 	// labeled knob for continuous params; color = banana accent on the label
 	knob { |name, label, color, role = \standard, surface = \ground, scale|
 		var family = this.prFamily(color), diameter = CQInk.knobDiameter(role);
-		// the persistent Master strip reads at the chrome's type size; Day's own
-		// columns pass nothing and stay pixel-identical to §16.10's fixed px
-		var k = this.prOwn(CQInkControl.knob(label, family, \day, diameter,
+		// The persistent Master strip reads at the chrome's fixed type size.
+		var k = this.prOwn(CQInkControl.knob(label, family, \night, diameter,
 			scale !? { |m| m[\label] }));
 		k.surface = surface;
 		scale !? { k.scale = scale };
@@ -36,7 +35,7 @@ CQGuiWidgets {
 	// two-state toggle; lights up in onColor when the param is 1
 	toggle { |name, label, onColor, surface = \ground|
 		var family = this.prFamily(onColor), b = this.prOwn(
-			CQInkControl.button(label, 58, \day, true, false, family)
+			CQInkControl.button(label, 58, \night, true, false, family)
 		);
 		b.surface = surface;
 		b.action = { |bt| state.set(name, bt.value) };
@@ -48,7 +47,8 @@ CQGuiWidgets {
 	enumSel { |name, color, label = ""|
 		var values = CQSpec.at(name)[\values];
 		var family = this.prFamily(color), m = this.prOwn(
-			CQInkControl.switch(label, values, if(values.size > 3) { 112 } { 82 }, family)
+			CQInkControl.switch(label, values,
+				if(values.size > 3) { 112 } { 82 }, family, \night)
 		);
 		m.action = { |menu| state.set(name, values[menu.value]) };
 		this.register(name, { |v| m.value = values.indexOf(v) ? 0 });
@@ -57,7 +57,7 @@ CQGuiWidgets {
 
 	// small integer box (bits)
 	intBox { |name|
-		var b = this.prOwn(CQInkControl.number("bits"));
+		var b = this.prOwn(CQInkControl.number("bits", \night));
 		b.action = { |box| state.set(name, CQSpec.map(name, box.value).round.asInteger) };
 		this.register(name, { |v|
 			b.value = CQSpec.unmap(name, v);
@@ -82,7 +82,7 @@ CQGuiWidgets {
 		);
 		var mode = switch(kind, \enum, { \enum }, \toggle, { \toggle },
 			\int, { \int }, { \num });
-		var row = this.prOwn(CQInkControl.ledger(label, mode, family, \day,
+		var row = this.prOwn(CQInkControl.ledger(label, mode, family, \night,
 			width, seats, CQSpec.centerNorm(name), scale));
 		row.surface = surface;
 		switch(kind,
@@ -151,7 +151,7 @@ CQGuiWidgets {
 
 	// small horizontal slider (castle sends, deck levels)
 	hslider { |name, width = 56|
-		var s = this.prOwn(CQInkControl.slider(width));
+		var s = this.prOwn(CQInkControl.slider(width, nil, \night));
 		s.action = { |sl| state.set(name, CQSpec.map(name, sl.value)) };
 		this.register(name, { |v| s.value = CQSpec.unmap(name, v) });
 		^s.view
@@ -162,7 +162,7 @@ CQGuiWidgets {
 	// manifest) name their family directly, which is what §16.2 asks for: no
 	// color is inlined at a draw site.
 	prFamily { |color|
-		var palette = CQInk.palette(\day), found;
+		var palette = CQInk.palette(\night), found;
 		if(color.isNil) { ^\line };
 		if(color.isKindOf(Symbol)) {
 			^if(palette[color].notNil) { color } { \line }
@@ -188,6 +188,6 @@ CQGuiWidgets {
 
 	// shared banana color code (SPEC §6.2)
 	*colors {
-		^CQInk.palette(\day)
+		^CQInk.palette(\night)
 	}
 }

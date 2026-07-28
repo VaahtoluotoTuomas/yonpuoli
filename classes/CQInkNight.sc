@@ -162,8 +162,8 @@ CQInkNight {
 	}
 
 	// §16.6 the spesal coupling: which castle each castle reads, drawn on the
-	// ring's own layer as inner chords in spesal green. Same fact as the Day
-	// constellation and the same direction — the chord runs the way the signal
+	// ring's own layer as inner chords in spesal green. The chord runs the way
+	// the signal
 	// runs, from the castle being read into the one reading it (SPEC §2.2) —
 	// but told in the night's own language:
 	//
@@ -294,8 +294,8 @@ CQInkNight {
 		Pen.stroke;
 		// skip's stationary home above the mouth jack, the chevron's mirror
 		// (§6.1). Momentary, so it carries §16.7's 120 ms ink flash — fired by
-		// ANY skip (mark, `a/s`, code, pattern, matrix gate), exactly like the
-		// Day button it mirrors, since both hang off the one `\action` notice.
+		// ANY skip (mark, `a/s`, code, pattern, matrix gate) hangs off the one
+		// `\action` notice.
 		CQInk.drawGlyph(\skip, Rect.aboutPoint(coco[\skipMark],
 			CQNightMeasures.skipGlyphR, CQNightMeasures.skipGlyphR),
 			if(skipFlash) { palette[\spark] } {
