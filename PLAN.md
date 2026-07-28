@@ -266,9 +266,12 @@ chaos-käyrä → Space/reverbin konseptipäätös ja kuuntelu → 13.2 speed-la
 mahdollinen äänenvoimakkuuskompensaatio tehdään tämän jälkeen samassa
 mittaus-/equal-loudness-vaiheessa: ensin todetaan ongelma, vasta sitten
 auditoidaan korjaus. Kohta 13.7 on punch (= kohta 1 yllä). Lopuksi suljetaan
-siirretyt bugit ja polish-velat sekä nelikanavaista laitteistoa vaativa
-  stem-gate sekä alla nimetty Nightin kokomittakaavan polish-portti ennen
-  Norns-porttia. Jokainen hyväksytty DSP-muutos ajaa myös
+mahdolliset korvakokeissa löytyvät täsmävelat. Nightin kokomittakaavan
+polish-portti on jo hyväksytty eikä kuulu avoimeen jonoon. Korvapassin jälkeen
+edetään Audio I/O Setupiin, sen toiminnalliseen hardware-katselmukseen,
+erilliseen pitkäkestoiseen laitteisto-/resource-soakiin ja kolmeen huokoiseen
+soittotilaan; vasta niiden jälkeen Norns-porttiin. Jokainen hyväksytty
+DSP-muutos ajaa myös
 `nrt_safety`n ja
 `nrt_hold_integrity`n ja päivittää SPEC §5:n samassa commitissa.
 
@@ -330,7 +333,7 @@ efektinä. Nykyistä Space/FDN-linjaa ei jatketa.
   [ ] 13.5 VCA-laki · [ ] 13.6 zipper-mittaus ·
   [ ] 13.8 preamp loudness compensation
 
-## Norns-portti (§14) — vasta night-first-vaiheen jälkeen
+## Norns-portti (§14) — jonon viimeinen, ei korvapassin välitön seuraaja
 
 Tavoiteympäristö norns + grid + 16n (+ crow). Puhdas ydin
 (`CQSpec/CQState/CQMatrix/CQSynthDefs/CQCompass` + turvaketju) siirtyy
@@ -339,7 +342,10 @@ speksillään. Dietti otetaan lahjana: 8-bit-rakeisuus ja epätarkkuus ovat
 identiteettiä, kalliit osat ovat kohteliaisuuksia (FDN → nornsin reverb,
 recorder → tape, dekit → softcut lähteenä). Askelmerkit N0–N6 ja karikot
 `NIGHT_STANDALONE_PLAN.md §14`:ssä. Ei aloiteta ennen kuin night-first on
-soitettu valmiiksi.
+soitettu valmiiksi. Tämän osion sijainti korvapassin checklistin vieressä on
+vain §-viittauksen vuoksi eikä toteutusjärjestys: ennen Nornsia valmistuvat
+Audio I/O Setup, erillinen pitkä laitteisto-/resource-soak ja kolme huokoista
+soittotilaa.
 
 ## Jokaisen osan välitarkastus (sitova)
 
@@ -1247,7 +1253,7 @@ telemetriaa ja koko sivua yhteen vaikeasti diagnosoitavaan diffiin.
 - Aja compile → run_all → `nrt_safety` → `nrt_hold_integrity` sekä kaikki
   Drawer/Night/shell-smoket, koska boot-lifecycle ja config ovat muuttuneet.
 
-**AIO-4 — signaalipresence ja oikea hardware-katselmus**
+**AIO-4 — signaalipresence ja rajattu hardware-I/O-katselmus**
 
 - Input-telemetria, master-cache/listener, visible-page refresh gate ja
   paint-count-/cleanup-testit.
@@ -1266,13 +1272,17 @@ telemetriaa ja koko sivua yhteen vaikeasti diagnosoitavaan diffiin.
   9. virtuaalinen loopback/DAW näkyy tavallisena driver-laitteena, mutta GUI
      ei lupaa luoneensa järjestelmäkytkentää;
   10. 10–15 minuutin tiheä patch + molemmat Cocot + Audio-sivu auki/kiinni:
-      CPU/resource-soak, ei dropoutia, listener-vuotoa tai kasvavaa repainttia.
+      rajattu AIO-vakauskoe, ei dropoutia, listener-vuotoa tai kasvavaa
+      repainttia.
 
 **Definition of done:** käyttäjä hyväksyy static layoutin sekä yhden oikean
 input→Coco→main-output-ketjun. Nelikanavainen stem-koe sulkee samalla vanhan
 KUUNTELU 7:n 7.4/7.5-laitteistovelan. `SPEC`, `GUI_SPEC`, README/config.example,
 testit ja tämä status päivitetään samassa hyväksyntäcommitissa; overlayt ja
-oikeat device-nimet eivät näy Git-diffissä.
+oikeat device-nimet eivät näy Git-diffissä. Tämä AIO-portti todistaa
+laitevalinnan, kanavareitityksen, rollbackin ja telemetrian toiminnallisuuden;
+sen lyhyt vakauskoe **ei korvaa** jonossa seuraavaa erillistä pitkäkestoista
+koko soittimen laitteisto-/resource-soakia.
 
 ## Myöhemmin, ei tämän vaiheen scopea
 - **Identiteetti ja sisäosien nimet** (käyttäjän havainto 2026-07-28, N8:n
