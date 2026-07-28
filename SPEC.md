@@ -217,7 +217,7 @@ Per Coco `n` ∈ {1,2} (names shown for n=1):
 |---|---|---|---|---|
 | `coco1In` | 0–2 | 0.8 | lin | input level into converter; >1 overdrives. Matrix VCA dest `coco1_inVca` |
 | `coco1Fb` | 0–1.25 | 0.35 | fb taper | feedback/loop level; 1.0 = unity looper; >1 = saturating growth (bounded by clip). Matrix VCA dest `coco1_fbVca` |
-| `coco1Speed` | 3000–48000 Hz | 24000 | exp | RAM clock. Loop length = bufFrames/clock (default buffer 2^17 ⇒ 2.7 s @48 k, 43.7 s @3 k). Post-modulation hard clamp: 1500 Hz – server SR (modulation may push an octave below the knob floor — the "ground jack" trick). Matrix dest `coco1_spaf` |
+| `coco1Speed` | 1500–48000 Hz | 24000 | exp | RAM clock. Loop length = bufFrames/clock (default buffer 2^17 ⇒ 2.7 s @48 k, 87.4 s @1.5 k). Post-modulation hard clamp: 750 Hz – server SR, i.e. exactly one octave below the knob floor (modulation may push where the hand alone cannot — the "ground jack" trick; the clamp floor lives in `CQSpec.speedClampFloor`). Matrix dest `coco1_spaf` |
 | `coco1Spaf` | −4.0–4.0 oct | 0 | bipolar | the `^` knob: depth/direction of speed modulation from the matrix |
 | `coco1DolbyIn` | enum | `\off` | — | `\off \gate \duck` — gate = downward expander on input; duck = input attenuated by feedback-channel envelope |
 | `coco1DolbyFb` | enum | `\off` | — | same, on feedback channel, keyed by input envelope |

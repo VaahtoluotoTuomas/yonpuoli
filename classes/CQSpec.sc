@@ -90,6 +90,14 @@ CQSpec {
 		^this.unmap(name, 0)
 	}
 
+	// SPEC §5.3: the Coco clock is clamped a second time AFTER speed modulation,
+	// which is what lets a banana into `_spaf` push the clock an octave below the
+	// knob's own floor (the "ground jack" trick). It is a range fact of the Speed
+	// parameter, so it lives here rather than as a literal inside \cqCoco — the
+	// SynthDef, the tests and the spec then cannot drift apart. The knob floor
+	// itself is the minval of `coco1Speed`/`coco2Speed`.
+	*speedClampFloor { ^750 }
+
 	// the funnel: every write path passes its value through here (SPEC §8.3)
 	*clamp { |name, value|
 		var e = this.specs[name];
@@ -241,7 +249,9 @@ CQSpec {
 			this.prNum(p.value("In"), 0, 2, \lin, 0.8, 0.03, nil, (unity: 1.0));
 			this.prNum(p.value("Fb"), 0, 1.25, \lin, 0.35, 0.03,
 				[[0.0, 0.0], [0.5, 0.85], [0.9, 1.10], [1.0, 1.25]]);
-			this.prNum(p.value("Speed"), 3000, 48000, \exp, 24000);
+			// 13.2: the floor is 1500 Hz, not the shy 3000 — five octaves of clock
+			// under the hand, and the darkest end is playable rather than a wall
+			this.prNum(p.value("Speed"), 1500, 48000, \exp, 24000);
 			this.prNum(p.value("Spaf"), -4.0, 4.0, \lin, 0);
 			this.prEnum(p.value("DolbyIn"), #[off, gate, duck], \off);
 			this.prEnum(p.value("DolbyFb"), #[off, gate, duck], \off);

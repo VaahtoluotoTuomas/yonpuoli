@@ -1280,6 +1280,22 @@ CQ.set(\coco1SlotDeck, 1); CQ.set(\coco1In, 0.8);
 
 ### 13.2 The speed floor — darker honey
 
+**Implementation status (2026-07-29).** Option A is implemented on
+`nocturne-feedback-taper` and the full automated gate is green, including
+both NRT renders (the DSP clamp moved, so `nrt_safety` and
+`nrt_hold_integrity` are mandatory, not optional). `\mayhem`'s ±4 oct spaf
+now really drives the clock onto the 750 Hz floor and the DC assert holds
+with room to spare (8e-05 / 2.8e-04 against the 0.02 ceiling), so LeakDC
+does what the proposal hoped and option B is not forced by measurement.
+The clamp floor is no longer a literal inside `\cqCoco`: it lives in
+`CQSpec.speedClampFloor`, because it is a range fact of the Speed
+parameter, and a unit test pins it at exactly one octave under the knob
+floor so the ground-jack trick cannot silently drift. **Not accepted —
+this waits on the ear** (checklist 13.2). The honest risk the listening
+block asks about first is not the new bottom but the cost everywhere else:
+the fader now spans five octaves instead of four, so every centimetre of
+travel covers more. If the middle got too twitchy, that is option B.
+
 **Hypothesis.** Slower clocks = darker, more alias-shimmering, longer
 loops — very CL. The knob floor (3 000 Hz) is shy; the post-mod clamp
 already trusts 1 500.

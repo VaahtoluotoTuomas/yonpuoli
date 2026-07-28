@@ -205,7 +205,8 @@ analog ring; do not "fix". All castle work at audio rate — ranges reach audio.
 
 ```supercollider
 // sketch of the RAM loop core
-var clockHz = (speed * (2 ** (spafSum * spafKnob))).clip(1500, SampleRate.ir);
+var clockHz = (speed * (2 ** (spafSum * spafKnob)))
+    .clip(CQSpec.speedClampFloor, SampleRate.ir);       // 750 Hz, SPEC §5.3
 var ratio   = clockHz / SampleRate.ir;               // ≤ 1.0
 var dir     = Select.ar(flipGate, [DC.ar(1), DC.ar(-1)]);   // flip = matrix gate OR param
 var phase   = Phasor.ar(skipTrig, ratio * dir, 0, BufFrames.ir(buf)); // address counter

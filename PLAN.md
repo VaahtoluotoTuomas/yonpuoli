@@ -37,7 +37,9 @@ kaapeliprioriteetti ja snapshot-kansion erotus — valmistui 2026-07-28.
 **13.1 feedback-taper sekä 13.4 chaos-käyrä ja sen sääkehät hyväksyttiin
 käyttäjän kuuntelu- ja näkökatselmuksessa 2026-07-28. Space-kuuntelupäätös,
 tuotantoketjun hallittu eläköitys ja Nightin täyden mittakaavan GUI-passi
-hyväksyttiin 2026-07-28–29.** Seuraava avoin portti on **13.2 speed-lattia**.
+hyväksyttiin 2026-07-28–29.** Avoin portti on **13.2 speed-lattia**, jonka
+vaihtoehto A:n kandidaatti on toteutettu 2026-07-29 ja odottaa käyttäjän
+korvaa (checklist 13.2).
 Sen jälkeen järjestys on **13.5 VCA-laki → 13.3 dust → 13.6 zipper-mittaus +
 13.8 preampin equal-loudness-koe → Audio I/O Setup Drawerissa (AIO, alla) →
 nelikanavainen laitteisto-/resource-soak → kolme huokoista soittotilaa →
@@ -305,6 +307,26 @@ kaapelipriorisoidun osuma-alueen sisään. Laajennetun kandidaatin portti:
 `CQ_GUI_NIGHT_PASSED`. Käyttäjä hyväksyi sääkehät ja hoverin
 visuaalikatselmuksessa 2026-07-28; 13.4 on suljettu.
 
+13.2:n kuuntelukandidaatti (vaihtoehto **A**) toteutettiin 2026-07-29:
+Speed-nupin lattia 3000 → **1500 Hz** ja modulaation jälkeinen kova
+kellorajoitin 1500 → **750 Hz**, eli ground jack -temppu säilyy täsmälleen
+oktaavina nupin oman ulottuvuuden alapuolella. Katto, oletus, exp-käyrä ja
+kaikki tallennetut arvot ovat ennallaan; vanhat snapshotit osuvat uuden
+alueen sisään, joten migraatiota ei ole. Rajoitin ei ole enää literaali
+`\cqCoco`:ssa vaan `CQSpec.speedClampFloor`, koska se on Speed-parametrin
+aluetosiasia; yksikkötesti pinnaa sen täsmälleen oktaaviksi nupin lattian
+alle. **DSP muuttui, joten koko patteri ajettiin:** `CQ_COMPILE_OK`,
+**13 147 unit-passia / 0 failurea / 32/32 luokkaa**, `CQ_SAFETY_PASSED`,
+`CQ_HOLD_OK` (A4-korrelaatio 1.0, A5-drift 0.0 dB) sekä kaikki neljä
+GUI-markkeria. `\mayhem`in ±4 oktaavin spaf painaa kellon nyt aidosti
+750 Hz:n lattialle, ja DC-assert kestää selvällä marginaalilla
+(8e-05 / 2.8e-04 vs. katto 0.02) — LeakDC tekee sen mitä §13.2 toivoi,
+eikä mittaus siis pakota vaihtoehtoon B. **Ei vielä hyväksytty:** portti
+odottaa korvaa. Checklist-lohko 13.2 kysyy ensin uuden pohjan
+soitettavuuden, mutta sen ratkaiseva kohta on keskialue — fader kattaa nyt
+viisi oktaavia neljän sijasta, ja jos tarkkuus katosi käyttökaistalta,
+kirjataan vaihtoehto B (lattia 2000, rajoitin jää 1500:aan).
+
 Space-keskustelun ensimmäinen päätös 2026-07-28: Silhouette hylättiin tämän
 soittimen sisältä. Tuotanto-FDN:ään, `CQSpec`iin tai GUI:hin koskematon
 `prototypes/space_lab.scd` rakensi yhden vertailtavan kuuntelusession. Neljä
@@ -328,7 +350,8 @@ säilytetään tutkimusmateriaalina tulevalle muistilukutilalle, ei hyväksyttyn
 efektinä. Nykyistä Space/FDN-linjaa ei jatketa.
 
 - [x] 13.1 feedback-taper (**hyväksytty 2026-07-28, myös asteikkolisäykset**) ·
-  [ ] 13.2 speed-lattia · [ ] 13.3 dust ·
+  [ ] 13.2 speed-lattia (*A-kandidaatti vihreä 2026-07-29, odottaa korvaa*) ·
+  [ ] 13.3 dust ·
   [x] 13.4 chaos-käyrä (**hyväksytty 2026-07-28, myös sääkehät**) ·
   [ ] 13.5 VCA-laki · [ ] 13.6 zipper-mittaus ·
   [ ] 13.8 preamp loudness compensation

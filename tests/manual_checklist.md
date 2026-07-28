@@ -949,6 +949,73 @@ CQ.free;
 - [x] 13.1 hyväksytty (2026-07-28 — taper sekä feedback-, SP.AF-, input- ja
       linnun level-sirppien semanttiset lisäykset hyväksytty)
 
+### 13.2 — Speed-lattian korvaportti
+
+Kuuntelukandidaatti (§13.2 vaihtoehto **A**) elää `nocturne-feedback-taper`-
+haaralla. Nupin lattia 3000 → **1500 Hz** ja modulaation jälkeinen kova
+kellorajoitin 1500 → **750 Hz**, eli ground jack -temppu säilyy täsmälleen
+oktaavina nupin oman ulottuvuuden alapuolella. Katto (48 k), oletus (24000) ja
+exp-käyrä ovat ennallaan, samoin kaikki tallennetut snapshot-arvot.
+
+**Tämä on koko kädenkartan muutos, ei vain uusi alapää.** Speed-kaista on nyt
+viisi oktaavia neljän sijasta, joten *jokainen* faderin senttimetri kattaa
+enemmän. Kohta 4 on siksi portin tärkein kysymys: jos pimeys varasti liikaa
+matkaa keskialueelta, kirjataan vaihtoehto **B** (lattia 2000, rajoitin jää
+1500:aan) eikä tätä hyväksytä. 16n:llä `takeover: \pickup` on suositeltava —
+sama fyysinen faderin asento tarkoittaa nyt eri lukemaa.
+
+```supercollider
+// 13.2 — Ctrl+Shift+L ensin, koska CQSpec ja \cqCoco muuttuivat.
+// Huom: \empty eikä \classic, jotta kuulet kellon eikä preset'n omaa
+// tri1+tri3 -> spaf -modulaatiota. Yksi muuttuja kerrallaan.
+CQ.free;
+CQ.boot;
+CQ.patchPreset(\empty);
+CQ.set(\masterVol, -24);
+CQ.deckA.load("<kirkas kenttä-äänite>");
+CQ.set(\coco1SlotDeck, 1);
+CQ.set(\coco1In, 0.8);
+CQ.hold(1, 0);                 // kerää looppi...
+CQ.hold(1, 1);                 // ...ja lukitse se
+// 1. UUSI POHJA. Kelaa coco1:n kello pohjaan (Night: kierrä kuoren spiraalia;
+//    16n: F2). Oletusbufferilla looppi venyy pohjalla ~87 sekuntiin ja sointi
+//    tummuu ja rakeistuu. Kysymys korvalle: onko 1500–3000 Hz SOITETTAVAA
+//    pimeyttä vai mutaa? Missä kohtaa siitä tulee mutaa?
+CQ.get(\coco1Speed);           // ...lue tästä se kohta jossa se kääntyy
+// 2. URUT POHJALLA. Nosta organ ja kelaa uudestaan alas.
+CQ.set(\coco1Organ, 0.5);
+//    Urkupilli seuraa kelloa, joten se laskeutuu nyt oktaavin entistä alemmas
+//    — pohjalla se lakkaa olemasta sävelkorkeus ja muuttuu sykkeeksi.
+//    Onko se ääni jota käyttäisit, vai pelkkä rätinä? Kuuletko rajan?
+CQ.set(\coco1Organ, 0);
+// 3. GROUND JACK -TEMPUN SYVIN PÄÄ. Nupin oma lattia on 1500 Hz; modulaatio
+//    saa painaa sen alta 750 Hz:iin. Vie käsi ensin omaan pohjaansa:
+CQ.set(\coco1Speed, 1500);
+CQ.patch(\tri1, \coco1_spaf, 0.8);
+CQ.set(\coco1Spaf, -2.5);      // tri1 on infra-kolmio: odota koko hidas kierros
+//    Keinunnan alaosa viipyy 750 Hz:n rajoittimella ja nousee takaisin.
+//    Kimmellystä vai katastrofia? Rajoittimeen osuminen ei saa naksahtaa,
+//    vaimentaa looppia pysyvästi eikä jättää kelloa jumiin.
+CQ.unpatch(\tri1, \coco1_spaf);
+CQ.set(\coco1Spaf, 0);
+// 4. HINTA KESKIALUEELLA (portin ratkaiseva kohta). Palaa käyttökaistalle ja
+//    hae kädellä tuttuja pisteitä — 12000, 18000, 24000 — pelkällä sirpillä
+//    tai faderilla, ilman että katsot lukemaa:
+CQ.set(\coco1Speed, 24000);
+//    Osuuko käsi yhtä luotettavasti kuin ennen, vai tuntuuko keskialue nyt
+//    liian herkältä? Jos tuntuu: se on vaihtoehto B, ja portti hylätään.
+// 5. M1-REGRESSIO. Aja hidas sweep pohjasta kattoon ja takaisin minuutin ajan
+//    loopin ollessa lukittuna. Repitchin pitää yhä olla portaaton ja
+//    nauhamainen, eikä loopin sisältö saa rapistua matkalla.
+// 6. Tee sama coco2:lla (F6). Molempien pitää tuntua samalta.
+CQ.set(\coco1Speed, 24000);
+CQ.free;
+```
+
+- [ ] 13.2 hyväksytty (pvm: ______ — pohjan soitettavuus, urkujen alapää,
+      ground jackin syvin pää, keskialueen tarkkuus ja M1-regressio) — TAI
+      kirjattu siirtymä vaihtoehtoon B
+
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>
 

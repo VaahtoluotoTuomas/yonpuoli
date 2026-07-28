@@ -218,8 +218,11 @@ CQSynthDefs {
 			flipGate = max(\flip.kr(CQSpec.default(\coco1Flip)),
 				Schmidt.ar(flipSum, 0.3, 0.5));            // flip = matrix gate OR param
 			skipTrig = Trig1.ar(Schmidt.ar(skipSum, 0.3, 0.5), SampleDur.ir);
-			// hard clamp 1500 Hz..SR is post-modulation by design (SPEC §5.3)
-			clockHz = (speed * (2 ** (spafSum * spafKnob))).clip(1500, SampleRate.ir);
+			// hard clamp floor..SR is post-modulation by design (SPEC §5.3): the
+			// floor sits an octave under the knob's own, so a banana into _spaf
+			// still reaches a country the hand alone cannot ("ground jack" trick)
+			clockHz = (speed * (2 ** (spafSum * spafKnob)))
+				.clip(CQSpec.speedClampFloor, SampleRate.ir);
 			ratio = clockHz / SampleRate.ir;
 			dir = 1 - (flipGate * 2);                  // flip = matrix gate OR param
 			phase = Phasor.ar(\t_skip.tr(0) + skipTrig, ratio * dir, 0, frames, 0); // address counter

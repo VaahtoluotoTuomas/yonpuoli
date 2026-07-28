@@ -30,8 +30,21 @@ CQSpecTest : UnitTest {
 		this.assertEquals(CQSpec.clamp(\coco1Fb, 99), 1.25, "over-range clips to max");
 		this.assertEquals(CQSpec.clamp(\coco1Fb, -1), 0.0, "under-range clips to min");
 		this.assertEquals(CQSpec.clamp(\masterVol, 20), 0.0, "masterVol tops at 0 dB");
-		this.assertEquals(CQSpec.clamp(\coco1Speed, 100), 3000.0,
-			"speed knob floor is 3000 Hz (SPEC §5.3)");
+		this.assertEquals(CQSpec.clamp(\coco1Speed, 100), 1500.0,
+			"speed knob floor is 1500 Hz (SPEC §5.3)");
+	}
+
+	// The two floors are one musical decision, not two numbers: modulation is
+	// allowed exactly one octave of country below the hand's own reach, and the
+	// clamp is the only thing standing between a ±4 oct spaf banana and DC.
+	test_speedClampFloorIsAnOctaveBelowTheKnob {
+		var knobFloor = CQSpec.at(\coco1Speed)[\spec].minval;
+		this.assertEquals(CQSpec.speedClampFloor, 750,
+			"post-modulation clock clamp floor is 750 Hz (SPEC §5.3)");
+		this.assertEquals(CQSpec.speedClampFloor * 2, knobFloor,
+			"the ground-jack trick is exactly one octave under the knob floor");
+		this.assertEquals(CQSpec.at(\coco2Speed)[\spec].minval, knobFloor,
+			"both cocos share one Speed floor (identical pair, SPEC §5.3)");
 	}
 
 	test_garbageFuzz {
