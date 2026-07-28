@@ -272,7 +272,7 @@ CQGuiPanels {
 				nil,
 				VLayout(notice,
 					HLayout(recBtn.view, recTime, panicBtn.view, nil).spacing_(8)).spacing_(6)
-			).margins_(8).spacing_(8)
+			).margins_(6).spacing_(8)
 		).margins_(0).spacing_(0);
 		^panel
 	}

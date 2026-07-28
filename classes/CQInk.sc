@@ -64,6 +64,17 @@ CQInk {
 		)
 	}
 
+	// A knob's box must hold its label band, the circle, the value arc's 3 px
+	// and the value readout. The reviewed Day figure is `diameter + 30` at
+	// 10 px type; a larger label needs the difference twice over, above and
+	// below. Day and Night pass no size and are pixel-identical to before.
+	*knobBoxHeight { |diameter, labelSize|
+		var grown = if(labelSize.isNil) { 0 } {
+			4 * (labelSize - this.metrics[\labelSize])
+		};
+		^diameter + 30 + grown
+	}
+
 	// The face is always the kit's (§16.4: two faces, generic constructors).
 	// `size` overrides only the *size*, for the Drawer's two reviewed steps
 	// (CQGuiScale) — the Day panel and the Night landscape keep the fixed px
@@ -297,7 +308,12 @@ CQInk {
 		var palette = this.palette(skin), m = this.metrics;
 		var size = labelSize ? m[\labelSize];
 		var radius = (diameter ? m[\knobDiameter]) / 2;
-		var center = Point(rect.center.x, rect.top + 14 + radius);
+		// The value arc sits 3 px outside the circle and sweeps over the top, so
+		// the label needs clearance from the ARC, not from the knob. The default
+		// path keeps the reviewed 14 px exactly; a caller that grew the type
+		// (the Master strip) gets a band measured from its own size.
+		var band = if(labelSize.isNil) { 14 } { size + 8 };
+		var center = Point(rect.center.x, rect.top + band + radius);
 		var start = 0.75pi, sweep = 1.5pi, angle, pointer, accent;
 		value = value.clip(0, 1);
 		accent = palette[family] ?? { palette[\whisper] };

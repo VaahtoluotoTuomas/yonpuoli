@@ -15,12 +15,13 @@ CQInkControl {
 	// type steps between two reviewed sizes; nil keeps the kit's fixed px
 	var <scale;
 
-	*knob { |label, family, skin = \day, knobDiameter|
+	*knob { |label, family, skin = \day, knobDiameter, labelSize|
 		var control, m = CQInk.metrics;
 		knobDiameter = (knobDiameter ? m[\knobDiameter])
 			.clip(m[\knobDiameter], m[\primaryKnobDiameter]);
 		control = super.new.prInit(\knob, label, family, skin,
-			Size(knobDiameter + 22, knobDiameter + 30));
+			Size(knobDiameter + 22,
+				CQInk.knobBoxHeight(knobDiameter, labelSize)));
 		control.prKnobDiameter(knobDiameter);
 		^control
 	}

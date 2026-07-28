@@ -8,6 +8,7 @@ CQGuiShell {
 	var <workspaceStack, <drawerButton;
 	var contentStack, drawerStack, drawerPages, toolbarView, toolbarTitle;
 	var modeButton, tabButtons, skinAction, shownAction;
+	var toolbarInset = 6;
 
 	*new { |state, dayView, nightView, masterView, pages, skinAction, shownAction|
 		^super.new.prInit(state, dayView, nightView, masterView,
@@ -44,18 +45,20 @@ CQGuiShell {
 			.align_(\left).fixedWidth_(
 				(CQGuiScale.textWidth("cocoquantus · archipelago", chrome[\label])
 					+ 16).ceil.asInteger);
-		toolbarView = UserView().fixedHeight_(chrome[\buttonHeight] + 10)
+		toolbarView = UserView().fixedHeight_(chrome[\buttonHeight] + (2 * toolbarInset))
 			.background_(day[\recess]);
+		// the rule is the toolbar's alignment line, so it starts and ends at the
+		// same inset as the row it underlines — not at a separate constant
 		toolbarView.drawFunc = {
 			var palette = CQInk.palette(state.viewMode);
-			var y = toolbarView.bounds.height - 1;
+			var y = toolbarView.bounds.height - 1, inset = toolbarInset;
 			Pen.strokeColor = palette[\whisper];
 			Pen.width = CQInk.strokes[\hairline];
-			Pen.line(Point(8, y), Point(toolbarView.bounds.width - 8, y));
+			Pen.line(Point(inset, y), Point(toolbarView.bounds.width - inset, y));
 			Pen.stroke;
 		};
 		toolbarView.layout = HLayout(toolbarTitle, nil, modeButton.view, drawerButton.view)
-			.margins_(5).spacing_(6);
+			.margins_(toolbarInset).spacing_(6);
 
 		contentStack = StackLayout(dayView, nightView).mode_(\stackOne);
 		instrumentView = View().layout_(contentStack);

@@ -426,6 +426,37 @@ juuriprovenienssin ja lintu-hoverin suoran deck-reitin. §13.8:n
 loudness-kompensaatio kirjattiin myöhemmäksi kuuntelukokeeksi; DSP:hen ei
 koskettu tässä portissa.
 
+Saman haaran **viimeistelykierros** 2026-07-28 (N8 v5, käyttäjän neljännen
+testauskierroksen palaute; **vihreä mutta ei hyväksytty**): `CQ_COMPILE_OK`,
+**13 027 unit-passia / 0 failurea / 31/31 luokkaa**, `CQ_SAFETY_PASSED` ja
+kaikki neljä GUI-markkeria; `CQ_HOLD_OK` kantaa. Kuusi täsmäkorjausta:
+
+- **Toolbarin otsikko tasattiin viivaansa.** Viiva piirrettiin 8 px:n
+  sisennyksellä samalla kun rivin layout käytti 5:tä. Viiva on toolbarin
+  tasausviiva, joten se alkaa nyt samasta sisennyksestä kuin alleviivaamansa
+  rivi — ei erillisestä vakiosta.
+- **Master-nuppien nimet eivät enää osu nuppiin.** Arvokaari kulkee 3 px
+  ympyrän ulkopuolella ja pyyhkäisee yli laen, joten nimi tarvitsee väljyyden
+  *kaaresta*, ei nupista. Nupin laatikko kasvaa nyt tekstikoon mukana
+  (`CQInk.knobBoxHeight`); Day ja Night eivät välitä kokoa ja pysyvät
+  pikselilleen ennallaan.
+- **Loomin sarakeotsikkorivi sai ilmaa** preset-rivin ja itsensä väliin —
+  ilma menee väliin, ei otsikon ja sen oman ruudukon väliin.
+- **Memoryn ylämarginaali korjattu oikeasti.** VLayoutin `spacing` pätee myös
+  ensimmäisen kohteen yläpuolelle, joten sivun koko sisältö oli 6 px muita
+  alempana. Välit ovat nyt eksplisiittisiä välikkeitä ja spacing on 0.
+- **Fingerprint-laatikon yläosa purettiin.** Laatikko piirsi oman otsikkonsa
+  samaan kohtaan, jossa layout piti `live patch · now` -riviä; rivi alkaa nyt
+  otsikon alta, matriisin yläreuna on johdettu molemmista, ja selittävä
+  `outlined knots…` -teksti on yhden asteen pienempi — se on infoa, ei otsikko.
+- Laatikot venyvät alaspäin, joten fingerprintin korkeus kasvoi 300 → 370
+  (windowed) / 514 (maksimoitu).
+
+Karikko, joka melkein meni ohi: **piilotettu StackLayout-sivu raportoi
+vanhentuneet absoluuttiset koordinaatit**, joten neljän sivun tasausta ei voi
+mitata kerralla — testi vertaa nyt vanhempaan nähden suhteellisia arvoja
+samalla kokoaskeleella (kaikki neljä: 12 px).
+
 Saman haaran **kehys- ja kromikierros** 2026-07-28 (N8 v4, käyttäjän kolmannen
 testauskierroksen palaute; **vihreä mutta ei hyväksytty**): `CQ_COMPILE_OK`,
 **13 014 unit-passia / 0 failurea / 31/31 luokkaa**, `CQ_SAFETY_PASSED` ja

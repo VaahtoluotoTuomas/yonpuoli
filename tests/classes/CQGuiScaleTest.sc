@@ -241,6 +241,35 @@ CQGuiScaleTest : UnitTest {
 			"an over-wide rail cannot produce a negative margin");
 	}
 
+	// A knob's value arc sweeps 3 px outside its circle and passes over the top,
+	// so the label needs clearance from the ARC. Growing the Master strip's type
+	// put the labels under the knobs until the box grew with them.
+	test_aKnobsBoxHoldsItsLabelArcAndReadout {
+		var chrome = CQGuiScale.chrome;
+		#[26, 34, 44].do { |diameter|
+			var plain = CQInk.knobBoxHeight(diameter, nil);
+			var grown = CQInk.knobBoxHeight(diameter, chrome[\label]);
+			var band = chrome[\label] + 8;
+			this.assertEquals(plain, diameter + 30,
+				"a Day knob of % is pixel-identical to its reviewed box"
+					.format(diameter));
+			this.assert(grown > plain,
+				"a chrome knob of % grows its box with its type".format(diameter));
+			// label band, circle, the arc's 3 px and the value readout
+			this.assert(grown >= (band + diameter + 3 + chrome[\label] + 2),
+				"a chrome knob of % holds label, arc and readout (% >= %)"
+					.format(diameter, grown,
+						band + diameter + 3 + chrome[\label] + 2));
+			// and the arc's top must clear the label's baseline box
+			this.assert((band - 3) > (chrome[\label] + 2),
+				"the arc of a % knob starts below its label".format(diameter));
+		};
+		// the Master strip's own budget: 118 px, minus its title band and margins
+		this.assert(CQInk.knobBoxHeight(44, chrome[\label])
+			<= (118 - (chrome[\label] + 8) - 12),
+			"the largest chrome knob still fits the 118 px Master strip");
+	}
+
 	// ---- buttons ----
 
 	test_aButtonIsMeasuredFromItsOwnCaption {

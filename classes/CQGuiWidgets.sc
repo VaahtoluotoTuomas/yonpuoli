@@ -19,10 +19,11 @@ CQGuiWidgets {
 	// labeled knob for continuous params; color = banana accent on the label
 	knob { |name, label, color, role = \standard, surface = \ground, scale|
 		var family = this.prFamily(color), diameter = CQInk.knobDiameter(role);
-		var k = this.prOwn(CQInkControl.knob(label, family, \day, diameter));
+		// the persistent Master strip reads at the chrome's type size; Day's own
+		// columns pass nothing and stay pixel-identical to §16.10's fixed px
+		var k = this.prOwn(CQInkControl.knob(label, family, \day, diameter,
+			scale !? { |m| m[\label] }));
 		k.surface = surface;
-		// the persistent Master strip reads at the chrome's type size without
-		// growing in height; Day's own columns pass nothing and keep §16.10's px
 		scale !? { k.scale = scale };
 		k.action = { |v| state.set(name, CQSpec.map(name, v.value)) };
 		this.register(name, { |v|

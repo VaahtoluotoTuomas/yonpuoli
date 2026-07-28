@@ -239,6 +239,25 @@ centred = { |inner, outer|
 												"the last Coco slot rows and the fifth castle send are contained");
 											check.value(CQInkControl.drawErrors == 0,
 												"the islands and 43 ledger rows paint without callback errors");
+											// The user's N8 rounds: one shared page frame.
+											// Measured parent-relative, because a hidden
+											// StackLayout page reports stale ABSOLUTE
+											// bounds — all four have been laid out at
+											// this step by now.
+											pages = [
+												[drawer.inspectorView, drawer.grid.status.parent],
+												[drawer.workshopView, workshop.rail],
+												[drawer.spellbookView, drawer.spellbookGui.rail],
+												[drawer.memoryView, drawer.memoryGui.header]];
+											check.value(pages.collect { |pair|
+												pair[1].bounds.top
+											}.as(Set).size == 1,
+												"every Drawer page's first ink starts at the same top (%)"
+													.format(pages.collect { |pair| pair[1].bounds.top }));
+											check.value(pages.collect { |pair|
+												pair[1].bounds.top
+											}.first == CQGuiScale.metrics(drawer.step)[\vMargin],
+												"and that top is the step's own vertical margin");
 											// the rail writes through the funnel, and
 											// only the rail does
 											dustRail = railOf.value(\coco1Dust);
@@ -351,18 +370,11 @@ centred = { |inner, outer|
 																"the loom grows too and all four pages keep one rail");
 															check.value(CQInkControl.drawErrors == 0,
 																"both skins and both size steps paint cleanly");
-															// The user's N8 round: all four pages
-															// must open with the same air under the
-															// tab row. Each page's first child is its
-															// own top pad, so one height means one frame.
-															pages = [drawer.inspectorView, drawer.workshopView,
-																drawer.spellbookView, drawer.memoryView];
-															check.value(pages.collect { |page|
-																page.children.first.bounds.height
-															}.as(Set).size == 1,
-																"every Drawer page opens with the same top margin (%)"
-																	.format(pages.collect { |page|
-																		page.children.first.bounds.height }));
+															// The user's N8 rounds: all four pages must
+															// open with the same air under the tab row.
+															// Measure the first CONTENT row, not the top
+															// pad — a correct pad with extra layout
+															// spacing above it still pushed Memory down.
 															// a resize that happened while the Drawer
 															// was hidden must not leave a stale step
 															gui.shell.toggleDrawer;

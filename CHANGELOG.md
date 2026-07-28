@@ -85,6 +85,12 @@ tagged. Earlier tags describe internal development baselines.
 - Enlarged the Inspector's rotated destination headings and the Memory page's
   box titles and morph readout, which had stayed at the old 9–10 px while
   everything around them grew.
+- Aligned the toolbar title to the rule beneath it, gave the Master strip's
+  knob labels clearance from their value arcs, moved the loom's column
+  headings clear of the preset row, and unpacked the Memory fingerprint's
+  crowded top — its box title, the snapshot name and the explanatory line now
+  occupy their own rows, and that line is set one rank smaller because it is
+  information rather than a heading.
 - Raised the Drawer's type above the Day panel's fixed 10 px and gave all four
   pages one shared content rail — the Spellbook previously used neither.
   Subgroup headings gained their own rank (line ink, a lighter rule from the

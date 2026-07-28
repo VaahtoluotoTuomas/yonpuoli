@@ -14,7 +14,7 @@ CQGuiMemory {
 	var gui, state, matrix, snapshots, matrixCtl, morphCtl;
 	var skin = \day, snapshotNames, selectedData, labels, menus, panels;
 	var nameField, aMenu, bMenu, durationBox, detailTitle, detailHint;
-	var <view, <snapshotList, <fingerprint, <morphMeter, <selectedName;
+	var <view, <snapshotList, <fingerprint, <morphMeter, <selectedName, <header;
 	// the seed bank shares the workbench's content rail and size step
 	var <step = \compact, <railWidth, buttons, body, snapshotPanel, morphPanel;
 	var topPad, bottomPad;
@@ -133,7 +133,7 @@ CQGuiMemory {
 	// ---- private ----
 
 	prBuild {
-		var palette = CQInk.palette(\day), header;
+		var palette = CQInk.palette(\day);
 		var saveButton, recallButton, refreshButton, morphButton;
 		var m = CQGuiScale.metrics(step), column, print, saveW;
 		labels = List.new;
@@ -180,15 +180,22 @@ CQGuiMemory {
 		).margins_(7).spacing_(6);
 
 		detailTitle = this.prLabel("live patch · now", \line, \notice);
+		// explanatory info, not a heading: it sits one rank below the title it
+		// shares a row with (the user's N8 note)
 		detailHint = this.prLabel(
-			"select a saved snapshot to compare it with the live patch", \whisper, \label);
+			"select a saved snapshot to compare it with the live patch",
+			\whisper, \range);
 		fingerprint = UserView().fixedWidth_(print.width)
 			.background_(palette[\ground]);
 		fingerprint.drawFunc = {
 			try { this.prDrawFingerprint } { |error| CQInkControl.noteDrawError(error) }
 		};
+		// the box draws its own "patch fingerprint" title at the top, so this row
+		// starts below it rather than on top of it
 		fingerprint.layout = VLayout(
-			HLayout(detailTitle, nil, detailHint).margins_(8).spacing_(6), nil
+			View().fixedHeight_(m[\label] + 10),
+			HLayout(detailTitle, nil, detailHint).margins_(8).spacing_(6),
+			nil
 		).margins_(0).spacing_(0);
 
 		// width fixed to the rail, height free: the body takes the page's
@@ -233,13 +240,18 @@ CQGuiMemory {
 		// fingerprint's own cells and type then grow with the room it gets.
 		topPad = View().fixedHeight_(m[\vMargin]);
 		bottomPad = View().fixedHeight_(m[\vMargin]);
+		// spacing 0: a VLayout's spacing applies above the first item too, which
+		// pushed this page's whole content lower than every other Drawer page.
+		// The gaps are explicit spacers instead.
 		view = View().background_(palette[\recess]).layout_(VLayout(
 			topPad,
 			HLayout(nil, header, nil),
+			View().fixedHeight_(m[\rowGap]),
 			HLayout(nil, body, nil),
+			View().fixedHeight_(m[\rowGap]),
 			HLayout(nil, morphPanel, nil),
 			bottomPad
-		).margins_(0).spacing_(m[\rowGap]));
+		).margins_(0).spacing_(0));
 
 		matrixCtl = SimpleController(matrix);
 		#[patch, matrix, clear].do { |what|
@@ -343,7 +355,9 @@ CQGuiMemory {
 		var box = fingerprint.bounds.moveTo(0, 0);
 		var m = CQGuiScale.metrics(step);
 		var left = if(step == \roomy) { 112 } { 92 };
-		var top = if(step == \roomy) { 62 } { 50 };
+		// clear of the box title AND the title/hint row under it, so the column
+		// group names never crowd the explanatory text
+		var top = (m[\label] + 10) + m[\notice] + 16 + m[\tiny] + 8;
 		// the fingerprint fills whatever the rail leaves it, so a wider window
 		// buys patch detail rather than a small picture in a big box
 		var cellW = ((box.width - left - 24) / CQMatrix.destNames.size)
