@@ -31,6 +31,7 @@ $requiredMarker = switch -Wildcard ($leaf) {
     "gui_drawer_smoke.scd" { "CQ_GUI_DRAWER_PASSED"; break }
     "gui_drawer_preview_reentry_smoke.scd" { "CQ_GUI_DRAWER_REENTRY_PASSED"; break }
     "gui_night_smoke.scd" { "CQ_GUI_NIGHT_PASSED"; break }
+    "gui_night_capture.scd" { "CQ_NIGHT_CAPTURE_DONE"; break }
     default { $null }
 }
 $logDir = Join-Path $PSScriptRoot "tmp\gate-logs"

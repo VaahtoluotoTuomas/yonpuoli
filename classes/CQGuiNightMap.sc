@@ -3,8 +3,9 @@
 // grammar, plus the §6.1 night touch grammar (CQGuiNightTouch). Pure
 // view: geometry from CQNightGeometry, pixels from CQInk/CQInkNight, every
 // write through the shared grammar and funnels. Large stable bodies remain
-// opaque-backed; castles and their endpoint details use transparent paper so
-// only irregular flesh masks the river. Z order is ground → ring → eye →
+// opaque-backed; the eye, castles and their local details use transparent
+// paper so only their actual round/irregular bodies mask the river. Z order is
+// ground → ring → eye →
 // castles → shells → birds → endpoints → crescents → labels → cable overlay →
 // hit-transparent tide gesture overlay, so an ambient repaint touches
 // only the views whose information actually moved (§10) — the storm iris in
@@ -830,7 +831,10 @@ CQGuiNightMap {
 		compassView = groundView;
 		ringView = this.prLayer;
 		ringView.drawFunc = { this.prSafeDraw { this.prDrawRing } };
-		eyeView = this.prLayer;
+		// Clear rectangular paper plus CQInkNight's round ground mask: the iris
+		// hides the river behind its body without clipping coupling chords at
+		// the invisible corners of its repaint layer.
+		eyeView = this.prLayer(false);
 		eyeView.drawFunc = { this.prSafeDraw { this.prDrawEye } };
 		castleViews = 5.collect { |k|
 			// Transparent paper lets the river remain continuous around the
@@ -944,9 +948,14 @@ CQGuiNightMap {
 			or: { name.asString.beginsWith("cas") }
 			or: { name.asString.beginsWith("castle") };
 		var rootTip = #[envA, envB].includes(name);
+		var shellMouth = #[coco1, coco2].includes(name);
 		var view = UserView(container, Rect(0, 0, width, height))
 			.background_(CQInk.palette(\night)[
-				if(castleDetail or: { rootTip }) { \clear } { \ground }]);
+				if(castleDetail or: { rootTip } or: { shellMouth }) {
+					\clear
+				} {
+					\ground
+				}]);
 		view.drawFunc = {
 			this.prSafeDraw {
 				spec[\decoration] !? { this.prDrawDecoration(name, spec, anchor) };
@@ -1032,7 +1041,7 @@ CQGuiNightMap {
 				touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
 			};
 		};
-		// the eye's own opaque layer sits over the ring's center, so both
+		// the eye's own local layer sits over the ring's center, so both
 		// views speak the same ring grammar (prPoint maps via the container)
 		[ringView, eyeView].do { |view|
 			view.mouseDownAction = { |v, x, y, mods, button, clicks|
@@ -1259,7 +1268,7 @@ CQGuiNightMap {
 	}
 
 	// the ring's own line, hovered from either of the two views that speak the
-	// ring's grammar (the eye keeps its own opaque layer, §10)
+	// ring's grammar (the eye keeps its own round ground mask, §10)
 	prHoverRing { |view, x, y|
 		var near = false, point;
 		if(geometry.notNil and: { view.notNil }) {

@@ -640,6 +640,11 @@ punchChecks = { |map|
 				check.value(#[envA, envB].every { |name|
 					map.endpoints[name][\view].background.alpha == 0
 				}, "env output dots keep transparent paper over the exact curved branch");
+				check.value(map.eyeView.background.alpha == 0,
+					"the storm iris masks a circle, not an invisible square");
+				check.value(#[coco1, coco2].every { |name|
+					map.endpoints[name][\view].background.alpha == 0
+				}, "coco mouth outputs cannot erase the full-speed reel mark");
 				check.value(map.tideGestureView.acceptsMouse.not
 					and: { CQNightGeometry.compute(1280, 570)[\castles]
 						.every { |castle|
@@ -663,6 +668,19 @@ punchChecks = { |map|
 				check.value(map.endpoints.values.every { |endpoint|
 					endpoint[\view].mouseDownAction.notNil
 				}, "the shared grammar controller binds every night endpoint");
+				gui.bananaGrammar.hoverEndpoint = \deckA_rate;
+				check.value(gui.endpointInkState(\deckA_rate, \socket) == \idle,
+					"an inert destination hover promises no unavailable action");
+				gui.bananaGrammar.startSource(\tri1);
+				gui.bananaGrammar.hoverEndpoint = nil;
+				check.value(CQMatrix.destNames.every { |name|
+					gui.endpointInkState(name, \socket) == \available
+				}, "a banana in hand gives every legal destination a quiet halo");
+				gui.bananaGrammar.hoverEndpoint = \deckA_rate;
+				check.value(gui.endpointInkState(\deckA_rate, \socket) == \hover,
+					"the destination under the held banana answers more strongly");
+				gui.bananaGrammar.releaseVoid;
+				gui.bananaGrammar.hoverEndpoint = nil;
 				check.value(map.holdStates[0] == (state.get(\coco1Hold) > 0.5),
 					"hold seal state mirrors the power-on param");
 				check.value(map.sproutState == \hidden,
@@ -686,6 +704,21 @@ punchChecks = { |map|
 							(view.bounds.left - (expected.x - anchor.x)).abs < 1
 							and: { (view.bounds.top - (expected.y - anchor.y)).abs < 1 },
 							"a castle leaf jack sits exactly on its computed home");
+						check.value(map.endpoints.keys.every { |name|
+							var endpoint = map.endpoints[name];
+							var center = geo[\endpoints][name];
+							var actual = endpoint[\view].bounds.leftTop
+								+ endpoint[\anchor];
+							CQNightGeometry.distance(center, actual) < 1
+						},
+							"all 38 endpoint views keep their computed cable anchor");
+						map.overlay.invalidate;
+						check.value(map.overlay.cableRecords.every { |record|
+							CQNightGeometry.distance(record[\start],
+								geo[\endpoints][record[\src]]) < 1
+							and: { CQNightGeometry.distance(record[\finish],
+								geo[\endpoints][record[\dest]]) < 1 }
+						}, "every planted cable lands on both moved endpoint centres");
 						check.value(map.overlay.cableCount == 2,
 							"night overlay renders every planted matrix cable");
 						sourceView = map.endpoints[\org2][\view];
@@ -1004,7 +1037,7 @@ punchChecks = { |map|
 																"the ring's eye drags pitch and chaos together");
 															check.value(map.eyeView.notNil
 																and: { map.eyeView.mouseDownAction.notNil },
-																"the eye keeps its own opaque storm layer");
+																"the eye keeps its own local storm layer");
 															check.value((map.eyeFreqNorm
 																- CQSpec.unmap(\qFreq,
 																	state.get(\qFreq))).abs < 1e-6

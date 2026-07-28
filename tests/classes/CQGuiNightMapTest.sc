@@ -169,7 +169,7 @@ CQGuiNightMapTest : UnitTest {
 		this.assertEquals(feedback[\edges], [0.0, 0.5, 0.9, 1.0],
 			"feedback scale follows its exact taper breakpoints");
 		this.assertEquals(level[\kind], \level,
-			"bird level asks only for a quiet reference mark");
+			"bird level exposes its one honest nominal/boost boundary");
 		this.assertFloatEquals(CQSpec.map(\deckALevel, level[\unity]), 1.0,
 			"the bird reference lands on exact unity despite its curved map");
 		this.assert(CQGuiNightMap.crescentScaleFor(\qFreq).isNil,

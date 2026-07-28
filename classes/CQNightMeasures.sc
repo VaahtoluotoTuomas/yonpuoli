@@ -28,81 +28,83 @@ CQNightMeasures {
 
 	// ---- the river and its castles ----
 
-	*ringRadius { ^158 }                    // body
-	*ringBoxPad { ^12 }                     // px, the ring layer's own slack
+	*ringRadius { ^191 }                    // body
+	*ringBoxPad { ^14 }                     // px, the ring layer's own slack
 
-	*castleRx { ^29 }                       // body — the drawn blob's ellipse
-	*castleRy { ^25 }                       // body
-	*castleBoxReach { ^45 }                 // body — transparent castle paper
-	*castleBoxSlack { ^4 }                  // px, hairline room inside that box
-	*clockRadius { ^14 }                    // body — the inner spesal dial
+	*castleRx { ^37 }                       // body — the drawn blob's ellipse
+	*castleRy { ^33 }                       // body
+	*castleBoxReach { ^68 }                 // body — transparent castle paper
+	*castleBoxSlack { ^5 }                  // px, hairline room inside that box
+	*clockRadius { ^18 }                    // body — the inner spesal dial
 	// The ripple follows each seeded blob's actual bottom, not its mean ellipse,
 	// so every castle gives the control the same visual breath.
-	*rangeBodyGap { ^13 }                   // px — blob edge to playable ripple
+	*rangeBodyGap { ^17 }                   // px — blob edge to playable ripple
 
 	// the four castle endpoints on their clock face (body radii from the centre)
-	*castleJackOrbit { ^40 }                // tri at 1:30, cas at 10:30
-	*castleFmOrbit { ^34 }                  // the fm socket at 4 o'clock
+	*castleJackOrbit { ^52 }                // tri at 1:30, cas at 10:30
+	*castleFmOrbit { ^45 }                  // the fm socket at 4 o'clock
 	// the lamped spesal view is the widest box a castle carries; this orbit is
 	// what keeps it off the inner clock at every scale (CQNightGeometryTest)
-	*castleSpesalOrbit { ^48 }
+	*castleSpesalOrbit { ^61 }
 
-	*bodyMargin { ^10 }                     // px — the blob's hit/hover margin
-	*clockHit { ^10 }                       // px — the dial annulus' tolerance
+	*bodyMargin { ^12 }                     // px — the blob's hit/hover margin
+	*clockHit { ^12 }                       // px — the dial annulus' tolerance
 
 	// ---- the shells ----
 
 	// The gap is the flood's tightest number at the minimum stage: it is squeezed
 	// from the inside by the castle boxes the shell may not cover and from the
 	// outside by the almanac's water. CQNightGeometryTest holds both ends.
-	*shellGap { ^184 }                      // body — ring rim to shell centre
-	*shellRise { ^26 }                      // body — the shells sit above the eye
-	*shellOuterR { ^100 }                   // body — the spiral's outer rim
+	*shellGap { ^198 }                      // body — ring rim to shell centre
+	*shellRise { ^20 }                      // body — the shells sit above the eye
+	*shellOuterR { ^114 }                   // body — the spiral's outer rim
 	// the shell layer's slack past the rim. It only has to hold what the shell
 	// itself draws — the seal ring, the notch's hover reach, the struck head and
-	// the skip glyph, ~13 px past outerR — so trimming it is what buys the
+	// the skip glyph, ~16 px past outerR — so trimming it is what buys the
 	// castle boxes and the almanac their margins at the minimum stage.
-	*shellBoxPad { ^24 }                    // body
-	*spiralInnerR { ^12 }                   // body — where the winding starts
-	*orgStemReach { ^12 }                   // body — spiral to the hanging fruit
-	*moonArc { ^122 }                       // body — the five moons' arc
-	*crescentArc { ^152 }                   // body — the tide crescents' arc
+	*shellBoxPad { ^28 }                    // body
+	*spiralInnerR { ^14 }                   // body — where the winding starts
+	*orgStemReach { ^14 }                   // body — spiral to the hanging fruit
+	*moonArc { ^136 }                       // body — the five moons' arc
+	*crescentArc { ^176 }                   // body — the tide crescents' arc
 
 	// The mouth's two stationary transport marks hang below the jack, and the
 	// flood pushed them further out than they have ever hung: the grown jack
-	// view (30) and the grown mark boxes (13) set the floor, since a mark whose
+	// view (34) and the grown mark boxes (16) set the floor, since a mark whose
 	// box lies under the jack's opaque view is half unreachable. They are held
 	// AT that floor on purpose — the water below the mouth is the lane cables
 	// from the ring to this shell's moons sag through (§8 review note).
-	*chevronDrop { ^30 }                    // body
-	*chevronDropFloor { ^30 }               // px
-	*skipDrop { ^26 }                       // body, below the chevron
-	*skipDropFloor { ^26 }                  // px
+	*chevronDrop { ^38 }                    // body
+	*chevronDropFloor { ^38 }               // px
+	*skipDrop { ^34 }                       // body, below the chevron
+	*skipDropFloor { ^34 }                  // px
 
-	*heartHit { ^18 }                       // px — hold's toggle and the punch
-	*markHitReach { ^13 }                   // px — chevron and skip boxes
-	*rimMargin { ^10 }                      // px — the shell rim's body handle
+	*heartHit { ^22 }                       // px — hold's toggle and the punch
+	*markHitReach { ^16 }                   // px — chevron and skip boxes
+	*rimMargin { ^12 }                      // px — the shell rim's body handle
 	// how near the drawn groove a press takes the winding gesture. It must stay
 	// under half the spiral's radial pitch or two turns would answer one press.
-	*windGrab { ^11 }                       // px
+	*windGrab { ^13 }                       // px
 
 	// ---- the eye ----
 	// The two-knob macro of the whole instrument: qFreq and qChaos live nowhere
 	// else at night, so §8 gave the iris the mass its job deserves. Its position
 	// did not move a pixel.
 
-	*eyeLayerR { ^48 }                      // px — the storm iris' own layer
-	*eyeHit { ^42 }                         // px — the pupil plus four weather rings
+	*eyeLayerR { ^62 }                      // px — the storm iris' own layer
+	*eyeMaskR { ^54 }                       // px — round ground under the actual iris
+	*eyeHit { ^54 }                         // px — the pupil plus four weather rings
 
 	// ---- the birds ----
 
-	*birdAltitude { ^48 }                   // body
-	*birdSpan { ^46 }                       // body — wing tip to wing tip
-	*birdBoxRx { ^32 }                      // body
-	*birdBoxRy { ^22 }                      // body
-	*birdRateOffset { ^Point(17, 28) }      // body — the rate moon under the wing
-	*birdCrescentOffset { ^Point(-27, 24) } // body — the deck level crescent
-	*birdLabelDrop { ^46 }                  // body
+	*birdFractions { ^#[0.21, 0.79] }
+	*birdAltitude { ^56 }                   // body
+	*birdSpan { ^64 }                       // body — wing tip to wing tip
+	*birdBoxRx { ^44 }                      // body
+	*birdBoxRy { ^31 }                      // body
+	*birdRateOffset { ^Point(22, 30) }      // body — the rate moon under the wing
+	*birdCrescentOffset { ^Point(-37, 27) } // body — the deck level crescent
+	*birdLabelDrop { ^43 }                  // body
 	// fixed in px so a resize never re-cuts a name that already fits, and tall
 	// enough to hold a 10 px mono face whole (§16.4 fixes the type, not the box)
 	*birdLabelExtent { ^Point(200, 20) }    // px
@@ -110,37 +112,37 @@ CQNightMeasures {
 
 	// ---- the roots ----
 
-	*rootFractions { ^#[0.17, 0.83] }
-	*rootKnotReach { ^110 }                 // body — intake knot above the waterline
+	*rootFractions { ^#[0.12, 0.88] }
+	*rootKnotReach { ^74 }                  // body — intake knot above the waterline
 	// A root is a delta, not a comb: the seeded geometry perturbs this wide
 	// nominal spacing independently on both sides.
-	*rootSourceSpacing { ^32 }              // body — five unlabelled intake strands
-	*rootSourceShoulder { ^54 }             // body — first bend above the waterline
-	*rootSourceGather { ^32 }               // body — final bend before the knot
-	*rootSourceHit { ^11 }                  // px — nearest strand chooses provenance
-	*rootVeinOutset { ^46 }                 // body — route around the Coco crescents
-	*rootVeinLift { ^34 }                   // body — first audio-vein control point
-	*rootVeinDrop { ^58 }                   // body — final control point below the shell
+	*rootSourceSpacing { ^34 }              // body — five unlabelled intake strands
+	*rootSourceShoulder { ^48 }             // body — first bend above the waterline
+	*rootSourceGather { ^26 }               // body — final bend before the knot
+	*rootSourceHit { ^13 }                  // px — nearest strand chooses provenance
+	*rootVeinOutset { ^52 }                 // body — route around the Coco crescents
+	*rootVeinLift { ^38 }                   // body — first audio-vein control point
+	*rootVeinDrop { ^64 }                   // body — final control point below the shell
 	*rootVeinJoinNorm { ^0.8 }              // body fraction — a real outer spiral point
-	*rootBudX { ^38 }                       // body — env follower side-growth
+	*rootBudX { ^44 }                       // body — env follower side-growth
 	*rootBudY { ^-4 }                       // body
-	*rootKnotR { ^13 }                      // body — drawn two-lobed preamp knot
-	*rootKnotHit { ^20 }                    // px — axis-locked drive / bias gesture
-	*rootBoxPad { ^12 }                     // px — transparent local repaint layer
+	*rootKnotR { ^18 }                      // body — drawn two-lobed preamp knot
+	*rootKnotHit { ^27 }                    // px — axis-locked drive / bias gesture
+	*rootBoxPad { ^14 }                     // px — transparent local repaint layer
 	*rootLabelExtent { ^Point(72, 14) }      // px — transient provenance only
 	// "Beside, not over, the delta" is a promise a fixed inset cannot keep: the
 	// strands are seeded, so this is only the nominal rest, and the geometry
 	// pushes further inward until the ground erasure clears the actual curves.
-	*rootLabelInward { ^52 }                // body — nominal, minimum inward rest
+	*rootLabelInward { ^60 }                // body — nominal, minimum inward rest
 	*rootLabelDrop { ^5 }                   // body — slight settling below knot
 	*rootLabelClear { ^6 }                  // px — erasure never touches a strand
 	*rootLabelWashPad { ^Point(3, 1) }      // px — CQInkNight's ground erasure
 	// The mic sprout still grows beside envA, but on root A's far side: the
 	// tide pool took the water it used to stand in (§9), and a reed rising from
 	// the waterline at the bay's left edge is where it belongs anyway.
-	*sproutOffset { ^-58 }                  // body — the mic sprout beside envA
-	*sproutTipOffset { ^-66 }               // body
-	*sproutReach { ^60 }                    // body
+	*sproutOffset { ^-50 }                  // body — the mic sprout beside envA
+	*sproutTipOffset { ^-58 }               // body
+	*sproutReach { ^54 }                    // body
 
 	// ---- endpoint view extents (px, rake 12) ----
 	// Most of these remain opaque boxes that eat lines and marks beneath them.
@@ -149,29 +151,31 @@ CQNightMeasures {
 	// opaque owner re-runs the courtesy law; clear castle details must not add
 	// synthetic repair stubs.
 
-	*jackExtent { ^30 }                     // px, square
-	*socketExtent { ^Point(24, 24) }        // px
-	*lampedWidth { ^40 }                    // px — a socket that carries a lamp
-	*lampOffset { ^16 }                     // px — the lamp bead's own home
-	*crescentExtent { ^30 }                 // px, square
+	*jackExtent { ^34 }                     // px, square
+	*socketExtent { ^Point(28, 28) }        // px
+	*lampedWidth { ^46 }                    // px — a socket that carries a lamp
+	*lampOffset { ^18 }                     // px — the lamp bead's own home
+	*endpointInkScale { ^1.2 }              // visible jack/socket/lamp ink
+	*endpointGlyphExtent { ^12 }            // px — wave/wedge/trigger symbol
+	*crescentExtent { ^44 }                 // px, square
 	// Only the two in/fb crescents grow downward to carry their Dolby mark.
-	// The crescent itself keeps the old 30 px square and exact anchor; the
+	// The crescent itself keeps the common 44 px square and exact anchor; the
 	// extra paper is below it, away from the moons.
-	*dolbyCrescentHeight { ^50 }            // px — grown in/fb owner view
-	// CQInk.drawJack's idle dot plus its outline. Day and night share that one
-	// primitive (§16.11), so it does NOT move with the flood — but the stubs
-	// drawn inside a night view have to stop at it.
-	*jackDotRim { ^5 }                      // px
+	*dolbyCrescentHeight { ^72 }            // px — grown in/fb owner view
+	// CQInk.drawJack's Night-scaled idle dot plus its outline. The shared
+	// primitive keeps Day at scale 1 while Night supplies endpointInkScale;
+	// any local underlay has to stop at this visible rim.
+	*jackDotRim { ^5.8 }                    // px
 
 	// ---- the solitary moon and the bay-wide tide (§16.6) ----
 	// The moon is a remote body beyond bird B, not the heading of an almanac
 	// panel. Its vertical gesture briefly wears rain or sun; those glyphs have
 	// geometry only so their active ink cannot clip, never as resting targets.
 	*moonFraction { ^0.925 }                // of width — beyond bird B
-	*moonAltitude { ^42 }                   // body — slightly above the birds
-	*moonRadius { ^28 }                     // body (Ø 56)
+	*moonAltitude { ^50 }                   // body — slightly above the birds
+	*moonRadius { ^35 }                     // body (Ø 70)
 	*moonBoxSlack { ^4 }                    // px, hairline room past all ink
-	*moonHalo { ^9 }                        // px — the 120 ms shake flash
+	*moonHalo { ^10 }                       // px — the 120 ms shake flash
 	// [name, dx, dy] from the moon; deliberately asymmetric, never a row.
 	*moonWeatherPlaces { ^[[\grow, -25, 39], [\wither, 29, 35]] }
 
@@ -180,60 +184,61 @@ CQNightMeasures {
 	// rectangle itself is never drawn; these fractions place only its seeds.
 	*tideLeftFraction { ^0.31 }
 	*tideRightFraction { ^0.69 }
-	*tideTopFraction { ^0.22 }
-	*tideBottomFraction { ^0.91 }
-	*stampRadius { ^9 }                     // px touch body around a tiny seed
+	*tideTopFraction { ^0.18 }
+	*tideBottomFraction { ^0.96 }
+	*stampRadius { ^14 }                    // px touch body around a tiny seed
 	// The bay-wide focus is opened by a small gill below the two lower
 	// castles. It is an organ of the same landscape, not a toolbar toggle:
 	// closed = ordinary cable grammar, open = cables submerged + tide playable.
-	*tideGateFraction { ^0.86 }             // of stage height
-	*tideGateHit { ^17 }                    // px, one compact touch body
+	*tideGateFraction { ^0.94 }             // of stage height
+	*tideGateHit { ^24 }                    // px, one compact touch body
 	*tideGateBoxSlack { ^2 }                // px past the hover echo
-	*seedLength { ^7 }                      // px, inward-pointing kernel
-	*seedWidth { ^4.5 }                     // px
-	*seedHalo { ^10 }                       // px, focus / breed target bloom
-	*tideGateSpan { ^14 }                   // px, half-width of the gill strokes
-	*tideGateRise { ^8 }                    // px, opening breath
+	*seedLength { ^11 }                     // px, inward-pointing kernel
+	*seedWidth { ^7 }                       // px
+	*seedHalo { ^15 }                       // px, focus / breed target bloom
+	*tideGateSpan { ^20 }                   // px, half-width of the gill strokes
+	*tideGateRise { ^11 }                   // px, opening breath
 
 	// ---- drawn ink bodies (px — CQInkNight draws at these) ----
 	// Not stroke widths and not type: those are frozen (§16.3, §16.4). These are
 	// the sizes of the small drawn bodies themselves, and §8's law for them is
 	// that information must not shrink relative to the landscape around it.
 
-	*heartDotR { ^4 }                       // the hold heart at the spiral's eye
-	*heartSealR { ^8.5 }                    // its danger ring while sealed
-	*notchReach { ^6 }                      // the reel notch across the groove
-	*notchHoverReach { ^9 }                 // the grab cue
-	*crescentArcR { ^12 }                   // the tide crescent's own arc
-	*dolbyOysterDrop { ^24 }                // px — centre-to-centre from crescent
-	*dolbyOysterWidth { ^13 }               // px — half-width of the paired arcs
-	*dolbyOysterOpenGap { ^4.5 }            // px — off posture
-	*dolbyOysterGateGap { ^1.2 }            // px — gate's hairline opening
-	*dolbyOysterHitX { ^13 }                // px — specific tap before crescent
-	*dolbyOysterHitY { ^8 }                 // px
-	*clockBeadR { ^3.2 }                    // the spesal state's lit bead
-	*clockBeadHaloR { ^4.6 }
-	*clockTickReach { ^3.5 }                // the eight tick marks' half-length
-	*rangeRippleWidth { ^14 }               // px — drawn slow/mid/fast mark
-	*rangeRippleHeight { ^8 }               // px
-	*rangeHitX { ^10 }                      // px — cue and act around the ripple
-	*rangeHitY { ^8 }                       // px
+	*heartDotR { ^5.5 }                     // the hold heart at the spiral's eye
+	*heartSealR { ^11 }                     // its danger ring while sealed
+	*notchReach { ^8 }                      // the reel notch across the groove
+	*notchHoverReach { ^12 }                // the grab cue
+	*reelMaxNorm { ^0.99 }                  // keep full speed visible before mouth jack
+	*crescentArcR { ^18 }                   // the tide crescent's own arc
+	*dolbyOysterDrop { ^36 }                // px — centre-to-centre from crescent
+	*dolbyOysterWidth { ^17 }               // px — half-width of the paired arcs
+	*dolbyOysterOpenGap { ^6 }              // px — off posture
+	*dolbyOysterGateGap { ^1.6 }            // px — gate's hairline opening
+	*dolbyOysterHitX { ^17 }                // px — specific tap before crescent
+	*dolbyOysterHitY { ^10 }                // px
+	*clockBeadR { ^4.2 }                    // the spesal state's lit bead
+	*clockBeadHaloR { ^6 }
+	*clockTickReach { ^4.5 }                // the eight tick marks' half-length
+	*rangeRippleWidth { ^22 }               // px — drawn slow/mid/fast mark
+	*rangeRippleHeight { ^11 }              // px
+	*rangeHitX { ^15 }                      // px — cue and act around the ripple
+	*rangeHitY { ^12 }                      // px
 	*cometR { ^2.75 }                       // the read head
 	*fireflyR { ^1.6 }                      // the river's direction carriers
 	*chordLightR { ^2.2 }                   // the coupling's travelling light
-	*pupilMin { ^4 }                        // the iris at qFreq 0
-	*pupilRange { ^8 }                      // ...and how far it opens
-	*irisGap { ^5 }                         // pupil rim to the rays' inner ends
-	*irisRayBase { ^4 }                     // a calm corona's ray
-	*irisRayChaos { ^5 }                    // ...and how far the storm reaches
-	*irisRayJitter { ^6 }
-	*irisWeatherInner { ^16 }               // calm front, outside the largest pupil
-	*irisWeatherSpan { ^24 }                // four 6 px seasons: ¼, ½, ¾, full
-	*birdBodyR { ^2.6 }
-	*skipGlyphR { ^6 }                      // the mouth's stationary skip mark
-	*chevronReach { ^6.5 }                  // the flip chevron's half-width
-	*chevronRise { ^4.5 }                   // its head's depth
-	*chevronShuttleRise { ^5.5 }            // ...opposed, while shuttling
-	*struckBase { ^5 }                      // the hammered head's arms
-	*struckRange { ^8 }
+	*pupilMin { ^5.5 }                      // the iris at qFreq 0
+	*pupilRange { ^10.5 }                   // ...and how far it opens
+	*irisGap { ^6.5 }                       // pupil rim to the rays' inner ends
+	*irisRayBase { ^5.5 }                   // a calm corona's ray
+	*irisRayChaos { ^7 }                    // ...and how far the storm reaches
+	*irisRayJitter { ^8 }
+	*irisWeatherInner { ^20 }               // calm front, outside the largest pupil
+	*irisWeatherSpan { ^32 }                // four 8 px seasons: ¼, ½, ¾, full
+	*birdBodyR { ^3.6 }
+	*skipGlyphR { ^8 }                      // the mouth's stationary skip mark
+	*chevronReach { ^9 }                    // the flip chevron's half-width
+	*chevronRise { ^6 }                     // its head's depth
+	*chevronShuttleRise { ^7.5 }            // ...opposed, while shuttling
+	*struckBase { ^7 }                      // the hammered head's arms
+	*struckRange { ^10 }
 }

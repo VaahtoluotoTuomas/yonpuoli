@@ -137,11 +137,12 @@ CQInkNight {
 	// the irregular hairline circle through the five castles, with the
 	// fireflies that carry the loop's direction (k → k+1). Phase advances only
 	// when telemetry moves — a still bay keeps a still river. The eye lives on
-	// its own opaque layer (drawEye) so a storm repaint never re-inks the ring.
+	// its own clear local layer with a round mask, so a storm repaint never
+	// re-inks the ring and its paper never clips a chord.
 	*drawRing { |geometry, phase = 0, hover = false, skin = \night, chords|
 		var palette = CQInk.palette(skin), origin = geometry[\ringBox].leftTop;
 		Pen.translate(origin.x.neg, origin.y.neg);
-		// the spesal coupling rides this layer because a castle's own 80 px box
+		// the spesal coupling rides this layer because a castle's own local paper
 		// cannot paint a chord to a body 300 px away — and its travelling lights
 		// ride the river's own phase, so every moving mark in the ring advances
 		// on the same telemetry frames (§16.9)
@@ -241,7 +242,8 @@ CQInkNight {
 		skipHover = false, skipFlash = false, struckNorm, struckTwinkle = false,
 		rimHover = false, skin = \night, preampRoot, preampAura = 0,
 		preampDrive = 0, preampSlot = 1|
-		var palette = CQInk.palette(skin), notch, normal, reach, spark, tail, heart;
+		var palette = CQInk.palette(skin), notch, notchNorm, normal, reach;
+		var spark, tail, heart;
 		Pen.translate(origin.x.neg, origin.y.neg);
 		// This view is opaque-backed. Repaint the exact incoming audio vein
 		// beneath the winding so the anatomy reaches the real spiral
@@ -302,8 +304,9 @@ CQInkNight {
 				palette[if(skipHover) { \line } { \whisper }]
 			});
 		// the reel notch: a tick across the groove, never a bead
-		notch = CQNightGeometry.spiralPoint(coco, speedNorm ? 0.5);
-		normal = CQNightGeometry.spiralNormal(coco, speedNorm ? 0.5);
+		notchNorm = CQNightGeometry.reelNotchNorm(speedNorm ? 0.5);
+		notch = CQNightGeometry.spiralPoint(coco, notchNorm);
+		normal = CQNightGeometry.spiralNormal(coco, notchNorm);
 		reach = if(hover) { CQNightMeasures.notchHoverReach }
 			{ CQNightMeasures.notchReach };
 		Pen.strokeColor = palette[\line];
@@ -408,8 +411,8 @@ CQInkNight {
 						start, sweep, arcR, scale[\center])
 				},
 				\level, {
-					this.prDrawPlainCrescent(center, norm, family, active, palette,
-						start, sweep, arcR);
+					this.prDrawLevelCrescent(center, norm, active, palette,
+						start, sweep, arcR, scale[\unity]);
 					this.prDrawReferenceMark(center, start, sweep, arcR,
 						scale[\unity], palette)
 				},
@@ -423,14 +426,19 @@ CQInkNight {
 
 	// Feedback and input have audible countries; SP.AF has signed directions.
 	// Colour always names a consequence, while notches keep boundaries legible
-	// without hue. Bird level stays neutral and receives only its unity mark.
+	// without hue. Bird level stays neutral through unity and turns danger-red
+	// only for the travelled gain above its exact reference mark.
 	*feedbackCrescentFamilies { ^#[input, warning, danger] }
 	*inputCrescentFamilies { ^#[input, warning] }
 	*spafCrescentFamilies { ^#[inverso, verso] }
-	*levelCrescentFamily { ^\line }
+	*levelCrescentFamilies { ^#[line, danger] }
 
 	*feedbackCrescentFamilyAt { |norm, regionEdges|
 		^this.regionFamilyAt(norm, regionEdges, this.feedbackCrescentFamilies)
+	}
+
+	*levelCrescentFamilyAt { |norm, unity|
+		^if((norm ? 0) > unity) { \danger } { \line }
 	}
 
 	*regionFamilyAt { |norm, regionEdges, families|
@@ -451,6 +459,32 @@ CQInkNight {
 			Pen.addArc(center, arcR, start, sweep * norm);
 			Pen.stroke;
 		};
+	}
+
+	*prDrawLevelCrescent { |center, norm, active, palette,
+		start, sweep, arcR, unity|
+		var value = (norm ? 0).clip(0, 1);
+		var normalEnd = min(value, unity);
+		var angle, pearl, family;
+		if(normalEnd > 0.001) {
+			Pen.strokeColor = palette[\line].copy
+				.alpha_(if(active) { 1.0 } { 0.85 });
+			Pen.width = CQInk.strokes[\strong];
+			Pen.addArc(center, arcR, start, sweep * normalEnd);
+			Pen.stroke;
+		};
+		if(value > unity) {
+			Pen.strokeColor = palette[\danger].copy
+				.alpha_(if(active) { 1.0 } { 0.9 });
+			Pen.width = CQInk.strokes[\strong];
+			Pen.addArc(center, arcR, start + (sweep * unity),
+				sweep * (value - unity));
+			Pen.stroke;
+		};
+		angle = start + (sweep * value);
+		pearl = center + (Point(cos(angle), sin(angle)) * arcR);
+		family = this.levelCrescentFamilyAt(value, unity);
+		this.prDrawCrescentPearl(pearl, family, active, palette);
 	}
 
 	*prDrawRegionCrescent { |center, norm, active, palette,
@@ -943,8 +977,9 @@ CQInkNight {
 
 	// §6.1 the ring's eye — the storm iris. Its ink is the actual weather:
 	// the pupil's aperture is qFreq, and the twelve rays scatter and reach
-	// with qChaos (even, short corona = calm; ragged reach = storm). Drawn by
-	// its own opaque layer so a storm repaint never re-inks the ring (§10).
+	// with qChaos (even, short corona = calm; ragged reach = storm). Its view
+	// paper is transparent; one round ground mask beneath the actual iris keeps
+	// the river behind the body without clipping chords at square corners.
 	*drawEye { |center, active = false, hover = false,
 		freqNorm = 0.5, chaosNorm = 0.15, skin = \night|
 		var palette = CQInk.palette(skin), jitters = this.irisJitters;
@@ -952,6 +987,10 @@ CQInkNight {
 			+ (freqNorm.clip(0, 1) * CQNightMeasures.pupilRange);
 		var chaos = chaosNorm.clip(0, 1);
 		var engaged = active or: { hover };
+		Pen.fillColor = palette[\ground];
+		Pen.addOval(Rect.aboutPoint(center, CQNightMeasures.eyeMaskR,
+			CQNightMeasures.eyeMaskR));
+		Pen.fill;
 		this.drawIrisWeather(center, chaos, active, hover, skin);
 		Pen.fillColor = palette[\spark].copy.alpha_(
 			if(active) { 0.55 } { if(hover) { 0.38 } { 0.25 } });
@@ -1115,7 +1154,7 @@ CQInkNight {
 		};
 	}
 
-	// deck bird: two wing béziers and a body dot (§16.6), span ≈ 30 px,
+	// deck bird: two wing béziers and a body dot (§16.6), span ≈ 64 px,
 	// drawn by the bird's own opaque layer (origin = its box corner)
 	*drawBird { |bird, origin, active = false, flash = false, skin = \night|
 		var palette = CQInk.palette(skin), c = bird[\center], span = bird[\span];
@@ -1175,7 +1214,7 @@ CQInkNight {
 	// the coco mouth chevron: read direction below the spiral's mouth,
 	// reversed by flip (down = forward, up = flipped — mirrored the same on
 	// both cocos). Centered on its anchor so neither the shell box edge nor
-	// the mouth jack's opaque view ever swallows it.
+	// the mouth jack's 34 px interaction view ever crowds it.
 	// Three modes, not two (amended 2026-07-21 after the G2.5 review): once a
 	// flip banana drives the gate faster than an arrow can be read, a single
 	// arrowhead can only freeze or lie, so the mark becomes §16.5's opposed
@@ -1429,7 +1468,7 @@ CQInkNight {
 		Pen.stroke;
 	}
 
-	// The org jack owns an opaque 30 px box over the shell. Repaint the exact
+	// The org jack owns an opaque 34 px box over the shell. Repaint the exact
 	// spiral curve and its radial fruit stem inside that clipped view before
 	// the yellow jack is drawn; a generic vertical stub lies about both.
 	*drawOrganUnderlay { |coco, anchor, skin = \night|

@@ -515,6 +515,13 @@ surface at the review, not something the implementer decides.
 (checklist N3).** The cluster is dissolved one step further: weather becomes
 an act of the moon and the compass becomes a property of the bay.
 
+**Full-scale polish build, implemented 2026-07-28 and visually accepted
+2026-07-29.**
+The accepted interaction and topology stay unchanged while the moon grows
+Ø 56 → 70, the seed rows move 22/91 → 18/96 % of stage height, each seed
+gains a 28 px-diameter touch body, and the gill gains a 48 px-diameter exact
+hit body. These measures do not reopen N3's grammar.
+
 - The **solitary moon** is Ø 56 in the far upper-right, beyond bird B and
   slightly above it. It opens as a 0.22 crescent and sows through
   `0.2 × phase²` (quarter/half/full ≈ 4/18/70 cables). Tap throws and
@@ -1211,10 +1218,12 @@ spread to every continuous hand: colour must name a consequence, not merely
 magnitude. SP.AF now has a CQSpec-derived zero notch and two signed halves
 (inverso blue / verso orange), with its live fill growing away from zero.
 Input has a CQSpec-owned unity boundary: green normal gain, amber overdrive.
-The bird level remains neutral and gains only an exact unity tick. Speed, the
+The bird level remains neutral through its exact unity tick; the actually
+travelled gain above it and its pearl turn danger-red. This is one real
+boundary (nominal level → boost), not a generic magnitude ramp. Speed, the
 storm iris and the root gestures have no honest discrete region boundaries
-today and intentionally remain continuous. Dolby and range already state their
-discrete modes by shape.
+today and intentionally remain continuous. Dolby and range already state
+their discrete modes by shape.
 
 **Hypothesis.** The instrument's juiciest zone is fb ≈ 0.95–1.15
 (echo → looper → blooming crunch), but the linear 0–1.25 spec gives it

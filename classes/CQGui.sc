@@ -139,38 +139,57 @@ CQGui {
 	recButton_ { |btn| recBtn = btn }
 	recTime_ { |view| recTimeView = view }
 	registerInkControl { |control| inkControls.add(control); ^control }
-	drawEndpoint { |name, kind, center, family, glyph, lamp = false, skin = \night|
-		var palette = CQInk.palette(skin), endpointState;
-		endpointState = if(kind == \jack) {
-			if(bananaGrammar.isSourceInHand(name)) { \inHand } {
+	endpointInkState { |name, kind|
+		if(kind == \jack) {
+			^if(bananaGrammar.isSourceInHand(name)) { \inHand } {
 				if(bananaGrammar.hoverEndpoint == name) { \hover } { \idle }
 			}
+		};
+		if(bananaGrammar.isCandidate(name)) { ^\candidate };
+		// A destination that cannot act does not promise an action on hover.
+		// Once a banana is in hand, every legal destination answers with one
+		// quiet static halo; the nearest/hovered candidate still grows stronger.
+		if(bananaGrammar.isInHand) {
+			^if(bananaGrammar.hoverEndpoint == name) { \hover } { \available }
+		};
+		^if(matrix.asArray.any { |patch| patch[1] == name }) {
+			\occupied
 		} {
-			if(bananaGrammar.isCandidate(name)) { \candidate } {
-				if(bananaGrammar.hoverEndpoint == name) { \hover } {
-					if(matrix.asArray.any { |patch| patch[1] == name }) {
-						\occupied
-					} {
-						\idle
-					}
-				}
-			}
+			\idle
+		}
+	}
+
+	drawEndpoint { |name, kind, center, family, glyph, lamp = false, skin = \night|
+		var palette = CQInk.palette(skin);
+		var endpointState = this.endpointInkState(name, kind);
+		var inkScale = if(skin == \night) {
+			CQNightMeasures.endpointInkScale
+		} {
+			1
 		};
 		if(kind == \jack) {
-			CQInk.drawJack(center, family, skin, endpointState, this.auraFor(name) ? 0)
+			CQInk.drawJack(center, family, skin, endpointState,
+				this.auraFor(name) ? 0, inkScale)
 		} {
 			CQInk.drawSocket(center, family, skin, endpointState,
-				bananaGrammar.handWeight);
+				bananaGrammar.handWeight, inkScale);
 			glyph !? {
+				var glyphHalf = if(skin == \night) {
+					CQNightMeasures.endpointGlyphExtent * 0.5
+				} {
+					4
+				};
 				CQInk.drawGlyph(glyph,
-					Rect(center.x - 4, center.y - 4, 8, 8), palette[family])
+					Rect.aboutPoint(center, glyphHalf, glyphHalf), palette[family])
 			};
 			if(lamp) {
 				var charge = this.chargeFor(name) ? 0;
 				// §16.8: fill = charge / 0.5; at and above the Schmitt's on-threshold
 				// the lamp is lit (steady for a gate, a decaying bloom for a trig —
 				// the server's own peak-hold fall, no client-side timer)
-				CQInk.drawLamp(center + Point(16, 0), charge, charge >= 0.5, skin)
+				CQInk.drawLamp(center + Point(
+					if(skin == \night) { CQNightMeasures.lampOffset } { 16 }, 0),
+					charge, charge >= 0.5, skin, inkScale)
 			};
 		};
 		^this

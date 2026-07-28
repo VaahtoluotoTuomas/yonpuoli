@@ -129,8 +129,12 @@ CQInkTest : UnitTest {
 		this.assertEquals(CQInkNight.inputCrescentFamilies,
 			#[input, warning],
 			"input reads as normal gain followed by overdrive");
-		this.assertEquals(CQInkNight.levelCrescentFamily, \line,
-			"bird level keeps a neutral unity reference");
+		this.assertEquals(CQInkNight.levelCrescentFamilies, #[line, danger],
+			"bird level stays neutral through unity and warns only above it");
+		this.assertEquals(CQInkNight.levelCrescentFamilyAt(0.5, 0.5), \line,
+			"exact unity is still the normal listening level");
+		this.assertEquals(CQInkNight.levelCrescentFamilyAt(0.5001, 0.5), \danger,
+			"the travelled level past unity turns danger-red");
 	}
 
 	test_stormIrisCarriesFourPoeticButExactWeatherSeasons {
@@ -138,7 +142,7 @@ CQInkTest : UnitTest {
 		var radii = CQInkNight.irisWeatherRadii;
 		this.assertEquals(norms, #[0.25, 0.5, 0.75, 1.0],
 			"the four unlabelled growth rings still land on exact hand quarters");
-		this.assertEquals(radii, [22.0, 28.0, 34.0, 40.0],
+		this.assertEquals(radii, [28.0, 36.0, 44.0, 52.0],
 			"the weather seasons grow evenly inside the eye's own layer");
 		norms.do { |norm, i|
 			this.assertFloatEquals(CQInkNight.irisWeatherRadiusAt(norm), radii[i],

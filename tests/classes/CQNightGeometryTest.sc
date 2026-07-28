@@ -352,6 +352,24 @@ CQNightGeometryTest : UnitTest {
 		};
 	}
 
+	test_maximumReelNotchRemainsVisibleBeforeTheMouthJack {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			geo[\cocos].do { |coco, i|
+				var norm = CQNightGeometry.reelNotchNorm(1);
+				var point = CQNightGeometry.spiralPoint(coco, norm);
+				this.assertEquals(norm, CQNightMeasures.reelMaxNorm,
+					"coco %'s full value keeps the reviewed display inset (%x%)"
+						.format(i + 1, *size));
+				this.assert(CQNightGeometry.distance(point, coco[\mouth])
+					> (CQNightMeasures.jackDotRim
+						+ CQNightMeasures.notchHoverReach),
+					"coco %'s full-speed tick clears the mouth jack even on hover (%x%)"
+						.format(i + 1, *size));
+			};
+		};
+	}
+
 	// the G2.3 clip fixes, pinned: no opaque endpoint view may cover the
 	// chevron glyph, the inner clock's face or any of its eight bead homes
 	test_inkClearances {
@@ -756,6 +774,8 @@ CQNightGeometryTest : UnitTest {
 			var stamps = geo[\almanac][\stamps];
 			var gate = geo[\tideGate], gateBox = geo[\tideGateBox];
 			var endpointNames = CQMatrix.sourceNames ++ CQMatrix.destNames;
+			var seedReach = max(CQNightMeasures.stampRadius,
+				CQNightMeasures.seedHalo);
 			this.assert(tide.left >= 0 and: { tide.right <= size[0] }
 				and: { tide.top >= 0 } and: { tide.bottom <= size[1] },
 				"the tide's four winds stay on the stage (%x%)".format(*size));
@@ -768,29 +788,62 @@ CQNightGeometryTest : UnitTest {
 				"the four seeds ARE the tide's TL TR BL BR corners (%x%)"
 					.format(*size));
 			stamps.do { |stamp, c|
+				var seedBox = Rect.aboutPoint(stamp, seedReach, seedReach);
 				this.assertEquals(CQNightGeometry.stampHit(
 					geo[\almanac], stamp), c,
 					"seed % answers at its own open wind (%x%)"
 						.format(c, *size));
 				geo[\castles].do { |castle, k|
-					this.assert(castle[\box].containsPoint(stamp).not,
-						"seed % clears castle % (%x%)".format(c, k + 1, *size));
+					this.assert(castle[\box].intersects(seedBox).not,
+						"seed %'s whole hand clears castle % (%x%)"
+							.format(c, k + 1, *size));
 				};
 				geo[\cocos].do { |coco, i|
-					this.assert(coco[\shellBox].containsPoint(stamp).not,
-						"seed % clears cocoon % (%x%)".format(c, i + 1, *size));
+					this.assert(coco[\shellBox].intersects(seedBox).not,
+						"seed %'s whole hand clears cocoon % (%x%)"
+							.format(c, i + 1, *size));
 				};
 				geo[\birds].do { |bird, i|
-					this.assert(bird[\dropRect].containsPoint(stamp).not,
-						"seed % clears bird % (%x%)".format(c, i + 1, *size));
+					this.assert(bird[\dropRect].intersects(seedBox).not,
+						"seed %'s whole hand clears bird % (%x%)"
+							.format(c, i + 1, *size));
+				};
+				geo[\roots].do { |root, i|
+					this.assert(root[\box].intersects(seedBox).not,
+						"seed %'s whole hand clears root %'s event paper (%x%)"
+							.format(c, i + 1, *size));
 				};
 				endpointNames.do { |name|
 					var spec = CQGuiNightMap.endpointSpec(name);
-					this.assert(CQNightGeometry.endpointBox(
+					this.assert(seedBox.intersects(CQNightGeometry.endpointBox(
 						geo[\endpoints][name], spec[\kind], spec[\lamp])
-						.containsPoint(stamp).not,
-						"seed % clears endpoint % (%x%)".format(c, name, *size));
+						).not,
+						"seed %'s whole hand clears endpoint % (%x%)"
+							.format(c, name, *size));
 				};
+				geo[\cocos].do { |coco, i|
+					coco[\crescents].do { |center, m|
+						this.assert(seedBox.intersects(
+							CQNightGeometry.crescentViewBox(center, m > 0)).not,
+							"seed %'s whole hand clears coco % crescent % (%x%)"
+								.format(c, i + 1, m, *size));
+					};
+				};
+				geo[\birds].do { |bird, i|
+					this.assert(seedBox.intersects(
+						CQNightGeometry.crescentViewBox(
+							bird[\levelCrescent], false)).not,
+						"seed %'s whole hand clears bird % crescent (%x%)"
+							.format(c, i + 1, *size));
+				};
+				this.assert(seedBox.intersects(geo[\ringBox]).not
+					and: { seedBox.intersects(Rect.aboutPoint(geo[\eye],
+						CQNightMeasures.eyeLayerR,
+						CQNightMeasures.eyeLayerR)).not }
+					and: { seedBox.intersects(geo[\almanac][\box]).not }
+					and: { seedBox.intersects(gateBox).not },
+					"seed %'s whole hand remains in unclaimed water (%x%)"
+						.format(c, *size));
 				this.assertEquals(CQNightGeometry.compassNorm(
 					geo[\almanac], stamp), Point(c % 2, c div: 2),
 					"seed % recalls its corner bit-exact (%x%)"
@@ -842,6 +895,34 @@ CQNightGeometryTest : UnitTest {
 		};
 	}
 
+	// The full-scale polish is a hierarchy rather than one multiplier. These
+	// floors keep its primary hands from silently shrinking back to the first
+	// spring-flood draft while still allowing later visual tuning upward.
+	test_fullScalePolishKeepsItsPlayableHierarchy {
+		this.assert(CQNightMeasures.crescentExtent >= 44
+			and: { CQNightMeasures.crescentArcR >= 18 },
+			"the Coco and bird crescents keep a true 44 px-class hand");
+		this.assert(CQNightMeasures.castleRx >= 37
+			and: { CQNightMeasures.castleRy >= 33 }
+			and: { CQNightMeasures.clockHit >= 12 }
+			and: { CQNightMeasures.rangeHitX >= 15 }
+			and: { CQNightMeasures.rangeHitY >= 12 },
+			"castle flesh, clock and ripple keep three readable target scales");
+		this.assert(CQNightMeasures.rootKnotHit >= 27
+			and: { CQNightMeasures.eyeHit >= 54 }
+			and: { CQNightMeasures.birdSpan >= 64 },
+			"roots, storm eye and birds retain their performance mass");
+		this.assert(CQNightMeasures.stampRadius >= 14
+			and: { CQNightMeasures.tideGateHit >= 24 }
+			and: { CQNightMeasures.moonRadius >= 35 },
+			"seeds, gill and moon remain deliberate rather than pin-sized");
+		this.assert(CQNightMeasures.jackExtent >= 34
+			and: { CQNightMeasures.socketExtent.x >= 28 }
+			and: { CQNightMeasures.endpointInkScale >= 1.2 }
+			and: { CQNightMeasures.endpointGlyphExtent >= 12 },
+			"patch points grow both their hands and their visible Night ink");
+	}
+
 	// The spesal coupling chord (§16.6): both ends stop outside their castle's
 	// own opaque box — a line under an opaque layer is a line nobody sees — it
 	// bows inward far enough that an *adjacent* pair can never be mistaken for
@@ -851,6 +932,9 @@ CQNightGeometryTest : UnitTest {
 			var geo = CQNightGeometry.compute(size[0], size[1]);
 			var eye = geo[\eye], ringR = geo[\ringR];
 			var floor = ringR * CQNightGeometry.chordClearance;
+			this.assert(CQNightMeasures.eyeMaskR < CQNightMeasures.eyeLayerR,
+				"the iris masks a circle, never its repaint square (%x%)"
+					.format(*size));
 			5.do { |k|
 				(0..4).removing(k).do { |partner|
 					var path = CQNightGeometry.spesalChord(geo, k, partner);
@@ -997,8 +1081,6 @@ CQNightGeometryTest : UnitTest {
 	prOpaqueLayers { |geo|
 		var layers = List.new;
 		layers.add([\ring, geo[\ringBox]]);
-		layers.add([\eye, Rect.aboutPoint(geo[\eye],
-			CQNightMeasures.eyeLayerR, CQNightMeasures.eyeLayerR)]);
 		geo[\cocos].do { |coco, i|
 			layers.add([("shell" ++ (i + 1)).asSymbol, coco[\shellBox]])
 		};
@@ -1012,8 +1094,8 @@ CQNightGeometryTest : UnitTest {
 	// An opaque layer covers whatever is under it, so two of them overlapping
 	// means one body is quietly eating another's ink. Castles are intentionally
 	// absent: their paper is clear and only their irregular painted flesh masks
-	// the river. The storm iris keeps its own layer over the ring's centre so a
-	// storm repaint never re-inks the river.
+	// the river. The storm iris also has clear rectangular paper and one round
+	// body mask, so it is absent from this rectangle-only occlusion list.
 	test_floodOpaqueLayersMissEachOther {
 		[[1280, 570], [1920, 855]].do { |size|
 			var geo = CQNightGeometry.compute(size[0], size[1]);
@@ -1023,13 +1105,9 @@ CQNightGeometryTest : UnitTest {
 				this.assert(stage.contains(a[1]),
 					"the % layer stays on the stage (%x%)".format(a[0], *size));
 				layers.drop(i + 1).do { |b|
-					var pair = [a[0], b[0]];
-					var nested = pair.includes(\ring) and: { pair.includes(\eye) };
-					if(nested.not) {
-						this.assert(a[1].intersects(b[1]).not,
-							"opaque layers % and % keep off each other (%x%)"
-								.format(a[0], b[0], *size));
-					};
+					this.assert(a[1].intersects(b[1]).not,
+						"opaque layers % and % keep off each other (%x%)"
+							.format(a[0], b[0], *size));
 				};
 			};
 		};

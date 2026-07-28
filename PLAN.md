@@ -824,24 +824,51 @@ sommittelua (§7.2 korjattiin vasta hylätyn buildin jälkeen).
   2026-07-28: hylätyn efektin näkyvät, fyysiset ja DSP-reitit poistettiin
   yhtenä vaikutuspintana, F14 jätettiin vapaaksi ja Masteriin jäi tulevalle
   tilavalitsimelle varattu ilma.
-- [ ] **Nightin säätimien ja muun anatomian järjestelmällinen suurennus.**
+- [x] **Nightin säätimien ja muun anatomian järjestelmällinen suurennus.**
   N2:n yleinen väljennys ei vielä tehnyt kaikista käsistä ja merkeistä
   riittävän suuria: erityisesti tide-sirpit, niiden asteikkolovet ja Dolby-
   osterit ovat nyt paremmin luettavia mutta edelleen fyysisesti pieniä, ja sama
   koskee monia muitakin Nightin osia. Tämä on koko näkymän mittakaava- ja
   sommittelupassi, ei yksittäisten säätimien satunnainen kasvatus.
-- [ ] Inventoi ensin koko Night todellisessa käytössä ja ryhmittele kasvatukset
+  **Hyväksytty kuvallisessa katselmuksessa 2026-07-29.**
+- [x] Inventoi ensin koko Night todellisessa käytössä ja ryhmittele kasvatukset
   `CQNightMeasures`-mitoiksi. Aja sen jälkeen puhdas geometria/clearance-portti
   ennen näkymien siirtämistä: crescentit, osterit, endpointit, skip/chevron,
   range-ripplet, kidukset, linnut, juuret ja ringin kädet ovat vähintään
-  katselmuslista, eivät ennalta päätetty sama kerroin.
+  katselmuslista, eivät ennalta päätetty sama kerroin. **Valmis 2026-07-28:**
+  kaikki kasvatukset ovat mittataulussa; puhdas törmäysmatriisi kattaa myös
+  koko siemenen halo-/osuma-alueen, juurten käyrät ja siirretyt endpointit.
 - [ ] Hyväksy pienin ja suurin tuettu ikkuna sekä käyttöjärjestelmän
   100/125/150 % skaalaus. Värilliset semanttiset asteikot parantavat lukemista,
   mutta eivät kuittaa tätä osumakoon ja fyysisen koon velkaa.
 
-**Sijainti etenemisessä:** Space-päätös ja hallittu eläköitys ovat valmiit.
-Seuraavana tämä yhtenäinen koko-/layout-passi yhdessä jäljellä olevan polishin
-kanssa, ennen nelikanavaista laitteistogatea ja Norns-porttia.
+**Katselubuildin sommittelu:** ringin säde 158 → 191 levittää linnakkeet;
+Cocot siirtyvät ulommas ja kasvavat Ø 200 → 228; juuret asettuvat 12/88 %:
+iin leveyttä ja niiden bias-/drive-solmut kasvavat r 13 → 18. Kaikki Coco- ja
+lintusirpit käyttävät nyt Ø 36 piirtokehoa 44 px drag-laatikossa. Linnakkeet
+kasvavat 58×50 → 74×66, silmän tarkka hit-alue Ø 84 → 108, kuu Ø 56 → 70,
+siementen tarkka hit-alue Ø 18 → 28 ja kiduksen Ø 34 → 48. Nightin jack-/
+socket-paperi kasvaa 30/24 → 34/28, näkyvä endpoint-ink 1,2-kertaiseksi ja
+symbolit 8 → 12 px. `gui_night_smoke` varmistaa kaikkien 38 endpoint-näkymän
+keskukset ja jokaisen istutetun kaapelin molemmat päät siirron jälkeen.
+Katselukuvat: `tests/tmp/night-layout.png` (sommittelu) ja
+`tests/tmp/night-layout-cables.png` (täysi kaapelikenttä),
+`tests/tmp/night-layout-couplings.png` (vihreät kytkökset) ja
+`tests/tmp/night-layout-targets.png` (banana kädessä) sekä
+`tests/tmp/night-layout-control-edges.png` (täysi nopeus + yli-unity).
+Katselmuksen jälkeinen polish poisti silmän opaakin neliömaskin, jätti
+Coco-mouth-outputtien paperin läpinäkyväksi ja pitää täyden nopeuden merkin
+luettavana normissa 0,99. Lintusirpin unity-ylitys muuttuu punaiseksi. Tyhjä
+kohdesocket ei enää lupaa inertillä hoverilla toimintaa; banana kädessä kaikki
+sallitut kohteet saavat staattisen halon ja lähin kohde vahvemman vasteen.
+Portit: compile OK; 13 142 assertionia / 0 virhettä / 32 testiluokkaa;
+`CQ_GUI_NIGHT_PASSED`, `CQ_GUI_SHELL_PASSED` ja
+`CQ_GUI_DRAWER_REENTRY_PASSED`.
+
+**Sijainti etenemisessä:** Space-päätös, hallittu eläköitys ja yhtenäinen
+koko-/layout-passi ovat valmiit. Auki on vielä yllä erotettu käyttöjärjestelmän
+100/125/150 % fyysisen skaalauksen katselmus ennen nelikanavaista
+laitteistogatea ja Norns-porttia.
 
 ## Valmistunut polish-passissa 2026-07-28
 

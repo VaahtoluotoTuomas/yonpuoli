@@ -89,6 +89,13 @@ one law so implementers never have to decide case by case:
 - **Destination sockets** are ink rings; family-colored where SPEC assigns a
   family (spaf purple, fm blue, spesal green); gate/trig sockets carry a small
   glyph and a **charge lamp** (§9).
+- **Direction is shape first, invitation second** (accepted 2026-07-29).
+  A solid, symbol-free jack is a source; a hollow ring carrying the receiving
+  control's symbol is a destination. An empty destination has no idle hover
+  highlight because it cannot act without a banana. As soon as a source or a
+  planted banana is in hand, every legal destination gains one quiet, static
+  family-coloured halo; the nearest audition candidate answers more strongly.
+  No blinking: Night reserves motion for changing signal/state.
 - **Cables** are verso **amber** / inverso **blue** (the existing grid
   convention), drawn as gravity-sagged arcs; width and how deep the banana
   sits in its socket ∝ |w|; alpha pulses with the source's aura (§9).
@@ -203,8 +210,11 @@ funnel like any other client.
   cables recede to 46 % alpha. No pulse or telemetry aura is used for focus.
 - **Endpoints are cable territory.** Jack/socket/plug hover wins in its own
   geometry. A socket stack still fans out (§3.2), providing the precision path
-  when several bananas share an endpoint. At a control crossing, select the
-  cable from an exposed span or its endpoint instead.
+  when several bananas share an endpoint. A source jack answers at rest because
+  it can begin a banana; an empty destination does not light until a banana is
+  in hand. An occupied socket may still fan its stack without pretending the
+  empty ring itself is an action. At a control crossing, select the cable from
+  an exposed span or its endpoint instead.
 - **One hover language.** Every interactive Ink control responds immediately:
   knobs gain a quiet outer ring, slider/switch handles a small halo, and
   buttons a light wash plus stronger outline. Read-only meters and lamps do
@@ -364,7 +374,7 @@ below; it does not silently grant priority to any other control.
 | **the ring's eye** | the storm iris at the ring's center (§16.6); grab and drag — vertical = pitch, horizontal = chaos, and the iris itself answers on both axes. The weather of five castles from one fingertip | `qFreq` (y) + `qChaos` (x), relative |
 | **dial tap** | press a castle's inner clock — the dial face inside the body (§16.6): one step (same act as the day step button and keys 3..7). Hovering the castle first shows **which castle it reads** as an inner chord (§16.6's coupling chords), so the step's consequence is visible in the gesture that makes it | `spesal(k)` step |
 | **range ripple** | tap the drawn rate at a castle's 6 o'clock: one slow swell → one full cycle → five tight half-waves → one slow swell. The form is the whole regime display; no legacy `i/b/a` caption remains. Cable-first remains absolute, and ripple/clock/body hover cues are exclusive | `cNRange`: `infra → balcium → audio → infra` (CQSpec enum order) |
-| **bird fetch + drop + wing crescent** | tap the bird with < 8 px travel to open the asynchronous system file dialog at the configured samples folder; cancelling is inert. Dropping an audio file remains an equal load path. The neutral crescent under the wing remains the deck's level and carries one exact CQSpec-derived unity tick — no invented coloured regions | deck load · `deckN level` |
+| **bird fetch + drop + wing crescent** | tap the bird with < 8 px travel to open the asynchronous system file dialog at the configured samples folder; cancelling is inert. Dropping an audio file remains an equal load path. The crescent under the wing is the deck's level and carries one exact CQSpec-derived unity tick: line ink through unity; only the travelled arc and pearl beyond that mark turn danger-red | deck load · `deckN level` |
 | **bird folder walk** | wheel down = next file, wheel up = previous. Qt momentum is gated to one sign-step per 150 ms so one flick cannot skip a handful of perches; before a load, the deck's own guard scans the samples folder | `deckN.next / prev` |
 | **bird ruffle** | horizontal drag travels ≥ 6 px and reverses once by ≥ 6 px — one natural out-and-back; release chooses a random file. Repeated or broad ruffling remains valid once that reversal is clear. A drag that is neither a tap nor a ruffle is inert | `deckN.random` |
 | **the sowing moon** | the bone moon in the top-right sky (§16.6). It opens as a small 0.22 crescent. A press that travels < 8 px — the lasso's own threshold — throws a shake at the moon's current phase, with a 120 ms bone flash on *any* shake (`p` key, moon, code or pattern: one action notice, one light). A **horizontal** drag pours the phase fuller (right) or darker (left), the way the terminator itself travels; the lit fraction is **how much gets sown**, through the slow-first quadratic fertility curve in §10, no number | `shake` (matrix op — one undo, one spellbook entry) · `shakeAmount` (GUI constant, no undo) |
@@ -1072,8 +1082,10 @@ Laws:
 
 ### 16.5 Glyphs — drawn, never typed
 
-All glyphs are Pen paths in a nominal 8×8 box. No unicode symbols, no icon
-fonts (their rendering varies across platforms; paths don't).
+All glyphs are Pen paths in a nominal 8×8 base box. Night endpoint views draw
+that shared vocabulary in a 12×12 box so the symbols keep pace with the larger
+playing surface; other callers retain the base size. No unicode symbols, no
+icon fonts (their rendering varies across platforms; paths don't).
 
 | glyph | marks | recipe |
 |---|---|---|
@@ -1081,7 +1093,7 @@ fonts (their rendering varies across platforms; paths don't).
 | opposed chevrons | flip | mirrored ‹ › pair |
 | spark | skip; fired lamps | 4-point star: two crossed strokes, long/short arms |
 | wave | castle fm | one sine cycle from two béziers |
-| rate ripple | castle range | a short common keel plus one long half-wave (`infra`), two half-waves / one full cycle (`balcium`), or five tight half-waves (`audio`), in a nominal 14×8 px box. A 3 px ground under-stroke follows the vector paths exactly where the river crosses; never a rectangular knockout |
+| rate ripple | castle range | a short common keel plus one long half-wave (`infra`), two half-waves / one full cycle (`balcium`), or five tight half-waves (`audio`), in a nominal 22×11 px box. A 3 px ground under-stroke follows the vector paths exactly where the river crosses; never a rectangular knockout |
 | oyster / eyelid | coco in/fb Dolby | paired short arcs: relaxed apart = `off`; hairline gap = `gate`; closed plus a short stroke entering from the partner channel = `duck`. Posture carries the state before hue; the mark never fakes gate telemetry |
 | tick-ring | spesal dial | 8 radial ticks, current one lit |
 | pendulum | deck rate | small wedge + off-vertical line |
@@ -1090,24 +1102,24 @@ fonts (their rendering varies across platforms; paths don't).
 
 Positions on bodies are given as clock angles — more precise than pictures.
 
-**Castle (×5).** Body = closed blob: 6 anchors on a 46×40 px ellipse with
+**Castle (×5).** Body = closed blob: 6 anchors on a 74×66 px ellipse with
 seeded ±8 % radial jitter, cubic curve through them; 1.5 px stroke, hollow
 fill. Aura = radial gradient inside the body (phosphor → transparent),
 intensity from `/cq_aura`. At 10–11 o'clock, a crown of three 4 px square
 teeth — this *is* the cas source (gray dot at its base). At 1–2 o'clock, an
 8 px triangular leaf on a 6 px stem — the tri source (orange dot). fm moon =
-blue ring Ø 12 orbiting at 4 o'clock, r ≈ 28; spesal moon = green ring +
-lamp at 8 o'clock, r ≈ 40 (moved out from 34 on 2026-07-21: the lamped view
-is 34 px wide and its detail/hit box must clear the inner clock). Spesal dial =
+blue ring Ø ≈ 14 orbiting at 4 o'clock, r ≈ 45; spesal moon = green ring +
+lamp at 8 o'clock, r ≈ 61. Its lamped view is 46 px wide and its detail/hit
+box must clear the inner clock. Spesal dial =
 the castle's **inner clock** (amended 2026-07-21 after the G2.3 review): a
-whisper face at r ≈ 10 *inside* the body — where no endpoint mark can
+whisper face at r ≈ 18 *inside* the body — where no endpoint mark can
 ever cover it — with 8 ticks and the current state as a lit spark bead with a
 halo; a static hover brightens the face so it reads as pressable (§4.5).
 The **flesh around the clock is the body's own §6 solo target**, and hovering
 it lights the quiet outer ring §4.5 gives every pressable control (added
 2026-07-21: a double-click affordance the hand could not otherwise guess).
 The two cues are exclusive — clock or body, never both. Cue and action share
-one geometry: the drawn blob grown by `bodyMargin` (10 px, so the body answers
+one geometry: the drawn blob grown by `bodyMargin` (12 px, so the body answers
 the approaching hand), and the echo is stroked exactly on that boundary. A cue
 that covers more or less ground than its action is a cue that lies.
 At 6 o'clock, a **rate ripple** is the playable range switch. Its form is the
@@ -1121,10 +1133,10 @@ the regime family distinct from the fm moon's free single-cycle wave. Where a
 ripple crosses the river, a 3 px ground under-stroke follows only the keel and
 wave paths before the visible hairline is drawn; it is a local vector
 separation, never the rectangular paper erasure §9 removed. Each anchor sits
-13 px below its seeded blob's actual lowest point, so irregular castles breathe
+17 px below its seeded blob's actual lowest point, so irregular castles breathe
 equally. The ripple, inner clock and body have exclusive cues and press priority
 in that order after the cable layer: a cable under the pointer still wins. The
-14×8 px drawn mark, its fixed-pixel touch rectangle and all endpoint/clock
+22×11 px drawn mark, its 30×24 px touch rectangle and all endpoint/clock
 clearances are pinned at both reference sizes by `CQNightGeometryTest`.
 
 **Layer amendment, 2026-07-27.** Castle paper and its four endpoint-detail
@@ -1134,7 +1146,7 @@ chords can run beneath each castle centre and emerge at the true body edge.
 No rectangular blank area may erase castle ink, and no synthetic “river
 stub” may protrude from a castle to repair such an erasure.
 
-**The ring.** Irregular circle R ≈ 150 px through the five castles, 1 px
+**The ring.** Irregular circle R ≈ 191 px through the five castles, 1 px
 hairline. Flow k → k+1 shown by two **firefly dots** per arc segment
 (Ø 2 px bone, ≈ 2 s per segment) — permitted ambient motion, because it
 depicts the always-running LocalIn loop: it *is* information. **Stillness law
@@ -1144,15 +1156,19 @@ instrument keeps still water.* On the wood, lights move with signal, not with
 the wall clock; this is the permanent behavior, not a budget stopgap, and it
 stays even after the post-G2 offscreen cable cache. At the ring's center sits
 its **eye**, the §6.1 handle for qFreq/qChaos, drawn as the **storm iris**
-(amended 2026-07-28): the pupil's aperture is qFreq (Ø ≈ 5..14) and twelve
+(amended 2026-07-28): the pupil's aperture is qFreq (Ø ≈ 11..32) and twelve
 rays scatter and reach with qChaos — an even, short corona is calm weather, a
 ragged reach is storm. Hover or drag reveals four planted, broken weather
-rings at the hand's exact ¼, ½, ¾ and full positions; a living broken front
+rings at radii 28/36/44/52 px for the hand's exact ¼, ½, ¾ and full
+positions; a living broken front
 travels through them with qChaos. They are unlabelled growth rings, not a
 meter, and the whole visible weather body shares the eye's cable-first hit.
-The ink is the actual state, never decoration. The eye lives on its own opaque
-layer so a storm repaint never re-inks the ring (§10); it brightens on hover
-and while held, and never displays a value.
+The ink is the actual state, never decoration. The eye lives on its own local
+layer so a storm repaint never re-inks the ring (§10), but that layer's
+rectangular paper is transparent: a round r 54 ground mask hides the river only
+behind the actual iris. Coupling chords may not acquire square bites at the
+layer's otherwise invisible corners. The eye brightens on hover and while held,
+and never displays a value.
 
 **The spesal coupling chords** (added 2026-07-22 — the night's answer to
 "which castle is this one attached to?"). The inner clock shows a castle's
@@ -1195,11 +1211,12 @@ Both ends stop where the castle's own opaque box begins (§16.6's law about
 lines laid under opaque layers), or the arrowhead would hide beneath the
 very body it points at.
 
-**Coco (×2).** Spiral = Archimedean, 2.5 turns, outer R ≈ 85 px, 1.5 px
+**Coco (×2).** Spiral = Archimedean, 2.5 turns, outer R ≈ 114 px, 1.5 px
 stroke; the mouth at the outer end carries the gray coco-voice source dot;
-the direction chevron (a §6.1 touch: press = flip) hangs ≈ 24 px below the
-mouth, centered on its anchor — clear of the mouth jack's opaque view and the
-shell box edge at every scale (down = forward, up = flipped; amended
+the direction chevron (a §6.1 touch: press = flip) hangs ≈ 38 px below the
+mouth, centered on its anchor — clear of the mouth jack's 34 px interaction
+view and the shell box edge at every scale (down = forward, up = flipped;
+amended
 2026-07-21 after the G2.3 review found the outward home clipped).
 **The chevron has three states, not two** (amended 2026-07-21 after the G2.5
 review): forward, flipped, and — when the flip gate is driven faster than an
@@ -1262,33 +1279,37 @@ motion. It is not the trigger rate and never claims to be. Flip reverses comet
 and chevron.
 **Hold**: the outermost turn
 closes into a full circle and tints danger-red at 60 % — the loop is sealed;
-the **heart** at the spiral's innermost eye (small Ø ≈ 5 mark, red while
+the **heart** at the spiral's innermost eye (Ø ≈ 11 mark, red while
 sealed) is the §6.1 hold touch — a left tap toggles the seal, and a **right
 press held on it punches**: the seal inverts for as long as it is held and is
 restored on release and on every exit path (§6.1's punch row), so the same
 crack/close the display already draws animates the momentary hold for free. The **skip mark** hangs under the mouth
-chevron: the §16.5 spark glyph in a 9 px box, whisper at rest, line ink on
+chevron: the §16.5 spark glyph with ±8 px reach inside a 32 px touch square,
+whisper at rest, line ink on
 hover, a 120 ms bone-spark flash on any skip (§16.7's momentary law, one
 `CQInk.momentaryFlash` constant shared by every skip entrance). The spiral's line
 is the §6.1 winding surface; the **reel notch** (amended 2026-07-22) rides it
 at the speed's normalized position — inner eye = slowest, mouth = fastest — as
 the winding gesture's live hand and the resting speed display. It is a **tick
-drawn across the groove** in line ink, ±4 px, ±6 px and heavier on hover: a
+drawn across the groove** in line ink, ±8 px, ±12 px and heavier on hover: a
 speed is a setting on a scale, so it wears a scale mark, and the only
 travelling body on the shell keeps the bead. It was a bone bead until the G2
 gate, 0.2 px larger than the comet and the same hue — which is no difference a
 hand can use. §16.2's "no meaning by hue alone" is satisfied by **form first**;
-where hue can help too, let it. On spiral hover the line
+where hue can help too, let it. At exact maximum the value remains 1 but the
+display tick clamps to norm 0.99, one visible breath before the transparent
+mouth-jack paper; two objects may not claim the same pixels. On spiral hover the line
 brightens and the notch lengthens (static ink, §4.5). Org fruit =
 yellow Ø 7 dot on a 6 px stem from the second turn. Moons spaf / inVca /
 fbVca / flip / skip sit on an arc under the spiral, glyphs per §16.5, lamps
 on flip/skip; below the three continuous moons hang their **tide crescents**
-(§6.1): open arcs ~Ø 18, luminous fill = value, no numbers. SP.AF's signed
+(§6.1): open arcs Ø ≈ 36 in 44 px drag squares, luminous fill = value, no
+numbers. SP.AF's signed
 fill grows away from its zero notch; input marks unity and the overdrive side;
 feedback shows its three audible taper regions. Their notches make the
 landmarks form-readable rather than hue-only.
 The in/fb crescent owners grow only downward and carry a **Dolby oyster**
-24 px below the unchanged crescent centre. The oyster is consulted first on
+36 px below the crescent centre. The oyster is consulted first on
 press; its tap box and the crescent's original drag square are disjoint.
 `off / gate / duck` are readable as open / nearly shut / partner-pressed shut,
 and the duck arrival stroke enters from the other channel's direction. Spaf
@@ -1296,7 +1317,7 @@ and deck crescents carry no oyster. Cable-first priority remains absolute.
 Because these crescents are native controls, the shared controller must publish
 the crossing cable's hover *after* the oyster/crescent cue yields; clearing both
 cues is forbidden. The same cable must then receive the press.
-The yellow org fruit jack keeps its opaque 30×30 owner, but that owner repaints
+The yellow org fruit jack keeps its opaque 34×34 owner, but that owner repaints
 the shell's exact curved spiral segment and radial stem beneath the jack. A
 generic vertical stub is not the same path and may not replace it.
 The spiral's stroke alpha breathes 0.55 → 1.0 with the coco's out level.
@@ -1327,7 +1348,9 @@ intake body, not an envelope on a stick:
   `preABias` / `preBBias`. Both use 240 px for the full range and map only
   afterwards through their CQSpec curves. Drive deepens the living centre;
   bias swells the outgoing lobe and pinches the intake lobe, so zero is
-  symmetric and increasing asymmetry is shape-first. A tap changes neither.
+  symmetric and increasing asymmetry is shape-first. At the minimum stage the
+  knots live at 12/88 % width, each lobe body has r ≈ 18 and the whole gesture
+  owns a 54 px-diameter hit body. A tap changes neither.
   Non-left presses are inert. Cable/Alt priority remains absolute.
 - A preamp-colored audio vein leaves the knot, bends outside the
   Coco's tide crescents and terminates on an actual outer turn of the
@@ -1353,7 +1376,7 @@ while `micChan` is set **and** `micGain` > 0. The sole interactive `micGain`
 control is the Workshop warning row (§8).
 
 **Birds (decks).** Three strokes each — two wing béziers + a body dot,
-span ≈ 30 px; filename in 10 px mono whisper beneath, in a line box of at
+span ≈ 64 px; filename in 10 px mono whisper beneath, in a line box of at
 least 200 × 20 px (fixed 2026-07-21: 14 px clipped the ascenders and
 descenders, and a 160 px box ate both ends of a long name — §16.4 fixes the
 type size, so the box gives way first). A name too long for even that box is
@@ -1370,8 +1393,9 @@ pointer leaves its small UserView on Windows.
 A different drag is inert. Cable
 hit-testing remains first inside the bird view, while the rate socket and level
 crescent keep their higher sibling views and own geometry. The level crescent
-has one neutral unity tick at the exact position returned by its curved CQSpec
-map; it gains no colour scale because level has no named danger regimes. Any successful
+has one unity tick at the exact position returned by its curved CQSpec map.
+Its travelled arc stays neutral through unity; gain beyond the tick and the
+current pearl turn danger-red, while the unused region remains uncoloured. Any successful
 `\file` notification — dialog, wheel, ruffle, drop or code — flashes that bird
 for the shared 120 ms momentary interval and updates the one filename truth.
 Flutter = 1 px wing bob at ambient rate while the deck's level > 0.05
@@ -1389,11 +1413,12 @@ topological overlay above every landscape body and below actual patch cables.
 They therefore remain continuous across otherwise invisible Qt view
 rectangles instead of being repaired separately inside each object.
 
-**The moon and the tide field** (accepted for the next visual iteration with
-the user 2026-07-27). The weather machine is integrated by *gesture and
-relation*, not collected into a panel:
+**The moon and the tide field** (grammar accepted with the user 2026-07-27;
+the enlarged measures implemented 2026-07-28 and visually accepted
+2026-07-29). The weather machine is integrated by *gesture and relation*, not
+collected into a panel:
 
-- The sowing moon is a solitary Ø ≈ 56 body in the far upper-right, beyond
+- The sowing moon is a solitary Ø ≈ 70 body in the far upper-right, beyond
   bird B and slightly above its flight line. It opens as a 0.22 crescent;
   sowing density is `0.2 × phase²`, so quarter/half/full average roughly
   4/18/70 cables rather than crowding the first half. Tap throws shake;
@@ -1403,8 +1428,10 @@ relation*, not collected into a panel:
   sun 2.5…6 Hz) and visibly add drops/rays. Rain and sun are transient faces
   beside the moon and exist only while held — no static satellites remain.
 - There is no pond, shore or pad. Four inward-pointing memory seeds in the
-  NW/NE/SW/SE winds imply a large bilinear tide field through the bay. At
-  rest only those seeds are inked. During a voyage, a small cross and four
+  NW/NE/SW/SE winds at 31/69 % width and 18/96 % height imply a large
+  bilinear tide field through the bay. Their drawn kernels are 11×7 px and
+  each owns a 28 px-diameter touch body. At rest only those seeds are inked.
+  During a voyage, a small cross and four
   sparse wavefront pulls (≤ 8 % alpha) reveal the relation; there is no
   ambient animation and no rectangular boundary.
 - Filled seed tap recalls, Shift+tap stores/overwrites, and a latched Tab/gill
@@ -1416,7 +1443,8 @@ relation*, not collected into a panel:
   hit-transparent layer; a valid filled target catches the thread at its
   centre and opens a blue double bloom. No graft glyph or armed state exists.
 - Open-field left drag does nothing until water focus is open. Tab and the
-  clickable gill below the lower castles latch the mode; Shift is its
+  clickable gill below the lower castles latch the mode; its strokes span
+  40 px and its precise hit body has a 24 px radius. Shift is its
   momentary form. In focus, cable spans go behind the water and out of
   hit-testing while endpoints and bodies keep priority; left commits and
   right is elastic. Outside focus, right remains harvest. A captured voyage
