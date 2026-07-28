@@ -136,11 +136,14 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   (checklist N4). Build-order step 5, the Dolby oysters (§4), was accepted on
   `nocturne-dolby-oysters` the same day (checklist N5). Build-order step 6,
   the fetching birds (§11), was accepted on `nocturne-birds-fetch` on
-  2026-07-28 (checklist N6), and build-order step 7, the preamp roots (§10),
-  was accepted on `nocturne-preamp-roots` the same day (checklist N7).
-  The next step is N8, the Drawer workshop, whose implementation contract,
-  coverage audit and exact 31/5/43 parameter partition are written out in
-  `NIGHT_STANDALONE_PLAN.md` §12.1.**
+  2026-07-28 (checklist N6), build-order step 7, the preamp roots (§10), was
+  accepted on `nocturne-preamp-roots` the same day (checklist N7), and
+  **build-order step 8, the Drawer workshop (§12.1), was accepted on
+  `nocturne-drawer-workshop` on 2026-07-28 (checklist N8).** Its tested
+  Night 31 + Master 5 + Workshop 43 partition covers all 79 `CQSpec`
+  parameters without Day. **The next step is N9, the explicit Day verdict
+  (§0): decide the fate of Day's two overview surfaces, then make any removal
+  as its own reversible gate.**
   N7's review found one defect worth remembering: the transient provenance
   label's ground erasure was cutting the tops off root B's two leftmost
   intake strands. **A constant inset cannot promise clearance from a seeded
@@ -368,6 +371,12 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   carries because the increment did not touch DSP.
 - Accepted N7 preamp-root gate on `nocturne-preamp-roots` (2026-07-28,
   checklist N7): `CQ_COMPILE_OK`, **12,219 unit passes / 0 failures / 28/28
+  classes**, `CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`,
+  `CQ_GUI_DRAWER_PASSED`, `CQ_GUI_DRAWER_REENTRY_PASSED` and
+  `CQ_GUI_NIGHT_PASSED`; `CQ_HOLD_OK` carries because the accepted increment
+  did not touch DSP.
+- Accepted N8 Drawer-workshop gate on `nocturne-drawer-workshop` (2026-07-28,
+  checklist N8): `CQ_COMPILE_OK`, **13,035 unit passes / 0 failures / 31/31
   classes**, `CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`,
   `CQ_GUI_DRAWER_PASSED`, `CQ_GUI_DRAWER_REENTRY_PASSED` and
   `CQ_GUI_NIGHT_PASSED`; `CQ_HOLD_OK` carries because the accepted increment

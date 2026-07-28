@@ -223,9 +223,8 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
   labelin sijainti mitataan säikeiden omista käyristä pyyhkäisyn kaistalla ja
   väistyy ulospäin, kunnes 6 px vapaa väli toteutuu; erasuren mitat elävät
   yhtenä `CQNightMeasures`-arvona sekä musteessa että geometriassa.
-- [ ] **8. Drawer-workshop** (§12.1). **Ensimmäinen ajettava versio on valmis
-  ja vihreä `nocturne-drawer-workshop`-haaralla 2026-07-28; odottaa
-  käyttäjän visuaalista ja soitettavaa katselmusta (checklist N8).**
+- [x] **8. Drawer-workshop** (§12.1). **Valmis ja hyväksytty
+  `nocturne-drawer-workshop`-haaralla 2026-07-28 (checklist N8).**
   Toteutettu §12.1.4:n vihreässä järjestyksessä:
   1. Kolme omistajainventaariota julistettiin erikseen — Night 31
      (`CQGuiNightMap.reachableParamNames`, koottu samoista semanttisista
