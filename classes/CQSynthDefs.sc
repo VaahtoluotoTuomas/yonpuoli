@@ -20,6 +20,11 @@ CQSynthDefs {
 		this.all(CQConfig.validate(())).do { |def| def.asBytes };
 	}
 
+	// NIGHT's read head shares the ambient animation ceiling with the castle
+	// fireflies. Its GUI ink lives on a dedicated lightweight layer, so this
+	// rate no longer implies repainting either complete Coco shell.
+	*phaseReplyHz { ^15 }
+
 	// ARCHITECTURE §4.2 — live/mic trims, preamp fuzz pair, envelope followers.
 	// Source order in Select MUST match CQSpec's preASrc enum order.
 	*input { |config|
@@ -268,13 +273,12 @@ CQSynthDefs {
 			// GUI in/out meters (SPEC §6.2); replyID tells the two instances apart
 			SendPeakRMS.kr([inSig, voice * lvl], 20, 3, '/cq_cocometers', \meterId.ir(0));
 			// GUI_SPEC §9 loop phase → the night read-head spark. Its own message
-			// at 5 Hz on purpose, not the meters' 15: the send rate IS the two
-			// shells' repaint ceiling (§10), and one shell repaint costs ~30 Pen
-			// calls (~1.6 ms), so 15 Hz would spend the GUI budget on two dots.
+			// shares the 15 Hz ambient ceiling with the castle fireflies. The GUI
+			// repaints only a clear dot-and-tail layer, never either complete shell.
 			// ...plus the read DIRECTION as an audio-rate mean, not a sample.
 			// `dir` is what the chevron and the comet's tail must agree on, and
 			// it is driven by max(flip param, matrix gate) — so a flip banana can
-			// reverse it far faster than 5 Hz can sample. Averaging at audio rate
+			// reverse it far faster than 15 Hz can sample. Averaging at audio rate
 			// before A2K (the same law as \cqAura's lag and the charge peak-hold)
 			// makes the value alias-free and gives the GUI a third, honest
 			// reading: near ±1 = settled forward/flipped, near 0 = shuttling too
@@ -286,8 +290,8 @@ CQSynthDefs {
 			// output IS triggers per second, smoothed over 0.2 s and self-
 			// clearing when they stop. It exists because a rate this fast
 			// cannot be drawn as motion (the eye fuses above ~10 Hz and this
-			// message is 5 Hz), so §16.6 draws it as weight instead.
-			SendReply.kr(Impulse.kr(5), '/cq_phase',
+			// message is 15 Hz), so §16.6 draws it as weight instead.
+			SendReply.kr(Impulse.kr(this.phaseReplyHz), '/cq_phase',
 				[A2K.kr(phase / frames), A2K.kr(Lag.ar(dir, 0.15)),
 					A2K.kr(Lag.ar((\t_skip.tr(0) + skipTrig) * SampleRate.ir,
 						0.2))],

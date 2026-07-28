@@ -26,7 +26,7 @@ CQGuiNightTouchTest : UnitTest {
 
 	// Skip left the read-head comet at the G2 gate. The comet is the only
 	// target in the night that moves, and past a crawl a hand cannot land on
-	// it at all; a 5 Hz frame draws it stale on top of that. Its home is now
+	// it at all; any telemetry frame draws it slightly stale on top of that. Its home is now
 	// a stationary mark mirroring the flip chevron across the mouth jack.
 	test_skipHasAStationaryHome {
 		this.assert(CQGuiNightTouch.respondsTo(\sparkRadius).not,

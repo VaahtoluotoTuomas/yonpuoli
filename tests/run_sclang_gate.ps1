@@ -31,6 +31,7 @@ $requiredMarker = switch -Wildcard ($leaf) {
     "gui_drawer_smoke.scd" { "CQ_GUI_DRAWER_PASSED"; break }
     "gui_drawer_preview_reentry_smoke.scd" { "CQ_GUI_DRAWER_REENTRY_PASSED"; break }
     "gui_night_smoke.scd" { "CQ_GUI_NIGHT_PASSED"; break }
+    "gui_night_phase_layer_smoke.scd" { "CQ_GUI_PHASE_LAYER_PASSED"; break }
     "gui_night_capture.scd" { "CQ_NIGHT_CAPTURE_DONE"; break }
     default { $null }
 }

@@ -838,9 +838,10 @@ sommittelua (§7.2 korjattiin vasta hylätyn buildin jälkeen).
   katselmuslista, eivät ennalta päätetty sama kerroin. **Valmis 2026-07-28:**
   kaikki kasvatukset ovat mittataulussa; puhdas törmäysmatriisi kattaa myös
   koko siemenen halo-/osuma-alueen, juurten käyrät ja siirretyt endpointit.
-- [ ] Hyväksy pienin ja suurin tuettu ikkuna sekä käyttöjärjestelmän
-  100/125/150 % skaalaus. Värilliset semanttiset asteikot parantavat lukemista,
-  mutta eivät kuittaa tätä osumakoon ja fyysisen koon velkaa.
+- [x] Hyväksy pienin ja suurin tuettu ikkuna sekä käyttöjärjestelmän
+  näyttöskaalaus. Referenssikokojen automaattiset geometria-/osumaportit ovat
+  vihreät, ja käyttäjän visuaalinen 100–200 % katselmus hyväksyttiin
+  2026-07-29.
 
 **Katselubuildin sommittelu:** ringin säde 158 → 191 levittää linnakkeet;
 Cocot siirtyvät ulommas ja kasvavat Ø 200 → 228; juuret asettuvat 12/88 %:
@@ -861,14 +862,19 @@ Coco-mouth-outputtien paperin läpinäkyväksi ja pitää täyden nopeuden merki
 luettavana normissa 0,99. Lintusirpin unity-ylitys muuttuu punaiseksi. Tyhjä
 kohdesocket ei enää lupaa inertillä hoverilla toimintaa; banana kädessä kaikki
 sallitut kohteet saavat staattisen halon ja lähin kohde vahvemman vasteen.
-Portit: compile OK; 13 142 assertionia / 0 virhettä / 32 testiluokkaa;
-`CQ_GUI_NIGHT_PASSED`, `CQ_GUI_SHELL_PASSED` ja
+Lukupään liike nostettiin 5 → 15 Hz:iin 2026-07-29. Kummankin Cocon comet on
+nyt omalla läpinäkyvällä, hiiren läpäisevällä tasollaan: tavallinen phase-ruutu
+piirtää vain pisteen ja hännän, muuttumaton ruutu ei mitään, ja raskas shell
+piirtyy phase-polusta vain chevronin todellisen suuntaregimen vaihtuessa.
+Portit: compile OK; 13 144 assertionia / 0 virhettä / 32 testiluokkaa;
+`CQ_SAFETY_PASSED`, `CQ_GUI_PHASE_LAYER_PASSED`, `CQ_GUI_NIGHT_PASSED`,
+`CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED` ja
 `CQ_GUI_DRAWER_REENTRY_PASSED`.
 
-**Sijainti etenemisessä:** Space-päätös, hallittu eläköitys ja yhtenäinen
-koko-/layout-passi ovat valmiit. Auki on vielä yllä erotettu käyttöjärjestelmän
-100/125/150 % fyysisen skaalauksen katselmus ennen nelikanavaista
-laitteistogatea ja Norns-porttia.
+**Sijainti etenemisessä:** Space-päätös, hallittu eläköitys, yhtenäinen
+koko-/layout-passi ja 100–200 % fyysisen skaalauksen katselmus ovat valmiit.
+Seuraavat erilliset portit ovat nelikanavainen laitteisto-/resource-soak ja
+Norns-portti.
 
 ## Valmistunut polish-passissa 2026-07-28
 

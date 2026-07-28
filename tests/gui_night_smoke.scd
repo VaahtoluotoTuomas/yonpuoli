@@ -642,6 +642,11 @@ punchChecks = { |map|
 				}, "env output dots keep transparent paper over the exact curved branch");
 				check.value(map.eyeView.background.alpha == 0,
 					"the storm iris masks a circle, not an invisible square");
+				check.value(map.readHeadViews.size == 2
+					and: { map.readHeadViews.every { |view|
+						view.background.alpha == 0 and: { view.acceptsMouse.not }
+					} },
+					"Coco read heads own transparent hit-through animation layers");
 				check.value(#[coco1, coco2].every { |name|
 					map.endpoints[name][\view].background.alpha == 0
 				}, "coco mouth outputs cannot erase the full-speed reel mark");
@@ -1047,7 +1052,7 @@ punchChecks = { |map|
 																"the storm iris paints the funnel truth mid-drag");
 															// ---- the read head: '/cq_phase' spark, display only ----
 															check.value(map.sparkPoint(0).isNil,
-																"before telemetry the shell keeps its reviewed ink (no spark)");
+																"before telemetry the read-head layer invents no spark");
 															gui.prPhaseFrame(1, 0.62);
 															check.value((gui.phaseNorms[0] - 0.62).abs < 1e-9
 																and: { map.sparkPoint(0).notNil },
@@ -1216,8 +1221,12 @@ punchChecks = { |map|
 															check.value(map.struckOn[0].not,
 																"one lit frame is a skip, not yet a regime");
 															gui.prPhaseFrame(1, 0.03, 1, 12);
+															gui.prPhaseFrame(1, 0.025, 1, 12);
+															check.value(map.struckOn[0].not,
+																"three 15 Hz frames remain below the old time threshold");
+															gui.prPhaseFrame(1, 0.02, 1, 12);
 															check.value(map.struckOn[0],
-																"two lit frames running mark the head struck");
+																"four lit frames across about 0.2 s mark the head struck");
 															check.value(map.struckOn[1].not,
 																"the other shell's head is left alone");
 															// the rate is worn as weight, never as motion

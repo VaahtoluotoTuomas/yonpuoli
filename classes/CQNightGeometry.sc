@@ -622,8 +622,8 @@ CQNightGeometry {
 				// under the flip chevron, hanging in the one direction that is
 				// empty. The read-head
 				// comet lost the gesture because a moving target is not a
-				// control: past a crawl it cannot be hit at all, and a 5 Hz
-				// frame draws it stale. Above the mouth looked symmetrical and
+				// control: past a crawl it cannot be hit at all, and any
+				// telemetry frame is slightly stale. Above the mouth looked symmetrical and
 				// is wrong: the spiral *ends* at the mouth and arrives there
 				// from above, so that side is the groove itself (caught by the
 				// winding-surface assert, CQGuiNightTouchTest).

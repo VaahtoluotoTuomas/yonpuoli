@@ -498,6 +498,12 @@ points, the method is binding):**
 | weather marks / hit | ~10–13 / 10 | ~14–18 / 12–14 | see §9 |
 | telemetry marks (comet, fireflies, chord lights) | Ø 4 / 1.2 / 1.8 | Ø 5–6 / 1.6 / 2.2 | information must not shrink relative to grown bodies |
 
+The comet's accepted 2026-07-29 motion pass keeps that mark on one transparent,
+mouse-pass-through layer per Coco. `/cq_phase` now shares the 15 Hz ambient
+ceiling with the castle fireflies; ordinary address motion redraws only the
+dot/tail layer, never the complete shell, and an unchanged frame redraws
+nothing. A real direction-regime change still repaints the shell chevron.
+
 Strokes, fonts, palette, alphas: **unchanged** (§16.3, §16.4, §16.10 —
 "ink does not thicken when the paper grows"). Pen-call counts are size-
 independent, so the flood costs the frame budget nothing; only the opaque

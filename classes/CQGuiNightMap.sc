@@ -6,7 +6,7 @@
 // opaque-backed; the eye, castles and their local details use transparent
 // paper so only their actual round/irregular bodies mask the river. Z order is
 // ground → ring → eye →
-// castles → shells → birds → endpoints → crescents → labels → cable overlay →
+// castles → shells → read heads → birds → endpoints → crescents → labels → cable overlay →
 // hit-transparent tide gesture overlay, so an ambient repaint touches
 // only the views whose information actually moved (§10) — the storm iris in
 // particular repaints without re-inking the ring.
@@ -15,7 +15,8 @@ CQGuiNightMap {
 	var gui, state, matrix, config;
 	var <stageView, <container, <overlay, <routeView;
 	var <controller, <touch, <endpoints, <bodies;
-	var <groundView, <rootViews, <ringView, <eyeView, <castleViews, <shellViews, <birdViews;
+	var <groundView, <rootViews, <ringView, <eyeView, <castleViews, <shellViews;
+	var <readHeadViews, <birdViews, <shellPaintCounts, <readHeadPaintCounts;
 	var <birdHover, <birdFlash, birdFlashGeneration, fileDialog, deckAction;
 	var <almanacView, <moonHover = false, <moonFlash = false;
 	// The tide is the full ground itself: four seeds, no pool body or outline.
@@ -597,29 +598,38 @@ CQGuiNightMap {
 		^this
 	}
 
-	// one '/cq_phase' frame (CQGui caches the funnel truth in phaseNorms; the
-	// 5 Hz send rate is the repaint ceiling, §10). The comet's direction is
+	// One 15 Hz '/cq_phase' frame (CQGui caches the funnel truth in phaseNorms).
+	// Only the clear read-head layer follows ordinary address motion; the
+	// static shell repaints solely when the direction regime changes. The
+	// comet's direction is
 	// read from the phase's actual travel — wrap-aware — so a matrix-driven
 	// flip shows truthfully even when the chevron's param says otherwise.
 	// A move under ~1.5 px along the line keeps the frame.
 	paintPhase { |i|
 		var norm = gui.phaseNorms[i], mean = gui.phaseDirs[i];
-		var delta, mode, struck, rate, repaint = false;
+		var delta, mode, struck, rate, priorDir;
+		var shellRepaint = false, headRepaint = false;
 		if(freed) { ^this };
 		// the chevron's regime can change while the address barely moves — a
 		// shuttled loop goes nowhere — so it gets its own gate
 		mode = this.flipMode(i);
-		if(mode != flipPainted[i]) { flipPainted[i] = mode; repaint = true };
+		if(mode != flipPainted[i]) {
+			flipPainted[i] = mode;
+			shellRepaint = true
+		};
 		// so does the comet's: a hammered loop never leaves the eye, and a
 		// bead crawling near zero would read as "almost stopped" — the exact
 		// opposite of the truth
 		struck = this.prStruck(i);
-		if(struck != struckOn[i]) { struckOn[i] = struck; repaint = true };
+		if(struck != struckOn[i]) {
+			struckOn[i] = struck;
+			headRepaint = true
+		};
 		// the weight only moves in the steps the drawing can show
 		rate = this.class.struckNorm(gui.phaseSkipHz[i]);
 		if(struck and: { rate != struckNorms[i] }) {
 			struckNorms[i] = rate;
-			repaint = true;
+			headRepaint = true;
 		};
 		// and the mark twinkles once per frame while the state is in force —
 		// §16.9's read-head spark, ambient at the telemetry rate. The frames
@@ -627,43 +637,46 @@ CQGuiNightMap {
 		// a claim about liveness it can no longer make (§9's law, in motion)
 		if(struck) {
 			struckBlink[i] = struckBlink[i].not;
-			repaint = true;
+			headRepaint = true;
 		} {
 			struckBlink[i] = false;
 		};
 		// the tail shares the chevron's one truth wherever the server reports a
 		// settled direction; the wrap-aware travel stays the fallback
+		priorDir = sparkDirs[i];
 		if(mean.notNil and: { mean.abs > this.class.shuttleFloor }) {
 			sparkDirs[i] = mean.sign
 		};
+		if(sparkDirs[i] != priorDir) { headRepaint = true };
 		if(norm.notNil) {
 			if(sparkPainted[i].isNil) {
 				sparkPainted[i] = norm;
-				repaint = true;
+				headRepaint = true;
 			} {
 				delta = norm - sparkPainted[i];
 				if(delta.abs > 0.5) { delta = delta - delta.sign };  // the mouth seam
 				if(delta.abs >= 0.002) {
 					if(mean.isNil and: { delta != 0 }) { sparkDirs[i] = delta.sign };
 					sparkPainted[i] = norm;
-					repaint = true;
+					headRepaint = true;
 				};
 			};
 		};
-		if(repaint) { shellViews[i].refresh };
+		if(shellRepaint) { shellViews[i].refresh };
+		if(headRepaint) { readHeadViews[i].refresh };
 	}
 
 	// skip's charge is peak-held 0.15 s on the server (§9), so if it is still
-	// lit when the next 5 Hz phase frame lands, the loop was restarted inside
-	// that window. Two frames running means the head is being thrown back
+	// lit across about 0.2 s of 15 Hz phase frames, the loop was restarted
+	// inside that window. Four frames running means the head is being thrown back
 	// faster than the eye can follow, and it wears the struck mark (§16.6).
 	// No new telemetry and no client-side timer: the charge already says it.
-	*struckFrames { ^2 }
+	*struckFrames { ^4 }
 
 	// The rate the struck mark wears as weight, 8 Hz → 2 kHz over a log scale
 	// (rate is a pitch to the ear, so it is an octave axis to the eye too).
 	// Quantized to the eight steps the drawing can actually distinguish, so a
-	// drifting rate cannot repaint the shell on every 5 Hz frame for nothing.
+	// drifting rate cannot repaint the read-head layer on every frame for nothing.
 	*struckSteps { ^8 }
 
 	*struckNorm { |hz|
@@ -814,6 +827,8 @@ CQGuiNightMap {
 		struckBlink = [false, false];
 		sparkPainted = Array.newClear(2);
 		flipPainted = Array.newClear(2);
+		shellPaintCounts = [0, 0];
+		readHeadPaintCounts = [0, 0];
 		rangeStates = Array.newClear(5);
 		sproutState = CQNightGeometry.sproutState(config[\micChan].notNil, 0);
 		container = View().background_(night[\ground]);
@@ -846,6 +861,14 @@ CQGuiNightMap {
 		shellViews = 2.collect { |i|
 			var view = this.prLayer;
 			view.drawFunc = { this.prSafeDraw { this.prDrawShell(i) } };
+			view
+		};
+		// The only continuously moving Coco ink gets clear, mouse-pass-through
+		// paper of its own. At 15 Hz this redraws a dot and one short tail,
+		// while the much heavier shell remains still.
+		readHeadViews = 2.collect { |i|
+			var view = this.prLayer(false).acceptsMouse_(false);
+			view.drawFunc = { this.prSafeDraw { this.prDrawReadHead(i) } };
 			view
 		};
 		birdViews = 2.collect { |i|
@@ -1526,6 +1549,8 @@ CQGuiNightMap {
 		castleViews.do { |view, k| view.bounds = geometry[\castles][k][\box] };
 		shellViews.do { |view, i|
 			view.bounds = geometry[\cocos][i][\shellBox] };
+		readHeadViews.do { |view, i|
+			view.bounds = geometry[\cocos][i][\shellBox] };
 		birdViews.do { |view, i| view.bounds = geometry[\birds][i][\box] };
 		endpoints.keysValuesDo { |name, endpoint|
 			var center = geometry[\endpoints][name];
@@ -1845,7 +1870,7 @@ CQGuiNightMap {
 	// G2.5 review). The param is instant and exact, so it decides on its own.
 	// Otherwise the direction comes from `/cq_phase`'s audio-rate mean — never
 	// from client-side guessing, which aliased badly once the gate fired faster
-	// than the 5 Hz frame: a settled loop reads ±1, and a loop being shuttled
+	// than the 15 Hz frame: a settled loop reads ±1, and a loop being shuttled
 	// faster than an arrow can be read collapses toward 0, where the honest
 	// mark is the opposed chevron rather than a frozen or lying arrowhead.
 	*shuttleFloor { ^0.5 }
@@ -1863,14 +1888,23 @@ CQGuiNightMap {
 	prDrawShell { |i|
 		var coco;
 		if(geometry.isNil) { ^this };
+		shellPaintCounts[i] = shellPaintCounts[i] + 1;
 		coco = geometry[\cocos][i];
 		CQInkNight.drawShell(coco, coco[\shellBox].leftTop,
 			holdStates[i], this.flipMode(i), speedNorms[i], shellHover[i],
-			gui.phaseNorms[i], sparkDirs[i], skipHover[i], skipFlash[i],
-			if(struckOn[i]) { struckNorms[i] }, struckBlink[i],
-			rimHover[i], \night, geometry[\roots][i],
+			skipHover[i], skipFlash[i], rimHover[i], \night, geometry[\roots][i],
 			gui.auraFor(if(i == 0) { \envA } { \envB }) ? 0,
 			preampDriveNorms[i], preampSlotNorms[i]);
+	}
+
+	prDrawReadHead { |i|
+		var coco;
+		if(geometry.isNil) { ^this };
+		readHeadPaintCounts[i] = readHeadPaintCounts[i] + 1;
+		coco = geometry[\cocos][i];
+		CQInkNight.drawReadHead(coco, coco[\shellBox].leftTop,
+			gui.phaseNorms[i], sparkDirs[i],
+			if(struckOn[i]) { struckNorms[i] }, struckBlink[i], \night);
 	}
 
 	// §16.7's one dashed drop-target mark, from the shared CQInk primitive.

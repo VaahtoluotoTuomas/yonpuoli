@@ -479,8 +479,8 @@ CQGui {
 				nightMap !? { nightMap.spesalChanged };
 			}.defer;
 		}, '/cq_spesal');
-		// GUI_SPEC §9 loop phase: the read head's own message; its 5 Hz send
-		// rate IS the night shells' repaint ceiling (§10) — no timer added
+		// GUI_SPEC §9 loop phase: the read head's own 15 Hz message. Night gives
+		// the comet its own cheap layer, so no complete shell follows this stream.
 		OSCdef(\cq_gui_phase, { |msg|
 			{ this.prPhaseFrame(msg[2], msg[3], msg[4], msg[5]) }.defer;
 		}, '/cq_phase');

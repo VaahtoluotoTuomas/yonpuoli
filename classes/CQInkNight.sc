@@ -233,17 +233,12 @@ CQInkNight {
 	// mark in line ink; the only travelling body on this shell is the read
 	// head, and bone spark ink now belongs to events alone (§16.2: the
 	// difference is form first).
-	// The read head is the comet: a bone dot at the loop's true address
-	// (sparkNorm, nil until '/cq_phase' has reported — no telemetry is not
-	// zero, §9) with a short tail trailing where it came from. Display only
-	// since the G2 gate; the hand's skip lives on the mouth's own mark.
 	*drawShell { |coco, origin, holdOn = false, flipMode = \forward,
-		speedNorm = 0.5, hover = false, sparkNorm, sparkDir = 1,
-		skipHover = false, skipFlash = false, struckNorm, struckTwinkle = false,
+		speedNorm = 0.5, hover = false, skipHover = false, skipFlash = false,
 		rimHover = false, skin = \night, preampRoot, preampAura = 0,
 		preampDrive = 0, preampSlot = 1|
 		var palette = CQInk.palette(skin), notch, notchNorm, normal, reach;
-		var spark, tail, heart;
+		var heart;
 		Pen.translate(origin.x.neg, origin.y.neg);
 		// This view is opaque-backed. Repaint the exact incoming audio vein
 		// beneath the winding so the anatomy reaches the real spiral
@@ -313,26 +308,36 @@ CQInkNight {
 		Pen.width = CQInk.strokes[if(hover) { \strong } { \normal }];
 		Pen.line(notch - (normal * reach), notch + (normal * reach));
 		Pen.stroke;
-		// the read head, drawn last so the moving comet passes over the notch
-		sparkNorm !? {
-			spark = CQNightGeometry.spiralPoint(coco, sparkNorm);
-			// struckNorm is nil unless the head is being hammered — the same
-			// nil-or-value idiom the whole night uses for "state not in force"
-			if(struckNorm.notNil) {
-				this.drawStruck(spark, struckNorm, struckTwinkle, skin);
-			} {
-				tail = CQNightGeometry.spiralPoint(coco,
-					(sparkNorm - (sparkDir.sign * 0.01)).clip(0, 1));
-				Pen.strokeColor = palette[\spark].copy.alpha_(0.45);
-				Pen.width = CQInk.strokes[\hairline];
-				Pen.line(tail, spark);
-				Pen.stroke;
-			};
-			Pen.fillColor = palette[\spark];
-			Pen.addOval(Rect.aboutPoint(spark, CQNightMeasures.cometR,
-				CQNightMeasures.cometR));
-			Pen.fill;
+	}
+
+	// The read head is the comet: a bone dot at the loop's true address
+	// (sparkNorm, nil until '/cq_phase' has reported — no telemetry is not
+	// zero, §9) with a short tail trailing where it came from. It lives on a
+	// clear, hit-transparent layer above the static shell, so its 15 Hz truth
+	// costs only this dot and tail — never a repaint of the whole Coco.
+	*drawReadHead { |coco, origin, sparkNorm, sparkDir = 1,
+		struckNorm, struckTwinkle = false, skin = \night|
+		var palette, spark, tail;
+		if(sparkNorm.isNil) { ^this };
+		palette = CQInk.palette(skin);
+		Pen.translate(origin.x.neg, origin.y.neg);
+		spark = CQNightGeometry.spiralPoint(coco, sparkNorm);
+		// struckNorm is nil unless the head is being hammered — the same
+		// nil-or-value idiom the whole night uses for "state not in force"
+		if(struckNorm.notNil) {
+			this.drawStruck(spark, struckNorm, struckTwinkle, skin);
+		} {
+			tail = CQNightGeometry.spiralPoint(coco,
+				(sparkNorm - (sparkDir.sign * 0.01)).clip(0, 1));
+			Pen.strokeColor = palette[\spark].copy.alpha_(0.45);
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.line(tail, spark);
+			Pen.stroke;
 		};
+		Pen.fillColor = palette[\spark];
+		Pen.addOval(Rect.aboutPoint(spark, CQNightMeasures.cometR,
+			CQNightMeasures.cometR));
+		Pen.fill;
 	}
 
 	// The read head while it is being hammered (§16.6). It wears the skip
@@ -345,7 +350,7 @@ CQInkNight {
 	//
 	// The trigger RATE is drawn as weight, not as motion. Above ~10 Hz the eye
 	// fuses a flicker into a steady light (a real panel LED does the same), and
-	// this surface only gets 5 Hz of telemetry (§10) — so any blink would be a
+	// this surface only gets 15 Hz of telemetry (§10) — so any blink would be a
 	// rate we invented, slower than the truth and decorative besides (§16.12).
 	// A tachometer, not a strobe: the arms grow with the rate and a second,
 	// diagonal pair opens past the midpoint. Four Pen lines, one stroke.

@@ -153,6 +153,8 @@ CQGuiVisualContractTest : UnitTest {
 		this.assertEquals(
 			coco.detect { |reply| reply[\name] == '/cq_phase' }[\values], 3,
 			"the phase message carries address, direction and skip rate");
+		this.assertEquals(CQSynthDefs.phaseReplyHz, 15,
+			"the read head shares the 15 Hz ambient ceiling with castle motion");
 		this.assert(quantussy.collect { |reply| reply[\name] }
 			.includes('/cq_castle'),
 			"extracting the sums left the castle activity telemetry intact");
