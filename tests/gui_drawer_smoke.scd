@@ -281,7 +281,7 @@ centred = { |inner, outer|
 													<= workshop.view.bounds.height }
 												and: { centred.value(workshop.rail, workshop.view) },
 												"the shared content rail is centred and fits its page");
-											check.value(workshop.serviceModules.size == 4
+											check.value(workshop.serviceModules.size == 3
 												and: { workshop.serviceModules.collect { |module|
 													module.bounds.width
 												} == CQGuiWorkshop.serviceWidths(
@@ -290,7 +290,7 @@ centred = { |inner, outer|
 													module.bounds.height
 														== CQGuiScale.serviceBandHeight(drawer.step)
 												} },
-												"four equal modules make the shallow service band");
+												"three equal modules make the shallow service band");
 											check.value(workshop.mainLedgers
 												.collect { |ledger| ledger.bounds.width }
 												== CQGuiWorkshop.mainWidths(
@@ -298,11 +298,11 @@ centred = { |inner, outer|
 												and: { workshop.mainLedgers[0].bounds.width
 													== workshop.mainLedgers[2].bounds.width },
 												"the body is the coco / quantussy / coco triptych, the pair equal");
-											check.value(workshop.rows.size == 43
+											check.value(workshop.rows.size == 39
 												and: { workshop.rows.every { |row|
 													row.kind == \ledger and: { row.isInteractive }
 												} },
-												"all 43 parameters render as enabled ledger rows");
+												"all 39 parameters render as enabled ledger rows");
 											// no scroll view: the last row of the
 											// deepest group must lie inside the page
 											check.value(#[coco1SlotX, coco2SlotX, c5Send]
@@ -312,7 +312,7 @@ centred = { |inner, outer|
 												},
 												"the last Coco slot rows and the fifth castle send are contained");
 											check.value(CQInkControl.drawErrors == 0,
-												"the islands and 43 ledger rows paint without callback errors");
+												"the islands and 39 ledger rows paint without callback errors");
 											// The user's N8 rounds: one shared page frame.
 											// Measured parent-relative, because a hidden
 											// StackLayout page reports stale ABSOLUTE

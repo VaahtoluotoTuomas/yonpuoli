@@ -49,6 +49,6 @@ CQStateTest : UnitTest {
 		state.set(\coco1Fb, 1.0);
 		e = state.asEvent;
 		this.assertEquals(e[\coco1Fb], 1.0, "asEvent reflects current values");
-		this.assertEquals(e.size, 79, "asEvent carries every parameter");
+		this.assertEquals(e.size, 74, "asEvent carries every parameter");
 	}
 }

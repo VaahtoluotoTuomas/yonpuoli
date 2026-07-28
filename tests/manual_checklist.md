@@ -309,8 +309,8 @@ CQ.hold(1, 0);                 // deck kiertää coco1:een
 // 1. Faderikartta (SPEC §6.1) — liikuta yksi kerrallaan ja varmista korvalla
 //    ja/tai CQ.get-kutsulla, että oikea parametri liikkuu:
 //    F1 coco1In     F5 coco2In     F9  qFreq                F13 deckA+B Level
-//    F2 coco1Speed  F6 coco2Speed  F10 qChaos               F14 spaceMix (ei DSP:tä
-//    F3 coco1Spaf   F7 coco2Spaf   F11 preA+B Drive              vielä -> ei ääntä)
+//    F2 coco1Speed  F6 coco2Speed  F10 qChaos               F14 vapaa (ei muutosta)
+//    F3 coco1Spaf   F7 coco2Spaf   F11 preA+B Drive
 //    F4 coco1Fb     F8 coco2Fb     F12 deckA+B Rate         F15 patchDepth
 //                                                           F16 masterVol
 CQ.get(\coco1Speed);           // esim. faderin F2 liikkeen jälkeen
@@ -749,9 +749,9 @@ CQ.patch(\envA, \coco1_spaf, 0.7);
 ### N8 — Drawer-workshop (§12.1)
 
 Drawerin neljäs pysyvä sivu `workshop` on **Nightin hiljainen mittapöytä**:
-sama soitin vastakkaisella kieliopilla. Kiinteä 1128 px raili, 72 px huoltorivi
-(`deck a · input trims · space · deck b`) ja sen alla `coco 1 · quantussy ·
-coco 2` (365 · 366 · 365). Kaikki 43 puuttuvaa CQSpec-parametria ovat
+sama soitin vastakkaisella kieliopilla. Jaettu raili, kolmen moduulin huoltorivi
+(`deck a · input trims · deck b`) ja sen alla `coco 1 · quantussy ·
+coco 2`. Kaikki 39 puuttuvaa CQSpec-parametria ovat
 ledger-rivejä: nimi vasemmalla, hiusviivaraili keskellä, **tarkka arvo**
 monolla oikealla. `micGain` **siirtyi** Daystä tänne — Dayhin jäi vain
 passiivinen osoitin, eikä koko GUI:ssa ole toista mic-kontrollia.
@@ -765,7 +765,7 @@ CQ.set(\masterVol, -24);
 //    SIRISTYSTESTI (katso 2 m päästä, älä lue): näetkö yhden matalan
 //    huoltorivin ja sen alla kolme ledgeriä — etkä neljää pyöreää korttia,
 //    natiivia asetuspaneelia, pienoiskoko-Daytä tai Nightin koristekuvastoa?
-// 2. Lue läheltä: jokaisella 43 rivillä pitää näkyä tarkka arvo. Vertaa
+// 2. Lue läheltä: jokaisella 39 rivillä pitää näkyä tarkka arvo. Vertaa
 //    coco 1:n ja coco 2:n ledgereitä: alaotsikoiden (converter · material ·
 //    output · input mix) pitää olla täsmälleen samalla korkeudella.
 // 3. Vedä `coco 1 · output · level` railia. Äänen pitää muuttua heti ja
@@ -852,7 +852,7 @@ CQGuiScale.minimumHeight(\roomy) + CQGuiScale.comfort;    // vaadittu korkeus
 5. Riittääkö ledger-rivin raili soitettavaksi, vai onko se liian lyhyt?
    Erottuvatko kahva, keskimerkki ja istuimet soittoetäisyydeltä?
 6. Ovatko tarkat arvot oikealla luettavia ja onko desimaalitarkkuus
-   kussakin ryhmässä järkevä (esim. `qShLag` 0.0040, `spaceDamp` 4500)?
+   kussakin ryhmässä järkevä (esim. `qShLag` 0.0040, `c5Off` -0.170)?
 7. Onko semanttista väriä liian vähän vai liikaa (vain dust · organ · live ·
    mic saavat perheen)?
 8. Tuntuuko nimipalstan klikkauksen inerttiys turvalta vai hämäävältä?

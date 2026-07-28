@@ -7,7 +7,7 @@
 // shrunken Day panel.
 //
 // One manifest below drives BOTH the built layout and `paramNames`, so the
-// coverage audit can never test a second hand-copied list. The 43 names are
+// coverage audit can never test a second hand-copied list. The 39 names are
 // written out explicitly and are never computed as `CQSpec.names` minus the
 // other surfaces: a newly added parameter must fail the gate rather than
 // silently count as covered without a drawn control.
@@ -29,8 +29,15 @@ CQGuiWorkshop {
 	// every drawn row, by the parameter it writes
 	rowFor { |param| ^rowsByParam[param] }
 	panels { ^islandRecords.collect { |record| record[\panel] } }
-	serviceModules { ^islandRecords.copyRange(0, 3).collect { |r| r[\panel] } }
-	mainLedgers { ^islandRecords.copyRange(4, 6).collect { |r| r[\panel] } }
+	serviceModules {
+		^islandRecords.copyRange(0, this.class.serviceIslands.size - 1)
+			.collect { |r| r[\panel] }
+	}
+	mainLedgers {
+		var first = this.class.serviceIslands.size;
+		^islandRecords.copyRange(first, first + this.class.mainIslands.size - 1)
+			.collect { |r| r[\panel] }
+	}
 	railWidth { ^CQGuiScale.railWidth(step, pageWidth) }
 
 	// ---- the composition (pure, testable without Qt) ----
@@ -68,22 +75,20 @@ CQGuiWorkshop {
 		^last[\y] + last[\height]
 	}
 
-	// the four service modules and the three main ledgers, both summing to the
+	// the three service modules and the three main ledgers, both summing to the
 	// rail exactly (CQGuiScale.columns gives an odd count's remainder to the
 	// middle, so the two Coco ledgers stay literally the same width)
 	*serviceWidths { |railWidth, step = \compact|
-		^CQGuiScale.columns(railWidth, 4, CQGuiScale.metrics(step)[\gutter])
+		^CQGuiScale.columns(railWidth, 3, CQGuiScale.metrics(step)[\gutter])
 	}
 
 	*mainWidths { |railWidth, step = \compact|
 		^CQGuiScale.columns(railWidth, 3, CQGuiScale.metrics(step)[\gutter])
 	}
 
-	// ---- the manifest (§12.1.1's exact 43) ----
+	// ---- the manifest (§12.1.1's exact 39) ----
 
-	// The service band's four modules, in the wireframe's order. Space stays a
-	// neutral service module and grows no invented Night body; its `mix` lives
-	// on the persistent Master strip and is deliberately not repeated here.
+	// The service band keeps only live source services after Space retirement.
 	*serviceIslands {
 		^[
 			(title: "deck a", family: \line, rows: [
@@ -93,9 +98,6 @@ CQGuiWorkshop {
 				(param: \liveGain, label: "live gain", family: \input),
 				// the one deliberate red exception on the page (SPEC §7)
 				(param: \micGain, label: "mic gain", family: \danger)]),
-			(title: "space", family: \line, rows: [
-				(param: \spaceSize, label: "size"),
-				(param: \spaceDamp, label: "damping")]),
 			(title: "deck b", family: \line, rows: [
 				(param: \deckBRate, label: "rate"),
 				(param: \deckBLoop, label: "loop")])
@@ -118,8 +120,7 @@ CQGuiWorkshop {
 				(param: p.value("Organ"), label: "organ", family: \organ)]),
 			(label: "output", rows: [
 				(param: p.value("Level"), label: "level"),
-				(param: p.value("Pan"), label: "pan"),
-				(param: p.value("Send"), label: "send")]),
+				(param: p.value("Pan"), label: "pan")]),
 			// the input mixer's four slots (SPEC §5.3). These labels are short
 			// only because their group already names them.
 			(label: "input mix", rows: [
@@ -183,7 +184,7 @@ CQGuiWorkshop {
 	// measurements change — so a maximize can never re-register a funnel
 	// binding or resurrect a stale control.
 	applyScale { |nextStep, width|
-		var railW, serviceWidths, mainWidths;
+		var railW, serviceWidths, mainWidths, serviceCount;
 		nextStep = nextStep ? step;
 		width = width ? pageWidth;
 		if(nextStep == step and: { width == pageWidth }) { ^this };
@@ -193,6 +194,7 @@ CQGuiWorkshop {
 		railW = CQGuiScale.railWidth(step, pageWidth);
 		serviceWidths = this.class.serviceWidths(railW, step);
 		mainWidths = this.class.mainWidths(railW, step);
+		serviceCount = this.class.serviceIslands.size;
 		rail.fixedWidth = railW;
 		topPad.fixedHeight = metrics[\vMargin];
 		bottomPad.fixedHeight = metrics[\vMargin];
@@ -202,7 +204,8 @@ CQGuiWorkshop {
 		mainLayout.spacing = metrics[\gutter];
 		islandRecords.do { |record, i|
 			this.prScaleIsland(record,
-				if(i < 4) { serviceWidths[i] } { mainWidths[i - 4] });
+				if(i < serviceCount) { serviceWidths[i] }
+					{ mainWidths[i - serviceCount] });
 		};
 		^this
 	}

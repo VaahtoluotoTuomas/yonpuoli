@@ -19,9 +19,11 @@ CQGuiVisualContractTest : UnitTest {
 
 	test_masterIsPersistentPerformanceOnly {
 		var items = CQGuiPanels.masterItems;
-		#[masterVol, masterDry, spaceMix, patchDepth, gr, notice, rec, panic].do { |item|
+		#[masterVol, masterDry, patchDepth, gr, notice, rec, panic].do { |item|
 			this.assert(items.includes(item), "Master keeps %".format(item));
 		};
+		this.assert(items.includes(\spaceMix).not,
+			"the retired Space control cannot return through the persistent strip");
 		#[snapshotName, snapshotSave, snapshotRecall, morph].do { |item|
 			this.assert(items.includes(item).not,
 				"Master never contains Drawer-memory item %".format(item));

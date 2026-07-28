@@ -25,8 +25,9 @@ public-vaihto ja oikeat kuva-/äänidemot ovat erillinen julkaisutoimi.
 
 **Seuraava askel konkreettisesti:** **N9 hyväksyttiin 2026-07-28.** Day on
 poistettu, koska Night on inspiroivampi varsinainen soitin ja kahden
-käyttöliittymän ylläpito hajottaisi kehityksen. Night 31 · Master 5 · Workshop
-43 on erillinen, koneellisesti todistettu `CQSpec.names`-peitto. Dayn
+käyttöliittymän ylläpito hajottaisi kehityksen. Space-eläköityksen jälkeen
+Night 31 · Master 4 · Workshop 39 on erillinen, koneellisesti todistettu
+`CQSpec.names`-peitto. Dayn
 spesal-tähdistö ja staattinen muistipolkukartta saivat kirjatun kuoleman:
 Nightin osoittimen alla ilmestyvä suuntatotuudellinen kytkentäsointu kertoo
 spesalin seurauksen tekopaikassa, ja Workshopin täsmäkontrollit sekä Nightin
@@ -35,11 +36,13 @@ heikomman. N9:n jälkeinen rajattu polish-portti — kiduksen
 kaapeliprioriteetti ja snapshot-kansion erotus — valmistui 2026-07-28.
 **13.1 feedback-taper sekä 13.4 chaos-käyrä ja sen sääkehät hyväksyttiin
 käyttäjän kuuntelu- ja näkökatselmuksessa 2026-07-28.** Seuraava vaihe on
-**Space/reverbin konseptipäätös ja kuuntelu.** Sen jälkeen järjestys on
-**13.2 speed-lattia → 13.5 VCA-laki → 13.3 dust
-→ 13.6 zipper-mittaus + 13.8 preampin equal-loudness-koe → jäljellä olevat
-bugit/polish ja laitteistogate → Norns-portti (§14).** Yksi musiikillinen
-muuttuja käsitellään edelleen kerrallaan.
+**Space-kuuntelupäätös ja tuotantoketjun hallittu eläköitys valmistuivat
+2026-07-28.** Seuraava avoin portti on Nightin täyden mittakaavan
+layout/polish-katselmus; sen jälkeen järjestys on **13.2 speed-lattia →
+13.5 VCA-laki → 13.3 dust → 13.6 zipper-mittaus + 13.8 preampin
+equal-loudness-koe → jäljellä olevat bugit/polish ja laitteistogate →
+Norns-portti (§14).** Yksi musiikillinen muuttuja käsitellään edelleen
+kerrallaan.
 
 ## Auktoriteettijärjestys
 
@@ -214,8 +217,8 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
   Toteutettu §12.1.4:n vihreässä järjestyksessä:
   1. Kolme omistajainventaariota julistettiin erikseen — Night 31
      (`CQGuiNightMap.reachableParamNames`, koottu samoista semanttisista
-     apureista joilla kehot piirretään), Master 5
-     (`CQGuiPanels.masterParamNames`) ja Workshop 43 (`CQGuiWorkshop`in oma
+     apureista joilla kehot piirretään), nykyinen Master 4
+     (`CQGuiPanels.masterParamNames`) ja Workshop 39 (`CQGuiWorkshop`in oma
      manifesti) — ja `CQGuiCoverageTest` todistaa ne erillisiksi ja niiden
      unionin **täsmälleen `CQSpec.names`**iksi. Workshopin lista on
      eksplisiittinen, ei komplementti: huomenna lisätty parametri kaataa
@@ -298,6 +301,28 @@ kaapelipriorisoidun osuma-alueen sisään. Laajennetun kandidaatin portti:
 `CQ_COMPILE_OK`, **13 116 unit-passia / 0 failurea / 32/32 luokkaa** ja
 `CQ_GUI_NIGHT_PASSED`. Käyttäjä hyväksyi sääkehät ja hoverin
 visuaalikatselmuksessa 2026-07-28; 13.4 on suljettu.
+
+Space-keskustelun ensimmäinen päätös 2026-07-28: Silhouette hylättiin tämän
+soittimen sisältä. Tuotanto-FDN:ään, `CQSpec`iin tai GUI:hin koskematon
+`prototypes/space_lab.scd` rakensi yhden vertailtavan kuuntelusession. Neljä
+unity-palautukseen 0.0–0.4 dB:n sisään kalibroitua kandidaattia ovat tumma
+utility-FDN, todellisia Coco-organ-kelloja
+seuraava clock field, Coco-puskureiden kirjoitukseen koskematon memory halo sekä
+ei-reverb `confluence`, jossa kumpikin Coco uudelleennäytteistää toista oman
+kellonsa reunoilla. Yksi kerrallaan ajettava labra ohittaa vanhan placeholderin
+palautettavasti mutta käyttää sen send/return-väyliä ja koko `cqMaster`-
+turvaketjua. Automaattinen portti: `CQ_SPACE_LAB_COMPILE_OK`,
+`CQ_SPACE_LAB_NRT_PASSED`; kaikki neljä renderiä ovat ei-hiljaisia, finitejä,
+DC-rajattuja, keskenään eri signatuurisia ja master-katon alla. Tämä ei vielä
+hyväksynyt mitään kandidaattia eikä muuttanut Space-parametrilistaa.
+
+Kuuntelutuomio 2026-07-28: `utility` hylättiin liian tavanomaisena,
+`clockField` havaittiin mittauksesta huolimatta vailla selvästi kuultavaa
+identiteettiä ja `confluence` lähinnä stereokenttää sekoittavana ilman uutta
+merkityksellistä soittotapaa. `memoryHalo` oli ainoa jatkoajatusta synnyttänyt
+luonnos, mutta kiinteillä lukupääsuhteilla liian ennalta arvattava. Se
+säilytetään tutkimusmateriaalina tulevalle muistilukutilalle, ei hyväksyttynä
+efektinä. Nykyistä Space/FDN-linjaa ei jatketa.
 
 - [x] 13.1 feedback-taper (**hyväksytty 2026-07-28, myös asteikkolisäykset**) ·
   [ ] 13.2 speed-lattia · [ ] 13.3 dust ·
@@ -795,6 +820,10 @@ sommittelua (§7.2 korjattiin vasta hylätyn buildin jälkeen).
 
 ## Avoin Night-kokomittakaavan polish-portti
 
+- [x] **Eläköitä Space-ohjauspinta ennen layoutin mittaamista.** Valmis
+  2026-07-28: hylätyn efektin näkyvät, fyysiset ja DSP-reitit poistettiin
+  yhtenä vaikutuspintana, F14 jätettiin vapaaksi ja Masteriin jäi tulevalle
+  tilavalitsimelle varattu ilma.
 - [ ] **Nightin säätimien ja muun anatomian järjestelmällinen suurennus.**
   N2:n yleinen väljennys ei vielä tehnyt kaikista käsistä ja merkeistä
   riittävän suuria: erityisesti tide-sirpit, niiden asteikkolovet ja Dolby-
@@ -810,9 +839,9 @@ sommittelua (§7.2 korjattiin vasta hylätyn buildin jälkeen).
   100/125/150 % skaalaus. Värilliset semanttiset asteikot parantavat lukemista,
   mutta eivät kuittaa tätä osumakoon ja fyysisen koon velkaa.
 
-**Sijainti etenemisessä:** musiikilliset yhden muuttujan kokeet ja Space-
-päätös ensin, sitten tämä yhtenäinen koko-/layout-passi yhdessä jäljellä olevan
-polishin kanssa, ennen nelikanavaista laitteistogatea ja Norns-porttia.
+**Sijainti etenemisessä:** Space-päätös ja hallittu eläköitys ovat valmiit.
+Seuraavana tämä yhtenäinen koko-/layout-passi yhdessä jäljellä olevan polishin
+kanssa, ennen nelikanavaista laitteistogatea ja Norns-porttia.
 
 ## Valmistunut polish-passissa 2026-07-28
 
@@ -828,6 +857,14 @@ polishin kanssa, ennen nelikanavaista laitteistogatea ja Norns-porttia.
   `snapshots/`-kansioon. Vanha `presets/*.cqsnap.scd` on vain-lukuinen
   yhteensopivuuspolku, joten aiemmat henkilökohtaiset snapshotit näkyvät ja
   palautuvat ilman siirtoa; saman niminen uusi snapshot voittaa vanhan.
+- [x] **Space/reverbin hallittu eläköitys.** Neljän kuuntelukandidaatin
+  jälkeen erillinen reverb-/efektimoduuli hylättiin. `spaceMix`, `spaceSize`,
+  `spaceDamp` ja molemmat Coco-sendit poistettiin `CQSpec`/`CQState`-
+  sopimuksesta; `\cqSpace`, FX-ryhmä, send/return-bussit ja master-return
+  poistettiin tuotantograafista. Master ja Workshop eivät piirrä kuolleita
+  säätimiä, F14 on inertti ja vanhojen snapshotien kentät ohitetaan.
+  Night 31 · Master 4 · Workshop 39 kattaa kaikki 74 elävää parametria.
+  MemoryHalo säilyy vain arkistoidussa prototyyppitutkimuksessa.
 
 ## Myöhemmin, ei tämän vaiheen scopea
 - **Identiteetti ja sisäosien nimet** (käyttäjän havainto 2026-07-28, N8:n
@@ -846,20 +883,159 @@ polishin kanssa, ennen nelikanavaista laitteistogatea ja Norns-porttia.
   Vaikuttaa `README.md`:hen, `SOURCES.md`:hen, GUI:n kaikkiin otsikoihin ja
   mahdollisesti `CQ*`-nimiavaruuteen, joten se on oma päätöksensä eikä osa
   N8:aa. Liittyy suoraan julkaisuradan "nimi ja törmäystarkistus" -kohtaan.
-- **Space/reverb ja sen paikka Workshopissa** (käyttäjän kirjaus 2026-07-28).
-  `spaceSize` ja `spaceDamp` ovat nyt Workshopin huoltorivissä neutraalina
-  moduulina, koska SPEC §5.6:n FDN on nykymuodossaan juuri sitä. Reverbin
-  konsepti kuitenkin todennäköisesti **muuttuu kokonaan** (GUI_SPEC §14:n
-  lykätty space-identiteetti), joten Workshopin space-moduuli säädetään
-  uudelleen vasta kun reverbin suunnittelu etenee. Älä lukitse sen paikkaa
-  tai parametrilistaa sitä ennen.
 - **Kosketusnäyttö-optimointi Night-modeen** (multi-touch, ele-erottelu) —
   liittyy kevättulvaan (§8 kasvattaa kohteita jo ~40 px suuntaan); oma
   työvaihe kun mittakaava on lyöty lukkoon.
-- **Space-body ja Space-estetiikka** odottavat erillistä konseptipäätöstä.
 - **Stemien live-kuuntelu** — ainoa vielä avoin manuaalitesti aiemmilta
   vaiheilta (`manual_checklist.md` KUUNTELU 7, kohdat 7.4/7.5): vaatii
   ≥ nelikanavaisen äänikortin, joten se on erillinen laitteistogate. NRT-turva
   on jo vihreä; live-todennus odottaa laitteistoa. Muut checklistin
   rastittamattomat rivit ovat vanhentunutta jäännöstä valmiista v1.0/G1-
   vaiheista (v1.0 tagattu, G1 Drawer sulautui hyväksyttyyn G1-loppuporttiin).
+
+## Viimeinen musiikillinen lisävaihe: kolme huokoista soittotilaa
+
+**Status 2026-07-28: hyväksytty jatkosuunta, mutta tarkoituksella jonon
+viimeinen.** Tähän palataan vasta, kun yllä olevat perustoiminnallisuuden,
+Night-polishin ja laitteistotodennuksen avoimet työt ovat valmiit. Tämä on
+viimeinen uusi soitinarkkitehtuurin vaihe ennen lopullista julkaisu- ja
+mediakierrosta, ei syy lykätä nykyisiä viimeistelytöitä.
+
+### Taiteellinen teesi ja rajaus
+
+Puuttuva makro ei ole reverb vaan valinta siitä, **mikä herättää Coco-muistin
+ja miten muistia luetaan**. Työnimet ovat:
+
+1. `loop` — nykyinen outo luupperi: live/deck/ristisyöttö kirjoittaa, yksi
+   kellotettu ZOH-lukupää lukee;
+2. `drone` — soittimen omat castle-trianglet ja Coco-kellojen organ-pinot
+   herättävät 8-bittisen muistin ja sen feedback-kierron;
+3. `tide` / `field` — sama Coco-muisti luetaan liikkuvana,
+   monilukupäisenä muistokenttänä tavallisen luupin tai päälle liimatun
+   reverbin sijasta. Lopullinen nimi päätetään vasta kuuntelusta; `ambient`
+   kuvaa käyttötapaa, ei vielä algoritmia.
+
+Tilat ovat **huokoisia ekologioita**, eivät kolme toisiaan poissulkevaa
+presetiä. Globaali valitsin siirtää painopistettä ja vaihtaa
+heräte-/lukutopologiaa lennosta, mutta ulkoiset lähteet, drone-heräte,
+suora luuppiluku ja field-luku saavat olla eri määrin yhtä aikaa auki. Näin
+drone voidaan kerrostaa olemassa olevaan luuppiin ja uusi aine voi jäädä
+Coco-muistiin tilanvaihdon jälkeen. Erillistä efektiräkkiä tai täyttä
+patchattavaa audiomatriisia ei lisätä ennen kuin tämä ydin on todistettu.
+
+Mannequins Just Friendsin Technical Map on myöhemmän suunnittelun
+vertailukohta, ei kopioitava ominaisuuslista:
+<https://github.com/whimsicalraps/Mannequins-Technical-Maps/blob/main/just-friends/just-friends.md>.
+Hyödyllinen periaate on kuvata täsmällisesti, miten sama generaattori ja sama
+käsi muuttavat tehtäväänsä mode- ja timebase-yhdistelmissä. Yölahdelle tehdään
+lopuksi oma technical/mode map, joka kertoo vastaavasti jokaisen nykyisen
+säätimen, patch-kohteen ja eleen merkityksen kaikissa kolmessa tilassa.
+
+### Pysyvät soittolait
+
+- Mode-vaihto ei tyhjennä matriisia, lataa presetiä, muuta Spesal-tiloja,
+  nollaa phasea eikä kirjoita puskuriin itsestään.
+- `Hold` säilyy soittajan kirjoitusporttina. Drone-tila voidaan valita
+  turvallisesti, mutta sisäinen heräte tallentuu vasta kun soittaja avaa Cocon.
+- Ensimmäisessä versiossa kaikki tilat jakavat nykyiset kaksi Coco-bufferia.
+  Tilasta toiseen vuotava muisti on ominaisuus. Kolme erillistä audio-
+  muistiparia, automaattinen buffer-copy ja tilakohtainen patch-/nuppimuisti
+  rajataan pois, ellei käytännön soittaminen myöhemmin osoita niitä
+  välttämättömiksi.
+- Nykyisten käsien semantiikka säilyy: `Speed` on kello/sävelkorkeus/aika,
+  `Spaf` kellon tai lukukentän liike, `Feedback` pysyvyys/eroosio, `Hold`
+  kirjoita–säilytä, `Flip` suunta ja `Skip` vaiheen uudelleenasetus.
+  Tilat voivat laajentaa näiden seurausta, mutta sama säädin ei saa muuttua
+  mielivaltaisesti toiseksi käsitteeksi.
+- Sama 16×22 patchi pysyy voimassa tilan yli. Nykyiset `spaf`, `inVca`,
+  `fbVca`, `flip` ja `skip` -summat annetaan myös uuden lukutavan käyttöön
+  aina kun yhteys on semanttisesti sama. Uusia matriisikohteita lisätään vasta
+  jos kuunteluprototyyppi osoittaa, ettei nykyinen kieli riitä; matriisin
+  laajennus muuttaa myös Inspectorin geometriaa, snapshotteja ja testisopimusta.
+- Tilanvaihto on palvelimella silotettu crossfade, ei SynthDefin vaihto tai
+  nodejen churn. Vanhat kerrokset ja hännät saavat jatkua siirtymän läpi,
+  mutta ulostulo kulkee aina nykyisen master-turvaketjun kautta.
+- Snapshot voi myöhemmin tallentaa valitun tilan ja sen jatkuvat painot,
+  mutta snapshot ei edelleenkään lupaa tallentaa Coco-bufferien ääntä.
+
+### DSP-lähtökohta
+
+`loop` säilyttää nykyisen normatiivisen Coco-ketjun koskemattomana
+vertailupolkuna. Uudet polut rakennetaan sen rinnalle staattiseen graafiin ja
+ristihäivytetään; nykyisen hold-integriteetin on säilyttävä bitintarkkana.
+
+`drone` käyttää kahta jo osittain olemassa olevaa ääniperhettä:
+
+- Quantussyn audioalueiset castle-trianglet summataan nykyiselle `qMix`-
+  väylälle ja syötetään Cocon input-mikseriin kuten `quantumDrone`-reseptissä.
+- Cocon osoitekellosta johdettu `org1`/`org2` square-stack tuodaan uutena
+  **pre-converter-herätteenä** omaan Cocoon, vastakkaiseen Cocoon tai
+  molempiin. Nykyinen `cocoNOrgan` on post-memory-ulostulokerros ja
+  modulaatiolähde; tätä ei saa sekoittaa uuteen organ→memory-reittiin.
+- Oman kellon organ→oma muisti muodostaa itseensä viittaavan sävelketjun;
+  organ→vastakkainen muisti muodostaa kahden kellon intervalli- ja
+  ristikierron. Molemmat pysyvät Cocon clip/wrap→quantize-rajoituksen sisällä.
+- Ulkoinen `pre`/`deck` ja sisäinen triangle/organ eivät sulje toisiaan pois.
+  Prototyypin pitää ratkaista pienin ymmärrettävä heräteseos ilman uutta
+  geneeristä audiomatriisia.
+
+`tide/field` jatkaa vain `memoryHalo`-luonnoksen käyttökelpoista ydintä:
+kirjoitukseen koskemattomat rinnakkaiset lukupäät samassa muistissa. Kiinteä
+neljän offsetin multitap hylätään liian ennustettavana. Tutkittavat suhteet
+johdetaan Cocon kellosta, kahden Cocon suhteesta, puskurin vaiheesta ja
+nykyisistä patch-summista. Suora alkuperäinen lukupää on aina saatava
+vertailuksi; field on vaihtoehtoinen muistiluku, ei Space-sendin päässä oleva
+efekti. Ensimmäiset elehypoteesit:
+
+- `Spaf` avaa/supistaa lukupääkonstellaatiota ja voi erottaa päiden nopeuksia;
+- `Flip` kääntää kentän suunnan säilyttäen keskinäiset suhteet;
+- `Skip` kokoaa päät samaan vaiheeseen tai kylvää ne deterministisesti uudelleen;
+- `Feedback` ja Dolby päättävät, miten uusi materiaali korvaa vanhaa;
+- Coco-ristisyöttö saa liikuttaa muistia, mutta ei pelkästään levittää
+  stereokuvaa kuten hylätty `confluence`.
+
+### Toteutusjärjestys — aloita tästä, kun vaihe viimein avataan
+
+- [ ] **0. Päivitä sopimus ennen koodia.** Lukitse työtermit, mode-vaihdon
+  puskuri-/Hold-laki, tilojen sekoittumisen malli ja se, mitkä arvot ovat
+  snapshot-muistia. Piirrä signal map sekä tilakohtainen control map.
+- [ ] **1. Drone-labra, ei GUI:ta.** Vertaa samalla materiaalilla neljä
+  herätettä: `qMix→Coco`, organ→oma Coco, organ→vastakkainen Coco sekä niiden
+  rajattu seos. Kuuntele eri Speed-suhteet, Spaf-patchit, feedbackin
+  unity-raja, Hold-siirtymät ja organin suora/post-memory-osuus.
+- [ ] **2. Valitse drone-identiteetti.** Hyväksymisehto ei ole “kuuluu” vaan
+  uusi, vähintään yhden pitkän session kantava soittotapa, jossa nykyiset
+  patchit ja Coco-eleet muuttavat ääntä merkityksellisesti.
+- [ ] **3. Field-labra, ei GUI:ta.** Tee korkeintaan kolme suhteellista
+  lukupäämallia. A/B-kuuntele ne suoraa lukupäätä vasten; hylkää tavalliseksi
+  chorukseksi, multitapiksi tai stereolevitykseksi typistyvät mallit.
+- [ ] **4. Staattinen tuotanto-DSP.** Lisää vain hyväksytyt rinnakkaispolut,
+  silotetut tila-/seospainot ja tarvittavat sisäiset bussit. Älä vaihda
+  SynthDefejä soitettaessa. Lisää CQSpec/CQState vasta kun parametrien
+  semantiikka on kuuntelulla vakaa.
+- [ ] **5. Turva ja regressiot.** NRT jokaiselle puhtaalle tilalle, kaikille
+  siirtymille ja seoksille; pitkä feedback/wrap/chaos-worst-case; DC/NaN/
+  ceiling; hold-integriteetti; mode-vaihto Holdissa ei muuta bufferia;
+  sama matrix ennen/jälkeen; panic, recorder ja stemit kaikissa tiloissa.
+- [ ] **6. Ohjauspinnat.** Master-paneelin alaosaan yksi globaali
+  kolmiasentoinen tilavalitsin, joka näyttää myös siirtymän/seoksen ilman
+  efektiräkin estetiikkaa. Päätä kuuntelulla, tarvitseeko sen rinnalle yksi
+  jatkuva huokoisuus-/blend-makro. F14:n uusi tehtävä päätetään vasta tässä;
+  fyysisen faderin ei pidä joutua arvaamaan diskreettiä tilaa.
+- [ ] **7. Muisti ja lennosta soittaminen.** Snapshot roundtrip/morph,
+  MIDI-pickup, vanhojen snapshotien migraatio ja 30 minuutin sessio, jossa
+  jokaiseen tilaan siirrytään kesken äänen ja aineistoa kerrostetaan tilojen
+  välillä ilman tahatonta resettiä tai napsua.
+- [ ] **8. Oma Technical Map.** Dokumentoi lähde→muisti→lukija→master,
+  puhtaat tilat, kaikki kahden tilan seokset, säätimien/eleiden merkitys,
+  normaaloinnit, bufferin pysyvyys sekä muutama löytämiseen ohjaava patch —
+  ei reseptikokoelmaa, joka väittää löytöjä loppuun käsitellyiksi.
+
+### Exit-kriteeri
+
+Kolme ankkuria kuulostavat eri instrumentaalisilta näkökulmilta mutta samalta
+Yölahdelta; niiden välillä voi vaihtaa ja niitä voi sekoittaa kesken äänen;
+sama patchi ja sama käden kieli säilyvät ymmärrettävinä; kirjoitus tapahtuu
+vain soittajan Hold-päätöksellä; yksikään tila ei tarvitse geneeristä reverbiä
+ollakseen kokonainen; ja kaikki vanhat turvallisuus-, hold-, snapshot-,
+recorder-, GUI- ja suorituskykyportit kantavat.

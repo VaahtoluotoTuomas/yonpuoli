@@ -254,7 +254,6 @@ CQSpec {
 			this.prNum(p.value("Organ"), 0, 1, \lin, 0);
 			this.prNum(p.value("Level"), 0, 1.5, 4, 0.8);
 			this.prNum(p.value("Pan"), -1, 1, \lin, if(n == 1) { -0.3 } { 0.3 });
-			this.prNum(p.value("Send"), 0, 1, \lin, 0.0);
 			this.prNum(p.value("SlotPre"), 0, 1.5, \lin, 1.0);
 			this.prNum(p.value("SlotDeck"), 0, 1.5, \lin, 1.0);
 			this.prNum(p.value("SlotQ"), 0, 1.5, \lin, 0.0);
@@ -280,10 +279,7 @@ CQSpec {
 		// SPEC §5.5 matrix macro
 		this.prNum(\patchDepth, 0, 1, \lin, 1.0, 0.05);
 
-		// SPEC §5.6 space + master
-		this.prNum(\spaceMix, 0, 1, \lin, 0.0);
-		this.prNum(\spaceSize, 0.3, 0.98, \lin, 0.85);
-		this.prNum(\spaceDamp, 500, 12000, \exp, 4500);
+		// SPEC §5.6 master
 		this.prNum(\masterDry, 0, 1, \lin, 0.0);
 		this.prNum(\masterVol, -60, 0, \lin, -12, 0.1);   // lin dB, lag 100 ms
 		this.prToggle(\monitorMute, 0, 0.03);             // 30 ms panic fade
@@ -296,7 +292,7 @@ CQSpec {
 			[\preADrive, \preBDrive],
 			[\deckARate, \deckBRate],
 			[\deckALevel, \deckBLevel],
-			[\spaceMix], [\patchDepth], [\masterVol]
+			[], [\patchDepth], [\masterVol]
 		];
 	}
 }

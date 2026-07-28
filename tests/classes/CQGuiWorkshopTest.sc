@@ -1,6 +1,6 @@
 // The Drawer Workshop's own contracts (NIGHT_STANDALONE_PLAN §12.1.3/§12.1.5):
 // the ledger row's geometry, its exact-value reading, and the funnel bindings
-// every one of the 43 rows is built with. Serverless and Qt-free — the rendered
+// every one of the 39 rows is built with. Serverless and Qt-free — the rendered
 // page is asserted by the Drawer smoke.
 
 CQGuiWorkshopTest : UnitTest {
@@ -27,7 +27,7 @@ CQGuiWorkshopTest : UnitTest {
 			var main = CQGuiWorkshop.mainWidths(rail, step);
 			this.assertEquals(rail, CQGuiMatrix.loomSize(step, page).width,
 				"% : one rail serves the loom and the ledger".format(step));
-			this.assertEquals(service.size, 4, "% : four service modules".format(step));
+			this.assertEquals(service.size, 3, "% : three service modules".format(step));
 			this.assertEquals(main.size, 3, "% : three main ledgers".format(step));
 			this.assert(service.maxItem - service.minItem <= 1,
 				"% : the service modules are equal to the pixel".format(step));
@@ -50,7 +50,7 @@ CQGuiWorkshopTest : UnitTest {
 		var groups = items.select { |item| item[\kind] == \group };
 		var y = 0;
 		this.assertEquals(items.first[\kind], \title, "an island opens with its title");
-		this.assertEquals(rowItems.size, 12, "coco 1 lays out its twelve rows");
+		this.assertEquals(rowItems.size, 11, "coco 1 lays out its eleven rows");
 		this.assertEquals(groups.collect { |item| item[\label] },
 			["converter", "material", "output", "input mix"],
 			"rows are grouped by signal meaning, in the normative converter order");
@@ -63,10 +63,10 @@ CQGuiWorkshopTest : UnitTest {
 			"the score's end IS the island's height");
 		this.assertEquals(CQGuiWorkshop.islandHeight(coco),
 			CQGuiScale.tallestIslandHeight(\compact),
-			"a twelve-parameter Coco is the page's tallest island");
+			"an eleven-parameter Coco is the page's tallest island");
 		this.assert(CQGuiWorkshop.islandHeight(coco, \roomy)
 			> CQGuiWorkshop.islandHeight(coco, \compact),
-			"the roomy step gives the same twelve rows more room");
+			"the roomy step gives the same eleven rows more room");
 	}
 
 	test_bothCocoLedgersComeFromOneHelper {
@@ -96,8 +96,8 @@ CQGuiWorkshopTest : UnitTest {
 			"both groups label their castles identically");
 	}
 
-	// §12.1.3: semantic phosphor sparingly. Neutral slots, levels, pan, sends
-	// and Space get no family at all.
+	// §12.1.3: semantic phosphor sparingly. Neutral slots, levels and pan
+	// get no family at all.
 	test_semanticColourIsUsedSparingly {
 		var accented = CQGuiWorkshop.islands.inject([]) { |all, island|
 			all ++ CQGuiWorkshop.islandRows(island).select { |row|
@@ -191,8 +191,8 @@ CQGuiWorkshopTest : UnitTest {
 		// a rail with no value is not enough for this page (§12.1.1)
 		this.assertEquals(CQGuiWidgets.ledgerFormat(\qShLag, 0.004), "0.0040",
 			"a 4 ms slew is readable, not rounded away to zero");
-		this.assertEquals(CQGuiWidgets.ledgerFormat(\spaceDamp, 4500), "4500",
-			"a 4.5 kHz damping frequency carries no meaningless decimals");
+		this.assertEquals(CQGuiWidgets.ledgerFormat(\c5Off, -0.17), "-0.170",
+			"a detune offset keeps its sign and useful precision");
 		this.assertEquals(CQGuiWidgets.ledgerFormat(\coco1Pan, -0.3), "-0.300",
 			"a bipolar value keeps its sign and a stable width");
 		this.assertEquals(CQGuiWidgets.ledgerFormat(\coco1Level, 0.8), "0.800",
@@ -224,8 +224,8 @@ CQGuiWorkshopTest : UnitTest {
 			"and a castle detune", 1e-9);
 		this.assert(CQSpec.centerNorm(\coco1Level).isNil,
 			"a unipolar rail has no centre tick and fills from its left end");
-		this.assert(CQSpec.centerNorm(\spaceSize).isNil,
-			"a range that never reaches zero has no zero to mark");
+		this.assert(CQSpec.centerNorm(\deckALevel).isNil,
+			"a range that never crosses zero has no centre to mark");
 		this.assert(CQSpec.centerNorm(\coco1Interp).isNil,
 			"an enum has no rail at all");
 	}
@@ -298,14 +298,14 @@ CQGuiWorkshopTest : UnitTest {
 	// A funnel echo must move the row without firing a write back (the widget
 	// factory's standing law: setting .value never fires .action).
 	test_anExternalWriteRepaintsTheRowWithoutEchoing {
-		var row = this.prRow(\coco1Send, "send"), writes = 0;
+		var row = this.prRow(\coco1Level, "level"), writes = 0;
 		var previousAction = row.action;
 		row.action = { |c| writes = writes + 1; previousAction.value(c) };
-		state.set(\coco1Send, 0.75);
-		updaters[\coco1Send].do { |func| func.value(state.get(\coco1Send)) };
-		this.assertFloatEquals(row.value, CQSpec.unmap(\coco1Send, 0.75),
+		state.set(\coco1Level, 0.75);
+		updaters[\coco1Level].do { |func| func.value(state.get(\coco1Level)) };
+		this.assertFloatEquals(row.value, CQSpec.unmap(\coco1Level, 0.75),
 			"a code-layer write moves the handle", 1e-6);
-		this.assertEquals(row.display, CQGuiWidgets.ledgerFormat(\coco1Send, 0.75),
+		this.assertEquals(row.display, CQGuiWidgets.ledgerFormat(\coco1Level, 0.75),
 			"and the exact value follows it");
 		this.assertEquals(writes, 0,
 			"following an external write never writes back");
@@ -317,17 +317,17 @@ CQGuiWorkshopTest : UnitTest {
 				this.prRow(row[\param], row[\label], row[\family])
 			}
 		};
-		this.assertEquals(built.size, 43,
-			"the manifest builds 43 controls");
+		this.assertEquals(built.size, 39,
+			"the manifest builds 39 controls");
 		this.assertEquals(built.collect { |row| row.kind }.as(IdentitySet).asArray,
 			[\ledger],
-			"all 43 are ledger rows — no native widgets and no Day knobs");
+			"all 39 are ledger rows — no native widgets and no Day knobs");
 		built.do { |row|
 			this.assert(row.isInteractive,
 				"'%' is an enabled interactive control".format(row.label));
 			this.assert(row.action.notNil, "'%' is funnel-bound".format(row.label));
 		};
-		this.assertEquals(owner.controls.size, 43,
+		this.assertEquals(owner.controls.size, 39,
 			"every row is registered with the GUI's Ink control list");
 		CQGuiWorkshop.paramNames.do { |name|
 			this.assertEquals((updaters[name] ? []).size, 1,
@@ -348,7 +348,7 @@ CQGuiWorkshopTest : UnitTest {
 			"a toggle sits on seats rather than sliding");
 		this.assert(this.prRow(\coco2Interp, "read").isSeated,
 			"so does an enum");
-		this.assert(this.prRow(\spaceDamp, "damping").isSeated.not,
+		this.assert(this.prRow(\coco2Level, "level").isSeated.not,
 			"a continuous parameter is not seated");
 	}
 }

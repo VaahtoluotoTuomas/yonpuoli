@@ -231,7 +231,6 @@ Per Coco `n` ∈ {1,2} (names shown for n=1):
 | `coco1Organ` | 0–1 | 0 | lin | level of the organ square-stack voice (pitch tracks Speed) into this Coco's output mix |
 | `coco1Level` | 0–1.5 | 0.8 | exp | output level to mix |
 | `coco1Pan` | −1–1 | −0.3 (coco2: +0.3) | bipolar | |
-| `coco1Send` | 0–1 | 0.0 | lin | send to Space |
 | slot gains: `coco1SlotPre`, `coco1SlotDeck`, `coco1SlotQ`, `coco1SlotX` | 0–1.5 | 1.0 / 1.0 / 0.0 / 0.0 | lin | input mixer slots: preamp A, deck A, Quantussy audio mix (`qMix`), cross-feed from Coco2. (Coco2 slots: preamp B, deck B, qMix, Coco1) |
 
 **Converter chain (normative order):** input mix → dolby(in) → ×inVCA → + feedback
@@ -299,13 +298,10 @@ Outputs published to the mod source bus: `tri1..tri5` (±1 triangle), `cas1..cas
   animation), `\organMode` (organ outs as voices, cas→VCAs, tri→spaf light),
   `\mayhem` (dense random, capped depths).
 
-### 5.6 Space (optional quality effect) and master
+### 5.6 Master
 
 | Param | Range | Default | Curve | Notes |
 |---|---|---|---|---|
-| `spaceMix` | 0–1 | 0.0 | lin | FDN reverb return level. Default OFF = purist |
-| `spaceSize` | 0.3–0.98 | 0.85 | lin | FDN feedback/size |
-| `spaceDamp` | 500–12000 Hz | 4500 | exp | high damping |
 | `masterDry` | 0–1 | 0.0 | lin | untreated source monitor mix (hardware has none; convenience) |
 | `masterVol` | −60–0 dB | −12 | lin dB | lagged 100 ms |
 | `monitorMute` | 0/1 | 0 | — | hard output mute (panic), 30 ms fade |
@@ -375,7 +371,7 @@ smoothing with 30 ms lag on all faders.
 | F3 | 34 | `coco1Spaf` | | F11 | 42 | `preADrive` + `preBDrive` (linked) |
 | F4 | 35 | `coco1Fb` | | F12 | 43 | `deckARate` + `deckBRate` (linked) |
 | F5 | 36 | `coco2In` | | F13 | 44 | `deckALevel` + `deckBLevel` (linked) |
-| F6 | 37 | `coco2Speed` | | F14 | 45 | `spaceMix` |
+| F6 | 37 | `coco2Speed` | | F14 | 45 | unassigned (reserved) |
 | F7 | 38 | `coco2Spaf` | | F15 | 46 | `patchDepth` |
 | F8 | 39 | `coco2Fb` | | F16 | 47 | `masterVol` |
 
@@ -598,7 +594,8 @@ mic path + warnings, remaining presets, keyboard map. Exit: 30-min session witho
 typing anything but patch lines; M1–M8 checklist pass.
 
 **M3 — it ships (polish).**
-Space FDN, stems + stem recording, watchdog trim, pattern event type, README,
+The v1.0 baseline included the later-retired Space FDN; stems + stem recording,
+watchdog trim, pattern event type, README,
 performance pass (§9 budget), full acceptance re-run, v1.0 tag.
 
 ---
@@ -614,6 +611,7 @@ Documented so fidelity questions have one answer:
 4. File decks, snapshots, morphing, disk recorder: studio affordances, no hw analog.
 5. Master limiter, watchdog, lags, clamps: safety layer the hardware never needed
    (it can't exceed line level; a computer + headphones can).
-6. Space FDN reverb: optional, defaults off; the hardware has no reverb.
+6. The v1.0 Space FDN was a software-only experiment and was retired after the
+   2026-07-28 listening decision; current production has no built-in reverb.
 7. Spesal 8-state semantics and organ derivation are marked interpretations (§2, §3).
 8. Stereo image: hardware is dual-mono to a stereo out; SC adds pan/width control.

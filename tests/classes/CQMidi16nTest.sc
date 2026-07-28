@@ -26,6 +26,7 @@ CQMidi16nTest : UnitTest {
 		this.assertEquals(CQSpec.map16n[8], [\qFreq], "F9 = qFreq");
 		this.assertEquals(CQSpec.map16n[10], [\preADrive, \preBDrive],
 			"F11 = linked preamp drives");
+		this.assertEquals(CQSpec.map16n[13], [], "F14 is intentionally unassigned");
 		this.assertEquals(CQSpec.map16n[15], [\masterVol], "F16 = masterVol");
 		CQSpec.map16n.do { |slot|
 			slot.do { |p|
@@ -50,6 +51,19 @@ CQMidi16nTest : UnitTest {
 		midi.handleCC(42, 127);
 		this.assertFloatEquals(state.get(\preADrive), 40.0, "F11 writes preADrive");
 		this.assertFloatEquals(state.get(\preBDrive), 40.0, "F11 writes preBDrive too");
+	}
+
+	test_retiredSpaceSlotIsInert {
+		var before = state.asEvent;
+		this.assertNoException({ midi.handleCC(45, 127) },
+			"the retired F14 slot accepts physical movement safely");
+		midi.takeover = \pickup;
+		this.assertNoException({
+			midi.handleCC(45, 0);
+			midi.handleCC(45, 64);
+		}, "the empty slot is safe in pickup mode too");
+		this.assertEquals(state.asEvent, before,
+			"F14 cannot activate a hidden Space route or change another parameter");
 	}
 
 	test_outOfRangeCCIgnored {

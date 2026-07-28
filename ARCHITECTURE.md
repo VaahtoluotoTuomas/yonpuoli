@@ -46,7 +46,7 @@ yolahti/
 │   ├── CQMidi16n.sc            // 16n binding, smoothing, takeover
 │   ├── CQGui.sc                // panel window (view-only client of CQState)
 │   ├── CQGuiDrawer.sc          // Inspector / Workshop / Spellbook / Memory composition
-│   ├── CQGuiWorkshop.sc        // Drawer ledger page: the 43 remaining parameters
+│   ├── CQGuiWorkshop.sc        // Drawer ledger page: the 39 remaining parameters
 │   ├── CQGuiScale.sc           // the Drawer's two reviewed size steps (pure arithmetic)
 │   ├── CQInkMenu.sc            // Ink-painted Drawer choice box + opened list
 │   ├── CQInkList.sc            // Ink-painted persistent list with exact row geometry
@@ -82,7 +82,6 @@ RootNode
      ├─ gSources    // \cqDeck ×2, \cqInput (preamps + env followers)
      ├─ gQuantussy  // \cqQuantussy (single synth: 5 castles + spesal + qMix)
      ├─ gCocos      // \cqCoco ×2
-     ├─ gFx         // \cqSpace
      └─ gMaster     // \cqMaster (mix, safety, meters, stems), \cqAura (telemetry),
                     // \cqRecorder when active
 ```
@@ -113,8 +112,6 @@ and the Quantussy's internal ring (LocalIn/LocalOut).
 | `aDeckA`, `aDeckB` | audio | 1 | decks → input, cocos | deck audio |
 | `aQMix` | audio | 1 | quantussy → cocos | castle audio mix (per-castle sends) |
 | `aCoco1`, `aCoco2` | audio | 1 | cocos → master, cocos (cross via InFeedback) | post-converter, post-level, pre-pan taps |
-| `aSpace` | audio | 2 | cocos → space | space send |
-| `aSpaceRet` | audio | 2 | space → master | space return |
 | `aDry` | audio | 2 | input, decks → master | untreated source monitor feed (`masterDry`, SPEC §5.6) |
 | `wDest[dest]` | control | 16 | language (CQMatrix) → consumer synth | one 16-ch weight bus per matrix destination (22 total) |
 | (params) | — | — | language → synth args via `.set` | everything in CQSpec that isn't matrix |
@@ -233,7 +230,7 @@ var outTap  = Select.ar(interpSmooth, [
 var organ   = Mix(Pulse.ar(clockHz / [128, 256, 512], 0.5, [0.5, 0.3, 0.2]));
 var voice   = (outTap + (organ * organLvl * 0.3));
 // out: aCocoN = voice * level (lagged); aModSrc[12/13] = normalized tap;
-//      aModSrc[14/15] = organ; aSpace += pan-placed send
+//      aModSrc[14/15] = organ
 ```
 
 Why this reproduces SPEC §3: last-write-wins into each cell = ZOH ADC at `clockHz`
@@ -254,16 +251,10 @@ Select.ar(mode, [ sig,
     sig * (1 - (keyEnv * 0.9)).clip(0, 1) ]);     // \duck: "other-puncher"
 ```
 
-### 4.5 `\cqSpace` — small FDN (vanilla, no plugins)
-
-4 delay lines (`DelayC`, ~29/37/44/53 ms × size), Householder feedback matrix,
-one-pole damping at `spaceDamp`, in from `aSpace`, out `aSpaceRet`. ~20 lines,
-tasteful and dependency-free. Internal feedback gain ≤ 0.98 hard cap.
-
-### 4.6 `\cqMaster` — the sacred chain
+### 4.5 `\cqMaster` — the sacred chain
 
 ```supercollider
-var mix = (pan-placed cocos) + (aSpaceRet * spaceMix) + (drySources * masterDry);
+var mix = (pan-placed cocos) + (drySources * masterDry);
 mix     = mix * masterAmp.lag(0.1) * (1 - mute.lag(0.03));
 mix     = LeakDC.ar(mix);
 mix     = (mix * 0.5).tanh * 2 * 0.5;                    // −6 dB headroom glue
@@ -293,7 +284,7 @@ Language side on `\cq_hot`: engage −6 dB trim (a lagged synth arg), GUI notice
 | `CQAudition` | transient patch preview | Serverless one-candidate `{src,dest,prevW,audibleW}` state machine; candidate switches and every §4.1 cancellation path restore through `CQMatrix.patch(... committed:false)`, while plant commits exactly the audible weight |
 | `CQInspector` | Drawer precision gesture state | Shares `CQAudition`; press previews ±0.3, vertical frames are transient, and release publishes one committed fine-edit plus one shared GUI-undo entry; lifecycle cancellation restores the pre-gesture cell |
 | `CQGuiScale` | the Drawer's two size steps | Pure arithmetic, no Qt and no state: the measured page inset, the `compact`/`roomy` thresholds, both type/metric records, ascent/descent-safe short text-band height, the shared rail width (derived from the Inspector loom's clamped cell), the column split that keeps the Coco pair equal, and caption measurement for buttons. Every Drawer page asks it rather than holding a literal; `CQGui` feeds it the drawer stage's own resize callback |
-| `CQGuiWorkshop` | Drawer ledger page (GUI_SPEC §8) | One explicit manifest of the 43 parameters Night and Master do not own drives **both** the built layout and `paramNames`, so the coverage audit and the rendered page are the same data — Workshop ownership is never computed as `CQSpec.names` minus the other surfaces. Fixed 1128 px rail: a 72 px service band of four 270 px modules over a `365 · 366 · 365` coco/quantussy/coco body, one `islandLayout` score feeding both the Qt layout and the island's own painted titles. Owns the GUI's single interactive `micGain` row and its persistent warning subscription; builds with the GUI, not on demand. Pure view: every row writes through `CQGuiWidgets` → `CQState` |
+| `CQGuiWorkshop` | Drawer ledger page (GUI_SPEC §8) | One explicit manifest of the 39 parameters Night and Master do not own drives **both** the built layout and `paramNames`, so the coverage audit and the rendered page are the same data — Workshop ownership is never computed as `CQSpec.names` minus the other surfaces. The shared responsive rail carries three source-service modules over a coco/quantussy/coco body, with one `islandLayout` score feeding both the Qt layout and the island's painted titles. Owns the GUI's single interactive `micGain` row and its persistent warning subscription; builds with the GUI, not on demand. Pure view: every row writes through `CQGuiWidgets` → `CQState` |
 | `CQGuiMatrix` | experimental Inspector patch loom | Exact canonical 16×22 single-`UserView` field with 48×24 px hit cells, grouped destination islands, family-marked rows, weighted/polarity-shaped knots, persistent route selection, quiet hover row/column focus and an exact-cell spark cue; no inner scroll or new state funnel |
 | `CQInkMenu` | Drawer choice box | Replaces Qt's only-partly-styleable `PopUpMenu` for Inspector presets and Memory's Morph Bridge. The collapsed box and temporary borderless choice list are both painted from the active Ink palette; the popup enables mouse-over on its own top-level window and every row tracks Qt's no-button `mouseOverAction` with the shared spark cue, the list opens upward near the screen edge, and teardown owns the temporary window |
 | `CQInkList` | Drawer persistent single-selection list | Replaces native `ListView` where selectable row geometry must be exact. One application-owned `rowHeight` drives paint, ordinary no-button hover and click selection, preventing platform frame/content metrics from moving the highlight to an adjacent row; Memory's saved snapshots are its first client |

@@ -8,7 +8,7 @@ CQSynthDefs {
 
 	*all { |config|
 		^[this.input(config), this.deck(config), this.quantussy(config),
-			this.coco(config), this.space(config), this.master(config),
+			this.coco(config), this.master(config),
 			this.aura, this.record(config), this.recordStems(config)]
 	}
 
@@ -263,12 +263,6 @@ CQSynthDefs {
 					* 0.3);
 			lvl = \level.kr(CQSpec.default(\coco1Level), CQSpec.lag(\coco1Level));
 			Out.ar(\outBus.ir(0), voice * lvl);
-			// pan-placed post-fader send to the FDN (SPEC §5.3, cocoNSend). gCocos
-			// runs before gFx, so the send lands the same block the space processes
-			// it and the master reads the return — no extra latency (ARCH §3.1/§4.4)
-			Out.ar(\spaceBus.ir(0), Pan2.ar(voice * lvl,
-				\pan.kr(CQSpec.default(\coco1Pan), CQSpec.lag(\coco1Pan)),
-				\spaceSend.kr(CQSpec.default(\coco1Send), CQSpec.lag(\coco1Send))));
 			Out.ar(\modSrcBus.ir(0) + \modTapIdx.ir(12), outTap);  // canonical ch 12/13
 			Out.ar(\modSrcBus.ir(0) + \modOrganIdx.ir(14), organ); // canonical ch 14/15
 			// GUI in/out meters (SPEC §6.2); replyID tells the two instances apart
@@ -310,50 +304,23 @@ CQSynthDefs {
 		})
 	}
 
-	// ARCHITECTURE §4.5 — small 4-line FDN reverb, vanilla UGens only, default
-	// OFF (spaceMix 0). Four mutually-prime DelayC lines scaled by spaceSize, a
-	// Householder feedback matrix (orthogonal → norm-preserving), one-pole high
-	// damping at spaceDamp in the feedback path, LeakDC on the input so no DC can
-	// accumulate in the recirculation. The feedback gain is hard-capped at 0.98
-	// (< 1 ⇒ always decays, never diverges); the master safety chain bounds the
-	// return regardless (safety #1). in ← aSpace (cocoNSend), out → aSpaceRet.
-	*space { |config|
-		^SynthDef(\cqSpace, {
-			var in = LeakDC.ar(In.ar(\inBus.ir(0), 2));
-			var size = \spaceSize.kr(CQSpec.default(\spaceSize), CQSpec.lag(\spaceSize));
-			var damp = \spaceDamp.kr(CQSpec.default(\spaceDamp), CQSpec.lag(\spaceDamp));
-			var g = size.min(0.98);                        // decay/size; hard cap 0.98
-			var dampCoef = exp(-2pi * damp / SampleRate.ir).clip(0, 0.999);
-			var times = [0.0293, 0.0373, 0.0437, 0.0531]; // s, ~29/37/44/53 ms (ARCH §4.5)
-			var prev = LocalIn.ar(4);                      // delay outs, previous block
-			var damped = OnePole.ar(prev, dampCoef);       // one-pole damping in the loop
-			var reflected = damped - (damped.sum * 0.5);   // Householder H = I − (2/N)11ᵀ
-			var node = (reflected * g) + ([in[0], in[1], in[0], in[1]] * 0.3);
-			var delays = 4.collect { |i| DelayC.ar(node[i], 0.07, times[i] * size) };
-			LocalOut.ar(delays);
-			Out.ar(\outBus.ir(0), [delays[0] + delays[3], delays[1] + delays[2]]);
-		})
-	}
-
-	// ARCHITECTURE §4.6 — the sacred chain (SPEC §8.1): LeakDC → tanh headroom →
+	// ARCHITECTURE §4.5 — the sacred chain (SPEC §8.1): LeakDC → tanh headroom →
 	// Limiter(0.89, 0.01) → bad-value squelch → boot fade. Fixed, non-bypassable.
 	// NEVER weaken; every hardware output must pass through this.
 	*master { |config|
 		^SynthDef(\cqMaster, {
 			var coco1 = In.ar(\coco1Bus.ir(0));
 			var coco2 = In.ar(\coco2Bus.ir(0));
-			var spaceRet = In.ar(\spaceRetBus.ir(0), 2);
 			var dry = In.ar(\dryBus.ir(0), 2);
 			var pan1 = \pan1.kr(CQSpec.default(\coco1Pan), CQSpec.lag(\coco1Pan));
 			var pan2 = \pan2.kr(CQSpec.default(\coco2Pan), CQSpec.lag(\coco2Pan));
-			var spaceMix = \spaceMix.kr(CQSpec.default(\spaceMix), CQSpec.lag(\spaceMix));
 			var masterDry = \masterDry.kr(CQSpec.default(\masterDry), CQSpec.lag(\masterDry));
 			var vol = \masterVol.kr(CQSpec.default(\masterVol), CQSpec.lag(\masterVol)).dbamp;
 			var mute = 1 - \mute.kr(0, CQSpec.lag(\monitorMute));
 			var fade = EnvGen.kr(Env([0, 1], [2]), \fadeIn.kr(0)); // silent boot → 2 s ramp
 			var mix, driven, preLim, grDb, stem1, stem2, hotRms, hotTimer;
 			mix = Pan2.ar(coco1, pan1) + Pan2.ar(coco2, pan2)
-				+ (spaceRet * spaceMix) + (dry * masterDry);
+				+ (dry * masterDry);
 			mix = mix * vol * mute;
 			driven = mix;                              // pre-safety "how hard is the
 			                                           // master driven" — the watchdog
@@ -446,7 +413,7 @@ CQSynthDefs {
 		})
 	}
 
-	// the sacred safety chain (SPEC §8.1, ARCH §4.6), factored so every stem is
+	// the sacred safety chain (SPEC §8.1, ARCH §4.5), factored so every stem is
 	// provably identical to it (safety #1: "identical chain on each stem"). The
 	// master's own main path keeps the chain inline because it interleaves the
 	// GR-meter tap between the tanh and the Limiter. Mono in, mono out.

@@ -32,10 +32,10 @@ CQGuiCoverageTest : UnitTest {
 	test_theThreeSurfacesDeclareTheirIntendedCounts {
 		this.assertEquals(this.prNight.size, 31,
 			"Night plays 31 interactive parameters");
-		this.assertEquals(this.prMaster.size, 5,
-			"the persistent Master strip owns 5");
-		this.assertEquals(this.prWorkshop.size, 43,
-			"the Workshop ledger owns the 43 remaining parameters");
+		this.assertEquals(this.prMaster.size, 4,
+			"the persistent Master strip owns 4");
+		this.assertEquals(this.prWorkshop.size, 39,
+			"the Workshop ledger owns the 39 remaining parameters");
 	}
 
 	test_eachSurfaceNamesRealParametersOnce {
@@ -78,11 +78,11 @@ CQGuiCoverageTest : UnitTest {
 			"the interactive union is exactly CQSpec.names");
 	}
 
-	test_thePartitionIsCurrentlySeventyNine {
+	test_thePartitionIsCurrentlySeventyFour {
 		// a diagnostic, deliberately separate from the gate above: it tells a
 		// future reader what the registry held when the contract was written
-		this.assertEquals(CQSpec.names.size, 79,
-			"the registry holds the 79 parameters the N8 contract was audited against");
+		this.assertEquals(CQSpec.names.size, 74,
+			"the registry holds 74 live parameters after Space retirement");
 	}
 
 	// ---- the intended split, named surface by surface ----
@@ -131,11 +131,9 @@ CQGuiCoverageTest : UnitTest {
 		var master = this.prMaster;
 		this.assert(master.includes(\monitorMute),
 			"PANIC's parameter stays on the persistent strip");
-		this.assert(master.includes(\spaceMix),
-			"the strip keeps performance space mix");
-		#[spaceSize, spaceDamp].do { |name|
-			this.assert(master.includes(name).not,
-				"% is a Workshop service control, not a performance one".format(name));
+		#[spaceMix, spaceSize, spaceDamp].do { |name|
+			this.assert(CQSpec.includes(name).not,
+				"retired parameter % is absent from the instrument contract".format(name));
 		};
 	}
 
@@ -143,19 +141,18 @@ CQGuiCoverageTest : UnitTest {
 		var workshop = this.prWorkshop;
 		var expected = #[
 			liveGain, micGain, deckARate, deckBRate, deckALoop, deckBLoop,
-			spaceSize, spaceDamp,
 			coco1Bits, coco1Wrap, coco1Interp, coco1Dust, coco1Organ,
-			coco1Level, coco1Pan, coco1Send,
+			coco1Level, coco1Pan,
 			coco1SlotPre, coco1SlotDeck, coco1SlotQ, coco1SlotX,
 			qShLag, c1Off, c2Off, c3Off, c4Off, c5Off,
 			c1Send, c2Send, c3Send, c4Send, c5Send,
 			coco2Bits, coco2Wrap, coco2Interp, coco2Dust, coco2Organ,
-			coco2Level, coco2Pan, coco2Send,
+			coco2Level, coco2Pan,
 			coco2SlotPre, coco2SlotDeck, coco2SlotQ, coco2SlotX
 		];
 		// `sort` is in place and a `#[...]` literal is immutable: copy first
 		this.assertEquals(this.prSorted(workshop), this.prSorted(expected),
-			"the Workshop manifest is the contract's exact 43 names");
+			"the Workshop manifest is the contract's exact 39 names");
 	}
 
 	// SPEC §6.2: the GUI never grows a second interactive micGain path. The
@@ -202,8 +199,8 @@ CQGuiCoverageTest : UnitTest {
 			var service = CQGuiWorkshop.serviceWidths(rail, step);
 			var main = CQGuiWorkshop.mainWidths(rail, step);
 			var gutter = CQGuiScale.metrics(step)[\gutter];
-			this.assertEquals(service.sum + (3 * gutter), rail,
-				"% : four service modules and three gutters make the rail"
+			this.assertEquals(service.sum + (2 * gutter), rail,
+				"% : three service modules and two gutters make the rail"
 					.format(step));
 			this.assertEquals(main.sum + (2 * gutter), rail,
 				"% : the three main ledgers and two gutters make the same rail"

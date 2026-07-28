@@ -22,6 +22,11 @@ tagged. Earlier tags describe internal development baselines.
   remain persistent. Night's under-hand coupling chord replaces the permanent
   spesal constellation, while the playable shells plus Workshop replace the
   static Coco memory-path diagram.
+- Retired the rejected production Space/FDN chain after comparative listening:
+  its five parameters, Coco sends, F14 mapping, GUI controls, buses, node and
+  master return are removed. F14 is intentionally unassigned, old snapshot
+  fields are ignored safely, and the Master keeps open air for the final
+  instrument-mode phase.
 
 ### Added
 
@@ -48,9 +53,10 @@ tagged. Earlier tags describe internal development baselines.
 - Recorded preamp loudness compensation as a later equal-loudness DSP
   experiment; N7 deliberately changes only interaction and route drawing.
 - A fourth persistent Drawer page, **workshop**: the bay's quiet measurement
-  table, carrying the 43 parameters Night and the Master strip do not own so
-  the whole instrument is reachable without the Day panel. One centred 1128 px
-  rail holds a shallow service band (`deck a · input trims · space · deck b`)
+  table, now carrying the 39 parameters Night and the Master strip do not own
+  after Space retirement, so the whole instrument is reachable without the
+  Day panel. One centred responsive rail holds a shallow service band
+  (`deck a · input trims · deck b`)
   over a `coco 1 · quantussy · coco 2` body, with no scroll view at the
   1280×720 minimum and surrounding slate — not stretched controls — in a
   larger window. Accepted after five visual and playing review rounds on

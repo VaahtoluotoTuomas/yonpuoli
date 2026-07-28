@@ -31,7 +31,7 @@ rather than reading historical checklists as open tasks.
 - The Ink & Phosphor GUI: one playable Night landscape, a persistent Master
   strip, and a Drawer for precise patching, tuning, history, and memory.
 - File decks, live inputs, optional 16n faderbank control, recording, optional
-  stems, and a small studio reverb.
+  stems, snapshots, and morphing.
 - A fixed output-safety chain and offline render tests designed for unpredictable
   feedback patches.
 
@@ -62,7 +62,7 @@ plugins are required.
 
 3. In the SuperCollider IDE, open **Edit → Preferences → Interpreter → Include
    paths** and add `<repo>/classes`. Recompile the class library with
-   **Ctrl+Shift+L**. `CQSpec.specs.size` should return `79`. Developers running the
+   **Ctrl+Shift+L**. `CQSpec.specs.size` should return `74`. Developers running the
    unit suite also add `<repo>/tests/classes`.
 
 4. Put a few `.wav`, `.aiff`, or `.flac` files in the ignored `samples/`
@@ -134,14 +134,15 @@ large test count as a release claim:
 Headless developer gates:
 
 ```text
-sclang -l <conf> -i none tests/compile_check.scd      -> CQ_COMPILE_OK
-sclang -l <conf> -i none tests/run_all.scd            -> CQ_TESTS_PASSED
-sclang -l <conf> -i none tests/nrt_safety.scd         -> CQ_SAFETY_PASSED
-sclang -l <conf> -i none tests/nrt_hold_integrity.scd -> CQ_HOLD_OK
+powershell -File tests/run_sclang_gate.ps1 tests/compile_check.scd      -> CQ_COMPILE_OK
+powershell -File tests/run_sclang_gate.ps1 tests/run_all.scd            -> CQ_TESTS_PASSED
+powershell -File tests/run_sclang_gate.ps1 tests/nrt_safety.scd         -> CQ_SAFETY_PASSED
+powershell -File tests/run_sclang_gate.ps1 tests/nrt_hold_integrity.scd -> CQ_HOLD_OK
 ```
 
-`<conf>` is a local `sclang_conf` file whose include paths point to `classes/`
-and `tests/classes/`. The CI workflow generates its own isolated version. Current
+The wrapper owns the headless process, timeout and success marker; its default
+test config includes `classes/` and `tests/classes/`. The CI workflow generates
+its own isolated version. Current
 hands-on checks are in [`tests/manual_checklist.md`](tests/manual_checklist.md);
 accepted historical evidence is archived under [`docs/history/`](docs/history/).
 

@@ -554,10 +554,10 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
   here too: no aura, glowing borders, cable animation, texture, decorative
   gradients or organism wobble — only a changing parameter, hover/press,
   `micGain` danger or another real state may brighten a mark.
-  - It owns the **43 parameters** Night and Master do not, so that a player who
+  - It owns the **39 parameters** Night and Master do not, so that a player who
     starts in Night and uses only Night, the Drawer and the Master strip reaches
     every `CQSpec` parameter (SPEC §6.2). The interactive partition is
-    **Night 31 · Master 5 · Workshop 43**, disjoint, and its union is asserted
+    **Night 31 · Master 4 · Workshop 39**, disjoint, and its union is asserted
     against `CQSpec.names` itself rather than a copied count. Workshop ownership
     is an **explicit manifest**, never `CQSpec.names` minus the others: a newly
     added parameter must fail the audit instead of silently counting as covered.
@@ -565,15 +565,15 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     pages and always exactly the Inspector loom's own width, so the workbench
     reads as one surface. One continuous ground recess, not a board of rounded
     cards; hairline separators and gutters on the 8 px grid; the Drawer's own
-    soft edge stays the app's one shadow. A shallow service band (four equal
-    modules: `deck a · input trims · space · deck b`) sits over a
+    soft edge stays the app's one shadow. A shallow service band (three equal
+    modules: `deck a · input trims · deck b`) sits over a
     `coco 1 · quantussy · coco 2` body, whose three columns and two gutters sum
     back to the rail exactly — an odd split gives its remainder to the middle so
     the two Coco ledgers stay literally the same width. The page carries **no
     height constants**: each island is a stack of fixed-height rows over a
     trailing stretch, so the rail asks for exactly the height its content needs,
     spare room collects below as slate, and there is **no scroll view** at any
-    size. Space stays a neutral service module and gains no invented Night body.
+    size. The retired Space module has no hidden or disabled replacement.
   - **One shared page frame.** All four Drawer pages open with exactly the same
     air between the tab row and their first ink, centre exactly the same rail,
     and begin their first ink at one **content inset** inside it — the
@@ -616,7 +616,7 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     Drawer alone.
   - Rows are grouped by **signal meaning**, never alphabetically: each Coco as
     *converter* (`bits`, `wrap`, `interp`) · *material* (`dust`, `organ`) ·
-    *output* (`level`, `pan`, `send`) · *input mix* (`pre`, `deck`, `q`, `x`);
+    *output* (`level`, `pan`) · *input mix* (`pre`, `deck`, `q`, `x`);
     the Quantussy as *s&h* (`qShLag`) · *detune* (`c1Off`…`c5Off`) · *audio
     sends* (`c1Send`…`c5Send`), castles running 1→5 in both so the lists compare
     without hunting. **Pair symmetry is structural**: both Coco ledgers are built
@@ -634,7 +634,7 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     ledgers as slate rather than stretching rows apart.
   - Semantic phosphor is used **sparingly**: slate is `recess`, rules and values
     are bone/whisper, and only `dust`, `organ`, the live input and the mic carry
-    a family accent. Neutral slots, levels, pan, sends and Space get no family —
+    a family accent. Neutral slots, levels and pan get no family —
     do not rainbow a column, and inline no color at the draw site.
   - **`micGain` lives here and nowhere else.** SPEC §6.2 forbids a second
     interactive mic path, and the night-first completeness gate needs the mic
@@ -873,8 +873,8 @@ gate, manual_checklist blocks in the established copy-pasteable format.
   opposite corners and crossfade ecosystems with one finger; right-drag
   wobble snaps back cleanly; breed offspring differs but rhymes.
 - **N8 — the Workshop** (§8): the fourth Drawer page and the ledger row.
-  Tests: a **dynamic coverage gate** proving the Night 31 / Master 5 /
-  Workshop 43 interactive sets disjoint and their union equal to
+  Tests: a **dynamic coverage gate** proving the current Night 31 / Master 4 /
+  Workshop 39 interactive sets disjoint and their union equal to
   `CQSpec.names` — the three inventories are declared independently and none
   is a complement of the others; ownership tests for the four-tab order, page
   persistence and the single `micGain` path; binding tests for num, bipolar
@@ -896,9 +896,10 @@ gate, manual_checklist blocks in the established copy-pasteable format.
 - No parameter-knob undo (matrix ops only). No second window.
 - No touchscreen/tablet assumptions — hover is load-bearing by design.
 - No changes to the 16n or code layers beyond the spellbook bridge.
-- Space (`\cqSpace`) controls stay minimal pending the post-v1.0 space-concept
-  decision (`docs/history/PLAN_v1.0.md`, vaihe 7 kirjaukset) — the night map gives space no body
-  until it knows what space *is*.
+- No generic reverb/effect rack is part of the production GUI. The rejected
+  `\cqSpace` surface was retired on 2026-07-28; Master deliberately keeps the
+  released space as air until the final instrument-mode phase has earned a
+  concrete control.
 
 ---
 
@@ -1737,7 +1738,7 @@ never carry a rate the frames cannot resolve. Above roughly 10 Hz a rate is
 drawn as weight (§16.6's struck mark), because the fastest blink this surface
 could draw would be slower than the truth.
 
-### 16.10 Space & scale
+### 16.10 Spacing & scale
 
 Night bodies scale with the window (minimum 1280×720) but **stroke widths and
 font sizes stay in px** — ink does not thicken when the water grows. Sockets

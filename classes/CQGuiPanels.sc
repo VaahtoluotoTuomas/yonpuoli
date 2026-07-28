@@ -5,13 +5,13 @@
 
 CQGuiPanels {
 	*masterItems {
-		^#[masterVol, masterDry, spaceMix, patchDepth, gr, notice, rec, panic]
+		^#[masterVol, masterDry, patchDepth, gr, notice, rec, panic]
 	}
 
 	// The strip's exact interactive CQSpec ownership. Read-only GR/notice and
 	// recorder action REC do not count; PANIC owns monitorMute.
 	*masterParamNames {
-		^#[masterVol, masterDry, spaceMix, patchDepth, monitorMute]
+		^#[masterVol, masterDry, patchDepth, monitorMute]
 	}
 
 	*master { |gui|
@@ -67,8 +67,9 @@ CQGuiPanels {
 						chrome[\label] - 2)).spacing_(0),
 				w.knob(\masterVol, "vol", nil, \primary, \recess, chrome),
 				w.knob(\masterDry, "dry", nil, \standard, \recess, chrome),
-				w.knob(\spaceMix, "space", nil, \standard, \recess, chrome),
 				w.knob(\patchDepth, "depth", c[\spaf], \standard, \recess, chrome),
+				// Deliberate air: the final mode phase may claim this stretch,
+				// but cleanup does not pre-design its control.
 				nil,
 				VLayout(notice,
 					HLayout(recBtn.view, recTime, panicBtn.view, nil)

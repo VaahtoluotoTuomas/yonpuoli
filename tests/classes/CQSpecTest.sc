@@ -7,7 +7,7 @@ CQSpecTest : UnitTest {
 	tearDown { CQSpec.postWarnings = true }
 
 	test_registryMatchesSpec {
-		this.assertEquals(CQSpec.specs.size, 79, "SPEC §5 defines 79 parameters");
+		this.assertEquals(CQSpec.specs.size, 74, "SPEC §5 defines 74 parameters");
 		this.assertEquals(CQSpec.default(\coco1Fb), 0.35, "coco1Fb default");
 		this.assertEquals(CQSpec.default(\coco1Pan), -0.3, "coco1Pan default");
 		this.assertEquals(CQSpec.default(\coco2Pan), 0.3, "coco2Pan default");
@@ -114,7 +114,7 @@ CQSpecTest : UnitTest {
 			[\preADrive, \preBDrive],
 			[\deckARate, \deckBRate],
 			[\deckALevel, \deckBLevel],
-			[\spaceMix], [\patchDepth], [\masterVol]
+			[], [\patchDepth], [\masterVol]
 		];
 		this.assertEquals(CQSpec.map16n, expected, "16n default map mirrors SPEC §6.1");
 		CQSpec.map16n.flatten.do { |name|
@@ -123,8 +123,8 @@ CQSpecTest : UnitTest {
 	}
 
 	test_gainLags {
-		[\liveGain, \micGain, \deckALevel, \coco1In, \coco1Fb, \coco1Level, \coco1Send,
-			\coco1Dust, \coco1Organ, \masterDry, \spaceMix].do { |name|
+		[\liveGain, \micGain, \deckALevel, \coco1In, \coco1Fb, \coco1Level,
+			\coco1Dust, \coco1Organ, \masterDry].do { |name|
 			this.assert(CQSpec.lag(name) >= 0.03,
 				"gain param '%' lagged >= 30 ms (CLAUDE.md safety)".format(name));
 		};
