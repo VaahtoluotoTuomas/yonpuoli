@@ -70,6 +70,14 @@ CQGuiScale {
 		^switch(step, \roomy, { this.prRoomy }, { this.prCompact })
 	}
 
+	// Qt text views need room for the face's ascent/descent AND their own
+	// vertical bearings. A font-size-only fixedHeight clips the tops and
+	// descenders on Windows; every deliberately short text band derives its
+	// height here and keeps reviewed clearance above and below the glyphs.
+	*textBandHeight { |fontSize|
+		^(fontSize + 8).ceil.asInteger
+	}
+
 	// ---- the two reviewed records ----
 
 	*prCompact {

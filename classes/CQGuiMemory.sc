@@ -51,7 +51,7 @@ CQGuiMemory {
 			record[\view].font = CQInk.font(record[\role],
 				this.prRoleSize(record[\role], m));
 			record[\view].fixedHeight = if(record[\role] == \tiny) {
-				m[\tiny] + 5
+				CQGuiScale.textBandHeight(m[\tiny])
 			} {
 				m[\barHeight]
 			};
@@ -280,7 +280,11 @@ CQGuiMemory {
 			.font_(CQInk.font(role, this.prRoleSize(role, m)))
 			.align_(\left)
 			.stringColor_(palette[color] ?? { palette[\whisper] })
-			.fixedHeight_(if(role == \tiny) { m[\tiny] + 5 } { m[\barHeight] });
+			.fixedHeight_(if(role == \tiny) {
+				CQGuiScale.textBandHeight(m[\tiny])
+			} {
+				m[\barHeight]
+			});
 		labels.add((view: label, role: role, color: color));
 		^label
 	}

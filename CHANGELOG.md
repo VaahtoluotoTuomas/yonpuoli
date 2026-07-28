@@ -97,6 +97,12 @@ tagged. Earlier tags describe internal development baselines.
   drawn in the Ink palette instead of falling back to native Qt chrome.
   Memory's fingerprint comparison note is now the page's tiny type rank with
   explicit clearance from the `decks` heading.
+- Corrected the final N8 hover event path after live review: Inspector cells
+  and every selectable row in an opened Ink choice list now respond to Qt's
+  ordinary no-button mouse-over event, not only pressed mouse movement. The
+  matrix cue and list-row wash/outline were strengthened for Day visibility.
+  Short text bands now derive vertical ascent/descender clearance from
+  `CQGuiScale`, preventing the Memory comparison note from clipping.
 - Hardened every headless SuperCollider gate against a recurring Windows hang:
   the shared runner uses daemon mode, a child-only watchdog, expected-marker
   validation and per-run diagnostic logs; agents and CI now use that same

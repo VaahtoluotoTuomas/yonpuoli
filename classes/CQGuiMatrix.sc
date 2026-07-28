@@ -91,6 +91,9 @@ CQGuiMatrix {
 		grid.mouseDownAction = { |v, x, y, mod, btn, clickCount|
 			this.prMouseDown(x, y, btn, clickCount ? 1, srcs, dests)
 		};
+		// mouseMoveAction only runs while a button is held; ordinary hover is
+		// mouseOverAction in Qt. Keep both paths on the same hit geometry.
+		grid.mouseOverAction = { |v, x, y| this.prMouseMove(x, y, srcs, dests) };
 		grid.mouseMoveAction = { |v, x, y| this.prMouseMove(x, y, srcs, dests) };
 		grid.mouseUpAction = { |v, x, y, mod, btn|
 			this.prMouseUp(btn, srcs, dests)
@@ -240,18 +243,20 @@ CQGuiMatrix {
 			Pen.stroke;
 		};
 		if(selected or: { hovered }) {
-			if(hovered and: { selected.not }) {
-				Pen.fillColor = colors[\spark].copy.alpha_(0.08);
+			if(hovered) {
+				Pen.fillColor = colors[\spark].copy.alpha_(0.16);
 				Pen.addRoundedRect(Rect(cx - (cellW / 2) + 3,
 					cy - (cellH / 2) + 2, cellW - 6, cellH - 4), 4, 4);
 				Pen.fill;
 			};
-			Pen.strokeColor = if(hovered and: { selected.not }) {
-				colors[\spark].copy.alpha_(0.72)
+			Pen.strokeColor = if(hovered) {
+				colors[\spark].copy.alpha_(0.92)
 			} {
 				colors[\line].copy.alpha_(0.9)
 			};
-			Pen.width = if(selected) { CQInk.strokes[\strong] } {
+			Pen.width = if(selected or: { hovered }) {
+				CQInk.strokes[\strong]
+			} {
 				CQInk.strokes[\normal]
 			};
 			Pen.addRoundedRect(Rect(cx - (cellW / 2) + 4, cy - (cellH / 2) + 3,

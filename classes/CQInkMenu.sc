@@ -8,7 +8,7 @@
 
 CQInkMenu {
 	var <view, <items = #[], <value, <skin = \day, <hover = false, <isOpen = false;
-	var popupWindow, popupView, popupHover, menuFont, action;
+	var popupWindow, <popupView, <popupHover, menuFont, action;
 
 	*new { |items = #[], skin = \day|
 		^super.new.prInit(items, skin)
@@ -101,6 +101,9 @@ CQInkMenu {
 		popupWindow = Window("", screenRect, false, false)
 			.background_(CQInk.palette(skin)[\ground])
 			.alwaysOnTop_(true);
+		// This is a separate top-level window: the instrument window's
+		// acceptsMouseOver flag does not propagate into it.
+		popupWindow.acceptsMouseOver = true;
 		popupView = UserView(popupWindow, Rect(0, 0, absolute.width, height))
 			.background_(CQInk.palette(skin)[\ground]);
 		popupView.drawFunc = {
@@ -108,10 +111,13 @@ CQInkMenu {
 				|error| CQInkControl.noteDrawError(error)
 			}
 		};
-		popupView.mouseMoveAction = { |v, x, y|
+		// Ordinary pointer travel is mouseOverAction; mouseMoveAction is only
+		// delivered while a button is held. Both keep the same row hot.
+		popupView.mouseOverAction = { |v, x, y|
 			var next = (y / rowH).floor.asInteger.clip(0, items.size - 1);
 			if(next != popupHover) { popupHover = next; v.refresh };
 		};
+		popupView.mouseMoveAction = popupView.mouseOverAction;
 		popupView.mouseLeaveAction = { popupHover = nil; popupView.refresh };
 		popupView.mouseDownAction = { |v, x, y|
 			value = (y / rowH).floor.asInteger.clip(0, items.size - 1);
@@ -187,11 +193,14 @@ CQInkMenu {
 		items.do { |choice, index|
 			var row = Rect(1, index * rowH, rect.width - 2, rowH);
 			if(index == popupHover) {
-				Pen.fillColor = palette[\spark].copy.alpha_(0.12);
-				Pen.fillRect(row);
-				Pen.strokeColor = palette[\spark].copy.alpha_(0.62);
-				Pen.width = CQInk.strokes[\hairline];
-				Pen.line(row.leftTop, row.leftBottom);
+				Pen.fillColor = palette[\spark].copy.alpha_(0.18);
+				Pen.addRoundedRect(row.insetBy(2, 2),
+					CQInk.metrics[\buttonRadius], CQInk.metrics[\buttonRadius]);
+				Pen.fill;
+				Pen.strokeColor = palette[\spark].copy.alpha_(0.82);
+				Pen.width = CQInk.strokes[\normal];
+				Pen.addRoundedRect(row.insetBy(2, 2),
+					CQInk.metrics[\buttonRadius], CQInk.metrics[\buttonRadius]);
 				Pen.stroke;
 			};
 			Pen.stringLeftJustIn(choice.asString, row.insetBy(7, 0),

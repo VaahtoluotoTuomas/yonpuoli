@@ -813,7 +813,14 @@ CQGuiScale.minimumHeight(\roomy) + CQGuiScale.comfort;    // vaadittu korkeus
 //    Hoveroi ja avaa Inspectorin preset-valitsin sekä Memoryn molemmat
 //    Morph Bridge -valitsimet. Suljetun laatikon ja jokaisen avatun listan
 //    rivin pitää käyttää samaa Ink-spark-kieltä — ei Windowsin sinistä
-//    natiivivalikkoa.
+//    natiivivalikkoa. Liikuta osoitinta vähintään kolmen vaihtoehdon yli:
+//    highlightin pitää seurata osoitinta ennen klikkausta, ei jäädä vain
+//    nykyiseen valintaan.
+// 12. FONTIN LEIKKAUSPORTTI. Aina kun fontin kokoa tai arvorankia muutetaan,
+//    tarkista sekä vaakasuuntainen mahtuminen että yläreuna, alareuna ja
+//    laskevat kirjaimet (g, j, p, q, y). Pienempi fontti ei saa pienentää
+//    StaticText-laatikkoa ilman ascent/descent-ilmaa. Tässä passissa tarkista
+//    erityisesti koko "outlined knots differ from the live patch" -rivi.
 ```
 
 **Visuaalinen ja soitettava portti:** tarkista 1280×720 ja maksimoituna sekä

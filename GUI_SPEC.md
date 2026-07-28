@@ -205,6 +205,11 @@ funnel like any other client.
   knobs gain a quiet outer ring, slider/switch handles a small halo, and
   buttons a light wash plus stronger outline. Read-only meters and lamps do
   not pretend to be interactive. Hover is static and never changes state.
+  An opened choice list is still an interactive Ink surface: **every selectable
+  row under the pointer** gets the same light wash and stronger outline before
+  click. Styling only the collapsed box or only the currently selected row is
+  incomplete. In Qt this binds ordinary `mouseOverAction`; `mouseMoveAction`
+  alone covers only movement while a button is held.
 
 Deferred dense-patch escape hatches, recorded but **not current gestures**:
 
@@ -1032,6 +1037,12 @@ Laws:
   the strip is still 118 px and REC/PANIC keep their §16.7 hit areas. Buttons in
   the chrome and the Drawer are **measured from their own captions**, so growing
   the type can never crop one.
+- **A nominal font size is not a view height.** Every fixed-height text band
+  must reserve explicit ascent/descent clearance above and below the face
+  (`CQGuiScale.textBandHeight` in the Drawer). After any type-rank or font-size
+  change, the visual and Qt-smoke review checks both horizontal fit and that
+  glyph tops/descenders are not clipped. A smaller side note may use a smaller
+  face; it may not use a guessed face-size-plus-a-few-pixels box.
 - Labels are whispers: whisper color, close to their object, never boxed.
   The project's own words — spaf, spesal, verso, balcium — are decoration
   enough.

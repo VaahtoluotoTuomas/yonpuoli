@@ -456,6 +456,19 @@ viimeisen markerin validointia ja pysyvää lokia, ja CI käyttää samaa runner
 Korjaus todistettiin oikealla compile-virheellä: koko diagnoosi palautui,
 vain runnerin oma PID lopetettiin ja seuraava korjattu ajo meni vihreäksi.
 
+N8:n hyväksynnän jälkeinen live-tarkistus löysi vielä kaksi automaation
+väärää vihreää ja yhden toistuvan typografiakarikon. Matriisi ja avatun
+`CQInkMenu`-listan rivit oli sidottu `mouseMoveAction`iin, jonka Qt lähettää
+vain hiiren nappi pohjassa; tavallinen hover on `mouseOverAction`, ja popupin
+oma top-level-ikkuna tarvitsee lisäksi oman `acceptsMouseOver`-luvan. Smoke
+kutsuu nyt oikeaa no-button-callbackia ja todistaa rivin indeksin vaihtuvan.
+Dayn cell/list-highlightia vahvistettiin. Memoryn tiny-huomautuksen korkeus
+ei enää ole fonttikoko + arvattu vakio: `CQGuiScale.textBandHeight` varaa
+ascent/descent-ilman, yksikkötesti lukitsee sen ja GUI_SPEC §16.4 määrää
+vaaka- **ja pystyleikkauksen** tarkistettavaksi jokaisen fonttimuutoksen jälkeen.
+Korjausportti: `CQ_COMPILE_OK`, **13 031 unit-passia / 0 failurea / 31/31
+luokkaa**, `CQ_GUI_DRAWER_PASSED` ja `CQ_SAFETY_PASSED`.
+
 Saman haaran **viimeistelykierros** 2026-07-28 (N8 v5, käyttäjän neljännen
 testauskierroksen palaute; **vihreä mutta ei hyväksytty**): `CQ_COMPILE_OK`,
 **13 027 unit-passia / 0 failurea / 31/31 luokkaa**, `CQ_SAFETY_PASSED` ja

@@ -298,4 +298,20 @@ CQGuiScaleTest : UnitTest {
 			> CQGuiScale.textWidth("0.0040", 12, true),
 			"mono digits grow with their size");
 	}
+
+	// A smaller face does not authorize a view shorter than its real glyph
+	// bearings. This exact regression repeatedly clipped Memory's side note on
+	// Windows when fixedHeight was guessed from the nominal font size.
+	test_aShortTextBandAlwaysKeepsVerticalGlyphClearance {
+		CQGuiScale.steps.do { |step|
+			var size = CQGuiScale.metrics(step)[\tiny];
+			var height = CQGuiScale.textBandHeight(size);
+			this.assert(height >= (size + 8),
+				"% : tiny type keeps four pixels above and below its nominal size"
+					.format(step));
+			this.assert(height <= CQGuiScale.metrics(step)[\barHeight],
+				"% : the side note still fits inside the shared reading row"
+					.format(step));
+		};
+	}
 }
