@@ -1,6 +1,6 @@
 # Yölahti — ajantasainen kehityssuunnitelma (Nocturne-vaihe)
 
-Päivitetty 2026-07-28. Tämä tiedosto kertoo, **mitä tehdään seuraavaksi** ja
+Päivitetty 2026-07-29. Tämä tiedosto kertoo, **mitä tehdään seuraavaksi** ja
 **missä järjestyksessä**. Vaiheen yksityiskohtainen *miten* — jokaisen osan
 suunnittelu, geometria, karikot, korvakokeet — on
 [`docs/NIGHT_STANDALONE_PLAN.md`](docs/NIGHT_STANDALONE_PLAN.md):ssä; tämä
@@ -35,12 +35,12 @@ kuoret tekevät passiivisesta muistipolkukartasta ylläpitokustannustaan
 heikomman. N9:n jälkeinen rajattu polish-portti — kiduksen
 kaapeliprioriteetti ja snapshot-kansion erotus — valmistui 2026-07-28.
 **13.1 feedback-taper sekä 13.4 chaos-käyrä ja sen sääkehät hyväksyttiin
-käyttäjän kuuntelu- ja näkökatselmuksessa 2026-07-28.** Seuraava vaihe on
-**Space-kuuntelupäätös ja tuotantoketjun hallittu eläköitys valmistuivat
-2026-07-28.** Seuraava avoin portti on Nightin täyden mittakaavan
-layout/polish-katselmus; sen jälkeen järjestys on **13.2 speed-lattia →
-13.5 VCA-laki → 13.3 dust → 13.6 zipper-mittaus + 13.8 preampin
-equal-loudness-koe → jäljellä olevat bugit/polish ja laitteistogate →
+käyttäjän kuuntelu- ja näkökatselmuksessa 2026-07-28. Space-kuuntelupäätös,
+tuotantoketjun hallittu eläköitys ja Nightin täyden mittakaavan GUI-passi
+hyväksyttiin 2026-07-28–29.** Seuraava avoin portti on **13.2 speed-lattia**.
+Sen jälkeen järjestys on **13.5 VCA-laki → 13.3 dust → 13.6 zipper-mittaus +
+13.8 preampin equal-loudness-koe → Audio I/O Setup Drawerissa (AIO, alla) →
+nelikanavainen laitteisto-/resource-soak → kolme huokoista soittotilaa →
 Norns-portti (§14).** Yksi musiikillinen muuttuja käsitellään edelleen
 kerrallaan.
 
@@ -818,7 +818,7 @@ kauppana, ei löydetä jälkikäteen; ja **suunnitelmateksti voi olla vääräss
 jos toteutus sen mukaan tuntuu väärältä, epäile diagnoosia äläkä vain
 sommittelua (§7.2 korjattiin vasta hylätyn buildin jälkeen).
 
-## Avoin Night-kokomittakaavan polish-portti
+## Hyväksytty Night-kokomittakaavan polish-portti
 
 - [x] **Eläköitä Space-ohjauspinta ennen layoutin mittaamista.** Valmis
   2026-07-28: hylätyn efektin näkyvät, fyysiset ja DSP-reitit poistettiin
@@ -873,8 +873,10 @@ Portit: compile OK; 13 144 assertionia / 0 virhettä / 32 testiluokkaa;
 
 **Sijainti etenemisessä:** Space-päätös, hallittu eläköitys, yhtenäinen
 koko-/layout-passi ja 100–200 % fyysisen skaalauksen katselmus ovat valmiit.
-Seuraavat erilliset portit ovat nelikanavainen laitteisto-/resource-soak ja
-Norns-portti.
+Seuraava vaihe on korvapassin 13.2 speed-lattia. Jäljellä olevien korvakokeiden
+jälkeen tehdään alla määritelty Audio I/O Setup ennen nelikanavaista
+laitteisto-/resource-soakia; vasta niiden ja viimeisen soittotilavaiheen
+jälkeen alkaa Norns-portti.
 
 ## Valmistunut polish-passissa 2026-07-28
 
@@ -898,6 +900,379 @@ Norns-portti.
   säätimiä, F14 on inertti ja vanhojen snapshotien kentät ohitetaan.
   Night 31 · Master 4 · Workshop 39 kattaa kaikki 74 elävää parametria.
   MemoryHalo säilyy vain arkistoidussa prototyyppitutkimuksessa.
+
+## Tuleva työvaihe AIO — Audio I/O Setup Drawerissa
+
+**Jonopaikka:** jäljellä olevan korvapassin jälkeen, mutta ennen
+nelikanavaista laitteisto-/resource-soakia. **Status:** suunniteltu
+2026-07-29, ei vielä normatiivinen eikä toteutettu. Ennen ensimmäistä
+koodimuutosta tämän luvun hyväksytyt päätökset siirretään `SPEC.md` §7:n ja
+`GUI_SPEC.md` §8/§9/§13:n normatiivisiin kohtiin samassa incrementissä.
+
+### AIO.1 Tavoite ja vastuuraja
+
+Tavoite on tehdä jo olemassa oleva konekohtainen audiokytkentä löydettäväksi
+ilman SuperCollider-koodin käsin muokkaamista:
+
+`OS/driver → Audio I/O Setup → liveL/liveR/mic → Nightin juuret → Coco →
+Master → main/stem-outputit → hardware tai virtuaalinen loopback`.
+
+- **Audio-sivu hallitsee käynnistyskonfiguraatiota**, ei musiikillista
+  patchia. Se ei kuulu `CQSpec`iin, snapshotteihin, matrix-undoon, Spellbookiin
+  eikä banana-grammariin.
+- Nightin juuret säilyvät soittopinnan live-lähdevalintana:
+  `live l`, `live r`, `mic`, `deck a`, `deck b`. Audio-sivu päättää vain,
+  mistä fyysisistä/virtuaalisista kanavista nuo kolme live-lähdettä tulevat.
+- Master kulkee edelleen automaattisesti `outChans`-pariin ja valinnaiset
+  Coco-stemit `stemOuts`-pariin. Audio-sivu ei saa luoda yhtään
+  `Out.ar`-ohitusta pyhän master-/stem-turvaketjun ohi.
+- Käyttöjärjestelmien välistä audiokaapelia ei luvata: selain, DAW tai toinen
+  sovellus näkyy Yölahdelle vain, jos OS/driver tarjoaa sen tavallisena
+  loopback-/virtuaalilaitteena. GUI voi valita sellaisen laitteen mutta ei luo
+  sitä, asenna ajuria, rakenna macOS Aggregate Devicea tai yhdistä Windowsin
+  eri host API -laitteita keskenään.
+- Tämä ei ole hot-swap. Laite, sample rate, block size ja hardware-I/O-kanavat
+  ovat scsynthin boot-asetuksia; niiden käyttöönotto on aina näkyvä,
+  käyttäjän vahvistama **audio restart**.
+
+### AIO.2 Drawerin paikka ja navigaatio
+
+Audio I/O on Drawerin **viides normatiivinen sivu**, ei Nightiin lisättävä
+paneeli, popup-ikkuna eikä Workshopin 40. parametririvi.
+
+- Välilehtisymboli ja näkyvä nimi ovat `\audio` / `audio`.
+- Sitova järjestys on
+  `#[inspector, workshop, audio, spellbook, memory]`. Audio kuuluu
+  Workshopin viereen, koska molemmat ovat tarkkuus-/huoltopintoja; loki ja
+  muistot jäävät niiden jälkeen.
+- `CQGuiDrawer.tabs` ja `pages` muuttuvat yhdessä. Shell ei saa kovakoodata
+  viittä indeksiä muualla, vaan sivu ja tab sidotaan edelleen saman
+  järjestetyn inventaarion kautta.
+- Sivu rakennetaan kerran `CQGuiDrawer.prBuild`issä ja vain mitataan uudelleen
+  `applyScale`ssa. Drawer-tabien vaihto, sulkeminen tai resize ei saa
+  rekisteröidä uusia OSCdefejä, tiedostowatchereita tai lifecycle-callbackeja.
+- Valittu Audio-sivu säilyy Drawer close/open -kierroksen yli kuten muutkin
+  sivut. Onnistuneen Audio-restartin jälkeen uusi GUI avaa Drawerin takaisin
+  Audio-sivulle yhden jonotetun Qt-vaihdon kautta, jotta käyttäjä näkee uuden
+  aktiivisen tilan. Vanhan sivun Qt-viitteitä ei saa kantaa rebootin yli:
+  säilytä vain symbolinen `\audio`-aikomus lifecycle-omistajalla.
+
+### AIO.3 Sommittelu ja esteettinen ohjeistus
+
+Sivu on koneen ja soittimen **rauhallinen rantaportti**, ei yleinen
+Preferences-dialogi eikä toinen patch bay. Sen pitää näyttää samalta
+Ink & Phosphor -työpenkiltä kuin muut Drawer-sivut.
+
+**Yhteinen kehys**
+
+- Käytä täsmälleen `CQGuiScale.pageFrame`ä, samaa yläilmaa ja samaa keskitettyä
+  `CQGuiScale.railWidth`-sisältökiskoa kuin Inspector/Workshop/Spellbook/
+  Memory. Compact 1280×720 -ikkunan Drawer-sivu (noin 1272×526) on
+  ensimmäinen sitova sommittelu; roomy-askel saa lisätä ilmaa ja mittareiden
+  pituutta, ei uusia kontrolleja.
+- Ei scrollausta, resizable-paneelia, irrallisia ikkunoita, rounded card
+  -ruudukkoa, varjoja, gradientteja, native Qt -sinistä tai käyttöjärjestelmän
+  checkbox-/combo-tyyliä. Käytä recessed slate -pohjaa, suoria hairline-
+  sääntöjä, 8 px gridin guttereita, `CQInkControl`-kontrolleja ja
+  `CQInkMenu`n Ink-piirrettyjä avautuvia rivejä.
+- Kaikki control-/fontti-/tekstibandimitat tulevat `CQGuiScale.metrics`istä.
+  Älä keksi Audio-sivulle kiinteää rinnakkaista mittataulua. Avautuvan
+  laitelistauksen jokainen rivi tarvitsee saman tavallisen hover-ink-kielen
+  kuin Inspectorin preset- ja Memoryn valintalistat.
+
+**Kolme vaakavyöhykettä samalla sisältökiskolla**
+
+1. **Host / engine, täysi leveys.** Yksi ohut aktiivisen serverin tilarivi
+   (`running · 48 kHz · block 64 · hw 256`) ja sen alla device mode
+   (`system default`, `single device`, `split devices`), input-device ja
+   output-device. Single-tilassa yksi pitkä laiterivi; split-tilassa kaksi
+   tasalevyistä riviä. Laitteen täydellinen merkkijono on totuus, mutta
+   ylileveä nimi katkaistaan vain hännästä ellipsillä; se ei saa venyttää
+   railia tai kadottaa nimen alkua/host APIa.
+2. **In / out, kaksi yhtä leveää saarta.** Vasemmalla `into yölahti`:
+   `live l`, `live r`, `mic off/on + channel` sekä kolme ohutta
+   signal-presence-uraa. Oikealla `out of yölahti`: `main l`, `main r`,
+   `stems off/on`, `stem 1`, `stem 2`, `record 4ch off/on` sekä nykyinen
+   master-outputin stereoaktiivisuus. Saaret erottaa gutter ja yksi suora
+   hairline; niiden ei pidä näyttää neljältä tai kahdeksalta asetuskortilta.
+3. **Restart gate, täysi leveys.** Vasemmalla pysyvä validointi-/provenanssiteksti,
+   keskellä `discard changes`, oikealla ensisijainen `apply & restart audio`.
+   Ensimmäinen apply-painallus ei vielä reboottaa: se avaa saman railin sisään
+   staattisen vahvistustilan `audio stops · current unsaved patch resets ·
+   Server.default restarts`, jossa ovat `cancel` ja `restart`. Ei native-
+   modaalia, countdownia, spinneriä eikä vilkkumista.
+
+**Väri ja tilat**
+
+- Pysyvä aktiivinen arvo = bone/line-ink. Muuttunut draft-arvo = warning ochre
+  -alleviivaus tai vasen pieni delta-lovi; **älä väritä koko riviä**.
+  Rakenteellisesti virheellinen draft = danger-red sääntö + täsmällinen yksi
+  virketason syy. Onnistuminen = vihreä/input-värinen lyhyt `audio ready`,
+  mutta tavallinen aktiivinen sivu palaa neutraaliksi.
+- Inputin signaalijälki käyttää nykyistä `input`-vihreää, master-output line/
+  bonea ja stemit olemassa olevaa Coco/cas-perhettä. Väri kertoo signaalin
+  läsnäolon tai virheen, ei koristeellista vasen/oikea-identiteettiä.
+- `mic off` pitää mic-rivin ja kanavapaikan näkyvänä mutta himmeänä, jotta
+  layout ei hypi. `mic on` **ei koskaan nosta `micGain`ia nollasta**. Jos
+  micGain on myöhemmin käyttäjän toimesta live, Audio-sivu toistaa nykyisen
+  danger-red `MIC LIVE` -tilan vain read-only-varoituksena; Workshop säilyy
+  ainoana interaktiivisena `micGain`-omistajana.
+- `stems off` himmentää mutta ei poista stem-kanavarivejä. Pending, restarting,
+  rollback ja failed ovat staattisia tekstimuotoja; liike kuuluu vain
+  oikealle ≤15 Hz signaalitelemetrialle.
+- Audio-sivulla ei ole jack-/socket-palloja, johtoja, kaapelihaloja tai
+  vedettäviä reittejä. Se olisi väärä lupaus: OS-laite ei ole matrix-endpoint.
+
+### AIO.4 Muokattavat kentät ja täsmällinen semantiikka
+
+| UI-kenttä | config-totuus | laki |
+|---|---|---|
+| device mode | `device` | default = `nil`; single = yksi exact String; split = `[inDevice, outDevice]`, jossa kumpikin voi olla nil |
+| input/output device | `device` | valitaan `ServerOptions.devices`-snapshotista tai säilytetään nykyisenä puuttuvana arvona; ei substring-arvausta |
+| sample rate | `sampleRate` | vain CQConfigin 44.1/48/96 kHz |
+| server block | `blockSize` | vain CQConfigin 16/32/64/128/256/512 |
+| hardware buffer | `hardwareBufferSize` | `driver default` = nil tai validoitu 16…8192 |
+| live l / live r | `inChans[0..1]` | kaksi näkyvää kanavaa; sama indeksi molemmissa on sallittu tarkoituksellista mono-duplikaatiota varten |
+| mic | `micChan` | off = nil; on = yksi indeksi ≥0; saa olla sama kuin live-kanava |
+| main l / main r | `outChans` | täsmälleen kaksi eri indeksiä |
+| stems | `stemOuts` | off = nil; on = täsmälleen kaksi eri indeksiä, eivät saa osua main-pariin |
+| record 4ch | `recStems` | boolean; ei automaattisesti kytke hardware-stemejä päälle |
+
+- Käyttäjälle kanavat näytetään **1-pohjaisina** (`ch 1`), configiin ne
+  tallennetaan **0-pohjaisina** (`0`). Muunnos on yhdessä puhtaassa helperissä
+  ja roundtrip-testissä; mitään call-site-kohtaista `+1/-1`:tä ei sallita.
+- `inChans`-configin vanha 1…8 pituuden hyväksyntä säilyy taaksepäin
+  yhteensopivana, mutta Audio-sivu omistaa vain ensimmäisen stereo-/mono-parin
+  ja kirjoittaa aina kaksi arvoa. Se ei saa väittää kanavia 2…7 käytetyiksi,
+  koska nykyinen `\cqInput` lukee vain kaksi ensimmäistä.
+- `bufFrames`, kansiot, 16n, `autoTrim`, compass-polku ja muut ei-I/O-
+  asetukset eivät kuulu tälle sivulle eivätkä audio-overlayhin.
+- Device-lista ei kerro luotettavasti kanavakapasiteettia. GUI saa todistaa
+  rakenteellisen kelvollisuuden mutta ei saa näyttää vihreää “hardware
+  supports channel 8” -väitettä ennen onnistunutta boottia.
+- Windowsin split-device-tilassa näytä pysyvä whisper-ohje `same host API
+  required`; älä yritä päätellä tai korjata host APIa laitenimen pilkkomisella.
+
+### AIO.5 Aktiivinen tila, draft ja persistenssi
+
+Tämän eron pitää näkyä sekä mallissa että ruudulla:
+
+- **active** = `Cocoquantus.config`, jolla nykyinen onnistuneesti käynnistynyt
+  sessio todella soi;
+- **draft** = Audio-sivulla muokattu, vielä käyttämätön overlay;
+- **dirty** = draftin omistamat kentät eroavat activesta;
+- **valid** = `CQConfig` hyväksyy base+draft-yhdistelmän rakenteellisesti;
+- **last working** = viimeisin config, jonka koko server+graph-boot päätti
+  `\running`-tilaan, ei viimeisin levylle kirjoitettu teksti.
+
+Käsin ylläpidettyä `config.scd`:tä **ei koskaan kirjoiteta, parsita tekstinä
+eikä formatoida uudelleen**. GUI omistaa erillisen konekohtaisen,
+gitignorettavan overlayn:
+
+- oletus `config.scd` → saman kansion `config.audio.scd`;
+- custom `foo.scd` → saman kansion `foo.audio.scd`;
+- merge-järjestys `CQConfig.defaults < base config < audio overlay`, jonka
+  jälkeen validointi tehdään **kerran lopulliselle Eventille**;
+- overlay saa sisältää vain AIO.4-taulukon config-avaimet. Tuntematon avain on
+  generated-overlayn hard error, ei pelkkä warning.
+
+Tee puhdas ei-Qt-luokka (työnimi `CQAudioConfig`) omistamaan allowed keys,
+base+overlay-merge, active/draft-vertailu, 0/1-kanavamuunnos, validointi,
+profile-path ja serialisointi. Device-merkkijono tulee valintalistasta tai
+nykyisestä configista ja kirjoitetaan `asCompileString`-escaped Stringinä;
+UI-tekstiä ei koskaan evaluoida SuperCollider-koodina.
+
+Persistenssi on atominen:
+
+1. serialisoi vain validoitu overlay saman kansion `.pending`-tiedostoon;
+2. lataa pending takaisin ja validoi base+pending roundtrip;
+3. älä vielä korvaa viimeistä toimivaa overlayta;
+4. käynnistä candidate Eventillä;
+5. vasta onnistuneen koko graph-bootin jälkeen vaihda pending atomisesti
+   varsinaiseksi `.audio.scd`:ksi ja säilytä yksi `.bak`;
+6. jos final rename epäonnistuu, audio saa jäädä toimimaan candidatella mutta
+   sivu näyttää `running · not saved` ja tarjoaa tallennuksen uudelleen.
+
+Puuttuva overlay säilyttää nykyisen bootin bit-identtisenä. Base-configin
+muuttaminen myöhemmin voi jäädä overlayn alle, joten Audio-sivu näyttää
+whisper-provenanssin `audio profile overrides config.scd`, kun overlay on
+olemassa. `discard changes` palauttaa draftin activeen; se ei poista tiedostoa
+eikä reboottaa.
+
+### AIO.6 Apply/restart/rollback-lifecycle
+
+GUI ei omista serveriä. Lisää yksi facade-operaatio (työnimi
+`Cocoquantus.reconfigureAudio`) ja pidä `CQGraph.applyOptions` ainoana
+paikkana, joka kirjoittaa `ServerOptions`-arvot.
+
+Sitova transaktio:
+
+1. Apply on inertti, jos draft ei ole dirty+valid tai lifecycle ei ole
+   `\running`.
+2. Jos recorder on `starting/recording/stopping`, restart on estetty:
+   `stop REC before restarting audio`. Älä katkaise WAV-tiedostoa salaa.
+3. Ensimmäinen painallus näyttää inline-vahvistuksen. Kerro aina, että
+   `Server.default.reboot` pysäyttää myös muut samaa serveriä käyttävät synthit.
+4. Vahvistus captureoi vain arvot/dataa — ei vanhan Qt-sivun viitteitä —
+   kirjoittaa/validoi pendingin ja käynnistää olemassa olevan sukupolvi-
+   suojatun free→server reboot→build-polun candidatella.
+5. Ensimmäisen AIO-version hyväksytty rajaus: nykyinen musiikillinen patch,
+   deck-positiot ja recorder eivät palaudu automaattisesti. Vahvistusrivillä
+   lukee siksi `current unsaved patch resets`; käyttäjä voi tallentaa
+   snapshotin Memoryssä ennen restartia. Älä toteuta puolittaista “best
+   effort” -palautusta, joka palauttaa matrixin mutta unohtaa muun session.
+6. Candidate merkitään active/last workingiksi ja overlay commitataan vasta,
+   kun server, SynthDefit, graph spawn, state/matrix push ja fade-in ovat
+   päässeet nykyisen generationin `\running`-tilaan.
+7. Jos candidate-boot epäonnistuu, pending hylätään ja viimeinen toimiva Event
+   rebootataan automaattisesti **täsmälleen kerran**. Ei retry-loopia.
+   Onnistunut rollback avaa Audio-sivun danger-viestillä, säilyttää hylätyn
+   draftin korjattavaksi eikä muuta last-working-tiedostoa.
+8. Jos rollbackkin epäonnistuu, lifecycle jää `\failed`, output on hiljaa ja
+   post window saa tarkan candidate-errorin, rollback-errorin, aktiivisen
+   base/profile-polun sekä yhden palautuskomennon. Älä väitä GUI:ssa
+   onnistumista äläkä yritä kolmatta boottia.
+
+`Cocoquantus.reconfigureAudio` tarvitsee `onReady/onCandidateFailure/
+onRollbackReady/onRollbackFailure`-tulokset tai yhden dokumentoidun
+result-Eventin. Kaikki async-haarat tarkistavat `sessionGeneration`in.
+Vanhan session myöhäinen callback ei saa tallentaa overlayta, avata uutta
+Drawer-sivua tai muuttaa uuden session statusriviä.
+
+### AIO.7 Laitelista ja signaalin vahvistus
+
+- `ServerOptions.devices` luetaan vain sivun rakennuksessa ja käyttäjän
+  `refresh devices` -toiminnolla, ei drawFuncissa, timerissa tai jokaisella
+  Drawer-openilla. `system default` on aina ensimmäinen valinta.
+- Jos aktiivinen tai draft-laitenimi ei enää ole listassa, säilytä ja näytä
+  exact String danger-/warning-tilassa `device not currently reported`;
+  älä vaihda sitä automaattisesti ensimmäiseen laitteeseen.
+- Ensimmäiseen versioon ei tule test tonea. Väärään hardware-outputiin
+  automaattisesti lähetetty ääni on turvallisuusriski eikä todista fyysistä
+  kytkentää.
+- Input-vahvistus on kolme read-only presence-uraa aktiivisten hardware-
+  kanavien **raakasignaalille ennen `liveGain`/`micGain`-kertoimia ja ennen
+  preampin source-valintaa**. Presence vastaa “tuleeko porttiin mitään”, ei
+  “kuuluuko tämä nyt”; rinnalla oleva muted/live-tila kertoo gainin. Jaa
+  `\cqInput`issa nykyinen SoundIn ensin `rawLiveL/rawLiveR/rawMic`-muuttujiin
+  ja pidä varsinainen audiolaskenta bit-identtisenä niiden jälkeen. Lähetä
+  tarvittaessa yksi kolmekanavainen `/cq_io_inputs`-`SendPeakRMS`-blokki
+  enintään 15 Hz:llä; canonical order on `[rawLiveL, rawLiveR, rawMic]`,
+  puuttuva mic = 0. Viesti on telemetriaa eikä saa koskea audioon.
+- Output-ura käyttää jo olemassa olevan post-safety `/cq_meters`-masterin
+  stereoarvoja. Älä rekisteröi toista samannimistä OSCdefiä tai varasta
+  nykyistä yksipaikkaista `meterFuncs[\master]`-callbackia. Laajenna CQGui
+  tarvittaessa cache+listener-listaksi, jonka omistajat vapauttavat itsensä,
+  tai anna Audio-sivun lukea yhtä keskitettyä cachea.
+- Telemetria cachetaan aina, mutta Audio-sivun view refreshataan vain, kun
+  Drawer on auki Audio-tabilla ja näkyvä arvo ylittää piirrettävän delta-
+  kynnyksen. Piilotettu viides sivu ei saa maksaa 15 Qt-painttia sekunnissa.
+- Presence-ura todistaa vain, että aktiiviseen server-kanavaan tulee
+  signaalia. Se ei todista draft-laitetta tai fyysisen kaapelin kohdetta ennen
+  restartia/hardware-kuuntelua.
+
+### AIO.8 Toteutusrajat heikommalle mallille — älä oikaise näistä
+
+- Älä lisää Audio-kenttiä `CQSpec`iin tai `CQState`en. Boot-config ei ole
+  automatisoitava musiikkiparametri.
+- Älä kirjoita `config.scd`:tä, älä säilytä device-nimiä snapshotissa, presetissä
+  tai repossa, äläkä commitoi käyttäjän `.audio.scd`/`.bak`/`.pending`-tiedostoja.
+- Älä kutsu `Server.default.options`, `Server.quit`, `Server.reboot`,
+  `Synth`, `Bus` tai `Out` suoraan GUI-luokasta. Page → controller/model →
+  Cocoquantus facade → CQGraph on ainoa suunta.
+- Älä sovella yhtäkään draft-kenttää live-sessioon ennen vahvistettua
+  restartia. Dropdown-valinta ei saa mykistää ääntä.
+- Älä arvioi laitekanavien määrää device-stringistä. Älä moduloa tai clampaa
+  virheellistä output-indeksiä “lähimpään toimivaan”: validointi pysäyttää.
+- Älä muuta input/output-kanavia 1-pohjaisiksi configissa. 1-pohjaisuus on
+  vain esitys.
+- Älä anna main- ja stem-outputtien osua. Älä löysää `CQConfig`in uniqueness/
+  disjoint-sääntöjä GUI:n helpottamiseksi.
+- Älä avaa micGainia micChan-valinnan sivuvaikutuksena. Älä palauta
+  `monitorMute`a snapshotista tai ohita kahden sekunnin boot fadea.
+- Älä ota käyttöön uutta output-meteriä safety-chainin edestä; käyttäjälle
+  näytetään se ääni, joka oikeasti lähtee masterista.
+- Älä tee automaattista device-refresh-timeria, vilkkuvaa restart-spinneriä
+  tai animaatiota väittämään, että pysähtynyt server on elossa.
+- Älä pidä vanhan Drawer-/view-instanssin callbackia rebootin yli. Tämä on
+  sama stale-generation-luokan bugi, jonka `CQSessionLifecycleTest` jo
+  rekonstruoi.
+- Älä oleta, että server on vain Yölahden käytössä. Inline-vahvistus nimeää
+  `Server.default`-restartin vaikutuksen muihin syntheihin.
+- Älä sekoita Audio-sivua nelikanavaisen hardware-gaten hyväksyntään:
+  serverless testit todistavat rakenteen, mutta oikea main/stem-kuuntelu
+  oikeilla fyysisillä porteilla on yhä erillinen manuaalinen portti.
+
+### AIO.9 Inkrementit, testit ja hyväksyntä
+
+Tee työ neljänä pienenä porttina; älä rakenna file I/O:ta, lifecyclea,
+telemetriaa ja koko sivua yhteen vaikeasti diagnosoitavaan diffiin.
+
+**AIO-1 — puhdas malli ja read-only-sivu**
+
+- `CQAudioConfig`: allowed keys, merge precedence, active/draft/dirty/valid,
+  channel display roundtrip ja profile-path.
+- `CQGuiAudioSetup`: viides sivu, yhteinen rail/pageFrame, compact+roomy,
+  aktiivisen configin näyttö, device-listan explicit refresh; ei vielä savea
+  tai reboottia.
+- Unit: nil/single/split device; Unicode-, lainausmerkki- ja backslash-
+  device-stringit; custom config path; 0↔1 channel roundtrip; overlap/
+  duplicate/invalid range; base Event ei muutu.
+- Drawer smoke: viisi tabia/sivua samassa järjestyksessä ja railissa,
+  Audio-sivu mahtuu 1280×720:een ja roomyyn, Ink-menujen avatut rivit hoveravat,
+  mic/stem off ei muuta layoutia, close/open säilyttää sivun.
+- **Visuaalinen käyttäjästoppi:** hyväksy sommittelu ennen kirjoittavaa koodia.
+
+**AIO-2 — draft ja atominen overlay**
+
+- Kaikki AIO.4-kentät, invalid/dirty/provenance-tilat, discard, pending-
+  roundtrip ja gitignore.
+- Unit käyttää aina `tests/tmp`-polkuja: base säilyy byte-for-byte,
+  epäonnistunut serialisointi/validointi ei koske activea, pending ei korvaa
+  last workingiä, rename-failure näkyy `running · not saved` -tilana.
+- GUI smoke injektoi laitelistan ja file-adapterin; se ei lue oikeita OS-
+  laitteita eikä kirjoita käyttäjän configia.
+
+**AIO-3 — vahvistettu restart ja rollback**
+
+- Facaden reconfigure-operaatio, generation-suoja, recorder-portti,
+  candidate success, candidate fail→yksi rollback, rollback fail ja
+  symbolinen Audio-tab-reopen.
+- Laajenna `CQTestServer`/lifecycle-doublea; testaa reboot-count, callback-
+  järjestys, ettei stale callback committaa tiedostoa, eikä retryjä tule yli
+  kahta (candidate + rollback).
+- GUI smoke todistaa: edit ei reboottaa; invalid ei armaudu; ensimmäinen Apply
+  vain vahvistaa; cancel palaa; recorder estää; success/fail/rollback-state
+  käyttää oikeaa staattista ink-kieltä.
+- Aja compile → run_all → `nrt_safety` → `nrt_hold_integrity` sekä kaikki
+  Drawer/Night/shell-smoket, koska boot-lifecycle ja config ovat muuttuneet.
+
+**AIO-4 — signaalipresence ja oikea hardware-katselmus**
+
+- Input-telemetria, master-cache/listener, visible-page refresh gate ja
+  paint-count-/cleanup-testit.
+- Mittaa Qt paint-eventistä, ettei piilotettu Audio-sivu piirrä eikä avoin
+  sivu ylitä 15 Hz:ä. Tarkista OSCdef/listener-cleanup free/reboot/CmdPeriod.
+- Manuaalinen checklist vähintään:
+  1. system default boot + aktiivinen live L/R -signaali;
+  2. yksi USB-interface single-device-tilassa;
+  3. Windows split in/out samalla host APIlla;
+  4. tarkoituksella puuttuva laite → yksi turvallinen rollback;
+  5. mic off→configured pysyy mykkänä, kunnes Workshopin micGain nostetaan;
+  6. main L/R fyysisesti oikeissa porteissa ja PANIC mykistää ne;
+  7. vähintään nelikanavaisella interfacella stem 1/2 oikeissa, mainista
+     erillisissä porteissa ja saman safety-katon alla;
+  8. REC stereo ja `record 4ch` tuottavat oikean kanavamäärän;
+  9. virtuaalinen loopback/DAW näkyy tavallisena driver-laitteena, mutta GUI
+     ei lupaa luoneensa järjestelmäkytkentää;
+  10. 10–15 minuutin tiheä patch + molemmat Cocot + Audio-sivu auki/kiinni:
+      CPU/resource-soak, ei dropoutia, listener-vuotoa tai kasvavaa repainttia.
+
+**Definition of done:** käyttäjä hyväksyy static layoutin sekä yhden oikean
+input→Coco→main-output-ketjun. Nelikanavainen stem-koe sulkee samalla vanhan
+KUUNTELU 7:n 7.4/7.5-laitteistovelan. `SPEC`, `GUI_SPEC`, README/config.example,
+testit ja tämä status päivitetään samassa hyväksyntäcommitissa; overlayt ja
+oikeat device-nimet eivät näy Git-diffissä.
 
 ## Myöhemmin, ei tämän vaiheen scopea
 - **Identiteetti ja sisäosien nimet** (käyttäjän havainto 2026-07-28, N8:n
