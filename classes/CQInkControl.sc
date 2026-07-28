@@ -11,6 +11,9 @@ CQInkControl {
 	// the Workshop ledger row's own shape channel: \num · \int · \toggle · \enum,
 	// its seat captions and where its zero sits on the rail (nil = unipolar)
 	var <ledgerMode = \num, <seats, <center;
+	// a CQGuiScale metrics Event for controls that live in the Drawer, whose
+	// type steps between two reviewed sizes; nil keeps the kit's fixed px
+	var <scale;
 
 	*knob { |label, family, skin = \day, knobDiameter|
 		var control, m = CQInk.metrics;
@@ -48,10 +51,11 @@ CQInkControl {
 	// the kit's own 24 px. No range, step, default or enum lives here: the
 	// factory hands over seats and centre already read from CQSpec.
 	*ledger { |label, mode = \num, family, skin = \day, width = 200,
-		seats, center|
+		seats, center, scale|
 		var control = super.new.prInit(\ledger, label, family, skin,
-			Size(width, CQInk.ledgerMetrics[\height]));
+			Size(width, CQInk.ledgerMetrics(scale)[\height]));
 		control.prLedgerMode(mode, seats, center);
+		control.scale = scale;
 		^control
 	}
 
@@ -105,6 +109,28 @@ CQInkControl {
 
 	// SPEC §7's mic row: the control brightens, its module never does
 	danger_ { |flag| danger = flag; view.refresh; ^this }
+
+	// The Drawer's size step changed under a live control: take the new type
+	// metrics and the width its island now gives it, and re-fix the box. The
+	// control keeps its value, action and updater registration — only its
+	// measurements move, so a resize never rebuilds the funnel bindings.
+	scale_ { |metrics, width|
+		scale = metrics;
+		if(kind == \ledger) {
+			view.fixedSize = Size(width ? view.bounds.width,
+				CQInk.ledgerMetrics(scale)[\height]);
+		};
+		view.refresh;
+		^this
+	}
+
+	// a Drawer button re-measured for the current step, so growing the type can
+	// never crop a caption
+	resizeTo { |width, height|
+		view.fixedSize = Size(width, height ? view.bounds.height);
+		view.refresh;
+		^this
+	}
 
 	action_ { |func| action = func; ^this }
 	value_ { |newValue| value = newValue ? 0; view.refresh; ^this }
@@ -211,14 +237,16 @@ CQInkControl {
 	// one geometry for cue and action (§4.5): both ask CQInk for the same rail
 	prLedgerRect { |v| ^Rect(0, 0, v.bounds.width, v.bounds.height) }
 
-	prLedgerOverRail { |v, x| ^CQInk.ledgerHitsRail(this.prLedgerRect(v), x) }
+	prLedgerOverRail { |v, x|
+		^CQInk.ledgerHitsRail(this.prLedgerRect(v), x, scale)
+	}
 
 	prLedgerTouch { |v, x|
 		var rect = this.prLedgerRect(v), next;
 		next = if(this.isSeated) {
-			CQInk.ledgerSeatAt(rect, x, (seats ? []).size.max(1))
+			CQInk.ledgerSeatAt(rect, x, (seats ? []).size.max(1), scale)
 		} {
-			CQInk.ledgerNormAt(rect, x)
+			CQInk.ledgerNormAt(rect, x, scale)
 		};
 		if(next.isNil or: { next == value }) { ^this };
 		value = next;
@@ -236,7 +264,7 @@ CQInkControl {
 			\slider, { CQInk.drawSlider(bounds, value, skin, family, pressed or: { hover }) },
 			\button, {
 				CQInk.drawButton(bounds, label, skin, value > 0, pressed, family,
-					glyph, surface, hover)
+					glyph, surface, hover, scale !? { |m| m[\label] })
 			},
 			\switch, {
 				CQInk.drawSwitch(bounds, label, options, value.asInteger, skin,
@@ -247,7 +275,7 @@ CQInkControl {
 			},
 			\ledger, {
 				CQInk.drawLedgerRow(bounds, ledgerMode, value, label, display,
-					seats, family, skin, hover, pressed, center, danger)
+					seats, family, skin, hover, pressed, center, danger, scale)
 			},
 			\meter, { CQInk.drawMeter(bounds, value, skin, danger, downward) },
 			\lamp, { CQInk.drawLamp(bounds.center, value, value >= 0.5, skin) }

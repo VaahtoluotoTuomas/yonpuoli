@@ -3,17 +3,50 @@
 // Header, loom and route ribbon are separate fixed regions in the workbench.
 
 CQGuiMatrix {
-	classvar cellW = 48, cellH = 24, labW = 72, headerH = 64;
-
 	var matrix, inspector, <view, <grid, <header, <status, ctl;
 	var <selectedSrc, <selectedDest, hoverSi, hoverDi;
 	var skin = \day;
+	// the loom's own measurements, taken from the Drawer's size step. The
+	// cell width sets the shared content rail every Drawer page aligns to, so
+	// the loom is where the workbench's width is decided (CQGuiScale).
+	var <step = \compact, metrics, cellW, cellH, labW, headerH;
 
-	*new { |matrix, inspector| ^super.newCopyArgs(matrix, inspector).prBuild }
-	*cellSize { ^[cellW, cellH] }
-	*loomSize {
-		^Size(labW + (CQMatrix.destNames.size * cellW),
-			CQMatrix.sourceNames.size * cellH)
+	*new { |matrix, inspector, step| ^super.newCopyArgs(matrix, inspector).prBuild(step) }
+
+	*cellSize { |step = \compact, pageWidth = 1272|
+		^[CQGuiScale.loomCell(step, pageWidth),
+			CQGuiScale.metrics(step)[\cellHeight]]
+	}
+
+	*loomSize { |step = \compact, pageWidth = 1272|
+		^Size(CQGuiScale.railWidth(step, pageWidth), CQGuiScale.loomHeight(step))
+	}
+
+	cellSize { ^[cellW, cellH] }
+	loomSize { ^Size(labW + (CQMatrix.destNames.size * cellW), grid.bounds.height) }
+
+	// Nothing is rebuilt on a step change: the loom is one UserView whose ink is
+	// computed from these four numbers, so a resize is four assignments and a
+	// repaint.
+	applyScale { |nextStep, pageWidth = 1272|
+		var size;
+		step = nextStep ? step;
+		metrics = CQGuiScale.metrics(step);
+		cellW = CQGuiScale.loomCell(step, pageWidth);
+		cellH = metrics[\cellHeight];
+		labW = metrics[\loomLabel];
+		headerH = metrics[\headerHeight];
+		size = Size(labW + (CQMatrix.destNames.size * cellW),
+			CQMatrix.sourceNames.size * cellH);
+		header !? { header.fixedSize = Size(size.width, headerH) };
+		grid !? { grid.fixedSize = size };
+		status !? {
+			status.font = CQInk.font(\notice, metrics[\notice]);
+			status.fixedHeight = metrics[\barHeight];
+		};
+		header !? { header.refresh };
+		grid !? { grid.refresh };
+		^this
 	}
 
 	free {
@@ -36,9 +69,16 @@ CQGuiMatrix {
 
 	// ---- private ----
 
-	prBuild {
+	prBuild { |initialStep|
 		var srcs = CQMatrix.sourceNames, dests = CQMatrix.destNames;
-		var palette = CQInk.palette(\day), size = this.class.loomSize;
+		var palette = CQInk.palette(\day), size;
+		step = initialStep ? \compact;
+		metrics = CQGuiScale.metrics(step);
+		cellW = CQGuiScale.loomCell(step, 1272);
+		cellH = metrics[\cellHeight];
+		labW = metrics[\loomLabel];
+		headerH = metrics[\headerHeight];
+		size = Size(labW + (dests.size * cellW), srcs.size * cellH);
 		header = UserView().fixedSize_(Size(size.width, headerH))
 			.background_(palette[\recess]);
 		header.drawFunc = {
@@ -64,8 +104,8 @@ CQGuiMatrix {
 			};
 		};
 		status = StaticText().string_("select a knot · exact route and weight appear here")
-			.font_(CQInk.font(\notice)).stringColor_(palette[\line])
-			.align_(\left).fixedHeight_(24);
+			.font_(CQInk.font(\notice, metrics[\notice])).stringColor_(palette[\line])
+			.align_(\left).fixedHeight_(metrics[\barHeight]);
 		view = grid;
 		ctl = SimpleController(matrix);
 		ctl.put(\patch, { |obj, what, src, dest, wght|
@@ -82,31 +122,34 @@ CQGuiMatrix {
 
 	prDrawHeader { |dests|
 		var colors = CQInk.palette(skin), focusDi = hoverDi;
-		var groups = this.prDestGroups;
+		var groups = this.prDestGroups, ruleY = metrics[\subgroup] + 8;
 		focusDi = focusDi ? CQMatrix.destIndex(selectedDest);
 		groups.do { |group|
 			var left = labW + (group[\start] * cellW);
 			var width = group[\count] * cellW;
-			Pen.stringCenteredIn(group[\title], Rect(left, 2, width, 12),
-				CQInk.font(\label), colors[\whisper]);
+			Pen.stringCenteredIn(group[\title],
+				Rect(left, 2, width, metrics[\subgroup] + 4),
+				CQInk.font(\label, metrics[\subgroup]), colors[\line]);
 			Pen.strokeColor = colors[\whisper].copy.alpha_(0.45);
 			Pen.width = CQInk.strokes[\hairline];
-			Pen.line(Point(left + 5, 18), Point(left + width - 5, 18));
+			Pen.line(Point(left + 5, ruleY), Point(left + width - 5, ruleY));
 			Pen.stroke;
 		};
 		dests.do { |dest, di|
 			var color = this.prDestColor(dest, colors);
 			if(di != focusDi) { color = color.copy.alpha_(0.72) };
 			Pen.use {
-				Pen.translate(labW + (di * cellW) + 10, headerH - 7);
+				Pen.translate(labW + (di * cellW) + (cellW / 5).max(8), headerH - 7);
 				Pen.rotate(-0.25pi);
-				Pen.stringAtPoint(this.prDestLabel(dest), 0@0, CQInk.font(\range), color);
+				Pen.stringAtPoint(this.prDestLabel(dest), 0@0,
+					CQInk.font(\range, metrics[\loomDestSize]), color);
 			};
 		};
 	}
 
 	prDrawGrid { |srcs, dests|
-		var colors = CQInk.palette(skin), size = this.class.loomSize;
+		var colors = CQInk.palette(skin);
+		var size = Size(labW + (dests.size * cellW), srcs.size * cellH);
 		var focusSi = hoverSi ? CQMatrix.srcIndex(selectedSrc);
 		var focusDi = hoverDi ? CQMatrix.destIndex(selectedDest);
 		var selectedSi = CQMatrix.srcIndex(selectedSrc);
@@ -148,8 +191,9 @@ CQGuiMatrix {
 			var y = (si * cellH) + (cellH / 2), familyColor;
 			var labelColor = if(si == focusSi) { colors[\line] } { colors[\whisper] };
 			familyColor = colors[this.prSourceFamily(src)];
-			Pen.stringAtPoint(this.prSourceLabel(src), 2@(y - 5),
-				CQInk.font(\label), labelColor);
+			Pen.stringAtPoint(this.prSourceLabel(src),
+				4@(y - (metrics[\loomLabelSize] / 2) - 1),
+				CQInk.font(\label, metrics[\loomLabelSize]), labelColor);
 			Pen.fillColor = familyColor;
 			Pen.fillOval(Rect(labW - 15, y - 3, 6, 6));
 		};

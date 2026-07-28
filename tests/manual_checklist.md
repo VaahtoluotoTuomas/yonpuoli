@@ -782,38 +782,55 @@ CQ.set(\micGain, 0.5);
 //    JÄÄDÄ näkyviin. Tarkista myös ettei Dayn sources-sarakkeessa ole enää
 //    mic-nuppia — vain teksti "mic · drawer / workshop".
 CQ.set(\micGain, 0);
-// 8. Suurenna ikkuna maksimiin: railin pitää pysyä 1128 px:ssä ja keskellä,
-//    ja lisätila tulla ympärille liuskekivenä — rivit eivät veny.
-//    Pienennä takaisin 1280x720:een: mitään ei saa leikkautua eikä sivun
-//    pidä vierittyä. Viimeisen `input mix · x` -rivin ja `castle 5` -sendin
-//    pitää näkyä kokonaan.
+// 8. KOKOASKEL. Suurenna ikkuna maksimiin: koko drawerin pitää vaihtaa
+//    isompaan kokoaskeleeseen — teksti kasvaa (12 -> 15 px), rivit
+//    24 -> 30 px, raili levenee ja loomin solut kasvavat. Reunoille pitää
+//    silti jäädä marginaali; sivu ei saa mennä kiinni reunoihin.
+//    Pienennä takaisin 1280x720:een: askel palaa, mitään ei leikkaudu eikä
+//    sivu vierity. Viimeisen `input mix · x` -rivin ja `castle 5` -sendin
+//    pitää näkyä kokonaan molemmissa koissa.
 // 9. Vaihda DAY: saman geometrian pitää piirtyä musteena paperille.
+// 10. Käy KAIKKI neljä välilehteä läpi molemmissa koissa: inspector,
+//    workshop, spellbook, memory. Niiden pitää jakaa sama railin leveys
+//    (sama vasen ja oikea reuna), sama tekstikoko ja sama tyyli. Tarkista
+//    erityisesti: loomin rivinimet ja vinot sarakenimet, spellbookin
+//    monoteksti, memoryn nimilista ja patch-fingerprint.
 ```
 
 **Visuaalinen ja soitettava portti:** tarkista 1280×720 ja maksimoituna sekä
 100/125/150 % käyttöjärjestelmäskaalaus, molemmilla skineillä. Arvioi:
 
-1. Lukeeko sivu Nightin *mittapöytänä* — sama lajityyppi, tietoisesti eri
+1. **Luettavuus ensin (2026-07-28 palautteen ydin):** onko teksti nyt
+   riittävän suurta windowed-tilassa? Entä maksimoituna? Jos ei, kerro
+   kumpi askel jää pieneksi — ne ovat erikseen säädettävissä.
+2. Lukeeko sivu Nightin *mittapöytänä* — sama lajityyppi, tietoisesti eri
    kielioppi — vai geneerisenä settings-paneelina?
-2. Onko `coco 1 · quantussy · coco 2` -järjestys tunnistettavasti yön oma
+3. **Väliotsikot** (converter · material · output · input mix): erottuvatko
+   ne nyt riittävästi? Ne ovat isompaa tekstiä, viivamustetta ja saavat
+   oman viivan nimen jälkeen. Jos yhä liian vaimeita, seuraava keino on
+   lisää ilmaa niiden ympärille — ei versaaleja (§16.4) eikä uutta väriä.
+4. Onko `coco 1 · quantussy · coco 2` -järjestys tunnistettavasti yön oma
    maantiede vai pelkkä lista?
-3. Riittääkö ledger-rivin raili soitettavaksi, vai onko se liian lyhyt?
+5. Riittääkö ledger-rivin raili soitettavaksi, vai onko se liian lyhyt?
    Erottuvatko kahva, keskimerkki ja istuimet soittoetäisyydeltä?
-4. Ovatko tarkat arvot oikealla luettavia ja onko desimaalitarkkuus
+6. Ovatko tarkat arvot oikealla luettavia ja onko desimaalitarkkuus
    kussakin ryhmässä järkevä (esim. `qShLag` 0.0040, `spaceDamp` 4500)?
-5. Onko semanttista väriä liian vähän vai liikaa (vain dust · organ · live ·
+7. Onko semanttista väriä liian vähän vai liikaa (vain dust · organ · live ·
    mic saavat perheen)?
-6. Tuntuuko nimipalstan klikkauksen inerttiys turvalta vai hämäävältä?
-7. Onko huoltorivin neljä moduulia oikeassa suhteessa alempaan runkoon?
-8. Löytyykö mic Daystä ilman apua pelkän osoitintekstin perusteella?
-9. Kuuluuko jokaisen alaryhmän edustaja (deck rate/loop, converter,
+8. Tuntuuko nimipalstan klikkauksen inerttiys turvalta vai hämäävältä?
+9. **Yhdenmukaisuus:** näyttävätkö neljä sivua yhdeltä työpöydältä vai
+   neljältä eri tyyliltä? Onko marginaali reunoihin joka sivulla sopiva —
+   liian ahdas vai liian väljä?
+10. Löytyykö mic Daystä ilman apua pelkän osoitintekstin perusteella?
+11. Kuuluuko jokaisen alaryhmän edustaja (deck rate/loop, converter,
    material, output, slot, castle detune/send, qShLag, space size/damp)
    oikein — eli kirjoittaako jokainen rivi sitä parametria jonka se nimeää?
-10. Pystyykö koko session soittamaan avaamatta Daytä kertaakaan?
+12. Pystyykö koko session soittamaan avaamatta Daytä kertaakaan?
 
-- [ ] N8 hyväksytty (pvm: ______ — siristystesti, coco-symmetria, tarkat
-      arvot, ledger-ele, väririiisto, mic-siirto ja pysyvä varoitus,
-      kiinteä raili molemmissa kokoluokissa, molemmat skinit, kuuntelupassi)
+- [ ] N8 hyväksytty (pvm: ______ — luettavuus molemmissa kokoaskeleissa,
+      väliotsikoiden erottuvuus, neljän sivun yhdenmukaisuus, siristystesti,
+      coco-symmetria, tarkat arvot, ledger-ele, väririiisto, mic-siirto ja
+      pysyvä varoitus, molemmat skinit, kuuntelupassi)
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>

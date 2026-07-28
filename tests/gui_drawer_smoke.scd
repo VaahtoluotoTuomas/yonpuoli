@@ -6,7 +6,7 @@ var state = CQState(nil);
 var matrix = CQMatrix(nil);
 var config = CQConfig.validate((headless: true));
 var gui, ok = true, abort;
-var workshop, rowOf, railOf, pressRow, centred;
+var workshop, rowOf, railOf, pressRow, centred, beforeRow, beforeRail;
 var check = { |condition, message|
 	if(condition) { ("ok:   " ++ message).postln } {
 		ok = false;
@@ -27,12 +27,13 @@ CQInkControl.resetDrawErrors;
 rowOf = { |name| workshop.rowFor(name) };
 railOf = { |name|
 	var view = rowOf.value(name).view;
-	CQInk.ledgerRailRect(Rect(0, 0, view.bounds.width, view.bounds.height))
+	CQInk.ledgerRailRect(Rect(0, 0, view.bounds.width, view.bounds.height),
+		CQGuiScale.metrics(gui.drawer.step))
 };
 pressRow = { |name, x|
-	var view = rowOf.value(name).view;
-	view.mouseDownAction.value(view, x, CQInk.ledgerMetrics[\height] / 2);
-	view.mouseUpAction.value(view, x, CQInk.ledgerMetrics[\height] / 2, 0, 0);
+	var view = rowOf.value(name).view, y = view.bounds.height / 2;
+	view.mouseDownAction.value(view, x, y);
+	view.mouseUpAction.value(view, x, y, 0, 0);
 };
 centred = { |inner, outer|
 	(inner.absoluteBounds.center.x - outer.absoluteBounds.center.x).abs <= 1
@@ -68,10 +69,14 @@ centred = { |inner, outer|
 						and: { grid.header.drawFunc.notNil }
 						and: { grid.status.parent !== grid.grid },
 						"Inspector keeps grouped headers and exact route detail outside the loom");
-					check.value(CQGuiMatrix.cellSize == [48, 24]
-						and: { grid.grid.bounds.width == 1128 }
-						and: { grid.grid.bounds.height == 384 }
-						and: { grid.header.bounds.height == 64 },
+					check.value(grid.cellSize[0] >= 48
+						and: { grid.cellSize[1] >= 24 }
+						and: { grid.grid.bounds.width
+							== CQGuiScale.railWidth(drawer.step, drawer.pageSize.width) }
+						and: { grid.grid.bounds.height
+							== (CQMatrix.sourceNames.size * grid.cellSize[1]) }
+						and: { grid.header.bounds.height
+							== CQGuiScale.metrics(drawer.step)[\headerHeight] },
 						"workbench exposes the full 16x22 patch loom with large targets");
 					check.value(grid.status.absoluteBounds.left == grid.grid.absoluteBounds.left
 						and: { grid.status.parent.absoluteBounds.right
@@ -133,9 +138,21 @@ centred = { |inner, outer|
 								"toolbar action keeps the stable global Drawer name");
 							check.value(drawer.memoryGui.snapshotList.items.first == "live patch · now",
 								"Memory always exposes the live patch above the saved snapshots");
-							check.value(drawer.memoryGui.fingerprint.bounds.width == 840
-								and: { drawer.memoryGui.fingerprint.bounds.height == 300 },
+							check.value(drawer.memoryGui.fingerprint.bounds
+								== Rect(0, 0,
+									CQGuiMemory.fingerprintSize(drawer.step,
+										drawer.memoryGui.railWidth).width,
+									CQGuiMemory.fingerprintSize(drawer.step,
+										drawer.memoryGui.railWidth).height)
+									.moveTo(drawer.memoryGui.fingerprint.bounds.left,
+										drawer.memoryGui.fingerprint.bounds.top),
 								"Memory gives the live/selected patch a substantial fingerprint");
+							check.value(drawer.memoryGui.railWidth
+								== CQGuiScale.railWidth(drawer.step,
+									drawer.pageSize.width)
+								and: { drawer.spellbookGui.rail.bounds.width
+									== drawer.memoryGui.railWidth },
+								"every Drawer page shares one content rail");
 							gui.shell.selectDrawer(\spellbook);
 							check.value(gui.shellState.drawerTab == \spellbook,
 								"open workbench returns to the live Spellbook page");
@@ -175,26 +192,34 @@ centred = { |inner, outer|
 												"Night opens the Drawer onto the visible Workshop page");
 											check.value(gui.shell.masterView.visible,
 												"the persistent Master strip stays visible beside it");
+											check.value(drawer.step == \compact
+												and: { drawer.pageSize == Size(1272, 526) },
+												"the 1280x720 minimum is the compact step on a 1272x526 page");
 											check.value(workshop.rail.bounds.width
-												== CQGuiWorkshop.railWidth
+												== CQGuiScale.railWidth(\compact, 1272)
 												and: { workshop.rail.bounds.height
-													== CQGuiWorkshop.railHeight }
+													>= CQGuiScale.minimumHeight(\compact) }
+												and: { workshop.rail.bounds.height
+													<= workshop.view.bounds.height }
 												and: { centred.value(workshop.rail, workshop.view) },
-												"the fixed 1128 x 504 px content rail is centred");
+												"the shared content rail is centred and fits its page");
 											check.value(workshop.serviceModules.size == 4
+												and: { workshop.serviceModules.collect { |module|
+													module.bounds.width
+												} == CQGuiWorkshop.serviceWidths(
+													workshop.railWidth, drawer.step) }
 												and: { workshop.serviceModules.every { |module|
-													module.bounds.width == CQGuiWorkshop.serviceWidth
-														and: { module.bounds.height
-															== CQGuiWorkshop.serviceHeight }
+													module.bounds.height
+														== CQGuiScale.serviceBandHeight(drawer.step)
 												} },
-												"four equal 270 px modules make the shallow service band");
+												"four equal modules make the shallow service band");
 											check.value(workshop.mainLedgers
 												.collect { |ledger| ledger.bounds.width }
-												== CQGuiWorkshop.mainWidths
-												and: { workshop.mainLedgers.every { |ledger|
-													ledger.bounds.height == CQGuiWorkshop.mainHeight
-												} },
-												"the body is the 365 · 366 · 365 coco / quantussy / coco triptych");
+												== CQGuiWorkshop.mainWidths(
+													workshop.railWidth, drawer.step)
+												and: { workshop.mainLedgers[0].bounds.width
+													== workshop.mainLedgers[2].bounds.width },
+												"the body is the coco / quantussy / coco triptych, the pair equal");
 											check.value(workshop.rows.size == 43
 												and: { workshop.rows.every { |row|
 													row.kind == \ledger and: { row.isInteractive }
@@ -267,29 +292,61 @@ centred = { |inner, outer|
 													}.isEmpty,
 														"Day no longer owns a second mic knob");
 													state.set(\micGain, 0);
-													// a bigger window buys slate, not
-													// stretched controls (§12.1.3)
+													// A maximized window is read at the
+													// bigger step: the extra room buys
+													// legibility, not empty slate
+													// (the user's N8 review, 2026-07-28).
+													// The screen may clamp the request,
+													// so everything below is asserted
+													// against the size actually achieved.
+													beforeRow = rowOf.value(\c5Send).view.bounds.height;
+													beforeRail = workshop.railWidth;
 													gui.window.setInnerExtent(1920, 1005);
-													AppClock.sched(0.35, {
+													AppClock.sched(0.4, {
 														try {
 															check.value(workshop.micLive.not
 																and: { (gui.noticeText ? "").find("MIC LIVE").isNil },
 																"muting the mic clears the row and the notice together");
+															check.value(drawer.step == \roomy
+																and: { drawer.pageSize.width >= 1400 },
+																"a maximized window reaches the roomy step (page %)"
+																	.format(drawer.pageSize));
+															check.value(rowOf.value(\c5Send).view.bounds.height
+																> beforeRow
+																and: { workshop.railWidth > beforeRail },
+																"rows and rail both grow — the room buys legibility");
 															check.value(workshop.rail.bounds.width
-																== CQGuiWorkshop.railWidth
+																== CQGuiScale.railWidth(drawer.step,
+																	drawer.pageSize.width)
 																and: { centred.value(workshop.rail, workshop.view) },
-																"the rail stays 1128 px and centred in a 1920x1005 window");
+																"the rail keeps its measured width and stays centred");
 															check.value(workshop.view.bounds.width
-																> CQGuiWorkshop.railWidth,
-																"the extra width becomes surrounding slate");
+																- workshop.rail.bounds.width
+																>= (2 * CQGuiScale.metrics(drawer.step)[\pageMargin]),
+																"and it always keeps its page margin of slate");
 															check.value(workshop.mainLedgers
 																.collect { |ledger| ledger.bounds.width }
-																== CQGuiWorkshop.mainWidths
+																== CQGuiWorkshop.mainWidths(
+																	workshop.railWidth, drawer.step)
 																and: { rowOf.value(\c5Send).view.bounds.width
-																	== CQGuiWorkshop.mainWidths[1] },
-																"no control is stretched into a different hierarchy");
+																	== CQGuiWorkshop.mainWidths(
+																		workshop.railWidth, drawer.step)[1] },
+																"every row is re-measured to its own island");
+															check.value(#[coco1SlotX, coco2SlotX, c5Send]
+																.every { |name|
+																	rowOf.value(name).view.absoluteBounds.bottom
+																		<= (workshop.view.absoluteBounds.bottom + 1)
+																},
+																"the deepest rows are still contained at the bigger step");
+															check.value(grid.cellSize[1]
+																> CQGuiScale.metrics(\compact)[\cellHeight]
+																and: { drawer.spellbookGui.rail.bounds.width
+																	== workshop.railWidth }
+																and: { drawer.memoryGui.railWidth
+																	== workshop.railWidth },
+																"the loom grows too and all four pages keep one rail");
 															check.value(CQInkControl.drawErrors == 0,
-																"both skins and both window sizes paint cleanly");
+																"both skins and both size steps paint cleanly");
 															gui.free;
 															AppClock.sched(0.2, {
 																if(ok) { "CQ_GUI_DRAWER_PASSED".postln; 0.exit } {

@@ -17,24 +17,32 @@ CQGuiWorkshopTest : UnitTest {
 		^widgets.ledger(name, label ? name.asString, family, width)
 	}
 
-	// ---- the fixed composition ----
+	// ---- the composition ----
 
-	test_theRailIsTheAcceptedInspectorRail {
-		this.assertEquals(CQGuiWorkshop.railWidth, 1128,
-			"the content rail is 1128 px");
-		this.assertEquals(CQGuiWorkshop.serviceWidth * 4
-			+ (CQGuiWorkshop.gutter * 3), CQGuiWorkshop.railWidth,
-			"four 270 px service modules and three 16 px gutters fill it exactly");
-		this.assertEquals(CQGuiWorkshop.mainWidths, [365, 366, 365],
-			"the main row is 365 · 366 · 365");
-		this.assertEquals(CQGuiWorkshop.mainWidths.sum
-			+ (CQGuiWorkshop.gutter * 2), CQGuiWorkshop.railWidth,
-			"the three main ledgers and two gutters fill the same rail");
-		this.assertEquals(CQGuiWorkshop.rowHeight, 24, "a ledger row is 24 px");
+	test_theRailIsTheInspectorLoomsRailAtEveryStep {
+		CQGuiScale.steps.do { |step|
+			var page = if(step == \roomy) { 1434 } { 1272 };
+			var rail = CQGuiScale.railWidth(step, page);
+			var service = CQGuiWorkshop.serviceWidths(rail, step);
+			var main = CQGuiWorkshop.mainWidths(rail, step);
+			this.assertEquals(rail, CQGuiMatrix.loomSize(step, page).width,
+				"% : one rail serves the loom and the ledger".format(step));
+			this.assertEquals(service.size, 4, "% : four service modules".format(step));
+			this.assertEquals(main.size, 3, "% : three main ledgers".format(step));
+			this.assert(service.maxItem - service.minItem <= 1,
+				"% : the service modules are equal to the pixel".format(step));
+			this.assertEquals(main[0], main[2],
+				"% : the Coco ledgers are the same width".format(step));
+		};
+		this.assertEquals(CQGuiScale.railWidth(\compact, 1272), 1224,
+			"the windowed minimum fills its page, keeping a 24 px margin");
+		this.assert(CQGuiScale.railWidth(\roomy, 1434)
+			> CQGuiScale.railWidth(\compact, 1272),
+			"a maximized window buys a wider rail, not only more slate");
 	}
 
 	// One score drives both the Qt layout and the painted labels, so a subgroup
-	// whisper can never sit above the wrong rows.
+	// label can never sit above the wrong rows.
 	test_oneIslandScoreDrivesLayoutAndInk {
 		var coco = CQGuiWorkshop.cocoIsland(1);
 		var items = CQGuiWorkshop.islandLayout(coco);
@@ -53,8 +61,12 @@ CQGuiWorkshopTest : UnitTest {
 		};
 		this.assertEquals(y, CQGuiWorkshop.islandHeight(coco),
 			"the score's end IS the island's height");
-		this.assertEquals(CQGuiWorkshop.islandHeight(coco), 372,
-			"a twelve-parameter Coco needs 372 px of its 392 px budget");
+		this.assertEquals(CQGuiWorkshop.islandHeight(coco),
+			CQGuiScale.tallestIslandHeight(\compact),
+			"a twelve-parameter Coco is the page's tallest island");
+		this.assert(CQGuiWorkshop.islandHeight(coco, \roomy)
+			> CQGuiWorkshop.islandHeight(coco, \compact),
+			"the roomy step gives the same twelve rows more room");
 	}
 
 	test_bothCocoLedgersComeFromOneHelper {
@@ -112,7 +124,7 @@ CQGuiWorkshopTest : UnitTest {
 	test_theRailIsOneGeometryForCueAndAction {
 		var rect = Rect(0, 0, 365, 24);
 		var rail = CQInk.ledgerRailRect(rect);
-		var m = CQInk.ledgerMetrics;
+		var m = CQInk.ledgerMetrics(nil);
 		this.assertEquals(rail.left, m[\inset] + m[\labelWidth],
 			"the rail begins after the label column");
 		this.assertEquals(rail.right,
@@ -133,12 +145,31 @@ CQGuiWorkshopTest : UnitTest {
 		var rail = CQInk.ledgerRailRect(rect);
 		this.assert(CQInk.ledgerHitsRail(rect, rail.center.x),
 			"the rail itself answers");
-		this.assert(CQInk.ledgerHitsRail(rect, rail.left - CQInk.ledgerMetrics[\grab]),
+		this.assert(CQInk.ledgerHitsRail(rect,
+			rail.left - CQInk.ledgerMetrics(nil)[\grab]),
 			"a small grab band makes the rail's own ends reachable");
 		this.assert(CQInk.ledgerHitsRail(rect, 4).not,
 			"a mis-aimed click on the label writes nothing");
 		this.assert(CQInk.ledgerHitsRail(rect, 362).not,
 			"nor does one on the value column");
+	}
+
+	// the rail follows its step, so a press measured at one size can never be
+	// answered by geometry from the other
+	test_theRailGrowsWithTheStep {
+		var rect = Rect(0, 0, 520, 30);
+		var compact = CQInk.ledgerRailRect(rect, CQGuiScale.metrics(\compact));
+		var roomy = CQInk.ledgerRailRect(rect, CQGuiScale.metrics(\roomy));
+		this.assert(roomy.left > compact.left,
+			"the roomy label column is wider for its bigger type");
+		this.assert(roomy.right < compact.right,
+			"and so is its value column");
+		this.assertFloatEquals(
+			CQInk.ledgerNormAt(rect, roomy.right, CQGuiScale.metrics(\roomy)), 1,
+			"the roomy rail's own right end is still exactly 1", 1e-9);
+		this.assertEquals(CQInk.ledgerMetrics(CQGuiScale.metrics(\roomy))[\height],
+			CQGuiScale.metrics(\roomy)[\rowHeight],
+			"a row is exactly its step's row height");
 	}
 
 	test_seatsAreStableAndEvenlySpaced {

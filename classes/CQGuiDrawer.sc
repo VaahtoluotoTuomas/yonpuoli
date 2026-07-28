@@ -7,6 +7,9 @@ CQGuiDrawer {
 	var <spellbookGui, <memoryGui, <workshop, presetMenu;
 	var <inspector, <grid, <spellbook;
 	var <inspectorView, <workshopView, <spellbookView, <memoryView;
+	// the Drawer's shared size step (CQGuiScale) and the Inspector chrome that
+	// follows the loom's rail
+	var <step = \compact, <pageSize, applyButton, gestureHelp, topRail, footerRail;
 
 	*new { |gui, state, matrix, audition, grammar|
 		^super.newCopyArgs(gui, state, matrix, grammar).prBuild(audition)
@@ -55,12 +58,49 @@ CQGuiDrawer {
 
 	// ---- private ----
 
+	// One size step for the whole workbench, so the four pages read as one
+	// surface (GUI_SPEC §8). The stage's own rect decides it; every page then
+	// re-measures rather than rebuilding, so a resize can never re-register a
+	// funnel binding or leave a stale control behind.
+	applyScale { |stageWidth, stageHeight|
+		var size = CQGuiScale.pageSizeFor(stageWidth, stageHeight);
+		var next = CQGuiScale.stepFor(size.width, size.height);
+		if(pageSize.notNil and: { next == step }
+			and: { size.width == pageSize.width }) { ^this };
+		step = next;
+		pageSize = size;
+		grid.applyScale(step, size.width);
+		this.prScaleInspectorChrome;
+		workshop.applyScale(step, size.width);
+		spellbookGui.applyScale(step, grid.loomSize.width);
+		memoryGui.applyScale(step, grid.loomSize.width);
+		^this
+	}
+
+	prScaleInspectorChrome {
+		var m = CQGuiScale.metrics(step), width = grid.loomSize.width;
+		topRail.fixedWidth = width;
+		footerRail.fixedWidth = width;
+		gestureHelp.font = CQInk.font(\label, m[\label]);
+		gestureHelp.fixedSize = Size(width, m[\barHeight]);
+		presetMenu.font = CQInk.font(\number, m[\mono]);
+		presetMenu.fixedSize = Size(
+			(CQGuiScale.textWidth("apply preset", m[\mono], true) + 40)
+				.ceil.asInteger,
+			m[\boxHeight]);
+		applyButton.scale_(m);
+		applyButton.resizeTo(CQGuiScale.buttonWidth(step, applyButton.label),
+			m[\boxHeight]);
+		^this
+	}
+
 	prBuild { |audition|
-		var palette = CQInk.palette(\day), applyButton, gestureHelp;
-		var loomWidth = CQGuiMatrix.loomSize.width, topRail, footerRail;
-		var presetNames = CQMatrix.presets.keys.asArray.sort;
+		var palette = CQInk.palette(\day);
+		var loomWidth, presetNames = CQMatrix.presets.keys.asArray.sort;
+		var m = CQGuiScale.metrics(step);
 		inspector = CQInspector(matrix, audition, grammar);
-		grid = CQGuiMatrix(matrix, inspector);
+		grid = CQGuiMatrix(matrix, inspector, step);
+		loomWidth = grid.loomSize.width;
 		spellbook = CQSpellbook(matrix);
 		spellbookGui = CQGuiSpellbook(gui, spellbook);
 		spellbookView = spellbookGui.view;
@@ -72,17 +112,23 @@ CQGuiDrawer {
 		workshop = CQGuiWorkshop(gui, state);
 		workshopView = workshop.view;
 		presetMenu = PopUpMenu().items_(presetNames.collect { |name| name.asString })
-			.font_(CQInk.font(\number)).stringColor_(palette[\line])
-			.background_(palette[\ground]).fixedSize_(Size(148, 22));
-		applyButton = this.prButton("apply preset", 96, {
-			presetMenu.item !? { |item| this.applyPreset(item.asSymbol) }
-		});
+			.font_(CQInk.font(\number, m[\mono])).stringColor_(palette[\line])
+			.background_(palette[\ground])
+			.fixedSize_(Size(
+				(CQGuiScale.textWidth("apply preset", m[\mono], true) + 40)
+					.ceil.asInteger,
+				m[\boxHeight]));
+		applyButton = this.prButton("apply preset",
+			CQGuiScale.buttonWidth(step, "apply preset"), {
+				presetMenu.item !? { |item| this.applyPreset(item.asSymbol) }
+			});
 		gestureHelp = StaticText().string_(
 			"press listens · double-click plants · vertical drag trims · right-click clears")
-			.font_(CQInk.font(\label)).stringColor_(palette[\whisper])
-			.align_(\right).fixedSize_(Size(loomWidth, 26));
+			.font_(CQInk.font(\label, m[\label])).stringColor_(palette[\whisper])
+			.align_(\right).fixedSize_(Size(loomWidth, m[\barHeight]));
 		topRail = View().fixedWidth_(loomWidth).layout_(
-			HLayout(grid.status, nil, presetMenu, applyButton).margins_(0).spacing_(6));
+			HLayout(grid.status, nil, presetMenu, applyButton.view)
+				.margins_(0).spacing_(6));
 		footerRail = View().fixedWidth_(loomWidth).layout_(
 			HLayout(gestureHelp).margins_(0).spacing_(0));
 		inspectorView = View().background_(palette[\recess]).layout_(VLayout(
@@ -95,11 +141,14 @@ CQGuiDrawer {
 		^this
 	}
 
+	// returns the control, not its view: the chrome has to re-measure it when
+	// the Drawer's size step changes
 	prButton { |label, width, action|
 		var button = CQInkControl.button(label, width, \day, false, true, \spaf);
 		button.surface = \recess;
 		button.action = action;
+		button.scale = CQGuiScale.metrics(step);
 		gui.registerInkControl(button);
-		^button.view
+		^button
 	}
 }

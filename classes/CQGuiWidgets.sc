@@ -68,7 +68,7 @@ CQGuiWidgets {
 	// row still owns no range, step, default or enum of its own. Returns the
 	// control (not its view): the page needs the row itself for the mic's
 	// danger treatment, and the view is one accessor away.
-	ledger { |name, label, color, width = 200, surface = \recess|
+	ledger { |name, label, color, width = 200, surface = \recess, scale|
 		var kind = CQSpec.kind(name), values = CQSpec.enumValues(name);
 		var family = this.prFamily(color);
 		var seats = switch(kind,
@@ -79,7 +79,7 @@ CQGuiWidgets {
 		var mode = switch(kind, \enum, { \enum }, \toggle, { \toggle },
 			\int, { \int }, { \num });
 		var row = this.prOwn(CQInkControl.ledger(label, mode, family, \day,
-			width, seats, CQSpec.centerNorm(name)));
+			width, seats, CQSpec.centerNorm(name), scale));
 		row.surface = surface;
 		switch(kind,
 			\enum, {

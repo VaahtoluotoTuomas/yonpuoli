@@ -373,6 +373,19 @@ CQGui {
 		gridPanel = drawer.grid;
 		shell = CQGuiShell(shellState, dayView, nightMap.stageView, masterView,
 			drawer.pages, { |skin| this.prApplySkin(skin) });
+		// The workbench reads at two reviewed sizes (CQGuiScale): a windowed
+		// 1280x720 gives a Drawer page 1272x526, a maximized window far more,
+		// and a page that is nothing but text should spend that on legibility
+		// rather than on slate. Qt reports the stage's new rect straight into
+		// the language, so the step follows the window with no timer and no
+		// polling — and each page re-measures rather than rebuilding.
+		shell.drawerView.onResize = { |resized|
+			if(cleaned.not) {
+				drawer !? { |d|
+					d.applyScale(resized.bounds.width, resized.bounds.height)
+				};
+			};
+		};
 		this.prApplySkin(shellState.viewMode);
 		window = Window("Cocoquantus · Archipelago",
 			Rect(50, 50, minimum[0], minimum[1]));

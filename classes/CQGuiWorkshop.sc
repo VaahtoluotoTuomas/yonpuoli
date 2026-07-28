@@ -11,68 +11,49 @@
 // written out explicitly and are never computed as `CQSpec.names` minus the
 // other surfaces: a newly added parameter must fail the gate rather than
 // silently count as covered without a drawn control.
+//
+// The page carries no height constants: every island is a stack of fixed-height
+// rows over a trailing stretch, so the rail asks for exactly the height its
+// content needs and spare room collects below it as slate. Width and type come
+// from CQGuiScale's two reviewed steps.
 
 CQGuiWorkshop {
-	// §12.1.3's fixed composition. The rail matches the accepted Inspector loom
-	// exactly; larger windows buy surrounding slate, never stretched controls.
-	classvar railW = 1128, serviceW = 270, gutterW = 16, serviceH = 72;
-	classvar mainH = 392, pageMargin = 12, bandGap = 16;
-	classvar titleH = 20, groupLabelH = 16, rowH = 24;
-
 	var gui, state;
-	var <view, <rail, skin = \day;
-	var <rows, rowsByParam, <serviceModules, <mainLedgers, <micLive = false;
+	var <view, <rail, <step, <metrics, skin = \day, pageWidth = 1272;
+	var <rows, rowsByParam, <islandRecords, <micLive = false;
+	var bandView, mainView, bandLayout, mainLayout, railLayout;
+	var topPad, gapPad, bottomPad;
 
 	*new { |gui, state| ^super.newCopyArgs(gui, state).prBuild }
 
 	// every drawn row, by the parameter it writes
 	rowFor { |param| ^rowsByParam[param] }
-	panels { ^(serviceModules ++ mainLedgers) }
+	panels { ^islandRecords.collect { |record| record[\panel] } }
+	serviceModules { ^islandRecords.copyRange(0, 3).collect { |r| r[\panel] } }
+	mainLedgers { ^islandRecords.copyRange(4, 6).collect { |r| r[\panel] } }
+	railWidth { ^CQGuiScale.railWidth(step, pageWidth) }
 
-	// ---- the fixed composition (pure, testable without Qt) ----
+	// ---- the composition (pure, testable without Qt) ----
 
-	*railWidth { ^railW }
-	*serviceWidth { ^serviceW }
-	*serviceHeight { ^serviceH }
-	*gutter { ^gutterW }
-	*pageMargin { ^pageMargin }
-	*bandGap { ^bandGap }
-	*rowHeight { ^rowH }
-	*titleHeight { ^titleH }
-	*groupLabelHeight { ^groupLabelH }
-	*mainHeight { ^mainH }
-
-	// 365 · 366 · 365 with two 16 px gutters — the odd middle pixel goes to the
-	// Quantussy so the two Coco ledgers stay literally identical (§12.1.3's pair
-	// symmetry: the same helper, only the index changed).
-	*mainWidths { ^[365, 366, 365] }
-
-	// service band: four equal modules, three gutters
-	*serviceSpan { ^(4 * serviceW) + (3 * gutterW) }
-	*mainSpan { ^this.mainWidths.sum + (2 * gutterW) }
-
-	// 12 + 72 + 16 + 392 + 12 — the whole page inside the minimum Drawer
-	// workspace with no scroll view (§12.1.3)
-	*railHeight { ^(2 * pageMargin) + serviceH + bandGap + mainH }
-
-	// One island's vertical score: a title, then each subgroup's whisper and its
+	// One island's vertical score: a title, then each subgroup's label and its
 	// rows, each item carrying the y it starts at. Both the Qt layout and the
 	// island's own drawFunc consume THIS list, so a painted subgroup label and
 	// the rows under it can never drift apart, and both Coco ledgers share their
 	// subgroup baselines by construction (§12.1.3).
-	*islandLayout { |island|
-		var items = List.new, y = 0;
-		items.add((kind: \title, y: y, height: titleH, label: island[\title],
-			family: island[\family] ? \line));
-		y = y + titleH;
+	*islandLayout { |island, step = \compact|
+		var m = CQGuiScale.metrics(step), items = List.new, y = 0;
+		items.add((kind: \title, y: y, height: m[\titleHeight],
+			label: island[\title], family: island[\family] ? \line));
+		y = y + m[\titleHeight];
 		this.islandGroups(island).do { |group|
 			group[\label] !? { |text|
-				items.add((kind: \group, y: y, height: groupLabelH, label: text));
-				y = y + groupLabelH;
+				items.add((kind: \group, y: y, height: m[\groupHeight],
+					label: text));
+				y = y + m[\groupHeight];
 			};
 			(group[\rows] ? []).do { |row|
-				items.add((kind: \row, y: y, height: rowH, row: row));
-				y = y + rowH;
+				items.add((kind: \row, y: y, height: m[\rowHeight], row: row));
+				y = y + m[\rowHeight];
 			};
 		};
 		^items.asArray
@@ -82,11 +63,20 @@ CQGuiWorkshop {
 		^island[\groups] ?? { [(label: nil, rows: island[\rows] ? [])] }
 	}
 
-	// the tallest island's own ink: a title, four subgroup labels and twelve
-	// rows must fit inside `mainHeight` before any bottom air
-	*islandHeight { |island|
-		var items = this.islandLayout(island), last = items.last;
+	*islandHeight { |island, step = \compact|
+		var items = this.islandLayout(island, step), last = items.last;
 		^last[\y] + last[\height]
+	}
+
+	// the four service modules and the three main ledgers, both summing to the
+	// rail exactly (CQGuiScale.columns gives an odd count's remainder to the
+	// middle, so the two Coco ledgers stay literally the same width)
+	*serviceWidths { |railWidth, step = \compact|
+		^CQGuiScale.columns(railWidth, 4, CQGuiScale.metrics(step)[\gutter])
+	}
+
+	*mainWidths { |railWidth, step = \compact|
+		^CQGuiScale.columns(railWidth, 3, CQGuiScale.metrics(step)[\gutter])
 	}
 
 	// ---- the manifest (§12.1.1's exact 43) ----
@@ -188,34 +178,67 @@ CQGuiWorkshop {
 		^this
 	}
 
+	// The Drawer's size step moved (CQGuiScale). Nothing is rebuilt: the rows
+	// keep their values, actions and updater registrations, and only their
+	// measurements change — so a maximize can never re-register a funnel
+	// binding or resurrect a stale control.
+	applyScale { |nextStep, width|
+		var railW, serviceWidths, mainWidths;
+		nextStep = nextStep ? step;
+		width = width ? pageWidth;
+		if(nextStep == step and: { width == pageWidth }) { ^this };
+		step = nextStep;
+		pageWidth = width;
+		metrics = CQGuiScale.metrics(step);
+		railW = CQGuiScale.railWidth(step, pageWidth);
+		serviceWidths = this.class.serviceWidths(railW, step);
+		mainWidths = this.class.mainWidths(railW, step);
+		rail.fixedWidth = railW;
+		topPad.fixedHeight = metrics[\vMargin];
+		bottomPad.fixedHeight = metrics[\vMargin];
+		gapPad.fixedHeight = metrics[\bandGap];
+		bandView.fixedHeight = CQGuiScale.serviceBandHeight(step);
+		bandLayout.spacing = metrics[\gutter];
+		mainLayout.spacing = metrics[\gutter];
+		islandRecords.do { |record, i|
+			this.prScaleIsland(record,
+				if(i < 4) { serviceWidths[i] } { mainWidths[i - 4] });
+		};
+		^this
+	}
+
 	// ---- private ----
 
 	prBuild {
-		var palette = CQInk.palette(\day), band, main;
+		var palette = CQInk.palette(\day), railW, serviceWidths, mainWidths;
+		step = \compact;
+		metrics = CQGuiScale.metrics(step);
+		railW = CQGuiScale.railWidth(step, pageWidth);
+		serviceWidths = this.class.serviceWidths(railW, step);
+		mainWidths = this.class.mainWidths(railW, step);
 		rows = List.new;
 		rowsByParam = IdentityDictionary.new;
-		serviceModules = this.class.serviceIslands.collect { |island|
-			this.prIsland(island, serviceW, serviceH)
+		islandRecords = this.class.serviceIslands.collect { |island, i|
+			this.prIsland(island, serviceWidths[i])
+		} ++ this.class.mainIslands.collect { |island, i|
+			this.prIsland(island, mainWidths[i])
 		};
-		mainLedgers = this.class.mainIslands.collect { |island, i|
-			this.prIsland(island, this.class.mainWidths[i], mainH)
-		};
-		band = View().fixedHeight_(serviceH).layout_(
-			HLayout(*serviceModules).margins_(0).spacing_(gutterW));
-		main = View().fixedHeight_(mainH).layout_(
-			HLayout(*mainLedgers).margins_(0).spacing_(gutterW));
-		rail = View().fixedSize_(Size(railW, this.class.railHeight))
-			.background_(palette[\recess]);
-		rail.layout = VLayout(
-			View().fixedHeight_(pageMargin),
-			band,
-			View().fixedHeight_(bandGap),
-			main,
-			View().fixedHeight_(pageMargin)
-		).margins_(0).spacing_(0);
-		// The rail is fixed: a larger window buys surrounding slate, never
-		// stretched controls, and spare height collects below as slate rather
-		// than pulling the rows apart (§12.1.3).
+		bandLayout = HLayout(*this.serviceModules).margins_(0)
+			.spacing_(metrics[\gutter]);
+		bandView = View().fixedHeight_(CQGuiScale.serviceBandHeight(step))
+			.layout_(bandLayout);
+		mainLayout = HLayout(*this.mainLedgers).margins_(0)
+			.spacing_(metrics[\gutter]);
+		mainView = View().layout_(mainLayout);
+		topPad = View().fixedHeight_(metrics[\vMargin]);
+		gapPad = View().fixedHeight_(metrics[\bandGap]);
+		bottomPad = View().fixedHeight_(metrics[\vMargin]);
+		// no height constant anywhere: the rail asks for exactly what its
+		// islands need, and the page's trailing stretch turns the rest into slate
+		railLayout = VLayout(topPad, bandView, gapPad, mainView, bottomPad)
+			.margins_(0).spacing_(0);
+		rail = View().fixedWidth_(railW).background_(palette[\recess])
+			.layout_(railLayout);
 		view = View().background_(palette[\recess]);
 		view.layout = VLayout(
 			HLayout(nil, rail, nil).margins_(0).spacing_(0),
@@ -224,33 +247,55 @@ CQGuiWorkshop {
 		^this
 	}
 
-	prIsland { |island, width, height|
+	prIsland { |island, width|
 		var palette = CQInk.palette(\day);
-		var items = this.class.islandLayout(island);
-		var panel = UserView().fixedSize_(Size(width, height))
-			.background_(palette[\recess]);
-		var stack = List.new;
+		var record = (island: island, items: this.class.islandLayout(island, step));
+		var panel = UserView().fixedWidth_(width).background_(palette[\recess]);
+		var children = List.new, stack = List.new;
 		panel.drawFunc = {
 			try {
-				CQInk.drawLedgerIsland(panel.bounds.moveTo(0, 0), items, skin)
+				CQInk.drawLedgerIsland(panel.bounds.moveTo(0, 0),
+					record[\items], skin, metrics, island[\family] ? \line)
 			} { |error| CQInkControl.noteDrawError(error) };
 		};
-		items.do { |item|
+		record[\items].do { |item|
 			if(item[\kind] == \row) {
-				stack.add(this.prRow(item[\row], width).view);
+				var control = this.prRow(item[\row], width);
+				children.add(control);
+				stack.add(control.view);
 			} {
-				stack.add(View().fixedHeight_(item[\height]));
+				var spacer = View().fixedHeight_(item[\height]);
+				children.add(spacer);
+				stack.add(spacer);
 			};
 		};
 		// the island's own bottom air; the rows never stretch to fill it
 		stack.add(nil);
 		panel.layout = VLayout(*stack.asArray).margins_(0).spacing_(0);
-		^panel
+		record[\panel] = panel;
+		record[\children] = children.asArray;
+		^record
+	}
+
+	prScaleIsland { |record, width|
+		var items = this.class.islandLayout(record[\island], step);
+		record[\items] = items;
+		record[\panel].fixedWidth = width;
+		items.do { |item, i|
+			var child = record[\children][i];
+			if(item[\kind] == \row) {
+				child.scale_(metrics, width);
+			} {
+				child.fixedHeight = item[\height];
+			};
+		};
+		record[\panel].refresh;
+		^this
 	}
 
 	prRow { |row, width|
 		var control = gui.widgets.ledger(row[\param], row[\label],
-			row[\family], width);
+			row[\family], width, \recess, metrics);
 		rows.add(control);
 		rowsByParam[row[\param]] = control;
 		// SPEC §7 / §12.1.3: the one interactive mic path in the whole GUI. Its

@@ -58,7 +58,21 @@ tagged. Earlier tags describe internal development baselines.
   itself. Workshop ownership is an explicit manifest, never a complement, so a
   future parameter fails the gate instead of silently counting as covered.
 
+- Two reviewed size steps for the whole Drawer (`CQGuiScale`): `compact` for a
+  windowed 1280×720 and `roomy` once a maximized window gives the page room.
+  Type, row height, gutters, the shared content rail and the Inspector loom's
+  cells all grow at the bigger step, so a large window buys legibility rather
+  than empty slate, while a margin to the page edge is always kept. The step
+  follows the window through Qt's own resize callback, and every page
+  re-measures instead of rebuilding.
+
 ### Changed (Nocturne)
+
+- Raised the Drawer's type above the Day panel's fixed 10 px and gave all four
+  pages one shared content rail — the Spellbook previously used neither.
+  Subgroup headings gained their own rank (line ink, a lighter rule from the
+  end of the name to the island's edge) instead of being a fainter whisper.
+  Day and Night keep §16.10's fixed px sizes unchanged.
 
 - **Moved** the interactive `micGain` control and its warning owner from the
   Day sources column to the Workshop page, keeping SPEC §6.2's one-mic-path

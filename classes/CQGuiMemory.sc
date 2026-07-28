@@ -9,19 +9,73 @@
 // identifiers all say snapshot.
 
 CQGuiMemory {
-	classvar contentW = 1128, fingerprintW = 840, fingerprintH = 300;
+	classvar contentW = 1128;
 
 	var gui, state, matrix, snapshots, matrixCtl, morphCtl;
 	var skin = \day, snapshotNames, selectedData, labels, menus, panels;
 	var nameField, aMenu, bMenu, durationBox, detailTitle, detailHint;
 	var <view, <snapshotList, <fingerprint, <morphMeter, <selectedName;
+	// the seed bank shares the workbench's content rail and size step
+	var <step = \compact, <railWidth, buttons, body, snapshotPanel, morphPanel;
 
 	*new { |gui, state, matrix, snapshots|
 		^super.newCopyArgs(gui, state, matrix, snapshots).prBuild
 	}
 
+	// the historical reference width, kept so older contracts still read; the
+	// live rail is `railWidth` and follows CQGuiScale
 	*contentWidth { ^contentW }
-	*fingerprintSize { ^Size(fingerprintW, fingerprintH) }
+
+	// The saved-snapshot column is a fixed reading width; the fingerprint takes
+	// whatever the rail has left, so a wider window buys patch detail rather
+	// than empty slate.
+	*snapshotColumnWidth { |step = \compact|
+		^if(step == \roomy) { 340 } { 280 }
+	}
+
+	*fingerprintSize { |step = \compact, rail = 1128|
+		var column = this.snapshotColumnWidth(step);
+		var height = if(step == \roomy) { 380 } { 300 };
+		^Size(rail - column - 8, height)
+	}
+
+	applyScale { |nextStep, width|
+		var m, column, print;
+		step = nextStep ? step;
+		railWidth = width ? railWidth;
+		m = CQGuiScale.metrics(step);
+		column = this.class.snapshotColumnWidth(step);
+		print = this.class.fingerprintSize(step, railWidth);
+		labels.do { |record|
+			record[\view].font = CQInk.font(record[\role],
+				m[if(record[\role] == \notice) { \notice } { \label }]);
+			record[\view].fixedHeight = m[\barHeight];
+		};
+		snapshotList.font = CQInk.font(\spellbook, m[\mono]);
+		snapshotList.fixedSize = Size(column - 14, print.height - 106);
+		nameField.font = CQInk.font(\number, m[\mono]);
+		nameField.fixedSize = Size(column - 14 - CQGuiScale.buttonWidth(step,
+			"save snapshot") - 6, m[\boxHeight]);
+		durationBox.font = CQInk.font(\number, m[\mono]);
+		durationBox.fixedSize = Size(64, m[\boxHeight]);
+		menus.do { |menu|
+			menu.font = CQInk.font(\number, m[\mono]);
+			menu.fixedSize = Size(if(step == \roomy) { 210 } { 170 }, m[\boxHeight]);
+		};
+		buttons.do { |button|
+			button.scale = m;
+			button.resizeTo(CQGuiScale.buttonWidth(step, button.label),
+				m[\boxHeight]);
+		};
+		snapshotPanel.fixedSize = Size(column, print.height);
+		fingerprint.fixedSize = print;
+		body.fixedSize = Size(railWidth, print.height);
+		morphPanel.fixedSize = Size(railWidth, m[\boxHeight] + 62);
+		morphMeter.fixedSize = Size(if(step == \roomy) { 380 } { 310 },
+			m[\boxHeight]);
+		panels.do { |panel| panel.refresh };
+		^this
+	}
 
 	free {
 		matrixCtl !? { matrixCtl.remove };
@@ -36,7 +90,10 @@ CQGuiMemory {
 		palette = CQInk.palette(skin);
 		view.background = palette[\recess];
 		panels.do { |panel| panel.background = palette[\recess]; panel.refresh };
-		labels.do { |label| label.stringColor = palette[\whisper] };
+		labels.do { |record|
+			record[\view].stringColor = palette[record[\color]]
+				?? { palette[\whisper] };
+		};
 		snapshotList.background = palette[\ground];
 		snapshotList.stringColor = palette[\line];
 		snapshotList.selectedStringColor = palette[\line];
@@ -73,43 +130,55 @@ CQGuiMemory {
 	// ---- private ----
 
 	prBuild {
-		var palette = CQInk.palette(\day), snapshotPanel, morphPanel, header, body;
+		var palette = CQInk.palette(\day), header;
 		var saveButton, recallButton, refreshButton, morphButton;
+		var m = CQGuiScale.metrics(step), column, print, saveW;
 		labels = List.new;
 		menus = List.new;
 		panels = List.new;
+		buttons = List.new;
+		railWidth = CQGuiScale.railWidth(step, 1272);
+		column = this.class.snapshotColumnWidth(step);
+		print = this.class.fingerprintSize(step, railWidth);
+		saveW = CQGuiScale.buttonWidth(step, "save snapshot");
 
 		header = this.prLabel("memory · seed bank", \line, \notice)
-			.fixedWidth_(contentW);
-		nameField = TextField().string_("snapshot").font_(CQInk.font(\number))
+			.fixedWidth_(railWidth);
+		nameField = TextField().string_("snapshot")
+			.font_(CQInk.font(\number, m[\mono]))
 			.stringColor_(palette[\line]).background_(palette[\ground])
-			.fixedSize_(Size(154, 24)).action_({ |field| field.focus(false) });
-		snapshotList = ListView().selectionMode_(\single).font_(CQInk.font(\spellbook))
+			.fixedSize_(Size(column - 14 - saveW - 6, m[\boxHeight]))
+			.action_({ |field| field.focus(false) });
+		snapshotList = ListView().selectionMode_(\single)
+			.font_(CQInk.font(\spellbook, m[\mono]))
 			.stringColor_(palette[\line]).selectedStringColor_(palette[\line])
 			.hiliteColor_(palette[\spaf].copy.alpha_(0.28))
-			.background_(palette[\ground]).fixedSize_(Size(266, 194));
+			.background_(palette[\ground])
+			.fixedSize_(Size(column - 14, print.height - 106));
 		snapshotList.action = { this.prSelectSnapshot };
 		snapshotList.selectionAction = { this.prSelectSnapshot };
-		saveButton = this.prButton("save snapshot", 104, \line, { this.prSave });
-		recallButton = this.prButton("recall", 66, \line, { this.prRecall });
-		refreshButton = this.prButton("refresh", 66, \line, { this.refresh });
+		saveButton = this.prButton("save snapshot", saveW, \line, { this.prSave });
+		recallButton = this.prButton("recall",
+			CQGuiScale.buttonWidth(step, "recall"), \line, { this.prRecall });
+		refreshButton = this.prButton("refresh",
+			CQGuiScale.buttonWidth(step, "refresh"), \line, { this.refresh });
 
-		snapshotPanel = UserView().fixedSize_(Size(280, fingerprintH))
+		snapshotPanel = UserView().fixedSize_(Size(column, print.height))
 			.background_(palette[\recess]);
 		snapshotPanel.drawFunc = {
 			CQInk.drawToolBox(snapshotPanel.bounds.moveTo(0, 0), "saved snapshots", skin)
 		};
 		snapshotPanel.layout = VLayout(
-			View().fixedHeight_(18),
-			HLayout(nameField, saveButton).spacing_(6),
+			View().fixedHeight_(m[\barHeight] - 4),
+			HLayout(nameField, saveButton.view).spacing_(6),
 			snapshotList,
-			HLayout(recallButton, refreshButton, nil).spacing_(6)
+			HLayout(recallButton.view, refreshButton.view, nil).spacing_(6)
 		).margins_(7).spacing_(6);
 
 		detailTitle = this.prLabel("live patch · now", \line, \notice);
 		detailHint = this.prLabel(
 			"select a saved snapshot to compare it with the live patch", \whisper, \label);
-		fingerprint = UserView().fixedSize_(Size(fingerprintW, fingerprintH))
+		fingerprint = UserView().fixedSize_(print)
 			.background_(palette[\ground]);
 		fingerprint.drawFunc = {
 			try { this.prDrawFingerprint } { |error| CQInkControl.noteDrawError(error) }
@@ -118,31 +187,35 @@ CQGuiMemory {
 			HLayout(detailTitle, nil, detailHint).margins_(8).spacing_(6), nil
 		).margins_(0).spacing_(0);
 
-		body = View().fixedSize_(Size(contentW, fingerprintH)).layout_(
+		body = View().fixedSize_(Size(railWidth, print.height)).layout_(
 			HLayout(snapshotPanel, fingerprint).margins_(0).spacing_(8));
 
 		aMenu = this.prMenu;
 		bMenu = this.prMenu;
 		menus = [aMenu, bMenu];
 		durationBox = NumberBox().value_(10).clipLo_(0.1).clipHi_(600)
-			.font_(CQInk.font(\number)).stringColor_(palette[\line])
-			.background_(palette[\ground]).fixedSize_(Size(54, 24))
+			.font_(CQInk.font(\number, m[\mono])).stringColor_(palette[\line])
+			.background_(palette[\ground]).fixedSize_(Size(64, m[\boxHeight]))
 			.action_({ |box| box.focus(false) });
-		morphButton = this.prButton("morph", 66, \spaf, { this.prMorph });
-		morphMeter = UserView().fixedSize_(Size(310, 24)).background_(palette[\ground]);
+		morphButton = this.prButton("morph",
+			CQGuiScale.buttonWidth(step, "morph"), \spaf, { this.prMorph });
+		morphMeter = UserView().fixedSize_(Size(310, m[\boxHeight]))
+			.background_(palette[\ground]);
 		morphMeter.drawFunc = {
 			try { this.prDrawMorphMeter } { |error| CQInkControl.noteDrawError(error) }
 		};
-		morphPanel = UserView().fixedSize_(Size(contentW, 86))
+		morphPanel = UserView().fixedSize_(Size(railWidth, m[\boxHeight] + 62))
 			.background_(palette[\recess]);
 		morphPanel.drawFunc = {
 			CQInk.drawToolBox(morphPanel.bounds.moveTo(0, 0), "morph bridge", skin)
 		};
 		morphPanel.layout = VLayout(
-			View().fixedHeight_(18),
-			HLayout(this.prLabel("a", \whisper, \label), aMenu,
-				this.prLabel("→", \whisper, \label), bMenu,
-				durationBox, this.prLabel("seconds", \whisper, \label), morphButton,
+			View().fixedHeight_(m[\barHeight] - 4),
+			HLayout(this.prLabel("a", \whisper, \label).fixedWidth_(10), aMenu,
+				this.prLabel("→", \whisper, \label).fixedWidth_(12), bMenu,
+				durationBox,
+				this.prLabel("seconds", \whisper, \label).fixedWidth_(58),
+				morphButton.view,
 				nil, morphMeter).spacing_(6)
 		).margins_(7).spacing_(4);
 
@@ -152,7 +225,7 @@ CQGuiMemory {
 			HLayout(nil, body, nil),
 			HLayout(nil, morphPanel, nil),
 			nil
-		).margins_(4).spacing_(8));
+		).margins_(m[\vMargin]).spacing_(8));
 
 		matrixCtl = SimpleController(matrix);
 		#[patch, matrix, clear].do { |what|
@@ -167,25 +240,34 @@ CQGuiMemory {
 	}
 
 	prMenu {
-		var palette = CQInk.palette(skin);
-		^PopUpMenu().font_(CQInk.font(\number)).stringColor_(palette[\line])
-			.background_(palette[\ground]).fixedSize_(Size(170, 24))
+		var palette = CQInk.palette(skin), m = CQGuiScale.metrics(step);
+		^PopUpMenu().font_(CQInk.font(\number, m[\mono]))
+			.stringColor_(palette[\line])
+			.background_(palette[\ground])
+			.fixedSize_(Size(if(step == \roomy) { 210 } { 170 }, m[\boxHeight]))
 	}
 
 	prLabel { |text, color = \whisper, role = \label|
 		var palette = CQInk.palette(skin), label;
-		label = StaticText().string_(text).font_(CQInk.font(role)).align_(\left)
-			.stringColor_(palette[color] ?? { palette[\whisper] }).fixedHeight_(18);
-		labels.add(label);
+		var m = CQGuiScale.metrics(step);
+		label = StaticText().string_(text)
+			.font_(CQInk.font(role, m[if(role == \notice) { \notice } { \label }]))
+			.align_(\left)
+			.stringColor_(palette[color] ?? { palette[\whisper] })
+			.fixedHeight_(m[\barHeight]);
+		labels.add((view: label, role: role, color: color));
 		^label
 	}
 
+	// returns the control: the page re-measures it when the size step changes
 	prButton { |label, width, accent, action|
 		var button = CQInkControl.button(label, width, \day, false, true, accent);
 		button.surface = \recess;
 		button.action = action;
+		button.scale = CQGuiScale.metrics(step);
 		gui.registerInkControl(button);
-		^button.view
+		buttons.add(button);
+		^button
 	}
 
 	prSelectSnapshot {
@@ -244,13 +326,21 @@ CQGuiMemory {
 
 	prDrawFingerprint {
 		var palette = CQInk.palette(skin), data = selectedData;
-		var left = 92, top = 50, cellW = 32, cellH = 14;
+		var box = fingerprint.bounds.moveTo(0, 0);
+		var m = CQGuiScale.metrics(step);
+		var left = if(step == \roomy) { 112 } { 92 };
+		var top = if(step == \roomy) { 62 } { 50 };
+		// the fingerprint fills whatever the rail leaves it, so a wider window
+		// buys patch detail rather than a small picture in a big box
+		var cellW = ((box.width - left - 24) / CQMatrix.destNames.size)
+			.floor.clip(24, 48);
+		var cellH = ((box.height - top - 34) / CQMatrix.sourceNames.size)
+			.floor.clip(11, 24);
 		var width = CQMatrix.destNames.size * cellW;
 		var height = CQMatrix.sourceNames.size * cellH;
 		var active = 0, verso = 0, inverso = 0, changed = 0;
 		var groups;
-		CQInk.drawToolBox(fingerprint.bounds.moveTo(0, 0), "patch fingerprint", skin,
-			selectedName.notNil);
+		CQInk.drawToolBox(box, "patch fingerprint", skin, selectedName.notNil);
 		groups = [(start: 0, count: 5, title: "coco 1"),
 			(start: 5, count: 5, title: "coco 2"),
 			(start: 10, count: 5, title: "castle fm"),
@@ -258,8 +348,9 @@ CQGuiMemory {
 			(start: 20, count: 2, title: "decks")];
 		groups.do { |group|
 			var x = left + (group[\start] * cellW);
-			Pen.stringCenteredIn(group[\title], Rect(x, top - 18,
-				group[\count] * cellW, 11), CQInk.font(\range), palette[\whisper]);
+			Pen.stringCenteredIn(group[\title],
+				Rect(x, top - m[\tiny] - 8, group[\count] * cellW, m[\tiny] + 4),
+				CQInk.font(\range, m[\tiny]), palette[\line]);
 		};
 		Pen.strokeColor = palette[\whisper].copy.alpha_(0.16);
 		Pen.width = CQInk.strokes[\hairline];
@@ -275,8 +366,9 @@ CQGuiMemory {
 		CQMatrix.sourceNames.do { |src, si|
 			var y = top + (si * cellH) + (cellH / 2);
 			var family = this.prSourceFamily(src);
-			Pen.stringAtPoint(this.prSourceLabel(src), 8@(y - 5), CQInk.font(\range),
-				palette[\whisper]);
+			Pen.stringAtPoint(this.prSourceLabel(src),
+				8@(y - (m[\tiny] / 2) - 1),
+				CQInk.font(\range, m[\tiny]), palette[\whisper]);
 			Pen.fillColor = palette[family];
 			Pen.fillOval(Rect(left - 12, y - 2.5, 5, 5));
 			CQMatrix.destNames.do { |dest, di|
@@ -301,8 +393,8 @@ CQGuiMemory {
 		};
 		Pen.stringRightJustIn("% routes · % verso · % inverso · % changed"
 			.format(active, verso, inverso, changed),
-			Rect(fingerprintW - 390, fingerprintH - 22, 378, 12),
-			CQInk.font(\number), palette[\line]);
+			Rect(box.width - 396, box.height - (m[\mono] + 12), 384, m[\mono] + 4),
+			CQInk.font(\number, m[\mono]), palette[\line]);
 	}
 
 	prDrawMorphMeter {

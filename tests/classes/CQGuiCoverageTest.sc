@@ -178,7 +178,7 @@ CQGuiCoverageTest : UnitTest {
 	// The Drawer's own four-page order is asserted where the pages are
 	// published, in CQGuiVisualContractTest.
 	test_theRemainingObligationsAreOwnedElsewhere {
-		this.assertEquals(CQGuiMatrix.cellSize, [48, 24],
+		this.assertEquals(CQGuiMatrix.cellSize(\compact, 1272), [52, 24],
 			"the Inspector still owns the full 16x22 signed matrix");
 		#[snapshotName, snapshotSave, snapshotRecall, morph].do { |item|
 			this.assert(CQGuiPanels.memoryItems.includes(item),
@@ -187,29 +187,48 @@ CQGuiCoverageTest : UnitTest {
 	}
 
 	// The manifest is the drawn page, not a table beside it: every island's ink
-	// must fit its budget, or the audit would be proving controls nobody can see.
-	test_theManifestFitsItsOwnFixedComposition {
-		this.assertEquals(CQGuiWorkshop.serviceSpan, CQGuiWorkshop.railWidth,
-			"four service modules and three gutters make the 1128 px rail");
-		this.assertEquals(CQGuiWorkshop.mainSpan, CQGuiWorkshop.railWidth,
-			"the three main ledgers and two gutters make the same rail");
-		this.assertEquals(CQGuiWorkshop.railWidth, CQGuiMatrix.loomSize.width,
-			"the Workshop rail is the accepted Inspector loom rail");
-		CQGuiWorkshop.serviceIslands.do { |island|
-			this.assert(CQGuiWorkshop.islandHeight(island)
-				<= CQGuiWorkshop.serviceHeight,
-				"service module '%' fits the 72 px band".format(island[\title]));
+	// must fit the room the page actually has, at BOTH size steps, or the audit
+	// would be proving controls nobody can see.
+	test_theManifestFitsTheRoomThePageActuallyHas {
+		CQGuiScale.steps.do { |step|
+			// the page rect this step is chosen for, at its own floor
+			var page = if(step == \roomy) { Size(1400, 640) } { Size(1272, 526) };
+			var rail = CQGuiScale.railWidth(step, page.width);
+			var service = CQGuiWorkshop.serviceWidths(rail, step);
+			var main = CQGuiWorkshop.mainWidths(rail, step);
+			var gutter = CQGuiScale.metrics(step)[\gutter];
+			this.assertEquals(service.sum + (3 * gutter), rail,
+				"% : four service modules and three gutters make the rail"
+					.format(step));
+			this.assertEquals(main.sum + (2 * gutter), rail,
+				"% : the three main ledgers and two gutters make the same rail"
+					.format(step));
+			this.assertEquals(main[0], main[2],
+				"% : the two Coco ledgers are exactly the same width".format(step));
+			this.assertEquals(rail, CQGuiMatrix.loomSize(step, page.width).width,
+				"% : the Workshop rail is the Inspector loom's rail".format(step));
+			this.assert(rail <= (page.width - (2 * CQGuiScale.metrics(step)[\pageMargin])),
+				"% : the rail keeps its page margin".format(step));
+			CQGuiWorkshop.serviceIslands.do { |island|
+				this.assertEquals(CQGuiWorkshop.islandHeight(island, step),
+					CQGuiScale.serviceBandHeight(step),
+					"% : service module '%' is exactly the band"
+						.format(step, island[\title]));
+			};
+			CQGuiWorkshop.mainIslands.do { |island|
+				this.assert(CQGuiWorkshop.islandHeight(island, step)
+					<= CQGuiScale.tallestIslandHeight(step),
+					"% : ledger '%' fits the tallest-island budget"
+						.format(step, island[\title]));
+			};
+			this.assertEquals(
+				CQGuiWorkshop.islandHeight(CQGuiWorkshop.cocoIsland(1), step),
+				CQGuiWorkshop.islandHeight(CQGuiWorkshop.cocoIsland(2), step),
+				"% : both Coco ledgers are one helper and exactly as tall"
+					.format(step));
+			this.assert(CQGuiScale.minimumHeight(step) <= page.height,
+				"% : the whole page fits its own floor without a scroll view (% <= %)"
+					.format(step, CQGuiScale.minimumHeight(step), page.height));
 		};
-		CQGuiWorkshop.mainIslands.do { |island|
-			this.assert(CQGuiWorkshop.islandHeight(island)
-				<= CQGuiWorkshop.mainHeight,
-				"ledger '%' fits its 392 px budget (needs %)"
-					.format(island[\title], CQGuiWorkshop.islandHeight(island)));
-		};
-		this.assertEquals(CQGuiWorkshop.islandHeight(CQGuiWorkshop.cocoIsland(1)),
-			CQGuiWorkshop.islandHeight(CQGuiWorkshop.cocoIsland(2)),
-			"both Coco ledgers are built by one helper and are exactly as tall");
-		this.assertEquals(CQGuiWorkshop.railHeight, 504,
-			"the complete rail is 504 px and needs no scroll view at 1280x720");
 	}
 }

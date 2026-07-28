@@ -64,18 +64,45 @@ CQGuiVisualContractTest : UnitTest {
 			"and still refuses a page that does not exist");
 	}
 
-	test_inspectorPrototypeUsesPlayablePatchLoomCells {
-		this.assertEquals(CQGuiMatrix.cellSize, [48, 24],
-			"workbench prototype replaces the tiny ledger targets with playable knots");
-		this.assertEquals(CQGuiMatrix.loomSize, Size(1128, 384),
-			"the exact 16x22 loom fits the 1280x720 central workspace without scrolling");
+	// The loom keeps large playable knots at every Drawer size step; its cell
+	// width is what sets the rail all four pages align to (CQGuiScale).
+	test_inspectorUsesPlayablePatchLoomCellsAtEveryStep {
+		CQGuiScale.steps.do { |step|
+			var page = if(step == \roomy) { 1434 } { 1272 };
+			var cell = CQGuiMatrix.cellSize(step, page);
+			var loom = CQGuiMatrix.loomSize(step, page);
+			this.assert(cell[0] >= 48 and: { cell[1] >= 24 },
+				"% : knots stay at least as large as the reviewed 48x24"
+					.format(step));
+			this.assertEquals(loom.height,
+				CQMatrix.sourceNames.size * cell[1],
+				"% : the loom is exactly its 16 source rows".format(step));
+			this.assertEquals(loom.width, CQGuiScale.railWidth(step, page),
+				"% : the loom's width IS the shared content rail".format(step));
+		};
+		this.assert(CQGuiMatrix.cellSize(\roomy, 1434)[0]
+			> CQGuiMatrix.cellSize(\compact, 1272)[0],
+			"a maximized window gives the loom bigger cells, not just more slate");
 	}
 
-	test_memoryPrototypeUsesTheLoomContentRail {
-		this.assertEquals(CQGuiMemory.contentWidth, CQGuiMatrix.loomSize.width,
-			"Memory seed bank aligns with the Inspector patch-loom rail");
-		this.assertEquals(CQGuiMemory.fingerprintSize, Size(840, 300),
-			"Memory gives the selected seed a substantial patch fingerprint");
+	test_memoryFillsTheSharedRailAtEveryStep {
+		CQGuiScale.steps.do { |step|
+			var page = if(step == \roomy) { 1434 } { 1272 };
+			var rail = CQGuiScale.railWidth(step, page);
+			var print = CQGuiMemory.fingerprintSize(step, rail);
+			var column = CQGuiMemory.snapshotColumnWidth(step);
+			this.assertEquals(print.width + column + 8, rail,
+				"% : the saved-snapshot column and the fingerprint fill the rail"
+					.format(step));
+			this.assert(print.width >= 840,
+				"% : the fingerprint keeps at least its reviewed width".format(step));
+		};
+		this.assert(
+			CQGuiMemory.fingerprintSize(\roomy, CQGuiScale.railWidth(\roomy, 1434))
+				.height
+			> CQGuiMemory.fingerprintSize(\compact,
+				CQGuiScale.railWidth(\compact, 1272)).height,
+			"a wider window buys patch detail rather than empty slate");
 	}
 
 	// GUI_SPEC §9: the aura is the spec's only server-side addition, and §16.8

@@ -426,6 +426,30 @@ juuriprovenienssin ja lintu-hoverin suoran deck-reitin. §13.8:n
 loudness-kompensaatio kirjattiin myöhemmäksi kuuntelukokeeksi; DSP:hen ei
 koskettu tässä portissa.
 
+Saman haaran **luettavuuskierros** 2026-07-28 (N8 v2, käyttäjän ensimmäisen
+testauskierroksen palaute; **vihreä mutta ei hyväksytty**): `CQ_COMPILE_OK`,
+**13 001 unit-passia / 0 failurea / 31/31 luokkaa**, `CQ_SAFETY_PASSED` ja
+kaikki neljä GUI-markkeria; `CQ_HOLD_OK` kantaa. Uusi `CQGuiScale` antaa
+koko Drawerille **kaksi katselmoitua kokoaskelta**: `compact` (1280×720:n
+minimi, sivu 1272×526) ja `roomy` (sivu ≥ 1400×640). Mitattu ensin, sitten
+valittu — sivun todellinen suorakaide on aina lava miinus (8, 44). Askel
+seuraa ikkunaa Qt:n omasta `onResize`ista, eikä yksikään sivu rakennu
+uudelleen: rivit vain mitataan uudelleen, joten koon muutos ei voi
+rekisteröidä funnel-sidontaa toiseen kertaan. Tyyppi 10 → 12/15 px, rivi
+24 → 30 px, raili 1128 → 1224/1358…1688 px, loomin solu 48 → 52/57…72 px.
+Kaikki neljä sivua jakavat nyt saman railin (spellbook ei aiemmin käyttänyt
+sitä lainkaan). Väliotsikoille annettiin oma **arvoaste**: otsikko saa koko
+saaren mittaisen viivan, väliotsikko nimensä jälkeen alkavan kevyemmän
+viivan ja viivamusteen, rivi vain oman arvorailinsa — ei versaaleja, koska
+§16.4 pitää kaiken pienaakkosina.
+
+Kierros paljasti kaksi omaa virhettä, jotka testit löysivät ennen käyttäjää:
+solun **minimileveys saattoi työntää railin ulos sivultaan** kapealla
+ikkunalla (minimi joka rikkoo marginaalin ei ole minimi — lattia väistyy nyt
+ennen marginaalia), ja **oma väitteeni sarakkeiden tasaisuudesta oli
+ristiriidassa oman suunnittelupäätökseni kanssa** (pariton jako antaa jäännöksen
+keskelle juuri siksi, että Cocojen leveydet pysyvät identtisinä).
+
 Haaran `nocturne-drawer-workshop` portti 2026-07-28 (§12.1 / N8,
 **ensimmäinen ajettava versio; vihreä mutta ei hyväksytty**):
 `CQ_COMPILE_OK`, **12 650 unit-passia / 0 failurea / 30/30 luokkaa**,
@@ -605,6 +629,29 @@ sommittelua (§7.2 korjattiin vasta hylätyn buildin jälkeen).
   polish-passissa aina painalluksen ennen kaapelijännettä, ja sen hover-/piirto-
   vihje nostetaan löydettäväksi johtojen alta. Poikkeusta ei yleistetä muihin
   kontrolleihin ilman uutta päätöstä. Palataan toteutukseen erikseen.
+- **Identiteetti ja sisäosien nimet** (käyttäjän havainto 2026-07-28, N8:n
+  katselmoinnissa). Nightissä Cocoquantus-sukulinja näkyy *muotona* —
+  castlejen anatomiana ja arkkitehtuurina — mutta se on jo selvästi eri soitin
+  eikä esikuvaa nimetä eksplisiittisesti. Drawerissa esikuva sen sijaan
+  **nimetään suoraan**: `quantussy`, `coco 1`, `coco 2`, `spesal`, `balcium`.
+  Workshop-sivu teki tämän ristiriidan näkyväksi, koska se on ensimmäinen
+  pinta jossa sisäosien nimet luetaan tekstinä eikä hahmoteta muotona.
+  Kaksi ratkaisusuuntaa, joista pitää valita yksi:
+  (a) **nimetään koko soitin avoimesti Cocoquantus-johdannaiseksi** — ei
+  emulaatioksi vaan uudeksi soittimeksi joka tekee kunniaa jo nimen tasolla,
+  jolloin sisäosien nimet ovat rehellistä sukulinjaa; tai
+  (b) **nimetään sisäosat uudelleen** (quantussy, coco jne. saavat Yölahden
+  omat nimet) ja Cocoquantus jää pelkäksi dokumentoiduksi vaikutteeksi.
+  Vaikuttaa `README.md`:hen, `SOURCES.md`:hen, GUI:n kaikkiin otsikoihin ja
+  mahdollisesti `CQ*`-nimiavaruuteen, joten se on oma päätöksensä eikä osa
+  N8:aa. Liittyy suoraan julkaisuradan "nimi ja törmäystarkistus" -kohtaan.
+- **Space/reverb ja sen paikka Workshopissa** (käyttäjän kirjaus 2026-07-28).
+  `spaceSize` ja `spaceDamp` ovat nyt Workshopin huoltorivissä neutraalina
+  moduulina, koska SPEC §5.6:n FDN on nykymuodossaan juuri sitä. Reverbin
+  konsepti kuitenkin todennäköisesti **muuttuu kokonaan** (GUI_SPEC §14:n
+  lykätty space-identiteetti), joten Workshopin space-moduuli säädetään
+  uudelleen vasta kun reverbin suunnittelu etenee. Älä lukitse sen paikkaa
+  tai parametrilistaa sitä ennen.
 - **Snapshotit omaan kansioonsa** (`snapshots/` vs `presets/`) — kirjattu jo
   Archipelago-vaiheessa, tehdään omana pienenä työnään.
 - **Kosketusnäyttö-optimointi Night-modeen** (multi-touch, ele-erottelu) —

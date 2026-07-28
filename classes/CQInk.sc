@@ -64,14 +64,18 @@ CQInk {
 		)
 	}
 
-	*font { |role = \label|
+	// The face is always the kit's (§16.4: two faces, generic constructors).
+	// `size` overrides only the *size*, for the Drawer's two reviewed steps
+	// (CQGuiScale) — the Day panel and the Night landscape keep the fixed px
+	// sizes §16.10 requires and simply never pass one.
+	*font { |role = \label, size|
 		var m = this.metrics;
 		^switch(role,
-			\number, { Font.monospace(m[\numberSize]) },
-			\notice, { Font.sansSerif(m[\noticeSize]) },
-			\spellbook, { Font.monospace(m[\noticeSize]) },
-			\range, { Font.sansSerif(m[\rangeSize]) },
-			{ Font.sansSerif(m[\labelSize]) }
+			\number, { Font.monospace(size ? m[\numberSize]) },
+			\notice, { Font.sansSerif(size ? m[\noticeSize]) },
+			\spellbook, { Font.monospace(size ? m[\noticeSize]) },
+			\range, { Font.sansSerif(size ? m[\rangeSize]) },
+			{ Font.sansSerif(size ? m[\labelSize]) }
 		)
 	}
 
@@ -324,7 +328,7 @@ CQInk {
 	}
 
 	*drawButton { |rect, label, skin = \day, active = false, pressed = false,
-		accent = \line, glyph, surface = \ground, hover = false|
+		accent = \line, glyph, surface = \ground, hover = false, labelSize|
 		var palette = this.palette(skin), body = rect.insetBy(1, 2), ink = palette[accent];
 		var fill = if(active or: { pressed }) { ink } { palette[surface] };
 		var text = if(active or: { pressed }) { palette[surface] } { ink };
@@ -346,7 +350,7 @@ CQInk {
 		Pen.stringCenteredIn(label.asString,
 			Rect(body.left + if(glyph.isNil) { 2 } { 14 }, body.top,
 				body.width - if(glyph.isNil) { 4 } { 16 }, body.height),
-			this.font(\label), text);
+			this.font(\label, labelSize), text);
 	}
 
 	*drawSlider { |rect, value = 0, skin = \day, family, hover = false|
@@ -452,13 +456,23 @@ CQInk {
 	// the hit test are literally the same rectangle (§4.5: cue and action share
 	// one geometry) — no view may compute a second one.
 
-	*ledgerMetrics {
-		^(height: 24, inset: 10, labelWidth: 84, valueWidth: 52, gap: 8,
-			grab: 4, seatRadius: 3.5)
+	// `scale` is a CQGuiScale metrics Event; nil means the compact step, so a
+	// caller that has no opinion still gets a reviewed geometry.
+	*ledgerMetrics { |scale|
+		var m = scale ?? { CQGuiScale.metrics(\compact) };
+		^(height: m[\rowHeight], inset: m[\ledgerInset],
+			labelWidth: m[\ledgerLabel], valueWidth: m[\ledgerValue],
+			gap: m[\ledgerGap],
+			// the grab band and the seat bead follow the row, so the whole
+			// control grows as one thing rather than as a bigger box holding
+			// the same small marks
+			grab: (m[\rowHeight] / 6).round.asInteger,
+			seatRadius: m[\rowHeight] / 6.8,
+			labelSize: m[\label], valueSize: m[\value], seatSize: m[\subgroup])
 	}
 
-	*ledgerRailRect { |rect|
-		var m = this.ledgerMetrics, body = rect.insetBy(m[\inset], 0);
+	*ledgerRailRect { |rect, scale|
+		var m = this.ledgerMetrics(scale), body = rect.insetBy(m[\inset], 0);
 		var left = body.left + m[\labelWidth];
 		var right = body.right - m[\valueWidth] - m[\gap];
 		^Rect(left, body.top, (right - left).max(16), body.height)
@@ -466,19 +480,20 @@ CQInk {
 
 	// a press is answered only over the rail (plus a small grab band at each
 	// end): a mis-aimed click on the label may not slam a parameter to its floor
-	*ledgerHitsRail { |rect, x|
-		var rail = this.ledgerRailRect(rect), grab = this.ledgerMetrics[\grab];
+	*ledgerHitsRail { |rect, x, scale|
+		var rail = this.ledgerRailRect(rect, scale);
+		var grab = this.ledgerMetrics(scale)[\grab];
 		^(x >= (rail.left - grab)) and: { x <= (rail.right + grab) }
 	}
 
-	*ledgerNormAt { |rect, x|
-		var rail = this.ledgerRailRect(rect);
+	*ledgerNormAt { |rect, x, scale|
+		var rail = this.ledgerRailRect(rect, scale);
 		if(rail.width <= 0) { ^nil };
 		^((x - rail.left) / rail.width).clip(0, 1)
 	}
 
-	*ledgerSeatAt { |rect, x, count = 2|
-		var rail = this.ledgerRailRect(rect);
+	*ledgerSeatAt { |rect, x, count = 2, scale|
+		var rail = this.ledgerRailRect(rect, scale);
 		if(count < 1 or: { rail.width <= 0 }) { ^nil };
 		^((((x - rail.left) / rail.width) * count).floor.asInteger)
 			.clip(0, count - 1)
@@ -486,21 +501,25 @@ CQInk {
 
 	*drawLedgerRow { |rect, mode = \num, value = 0, label = "", display = "",
 		seats, family, skin = \day, hover = false, pressed = false,
-		center, danger = false|
-		var palette = this.palette(skin), m = this.ledgerMetrics;
-		var body = rect.insetBy(m[\inset], 0), rail = this.ledgerRailRect(rect);
+		center, danger = false, scale|
+		var palette = this.palette(skin), m = this.ledgerMetrics(scale);
+		var body = rect.insetBy(m[\inset], 0);
+		var rail = this.ledgerRailRect(rect, scale);
 		var accent = palette[family] ?? { palette[\line] };
+		var textH = m[\labelSize] + 4;
 		var y = rail.center.y, norm, handleX, originX, reach;
 		Pen.stringLeftJustIn(label.asString,
-			Rect(body.left, body.center.y - 6, m[\labelWidth] - m[\gap], 12),
-			this.font(\label), if(hover) { palette[\line] } { palette[\whisper] });
+			Rect(body.left, body.center.y - (textH / 2),
+				m[\labelWidth] - m[\gap], textH),
+			this.font(\label, m[\labelSize]),
+			if(hover) { palette[\line] } { palette[\whisper] });
 		Pen.strokeColor = if(hover) { palette[\line] } { palette[\whisper] };
 		Pen.width = this.strokes[\hairline];
 		Pen.line(Point(rail.left, y), Point(rail.right, y));
 		Pen.stroke;
 		if(#[\toggle, \enum].includes(mode)) {
 			this.prLedgerSeats(rail, seats ? [], (value ? 0).asInteger,
-				accent, palette, hover);
+				accent, palette, hover, m);
 		} {
 			// a unipolar rail fills from its left end; a bipolar one grows away
 			// from a visible centre tick, so zero is a place and not a guess
@@ -519,15 +538,17 @@ CQInk {
 			Pen.stroke;
 			// the handle is a tick drawn across the rail — a setting on a scale
 			// wears a scale mark, exactly as the shell's reel notch does (§16.6)
-			reach = if(hover) { 6 } { 4.5 };
+			reach = m[\seatRadius] * if(hover) { 1.7 } { 1.3 };
 			Pen.strokeColor = if(hover) { palette[\spark] } { accent };
 			Pen.width = this.strokes[\normal];
 			Pen.line(Point(handleX, y - reach), Point(handleX, y + reach));
 			Pen.stroke;
 		};
 		Pen.stringRightJustIn(display.asString,
-			Rect(body.right - m[\valueWidth], body.center.y - 6, m[\valueWidth], 12),
-			this.font(\number), if(hover) { palette[\spark] } { palette[\line] });
+			Rect(body.right - m[\valueWidth], body.center.y - (textH / 2),
+				m[\valueWidth], textH),
+			this.font(\number, m[\valueSize]),
+			if(hover) { palette[\spark] } { palette[\line] });
 		if(pressed) {
 			Pen.strokeColor = accent.copy.alpha_(0.55);
 			Pen.width = this.strokes[\hairline];
@@ -548,27 +569,27 @@ CQInk {
 
 	// a toggle or enum is stable seats, never a sliding value: one labelled seat
 	// per value, in the order CQSpec gave them
-	*prLedgerSeats { |rail, seats, index, accent, palette, hover = false|
-		var m = this.ledgerMetrics, cell = rail.width / seats.size.max(1);
+	*prLedgerSeats { |rail, seats, index, accent, palette, hover = false, m|
+		var cell = rail.width / seats.size.max(1);
+		var radius = m[\seatRadius], textH = m[\seatSize] + 4;
 		seats.do { |seat, i|
 			var left = rail.left + (cell * i);
-			var seatCenter = Point(left + (m[\seatRadius] * 2), rail.center.y);
+			var seatCenter = Point(left + (radius * 2), rail.center.y);
 			var lit = i == index;
 			if(lit) {
 				Pen.fillColor = accent;
-				Pen.addOval(Rect.aboutPoint(seatCenter,
-					m[\seatRadius], m[\seatRadius]));
+				Pen.addOval(Rect.aboutPoint(seatCenter, radius, radius));
 				Pen.fill;
 			} {
 				Pen.strokeColor = palette[\whisper];
 				Pen.width = this.strokes[\hairline];
-				Pen.addOval(Rect.aboutPoint(seatCenter,
-					m[\seatRadius], m[\seatRadius]));
+				Pen.addOval(Rect.aboutPoint(seatCenter, radius, radius));
 				Pen.stroke;
 			};
 			Pen.stringLeftJustIn(seat.asString,
-				Rect(seatCenter.x + 7, rail.center.y - 6, (cell - 14).max(8), 12),
-				this.font(\range),
+				Rect(seatCenter.x + radius + 4, rail.center.y - (textH / 2),
+					(cell - (radius * 3) - 4).max(8), textH),
+				this.font(\range, m[\seatSize]),
 				if(lit) {
 					if(hover) { palette[\spark] } { palette[\line] }
 				} {
@@ -577,19 +598,29 @@ CQInk {
 		};
 	}
 
-	// One ledger island: its title over a hairline rule, then its subgroup
-	// whispers. The y offsets come from the caller's own layout list, so the
-	// painted labels and the laid-out rows can never drift apart.
-	*drawLedgerIsland { |rect, items, skin = \day|
-		var palette = this.palette(skin), m = this.ledgerMetrics;
+	// One ledger island: its title over a full rule, then its subgroups. The y
+	// offsets come from the caller's own layout list, so the painted labels and
+	// the laid-out rows can never drift apart.
+	//
+	// Three ranks, told by rule length rather than by shouting (§16.4 keeps
+	// everything lowercase but PANIC/REC/HOLD): the island title carries a rule
+	// across the whole island, a subgroup carries a lighter rule from the end of
+	// its own name to the island's edge, and a row carries only its value rail.
+	// The subgroup label is line ink, not whisper — it names a region of the
+	// signal, and the rows under it are the whispers.
+	*drawLedgerIsland { |rect, items, skin = \day, scale, titleFamily = \line|
+		var palette = this.palette(skin), m = this.ledgerMetrics(scale);
+		var sizes = scale ?? { CQGuiScale.metrics(\compact) };
 		var left = rect.left + m[\inset], right = rect.right - m[\inset];
 		items.do { |item|
-			var y = rect.top + item[\y];
+			var y = rect.top + item[\y], textH, ruleY, labelEnd;
 			switch(item[\kind],
 				\title, {
+					textH = sizes[\title] + 4;
 					Pen.stringLeftJustIn(item[\label].asString,
-						Rect(left, y + 2, right - left, 12),
-						this.font(\label), palette[item[\family] ? \line]);
+						Rect(left, y + 2, right - left, textH),
+						this.font(\label, sizes[\title]),
+						palette[item[\family] ? titleFamily]);
 					Pen.strokeColor = palette[\whisper];
 					Pen.width = this.strokes[\hairline];
 					Pen.line(Point(left, y + item[\height] - 3),
@@ -597,9 +628,20 @@ CQInk {
 					Pen.stroke;
 				},
 				\group, {
+					textH = sizes[\subgroup] + 4;
+					ruleY = y + (item[\height] / 2) + 1;
+					labelEnd = left + CQGuiScale.textWidth(item[\label],
+						sizes[\subgroup]) + 10;
 					Pen.stringLeftJustIn(item[\label].asString,
-						Rect(left, y + 3, right - left, 11),
-						this.font(\range), palette[\whisper]);
+						Rect(left, y + ((item[\height] - textH) / 2),
+							right - left, textH),
+						this.font(\label, sizes[\subgroup]), palette[\line]);
+					if(labelEnd < (right - 12)) {
+						Pen.strokeColor = palette[\whisper].copy.alpha_(0.4);
+						Pen.width = this.strokes[\hairline];
+						Pen.line(Point(labelEnd, ruleY), Point(right, ruleY));
+						Pen.stroke;
+					};
 				}
 			);
 		};

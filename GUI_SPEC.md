@@ -546,16 +546,36 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     against `CQSpec.names` itself rather than a copied count. Workshop ownership
     is an **explicit manifest**, never `CQSpec.names` minus the others: a newly
     added parameter must fail the audit instead of silently counting as covered.
-  - **Fixed composition.** One centred **1128 px content rail**, exactly the
-    Inspector loom's rail, fixed at every window size — larger windows buy
-    surrounding slate, never stretched controls. One continuous ground recess,
-    not a board of rounded cards; hairline separators and 16 px gutters on the
-    8 px grid; the Drawer's own soft edge stays the app's one shadow. A 72 px
-    service band (four equal 270 px modules: `deck a · input trims · space ·
-    deck b`) sits over a `coco 1 · quantussy · coco 2` body of `365 · 366 · 365`
-    with a 392 px budget; 12 px page margins make the whole rail 504 px, which
-    fits the minimum Drawer workspace with **no scroll view**. Space stays a
-    neutral service module and gains no invented Night body.
+  - **Composition.** One centred **content rail**, shared by all four Drawer
+    pages and always exactly the Inspector loom's own width, so the workbench
+    reads as one surface. One continuous ground recess, not a board of rounded
+    cards; hairline separators and gutters on the 8 px grid; the Drawer's own
+    soft edge stays the app's one shadow. A shallow service band (four equal
+    modules: `deck a · input trims · space · deck b`) sits over a
+    `coco 1 · quantussy · coco 2` body, whose three columns and two gutters sum
+    back to the rail exactly — an odd split gives its remainder to the middle so
+    the two Coco ledgers stay literally the same width. The page carries **no
+    height constants**: each island is a stack of fixed-height rows over a
+    trailing stretch, so the rail asks for exactly the height its content needs,
+    spare room collects below as slate, and there is **no scroll view** at any
+    size. Space stays a neutral service module and gains no invented Night body.
+  - **Two reviewed size steps, never a continuous zoom** (added 2026-07-28 at
+    the user's N8 review; `CQGuiScale`). This page is *only* text, rules and
+    rails, so legibility is its whole job, and a maximized window that spends
+    its extra room on empty slate has wasted it. The Drawer therefore has two
+    measured compositions — **compact** for the 1280×720 minimum (page
+    1272×526) and **roomy** once a page reaches 1400×640 — differing in type
+    size, row height, gutters and rail width. Qt reports the stage's new rect
+    into the language, so the step follows the window with no timer and no
+    polling, and every page **re-measures rather than rebuilding**: a resize can
+    never re-register a funnel binding or resurrect a stale control. Two
+    discrete steps keep coordinates stable inside a step and keep type at sizes
+    that were actually looked at. The rail grows with the page until the loom
+    cell reaches its cap, after which the surplus becomes slate — a knot grid
+    spread over two thousand pixels stops reading as a grid — but a **page
+    margin is always kept**: the rail may never reach the edge. §16.10's "font
+    sizes stay in px" still binds the Day panel and the Night landscape, whose
+    ink must not thicken when the paper grows; this applies to the Drawer alone.
   - Rows are grouped by **signal meaning**, never alphabetically: each Coco as
     *converter* (`bits`, `wrap`, `interp`) · *material* (`dust`, `organ`) ·
     *output* (`level`, `pan`, `send`) · *input mix* (`pre`, `deck`, `q`, `x`);
@@ -563,10 +583,17 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     sends* (`c1Send`…`c5Send`), castles running 1→5 in both so the lists compare
     without hunting. **Pair symmetry is structural**: both Coco ledgers are built
     by one helper with only the index changed, so their subgroup baselines match
-    by construction. Island titles and row labels are lowercase 10 px sans,
-    subgroup labels 9 px whisper, exact values 10 px mono; labels sit close to
-    their rail and are never boxed or rendered as pills. Spare vertical room
-    collects below the ledgers as slate rather than stretching rows apart.
+    by construction.
+  - **Three ranks, told by rule length rather than by shouting** (amended
+    2026-07-28: the first version's 9 px whisper subgroups did not separate the
+    groups enough to be read at a glance). §16.4 keeps everything lowercase but
+    PANIC/REC/HOLD, so emphasis comes from *rank*, not from caps or a new hue:
+    an island **title** carries a rule across the whole island; a **subgroup**
+    carries a lighter rule from the end of its own name to the island's edge and
+    is set in line ink one step below the title; a **row** carries only its value
+    rail, and its label is the whisper. Labels sit close to their rail and are
+    never boxed or rendered as pills. Spare vertical room collects below the
+    ledgers as slate rather than stretching rows apart.
   - Semantic phosphor is used **sparingly**: slate is `recess`, rules and values
     are bone/whisper, and only `dust`, `organ`, the live input and the mic carry
     a family accent. Neutral slots, levels, pan, sends and Space get no family —
@@ -955,6 +982,15 @@ Laws:
   annotations**. These are the laptop-legibility values approved after the first
   real Day-skin review; do not shrink them back to the earlier 9/10/8 sketch.
   Lowercase everywhere; only PANIC, REC and HOLD may shout.
+- **The Drawer is the one exception, and it goes up, never down** (added
+  2026-07-28). Day and Night are read as *shapes* — a knob's arc, a castle's
+  ripple — with text as annotation, and their px sizes are fixed by §16.10. The
+  workbench is read as **prose and numbers**, so the same 10 px that works
+  beside a knob is too small for forty-three rows of exact values. Its two
+  reviewed steps (§8, `CQGuiScale`) therefore start above the Day floor and step
+  up again when the window has the room. Every Drawer size is still a whole
+  number of px chosen at a reviewed step — never a scale factor applied to a
+  base size, which is how type turns to mush.
 - Labels are whispers: whisper color, close to their object, never boxed.
   The project's own words — spaf, spesal, verso, balcium — are decoration
   enough.
@@ -1504,7 +1540,10 @@ at all.
     idiom (§16.6): a setting on a scale wears a scale mark. Hover brightens only
     that row's rail, handle and value; press adds the stronger outline. Cue and
     action share one geometry — the rail is published once, by the kit, and both
-    the drawing and the hit test ask for it (§4.5).
+    the drawing and the hit test ask for it (§4.5). The whole row, including its
+    grab band, seat beads and handle, is measured from the current size step, so
+    it grows as one thing rather than as a bigger box holding the same small
+    marks.
   - External state and snapshot morphs move handle and value through the
     existing paced updater stream (§10). That real change is the only motion.
 - **Meters**: 1 px ink outline, whisper fill, 1 px peak tick; the GR meter

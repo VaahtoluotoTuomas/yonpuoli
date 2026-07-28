@@ -5,9 +5,30 @@
 CQGuiSpellbook {
 	var gui, model, ctl, copyHelper, operationStatus;
 	var <listView;
-	var <view;
+	var <view, <rail, header, copyLine, copyPreset;
+	var <step = \compact;
 
 	*new { |gui, model| ^super.newCopyArgs(gui, model).prBuild }
+
+	// The journal shares the workbench's content rail and size step, so the
+	// four Drawer pages line up on one edge and read at one size (GUI_SPEC §8).
+	applyScale { |nextStep, width|
+		var m;
+		step = nextStep ? step;
+		m = CQGuiScale.metrics(step);
+		rail.fixedWidth = width;
+		header.font = CQInk.font(\notice, m[\notice]);
+		listView.font = CQInk.font(\spellbook, m[\mono]);
+		operationStatus.font = CQInk.font(\label, m[\label]);
+		operationStatus.fixedHeight = m[\barHeight];
+		[copyLine, copyPreset].do { |button|
+			button.scale = m;
+			button.resizeTo(CQGuiScale.buttonWidth(step, button.label),
+				m[\boxHeight]);
+		};
+		view.layout.margins = m[\vMargin];
+		^this
+	}
 
 	free {
 		ctl !? { ctl.remove };
@@ -39,29 +60,35 @@ CQGuiSpellbook {
 	// ---- private ----
 
 	prBuild {
-		var palette = CQInk.palette(\day), copyLine, copyPreset, header;
+		var palette = CQInk.palette(\day);
+		var m = CQGuiScale.metrics(step);
 		listView = ListView().selectionMode_(\single)
-			.font_(CQInk.font(\spellbook)).stringColor_(palette[\line])
+			.font_(CQInk.font(\spellbook, m[\mono])).stringColor_(palette[\line])
 			.selectedStringColor_(palette[\line])
 			.hiliteColor_(palette[\spaf].copy.alpha_(0.28))
 			.background_(palette[\ground]).items_(model.lines);
 		listView.action = { this.prShowSelection };
 		listView.selectionAction = { this.prShowSelection };
 		copyHelper = TextView().fixedSize_(Size(1, 1)).visible_(false);
-		copyLine = this.prButton("copy line", 78, { this.copySelectedLine });
-		copyPreset = this.prButton("copy all as preset data", 162,
+		copyLine = this.prButton("copy line",
+			CQGuiScale.buttonWidth(step, "copy line"), { this.copySelectedLine });
+		copyPreset = this.prButton("copy all as preset data",
+			CQGuiScale.buttonWidth(step, "copy all as preset data"),
 			{ this.copyPresetData });
 		header = StaticText().string_("read-only patch journal · committed operations · every layer")
-			.font_(CQInk.font(\notice)).stringColor_(palette[\whisper]);
+			.font_(CQInk.font(\notice, m[\notice])).stringColor_(palette[\whisper]);
 		operationStatus = StaticText().string_("no committed operation selected")
-			.font_(CQInk.font(\label)).stringColor_(palette[\whisper])
-			.fixedHeight_(18);
-		view = View().background_(palette[\recess]).layout_(VLayout(
-			HLayout(header, nil, copyLine, copyPreset).spacing_(6),
+			.font_(CQInk.font(\label, m[\label])).stringColor_(palette[\whisper])
+			.fixedHeight_(m[\barHeight]);
+		rail = View().fixedWidth_(CQGuiScale.railWidth(step, 1272)).layout_(VLayout(
+			HLayout(header, nil, copyLine.view, copyPreset.view)
+				.margins_(0).spacing_(6),
 			listView,
 			operationStatus,
 			copyHelper
-		).margins_(4).spacing_(4));
+		).margins_(0).spacing_(6));
+		view = View().background_(palette[\recess]).layout_(
+			HLayout(nil, rail, nil).margins_(m[\vMargin]).spacing_(0));
 		ctl = SimpleController(model);
 		ctl.put(\entry, {
 			{
@@ -86,12 +113,14 @@ CQGuiSpellbook {
 		^this
 	}
 
+	// returns the control: the page re-measures it when the size step changes
 	prButton { |label, width, action|
 		var button = CQInkControl.button(label, width, \day, false, true, \line);
 		button.surface = \recess;
 		button.action = action;
+		button.scale = CQGuiScale.metrics(step);
 		gui.registerInkControl(button);
-		^button.view
+		^button
 	}
 
 	prCopy { |string|
