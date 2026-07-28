@@ -279,6 +279,16 @@ Outputs published to the mod source bus: `tri1..tri5` (±1 triangle), `cas1..cas
   (inverted CV) — this is how verso/inverso polarity is expressed.
 - Gate/trig destinations use a Schmitt threshold: rising through +0.5 fires (gates:
   >+0.5 = on).
+- **VCA law (`_inVca`, `_fbVca`).** The knob is the valve's resting position and the
+  matrix adds to it, but the modulation's contribution is **shaped, not linear**:
+  `shaped = (1 + sum)² − 1`, with `sum` clamped to ±2 before the shaping. Fixed
+  points: 0 contributes nothing, so no knob, default or stored snapshot is
+  recalibrated; −1 still shuts the valve completely; +1 pushes +3 where linear
+  pushed +1. At a knob of unity the law is exactly `(1 + sum)²`. It is an
+  interpretation (an analog verso/inverso VCA breathes rather than slides — §13.5),
+  documented like the organ derivation, and it is bounded by the same output clip
+  and by `clip2` inside the recirculation. Continuous VCA paths only; gate/trig
+  destinations keep their Schmitt semantics.
 - `patchDepth` (0–1, default 1.0, lag 50 ms): global scaler over all matrix weights —
   a "how alive is it" macro and instant tamer.
 - API: `patch(src, dest, w)`, `unpatch(src, dest)`, `clearPatch`, `getPatch`,

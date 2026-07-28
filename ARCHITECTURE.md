@@ -214,8 +214,14 @@ var here    = BufRd.ar(1, buf, phase, loop: 1, interpolation: 1);
 // ^ MUST be created before BufWr: reads the cell value BEFORE overwrite = the DAC out
 
 var inSig   = Mix([aPreX * slotPre, deck * slotDeck, qmix * slotQ, cross * slotX]);
-var inVca   = (inLevel + inVcaSum).clip(0, 2);       // verso/inverso via signed weights
-var fbVca   = (fbLevel + fbVcaSum).clip(0, 2.5);
+// verso/inverso via signed weights. The knob is the valve's rest; the matrix
+// contribution is SHAPED, not linear — (1+sum)^2 - 1, sum clamped +-2 first
+// (SPEC §5.3/§5.5, interpretation §13.5, exactly like the organ derivation).
+// Shaping the contribution rather than the total is what keeps every knob,
+// default and stored snapshot calibrated, and keeps a banana able to open a
+// shut VCA. See CQSynthDefs.prVcaLaw.
+var inVca   = (inLevel + CQSynthDefs.prVcaLaw(inVcaSum)).clip(0, 2);
+var fbVca   = (fbLevel + CQSynthDefs.prVcaLaw(fbVcaSum)).clip(0, 2.5);
 var inCh    = dolby(inSig, dolbyInMode, keyEnv: fbEnv);   // 3-mode gate/duck helper
 var fbCh    = dolby(here,  dolbyFbMode, keyEnv: inEnv);
 var record  = (inCh * inVca) + (fbCh * fbVca) + (WhiteNoise.ar(dust) * LFNoise2.ar(3));

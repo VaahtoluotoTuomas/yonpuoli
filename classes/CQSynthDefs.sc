@@ -244,10 +244,12 @@ CQSynthDefs {
 					* \slotQ.kr(CQSpec.default(\coco1SlotQ), CQSpec.lag(\coco1SlotQ)))
 				+ (InFeedback.ar(\crossBus.ir(0))   // other coco, one block late by design
 					* \slotX.kr(CQSpec.default(\coco1SlotX), CQSpec.lag(\coco1SlotX)));
-			inVca = (\inLevel.kr(CQSpec.default(\coco1In), CQSpec.lag(\coco1In)) + inVcaSum)
-				.clip(0, 2);
-			fbVca = (\fbLevel.kr(CQSpec.default(\coco1Fb), CQSpec.lag(\coco1Fb)) + fbVcaSum)
-				.clip(0, 2.5);
+			// the knob is the valve's rest, the matrix opens and shuts it —
+			// shaped, never linear (§13.5, CQSynthDefs.prVcaLaw)
+			inVca = (\inLevel.kr(CQSpec.default(\coco1In), CQSpec.lag(\coco1In))
+				+ CQSynthDefs.prVcaLaw(inVcaSum)).clip(0, 2);
+			fbVca = (\fbLevel.kr(CQSpec.default(\coco1Fb), CQSpec.lag(\coco1Fb))
+				+ CQSynthDefs.prVcaLaw(fbVcaSum)).clip(0, 2.5);
 			inEnv = Amplitude.ar(inSig, 0.003, 0.08);
 			fbEnv = Amplitude.ar(here, 0.003, 0.08);
 			inCh = dolby.value(inSig, \dolbyIn.kr(enumIdx.value(\coco1DolbyIn)),
@@ -461,5 +463,40 @@ CQSynthDefs {
 	// matrix weight-bus read: 50 ms smoothing + global patchDepth scaler (ARCH §3.3)
 	*prMatrixWeight { |busArg, patchDepth|
 		^Lag.kr(In.kr(busArg, 16), 0.05) * patchDepth
+	}
+
+	// ---- the VCA law (SPEC §5.5, interpretation — see ARCHITECTURE §4.4) ----
+	//
+	// §13.5's hypothesis: a summed LINEAR matrix VCA slides; an analog
+	// verso/inverso VCA breathes, so duckings and tremolos should have a
+	// "valve opens / valve shuts" body. The law is (1 + sum) ** 2.
+	//
+	// The plan sketched that as the gain itself. It cannot be, because in this
+	// instrument the knob is the VCA's base and the matrix ADDS to it
+	// (`knob + sum`, SPEC §5.5) — shaping the total would silently recalibrate
+	// every knob, default and stored snapshot, and a banana could no longer
+	// open a shut VCA, which is a documented patching move. So the shaping is
+	// applied to the modulation alone, as the contribution it makes:
+	//
+	//     shaped = (1 + sum) ** 2 - 1
+	//
+	// At knob = unity this is EXACTLY the plan's law (1 + shaped = (1 + sum)**2);
+	// away from unity the knob keeps the meaning it always had. Its fixed
+	// points are the ones that matter: sum 0 contributes nothing, sum -1 still
+	// closes the valve completely, and sum +1 now pushes +3 instead of +1 —
+	// the hotter overdrive §13.5 asked for, still bounded by the same clip and
+	// by clip2 inside the loop (safety #2 untouched).
+	//
+	// `g.abs * g` is g**2 * g.sign in two ops: signed, so the law stays
+	// monotonic below sum = -1 instead of folding back up.
+	// The sum is clamped BEFORE shaping (§13.5's rake): \mayhem swings a VCA
+	// sum far past ±1 and squaring an unclamped swing would scorch the tone
+	// long before the clip caught it. Continuous VCA paths only — gate/trig
+	// destinations keep their Schmitt semantics and never come here.
+	*vcaSumClamp { ^2 }
+
+	*prVcaLaw { |sum|
+		var g = 1 + sum.clip(this.vcaSumClamp.neg, this.vcaSumClamp);
+		^(g.abs * g) - 1
 	}
 }

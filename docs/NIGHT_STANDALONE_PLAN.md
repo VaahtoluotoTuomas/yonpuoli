@@ -1424,6 +1424,43 @@ CQ.boot; CQ.patchPreset(\classic); CQ.set(\c5Send, 0.5);
 
 ### 13.5 The VCA law — the shell opens and closes
 
+**Implementation status (2026-07-29).** Implemented on
+`nocturne-feedback-taper`; the full battery including both NRT renders is
+green and it **waits on the ear** (checklist 13.5).
+
+**The sketch below did not match the code, and the rake is why it was
+caught.** "Verify the current form first" was the right instruction: the
+real form is `gain = (knob + sum).clip(...)` — the knob is the VCA's rest
+and the matrix *adds* to it — not `gain = (1 + sum)`. Shaping the total
+would have recalibrated every knob, default and stored snapshot
+(`coco1In` 0.8 → 0.64) and would have destroyed a documented patching
+move: a banana into a VCA whose knob is shut can currently open it, and
+under a multiplicative law it never could. So the shaping is applied to
+the modulation's **contribution**:
+
+```
+shaped = (1 + sum) ** 2 - 1        // sum clamped ±2 first (the rake)
+inVca  = (knob + shaped).clip(0, 2)
+```
+
+At a knob of unity this is *exactly* the law proposed below, since
+`1 + shaped = (1 + sum) ** 2`; away from unity the knob keeps its meaning.
+Fixed points: 0 contributes nothing, −1 still shuts the valve completely,
++1 pushes +3. `g.abs * g` is `g² · sign(g)` in two ops, and the sign is
+what keeps the law monotonic below sum = −1 instead of folding back up.
+This is the second time a plan paragraph was the defect rather than the
+implementation (cf. §7.2/§9) — **the sketch is a hypothesis about the
+code, not a description of it.**
+
+**One consequence the sketch does not mention and the ear will meet
+first:** the curve's slope at the origin is 2, so *all* existing VCA
+modulation roughly doubles in depth — an old weight of −0.4 now behaves
+about like −0.8 did. That is a property of `(1 + x) ** 2` itself, not of
+the re-expression, and it reaches `\selfNoise`, `\organMode`, `\mayhem`
+and the user's snapshots. The expansion is also asymmetric (3× open, 1×
+shut, since −1 is a fixed point): the valve opens wider than it closes.
+p = 1.5 remains the documented gentler option.
+
 **Hypothesis.** The matrix in/fb-VCAs sum linearly; an analog verso/
 inverso VCA breathes more exponentially. A gentle power shaping gives
 duckings and tremolos a "valve opens / valve shuts" body.

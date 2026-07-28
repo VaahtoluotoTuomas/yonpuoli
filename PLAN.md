@@ -38,7 +38,8 @@ kaapeliprioriteetti ja snapshot-kansion erotus — valmistui 2026-07-28.
 käyttäjän kuuntelu- ja näkökatselmuksessa 2026-07-28. Space-kuuntelupäätös,
 tuotantoketjun hallittu eläköitys ja Nightin täyden mittakaavan GUI-passi
 hyväksyttiin 2026-07-28–29. 13.2 speed-lattia (vaihtoehto A) hyväksyttiin
-2026-07-29.** Seuraava avoin portti on **13.5 VCA-laki**.
+2026-07-29.** Avoin portti on **13.5 VCA-laki**, jonka kandidaatti on
+toteutettu 2026-07-29 ja odottaa käyttäjän korvaa (checklist 13.5).
 Sen jälkeen järjestys on **13.3 dust → 13.6 zipper-mittaus +
 13.8 preampin equal-loudness-koe → Audio I/O Setup Drawerissa (AIO, alla) →
 nelikanavainen laitteisto-/resource-soak → kolme huokoista soittotilaa →
@@ -350,11 +351,46 @@ vihje kertoo silloin myös sen, mihin kela loppuu. Portti:
 `CQ_COMPILE_OK`, **13 217 unit-passia / 0 failurea / 32/32 luokkaa** ja
 kaikki neljä GUI-markkeria; `CQ_SAFETY_PASSED` ja `CQ_HOLD_OK` kantavat
 saman päivän 13.2-portista, koska tämä inkrementti ei koske DSP:hen.
-**Löydetty mutta korjaamatta jätetty:** mouth-chevronilla ei ole lainkaan
-hover-vihjettä (§4.5 lupaa sellaisen jokaiselle painettavalle
-kontrollille). Se ei ole osa tätä konfliktia — chevron ei osu uraan
-(mitattu 38/57 px) — eikä hyväksyttyyn pintaan lisätä uutta vihjettä
-omasta aloitteesta; odottaa käyttäjän päätöstä.
+Samassa katselmuksessa löytyi myös, ettei mouth-chevronilla ollut lainkaan
+hover-vihjettä, vaikka §4.5 lupaa sellaisen jokaiselle painettavalle
+kontrollille. Käyttäjä hyväksyi sen lisäämisen 2026-07-29. Chevron vastaa
+**painolla** (hiusviiva → normaali) eikä värillä: se lepää jo `cas`-sävyssä
+(193,186,173), joka on kirkkaampi kuin `line` (169,174,184) johon sen kaksi
+siskomerkkiä — skip-glyfi ja range-väre — kirkastuvat, joten värivaihto voisi
+vain himmentää sen, ja `spark` tarkoittaa jo "jokin juuri laukesi". Paino on
+saman kuoren kelalovi-vihjeen kanaava, joten yksi keho puhuu yhtä
+hover-kieltä eikä yksikään lepotilan muste liiku (§16.3/§16.10).
+
+**13.5 VCA-lain kandidaatti (2026-07-29, odottaa korvaa).** §13.5:n luonnos
+esitti lain muodossa `gain = (1 + sum) ** p`, mutta koodin todellinen muoto
+on `gain = (nuppi + summa).clip(...)` — nuppi on VCA:n lepoasento ja matriisi
+lisää siihen. Luonnos itse käski varmistaa nykymuodon ensin, ja varmistus
+osoitti sen eroavan: **suunnitelmakappale ei vastannut toteutusta.** Koko
+arvon muotoilu olisi kalibroinut jokaisen nupin, oletuksen ja tallennetun
+snapshotin uudelleen (esim. `coco1In` 0.8 → 0.64) ja tehnyt mahdottomaksi
+dokumentoidun tavan avata kiinni käännetty VCA banaanilla. Siksi muotoilu
+kohdistuu modulaation **osuuteen**: `shaped = (1 + sum)² − 1`, summa rajattu
+±2 ennen muotoilua (§13.5:n oma karikko). Nupin ollessa ykkösessä tämä on
+täsmälleen luonnoksen laki, koska `1 + shaped = (1 + sum)²`; muualla nuppi
+säilyttää merkityksensä. Kiinteät pisteet: 0 ei tee mitään, −1 sulkee
+venttiilin täysin, +1 työntää +3. `g.abs * g` on `g² · sign(g)` kahdella
+operaatiolla, ja etumerkki on se mikä pitää lain monotonisena summan −1
+alapuolella sen sijaan että se taittuisi takaisin ylös.
+
+**Kuultava sivuvaikutus, joka on kirjattava:** käyrän kulmakerroin nollassa
+on 2, joten kaikki olemassa oleva VCA-modulaatio noin kaksinkertaistuu
+syvyydeltään — vanha paino −0.4 vastaa suunnilleen entistä −0.8:aa. Tämä on
+`(1+x)²`:n oma ominaisuus eikä toteutuksen valinta, ja se koskee `\selfNoise`-,
+`\organMode`- ja `\mayhem`-presetejä sekä käyttäjän snapshotteja. Vaimennus
+on lisäksi epäsymmetristä (3× auki, 1× kiinni), eli venttiili aukeaa
+leveämmin kuin sulkeutuu. Jos se on liikaa, dokumentoitu vaihtoehto on
+p = 1.5. Portti: `CQ_COMPILE_OK`, **13 273 unit-passia / 0 failurea / 33/33
+luokkaa** (uusi `CQSynthDefsTest` lukitsee lain kiinteät pisteet,
+monotonisuuden, ±2-rajauksen ja sen että laki on ykkösessä *täsmälleen*
+luonnoksen laki), `CQ_SAFETY_PASSED`, `CQ_HOLD_OK` (A4-korrelaatio 1.0,
+A5-drift 0.0 dB) ja kaikki neljä GUI-markkeria. `\mayhem`in huippu ei
+käytännössä liikkunut (0.889 → 0.890): silmukan sisäinen `clip2` ja
+masterin limitteri ottavat kuumemman ajon vastaan kuten pitääkin.
 
 Space-keskustelun ensimmäinen päätös 2026-07-28: Silhouette hylättiin tämän
 soittimen sisältä. Tuotanto-FDN:ään, `CQSpec`iin tai GUI:hin koskematon
