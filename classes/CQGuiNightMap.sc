@@ -32,7 +32,7 @@ CQGuiNightMap {
 	var <geometry, <eyeActive = false, <eyeHover = false;
 	var <eyeFreqNorm = 0.5, <eyeChaosNorm = 0.15;
 	var <speedNorms, <shellHover, <dialHover, <rangeHover, <bodyHover;
-	var <rimHover, <heartHover, <ringHover = false;
+	var <rimHover, <heartHover, <chevronHover, <ringHover = false;
 	var <preampHover, <preampSourceHover, <preampActive;
 	var <preampDriveNorms, <preampBiasNorms, <preampSlotNorms, <deckSlotNorms;
 	var <preampSources, preampPainted;
@@ -807,6 +807,7 @@ CQGuiNightMap {
 		shellHover = [false, false];
 		rimHover = [false, false];
 		heartHover = [false, false];
+		chevronHover = [false, false];
 		dialHover = Array.fill(5, false);
 		rangeHover = Array.fill(5, false);
 		bodyHover = Array.fill(5, false);
@@ -1272,7 +1273,7 @@ CQGuiNightMap {
 	// makes them mutually exclusive by construction rather than by three
 	// hand-written `.not`s.
 	prHoverShell { |i, view, x, y|
-		var target, heart, near, mark, rim, point;
+		var target, heart, near, mark, rim, chevron, point;
 		if(geometry.notNil and: { view.notNil }) {
 			point = this.prStagePoint(view, x, y);
 			// §4.5 cable-first: a cable inside its own hit path owns the pointer
@@ -1284,12 +1285,15 @@ CQGuiNightMap {
 		near = target == \wind;
 		mark = target == \skip;
 		rim = target == \rim;
+		chevron = target == \chevron;
 		if((near != shellHover[i]) or: { mark != skipHover[i] }
-			or: { rim != rimHover[i] } or: { heart != heartHover[i] }) {
+			or: { rim != rimHover[i] } or: { heart != heartHover[i] }
+			or: { chevron != chevronHover[i] }) {
 			shellHover[i] = near;
 			skipHover[i] = mark;
 			rimHover[i] = rim;
 			heartHover[i] = heart;
+			chevronHover[i] = chevron;
 			if(freed.not) { shellViews[i].refresh };
 		};
 	}
@@ -1897,7 +1901,7 @@ CQGuiNightMap {
 		CQInkNight.drawShell(coco, coco[\shellBox].leftTop,
 			holdStates[i], this.flipMode(i), speedNorms[i], shellHover[i],
 			skipHover[i], skipFlash[i], rimHover[i], heartHover[i],
-			\night, geometry[\roots][i],
+			chevronHover[i], \night, geometry[\roots][i],
 			gui.auraFor(if(i == 0) { \envA } { \envB }) ? 0,
 			preampDriveNorms[i], preampSlotNorms[i]);
 	}

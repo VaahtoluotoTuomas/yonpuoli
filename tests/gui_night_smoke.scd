@@ -1049,6 +1049,21 @@ punchChecks = { |map|
 															shell.mouseLeaveAction.value(shell);
 															check.value(map.heartHover[0].not,
 																"leaving rests the heart's ring too");
+															// the chevron was the last pressable night
+															// control with no cue at all (§4.5)
+															shell.mouseOverAction.value(shell,
+																coco[\chevron].x - local.x,
+																coco[\chevron].y - local.y);
+															check.value(map.chevronHover[0],
+																"hovering the mouth chevron answers in weight");
+															check.value(map.shellHover[0].not
+																and: { map.heartHover[0].not }
+																and: { map.skipHover[0].not }
+																and: { map.rimHover[0].not },
+																"and it is the only shell cue lit");
+															shell.mouseLeaveAction.value(shell);
+															check.value(map.chevronHover[0].not,
+																"leaving rests the chevron");
 															castleTwo = map.geometry[\castles][1];
 															castleView = map.castleViews[1];
 															dialPoint = CQNightGeometry.polar(

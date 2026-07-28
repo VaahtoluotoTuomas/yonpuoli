@@ -1045,14 +1045,20 @@ CQ.set(\coco1Speed, 1500);     // helmi kelan sisimpään päähän
 // 5. Kelaa nopeus takaisin ylös uran ULOMMALTA kierrokselta. Tämä on koko
 //    ratkaisun hinta: hitaimmassa päässä kelaus aloitetaan kierros ulompaa.
 //    Tuntuuko se luontevalta vai kiusalliselta?
-// 6. Tee sama coco2:lla. Tarkista myös 1280x570 ja maksimoituna: sydämen
+// 6. Vie osoitin suun chevronille (nuoli suujakin alla). Sen pitää nyt
+//    paksuntua hiusviivasta normaaliin — chevron oli yön viimeinen
+//    painettava kontrolli ilman vihjettä. Väri ei muutu: chevron lepää jo
+//    siskomerkkejään kirkkaammassa sävyssä, joten paino on ainoa rehellinen
+//    kanava. Napautus kääntää flipin kuten ennen.
+// 7. Tee sama coco2:lla. Tarkista myös 1280x570 ja maksimoituna: sydämen
 //    kiekko on kiinteä 22 px, ura skaalautuu, joten päällekkäisyys on eri
 //    kokoinen eri koossa — kehän pitää silti aina kertoa totuus.
 CQ.free;
 ```
 
 - [ ] N10 hyväksytty (pvm: ______ — vihje ja teko samaa mieltä, sydämen kehä
-      luettava, kelaus ulomman kierroksen kautta hyväksyttävä)
+      luettava, chevronin painovihje luettava, kelaus ulomman kierroksen
+      kautta hyväksyttävä)
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>

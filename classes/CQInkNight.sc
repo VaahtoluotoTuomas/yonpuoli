@@ -235,7 +235,8 @@ CQInkNight {
 	// difference is form first).
 	*drawShell { |coco, origin, holdOn = false, flipMode = \forward,
 		speedNorm = 0.5, hover = false, skipHover = false, skipFlash = false,
-		rimHover = false, heartHover = false, skin = \night, preampRoot,
+		rimHover = false, heartHover = false, chevronHover = false,
+		skin = \night, preampRoot,
 		preampAura = 0, preampDrive = 0, preampSlot = 1|
 		var palette = CQInk.palette(skin), notch, notchNorm, normal, reach;
 		var heart;
@@ -296,7 +297,7 @@ CQInkNight {
 			Pen.addOval(Rect.aboutPoint(coco[\center], heart, heart));
 			Pen.stroke;
 		};
-		this.drawMouthChevron(coco[\chevron], flipMode, skin);
+		this.drawMouthChevron(coco[\chevron], flipMode, skin, chevronHover);
 		// org stem from the second turn out to the hanging fruit jack
 		Pen.strokeColor = palette[\organ].copy.alpha_(0.8);
 		Pen.width = CQInk.strokes[\hairline];
@@ -1238,7 +1239,13 @@ CQInkNight {
 	// arrowhead can only freeze or lie, so the mark becomes §16.5's opposed
 	// chevrons — *shuttling*, the regime instead of the value. Which regime is
 	// decided on the server, at audio rate (§9), never by guessing here.
-	*drawMouthChevron { |anchor, mode = \forward, skin = \night|
+	// §4.5 gives every pressable control a hover cue; the chevron had none.
+	// It answers in WEIGHT, not colour, because it already rests in `cas` —
+	// brighter than the `line` its two siblings (skip glyph, range ripple)
+	// brighten *to*, so a colour step here could only dim it. Weight is the
+	// same channel the reel notch uses on this very shell, so one body keeps
+	// one hover language. Its resting ink is untouched (§16.3/§16.10).
+	*drawMouthChevron { |anchor, mode = \forward, skin = \night, hover = false|
 		var palette = CQInk.palette(skin);
 		var reach = CQNightMeasures.chevronReach;
 		var rise = CQNightMeasures.chevronRise;
@@ -1248,7 +1255,7 @@ CQInkNight {
 			Pen.line(anchor + Point(0, dy), anchor + Point(reach, dy.neg));
 		};
 		Pen.strokeColor = palette[\cas];
-		Pen.width = CQInk.strokes[\hairline];
+		Pen.width = CQInk.strokes[if(hover) { \normal } { \hairline }];
 		switch(mode,
 			\shuttle, { head.value(shuttleRise); head.value(shuttleRise.neg) },
 			\flipped, { head.value(rise.neg) },
