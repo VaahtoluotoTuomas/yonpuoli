@@ -178,6 +178,24 @@ CQSpecTest : UnitTest {
 			"a caller cannot mutate CQSpec's breakpoint table");
 	}
 
+	test_chaosCurveWidensTheDrunkenCountry {
+		var norms = [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1];
+		this.assertFloatEquals(CQSpec.map(\qChaos, 0.0), 0.0,
+			"chaos hand starts at the unchanged stable value", 1e-12);
+		this.assertFloatEquals(CQSpec.map(\qChaos, 0.5), 0.2689414213699951,
+			"chaos noon lands in the deep-wander country", 1e-12);
+		this.assertFloatEquals(CQSpec.map(\qChaos, 0.75), 0.5449457660765887,
+			"hyperchaos is compressed into the last quarter", 1e-12);
+		this.assertFloatEquals(CQSpec.map(\qChaos, 1.0), 1.0,
+			"chaos hand keeps the unchanged DSP maximum", 1e-12);
+		norms.do { |norm|
+			var back = CQSpec.unmap(\qChaos, CQSpec.map(\qChaos, norm));
+			this.assert((back - norm).abs <= 1e-9,
+				"qChaos map/unmap roundtrip at % has error %"
+					.format(norm, (back - norm).abs));
+		};
+	}
+
 	test_semanticReferenceMarksUseTheParametersOwnMap {
 		var deckUnity = CQSpec.referenceNorm(\deckALevel, \unity);
 		this.assertFloatEquals(CQSpec.referenceNorm(\coco1In, \unity), 0.5,

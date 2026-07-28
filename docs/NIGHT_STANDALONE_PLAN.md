@@ -1360,15 +1360,24 @@ heart, and it deserves the widest band of the fader; hyperchaos can keep
 the top quarter.
 
 **Proposal.** Change only `qChaos`'s CQSpec curve (lin → an exp-like
-curve factor ≈ **+2.5**, try 2–3 at the review). Value semantics — the
+curve factor **+2.0**, selected because it gives the intended review
+landmarks). Value semantics — the
 internal 0–5 octave FM depth — are untouched, so snapshots, patterns and
 the DSP stay bit-identical; only the hand's mapping stretches. With
-+2.5: fader noon ↦ qChaos ≈ 0.27 (deep wander), 3/4 ↦ ≈ 0.55, and the
++2.0: fader noon ↦ qChaos ≈ 0.269 (deep wander), 3/4 ↦ ≈ 0.545, and the
 hyperchaos region 0.6–1.0 compresses into the last quarter.
 
 **Technique.** One curve field in CQSpec + SPEC §5.4 row note. The eye's
 horizontal axis at Night, the Workshop ledger and 16n all read through `unmap` —
 they follow. M3's sweep is the acceptance ear.
+
+**Accepted 2026-07-28.** SuperCollider's curve **+2.0** produced the intended
+hand landmarks (noon ≈ 0.269, 3/4 ≈ 0.545) more accurately than the draft's
++2.5 estimate. The first listening pass accepted the stable → wander →
+hyperchaos dramaturgy. The visual pass then added four planted broken weather
+rings at exact hand quarters, a living qChaos front and the missing
+cable-priority eye hover. The user accepted both the curve and this poetic
+position feedback.
 
 **Listening protocol:**
 

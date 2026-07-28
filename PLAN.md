@@ -33,11 +33,10 @@ spesalin seurauksen tekopaikassa, ja Workshopin täsmäkontrollit sekä Nightin
 kuoret tekevät passiivisesta muistipolkukartasta ylläpitokustannustaan
 heikomman. N9:n jälkeinen rajattu polish-portti — kiduksen
 kaapeliprioriteetti ja snapshot-kansion erotus — valmistui 2026-07-28.
-**13.1 feedback-taper sekä sen semanttiset sirppiasteikot hyväksyttiin
-käyttäjän kuuntelu- ja näkökatselmuksessa 2026-07-28.** Seuraava muuttuja on
-13.4:n chaos-käyrä. Etenemisjärjestys on
-**13.4 chaos-käyrä → Space/reverbin
-konseptipäätös ja kuuntelu → 13.2 speed-lattia → 13.5 VCA-laki → 13.3 dust
+**13.1 feedback-taper sekä 13.4 chaos-käyrä ja sen sääkehät hyväksyttiin
+käyttäjän kuuntelu- ja näkökatselmuksessa 2026-07-28.** Seuraava vaihe on
+**Space/reverbin konseptipäätös ja kuuntelu.** Sen jälkeen järjestys on
+**13.2 speed-lattia → 13.5 VCA-laki → 13.3 dust
 → 13.6 zipper-mittaus + 13.8 preampin equal-loudness-koe → jäljellä olevat
 bugit/polish ja laitteistogate → Norns-portti (§14).** Yksi musiikillinen
 muuttuja käsitellään edelleen kerrallaan.
@@ -284,9 +283,26 @@ unity/overdrive-rajan sekä linnun levelille neutraalin unity-viivan. Speed,
 storm iris ja juurieleet jäivät tarkoituksella ennalleen. Käyttäjä hyväksyi
 taperin sekä kaikki nämä lisäykset 2026-07-28; 13.1 on suljettu.
 
+13.4:n kuuntelukandidaatti käyttää `qChaos`-käyrää **+2.0**: faderin
+puoliväli mapataan arvoon ≈ 0.269 ja 3/4-kohta arvoon ≈ 0.545. Tämä vastaa
+§13.4:n tavoiteltuja käsituntuman maamerkkejä täsmällisemmin kuin luonnoksen
+alustava +2.5-arvio. DSP-arvoalue, suorat `CQ.set`-arvot ja snapshotit eivät
+muutu. Automaattinen portti 2026-07-28: `CQ_COMPILE_OK`, **13 106
+unit-passia / 0 failurea / 32/32 luokkaa** ja `CQ_GUI_NIGHT_PASSED`.
+Ensimmäinen kuuntelu hyväksyi alueiden dramaturgian. Käsituntumakatselmuksessa
+silmän myrskysäteet jäivät liian pieneksi paikkatiedoksi, joten hover/drag
+paljastaa nyt neljä rikkonaista sääkehää täsmälleen ¼-, ½-, ¾- ja
+täysi-kohdissa sekä niiden läpi kulkevan elävän rintaman. Samalla korjattiin
+puuttunut silmän hover-palaute ja näkyvä sääkeho otettiin kokonaan saman
+kaapelipriorisoidun osuma-alueen sisään. Laajennetun kandidaatin portti:
+`CQ_COMPILE_OK`, **13 116 unit-passia / 0 failurea / 32/32 luokkaa** ja
+`CQ_GUI_NIGHT_PASSED`. Käyttäjä hyväksyi sääkehät ja hoverin
+visuaalikatselmuksessa 2026-07-28; 13.4 on suljettu.
+
 - [x] 13.1 feedback-taper (**hyväksytty 2026-07-28, myös asteikkolisäykset**) ·
   [ ] 13.2 speed-lattia · [ ] 13.3 dust ·
-  [ ] 13.4 chaos-käyrä · [ ] 13.5 VCA-laki · [ ] 13.6 zipper-mittaus ·
+  [x] 13.4 chaos-käyrä (**hyväksytty 2026-07-28, myös sääkehät**) ·
+  [ ] 13.5 VCA-laki · [ ] 13.6 zipper-mittaus ·
   [ ] 13.8 preamp loudness compensation
 
 ## Norns-portti (§14) — vasta night-first-vaiheen jälkeen

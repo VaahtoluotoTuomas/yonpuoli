@@ -263,7 +263,9 @@ CQSpec {
 
 		// SPEC §5.4 quantussy
 		this.prNum(\qFreq, 0.05, 500, \exp, 4.0);
-		this.prNum(\qChaos, 0, 1, \lin, 0.15);
+		// Curve +2 keeps the stepped drunken-wander country broad under the hand:
+		// noon maps to ~0.269 and 3/4 to ~0.545; DSP value semantics stay linear.
+		this.prNum(\qChaos, 0, 1, 2, 0.15);
 		this.prNum(\qShLag, 0, 0.2, 4, 0.004);
 		[\infra, \infra, \balcium, \infra, \audio].do { |range, i|
 			this.prEnum(("c" ++ (i + 1) ++ "Range").asSymbol, #[infra, balcium, audio], range);

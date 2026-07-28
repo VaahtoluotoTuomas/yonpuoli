@@ -27,7 +27,7 @@ CQGuiNightMap {
 	var blendPending, blendScheduled = false, lastBlendWrite = 0;
 	var <crescentViews, crescentNorms, activeCrescents, hoverCrescents, labels;
 	var <dolbyStates, <dolbyHover;
-	var <geometry, <eyeActive = false;
+	var <geometry, <eyeActive = false, <eyeHover = false;
 	var <eyeFreqNorm = 0.5, <eyeChaosNorm = 0.15;
 	var <speedNorms, <shellHover, <dialHover, <rangeHover, <bodyHover;
 	var <rimHover, <ringHover = false;
@@ -1137,8 +1137,14 @@ CQGuiNightMap {
 		};
 		[ringView, eyeView].do { |view|
 			view.acceptsMouseOver = true;
-			view.mouseOverAction = { |v, x, y| this.prHoverRing(v, x, y) };
-			view.mouseLeaveAction = { this.prHoverRing(nil, nil, nil) };
+			view.mouseOverAction = { |v, x, y|
+				this.prHoverEye(v, x, y);
+				this.prHoverRing(v, x, y);
+			};
+			view.mouseLeaveAction = {
+				this.prHoverEye(nil, nil, nil);
+				this.prHoverRing(nil, nil, nil);
+			};
 		};
 		almanacView.acceptsMouseOver = true;
 		almanacView.mouseOverAction = { |v, x, y| this.prHoverAlmanac(v, x, y) };
@@ -1266,6 +1272,23 @@ CQGuiNightMap {
 		if(near != ringHover) {
 			ringHover = near;
 			if(freed.not) { ringView.refresh };
+		};
+	}
+
+	// The eye is a larger weather body than its pupil: the four rings it reveals
+	// all belong to the same gesture. Like the press path, its cue yields to a
+	// planted cable before promising that the next hand will move the macro.
+	prHoverEye { |view, x, y|
+		var near = false, point;
+		if(geometry.notNil and: { view.notNil }) {
+			point = this.prStagePoint(view, x, y);
+			near = CQNightGeometry.distance(point, geometry[\eye])
+				<= CQNightMeasures.eyeHit
+				and: { overlay.patchAt(point).isNil };
+		};
+		if(near != eyeHover) {
+			eyeHover = near;
+			if(freed.not) { eyeView.refresh };
 		};
 	}
 
@@ -1791,7 +1814,7 @@ CQGuiNightMap {
 		origin = Rect.aboutPoint(geometry[\eye], CQNightMeasures.eyeLayerR,
 			CQNightMeasures.eyeLayerR).leftTop;
 		Pen.translate(origin.x.neg, origin.y.neg);
-		CQInkNight.drawEye(geometry[\eye], eyeActive,
+		CQInkNight.drawEye(geometry[\eye], eyeActive, eyeHover,
 			eyeFreqNorm, eyeChaosNorm, \night);
 	}
 

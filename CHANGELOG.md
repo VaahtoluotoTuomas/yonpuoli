@@ -75,6 +75,12 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Changed (Nocturne)
 
+- Widened the playable middle of the Quantussy Chaos hand with a `+2.0`
+  control curve while preserving direct values, snapshots and the 0–1 DSP
+  semantics. Night's storm iris now reveals four planted broken weather rings
+  at ¼, ½, ¾ and full, with a living front through them and a proper
+  cable-priority hover cue. The curve's listening pass and the rings' visual
+  review were accepted on 2026-07-28.
 - Gave all four Drawer pages one shared page frame: the same air between the
   tab row and the first ink, the same centred rail, and one content inset so
   the Workshop's labels, the loom's row names and the seed bank's boxes begin

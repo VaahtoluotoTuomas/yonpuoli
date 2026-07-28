@@ -245,7 +245,7 @@ Global:
 | Param | Range | Default | Curve | Notes |
 |---|---|---|---|---|
 | `qFreq` | 0.05–500 Hz | 4.0 | exp | Master Frequency — scales all castle rates |
-| `qChaos` | 0–1 | 0.15 | lin | global depth of internal castle→FM feedback; maps internally to 0–5 octaves of expo FM |
+| `qChaos` | 0–1 | 0.15 | curve +2 | global depth of internal castle→FM feedback; maps internally to 0–5 octaves of expo FM. The hand map widens stepped wander (fader 0.5 → ≈0.269, 0.75 → ≈0.545); direct values and snapshots retain linear 0–1 DSP semantics |
 | `qShLag` | 0–0.2 s | 0.004 | exp | slew on castle (S&H) outputs. 4 ms = declick only ≈ authentic steps; larger tames the network (SC extension) |
 
 Per castle `k` ∈ {1..5}:

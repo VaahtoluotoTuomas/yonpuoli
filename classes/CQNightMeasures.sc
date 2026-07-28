@@ -92,7 +92,7 @@ CQNightMeasures {
 	// did not move a pixel.
 
 	*eyeLayerR { ^48 }                      // px — the storm iris' own layer
-	*eyeHit { ^24 }                         // px — the qFreq/qChaos pupil
+	*eyeHit { ^42 }                         // px — the pupil plus four weather rings
 
 	// ---- the birds ----
 
@@ -227,6 +227,8 @@ CQNightMeasures {
 	*irisRayBase { ^4 }                     // a calm corona's ray
 	*irisRayChaos { ^5 }                    // ...and how far the storm reaches
 	*irisRayJitter { ^6 }
+	*irisWeatherInner { ^16 }               // calm front, outside the largest pupil
+	*irisWeatherSpan { ^24 }                // four 6 px seasons: ¼, ½, ¾, full
 	*birdBodyR { ^2.6 }
 	*skipGlyphR { ^6 }                      // the mouth's stationary skip mark
 	*chevronReach { ^6.5 }                  // the flip chevron's half-width

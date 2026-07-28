@@ -877,24 +877,93 @@ CQInkNight {
 			-0.91, 0.07, -0.44, 0.68, -0.15, 0.39]
 	}
 
+	// Four broken weather rings make the hand's quarters findable without
+	// turning the eye into a labelled meter. Their radii are exact, but their
+	// planted gaps rotate from season to season like imperfect growth rings.
+	*irisWeatherNorms { ^#[0.25, 0.5, 0.75, 1.0] }
+
+	*irisWeatherRadiusAt { |norm|
+		^CQNightMeasures.irisWeatherInner
+			+ (norm.clip(0, 1) * CQNightMeasures.irisWeatherSpan)
+	}
+
+	*irisWeatherRadii {
+		^this.irisWeatherNorms.collect { |norm| this.irisWeatherRadiusAt(norm) }
+	}
+
+	*irisWeatherArcs {
+		^[
+			[[0.03, 0.20], [0.31, 0.27], [0.70, 0.21]],
+			[[0.10, 0.24], [0.43, 0.18], [0.69, 0.25]],
+			[[0.00, 0.17], [0.26, 0.25], [0.62, 0.29]],
+			[[0.07, 0.27], [0.45, 0.22], [0.76, 0.16]]
+		]
+	}
+
+	*irisWeatherFrontArcs {
+		^[[0.02, 0.26, -0.45], [0.36, 0.25, 0.55], [0.70, 0.23, -0.15]]
+	}
+
+	*drawIrisWeather { |center, chaos, active = false, hover = false,
+		skin = \night|
+		var palette = CQInk.palette(skin), norms = this.irisWeatherNorms;
+		var visible = active or: { hover }, frontRadius;
+		if(visible.not) { ^this };
+
+		this.irisWeatherRadii.do { |radius, i|
+			var near = (chaos - norms[i]).abs <= 0.035;
+			var alpha = if(active) { 0.18 } { 0.11 };
+			if(near) { alpha = if(active) { 0.58 } { 0.42 } };
+			Pen.strokeColor = palette[
+				if(near) { \spark } { \whisper }
+			].copy.alpha_(alpha);
+			Pen.width = CQInk.strokes[\hairline];
+			this.irisWeatherArcs[i].do { |arc|
+				Pen.addArc(center, radius, arc[0] * 2pi, arc[1] * 2pi);
+			};
+			Pen.stroke;
+		};
+
+		// The living front is independent of pupil size: qFreq may open the
+		// centre, but only qChaos carries this contour through the four seasons.
+		frontRadius = this.irisWeatherRadiusAt(chaos);
+		Pen.strokeColor = palette[\spark].copy
+			.alpha_(if(active) { 0.92 } { 0.72 });
+		Pen.width = if(active) {
+			CQInk.strokes[\normal]
+		} {
+			CQInk.strokes[\hairline]
+		};
+		this.irisWeatherFrontArcs.do { |arc|
+			Pen.addArc(center, frontRadius + arc[2],
+				arc[0] * 2pi, arc[1] * 2pi);
+		};
+		Pen.stroke;
+	}
+
 	// §6.1 the ring's eye — the storm iris. Its ink is the actual weather:
 	// the pupil's aperture is qFreq, and the twelve rays scatter and reach
 	// with qChaos (even, short corona = calm; ragged reach = storm). Drawn by
 	// its own opaque layer so a storm repaint never re-inks the ring (§10).
-	*drawEye { |center, active = false, freqNorm = 0.5, chaosNorm = 0.15,
-		skin = \night|
+	*drawEye { |center, active = false, hover = false,
+		freqNorm = 0.5, chaosNorm = 0.15, skin = \night|
 		var palette = CQInk.palette(skin), jitters = this.irisJitters;
 		var pupil = CQNightMeasures.pupilMin
 			+ (freqNorm.clip(0, 1) * CQNightMeasures.pupilRange);
 		var chaos = chaosNorm.clip(0, 1);
-		Pen.fillColor = palette[\spark].copy.alpha_(if(active) { 0.55 } { 0.25 });
+		var engaged = active or: { hover };
+		this.drawIrisWeather(center, chaos, active, hover, skin);
+		Pen.fillColor = palette[\spark].copy.alpha_(
+			if(active) { 0.55 } { if(hover) { 0.38 } { 0.25 } });
 		Pen.addOval(Rect.aboutPoint(center, pupil, pupil));
 		Pen.fill;
-		Pen.strokeColor = palette[\spark].copy.alpha_(if(active) { 1.0 } { 0.7 });
+		Pen.strokeColor = palette[\spark].copy.alpha_(
+			if(active) { 1.0 } { if(hover) { 0.9 } { 0.7 } });
 		Pen.width = CQInk.strokes[\hairline];
 		Pen.addOval(Rect.aboutPoint(center, pupil + 1.5, pupil + 1.5));
 		Pen.stroke;
-		Pen.strokeColor = palette[\spark].copy.alpha_(if(active) { 0.8 } { 0.5 });
+		Pen.strokeColor = palette[\spark].copy.alpha_(
+			if(active) { 0.8 } { if(engaged) { 0.68 } { 0.5 } });
 		12.do { |i|
 			var angle = (i / 12 * 2pi) + (jitters[i] * chaos * 0.45);
 			var innerR = pupil + CQNightMeasures.irisGap;

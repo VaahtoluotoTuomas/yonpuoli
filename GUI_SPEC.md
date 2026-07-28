@@ -1143,11 +1143,15 @@ instrument keeps still water.* On the wood, lights move with signal, not with
 the wall clock; this is the permanent behavior, not a budget stopgap, and it
 stays even after the post-G2 offscreen cable cache. At the ring's center sits
 its **eye**, the §6.1 handle for qFreq/qChaos, drawn as the **storm iris**
-(amended 2026-07-21): the pupil's aperture is qFreq (Ø ≈ 5..14) and twelve
+(amended 2026-07-28): the pupil's aperture is qFreq (Ø ≈ 5..14) and twelve
 rays scatter and reach with qChaos — an even, short corona is calm weather, a
-ragged reach is storm. The ink is the actual state, never decoration. The eye
-lives on its own opaque layer so a storm repaint never re-inks the ring
-(§10); it brightens while held and never displays a value.
+ragged reach is storm. Hover or drag reveals four planted, broken weather
+rings at the hand's exact ¼, ½, ¾ and full positions; a living broken front
+travels through them with qChaos. They are unlabelled growth rings, not a
+meter, and the whole visible weather body shares the eye's cable-first hit.
+The ink is the actual state, never decoration. The eye lives on its own opaque
+layer so a storm repaint never re-inks the ring (§10); it brightens on hover
+and while held, and never displays a value.
 
 **The spesal coupling chords** (added 2026-07-22 — the night's answer to
 "which castle is this one attached to?"). The inner clock shows a castle's

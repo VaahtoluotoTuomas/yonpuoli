@@ -870,8 +870,9 @@ CQNightGeometryTest : UnitTest {
 					this.assert(CQNightGeometry.ringDistance(geo, curveMid) > 12,
 						"chord % -> % never doubles the river's own line (%x%)"
 							.format(k, partner, *size));
-					// the storm iris draws out to roughly 20 px at full chaos
-					this.assert(this.prDistance(curveMid, eye) > 20,
+					// the storm iris' outer weather season is the full visual body
+					this.assert(this.prDistance(curveMid, eye)
+						> CQInkNight.irisWeatherRadii.last,
 						"chord % -> % passes clear of the iris itself (%x%)"
 							.format(k, partner, *size));
 				};
@@ -1323,6 +1324,10 @@ CQNightGeometryTest : UnitTest {
 			this.assert(CQNightMeasures.eyeHit
 				<= CQNightMeasures.eyeLayerR,
 				"the eye answers no further than its own layer draws (%x%)"
+					.format(*size));
+			this.assert(CQInkNight.irisWeatherRadii.last
+				<= CQNightMeasures.eyeHit,
+				"every visible weather season belongs to the eye's hit body (%x%)"
 					.format(*size));
 		};
 	}

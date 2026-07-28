@@ -132,4 +132,21 @@ CQInkTest : UnitTest {
 		this.assertEquals(CQInkNight.levelCrescentFamily, \line,
 			"bird level keeps a neutral unity reference");
 	}
+
+	test_stormIrisCarriesFourPoeticButExactWeatherSeasons {
+		var norms = CQInkNight.irisWeatherNorms;
+		var radii = CQInkNight.irisWeatherRadii;
+		this.assertEquals(norms, #[0.25, 0.5, 0.75, 1.0],
+			"the four unlabelled growth rings still land on exact hand quarters");
+		this.assertEquals(radii, [22.0, 28.0, 34.0, 40.0],
+			"the weather seasons grow evenly inside the eye's own layer");
+		norms.do { |norm, i|
+			this.assertFloatEquals(CQInkNight.irisWeatherRadiusAt(norm), radii[i],
+				"season % owns its exact radius".format(i + 1), 1e-12);
+		};
+		this.assertEquals(CQInkNight.irisWeatherArcs.size, 4,
+			"every season is a distinct planted broken contour");
+		this.assert(CQInkNight.irisWeatherArcs.every { |arcs| arcs.size >= 3 },
+			"no weather ring collapses into a mechanical full circle");
+	}
 }

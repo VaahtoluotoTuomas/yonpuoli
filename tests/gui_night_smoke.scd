@@ -982,6 +982,15 @@ punchChecks = { |map|
 															freqBefore = state.get(\qFreq);
 															chaosBefore = state.get(\qChaos);
 															local = map.geometry[\eye]
+																- map.eyeView.bounds.leftTop;
+															map.eyeView.mouseOverAction.value(
+																map.eyeView, local.x, local.y);
+															check.value(map.eyeHover,
+																"hovering the eye reveals its weather seasons");
+															map.eyeView.mouseLeaveAction.value(map.eyeView);
+															check.value(map.eyeHover.not,
+																"leaving the eye rests its weather seasons");
+															local = map.geometry[\eye]
 																- map.geometry[\ringBox].leftTop;
 															map.ringView.mouseDownAction.value(
 																map.ringView, local.x, local.y, 0, 0, 1);
