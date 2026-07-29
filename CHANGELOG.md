@@ -67,7 +67,9 @@ tagged. Earlier tags describe internal development baselines.
   be retried without another reboot. The physical split-WASAPI candidate
   roundtrip also passed at server block 64→128→64: both values persisted
   exactly, both rebuilt GUIs restored sound and Night motion, and the final
-  server remained externally responsive.
+  server remained externally responsive. Physical Discard and confirmation
+  Cancel checks left the same server PID and persisted value untouched while
+  preserving or reverting the draft at their documented boundaries.
 - `CQAudioReconfigure`, a serverless candidate/rollback coordinator with
   explicit lifecycle callbacks and hermetic success, rollback, stale-callback,
   recorder-block and retry tests.

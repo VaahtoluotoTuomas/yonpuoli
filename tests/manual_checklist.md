@@ -1459,6 +1459,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
 - [x] Fyysinen candidate-roundtrip (split-WASAPI 2026-07-29): server block
       64→128→64 säilyy exact overlay-arvona, GUI/ääni/Night palautuvat
       kummallakin restartilla ja lopullinen serveri vastaa `/status`-kyselyihin
+- [x] Fyysinen Discard/Cancel (2026-07-29): Discard palauttaa draftin ilman
+      kirjoitusta/restartia; confirmation Cancel säilyttää draftin mutta peruu
+      restartin. PID ja persisted block 64 pysyvät muuttumattomina
 
 ### AIO-4 — signaalipresence ja fyysinen hardware-I/O-portti
 

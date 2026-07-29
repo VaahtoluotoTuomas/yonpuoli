@@ -1446,6 +1446,10 @@ Portit AIO-2:ssa ja Windows-rivinvaihtokorjauksessa: `CQ_COMPILE_OK`;
   64→128→64 tallentui exact generated overlayhin, GUI palasi kummankin
   restartin jälkeen, ääni ja Night-liike jatkuivat ja lopullinen `scsynth`
   vastasi kolmeen ulkoiseen `/status`-kyselyyn.
+- [x] Fyysiset draft-rajat 2026-07-29: Discard palautti 128→64 kirjoittamatta
+  tai restarttaamatta; confirmation Cancel säilytti 128-draftin mutta perui
+  restartin, minkä jälkeen Discard palautti 64:n. PID ja overlay pysyivät
+  muuttumattomina.
 
 Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
 36/36 luokkaa**; `CQ_SAFETY_PASSED`, `CQ_HOLD_OK`,
