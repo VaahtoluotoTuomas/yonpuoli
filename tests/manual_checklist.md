@@ -1449,8 +1449,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
 
 - [x] Clean/invalid/non-running draft ei kirjoita pendingiä eikä reboottia
 - [x] Aktiivinen recorder näyttää `stop REC before restarting audio`
-- [ ] REC-stop poistaa varoituksen heti ilman kenttämuutosta, palauttaa Applyn
-      ja disabled Apply ei piirrä hover-highlightia
+- [x] REC-stop poistaa varoituksen heti ilman kenttämuutosta, palauttaa Applyn
+      ja disabled Apply ei piirrä hover-highlightia (split-WASAPI 2026-07-30)
 - [x] Ensimmäinen Apply vain vahvistaa; cancel säilyttää draftin
 - [x] Candidate success hyväksyy capturoidun datan ja promottaa vasta readyssä
 - [x] Candidate fail poistaa pendingin, säilyttää draftin ja tekee yhden rollbackin

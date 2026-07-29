@@ -1452,6 +1452,10 @@ Portit AIO-2:ssa ja Windows-rivinvaihtokorjauksessa: `CQ_COMPILE_OK`;
   tai restarttaamatta; confirmation Cancel säilytti 128-draftin mutta perui
   restartin, minkä jälkeen Discard palautti 64:n. PID ja overlay pysyivät
   muuttumattomina.
+- [x] Fyysinen REC-lock-uusinta 2026-07-30: REC start lukitsi Applyn ilman
+  hover-cuesta, REC stop poisti varoituksen ja palautti validin draft-gaten
+  ilman kenttämuutosta, Discard palautti block 64:n ja sama serveri vastasi
+  kolmeen ulkoiseen `/status`-kyselyyn.
 
 Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
 36/36 luokkaa**; `CQ_SAFETY_PASSED`, `CQ_HOLD_OK`,
