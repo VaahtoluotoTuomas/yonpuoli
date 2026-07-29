@@ -24,6 +24,7 @@ CQSynthDefs {
 	// fireflies. Its GUI ink lives on a dedicated lightweight layer, so this
 	// rate no longer implies repainting either complete Coco shell.
 	*phaseReplyHz { ^15 }
+	*ioPresenceReplyHz { ^15 }
 
 	// §13.8's accepted partial preamp compensation. Drive still raises level
 	// substantially; one dB per doubling merely stops loudness from masking the
@@ -44,10 +45,18 @@ CQSynthDefs {
 			var inChans = config[\inChans];
 			var micChan = config[\micChan];
 			var liveGain = \liveGain.kr(CQSpec.default(\liveGain), CQSpec.lag(\liveGain));
-			var liveL = SoundIn.ar(inChans[0]) * liveGain;
-			var liveR = SoundIn.ar(inChans[1] ? inChans[0]) * liveGain;
-			var mic = if(micChan.isNil) { DC.ar(0) } {
+			// AIO-4 presence taps the hardware ports before either trim and before
+			// the preamp source selector. The audio expressions below are otherwise
+			// unchanged: these names only expose the already-read SoundIn signals.
+			var rawLiveL = SoundIn.ar(inChans[0]);
+			var rawLiveR = SoundIn.ar(inChans[1] ? inChans[0]);
+			var rawMic = if(micChan.isNil) { DC.ar(0) } {
 				SoundIn.ar(micChan)
+			};
+			var liveL = rawLiveL * liveGain;
+			var liveR = rawLiveR * liveGain;
+			var mic = if(micChan.isNil) { DC.ar(0) } {
+				rawMic
 					* \micGain.kr(CQSpec.default(\micGain), CQSpec.lag(\micGain))
 			};
 			var deckA = In.ar(\deckABus.ir(0));
@@ -75,6 +84,10 @@ CQSynthDefs {
 			Out.ar(\preBBus.ir(0), preB);
 			Out.ar(\modSrcBus.ir(0) + 10, [envA, envB]);   // canonical slots 10/11 (ARCH §3.2)
 			Out.ar(\dryBus.ir(0), [liveL, liveR] + (mic * 0.7)); // untreated monitor feed
+			// Telemetry only, canonical [live L, live R, mic]. A missing mic is
+			// the rawMic DC zero above, so the message shape never changes.
+			SendPeakRMS.kr([rawLiveL, rawLiveR, rawMic],
+				this.ioPresenceReplyHz, 3, '/cq_io_inputs');
 		})
 	}
 

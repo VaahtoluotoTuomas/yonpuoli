@@ -16,10 +16,9 @@ CQGui {
 	// an audio-rate mean (§9) — ±1 settled, near 0 shuttling. Both nil until the
 	// server reports.
 	var <phaseNorms, <phaseDirs, <phaseSkipHz;
-	// AIO-4 caches post-safety master presence even while its Drawer page is
-	// hidden. The three input slots stay nil until a stable hardware-input
-	// telemetry path is accepted; listeners are paced and notified only while
-	// the Audio tab is the visible workbench page.
+	// AIO-4 caches raw hardware-input and post-safety master presence even while
+	// its Drawer page is hidden. Listeners are paced and notified only while the
+	// Audio tab is the visible workbench page.
 	var <ioInputPresence, <masterPresence, audioPresenceListeners;
 	var <audioPresenceNotifyCount = 0;
 	var audioPresencePending = false, audioPresenceGeneration = 0;
@@ -489,9 +488,9 @@ CQGui {
 		})
 	}
 
-	// Coalesce presence caches onto one page notification stream so neither a
-	// current nor future source can make the Audio workbench paint faster than
-	// its 15 Hz ambient ceiling.
+	// `/cq_meters` arrives at 20 Hz and `/cq_io_inputs` at 15 Hz. Coalesce both
+	// caches onto one page notification stream so their sum can never make the
+	// Audio workbench paint faster than its 15 Hz ambient ceiling.
 	prQueueAudioPresence {
 		var wait, generation;
 		if(cleaned or: { this.audioPageVisible.not }) { ^this };
@@ -556,6 +555,9 @@ CQGui {
 				meterFuncs[\master].value(msg[3], msg[5]);
 			}.defer;
 		}, '/cq_meters');
+		OSCdef(\cq_gui_io_inputs, { |msg|
+			{ this.audioInputPresenceFrame([msg[3], msg[5], msg[7]]) }.defer;
+		}, '/cq_io_inputs');
 		OSCdef(\cq_gui_gr, { |msg|
 			{ meterFuncs[\gr].value(max(msg[3] ? 0, msg[4] ? 0)) }.defer;
 		}, '/cq_gr');
@@ -927,7 +929,7 @@ CQGui {
 		audioPresenceListeners.clear;
 		#[cq_gui_meters, cq_gui_gr, cq_gui_coco, cq_gui_castle,
 			cq_gui_spesal, cq_gui_hot, cq_gui_aura, cq_gui_phase,
-			cq_gui_charge].do { |k|
+			cq_gui_charge, cq_gui_io_inputs].do { |k|
 			OSCdef.all[k] !? { |d| d.free }
 		};
 	}

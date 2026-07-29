@@ -696,8 +696,7 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     physical Windows WASAPI server. Full directional discovery is reopened as
     a stopped-server workflow.
   - Input keeps `live l`, `live r` and `mic off/on · ch n` in stable rows plus
-    three reserved presence tracks. They remain unknown (`—`) until a stable
-    hardware-gated raw-input source is accepted. Output keeps main L/R, stems off/on, both
+    three thin raw-presence tracks. Output keeps main L/R, stems off/on, both
     stem channels and record-4ch in stable rows plus post-safety master
     presence. Mic/stem off dims rows but never removes them. `micGain` remains
     Workshop's only interactive mic-gain path; Audio merely repeats `MIC LIVE`
@@ -725,12 +724,12 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     remains registered but stops answering is shown as
     `server not responding · restart audio`; confirmed recovery forces that
     owned local process down before boot and does not write an Audio profile.
-  - AIO-4 reuses the existing post-safety master pair and renders coarse
-    quantized presence only. The GUI caches while hidden, paces the listener to
-    ≤15 Hz, primes Audio on open and repaints only changed presence geometry.
-    Listener and pending generation are released with the page/window. The
-    attempted `/cq_io_inputs` raw-input block was withdrawn after a reproducible
-    Windows WASAPI server hang; no new input UGen remains in the runtime graph.
+  - AIO-4 taps raw live L/R/mic before their gains, reuses the existing
+    post-safety master pair and renders coarse quantized presence only. The GUI
+    caches both streams while hidden, combines their 15/20 Hz arrivals into one
+    ≤15 Hz listener stream, primes Audio on open and repaints only changed
+    presence geometry. Listener, pending generation and `/cq_io_inputs` OSCdef
+    are released with the page/window.
 - **Inspector** = the existing 16×22 grid, demoted but upgraded with
   **touch-and-listen**: press a cell = audition ± 0.3 (mouse button = sign)
   until release, same bookkeeping and revert law as §4.1; double-click =
@@ -789,6 +788,7 @@ meters:
 | G1 | `/cq_aura` | 16 source magnitudes (lagged \|amp\|, canonical source order) | jack glow, cable pulse, root/castle/body glow |
 | G2 | `/cq_phase` | coco read-head position 0..1, **the read direction as an audio-rate mean** (`Lag.ar(dir, 0.15)`) and **the skip rate in Hz** (added 2026-07-22: impulses of height `SampleRate` through a one-pole settle at their own rate, because a `Lag`'s DC gain is 1 — so the value *is* triggers/second, over the combined reset `\t_skip + skipTrig` that Phasor actually obeys, smoothed 0.2 s and self-clearing. It exists because a rate this fast cannot be drawn as motion — see §16.6), replyID 1/2. Landed 2026-07-21 at 5 Hz; raised to the shared **15 Hz ambient ceiling** on 2026-07-29 after the comet was isolated on one transparent, hit-through layer per Coco. Ordinary phase motion now redraws only the dot and tail, never the ≈30-Pen-call shell. The direction is a *mean*, not a sample, because a flip banana can reverse the loop far faster than 15 Hz can sample it: ±1 = settled, near 0 = shuttling. Deriving direction client-side from consecutive positions aliased and was replaced | the spiral spark, the comet's tail and the mouth chevron; the rate is the struck mark's weight |
 | G2 | `/cq_charge` | the 9 gate/trig destination sums (post-weight, pre-Schmitt); landed 2026-07-21 as **three 15 Hz blocks** sent by the synths that already compute those sums — coco 1 (replyID 1) and coco 2 (replyID 2) report their own flip/skip pair, the quantussy (replyID 3) all five spesal sums. Each sum is **peak-held at audio rate** (instant rise, 0.15 s fall) before `A2K`, because a trigger crossing can last a single sample and a plain control-rate sample would miss it; the fall is also §16.8's fired bloom. No second copy of the sums exists in the graph, so a lamp can never disagree with its Schmitt | charge lamps — the answer to "why is my flip banana silent" — and, for `cocoN_skip`, the read head's struck mark (§16.6) |
+| AIO-4 | `/cq_io_inputs` | one ≤15 Hz three-channel raw-input presence block from `\cqInput`, canonical order `[rawLiveL, rawLiveR, rawMic]`, missing mic = 0; the taps precede `liveGain`, `micGain` and preamp source selection and write no bus/output | Audio page's three “does anything reach this configured port?” tracks; never evidence for a draft device |
 
 `/cq_charge` canonical channel order = the matrix destination order filtered
 to gates/trigs, nine channels: `coco1_flip, coco1_skip, coco2_flip,
@@ -996,12 +996,12 @@ gate, manual_checklist blocks in the established copy-pasteable format.
   success commits after running, candidate failure preserves the rejected
   draft over one restored last-working session, rollback failure stays silent,
   and not-saved retries persistence without a third reboot.
-- **AIO-4 — presence + physical gate:** implemented shared post-safety master
-  cache/listeners and visible-tab repaint ceiling/cleanup. Raw-input telemetry
-  is reopened after the first physical implementation was withdrawn for a
-  reproducible Windows WASAPI server hang. The remaining gate includes a stable
-  raw-input source plus the real default/single/split/absent-device, mic, main,
-  stem and REC listening checklist.
+- **AIO-4 — presence + physical gate:** implemented raw input telemetry, shared
+  post-safety master cache/listeners and visible-tab repaint ceiling/cleanup.
+  The raw tap was restored after the controlled no-tap baseline still hung and
+  removing live device enumeration restored a responsive engine. Its isolated
+  physical recheck plus the default/single/split/absent-device, mic, main, stem
+  and REC listening checklist remain.
 - **AIO-5 — safe device discovery:** move directional
   `ServerOptions.inDevices/outDevices` enumeration to a stopped-server boundary
   before restoring the runtime `refresh devices` control. Running WASAPI must

@@ -1,7 +1,6 @@
-// AIO-4 Qt smoke: test-injected input and real post-safety-master caches remain
-// live while Audio is hidden, but only the visible Audio page receives a paced
-// repaint stream. Runtime input slots stay unknown until a stable hardware
-// telemetry path is accepted.
+// AIO-4 Qt smoke: the raw-input/post-safety-master caches remain live while
+// Audio is hidden, but only the visible Audio page receives a paced repaint
+// stream. Free removes both its listener and the namespaced OSC receiver.
 // Run only through tests/run_sclang_gate.ps1.
 
 (
@@ -31,8 +30,8 @@ var abort = { |error|
 				var hiddenFrames = page.presenceFrameCount;
 				var hiddenPaints = page.presencePaintCount;
 				check.value(gui.audioPresenceListenerCount == 1
-					and: { OSCdef.all[\cq_gui_io_inputs].isNil },
-					"one Audio owner exists without the withdrawn input OSC receiver");
+					and: { OSCdef.all[\cq_gui_io_inputs].notNil },
+					"one Audio owner listens through one namespaced input OSCdef");
 
 				24.do { |index|
 					var hot = index.even;
@@ -119,7 +118,7 @@ var abort = { |error|
 									check.value(gui.audioPresenceListenerCount == 0
 										and: { OSCdef.all[\cq_gui_io_inputs].isNil }
 										and: { OSCdef.all[\cq_gui_meters].isNil },
-										"free removes the page listener and master telemetry OSCdef");
+										"free removes the page listener and both telemetry OSCdefs");
 									if(ok) {
 										"CQ_GUI_AUDIO_PRESENCE_PASSED".postln;
 										0.exit;

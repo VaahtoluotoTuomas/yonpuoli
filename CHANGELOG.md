@@ -15,10 +15,11 @@ tagged. Earlier tags describe internal development baselines.
   misleading inert discard), and recovery forces the exact hung local server
   process down, waits for process/status teardown, then boots instead of racing
   a second process onto its port.
-- Withdrew AIO-4's new raw-input `SendPeakRMS` block after physical Windows
-  WASAPI testing reproducibly left `scsynth` unresponsive. The input graph is
-  restored to the last hardware-tested form; post-safety master presence and
-  the paced/hidden-page GUI infrastructure remain.
+- Root-caused the apparent AIO-4 audio regression to live
+  `_ListAudioDevices` enumeration, not the raw-input telemetry: the hang
+  reproduced after `SendPeakRMS` was withdrawn, while removing enumeration
+  restored sound, Night motion and repeated `/status` replies. The raw tap is
+  reinstated behind its own isolated physical WASAPI recheck.
 - Removed runtime `_ListAudioDevices` enumeration from Audio construction:
   querying `ServerOptions.devices/inDevices/outDevices` after scsynth claimed
   a split Windows WASAPI pair reproducibly wedged the server. Runtime exposes
@@ -46,11 +47,12 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Added
 
-- AIO-4 signal-presence infrastructure: Audio reuses the existing post-safety
-  master meter; `CQGui` caches and paces presence data to at most 15 visible
-  page notifications, skips hidden Audio paints, primes from cache on open and
-  releases the owner on teardown. Raw input slots remain unknown pending a
-  separately hardware-gated implementation.
+- AIO-4 signal presence: `\cqInput` reports canonical raw live L/R/mic peaks
+  before gain and preamp selection at 15 Hz, while Audio reuses the existing
+  post-safety master meter. `CQGui` caches both streams, coalesces their
+  combined 20/15 Hz arrivals to at most 15 visible page notifications, skips
+  hidden Audio paints, primes from cache on open and releases the owner plus
+  namespaced OSCdef on teardown.
 - AIO-3 confirmed Audio restart: inline impact confirmation, active-recorder
   gate, facade-owned generation-safe candidate reboot, exactly one automatic
   last-working rollback, terminal silent failure diagnostics and symbolic
