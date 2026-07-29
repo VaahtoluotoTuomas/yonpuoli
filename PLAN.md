@@ -1178,7 +1178,7 @@ Ink & Phosphor -työpenkiltä kuin muut Drawer-sivut.
 | UI-kenttä | config-totuus | laki |
 |---|---|---|
 | device mode | `device` | default = `nil`; single = yksi exact String; split = `[inDevice, outDevice]`, jossa kumpikin voi olla nil |
-| input/output device | `device` | valitaan `ServerOptions.devices`-snapshotista tai säilytetään nykyisenä puuttuvana arvona; ei substring-arvausta |
+| input/output device | `device` | runtime näyttää vain exact konfiguroidut endpointit tai system defaultin; directional discovery palautetaan vasta stopped-server-portin takana, ei substring-arvausta |
 | sample rate | `sampleRate` | vain CQConfigin 44.1/48/96 kHz |
 | server block | `blockSize` | vain CQConfigin 16/32/64/128/256/512 |
 | hardware buffer | `hardwareBufferSize` | `driver default` = nil tai validoitu 16…8192 |
@@ -1298,9 +1298,11 @@ Drawer-sivua tai muuttaa uuden session statusriviä.
 
 ### AIO.7 Laitelista ja signaalin vahvistus
 
-- `ServerOptions.devices` luetaan vain sivun rakennuksessa ja käyttäjän
-  `refresh devices` -toiminnolla, ei drawFuncissa, timerissa tai jokaisella
-  Drawer-openilla. `system default` on aina ensimmäinen valinta.
+- Running Audio -sivu ei kutsu `_ListAudioDevices`-primitiiviä lainkaan.
+  Fyysinen Windows WASAPI -portti osoitti konstruktorin
+  `ServerOptions.devices/inDevices/outDevices`-kyselyn jumittavan jo endpointit
+  omistavan `scsynth`in. Runtime-katalogi sisältää exact konfiguroidut nimet ja
+  `system default` -valinnan; täysi discovery siirretään stopped-server-porttiin.
 - Jos aktiivinen tai draft-laitenimi ei enää ole listassa, säilytä ja näytä
   exact String danger-/warning-tilassa `device not currently reported`;
   älä vaihda sitä automaattisesti ensimmäiseen laitteeseen.
@@ -1436,13 +1438,15 @@ Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
 
 - [ ] Vakaa raw-input-telemetria; ensimmäinen `SendPeakRMS`-toteutus vedettiin
   takaisin Windows WASAPI -jumituksen vuoksi.
+- [ ] Täysi directional device discovery stopped-server-rajalla; running-sivun
+  `_ListAudioDevices` on poistettu toistettavan WASAPI-jumin vuoksi.
 - [x] Master-cache/listener, visible-page refresh gate ja
   paint-count-/cleanup-testit.
 - [x] Qt-paint-batch-portti todistaa, ettei piilotettu Audio-sivu piirrä,
   yhdistetty 40 Hz input/master-testivirta ylitä avoimella sivulla 15 Hz:ä
   eikä listener/OSCdef jää eloon freen jälkeen.
 - [x] Compile, unit, Audio/presence/Drawer/shell-smoket sekä muuttumattomat
-  safety- ja hold-portit ovat vihreitä: **13 460 passia / 0 failurea /
+  safety- ja hold-portit ovat vihreitä: **13 465 passia / 0 failurea /
   36/36 luokkaa**, `CQ_GUI_AUDIO_PRESENCE_PASSED`, `CQ_SAFETY_PASSED` ja
   `CQ_HOLD_OK`.
 - [ ] Fyysinen hardware-I/O-katselmus, vähintään:

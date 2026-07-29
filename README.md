@@ -64,10 +64,11 @@ plugins are required.
 1. Clone the repository and install SuperCollider.
 
 2. Copy `config.example.scd` to `config.scd`. The copy is ignored by Git and
-   holds machine-specific audio, MIDI, and path settings. The Drawer’s Audio
-   page reads `ServerOptions.inDevices` and `outDevices`, removes only exact
-   duplicates, and keeps input/output choices directional. If input and output
-   are separate Windows devices, use a pair from the same host API:
+   holds machine-specific audio, MIDI, and path settings. During the current
+   Windows stability gate, the running Audio page exposes only the exact
+   configured endpoint(s): live `_ListAudioDevices` discovery was withdrawn
+   because it reproducibly wedged an already-running WASAPI server. If input
+   and output are separate Windows devices, use a pair from the same host API:
 
    ```supercollider
    device: ["Windows WASAPI : Microphone (...)", "Windows WASAPI : Speakers (...)"]

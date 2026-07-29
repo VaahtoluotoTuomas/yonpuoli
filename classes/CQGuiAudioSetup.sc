@@ -18,6 +18,7 @@ CQGuiAudioSetup {
 	var <deviceSnapshot = #[], <inputDeviceSnapshot = #[];
 	var <outputDeviceSnapshot = #[], <singleDeviceSnapshot = #[];
 	var <deviceReadCount = 0, <deviceError;
+	var <deviceRefreshAvailable = true;
 	var <step = \compact, <metrics, <pageWidth = 1272, <skin = \night;
 	var ioBand, railLayout, topPad, hostGap, restartGap, bottomPad;
 	var hostFirstSpacer, hostTitleSpacer, refreshRightSpacer;
@@ -59,6 +60,32 @@ CQGuiAudioSetup {
 
 	*hardwareBufferText { |frames|
 		^if(frames.isNil) { "driver default" } { frames.asString }
+	}
+
+	// `_ListAudioDevices` touches the host audio subsystem. On the physical
+	// Windows WASAPI split-device path, invoking it while scsynth owns the
+	// endpoints reproducibly wedged the running server. The runtime page uses
+	// only the exact configured endpoint(s); full discovery belongs to a
+	// separately gated stopped-server workflow.
+	*configuredDeviceCatalog { |device|
+		var mode = CQAudioConfig.deviceMode(device);
+		var inputs = [], outputs = [], all;
+		switch(mode,
+			\single, {
+				inputs = [device.asString];
+				outputs = [device.asString];
+			},
+			\split, {
+				device[0] !? { |name| inputs = [name.asString] };
+				device[1] !? { |name| outputs = [name.asString] };
+			}
+		);
+		all = CQAudioConfig.uniqueDeviceNames(inputs ++ outputs);
+		^(
+			all: all,
+			inputs: CQAudioConfig.uniqueDeviceNames(inputs),
+			outputs: CQAudioConfig.uniqueDeviceNames(outputs)
+		)
 	}
 
 	*presenceThreshold { ^(-48).dbamp }
@@ -463,13 +490,14 @@ CQGuiAudioSetup {
 		presenceGains = [
 			CQSpec.default(\liveGain), CQSpec.default(\micGain)
 		];
-		deviceProvider = deviceProvider ?? { {
-			(
-				all: ServerOptions.devices,
-				inputs: ServerOptions.inDevices,
-				outputs: ServerOptions.outDevices
-			)
-		} };
+		if(deviceProvider.isNil) {
+			deviceRefreshAvailable = false;
+			deviceProvider = {
+				this.class.configuredDeviceCatalog(model.activeAt(\device))
+			};
+		} {
+			deviceRefreshAvailable = true;
+		};
 		transactionController = transactionController ?? {
 			(
 				lifecycle: { Cocoquantus.lifecycleState },
@@ -503,7 +531,13 @@ CQGuiAudioSetup {
 		var palette = CQInk.palette(skin), sizes = this.class.layoutFor(step);
 		var railW = CQGuiScale.railWidth(step, pageWidth);
 		var columns = CQGuiScale.columns(railW, 2, metrics[\gutter]);
-		refreshButton = this.prButton("refresh devices", true);
+		refreshButton = this.prButton(
+			if(deviceRefreshAvailable) {
+				"refresh devices"
+			} {
+				"configured devices"
+			},
+			deviceRefreshAvailable);
 		discardButton = this.prButton("discard changes", false);
 		applyButton = this.prButton("apply & restart audio", false);
 		refreshButton.action = { this.refreshDevices };
@@ -921,7 +955,7 @@ CQGuiAudioSetup {
 				allMenus.do { |menu| menu.enabled = false };
 				refreshButton.enabled = false;
 			} {
-				refreshButton.enabled = true;
+				refreshButton.enabled = deviceRefreshAvailable;
 			};
 			if(confirming) {
 				discardButton.label = "cancel";

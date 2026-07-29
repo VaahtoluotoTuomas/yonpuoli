@@ -1398,7 +1398,7 @@ Katso compactissa ja roomyssa:
 AIO-2:n kaikki kenttävalinnat koskevat vain `CQAudioConfig.draft`ia.
 `discard changes` palauttaa activen. Tässä historiallisessa portissa
 `apply & restart audio` oli vielä rakenteellisesti lukittu AIO-3:een.
-Laitelista lukee erilliset
+Injektoitu laitelista lukee erilliset
 `ServerOptions.inDevices/outDevices`-snapshotit, exact-dedupplikoi ne ja näyttää
 single-tilassa vain niiden exact-intersectionin. Se ei päättele kanavamääriä tai
 host APIa nimestä.
@@ -1465,6 +1465,12 @@ tulee olemassa olevasta post-safety-mittarista. Ensimmäinen raw-input-
 jälkeen, joten `into yölahti` -presence näyttää nyt rehellisesti `—`. Presence
 ei todista draft-laitetta eikä fyysistä kaapelointia ennen restartia ja
 kuuntelua.
+
+Running Audio -sivu näyttää nyt `configured devices` ja vain aktiivisen
+configin exact endpointit. Kontrolli on tarkoituksella disabled:
+`_ListAudioDevices`-rescan jumitti fyysisessä portissa jo käynnissä olevan
+Windows WASAPI -palvelimen. Täysi lista palautetaan vasta stopped-server-
+discoveryllä.
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/compile_check.scd

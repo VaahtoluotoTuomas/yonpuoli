@@ -689,12 +689,12 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     device mode and exact device String(s). Default/single mode uses one long
     device row; split mode uses input/output rows. Long names preserve their
     beginning and use a tail ellipsis before Qt receives the String, so both
-    text and highlight remain one row. Device discovery occurs once at page
-    construction and only again through `refresh devices`. It reads directional
-    `ServerOptions.inDevices/outDevices`, removes only exact duplicate Strings,
-    offers only their exact intersection in single-device mode, and uses each
-    directional list in split mode. An opened list shows at most sixteen
-    scrollable rows; no fuzzy name/host-API parsing hides endpoints.
+    text and highlight remain one row. The runtime catalog is constructed from
+    the exact configured endpoint(s), without host discovery while scsynth is
+    running; the disabled control reads `configured devices`. The former live
+    `_ListAudioDevices` path was withdrawn after it reproducibly wedged the
+    physical Windows WASAPI server. Full directional discovery is reopened as
+    a stopped-server workflow.
   - Input keeps `live l`, `live r` and `mic off/on · ch n` in stable rows plus
     three reserved presence tracks. They remain unknown (`—`) until a stable
     hardware-gated raw-input source is accepted. Output keeps main L/R, stems off/on, both
@@ -983,8 +983,9 @@ gate, manual_checklist blocks in the established copy-pasteable format.
 - **AIO-2 — draft + atomic profile:** activate the fields and state ink;
   pending roundtrip, last-working preservation, atomic promote/backup and
   `running · not saved` recovery. Tests use only `tests/tmp` and injected file
-  adapters; no user's base config is touched. Implemented: directional/exact-
-  deduplicated device menus, all nine draft controls, invalid/dirty/discard
+  adapters; no user's base config is touched. Implemented in the injected
+  serverless provider: directional/exact-deduplicated device menus, all nine
+  draft controls, invalid/dirty/discard
   states, generated sibling load, validated pending roundtrip, atomic replace,
   one backup and retryable not-saved state.
 - **AIO-3 — confirmed restart + rollback:** facade transaction, recorder gate,
@@ -1001,6 +1002,10 @@ gate, manual_checklist blocks in the established copy-pasteable format.
   reproducible Windows WASAPI server hang. The remaining gate includes a stable
   raw-input source plus the real default/single/split/absent-device, mic, main,
   stem and REC listening checklist.
+- **AIO-5 — safe device discovery:** move directional
+  `ServerOptions.inDevices/outDevices` enumeration to a stopped-server boundary
+  before restoring the runtime `refresh devices` control. Running WASAPI must
+  never be queried through `_ListAudioDevices`.
 
 ---
 

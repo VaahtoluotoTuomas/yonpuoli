@@ -576,14 +576,16 @@ Candidate failure triggers exactly one automatic reboot of the previous
 last-working Event; rollback failure leaves the lifecycle failed and silent.
 No callback from an older session generation may publish state or files.
 
-Audio I/O can select only devices the OS/driver reports. It does not install
-drivers, create loopbacks/Aggregate Devices or bridge incompatible host APIs.
-Discovery uses `ServerOptions.inDevices` and `outDevices`: exact duplicate
-Strings collapse in driver order, single-device mode offers their exact
-intersection, and split mode keeps the directions separate. Similar names are
-never fuzzy-merged or parsed as host-API metadata. Device-list membership is
-not evidence of channel capacity. Structural validation therefore cannot
-replace the physical input/main/stem listening gate.
+Audio I/O does not install drivers, create loopbacks/Aggregate Devices or
+bridge incompatible host APIs. The running page must not call
+`_ListAudioDevices`: physical Windows WASAPI testing showed that
+`ServerOptions.inDevices/outDevices` enumeration can wedge an already-owned
+endpoint. Until discovery is moved behind a stopped-server boundary, runtime
+choices are the exact configured endpoint(s) plus system default and the
+disabled control reads `configured devices`. Future directional discovery
+must collapse only exact duplicate Strings; similar names are never
+fuzzy-merged or parsed as host-API metadata. Device-list membership is not
+evidence of channel capacity.
 
 ### 7.2 Existing safety and hardware notes
 

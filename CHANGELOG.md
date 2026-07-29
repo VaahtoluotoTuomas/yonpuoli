@@ -19,6 +19,11 @@ tagged. Earlier tags describe internal development baselines.
   WASAPI testing reproducibly left `scsynth` unresponsive. The input graph is
   restored to the last hardware-tested form; post-safety master presence and
   the paced/hidden-page GUI infrastructure remain.
+- Removed runtime `_ListAudioDevices` enumeration from Audio construction:
+  querying `ServerOptions.devices/inDevices/outDevices` after scsynth claimed
+  a split Windows WASAPI pair reproducibly wedged the server. Runtime exposes
+  only exact configured endpoints and labels discovery `configured devices`;
+  full discovery awaits a stopped-server boundary.
 - Moved the technical Audio page to the Drawer's rightmost tab, after the
   Inspector, Workshop, Spellbook and Memory musical/workflow pages.
 - Adopted **Yölahti** as the independent product identity while retaining the
@@ -57,7 +62,7 @@ tagged. Earlier tags describe internal development baselines.
   recorder-block and retry tests.
 - AIO-2 draft editing for all nine Audio startup fields, with one-based channel
   presentation, exact invalid/dirty states and discard that never touches the
-  running server. Device discovery now uses directional `inDevices`/
+  running server. The injected serverless discovery adapter uses directional `inDevices`/
   `outDevices`, removes only exact duplicates, limits long menus to sixteen
   scrollable one-line rows and pre-ellipsizes long names so row highlight and
   text cannot disagree. Embedded CR/LF/tab/control whitespace from Windows

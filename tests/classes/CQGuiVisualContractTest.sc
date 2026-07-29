@@ -74,6 +74,24 @@ CQGuiVisualContractTest : UnitTest {
 			"combined input/master presence is paced to 15 Hz");
 	}
 
+	test_runtimeAudioCatalogUsesOnlyConfiguredEndpoints {
+		var input = "Windows WASAPI : Lake Mic";
+		var output = "Windows WASAPI : Lake Phones";
+		var split = CQGuiAudioSetup.configuredDeviceCatalog([input, output]);
+		var single = CQGuiAudioSetup.configuredDeviceCatalog(output);
+		var defaults = CQGuiAudioSetup.configuredDeviceCatalog(nil);
+		this.assertEquals(split[\inputs], [input],
+			"runtime split catalog keeps only the exact configured input");
+		this.assertEquals(split[\outputs], [output],
+			"runtime split catalog keeps only the exact configured output");
+		this.assertEquals(single[\inputs], [output],
+			"a configured single device remains bidirectional");
+		this.assertEquals(single[\outputs], [output],
+			"single-device output matches the same exact endpoint");
+		this.assert(defaults[\all].isEmpty,
+			"system default needs no host-device enumeration");
+	}
+
 	// The loom keeps large playable knots at every Drawer size step; its cell
 	// width is what sets the rail all five pages align to (CQGuiScale).
 	test_inspectorUsesPlayablePatchLoomCellsAtEveryStep {

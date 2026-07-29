@@ -231,6 +231,11 @@ centred = { |inner, outer|
 							check.value(gui.shellState.drawerTab == \audio
 								and: { drawer.audioSetup.deviceReadCount == 1 },
 								"the fifth Audio page is selectable without rescanning devices");
+							check.value(drawer.audioSetup.deviceRefreshAvailable.not
+								and: { drawer.audioSetup.refreshButton.label
+									== "configured devices" }
+								and: { drawer.audioSetup.refreshButton.enabled.not },
+								"runtime Audio never enumerates devices over owned WASAPI endpoints");
 							gui.shell.toggleDrawer;
 							gui.shell.toggleDrawer;
 							check.value(gui.shellState.drawerTab == \audio
