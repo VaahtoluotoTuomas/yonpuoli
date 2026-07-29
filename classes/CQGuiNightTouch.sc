@@ -138,9 +138,9 @@ CQGuiNightTouch {
 		^nil
 	}
 
-	// §7.1 compass writes: the law's ceiling is 60 Hz; 30 is chosen because the
-	// weights are unlagged control buses (§15 — a banana contact is a step too),
-	// so faster stepping buys no audible smoothness, only server traffic
+	// §7.1 compass writes: the law's ceiling is 60 Hz; 30 is chosen because
+	// production readers already apply prMatrixWeight's 50 ms smoother (§15),
+	// so faster language stepping buys no useful resolution, only server traffic
 	*compassWritePeriod { ^1/30 }
 
 	// §7.2 grow/wither repeat while held

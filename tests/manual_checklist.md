@@ -1205,8 +1205,8 @@ CQ.set(\coco1Speed, 1500);     // helmi kelan sisimpään päähän
 CQ.free;
 ```
 
-- [ ] N10 hyväksytty (pvm: ______ — vihje ja teko samaa mieltä, sydämen kehä
-      luettava, chevronin painovihje luettava, kelaus ulomman kierroksen
+- [x] N10 hyväksytty (pvm: 2026-07-29 — vihje ja teko samaa mieltä, sydämen
+      22 px kehä ja chevronin painovihje luettavat, kelaus ulomman kierroksen
       kautta hyväksyttävä)
 
 ### 13.5 — VCA-lain korvaportti
@@ -1265,6 +1265,74 @@ p = 1,5:tä.
       hienovarainen 0,05–0,10, fraseeraava keskialue, täydet aukot vasta
       korkealla painolla, hallittu positiivinen kaari ja feedback-duck;
       ei character-kytkintä)
+
+### 13.6 — Matriisiliu’un zipper-portti
+
+Mittaus käyttää toteutuksen todellista lakia. Vanha suunnitelmateksti kutsui
+weight-busseja lagittomiksi, mutta `CQSynthDefs.prMatrixWeight` on silottanut
+kaikkia kohteita 50 ms:llä M1:stä asti. Portti vertaa tuotannon 30 Hz + 50 ms
+-polkua yhtä lailla silotettuun jatkuvaan ramppiin ja lagittomaan positiiviseen
+kontrolliin:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_zipper_measure.scd
+```
+
+Odotettu markkeri: `CQ_ZIPPER_MEASURED`. Kuuntelutiedostot syntyvät:
+
+- `tests/tmp/zipper_current_30hz.wav`
+- `tests/tmp/zipper_reference_continuous.wav`
+- `tests/tmp/zipper_unlagged_positive_control.wav`
+- `tests/tmp/zipper_unlagged_reference.wav`
+
+Mittaus 2026-07-29: nykyisen polun residual RMS oli −55,87 dB suhteessa
+signaaliin; lagiton kontrolli −55,15 dB. Numerot eivät ratkaise korvaporttia.
+Kuuntele ensin nykyinen vastaan jatkuva; käytä lagitonta paria vain etsimäsi
+portaikon opetteluun.
+
+- [x] 13.6 hyväksytty (pvm: 2026-07-29 — zipperiä ei erottunut
+      luotettavasti ja se on todennäköisesti kuulumaton; ei DSP-muutosta)
+- [ ] 13.6 tarvitsee korjauksen (havainto: ________________________________)
+
+Jos korjaus tarvitaan, älä lisää uutta blanket-lagia. Kokeile ensin vain
+jaettujen solujen client-glidea; serveriratkaisussa nykyinen helper korvataan
+continuous-only-polulla. Flip/skip/spesal eivät saa periä uutta lagia.
+Nykyinen historiallinen 50 ms helper osuu myös niiden Schmitt-summiin, joten
+sen mahdollinen poistaminen on oma porttiajoituskoe, ei huomaamaton sivumuutos.
+
+### 13.8 — Preampin equal-loudness-koe
+
+Labra tekee samasta peak-tasatusta puheesta, rumpuloopista ja sustain-urusta
+kolme versiota: vanha kompensoimaton polku, tuotantoon valittu −1 dB per
+todellinen Drive-oktaavi ja hylätty vahvempi −1,5 dB/okt-verrokki.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_preamp_loudness.scd
+```
+
+Odotettu markkeri: `CQ_PREAMP_OK`. Jokaisessa
+`tests/tmp/preamp_<materiaali>_<versio>.wav`-tiedostossa sama 2,5 s katkelma
+toistuu järjestyksessä Drive 1/2/6/16/40, Bias 0,15; lopuksi Bias
+0/0,15/0,6, Drive 12. Kuuntele:
+
+1. Peittääkö vanhan kompensoimattoman Driven tasohyppy itse särön eleen?
+2. Säilyttääkö ehdokas perkussion atakin ja sustainin paineen?
+3. Pysyykö puhe läsnä vai vetäytyykö se Driven kasvaessa oudosti?
+4. Onko bias-kolmikko musikaalisesti sama ele kaikissa versioissa?
+5. Vasta tiedostovalinnan jälkeen kokeile voittajaa live-inputilla.
+
+Drive 40:n mitattu RMS-nousu Drive 1:een nähden oli vanhalla kompensoimattomalla
++21,67/+22,17/+16,09 dB (puhe/rummut/urut), −1 dB/okt-versiolla
++16,34/+16,84/+10,77 dB ja −1,5 dB/okt-versiolla
++13,68/+14,18/+8,11 dB. Vahvempikin ehdokas jättää siis tarkoituksella paljon
+painetta; kumpikaan ei ole automaattinen loudness-normalisoija.
+
+- [x] 13.8 tiedostovalinta hyväksytty (pvm: 2026-07-29 — −1 dB/okt;
+      vanha polku kasvattaa äänenvoimakkuutta liikaa, valittu välimuoto
+      hillitsee karkaamista tasapäistämättä särön painetta)
+- [x] 13.8 valitun tuotantopolun live-input-vahvistus
+      (pvm: 2026-07-29 — vaihe hyväksytty)
+- [ ] 13.8 hylätty/uusi hienoviritys tarvitaan: ___________________________
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>

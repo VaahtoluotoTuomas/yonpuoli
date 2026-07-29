@@ -158,11 +158,15 @@ ordinary one-deck loads remain dual mono.
 
 - Reads `SoundIn` channels from config (live L/R, mic), applies `liveGain`/`micGain`.
 - Preamp A/B: source select (`Select.ar` over [liveL, liveR, mic, deckA, deckB, 0]),
-  drive → asymmetric fuzz, gentle HPF 20 Hz:
+  drive → asymmetric fuzz → fixed partial makeup (−1 dB per actual Drive
+  octave) → gentle HPF 20 Hz:
   ```supercollider
   var shaped = ((x * drive) + bias).tanh - bias.tanh;   // asymmetric soft clip
+  var makeup = (drive.log2.neg).dbamp;                   // unity at Drive 1
+  var pre = HPF.ar(shaped * makeup, 20);
   ```
-- Envelope followers: `Amplitude.ar(pre, 0.003, 0.15)` → `aModSrc[10..11]`.
+- Envelope followers read that audible compensated `pre` signal:
+  `Amplitude.ar(pre, 0.003, 0.15)` → `aModSrc[10..11]`.
 - Outputs `aPreA`, `aPreB`.
 
 ### 4.3 `\cqQuantussy` (one synth, five castles)

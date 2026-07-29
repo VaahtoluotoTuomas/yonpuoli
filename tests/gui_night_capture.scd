@@ -15,6 +15,14 @@ var targetOutput = Cocoquantus.repoDir +/+ "tests" +/+ "tmp"
 	+/+ "night-layout-targets.png";
 var controlOutput = Cocoquantus.repoDir +/+ "tests" +/+ "tmp"
 	+/+ "night-layout-control-edges.png";
+var n10HeartOutput = Cocoquantus.repoDir +/+ "tests" +/+ "tmp"
+	+/+ "n10-heart-hover.png";
+var n10HeartRestOutput = Cocoquantus.repoDir +/+ "tests" +/+ "tmp"
+	+/+ "n10-heart-rest.png";
+var n10ChevronRestOutput = Cocoquantus.repoDir +/+ "tests" +/+ "tmp"
+	+/+ "n10-chevron-rest.png";
+var n10ChevronHoverOutput = Cocoquantus.repoDir +/+ "tests" +/+ "tmp"
+	+/+ "n10-chevron-hover.png";
 var gui;
 
 matrix.preset(\classic, origin: \code, committed: true, operation: \preset);
@@ -28,7 +36,7 @@ matrix.patch(\cas4, \coco2_fbVca, 0.37);
 			try {
 				var map = gui.nightMap;
 				var paintView;
-				var render;
+				var render, renderCrop;
 				var ringPoint, ringLocal;
 				paintView = { |view|
 					var bounds = view.bounds;
@@ -48,6 +56,35 @@ matrix.patch(\cas4, \coco2_fbVca, 0.37);
 						Pen.fillColor = CQInk.palette(\night)[\ground];
 						Pen.addRect(Rect(0, 0, 1280, 570));
 						Pen.fill;
+						paintView.value(map.groundView);
+						map.rootViews.do(paintView);
+						paintView.value(map.ringView);
+						paintView.value(map.eyeView);
+						map.castleViews.do(paintView);
+						map.shellViews.do(paintView);
+						map.birdViews.do(paintView);
+						paintView.value(map.almanacView);
+						map.endpoints.values.do { |endpoint|
+							paintView.value(endpoint[\view])
+						};
+						map.crescentViews.values.do(paintView);
+						paintView.value(map.routeView);
+						paintView.value(map.overlay.view);
+						paintView.value(map.tideGestureView);
+					};
+					image.write(path);
+					image.free;
+				};
+				renderCrop = { |path, crop, scale = 3|
+					var image = Image(
+						(crop.width * scale).round.asInteger,
+						(crop.height * scale).round.asInteger);
+					image.draw {
+						Pen.fillColor = CQInk.palette(\night)[\ground];
+						Pen.addRect(Rect(0, 0, image.width, image.height));
+						Pen.fill;
+						Pen.scale(scale, scale);
+						Pen.translate(crop.left.neg, crop.top.neg);
 						paintView.value(map.groundView);
 						map.rootViews.do(paintView);
 						paintView.value(map.ringView);
@@ -93,13 +130,54 @@ matrix.patch(\cas4, \coco2_fbVca, 0.37);
 				state.set(\deckALevel, 2);
 				AppClock.sched(0.15, {
 					try {
+						var coco = map.geometry[\cocos][0];
+						var shell = map.shellViews[0];
+						var shellOrigin = coco[\shellBox].leftTop;
+						var heartPoint, crop;
 						render.value(controlOutput);
-						gui.free;
-						("CQ_NIGHT_CAPTURE: " ++ output ++ " · " ++ cableOutput
-							++ " · " ++ couplingOutput ++ " · " ++ targetOutput
-							++ " · " ++ controlOutput).postln;
-						"CQ_NIGHT_CAPTURE_DONE".postln;
-						0.exit;
+						// N10 visual-review fixtures. Clear the bay so cable-first
+						// priority cannot hide either cue, then place the slowest
+						// reel pearl inside the heart's real 22 px hit disc.
+						matrix.preset(\empty, origin: \test,
+							committed: false, operation: \n10Capture);
+						map.overlay.invalidate;
+						state.set(\coco1Speed, 1500);
+						state.set(\coco1Hold, 0);
+						AppClock.sched(0.15, {
+							try {
+								heartPoint = CQNightGeometry.spiralPoint(coco, 0);
+								crop = Rect.aboutPoint(coco[\center], 58, 58);
+								renderCrop.value(n10HeartRestOutput, crop);
+								shell.mouseOverAction.value(shell,
+									heartPoint.x - shellOrigin.x,
+									heartPoint.y - shellOrigin.y);
+								renderCrop.value(n10HeartOutput, crop);
+								shell.mouseLeaveAction.value(shell);
+								crop = Rect.aboutPoint(coco[\chevron], 48, 38);
+								renderCrop.value(n10ChevronRestOutput, crop);
+								shell.mouseOverAction.value(shell,
+									coco[\chevron].x - shellOrigin.x,
+									coco[\chevron].y - shellOrigin.y);
+								renderCrop.value(n10ChevronHoverOutput, crop);
+								shell.mouseLeaveAction.value(shell);
+								gui.free;
+								("CQ_NIGHT_CAPTURE: " ++ output ++ " | "
+									++ cableOutput ++ " | " ++ couplingOutput
+									++ " | " ++ targetOutput ++ " | "
+									++ controlOutput ++ " | " ++ n10HeartOutput
+									++ " | " ++ n10HeartRestOutput ++ " | "
+									++ n10ChevronRestOutput ++ " | "
+									++ n10ChevronHoverOutput).postln;
+								"CQ_NIGHT_CAPTURE_DONE".postln;
+								0.exit;
+							} { |error|
+								error.reportError;
+								gui !? { gui.free };
+								"CQ_NIGHT_CAPTURE_FAILED".postln;
+								1.exit;
+							};
+							nil
+						});
 					} { |error|
 						error.reportError;
 						gui !? { gui.free };

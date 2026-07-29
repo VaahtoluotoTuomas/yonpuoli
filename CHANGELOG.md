@@ -52,6 +52,19 @@ tagged. Earlier tags describe internal development baselines.
   complete intake body passed live review on 2026-07-28.
 - Recorded preamp loudness compensation as a later equal-loudness DSP
   experiment; N7 deliberately changes only interaction and route drawing.
+- Added reproducible §13.6/§13.8 listening labs: a 30 Hz shared-cell zipper
+  render against continuous and deliberately unlagged controls, plus
+  peak-aligned speech, drum and sustained-organ comparisons for the legacy
+  preamp and two conservative drive-derived attenuation curves. The user could
+  not distinguish the measured zipper reliably, so its DSP remains unchanged.
+- Accepted the middle preamp curve for production: fixed partial attenuation of
+  −1 dB per actual Drive octave after the asymmetric waveshaper. It is unity at
+  Drive 1, leaves substantial material-dependent pressure, and feeds the
+  envelope follower from the same compensated signal that reaches the Coco.
+  This adds no parameter, GUI control or snapshot migration. The selected
+  production path also passed its final live-input confirmation.
+- Completed the N10 shell-cue review: the heart's true 22 px hover disc and
+  the mouth chevron's weight cue passed visual acceptance on 2026-07-29.
 - A fourth persistent Drawer page, **workshop**: the bay's quiet measurement
   table, now carrying the 39 parameters Night and the Master strip do not own
   after Space retirement, so the whole instrument is reachable without the

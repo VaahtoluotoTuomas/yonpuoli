@@ -39,13 +39,15 @@ käyttäjän kuuntelu- ja näkökatselmuksessa 2026-07-28. Space-kuuntelupäät�
 tuotantoketjun hallittu eläköitys ja Nightin täyden mittakaavan GUI-passi
 hyväksyttiin 2026-07-28–29. 13.2 speed-lattia (vaihtoehto A) ja 13.5:n
 kiinteä p = 2 VCA-laki sekä 13.3:n uusi dust-lähde ja sen uudelleen viritetty
-`selfNoise`-preset hyväksyttiin 2026-07-29.** Seuraava varsinainen portti on
-**13.6 zipper-mittaus + 13.8 preampin equal-loudness-koe**, jonka jälkeen
-järjestys on **Audio I/O Setup Drawerissa (AIO, alla) →
+`selfNoise`-preset hyväksyttiin 2026-07-29. §13.6:n zipperiä ei erotettu
+luotettavasti, joten se suljettiin ilman DSP-muutosta. §13.8:ssa valittiin ja
+toteutettiin maltillinen −1 dB / todellinen Drive-oktaavi -kompensaatio, joka
+hyväksyttiin myös live-inputilla.** Seuraava vaihe on
+**Audio I/O Setup Drawerissa (AIO, alla) →
 nelikanavainen laitteisto-/resource-soak → kolme huokoista soittotilaa →
 Norns-portti (§14).** Yksi musiikillinen muuttuja käsitellään edelleen
-kerrallaan. N10:n sydän/kela- ja chevron-vihjeiden lyhyt visuaalinen
-hyväksyntä pysyy erillisenä avoimena GUI-velkana.
+kerrallaan. **N10:n sydän/kela- ja chevron-vihjeet hyväksyttiin visuaalisesti
+2026-07-29**, joten erillistä GUI-velkaa ei enää ole.
 
 ## Auktoriteettijärjestys
 
@@ -362,6 +364,11 @@ vain himmentää sen, ja `spark` tarkoittaa jo "jokin juuri laukesi". Paino on
 saman kuoren kelalovi-vihjeen kanaava, joten yksi keho puhuu yhtä
 hover-kieltä eikä yksikään lepotilan muste liiku (§16.3/§16.10).
 
+**Käyttäjä hyväksyi N10:n lopullisen visuaalisen portin 2026-07-29:**
+sydämen todellinen 22 px hover-kehä ja chevronin painonlisäys ovat luettavat,
+vihje ja teko ovat samaa mieltä ja ulomman kierroksen kautta aloitettava
+hitaimman pään kelaus on hyväksyttävä.
+
 **13.5 VCA-laki (hyväksytty 2026-07-29, kiinteä p = 2).** §13.5:n
 luonnos esitti lain muodossa `gain = (1 + sum) ** p`, mutta koodin todellinen
 muoto oli `gain = (nuppi + summa).clip(...)`: nuppi on VCA:n lepoasento ja
@@ -426,8 +433,38 @@ efektinä. Nykyistä Space/FDN-linjaa ei jatketa.
   myöhempi ei-estävä testi**) ·
   [x] 13.4 chaos-käyrä (**hyväksytty 2026-07-28, myös sääkehät**) ·
   [x] 13.5 VCA-laki (**hyväksytty 2026-07-29, kiinteä p = 2**) ·
-  [ ] 13.6 zipper-mittaus ·
-  [ ] 13.8 preamp loudness compensation
+  [x] 13.6 zipper-mittaus (**hyväksytty 2026-07-29, ei kuulu luotettavasti;
+  ei DSP-muutosta**) ·
+  [x] 13.8 preamp loudness compensation (**hyväksytty 2026-07-29;
+  −1 dB/okt valittu, toteutettu ja vahvistettu live-inputilla**)
+
+**13.6 suljettu ja 13.8:n tuotantoehdokas toteutettu 2026-07-29.**
+`nrt_zipper_measure.scd` korjasi ensin lähtötiedon: matriisipainot eivät ole
+lagittomia, vaan `prMatrixWeight` on silottanut kaikkia kohteita 50 ms:llä
+M1:stä asti. Hidas 30 Hz shared-cell -liuku jäi jatkuvasta verrokista
+−55,87 dB RMS:n päähän (`CQ_ZIPPER_MEASURED`). Käyttäjä ei erottanut
+zipperiä luotettavasti ja piti sitä todennäköisesti kuulumattomana, joten
+tuotantopolkuun ei tehty muutosta. Historiallinen helper edeltää myös
+flip/skip/spesal-Schmittejä; sen mahdollinen erottelu on oma
+porttisemantiikan auditointi, ei zipper-korjaukseen piilotettava sivumuutos.
+
+`nrt_preamp_loudness.scd` teki puheesta, rumpuloopista ja sustain-urusta
+vanhan kompensoimattoman sekä −1/−1,5 dB per todellisen Drive-oktaavin
+koeraidat (`CQ_PREAMP_OK`). Vanhan polun voimakas tasohyppy peitti
+säröelettä; käyttäjä
+valitsi käyttökelpoisimmaksi välimuodoksi −1 dB/okt-version, joka hillitsee
+karkaamista mutta ei tasapäistä painetta. Tuotanto käyttää nyt lakia
+`dbamp(−log2(drive))` waveshaperin jälkeen ja ennen 20 Hz HPF:ää; envelope
+follower lukee kompensoitua audiosignaalia. Parametria, GUI:ta tai
+snapshot-migraatiota ei lisätty. Drive 40 säilyttää valitulla lailla
+materiaalista riippuen vielä +10,77…+16,84 dB RMS-nousun Drive 1:een nähden.
+Tiedosto-A/B ja valitun tuotantopolun live-input-koe on hyväksytty.
+
+Tuotanto-DSP:n jälkeinen automaattinen portti: `CQ_COMPILE_OK`,
+**13 340 unit-passia / 0 failurea / 33/33 luokkaa**, `CQ_PREAMP_OK`,
+`CQ_SAFETY_PASSED`, `CQ_HOLD_OK`, `CQ_DUST_OK` ja `CQ_SELFNOISE_OK`.
+N10:n `CQ_NIGHT_CAPTURE_DONE` sekä muuttumattoman matrix-polun
+`CQ_ZIPPER_MEASURED` ovat myös vihreät.
 
 ## Norns-portti (§14) — jonon viimeinen, ei korvapassin välitön seuraaja
 

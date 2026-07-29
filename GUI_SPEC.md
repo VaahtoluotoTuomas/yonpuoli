@@ -457,8 +457,9 @@ aura and charge lamps make that visible instead of mysterious.
 - **Focused left-drag** on genuinely open water inside the four winds: the
   tide pours continuously after the lasso's own 8 px threshold (batched funnel
   write, one transient notification per frame, ≤ 60 Hz — implemented at
-  30 Hz, since the weights are unlagged control buses and faster stepping
-  buys no audible smoothness). Release **commits** (one undo op, one
+  30 Hz; the production readers have applied one shared 50 ms weight smoother
+  since M1, so faster language writes buy no useful control resolution).
+  Release **commits** (one undo op, one
   `// compass` spellbook batch). Outside water focus both a tap and an
   arbitrarily long left sweep are a **no-op**: exploratory movement cannot
   replace the patch accidentally.
@@ -932,12 +933,20 @@ gate, manual_checklist blocks in the established copy-pasteable format.
 
 ## 15. Open seams (measure before polishing)
 
-- **Weight-write zipper**: matrix weights are unlagged control buses read at
-  audio rate; mouse-rate stepping is probably fine (a hardware banana contact
-  is a step too). If audible on sustained sources, thin GUI writes to ~30 Hz
-  or add a small client-side glide. Do not add server-side lag without
-  checking the norns diet note (`docs/history/PLAN_v1.0.md` post-v1.0: one Lag per dest is the
-  ceiling).
+- **Weight-write zipper (measured and accepted 2026-07-29):** factual
+  correction to the old seam description: `CQSynthDefs.prMatrixWeight` has
+  applied `Lag.kr(..., 0.05)` since M1, before multiplying by `patchDepth`.
+  The control buses themselves step, but no production destination reads those
+  steps unsmoothed. A 30 Hz, 0.9→0.1 shared-cell VCA glide measured −55.87 dB
+  residual RMS against a continuously ramped, equally lagged reference; the
+  deliberately unlagged positive control measured −55.15 dB. The user could
+  not distinguish zippering reliably and judged it probably inaudible, so no
+  DSP change was made. If later material exposes it repeatably, do not stack
+  another blanket Lag: try a
+  shared-cell client glide or split continuous destinations from gates/triggers.
+  The inherited 50 ms helper currently also precedes flip/skip/spesal Schmitt
+  sums; changing that gate timing is a separate behavior audit, never a hidden
+  zipper remedy. One Lag per destination remains the norns-diet ceiling.
 - **Overlay performance** on the reference laptop: if the full-window cable
   layer runs hot, split static and animated layers — implementers' craft.
 - **Night-map coordinates**: tune by eye; keep the topology truths (ring

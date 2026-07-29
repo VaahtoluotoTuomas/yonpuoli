@@ -49,6 +49,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
 powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_selfnoise_character.scd -Sclang "C:\Program Files\SuperCollider-3.14.1\sclang.exe"
 ```
 
+Focused listening experiments or frozen character comparisons may add their
+own marker-validated NRT gate (for example `nrt_zipper_measure.scd` or
+`nrt_preamp_loudness.scd`). A successful marker means that the comparison
+files and measurements are valid; it never substitutes for the separately
+documented human listening result.
+
 A marker missing from the end of output counts as failure even if the process exits
 without a conventional error. GUI changes additionally require their focused
 interaction tests and the relevant Qt smoke. Audible or visible behavior is not

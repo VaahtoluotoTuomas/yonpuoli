@@ -73,4 +73,22 @@ CQSynthDefsTest : UnitTest {
 				.format(ceiling));
 	}
 
+	// §13.8 accepted the conservative middle curve: one dB of attenuation per
+	// doubling of the actual Drive value. It is a fixed interpretation, not a
+	// GUI-normalized map or a new snapshot parameter.
+	test_preampMakeupUsesActualDriveOctaves {
+		this.assertFloatEquals(CQSynthDefs.prPreampMakeup(1), 1.0,
+			"Drive 1 is the exact unity anchor", 1e-9);
+		this.assertFloatEquals(CQSynthDefs.prPreampMakeup(2), (-1).dbamp,
+			"one Drive octave attenuates exactly 1 dB", 1e-9);
+		this.assertFloatEquals(CQSynthDefs.prPreampMakeup(4), (-2).dbamp,
+			"two Drive octaves attenuate exactly 2 dB", 1e-9);
+		this.assertFloatEquals(CQSynthDefs.prPreampMakeup(40),
+			(CQSynthDefs.preampMakeupDbPerOct.neg * 40.log2).dbamp,
+			"Drive 40 follows the same actual-value curve", 1e-9);
+		this.assert(CQSynthDefs.prPreampMakeup(40)
+			< CQSynthDefs.prPreampMakeup(16),
+			"attenuation remains monotonic across the full CQSpec range");
+	}
+
 }

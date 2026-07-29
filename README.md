@@ -142,6 +142,14 @@ powershell -File tests/run_sclang_gate.ps1 tests/nrt_dust_character.scd -> CQ_DU
 powershell -File tests/run_sclang_gate.ps1 tests/nrt_selfnoise_character.scd -> CQ_SELFNOISE_OK
 ```
 
+Focused measurement/listening gates (they render reproducible evidence; the
+human verdict is recorded separately in `tests/manual_checklist.md`):
+
+```text
+powershell -File tests/run_sclang_gate.ps1 tests/nrt_zipper_measure.scd  -> CQ_ZIPPER_MEASURED
+powershell -File tests/run_sclang_gate.ps1 tests/nrt_preamp_loudness.scd -> CQ_PREAMP_OK
+```
+
 The wrapper owns the headless process, timeout and success marker; its default
 test config includes `classes/` and `tests/classes/`. The CI workflow generates
 its own isolated version. Current

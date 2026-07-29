@@ -206,11 +206,20 @@ Two channels; A feeds Coco1's `pre` slot, B feeds Coco2's by default.
 | Param | Range | Default | Curve | Notes |
 |---|---|---|---|---|
 | `preASrc`, `preBSrc` | enum | `\liveL` / `\liveR` | — | `\liveL \liveR \mic \deckA \deckB \none` |
-| `preADrive`, `preBDrive` | 1–40 (amp) | 2.0 | exp | into asymmetric soft clip (fuzz). Unity-ish ≤ 2 |
+| `preADrive`, `preBDrive` | 1–40 (amp) | 2.0 | exp | into asymmetric soft clip (fuzz), followed by fixed partial makeup attenuation of −1 dB per actual Drive octave. Unity-ish ≤ 2 |
 | `preABias`, `preBBias` | 0–0.6 | 0.15 | lin | waveshaper asymmetry (even harmonics) |
 
+The normative preamp path is
+`shaped = tanh((signal × drive) + bias) − tanh(bias)`, then
+`makeup = dbamp(−log2(drive))`, then `HPF(shaped × makeup, 20 Hz)`.
+The curve is anchored at exact unity for Drive 1 and is derived from the actual
+Drive value, not its GUI normalization. It is deliberately only partial:
+Drive still adds substantial material-dependent level and pressure.
+
 Each preamp publishes an **envelope follower** (`envA`, `envB`) to the mod source bus
-(attack 3 ms, release 150 ms, 0–1 range).
+(attack 3 ms, release 150 ms, 0–1 range). The follower reads the audible,
+post-makeup and post-HPF preamp output; A and B use the identical compensation
+law.
 
 ### 5.3 Coco 1 / Coco 2
 
@@ -295,6 +304,12 @@ Outputs published to the mod source bus: `tri1..tri5` (±1 triangle), `cas1..cas
   slides — §13.5), documented like the organ derivation, and it is bounded by
   the same output clip and by `clip2` inside the recirculation. Continuous VCA
   paths only; gate/trig destinations keep their Schmitt semantics.
+- Each destination reads its 16-channel weight bus through the production
+  `prMatrixWeight` helper: `Lag.kr(weights, 0.05) × patchDepth`. This inherited
+  M1 smoothing currently precedes continuous sums **and** flip/skip/spesal
+  Schmitt sums; it is the implemented timing truth, not permission to add a
+  second lag. The §13.6 gate may replace it with destination-aware smoothing
+  only as an explicit DSP/SPEC change with gate/trig timing tests.
 - `patchDepth` (0–1, default 1.0, lag 50 ms): global scaler over all matrix weights —
   a "how alive is it" macro and instant tamer.
 - API: `patch(src, dest, w)`, `unpatch(src, dest)`, `clearPatch`, `getPatch`,

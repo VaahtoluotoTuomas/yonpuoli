@@ -27,6 +27,8 @@ $requiredMarker = switch -Wildcard ($leaf) {
     "nrt_hold_integrity.scd" { "CQ_HOLD_OK"; break }
     "nrt_dust_character.scd" { "CQ_DUST_OK"; break }
     "nrt_selfnoise_character.scd" { "CQ_SELFNOISE_OK"; break }
+    "nrt_zipper_measure.scd" { "CQ_ZIPPER_MEASURED"; break }
+    "nrt_preamp_loudness.scd" { "CQ_PREAMP_OK"; break }
     "prototype_space_compile.scd" { "CQ_SPACE_LAB_COMPILE_OK"; break }
     "prototype_space_nrt.scd" { "CQ_SPACE_LAB_NRT_PASSED"; break }
     "gui_shell_smoke.scd" { "CQ_GUI_SHELL_PASSED"; break }

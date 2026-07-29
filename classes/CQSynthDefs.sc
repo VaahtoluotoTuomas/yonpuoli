@@ -25,6 +25,16 @@ CQSynthDefs {
 	// rate no longer implies repainting either complete Coco shell.
 	*phaseReplyHz { ^15 }
 
+	// §13.8's accepted partial preamp compensation. Drive still raises level
+	// substantially; one dB per doubling merely stops loudness from masking the
+	// saturation gesture in longer playing sessions. The curve is derived from
+	// the actual drive value (never its GUI norm) and is anchored at drive = 1.
+	*preampMakeupDbPerOct { ^1.0 }
+
+	*prPreampMakeup { |drive|
+		^((drive.log2 * this.preampMakeupDbPerOct.neg).dbamp)
+	}
+
 	// ARCHITECTURE §4.2 — live/mic trims, preamp fuzz pair, envelope followers.
 	// Source order in Select MUST match CQSpec's preASrc enum order.
 	*input { |config|
@@ -45,8 +55,11 @@ CQSynthDefs {
 			var sources = [liveL, liveR, mic, deckA, deckB, DC.ar(0)];
 			var preamp = { |srcCtl, driveCtl, biasCtl|
 				var sig = Select.ar(srcCtl, sources);
-				var shaped = ((sig * driveCtl) + biasCtl).tanh - biasCtl.tanh; // asym. fuzz
-				HPF.ar(shaped, 20)
+				var shaped = ((sig * driveCtl) + biasCtl).tanh - biasCtl.tanh;
+				// §13.8: accepted -1 dB per actual Drive octave, after the
+				// asymmetric waveshaper. Envelope followers below therefore
+				// publish the audible compensated signal, not its hotter shadow.
+				HPF.ar(shaped * CQSynthDefs.prPreampMakeup(driveCtl), 20)
 			};
 			var preA = preamp.value(
 				\preASrc.kr(srcAIdx),

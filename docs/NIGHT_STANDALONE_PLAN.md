@@ -1557,14 +1557,27 @@ section (it is an interpretation, like the organ derivation).
 small-weight nuance, three-depth inverso chop, positive ceiling arc, two-depth
 feedback duck, SP.AF isolation and whole-preset checks.
 
-### 13.6 The zipper seam — measured in G3.1, remedy ladder ready
+### 13.6 The zipper seam — measured and closed without a DSP change
 
-**Not a change — a measurement with a prepared answer.** The compass now
-pours weights as a 30 Hz stream into unlagged control buses (§15's open
-seam, finally exercised for real). The tide makes this *mostly* moot —
-disjoint cables step whole, which is the banana idiom — but **shared
-cells glide**, and a glide in 30 Hz steps on a VCA cable over sustained
-material is where a zipper would live.
+**Not a change — a measurement with a prepared answer.** Factual correction
+found while building the gate on 2026-07-29: the compass pours weights as a
+30 Hz stream into control buses, but production readers have never been
+unlagged. `CQSynthDefs.prMatrixWeight` has applied one 50 ms `Lag.kr` to every
+destination since M1, before `patchDepth`. The tide makes the remaining seam
+*mostly* moot — disjoint cables step whole, which is the banana idiom — but
+**shared cells glide**, and their 30 Hz writes over sustained VCA material are
+still the right place to verify the real implementation rather than trust its
+topology.
+
+The reproducible NRT gate `tests/nrt_zipper_measure.scd` now renders the
+production 30 Hz + 50 ms path, a continuously ramped reference with the same
+lag, and an intentionally unlagged positive control. On the slow 0.9→0.1
+shared-cell glide, production residual was −55.87 dB RMS relative to the
+signal; the positive control was −55.15 dB. The tiny 0.72 dB RMS difference
+does not decide audibility. In the 2026-07-29 listening gate the user could
+not distinguish zippering reliably and judged it probably inaudible.
+Production therefore stays unchanged; the remedy ladder below is retained
+only if later material exposes a repeatable problem.
 
 **Measurement (fold into the G3.1a session):**
 
@@ -1580,17 +1593,20 @@ CQ.patch(\cas1, \coco1_inVca, 0.9);
 ```
 
 **Remedy ladder if it grates (stop at the first rung that cures it):**
-1. Nothing — 30 Hz already is the "thin the writes" answer; a faint step
-   *is* the hardware's banana-contact truth (§15).
+1. Nothing — 30 Hz plus the inherited 50 ms reader smoothing may already be
+   clean; a faint disjoint-cable step *is* the hardware's banana-contact truth
+   (§15).
 2. Client-side glide: the touch layer splits each paced blend write into
    2–3 sub-writes ~10 ms apart, interpolating only the **shared** cells
    (the tide already knows which those are — disjoint cells must keep
    stepping whole, that is the design).
-3. Server-side `Lag.kr` ≈ 15–20 ms on the **continuous destinations
-   only** (spaf, inVca, fbVca, fm, deck rates) — within the norns-diet
-   ceiling (one Lag per dest). **Never on gate/trig destinations**: a
-   lagged flip/skip/spesal sum reshapes Schmitt crossings and charge-lamp
-   truth. This rung is a SPEC §15/§5.5 edit and needs the user's yes.
+3. Replace — do not stack — the inherited blanket 50 ms helper with a
+   destination-aware smoother on the **continuous destinations only** (spaf,
+   inVca, fbVca, fm, deck rates). **Never add lag to gate/trig destinations**:
+   a lagged flip/skip/spesal sum reshapes Schmitt crossings and charge-lamp
+   truth. The inherited helper currently does precede those Schmitt sums; its
+   removal is a separate gate-timing audit, not a free side effect. This rung
+   is a SPEC §15/§5.5 edit and needs the user's yes plus the full battery.
 
 ### 13.7 The punch — already planned
 
@@ -1612,11 +1628,38 @@ drive-dependent **partial makeup attenuation** after the waveshaper rather
 than automatic full loudness normalization. The goal is to expose saturation,
 not erase the preamp's pressure.
 
-Any accepted curve must be specified in `SPEC.md`/`CQSpec`, keep peak safety
+Any accepted curve must be specified in `SPEC.md` (and in `CQSpec` only if it
+introduces a parameter), keep peak safety
 and stereo symmetry, place the envelope follower after the audible compensated
 signal, pass the full NRT battery, and survive an equal-loudness listening
 comparison. Do not infer a curve from the GUI's normalized value alone or
 silently fold this experiment into a visual iteration.
+
+**File A/B accepted and production curve implemented 2026-07-29.**
+`tests/nrt_preamp_loudness.scd` peak-aligns the local speech, drum-loop and
+sustained-organ sources to the Deck contract, then repeats the exact same
+excerpt at drive 1/2/6/16/40 and at bias 0/0.15/0.6. It renders the current
+production path beside the legacy uncompensated path and the rejected stronger
+−1.5 dB per drive octave reference. The chosen production path is −1.0 dB per
+actual drive octave. These are partial attenuation curves, not
+material-dependent normalization, and remain anchored exactly at drive 1.
+At drive 40, RMS rise relative to drive 1 measured:
+
+| source | legacy uncompensated | accepted −1 dB/oct | stronger −1.5 dB/oct |
+|---|---:|---:|---:|
+| speech | +21.67 dB | +16.34 dB | +13.68 dB |
+| drums | +22.17 dB | +16.84 dB | +14.18 dB |
+| sustained organ | +16.09 dB | +10.77 dB | +8.11 dB |
+
+The user heard the legacy level rise as excessive and selected the middle curve
+as the most playable compromise: it limits runaway loudness without flattening
+the saturation pressure. Production now applies
+`dbamp(−log2(actualDrive))` after the asymmetric waveshaper and before the
+20 Hz HPF. The post-HPF envelope follower therefore tracks the same compensated
+audio that is sent to the Coco. No parameter, GUI control or snapshot migration
+was added. Marker `CQ_PREAMP_OK`, 13,340 unit assertions, safety, hold, dust and
+self-noise gates all pass. The selected production path passed its final
+live-input confirmation on 2026-07-29, closing §13.8.
 
 ---
 
