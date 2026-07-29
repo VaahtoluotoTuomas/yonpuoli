@@ -23,6 +23,7 @@ CQGuiAudioSetup {
 	var <deviceRefreshAvailable = true;
 	var <deviceCatalogSource = \configured, <showAllDrivers = false;
 	var <advancedDeviceCount = 0;
+	var <recorderCtl;
 	var <step = \compact, <metrics, <pageWidth = 1272, <skin = \night;
 	var ioBand, railLayout, topPad, hostGap, restartGap, bottomPad;
 	var hostFirstSpacer, hostTitleSpacer, refreshRightSpacer;
@@ -196,6 +197,15 @@ CQGuiAudioSetup {
 	}
 
 	serverHealthChanged {
+		this.prSyncDraft;
+		^this
+	}
+
+	recorderStateChanged {
+		if(localStatus == \blocked) {
+			localStatus = nil;
+			localError = nil;
+		};
 		this.prSyncDraft;
 		^this
 	}
@@ -430,6 +440,8 @@ CQGuiAudioSetup {
 	}
 
 	free {
+		recorderCtl !? { recorderCtl.remove };
+		recorderCtl = nil;
 		gui !? { gui.removeAudioPresenceListener(this) };
 		allMenus.do { |menu| menu.free };
 		^this
@@ -504,6 +516,7 @@ CQGuiAudioSetup {
 					var current = Cocoquantus.recorder;
 					if(current.isNil) { \idle } { current.state }
 				},
+				recorder: { Cocoquantus.recorder },
 				status: { Cocoquantus.audioReconfigureState },
 				error: { Cocoquantus.audioReconfigureError },
 				responsive: { Cocoquantus.serverResponsive },
@@ -514,6 +527,7 @@ CQGuiAudioSetup {
 				retry: { Cocoquantus.retryAudioProfileSave }
 			)
 		};
+		this.prListenRecorder;
 		step = \compact;
 		metrics = CQGuiScale.metrics(step);
 		this.refreshDevices;
@@ -522,6 +536,24 @@ CQGuiAudioSetup {
 			gui.addAudioPresenceListener(this, { |inputs, master, gains|
 				this.presenceFrame(inputs, master, gains)
 			})
+		};
+		^this
+	}
+
+	prListenRecorder {
+		var provider = transactionController[\recorder];
+		var current;
+		if(provider.isNil) { ^this };
+		current = provider.value;
+		current !? {
+			recorderCtl = SimpleController(current);
+			recorderCtl.put(\state, {
+				{
+					if(recorderCtl.notNil) {
+						this.recorderStateChanged
+					}
+				}.defer
+			});
 		};
 		^this
 	}

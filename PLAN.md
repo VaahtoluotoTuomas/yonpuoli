@@ -1268,7 +1268,9 @@ Sitova transaktio:
 1. Apply on inertti, jos draft ei ole dirty+valid tai lifecycle ei ole
    `\running`.
 2. Jos recorder on `starting/recording/stopping`, restart on estetty:
-   `stop REC before restarting audio`. Älä katkaise WAV-tiedostoa salaa.
+   `stop REC before restarting audio`. Audio-sivu kuuntelee recorderin
+   `\state`-muutoksia suoraan: `idle` poistaa lukon ilman uutta kenttämuutosta,
+   eikä disabled Apply piirrä hover-cuesta. Älä katkaise WAV-tiedostoa salaa.
 3. Ensimmäinen painallus näyttää inline-vahvistuksen. Kerro aina, että
    `Server.default.reboot` pysäyttää myös muut samaa serveriä käyttävät synthit.
 4. Vahvistus captureoi vain arvot/dataa — ei vanhan Qt-sivun viitteitä —

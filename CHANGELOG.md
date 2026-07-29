@@ -10,6 +10,10 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Changed
 
+- Audio now subscribes directly to recorder state changes, so
+  `starting/recording/stopping` locks the restart gate immediately and the
+  transition back to `idle` clears the warning without requiring another field
+  edit. Disabled Ink controls no longer draw an active hover cue.
 - Audio now distinguishes a responding engine from an unresponsive registered
   server. A clean page exposes `restart audio` (with `no changes` in place of a
   misleading inert discard), and recovery forces the exact hung local server

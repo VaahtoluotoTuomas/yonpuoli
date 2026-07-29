@@ -724,7 +724,10 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     `discard changes`. AIO-3 activates the two-step Apply confirmation,
     recorder gate and static `audio ready` / `running · not saved` /
     rollback / failed result language. Only the rebuilt GUI consumes the
-    symbolic `\audio` reopen request.
+    symbolic `\audio` reopen request. The page observes every recorder
+    `\state` transition: starting/recording/stopping lock Apply immediately,
+    and idle restores the current draft gate without another edit. A disabled
+    Ink control never advertises an active hover cue.
   - A clean draft labels its inert discard action `no changes` and keeps
     `restart audio` available as an explicit recovery operation. A server that
     remains registered but stops answering is shown as
@@ -1001,7 +1004,8 @@ gate, manual_checklist blocks in the established copy-pasteable format.
   inert; confirmed restart captures data without a Qt reference; candidate
   success commits after running, candidate failure preserves the rejected
   draft over one restored last-working session, rollback failure stays silent,
-  and not-saved retries persistence without a third reboot.
+  not-saved retries persistence without a third reboot, and recorder state
+  notifications update both the lock text and enabled/hover truth immediately.
 - **AIO-4 — presence + physical gate:** implemented raw input telemetry, shared
   post-safety master cache/listeners and visible-tab repaint ceiling/cleanup.
   The raw tap was restored after the controlled no-tap baseline still hung and

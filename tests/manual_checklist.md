@@ -1449,6 +1449,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
 
 - [x] Clean/invalid/non-running draft ei kirjoita pendingiä eikä reboottia
 - [x] Aktiivinen recorder näyttää `stop REC before restarting audio`
+- [ ] REC-stop poistaa varoituksen heti ilman kenttämuutosta, palauttaa Applyn
+      ja disabled Apply ei piirrä hover-highlightia
 - [x] Ensimmäinen Apply vain vahvistaa; cancel säilyttää draftin
 - [x] Candidate success hyväksyy capturoidun datan ja promottaa vasta readyssä
 - [x] Candidate fail poistaa pendingin, säilyttää draftin ja tekee yhden rollbackin
@@ -1525,7 +1527,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
       (split-WASAPI 2026-07-29)
 - [ ] Vähintään 4-kanavainen interface: stem 1/2 ovat mainista erillisissä
       fyysisissä porteissa ja saman safety-katon alla
-- [ ] REC stereo ja `record 4ch` tuottavat oikean kanavamäärän
+- [x] REC stereo kirjoitti 2026-07-29 RIFF/WAVE-tiedoston: 2 ch, 48 kHz,
+      24-bit, 21,24 s; header ja tiedostokoko ovat ehjät
+- [ ] `record 4ch` tuottaa nelikanavaisen tiedoston
 - [ ] Virtuaalinen loopback/DAW näkyy tavallisena driver-laitteena ilman
       lupausta siitä, että Yölahti olisi luonut järjestelmäkytkennän
 - [ ] 10–15 min tiheä patch, molemmat Cocot ja Audio auki/kiinni: ei dropoutia,

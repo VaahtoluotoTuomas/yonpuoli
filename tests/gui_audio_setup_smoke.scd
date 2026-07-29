@@ -31,11 +31,13 @@ var catalog = (
 var page, cachedPage, cachedModel, window, ok = true;
 var applies = 0, cleanRestarts = 0, retries = 0, cachedReads = 0;
 var restartStatus = \idle, restartError, recorderState = \idle;
+var recorderNotifier = Object.new;
 var responsive = true;
 var capturedProfile;
 var controller = (
 	lifecycle: { \running },
 	recorderState: { recorderState },
+	recorder: { recorderNotifier },
 	status: { restartStatus },
 	error: { restartError },
 	responsive: { responsive },
@@ -303,13 +305,22 @@ render = { |path|
 
 				// An active recorder blocks before confirmation or persistence.
 				recorderState = \recording;
-				check.value(page.requestApply.not
-					and: { page.restartRows[0][\value]
-						== "stop REC before restarting audio" }
+				recorderNotifier.changed(\state, recorderState);
+				page.applyButton.view.mouseEnterAction.value(
+					page.applyButton.view);
+				check.value(page.restartRows[0][\value]
+						== "stop REC before restarting audio"
+					and: { page.applyButton.enabled.not }
+					and: { page.applyButton.hover.not }
+					and: { page.requestApply.not }
 					and: { applies == 0 },
-					"an active recorder blocks restart without touching the candidate");
+					"active REC locks restart and disabled hover without touching the candidate");
 				recorderState = \idle;
-				page.refreshTransaction;
+				recorderNotifier.changed(\state, recorderState);
+				check.value(page.restartRows[0][\value]
+					== "valid draft · restart required"
+					and: { page.applyButton.enabled },
+					"REC stop notification immediately restores the valid draft gate");
 
 				// First Apply is confirmation only and names every destructive edge.
 				page.applyButton.view.mouseDownAction.value(
@@ -432,6 +443,9 @@ render = { |path|
 									and: { cachedPage.showAllDrivers.not },
 									"recommended roundtrip preserves the exact draft and read count");
 								cachedPage.free;
+								page.free;
+								check.value(page.recorderCtl.isNil,
+									"Audio free removes its recorder-state controller");
 								window.close;
 								if(ok) {
 									"CQ_GUI_AUDIO_PASSED".postln;

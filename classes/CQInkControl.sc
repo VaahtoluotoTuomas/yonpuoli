@@ -138,7 +138,15 @@ CQInkControl {
 	display_ { |string| display = string ? ""; view.refresh; ^this }
 	label_ { |string| label = string; view.refresh; ^this }
 	glyph_ { |icon| glyph = icon; view.refresh; ^this }
-	enabled_ { |flag| enabled = flag; view.refresh; ^this }
+	enabled_ { |flag|
+		enabled = flag == true;
+		if(enabled.not) {
+			hover = false;
+			pressed = false;
+		};
+		view.refresh;
+		^this
+	}
 
 	skin_ { |newSkin|
 		skin = newSkin;
@@ -166,7 +174,7 @@ CQInkControl {
 	}
 
 	prBind {
-		view.mouseEnterAction = { hover = true; view.refresh };
+		view.mouseEnterAction = { hover = enabled; view.refresh };
 		view.mouseLeaveAction = { hover = false; view.refresh };
 		view.mouseDownAction = { |v, x, y|
 			var index;
@@ -257,26 +265,35 @@ CQInkControl {
 
 	prDraw {
 		var bounds = view.bounds.moveTo(0, 0);
+		var activeHover = enabled and: { hover };
+		var activePressed = enabled and: { pressed };
 		switch(kind,
 			\knob, {
 				CQInk.drawKnob(bounds, value, label, display, family, skin,
-					pressed or: { hover }, diameter, scale !? { |m| m[\label] })
+					activePressed or: { activeHover }, diameter,
+					scale !? { |m| m[\label] })
 			},
-			\slider, { CQInk.drawSlider(bounds, value, skin, family, pressed or: { hover }) },
+			\slider, {
+				CQInk.drawSlider(bounds, value, skin, family,
+					activePressed or: { activeHover })
+			},
 			\button, {
-				CQInk.drawButton(bounds, label, skin, value > 0, pressed, family,
-					glyph, surface, hover, scale !? { |m| m[\label] })
+				CQInk.drawButton(bounds, label, skin, value > 0, activePressed,
+					family, glyph, surface, activeHover,
+					scale !? { |m| m[\label] })
 			},
 			\switch, {
 				CQInk.drawSwitch(bounds, label, options, value.asInteger, skin,
-					family, pressed or: { hover })
+					family, activePressed or: { activeHover })
 			},
 			\number, {
-				CQInk.drawNumber(bounds, label, display, skin, pressed or: { hover }, surface)
+				CQInk.drawNumber(bounds, label, display, skin,
+					activePressed or: { activeHover }, surface)
 			},
 			\ledger, {
 				CQInk.drawLedgerRow(bounds, ledgerMode, value, label, display,
-					seats, family, skin, hover, pressed, center, danger, scale)
+					seats, family, skin, activeHover, activePressed,
+					center, danger, scale)
 			},
 			\meter, { CQInk.drawMeter(bounds, value, skin, danger, downward) },
 			\lamp, { CQInk.drawLamp(bounds.center, value, value >= 0.5, skin) }
