@@ -8,7 +8,7 @@ CQSynthDefs {
 
 	*all { |config|
 		^[this.input(config), this.deck(config), this.quantussy(config),
-			this.coco(config), this.space(config), this.master(config),
+			this.coco(config), this.master(config),
 			this.aura, this.record(config), this.recordStems(config)]
 	}
 
@@ -20,6 +20,22 @@ CQSynthDefs {
 		this.all(CQConfig.validate(())).do { |def| def.asBytes };
 	}
 
+	// NIGHT's read head shares the ambient animation ceiling with the castle
+	// fireflies. Its GUI ink lives on a dedicated lightweight layer, so this
+	// rate no longer implies repainting either complete Coco shell.
+	*phaseReplyHz { ^15 }
+	*ioPresenceReplyHz { ^15 }
+
+	// §13.8's accepted partial preamp compensation. Drive still raises level
+	// substantially; one dB per doubling merely stops loudness from masking the
+	// saturation gesture in longer playing sessions. The curve is derived from
+	// the actual drive value (never its GUI norm) and is anchored at drive = 1.
+	*preampMakeupDbPerOct { ^1.0 }
+
+	*prPreampMakeup { |drive|
+		^((drive.log2 * this.preampMakeupDbPerOct.neg).dbamp)
+	}
+
 	// ARCHITECTURE §4.2 — live/mic trims, preamp fuzz pair, envelope followers.
 	// Source order in Select MUST match CQSpec's preASrc enum order.
 	*input { |config|
@@ -29,10 +45,18 @@ CQSynthDefs {
 			var inChans = config[\inChans];
 			var micChan = config[\micChan];
 			var liveGain = \liveGain.kr(CQSpec.default(\liveGain), CQSpec.lag(\liveGain));
-			var liveL = SoundIn.ar(inChans[0]) * liveGain;
-			var liveR = SoundIn.ar(inChans[1] ? inChans[0]) * liveGain;
-			var mic = if(micChan.isNil) { DC.ar(0) } {
+			// AIO-4 presence taps the hardware ports before either trim and before
+			// the preamp source selector. The audio expressions below are otherwise
+			// unchanged: these names only expose the already-read SoundIn signals.
+			var rawLiveL = SoundIn.ar(inChans[0]);
+			var rawLiveR = SoundIn.ar(inChans[1] ? inChans[0]);
+			var rawMic = if(micChan.isNil) { DC.ar(0) } {
 				SoundIn.ar(micChan)
+			};
+			var liveL = rawLiveL * liveGain;
+			var liveR = rawLiveR * liveGain;
+			var mic = if(micChan.isNil) { DC.ar(0) } {
+				rawMic
 					* \micGain.kr(CQSpec.default(\micGain), CQSpec.lag(\micGain))
 			};
 			var deckA = In.ar(\deckABus.ir(0));
@@ -40,8 +64,11 @@ CQSynthDefs {
 			var sources = [liveL, liveR, mic, deckA, deckB, DC.ar(0)];
 			var preamp = { |srcCtl, driveCtl, biasCtl|
 				var sig = Select.ar(srcCtl, sources);
-				var shaped = ((sig * driveCtl) + biasCtl).tanh - biasCtl.tanh; // asym. fuzz
-				HPF.ar(shaped, 20)
+				var shaped = ((sig * driveCtl) + biasCtl).tanh - biasCtl.tanh;
+				// §13.8: accepted -1 dB per actual Drive octave, after the
+				// asymmetric waveshaper. Envelope followers below therefore
+				// publish the audible compensated signal, not its hotter shadow.
+				HPF.ar(shaped * CQSynthDefs.prPreampMakeup(driveCtl), 20)
 			};
 			var preA = preamp.value(
 				\preASrc.kr(srcAIdx),
@@ -57,6 +84,10 @@ CQSynthDefs {
 			Out.ar(\preBBus.ir(0), preB);
 			Out.ar(\modSrcBus.ir(0) + 10, [envA, envB]);   // canonical slots 10/11 (ARCH §3.2)
 			Out.ar(\dryBus.ir(0), [liveL, liveR] + (mic * 0.7)); // untreated monitor feed
+			// Telemetry only, canonical [live L, live R, mic]. A missing mic is
+			// the rawMic DC zero above, so the message shape never changes.
+			SendPeakRMS.kr([rawLiveL, rawLiveR, rawMic],
+				this.ioPresenceReplyHz, 3, '/cq_io_inputs');
 		})
 	}
 
@@ -189,7 +220,7 @@ CQSynthDefs {
 		^SynthDef(\cqCoco, {
 			var buf, frames, speed, spafKnob, clockHz, ratio, dir, phase;
 			var here, hereSmooth, dolby, inSig, inVca, fbVca, inEnv, fbEnv;
-			var inCh, fbCh, record, write, outTap, organ, voice, lvl;
+			var inCh, fbCh, dustLevel, dustSig, record, write, outTap, organ, voice, lvl;
 			var patchDepth, mods, wSpaf, wInVca, wFbVca, wFlip, wSkip;
 			var spafSum, inVcaSum, fbVcaSum, flipSum, skipSum, flipGate, skipTrig;
 			buf = \buf.ir(0);
@@ -213,8 +244,11 @@ CQSynthDefs {
 			flipGate = max(\flip.kr(CQSpec.default(\coco1Flip)),
 				Schmidt.ar(flipSum, 0.3, 0.5));            // flip = matrix gate OR param
 			skipTrig = Trig1.ar(Schmidt.ar(skipSum, 0.3, 0.5), SampleDur.ir);
-			// hard clamp 1500 Hz..SR is post-modulation by design (SPEC §5.3)
-			clockHz = (speed * (2 ** (spafSum * spafKnob))).clip(1500, SampleRate.ir);
+			// hard clamp floor..SR is post-modulation by design (SPEC §5.3): the
+			// floor sits an octave under the knob's own, so a banana into _spaf
+			// still reaches a country the hand alone cannot ("ground jack" trick)
+			clockHz = (speed * (2 ** (spafSum * spafKnob)))
+				.clip(CQSpec.speedClampFloor, SampleRate.ir);
 			ratio = clockHz / SampleRate.ir;
 			dir = 1 - (flipGate * 2);                  // flip = matrix gate OR param
 			phase = Phasor.ar(\t_skip.tr(0) + skipTrig, ratio * dir, 0, frames, 0); // address counter
@@ -236,19 +270,31 @@ CQSynthDefs {
 					* \slotQ.kr(CQSpec.default(\coco1SlotQ), CQSpec.lag(\coco1SlotQ)))
 				+ (InFeedback.ar(\crossBus.ir(0))   // other coco, one block late by design
 					* \slotX.kr(CQSpec.default(\coco1SlotX), CQSpec.lag(\coco1SlotX)));
-			inVca = (\inLevel.kr(CQSpec.default(\coco1In), CQSpec.lag(\coco1In)) + inVcaSum)
-				.clip(0, 2);
-			fbVca = (\fbLevel.kr(CQSpec.default(\coco1Fb), CQSpec.lag(\coco1Fb)) + fbVcaSum)
-				.clip(0, 2.5);
+			// The knob is the valve's rest and the matrix opens and shuts it.
+			// §13.5's ear pass accepted one fixed signed p=2 contribution law:
+			// low cable weights still shade continuously, medium weights phrase,
+			// and only deliberate high weights cut full holes.
+			inVca = (\inLevel.kr(CQSpec.default(\coco1In), CQSpec.lag(\coco1In))
+				+ CQSynthDefs.prVcaLaw(inVcaSum)).clip(0, 2);
+			fbVca = (\fbLevel.kr(CQSpec.default(\coco1Fb), CQSpec.lag(\coco1Fb))
+				+ CQSynthDefs.prVcaLaw(fbVcaSum)).clip(0, 2.5);
 			inEnv = Amplitude.ar(inSig, 0.003, 0.08);
 			fbEnv = Amplitude.ar(here, 0.003, 0.08);
 			inCh = dolby.value(inSig, \dolbyIn.kr(enumIdx.value(\coco1DolbyIn)),
 				inEnv, fbEnv);
 			fbCh = dolby.value(here, \dolbyFb.kr(enumIdx.value(\coco1DolbyFb)),
 				fbEnv, inEnv);
-			record = (inCh * inVca) + (fbCh * fbVca)
-				+ (WhiteNoise.ar(\dust.kr(CQSpec.default(\coco1Dust), CQSpec.lag(\coco1Dust)))
-					* LFNoise2.ar(3));
+			// §13.3: chip debris, not a tape-hiss control. The quiet filtered bed
+			// keeps low dust settings continuous; sparse bipolar errors give the
+			// converter its own rough grain. Dust2's source rate is 2% of SR rather
+			// than 2% of clockHz on purpose: at slow clocks BufWr revisits one RAM
+			// cell for many server samples and only the last error survives. That
+			// natural thinning makes the STORED crackle density follow clockHz
+			// linearly (~30..960 grains/s at 1.5k..48k), instead of quadratically.
+			dustLevel = \dust.kr(CQSpec.default(\coco1Dust), CQSpec.lag(\coco1Dust));
+			dustSig = (LPF.ar(WhiteNoise.ar, 9000) * 0.35)
+				+ (Dust2.ar(SampleRate.ir * 0.02) * 1.2);
+			record = (inCh * inVca) + (fbCh * fbVca) + (dustSig * dustLevel);
 			record = Select.ar(\wrap.kr(CQSpec.default(\coco1Wrap)),
 				[record.clip2(1), record.wrap2(1)]);       // ADC rails — safety #2
 			record = record.round(2 ** (1 - \bits.kr(CQSpec.default(\coco1Bits))));
@@ -263,24 +309,17 @@ CQSynthDefs {
 					* 0.3);
 			lvl = \level.kr(CQSpec.default(\coco1Level), CQSpec.lag(\coco1Level));
 			Out.ar(\outBus.ir(0), voice * lvl);
-			// pan-placed post-fader send to the FDN (SPEC §5.3, cocoNSend). gCocos
-			// runs before gFx, so the send lands the same block the space processes
-			// it and the master reads the return — no extra latency (ARCH §3.1/§4.4)
-			Out.ar(\spaceBus.ir(0), Pan2.ar(voice * lvl,
-				\pan.kr(CQSpec.default(\coco1Pan), CQSpec.lag(\coco1Pan)),
-				\spaceSend.kr(CQSpec.default(\coco1Send), CQSpec.lag(\coco1Send))));
 			Out.ar(\modSrcBus.ir(0) + \modTapIdx.ir(12), outTap);  // canonical ch 12/13
 			Out.ar(\modSrcBus.ir(0) + \modOrganIdx.ir(14), organ); // canonical ch 14/15
 			// GUI in/out meters (SPEC §6.2); replyID tells the two instances apart
 			SendPeakRMS.kr([inSig, voice * lvl], 20, 3, '/cq_cocometers', \meterId.ir(0));
 			// GUI_SPEC §9 loop phase → the night read-head spark. Its own message
-			// at 5 Hz on purpose, not the meters' 15: the send rate IS the two
-			// shells' repaint ceiling (§10), and one shell repaint costs ~30 Pen
-			// calls (~1.6 ms), so 15 Hz would spend the GUI budget on two dots.
+			// shares the 15 Hz ambient ceiling with the castle fireflies. The GUI
+			// repaints only a clear dot-and-tail layer, never either complete shell.
 			// ...plus the read DIRECTION as an audio-rate mean, not a sample.
 			// `dir` is what the chevron and the comet's tail must agree on, and
 			// it is driven by max(flip param, matrix gate) — so a flip banana can
-			// reverse it far faster than 5 Hz can sample. Averaging at audio rate
+			// reverse it far faster than 15 Hz can sample. Averaging at audio rate
 			// before A2K (the same law as \cqAura's lag and the charge peak-hold)
 			// makes the value alias-free and gives the GUI a third, honest
 			// reading: near ±1 = settled forward/flipped, near 0 = shuttling too
@@ -292,8 +331,8 @@ CQSynthDefs {
 			// output IS triggers per second, smoothed over 0.2 s and self-
 			// clearing when they stop. It exists because a rate this fast
 			// cannot be drawn as motion (the eye fuses above ~10 Hz and this
-			// message is 5 Hz), so §16.6 draws it as weight instead.
-			SendReply.kr(Impulse.kr(5), '/cq_phase',
+			// message is 15 Hz), so §16.6 draws it as weight instead.
+			SendReply.kr(Impulse.kr(this.phaseReplyHz), '/cq_phase',
 				[A2K.kr(phase / frames), A2K.kr(Lag.ar(dir, 0.15)),
 					A2K.kr(Lag.ar((\t_skip.tr(0) + skipTrig) * SampleRate.ir,
 						0.2))],
@@ -310,50 +349,23 @@ CQSynthDefs {
 		})
 	}
 
-	// ARCHITECTURE §4.5 — small 4-line FDN reverb, vanilla UGens only, default
-	// OFF (spaceMix 0). Four mutually-prime DelayC lines scaled by spaceSize, a
-	// Householder feedback matrix (orthogonal → norm-preserving), one-pole high
-	// damping at spaceDamp in the feedback path, LeakDC on the input so no DC can
-	// accumulate in the recirculation. The feedback gain is hard-capped at 0.98
-	// (< 1 ⇒ always decays, never diverges); the master safety chain bounds the
-	// return regardless (safety #1). in ← aSpace (cocoNSend), out → aSpaceRet.
-	*space { |config|
-		^SynthDef(\cqSpace, {
-			var in = LeakDC.ar(In.ar(\inBus.ir(0), 2));
-			var size = \spaceSize.kr(CQSpec.default(\spaceSize), CQSpec.lag(\spaceSize));
-			var damp = \spaceDamp.kr(CQSpec.default(\spaceDamp), CQSpec.lag(\spaceDamp));
-			var g = size.min(0.98);                        // decay/size; hard cap 0.98
-			var dampCoef = exp(-2pi * damp / SampleRate.ir).clip(0, 0.999);
-			var times = [0.0293, 0.0373, 0.0437, 0.0531]; // s, ~29/37/44/53 ms (ARCH §4.5)
-			var prev = LocalIn.ar(4);                      // delay outs, previous block
-			var damped = OnePole.ar(prev, dampCoef);       // one-pole damping in the loop
-			var reflected = damped - (damped.sum * 0.5);   // Householder H = I − (2/N)11ᵀ
-			var node = (reflected * g) + ([in[0], in[1], in[0], in[1]] * 0.3);
-			var delays = 4.collect { |i| DelayC.ar(node[i], 0.07, times[i] * size) };
-			LocalOut.ar(delays);
-			Out.ar(\outBus.ir(0), [delays[0] + delays[3], delays[1] + delays[2]]);
-		})
-	}
-
-	// ARCHITECTURE §4.6 — the sacred chain (SPEC §8.1): LeakDC → tanh headroom →
+	// ARCHITECTURE §4.5 — the sacred chain (SPEC §8.1): LeakDC → tanh headroom →
 	// Limiter(0.89, 0.01) → bad-value squelch → boot fade. Fixed, non-bypassable.
 	// NEVER weaken; every hardware output must pass through this.
 	*master { |config|
 		^SynthDef(\cqMaster, {
 			var coco1 = In.ar(\coco1Bus.ir(0));
 			var coco2 = In.ar(\coco2Bus.ir(0));
-			var spaceRet = In.ar(\spaceRetBus.ir(0), 2);
 			var dry = In.ar(\dryBus.ir(0), 2);
 			var pan1 = \pan1.kr(CQSpec.default(\coco1Pan), CQSpec.lag(\coco1Pan));
 			var pan2 = \pan2.kr(CQSpec.default(\coco2Pan), CQSpec.lag(\coco2Pan));
-			var spaceMix = \spaceMix.kr(CQSpec.default(\spaceMix), CQSpec.lag(\spaceMix));
 			var masterDry = \masterDry.kr(CQSpec.default(\masterDry), CQSpec.lag(\masterDry));
 			var vol = \masterVol.kr(CQSpec.default(\masterVol), CQSpec.lag(\masterVol)).dbamp;
 			var mute = 1 - \mute.kr(0, CQSpec.lag(\monitorMute));
 			var fade = EnvGen.kr(Env([0, 1], [2]), \fadeIn.kr(0)); // silent boot → 2 s ramp
 			var mix, driven, preLim, grDb, stem1, stem2, hotRms, hotTimer;
 			mix = Pan2.ar(coco1, pan1) + Pan2.ar(coco2, pan2)
-				+ (spaceRet * spaceMix) + (dry * masterDry);
+				+ (dry * masterDry);
 			mix = mix * vol * mute;
 			driven = mix;                              // pre-safety "how hard is the
 			                                           // master driven" — the watchdog
@@ -446,7 +458,7 @@ CQSynthDefs {
 		})
 	}
 
-	// the sacred safety chain (SPEC §8.1, ARCH §4.6), factored so every stem is
+	// the sacred safety chain (SPEC §8.1, ARCH §4.5), factored so every stem is
 	// provably identical to it (safety #1: "identical chain on each stem"). The
 	// master's own main path keeps the chain inline because it interleaves the
 	// GR-meter tap between the tanh and the Limiter. Mono in, mono out.
@@ -487,5 +499,40 @@ CQSynthDefs {
 	// matrix weight-bus read: 50 ms smoothing + global patchDepth scaler (ARCH §3.3)
 	*prMatrixWeight { |busArg, patchDepth|
 		^Lag.kr(In.kr(busArg, 16), 0.05) * patchDepth
+	}
+
+	// ---- the VCA law (SPEC §5.5, interpretation — see ARCHITECTURE §4.4) ----
+	//
+	// §13.5's hypothesis: a summed LINEAR matrix VCA slides; an analog
+	// verso/inverso VCA breathes, so duckings and tremolos should have a
+	// "valve opens / valve shuts" body. The law is (1 + sum) ** 2.
+	//
+	// The plan sketched that as the gain itself. It cannot be, because in this
+	// instrument the knob is the VCA's base and the matrix ADDS to it
+	// (`knob + sum`, SPEC §5.5) — shaping the total would silently recalibrate
+	// every knob/default and a banana could no longer open a shut VCA, which is
+	// a documented patching move. So the shaping is applied to the modulation
+	// alone, as the contribution it makes:
+	//
+	//     shaped = (1 + sum) ** 2 - 1
+	//
+	// At knob=unity this is the plan's law BEFORE the real VCA ceiling
+	// (1 + shaped = (1 + sum)**2); input then clips to 2 and feedback to 2.5.
+	// Away from unity the knob keeps its zero-sum meaning. The contribution's
+	// anchors are: sum 0 -> 0, sum -1 -> -1 (therefore it closes a knob at or
+	// below unity, but only subtracts one above unity), sum +1 -> +3 before the
+	// ceiling. clip2 inside the loop remains safety invariant #2.
+	//
+	// `g.abs * g` is g**2 * g.sign in two ops: signed, so the law stays
+	// monotonic below sum = -1 instead of folding back up.
+	// The sum is clamped BEFORE shaping (§13.5's rake): \mayhem swings a VCA
+	// sum far past ±1 and squaring an unclamped swing would scorch the tone
+	// long before the clip caught it. Continuous VCA paths only — gate/trig
+	// destinations keep their Schmitt semantics and never come here.
+	*vcaSumClamp { ^2 }
+
+	*prVcaLaw { |sum|
+		var g = 1 + sum.clip(this.vcaSumClamp.neg, this.vcaSumClamp);
+		^(g.abs * g) - 1
 	}
 }

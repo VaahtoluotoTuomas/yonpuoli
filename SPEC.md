@@ -113,7 +113,10 @@ The implementation MUST reproduce these behaviors (these drive the acceptance te
 4. **Bounded chaos.** Feedback > unity must escalate into saturated, quantized mayhem
    that is *loudness-stable* (bounded by the converter clip), never a runaway level.
 5. **Digital dust.** With no input, feedback raised collects a granular noise floor
-   that can be caught into loops (self-noise source, level controllable in SC).
+   that can be caught into loops (self-noise source, level controllable in SC). A
+   quiet 9 kHz-filtered bed carries continuity while sparse bipolar converter errors
+   provide the chip-crackle; the RAM clock thins those errors so stored grain density
+   follows Speed (roughly 30–960 errors/s across 1.5–48 kHz).
 6. **Lossless hold.** Loop-hold plays the buffer indefinitely with zero degradation,
    and Speed changes during hold re-pitch the loop without destroying it.
 7. **Quantussy feel.** Master Frequency + Chaos as the two-knob macro: 0 = stable
@@ -172,7 +175,10 @@ buffers filled with dust and loop-locked, master faded in muted-to-nominal over 
 
 Conventions: all parameters listed here exist in `CQSpec` with exactly these names,
 ranges, curves, defaults. All setters clamp to range. `exp` = exponential mapping,
-`lin` = linear, `bipolar` = linear centered on 0. Toggles are 0/1. Enums are Symbols.
+`lin` = linear, `bipolar` = linear centered on 0. `fb taper` is the exactly
+invertible piecewise-linear control map
+`(0.00→0.00, 0.50→0.85, 0.90→1.10, 1.00→1.25)`; it changes hand resolution,
+not stored parameter values or DSP. Toggles are 0/1. Enums are Symbols.
 
 ### 5.1 Sources
 
@@ -200,11 +206,20 @@ Two channels; A feeds Coco1's `pre` slot, B feeds Coco2's by default.
 | Param | Range | Default | Curve | Notes |
 |---|---|---|---|---|
 | `preASrc`, `preBSrc` | enum | `\liveL` / `\liveR` | — | `\liveL \liveR \mic \deckA \deckB \none` |
-| `preADrive`, `preBDrive` | 1–40 (amp) | 2.0 | exp | into asymmetric soft clip (fuzz). Unity-ish ≤ 2 |
+| `preADrive`, `preBDrive` | 1–40 (amp) | 2.0 | exp | into asymmetric soft clip (fuzz), followed by fixed partial makeup attenuation of −1 dB per actual Drive octave. Unity-ish ≤ 2 |
 | `preABias`, `preBBias` | 0–0.6 | 0.15 | lin | waveshaper asymmetry (even harmonics) |
 
+The normative preamp path is
+`shaped = tanh((signal × drive) + bias) − tanh(bias)`, then
+`makeup = dbamp(−log2(drive))`, then `HPF(shaped × makeup, 20 Hz)`.
+The curve is anchored at exact unity for Drive 1 and is derived from the actual
+Drive value, not its GUI normalization. It is deliberately only partial:
+Drive still adds substantial material-dependent level and pressure.
+
 Each preamp publishes an **envelope follower** (`envA`, `envB`) to the mod source bus
-(attack 3 ms, release 150 ms, 0–1 range).
+(attack 3 ms, release 150 ms, 0–1 range). The follower reads the audible,
+post-makeup and post-HPF preamp output; A and B use the identical compensation
+law.
 
 ### 5.3 Coco 1 / Coco 2
 
@@ -213,8 +228,8 @@ Per Coco `n` ∈ {1,2} (names shown for n=1):
 | Param | Range | Default | Curve | Notes |
 |---|---|---|---|---|
 | `coco1In` | 0–2 | 0.8 | lin | input level into converter; >1 overdrives. Matrix VCA dest `coco1_inVca` |
-| `coco1Fb` | 0–1.25 | 0.35 | lin | feedback/loop level; 1.0 = unity looper; >1 = saturating growth (bounded by clip). Matrix VCA dest `coco1_fbVca` |
-| `coco1Speed` | 3000–48000 Hz | 24000 | exp | RAM clock. Loop length = bufFrames/clock (default buffer 2^17 ⇒ 2.7 s @48 k, 43.7 s @3 k). Post-modulation hard clamp: 1500 Hz – server SR (modulation may push an octave below the knob floor — the "ground jack" trick). Matrix dest `coco1_spaf` |
+| `coco1Fb` | 0–1.25 | 0.35 | fb taper | feedback/loop level; 1.0 = unity looper; >1 = saturating growth (bounded by clip). Matrix VCA dest `coco1_fbVca` |
+| `coco1Speed` | 1500–48000 Hz | 24000 | exp | RAM clock. Loop length = bufFrames/clock (default buffer 2^17 ⇒ 2.7 s @48 k, 87.4 s @1.5 k). Post-modulation hard clamp: 750 Hz – server SR, i.e. exactly one octave below the knob floor (modulation may push where the hand alone cannot — the "ground jack" trick; the clamp floor lives in `CQSpec.speedClampFloor`). Matrix dest `coco1_spaf` |
 | `coco1Spaf` | −4.0–4.0 oct | 0 | bipolar | the `^` knob: depth/direction of speed modulation from the matrix |
 | `coco1DolbyIn` | enum | `\off` | — | `\off \gate \duck` — gate = downward expander on input; duck = input attenuated by feedback-channel envelope |
 | `coco1DolbyFb` | enum | `\off` | — | same, on feedback channel, keyed by input envelope |
@@ -224,11 +239,10 @@ Per Coco `n` ∈ {1,2} (names shown for n=1):
 | `coco1Bits` | 3–12 | 8 | lin (int) | converter depth. 8 = authentic |
 | `coco1Wrap` | 0/1 | 0 | — | 0 = converter clips (authentic-safe); 1 = digital wraparound overflow (evil mode, still level-bounded downstream) |
 | `coco1Interp` | enum | `\zoh` | — | `\zoh` (authentic stair-step DAC) / `\smooth` (cubic read, tamer top end) |
-| `coco1Dust` | 0–0.5 | 0.02 | exp | self-noise injected pre-converter; the "digital dust" source |
+| `coco1Dust` | 0–0.5 | 0.02 | exp | filtered low bed + sparse bipolar chip errors injected pre-converter; stored error density follows Speed |
 | `coco1Organ` | 0–1 | 0 | lin | level of the organ square-stack voice (pitch tracks Speed) into this Coco's output mix |
 | `coco1Level` | 0–1.5 | 0.8 | exp | output level to mix |
 | `coco1Pan` | −1–1 | −0.3 (coco2: +0.3) | bipolar | |
-| `coco1Send` | 0–1 | 0.0 | lin | send to Space |
 | slot gains: `coco1SlotPre`, `coco1SlotDeck`, `coco1SlotQ`, `coco1SlotX` | 0–1.5 | 1.0 / 1.0 / 0.0 / 0.0 | lin | input mixer slots: preamp A, deck A, Quantussy audio mix (`qMix`), cross-feed from Coco2. (Coco2 slots: preamp B, deck B, qMix, Coco1) |
 
 **Converter chain (normative order):** input mix → dolby(in) → ×inVCA → + feedback
@@ -242,7 +256,7 @@ Global:
 | Param | Range | Default | Curve | Notes |
 |---|---|---|---|---|
 | `qFreq` | 0.05–500 Hz | 4.0 | exp | Master Frequency — scales all castle rates |
-| `qChaos` | 0–1 | 0.15 | lin | global depth of internal castle→FM feedback; maps internally to 0–5 octaves of expo FM |
+| `qChaos` | 0–1 | 0.15 | curve +2 | global depth of internal castle→FM feedback; maps internally to 0–5 octaves of expo FM. The hand map widens stepped wander (fader 0.5 → ≈0.269, 0.75 → ≈0.545); direct values and snapshots retain linear 0–1 DSP semantics |
 | `qShLag` | 0–0.2 s | 0.004 | exp | slew on castle (S&H) outputs. 4 ms = declick only ≈ authentic steps; larger tames the network (SC extension) |
 
 Per castle `k` ∈ {1..5}:
@@ -277,6 +291,25 @@ Outputs published to the mod source bus: `tri1..tri5` (±1 triangle), `cas1..cas
   (inverted CV) — this is how verso/inverso polarity is expressed.
 - Gate/trig destinations use a Schmitt threshold: rising through +0.5 fires (gates:
   >+0.5 = on).
+- **VCA law (`_inVca`, `_fbVca`).** The knob is the valve's resting position and the
+  matrix adds to it, but the modulation's contribution is **shaped, not linear**:
+  `shaped = (1 + sum)² − 1`, with `sum` clamped to ±2 before the shaping. Fixed
+  points: 0 contributes nothing, so the knob/default keeps its zero-sum value;
+  −1 contributes −1 (closing a knob at or below unity, only subtracting one above
+  unity); +1 contributes +3 where linear contributed +1. At a knob of unity the
+  pre-clip value is `(1 + sum)²`, but the actual input/feedback gains remain
+  capped at 2/2.5. VCA-bananas in stored snapshots are therefore sonically
+  revoiced even though their numeric knob and weight values are not migrated.
+  This is an interpretation (an analog verso/inverso VCA breathes rather than
+  slides — §13.5), documented like the organ derivation, and it is bounded by
+  the same output clip and by `clip2` inside the recirculation. Continuous VCA
+  paths only; gate/trig destinations keep their Schmitt semantics.
+- Each destination reads its 16-channel weight bus through the production
+  `prMatrixWeight` helper: `Lag.kr(weights, 0.05) × patchDepth`. This inherited
+  M1 smoothing currently precedes continuous sums **and** flip/skip/spesal
+  Schmitt sums; it is the implemented timing truth, not permission to add a
+  second lag. The §13.6 gate may replace it with destination-aware smoothing
+  only as an explicit DSP/SPEC change with gate/trig timing tests.
 - `patchDepth` (0–1, default 1.0, lag 50 ms): global scaler over all matrix weights —
   a "how alive is it" macro and instant tamer.
 - API: `patch(src, dest, w)`, `unpatch(src, dest)`, `clearPatch`, `getPatch`,
@@ -292,17 +325,15 @@ Outputs published to the mod source bus: `tri1..tri5` (±1 triangle), `cas1..cas
   Existing callers are unaffected: the default is the historical ~10%.
 - Named presets shipped in v1 (derived from documented hardware patches):
   `\empty`, `\classic` (tri→spaf both Cocos, castle→castle FM ring),
-  `\selfNoise` (dust looping + VCA wobble), `\quantumDrone` (castles as audio, skip/flip
-  animation), `\organMode` (organ outs as voices, cas→VCAs, tri→spaf light),
+  `\selfNoise` (dust looping as irregular held-feedback weather with true cross-feed
+  clearings), `\quantumDrone` (castles as audio, skip/flip animation),
+  `\organMode` (organ outs as voices, cas→VCAs, tri→spaf light),
   `\mayhem` (dense random, capped depths).
 
-### 5.6 Space (optional quality effect) and master
+### 5.6 Master
 
 | Param | Range | Default | Curve | Notes |
 |---|---|---|---|---|
-| `spaceMix` | 0–1 | 0.0 | lin | FDN reverb return level. Default OFF = purist |
-| `spaceSize` | 0.3–0.98 | 0.85 | lin | FDN feedback/size |
-| `spaceDamp` | 500–12000 Hz | 4500 | exp | high damping |
 | `masterDry` | 0–1 | 0.0 | lin | untreated source monitor mix (hardware has none; convenience) |
 | `masterVol` | −60–0 dB | −12 | lin dB | lagged 100 ms |
 | `monitorMute` | 0/1 | 0 | — | hard output mute (panic), 30 ms fade |
@@ -372,7 +403,7 @@ smoothing with 30 ms lag on all faders.
 | F3 | 34 | `coco1Spaf` | | F11 | 42 | `preADrive` + `preBDrive` (linked) |
 | F4 | 35 | `coco1Fb` | | F12 | 43 | `deckARate` + `deckBRate` (linked) |
 | F5 | 36 | `coco2In` | | F13 | 44 | `deckALevel` + `deckBLevel` (linked) |
-| F6 | 37 | `coco2Speed` | | F14 | 45 | `spaceMix` |
+| F6 | 37 | `coco2Speed` | | F14 | 45 | unassigned (reserved) |
 | F7 | 38 | `coco2Spaf` | | F15 | 46 | `patchDepth` |
 | F8 | 39 | `coco2Fb` | | F16 | 47 | `masterVol` |
 
@@ -492,7 +523,78 @@ gitignored):
 )
 ```
 
-Notes:
+### 7.1 Audio I/O Setup
+
+The Drawer exposes the existing machine-specific audio configuration without
+turning it into musical state. Audio I/O owns only:
+
+`device · sampleRate · blockSize · hardwareBufferSize · inChans[0..1] ·
+micChan · outChans · stemOuts · recStems`.
+
+These fields are not `CQSpec` parameters and never enter snapshots, matrix undo,
+Spellbook, presets or the banana grammar. Night still selects among `live l`,
+`live r`, `mic`, `deck a` and `deck b`; Audio I/O only decides which hardware or
+virtual channels feed the three live sources. Likewise, main and optional Coco
+stems still pass through the fixed post-safety master graph before their
+configured hardware outputs. The page may not add an `Out.ar` bypass.
+
+Channel indices remain zero-based in config and are displayed one-based in the
+GUI through one shared conversion helper. `inChans` remains backward-compatible
+with its existing 1…8-element config form, but the page reads/writes only the
+first two channels because `\cqInput` consumes only those. Main L/R must be
+different; enabled stem outputs must be different from one another and disjoint
+from main. Deliberate live L/R mono duplication and sharing the mic channel with
+a live channel are allowed. Selecting a mic channel never raises `micGain`.
+
+The model distinguishes:
+
+- **active** — the config of the successfully running graph;
+- **draft** — the page's unapplied Audio-owned values;
+- **dirty** — draft differs from active;
+- **valid** — `CQConfig` accepts the complete candidate structurally;
+- **last working** — the last candidate whose whole graph reached `running`.
+
+The hand-maintained base config is never rewritten. A generated, gitignored
+profile lives beside it: `config.scd → config.audio.scd`, or
+`foo.scd → foo.audio.scd`. Merge precedence is
+`CQConfig.defaults < base config < audio profile`, followed by validation of the
+complete candidate. Generated profiles may contain only the nine keys above;
+an unknown key is corruption and hard-fails. SuperCollider `Event` cannot retain
+an explicit `nil` value, so the generated profile uses the private value
+`\default` under `device`, `hardwareBufferSize`, `micChan` or `stemOuts`; the
+Audio model decodes it to the corresponding real `nil` config truth before the
+candidate reaches `CQGraph`. Device Strings remain exact, escaped data and are
+never parsed from or evaluated as UI text.
+
+Device, sample rate, server block, hardware buffer and hardware channel changes
+are not hot-swapped. Apply requires a visible inline confirmation that
+`Server.default` restarts, unrelated synths on it stop, and the current unsaved
+Yölahti patch resets. An active recorder blocks restart. A candidate becomes
+active/last-working and its pending profile becomes current only after the
+responsive server reports three actual-sample-rate readings, separated by
+0.75 seconds, all within 80–120% of the requested rate, and the full SynthDef,
+graph, state, matrix and fade-in sequence reaches `running`. Multiple readings
+are normative because the status watcher may briefly retain the previous
+server's healthy value across reboot. The clock check runs before graph
+allocation or fade-in: a responsive process with a catastrophically stalled
+audio clock is a candidate failure, not working audio. Candidate failure
+triggers exactly one automatic reboot of the previous last-working Event;
+rollback failure leaves the lifecycle failed and silent. No callback from an
+older session generation may publish state or files.
+
+Audio I/O does not install drivers, create loopbacks/Aggregate Devices or
+bridge incompatible host APIs. The running page must not call
+`_ListAudioDevices`: physical Windows WASAPI testing showed that
+`ServerOptions.inDevices/outDevices` enumeration can wedge an already-owned
+endpoint. Until discovery is moved behind a stopped-server boundary, runtime
+choices are the exact configured endpoint(s) plus system default and the
+disabled control reads `configured devices`. Future directional discovery
+must collapse only exact duplicate Strings; similar names are never
+fuzzy-merged or parsed as host-API metadata. Device-list membership is not
+evidence of channel capacity.
+
+### 7.2 Existing safety and hardware notes
+
 - **Mic feedback safety:** when `micChan` is set and output device is the laptop's
   speakers, GUI shows a persistent warning; `micGain` defaults to 0 and is never
   included in snapshots' recalled gains above 0 unless explicitly saved by the user.
@@ -595,7 +697,8 @@ mic path + warnings, remaining presets, keyboard map. Exit: 30-min session witho
 typing anything but patch lines; M1–M8 checklist pass.
 
 **M3 — it ships (polish).**
-Space FDN, stems + stem recording, watchdog trim, pattern event type, README,
+The v1.0 baseline included the later-retired Space FDN; stems + stem recording,
+watchdog trim, pattern event type, README,
 performance pass (§9 budget), full acceptance re-run, v1.0 tag.
 
 ---
@@ -611,6 +714,7 @@ Documented so fidelity questions have one answer:
 4. File decks, snapshots, morphing, disk recorder: studio affordances, no hw analog.
 5. Master limiter, watchdog, lags, clamps: safety layer the hardware never needed
    (it can't exceed line level; a computer + headphones can).
-6. Space FDN reverb: optional, defaults off; the hardware has no reverb.
+6. The v1.0 Space FDN was a software-only experiment and was retired after the
+   2026-07-28 listening decision; current production has no built-in reverb.
 7. Spesal 8-state semantics and organ derivation are marked interpretations (§2, §3).
 8. Stereo image: hardware is dual-mono to a stereo out; SC adds pan/width control.

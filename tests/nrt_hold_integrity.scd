@@ -65,7 +65,8 @@ var makeA4Score = {
 	score.add([3.0, [\n_set, 1002, \hold, 1]]);      // > one full capture pass
 	score.add([3.2, [\b_write, 0, dump1, "WAV", "float", -1, 0, 0]]);
 	// ±2 oct sine-shaped sweep and back, one step per 0.5 s; the def's own
-	// 1500 Hz..SR clamp is allowed to engage — hold must survive regardless
+	// post-modulation clamp (CQSpec.speedClampFloor..SR) is allowed to engage —
+	// hold must survive regardless
 	108.do { |i|
 		score.add([4.0 + (i * 0.5), [\n_set, 1002,
 			\speed, (a4Clock * (2 ** (2 * sin(2pi * i / 108)))).round(1)]]);

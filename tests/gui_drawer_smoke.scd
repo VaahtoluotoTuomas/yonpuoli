@@ -55,10 +55,10 @@ centred = { |inner, outer|
 					var beforePreset;
 					check.value(drawer.notNil
 						and: { CQGuiDrawer.tabs
-							== #[inspector, workshop, spellbook, memory] }
+							== #[inspector, workshop, spellbook, memory, audio] }
 						and: { drawer.pages.size == CQGuiDrawer.tabs.size }
 						and: { drawer.pages.every { |page| page.notNil } },
-						"real Drawer owns the four normative pages");
+						"real Drawer owns the five normative pages");
 					check.value(gui.shellState.drawerOpen
 						and: { gui.shell.workspaceStack.index == 1 }
 						and: { drawer.inspectorView.visible },
@@ -227,6 +227,20 @@ centred = { |inner, outer|
 								and: { drawer.spellbookGui.rail.bounds.width
 									== drawer.memoryGui.railWidth },
 								"every Drawer page shares one content rail");
+							gui.shell.selectDrawer(\audio);
+							check.value(gui.shellState.drawerTab == \audio
+								and: { drawer.audioSetup.deviceReadCount == 1 },
+								"the fifth Audio page is selectable without rescanning devices");
+							check.value(drawer.audioSetup.deviceRefreshAvailable.not
+								and: { drawer.audioSetup.refreshButton.label
+									== "configured devices" }
+								and: { drawer.audioSetup.refreshButton.enabled.not },
+								"runtime Audio never enumerates devices over owned WASAPI endpoints");
+							gui.shell.toggleDrawer;
+							gui.shell.toggleDrawer;
+							check.value(gui.shellState.drawerTab == \audio
+								and: { drawer.audioSetup.deviceReadCount == 1 },
+								"Audio selection persists across close/open without rebuild");
 							gui.shell.selectDrawer(\spellbook);
 							check.value(gui.shellState.drawerTab == \spellbook,
 								"open workbench returns to the live Spellbook page");
@@ -281,7 +295,7 @@ centred = { |inner, outer|
 													<= workshop.view.bounds.height }
 												and: { centred.value(workshop.rail, workshop.view) },
 												"the shared content rail is centred and fits its page");
-											check.value(workshop.serviceModules.size == 4
+											check.value(workshop.serviceModules.size == 3
 												and: { workshop.serviceModules.collect { |module|
 													module.bounds.width
 												} == CQGuiWorkshop.serviceWidths(
@@ -290,7 +304,7 @@ centred = { |inner, outer|
 													module.bounds.height
 														== CQGuiScale.serviceBandHeight(drawer.step)
 												} },
-												"four equal modules make the shallow service band");
+												"three equal modules make the shallow service band");
 											check.value(workshop.mainLedgers
 												.collect { |ledger| ledger.bounds.width }
 												== CQGuiWorkshop.mainWidths(
@@ -298,11 +312,11 @@ centred = { |inner, outer|
 												and: { workshop.mainLedgers[0].bounds.width
 													== workshop.mainLedgers[2].bounds.width },
 												"the body is the coco / quantussy / coco triptych, the pair equal");
-											check.value(workshop.rows.size == 43
+											check.value(workshop.rows.size == 39
 												and: { workshop.rows.every { |row|
 													row.kind == \ledger and: { row.isInteractive }
 												} },
-												"all 43 parameters render as enabled ledger rows");
+												"all 39 parameters render as enabled ledger rows");
 											// no scroll view: the last row of the
 											// deepest group must lie inside the page
 											check.value(#[coco1SlotX, coco2SlotX, c5Send]
@@ -312,15 +326,16 @@ centred = { |inner, outer|
 												},
 												"the last Coco slot rows and the fifth castle send are contained");
 											check.value(CQInkControl.drawErrors == 0,
-												"the islands and 43 ledger rows paint without callback errors");
+												"the islands and 39 ledger rows paint without callback errors");
 											// The user's N8 rounds: one shared page frame.
 											// Measured parent-relative, because a hidden
 											// StackLayout page reports stale ABSOLUTE
-											// bounds — all four have been laid out at
+											// bounds — all five have been laid out at
 											// this step by now.
 											pages = [
 												[drawer.inspectorView, drawer.grid.status.parent],
 												[drawer.workshopView, workshop.rail],
+												[drawer.audioView, drawer.audioSetup.rail],
 												[drawer.spellbookView, drawer.spellbookGui.rail],
 												[drawer.memoryView, drawer.memoryGui.header]];
 											check.value(pages.collect { |pair|
@@ -439,12 +454,14 @@ centred = { |inner, outer|
 																> CQGuiScale.metrics(\compact)[\cellHeight]
 																and: { drawer.spellbookGui.rail.bounds.width
 																	== workshop.railWidth }
+																and: { drawer.audioSetup.railWidth
+																	== workshop.railWidth }
 																and: { drawer.memoryGui.railWidth
 																	== workshop.railWidth },
-																"the loom grows too and all four pages keep one rail");
+																"the loom grows too and all five pages keep one rail");
 															check.value(CQInkControl.drawErrors == 0,
 																"the Night skin paints cleanly at both size steps");
-															// The user's N8 rounds: all four pages must
+															// Every Drawer page must
 															// open with the same air under the tab row.
 															// Measure the first CONTENT row, not the top
 															// pad — a correct pad with extra layout

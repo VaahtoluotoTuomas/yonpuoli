@@ -249,28 +249,42 @@ CQMatrix {
 				// "worn but working tape"; 0.15 already tipped into seasick
 			),
 
-			// "dust looping + VCA wobble" (SPEC §5.5, M4): the no-input digital-dust
-			// workflow as one gesture — external slots closed, both converters
-			// recording (hold 0) over unity feedback so their own dust accumulates;
-			// slotX cross-feed makes the two loops chew on each other. Infra tris
-			// breathe the feedback VCAs (dust-density waves), infra/balcium cas
-			// steps gate the cross-feed, slow spaf drift keeps the grain shifting.
-			// Different speeds = different loop lengths -> the pair never phase-locks
+			// "dust looping + broken weather" (SPEC §5.5, M4): no external input;
+			// both converters record their own dust and a gated fraction of the
+			// other loop. Small opposite-polarity tris keep an undertow under the
+			// feedback VCAs, but held castle values carry most of the gain: growth
+			// arrives as unequal plateaus, not two regular ocean swells. The input
+			// valves rest low enough that cas1/cas3 can fully cut cross-feed, making
+			// real clearings. All four modulation castles are explicitly infra so
+			// the preset cannot inherit an audio-rate gate from another overlay.
+			// Different speeds and opposing spaf drift keep the pair from phase-lock.
 			selfNoise: (
 				matrix: [
-					[\tri2, \coco1_fbVca, 0.15], [\tri4, \coco2_fbVca, 0.15],
-					[\cas1, \coco1_inVca, 0.3], [\cas3, \coco2_inVca, 0.3],
-					[\tri1, \coco1_spaf, 0.25], [\tri3, \coco2_spaf, 0.25]
+					[\tri2, \coco1_fbVca, 0.045], [\cas1, \coco1_fbVca, 0.19],
+					[\tri4, \coco2_fbVca, -0.04], [\cas3, \coco2_fbVca, -0.21],
+					[\cas2, \coco1_inVca, 0.36], [\cas4, \coco2_inVca, 0.36],
+					[\tri1, \coco1_spaf, 0.2], [\tri3, \coco2_spaf, -0.24]
 				],
 				params: (
 					coco1Hold: 0, coco2Hold: 0,
-					coco1Fb: 1.1, coco2Fb: 1.1,
-					coco1Dust: 0.3, coco2Dust: 0.25,
+					coco1In: 0.42, coco2In: 0.4,
+					coco1Fb: 0.86, coco2Fb: 0.82,
+					coco1Dust: 0.22, coco2Dust: 0.18,
 					coco1SlotPre: 0, coco2SlotPre: 0,
 					coco1SlotDeck: 0, coco2SlotDeck: 0,
-					coco1SlotX: 0.3, coco2SlotX: 0.3,
+					coco1SlotQ: 0, coco2SlotQ: 0,
+					coco1SlotX: 0.24, coco2SlotX: 0.2,
 					coco1Spaf: 0.4, coco2Spaf: 0.4,
-					coco2Speed: 18000
+					coco1Speed: 24000, coco2Speed: 18000,
+					coco1DolbyIn: \off, coco2DolbyIn: \off,
+					coco1DolbyFb: \off, coco2DolbyFb: \off,
+					coco1Bits: 8, coco2Bits: 8,
+					coco1Wrap: 0, coco2Wrap: 0,
+					coco1Interp: \zoh, coco2Interp: \zoh,
+					coco1Organ: 0, coco2Organ: 0,
+					qFreq: 4, qChaos: 0.36,
+					c1Range: \infra, c2Range: \infra,
+					c3Range: \infra, c4Range: \infra
 				)
 			),
 

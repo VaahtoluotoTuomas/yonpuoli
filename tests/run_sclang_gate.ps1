@@ -25,10 +25,20 @@ $requiredMarker = switch -Wildcard ($leaf) {
     "run_all.scd" { "CQ_TESTS_PASSED"; break }
     "nrt_safety.scd" { "CQ_SAFETY_PASSED"; break }
     "nrt_hold_integrity.scd" { "CQ_HOLD_OK"; break }
+    "nrt_dust_character.scd" { "CQ_DUST_OK"; break }
+    "nrt_selfnoise_character.scd" { "CQ_SELFNOISE_OK"; break }
+    "nrt_zipper_measure.scd" { "CQ_ZIPPER_MEASURED"; break }
+    "nrt_preamp_loudness.scd" { "CQ_PREAMP_OK"; break }
+    "prototype_space_compile.scd" { "CQ_SPACE_LAB_COMPILE_OK"; break }
+    "prototype_space_nrt.scd" { "CQ_SPACE_LAB_NRT_PASSED"; break }
     "gui_shell_smoke.scd" { "CQ_GUI_SHELL_PASSED"; break }
     "gui_drawer_smoke.scd" { "CQ_GUI_DRAWER_PASSED"; break }
+    "gui_audio_setup_smoke.scd" { "CQ_GUI_AUDIO_PASSED"; break }
+    "gui_audio_presence_smoke.scd" { "CQ_GUI_AUDIO_PRESENCE_PASSED"; break }
     "gui_drawer_preview_reentry_smoke.scd" { "CQ_GUI_DRAWER_REENTRY_PASSED"; break }
     "gui_night_smoke.scd" { "CQ_GUI_NIGHT_PASSED"; break }
+    "gui_night_phase_layer_smoke.scd" { "CQ_GUI_PHASE_LAYER_PASSED"; break }
+    "gui_night_capture.scd" { "CQ_NIGHT_CAPTURE_DONE"; break }
     default { $null }
 }
 $logDir = Join-Path $PSScriptRoot "tmp\gate-logs"

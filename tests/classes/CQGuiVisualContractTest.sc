@@ -19,9 +19,11 @@ CQGuiVisualContractTest : UnitTest {
 
 	test_masterIsPersistentPerformanceOnly {
 		var items = CQGuiPanels.masterItems;
-		#[masterVol, masterDry, spaceMix, patchDepth, gr, notice, rec, panic].do { |item|
+		#[masterVol, masterDry, patchDepth, gr, notice, rec, panic].do { |item|
 			this.assert(items.includes(item), "Master keeps %".format(item));
 		};
+		this.assert(items.includes(\spaceMix).not,
+			"the retired Space control cannot return through the persistent strip");
 		#[snapshotName, snapshotSave, snapshotRecall, morph].do { |item|
 			this.assert(items.includes(item).not,
 				"Master never contains Drawer-memory item %".format(item));
@@ -35,12 +37,12 @@ CQGuiVisualContractTest : UnitTest {
 		};
 	}
 
-	// N8 added the Workshop as a fourth persistent page — not a replacement for
-	// Inspector and not a mode inside Memory (NIGHT_STANDALONE_PLAN §12.1.3).
-	test_drawerPublishesTheFourNormativePages {
+	// AIO-1 adds Audio without replacing a musical page; it remains last because
+	// it is the technical machine/engine boundary.
+	test_drawerPublishesTheFiveNormativePages {
 		this.assertEquals(CQGuiDrawer.tabs,
-			#[inspector, workshop, spellbook, memory],
-			"Drawer exposes Inspector, Workshop, Spellbook and Memory in order");
+			#[inspector, workshop, spellbook, memory, audio],
+			"Drawer exposes Inspector, Workshop, Spellbook, Memory and Audio in order");
 	}
 
 	// A page the shell state would refuse is a page the toolbar cannot reach:
@@ -57,8 +59,41 @@ CQGuiVisualContractTest : UnitTest {
 			"and still refuses a page that does not exist");
 	}
 
+	test_audioPresenceUsesCoarseStableDisplaySteps {
+		this.assert(CQGuiAudioSetup.presenceNorm(0).isNumber
+			and: { CQGuiAudioSetup.presenceNorm(0) == 0 },
+			"silence sits at the start of the presence rail");
+		this.assertEquals(
+			CQGuiAudioSetup.presenceNorm(0.1),
+			CQGuiAudioSetup.presenceNorm(0.1001),
+			"sub-pixel amplitude noise does not request a new Qt frame");
+		this.assert(CQGuiAudioSetup.presenceThreshold > 0
+			and: { CQGuiAudioSetup.presenceThreshold < 0.01 },
+			"the signal/quiet threshold remains a low raw-port presence test");
+		this.assertEquals(CQGui.audioPresencePeriod, 1 / 15,
+			"combined input/master presence is paced to 15 Hz");
+	}
+
+	test_runtimeAudioCatalogUsesOnlyConfiguredEndpoints {
+		var input = "Windows WASAPI : Lake Mic";
+		var output = "Windows WASAPI : Lake Phones";
+		var split = CQGuiAudioSetup.configuredDeviceCatalog([input, output]);
+		var single = CQGuiAudioSetup.configuredDeviceCatalog(output);
+		var defaults = CQGuiAudioSetup.configuredDeviceCatalog(nil);
+		this.assertEquals(split[\inputs], [input],
+			"runtime split catalog keeps only the exact configured input");
+		this.assertEquals(split[\outputs], [output],
+			"runtime split catalog keeps only the exact configured output");
+		this.assertEquals(single[\inputs], [output],
+			"a configured single device remains bidirectional");
+		this.assertEquals(single[\outputs], [output],
+			"single-device output matches the same exact endpoint");
+		this.assert(defaults[\all].isEmpty,
+			"system default needs no host-device enumeration");
+	}
+
 	// The loom keeps large playable knots at every Drawer size step; its cell
-	// width is what sets the rail all four pages align to (CQGuiScale).
+	// width is what sets the rail all five pages align to (CQGuiScale).
 	test_inspectorUsesPlayablePatchLoomCellsAtEveryStep {
 		CQGuiScale.steps.do { |step|
 			var page = if(step == \roomy) { 1434 } { 1272 };
@@ -151,6 +186,8 @@ CQGuiVisualContractTest : UnitTest {
 		this.assertEquals(
 			coco.detect { |reply| reply[\name] == '/cq_phase' }[\values], 3,
 			"the phase message carries address, direction and skip rate");
+		this.assertEquals(CQSynthDefs.phaseReplyHz, 15,
+			"the read head shares the 15 Hz ambient ceiling with castle motion");
 		this.assert(quantussy.collect { |reply| reply[\name] }
 			.includes('/cq_castle'),
 			"extracting the sums left the castle activity telemetry intact");

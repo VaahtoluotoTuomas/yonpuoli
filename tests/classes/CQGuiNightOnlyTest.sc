@@ -1,7 +1,7 @@
 // N9 — Night is the instrument, not one half of a two-skin runtime.
 // This contract keeps the removal structural and reversible: the live shell
 // has one instrument destination, while the Drawer and persistent Master keep
-// the complete Night 31 + Master 5 + Workshop 43 ownership proved elsewhere.
+// the complete Night 31 + Master 4 + Workshop 39 ownership proved elsewhere.
 
 CQGuiNightOnlyTest : UnitTest {
 	test_shellHasOneNightInstrumentDestination {
@@ -31,8 +31,8 @@ CQGuiNightOnlyTest : UnitTest {
 			and: { CQGuiCastleConstellation.respondsTo(\normalizedPositions).not },
 			"the dead Day topology overview has no geometry or drawing path");
 		this.assertEquals(CQGuiPanels.masterParamNames,
-			#[masterVol, masterDry, spaceMix, patchDepth, monitorMute],
-			"Master keeps its five exact CQSpec owners");
+			#[masterVol, masterDry, patchDepth, monitorMute],
+			"Master keeps its four exact CQSpec owners");
 	}
 
 	test_nightDrawerMasterStillCoverTheInstrument {
@@ -43,7 +43,7 @@ CQGuiNightOnlyTest : UnitTest {
 			CQSpec.names,
 			"Night + Drawer + Master still reaches every CQSpec parameter");
 		this.assertEquals(CQGuiDrawer.tabs,
-			#[inspector, workshop, spellbook, memory],
-			"the complete four-page workbench remains");
+			#[inspector, workshop, spellbook, memory, audio],
+			"the complete five-page workbench remains");
 	}
 }

@@ -29,6 +29,30 @@ CQSpec {
 
 	*at { |name| ^this.specs[name] }
 
+	// A semantic control may draw the same normalized regions its hand map
+	// actually uses. Return a copy: CQSpec owns the table and no view may
+	// mutate range truth while decorating itself.
+	*mapBreakpoints { |name|
+		var e = this.specs[name], points;
+		if(e.isNil) { ^nil };
+		points = e[\breakpoints];
+		if(points.isNil) { ^nil };
+		^points.collect { |point| point.copy }
+	}
+
+	// Named landmarks belong to the parameter just like its range and curve.
+	// Views receive only the mapped normalized position: they never assume that
+	// unity is halfway along a rail (which is false for a curved deck level).
+	*referenceNorm { |name, reference|
+		var e = this.specs[name], references, value;
+		if(e.isNil) { ^nil };
+		references = e[\references];
+		if(references.isNil) { ^nil };
+		value = references[reference];
+		if(value.isNil) { ^nil };
+		^this.unmap(name, value)
+	}
+
 	*default { |name|
 		var e = this.specs[name];
 		^if(e.isNil) { nil } { e[\default] }
@@ -66,6 +90,14 @@ CQSpec {
 		^this.unmap(name, 0)
 	}
 
+	// SPEC §5.3: the Coco clock is clamped a second time AFTER speed modulation,
+	// which is what lets a banana into `_spaf` push the clock an octave below the
+	// knob's own floor (the "ground jack" trick). It is a range fact of the Speed
+	// parameter, so it lives here rather than as a literal inside \cqCoco — the
+	// SynthDef, the tests and the spec then cannot drift apart. The knob floor
+	// itself is the minval of `coco1Speed`/`coco2Speed`.
+	*speedClampFloor { ^750 }
+
 	// the funnel: every write path passes its value through here (SPEC §8.3)
 	*clamp { |name, value|
 		var e = this.specs[name];
@@ -87,7 +119,7 @@ CQSpec {
 		if(e.isNil) { ^nil };
 		norm = (this.prNumOrNil(norm) ? 0).clip(0, 1);
 		^switch(e[\kind],
-			\num,    { e[\spec].map(norm) },
+			\num,    { this.prMapNum(e, norm) },
 			\int,    { e[\spec].map(norm).round.asInteger },
 			\toggle, { if(norm > 0.5) { 1 } { 0 } },
 			\enum,   { e[\values].at((norm * (e[\values].size - 1)).round.asInteger) }
@@ -99,7 +131,7 @@ CQSpec {
 		if(e.isNil) { ^nil };
 		value = this.clamp(name, value);
 		^switch(e[\kind],
-			\num,    { e[\spec].unmap(value) },
+			\num,    { this.prUnmapNum(e, value) },
 			\int,    { e[\spec].unmap(value) },
 			\toggle, { value },
 			\enum,   { e[\values].indexOf(value) / (e[\values].size - 1) }
@@ -149,9 +181,32 @@ CQSpec {
 		^e[\default]
 	}
 
-	*prNum { |name, lo, hi, warp, default, lag = 0.03|
+	// An optional monotonic breakpoint table keeps a hand mapping honest and
+	// exactly invertible while ControlSpec remains the owner of range/clamping.
+	// Each point is [normalizedPosition, parameterValue]; the table itself lives
+	// only in this registry, never in a GUI or MIDI call site.
+	*prMapNum { |e, norm|
+		var points = e[\breakpoints], i;
+		if(points.isNil) { ^e[\spec].map(norm) };
+		i = (0 .. (points.size - 2)).detect { |j| norm <= points[j + 1][0] };
+		^norm.linlin(
+			points[i][0], points[i + 1][0],
+			points[i][1], points[i + 1][1])
+	}
+
+	*prUnmapNum { |e, value|
+		var points = e[\breakpoints], i;
+		if(points.isNil) { ^e[\spec].unmap(value) };
+		i = (0 .. (points.size - 2)).detect { |j| value <= points[j + 1][1] };
+		^value.linlin(
+			points[i][1], points[i + 1][1],
+			points[i][0], points[i + 1][0])
+	}
+
+	*prNum { |name, lo, hi, warp, default, lag = 0.03, breakpoints, references|
 		all[name] = (kind: \num, spec: ControlSpec(lo, hi, warp, 0, default),
-			default: default, lag: lag);
+			default: default, lag: lag, breakpoints: breakpoints,
+			references: references);
 	}
 
 	*prInt { |name, lo, hi, default|
@@ -173,8 +228,8 @@ CQSpec {
 		// SPEC §5.1 sources
 		this.prNum(\liveGain, 0, 4, 4, 1.0);
 		this.prNum(\micGain, 0, 8, 4, 0.0);       // default 0 = muted (SPEC §7 mic safety)
-		this.prNum(\deckALevel, 0, 2, 4, 1.0);
-		this.prNum(\deckBLevel, 0, 2, 4, 1.0);
+		this.prNum(\deckALevel, 0, 2, 4, 1.0, 0.03, nil, (unity: 1.0));
+		this.prNum(\deckBLevel, 0, 2, 4, 1.0, 0.03, nil, (unity: 1.0));
 		this.prNum(\deckARate, -2.0, 2.0, \lin, 1.0);
 		this.prNum(\deckBRate, -2.0, 2.0, \lin, 1.0);
 		this.prToggle(\deckALoop, 1);
@@ -191,9 +246,12 @@ CQSpec {
 		// SPEC §5.3 cocos (identical pair, only pan default differs)
 		[1, 2].do { |n|
 			var p = { |suffix| ("coco" ++ n ++ suffix).asSymbol };
-			this.prNum(p.value("In"), 0, 2, \lin, 0.8);
-			this.prNum(p.value("Fb"), 0, 1.25, \lin, 0.35);
-			this.prNum(p.value("Speed"), 3000, 48000, \exp, 24000);
+			this.prNum(p.value("In"), 0, 2, \lin, 0.8, 0.03, nil, (unity: 1.0));
+			this.prNum(p.value("Fb"), 0, 1.25, \lin, 0.35, 0.03,
+				[[0.0, 0.0], [0.5, 0.85], [0.9, 1.10], [1.0, 1.25]]);
+			// 13.2: the floor is 1500 Hz, not the shy 3000 — five octaves of clock
+			// under the hand, and the darkest end is playable rather than a wall
+			this.prNum(p.value("Speed"), 1500, 48000, \exp, 24000);
 			this.prNum(p.value("Spaf"), -4.0, 4.0, \lin, 0);
 			this.prEnum(p.value("DolbyIn"), #[off, gate, duck], \off);
 			this.prEnum(p.value("DolbyFb"), #[off, gate, duck], \off);
@@ -206,7 +264,6 @@ CQSpec {
 			this.prNum(p.value("Organ"), 0, 1, \lin, 0);
 			this.prNum(p.value("Level"), 0, 1.5, 4, 0.8);
 			this.prNum(p.value("Pan"), -1, 1, \lin, if(n == 1) { -0.3 } { 0.3 });
-			this.prNum(p.value("Send"), 0, 1, \lin, 0.0);
 			this.prNum(p.value("SlotPre"), 0, 1.5, \lin, 1.0);
 			this.prNum(p.value("SlotDeck"), 0, 1.5, \lin, 1.0);
 			this.prNum(p.value("SlotQ"), 0, 1.5, \lin, 0.0);
@@ -215,7 +272,9 @@ CQSpec {
 
 		// SPEC §5.4 quantussy
 		this.prNum(\qFreq, 0.05, 500, \exp, 4.0);
-		this.prNum(\qChaos, 0, 1, \lin, 0.15);
+		// Curve +2 keeps the stepped drunken-wander country broad under the hand:
+		// noon maps to ~0.269 and 3/4 to ~0.545; DSP value semantics stay linear.
+		this.prNum(\qChaos, 0, 1, 2, 0.15);
 		this.prNum(\qShLag, 0, 0.2, 4, 0.004);
 		[\infra, \infra, \balcium, \infra, \audio].do { |range, i|
 			this.prEnum(("c" ++ (i + 1) ++ "Range").asSymbol, #[infra, balcium, audio], range);
@@ -230,10 +289,7 @@ CQSpec {
 		// SPEC §5.5 matrix macro
 		this.prNum(\patchDepth, 0, 1, \lin, 1.0, 0.05);
 
-		// SPEC §5.6 space + master
-		this.prNum(\spaceMix, 0, 1, \lin, 0.0);
-		this.prNum(\spaceSize, 0.3, 0.98, \lin, 0.85);
-		this.prNum(\spaceDamp, 500, 12000, \exp, 4500);
+		// SPEC §5.6 master
 		this.prNum(\masterDry, 0, 1, \lin, 0.0);
 		this.prNum(\masterVol, -60, 0, \lin, -12, 0.1);   // lin dB, lag 100 ms
 		this.prToggle(\monitorMute, 0, 0.03);             // 30 ms panic fade
@@ -246,7 +302,7 @@ CQSpec {
 			[\preADrive, \preBDrive],
 			[\deckARate, \deckBRate],
 			[\deckALevel, \deckBLevel],
-			[\spaceMix], [\patchDepth], [\masterVol]
+			[], [\patchDepth], [\masterVol]
 		];
 	}
 }

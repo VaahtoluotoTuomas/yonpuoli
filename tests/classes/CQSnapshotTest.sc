@@ -186,6 +186,21 @@ CQSnapshotTest : UnitTest {
 			"the new snapshots folder wins over a same-name legacy file");
 	}
 
+	test_retiredSpaceFieldsCannotReturnThroughOldSnapshots {
+		var before = state.asEvent;
+		this.prWrite("retired_space",
+			"(version: 1, params: (spaceMix: 1, spaceSize: 0.98, "
+			++ "spaceDamp: 12000, coco1Send: 1, coco2Send: 1), matrix: [])");
+		this.assert(snaps.recall(\retired_space),
+			"an old snapshot remains structurally recallable");
+		this.assertEquals(state.asEvent, before,
+			"retired Space fields are skipped and change no live parameter");
+		#[spaceMix, spaceSize, spaceDamp, coco1Send, coco2Send].do { |name|
+			this.assert(CQSpec.includes(name).not,
+				"retired snapshot field % has no CQSpec activation path".format(name));
+		};
+	}
+
 	test_morphEndsAtTarget {
 		state.set(\coco1Fb, 0.2);
 		state.set(\coco1Hold, 0);

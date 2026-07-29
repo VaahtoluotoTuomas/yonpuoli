@@ -7,7 +7,8 @@ CQGuiLifecycleTest : UnitTest {
 	tearDown {
 		gui !? { gui.free };
 		#[cq_gui_meters, cq_gui_gr, cq_gui_coco, cq_gui_castle,
-			cq_gui_spesal, cq_gui_hot].do { |key|
+			cq_gui_spesal, cq_gui_hot, cq_gui_aura, cq_gui_phase,
+			cq_gui_charge, cq_gui_io_inputs].do { |key|
 			OSCdef.all[key] !? { |def| def.free };
 		};
 	}
@@ -30,7 +31,8 @@ CQGuiLifecycleTest : UnitTest {
 			"cancelled deferred GUI init never constructs a window (got %)"
 				.format(gui.window));
 		#[cq_gui_meters, cq_gui_gr, cq_gui_coco, cq_gui_castle,
-			cq_gui_spesal, cq_gui_hot].do { |key|
+			cq_gui_spesal, cq_gui_hot, cq_gui_aura, cq_gui_phase,
+			cq_gui_charge, cq_gui_io_inputs].do { |key|
 			this.assert(OSCdef.all[key].isNil,
 				"cancelled deferred GUI init does not leak %".format(key));
 		};

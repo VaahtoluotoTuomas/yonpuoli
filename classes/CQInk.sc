@@ -139,17 +139,21 @@ CQInk {
 		Pen.stroke;
 	}
 
-	*drawJack { |center, family, skin = \day, state = \idle, aura = 0|
+	*drawJack { |center, family, skin = \day, state = \idle, aura = 0,
+		sizeScale = 1|
 		var palette = this.palette(skin), radius;
-		radius = switch(state, \inHand, { 5 }, \hover, { 4.5 }, { 4 });
+		radius = switch(state, \inHand, { 5 }, \hover, { 4.5 }, { 4 })
+			* sizeScale;
 		if(aura > 0) {
 			Pen.fillColor = palette[family].copy.alpha_((aura * 0.22).clip(0, 0.22));
-			Pen.addOval(Rect.aboutPoint(center, 8 + (aura * 5), 8 + (aura * 5)));
+			Pen.addOval(Rect.aboutPoint(center,
+				(8 + (aura * 5)) * sizeScale,
+				(8 + (aura * 5)) * sizeScale));
 			Pen.fill;
 		};
 		if(state == \hover) {
 			Pen.fillColor = palette[family].copy.alpha_(0.10);
-			Pen.addOval(Rect.aboutPoint(center, 7, 7));
+			Pen.addOval(Rect.aboutPoint(center, 7 * sizeScale, 7 * sizeScale));
 			Pen.fill;
 		};
 		Pen.fillColor = palette[family];
@@ -161,9 +165,22 @@ CQInk {
 		Pen.stroke;
 	}
 
-	*drawSocket { |center, family, skin = \day, state = \idle, candidateWeight|
+	*drawSocket { |center, family, skin = \day, state = \idle, candidateWeight,
+		sizeScale = 1|
 		var palette = this.palette(skin), radius, halo;
-		radius = if(state == \candidate) { 7.2 } { 6 };
+		radius = if(state == \candidate) { 7.2 } { 6 } * sizeScale;
+		// Static invitation while a cable is in hand. It never pulses: Night
+		// reserves motion for telemetry, but every legal landing place should
+		// become readable before the hand has to guess.
+		if(state == \available) {
+			Pen.fillColor = palette[family].copy.alpha_(0.10);
+			Pen.addOval(Rect.aboutPoint(center, 10 * sizeScale, 10 * sizeScale));
+			Pen.fill;
+			Pen.strokeColor = palette[family].copy.alpha_(0.48);
+			Pen.width = this.strokes[\hairline];
+			Pen.addOval(Rect.aboutPoint(center, 10 * sizeScale, 10 * sizeScale));
+			Pen.stroke;
+		};
 		if(state == \candidate) {
 			halo = if((candidateWeight ? 1) < 0) {
 				palette[\inverso]
@@ -171,12 +188,12 @@ CQInk {
 				palette[\verso]
 			};
 			Pen.fillColor = halo.copy.alpha_(0.18);
-			Pen.addOval(Rect.aboutPoint(center, 11, 11));
+			Pen.addOval(Rect.aboutPoint(center, 11 * sizeScale, 11 * sizeScale));
 			Pen.fill;
 		};
 		if(state == \hover) {
 			Pen.fillColor = palette[family].copy.alpha_(0.09);
-			Pen.addOval(Rect.aboutPoint(center, 9, 9));
+			Pen.addOval(Rect.aboutPoint(center, 9 * sizeScale, 9 * sizeScale));
 			Pen.fill;
 		};
 		Pen.strokeColor = palette[family];
@@ -198,26 +215,26 @@ CQInk {
 		Pen.fill;
 	}
 
-	*drawLamp { |center, charge = 0, on = false, skin = \day|
+	*drawLamp { |center, charge = 0, on = false, skin = \day, sizeScale = 1|
 		var palette = this.palette(skin), fill = if(on) { 1 } { (charge / 0.5).clip(0, 1) };
 		// An idle charge lamp is a recessed bead, not another hollow patch socket.
 		Pen.fillColor = palette[\recess];
-		Pen.addOval(Rect.aboutPoint(center, 4, 4));
+		Pen.addOval(Rect.aboutPoint(center, 4 * sizeScale, 4 * sizeScale));
 		Pen.fill;
 		// Past the Schmitt's on-threshold the bead blooms (GUI_SPEC §16.8): a
 		// gate reads as lit steady, a trig as the bloom decaying with the
 		// server's peak-hold. Costs two Pen calls only while something fires.
 		if(on) {
 			Pen.fillColor = palette[\lamp].copy.alpha_(0.28);
-			Pen.addOval(Rect.aboutPoint(center, 7, 7));
+			Pen.addOval(Rect.aboutPoint(center, 7 * sizeScale, 7 * sizeScale));
 			Pen.fill;
 		};
 		Pen.fillColor = palette[\lamp].copy.alpha_(fill);
-		Pen.addOval(Rect.aboutPoint(center, 4, 4));
+		Pen.addOval(Rect.aboutPoint(center, 4 * sizeScale, 4 * sizeScale));
 		Pen.fill;
 		Pen.strokeColor = palette[\whisper];
 		Pen.width = this.strokes[\hairline];
-		Pen.addOval(Rect.aboutPoint(center, 4, 4));
+		Pen.addOval(Rect.aboutPoint(center, 4 * sizeScale, 4 * sizeScale));
 		Pen.stroke;
 	}
 

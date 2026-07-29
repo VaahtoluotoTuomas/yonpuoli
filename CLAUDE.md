@@ -141,7 +141,8 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   accepted on `nocturne-preamp-roots` the same day (checklist N7), and
   **build-order step 8, the Drawer workshop (§12.1), was accepted on
   `nocturne-drawer-workshop` on 2026-07-28 (checklist N8).** Its tested
-  Night 31 + Master 5 + Workshop 43 partition covers all 79 `CQSpec`
+  Space retirement leaves a Night 31 + Master 4 + Workshop 39 partition that
+  covers all 74 `CQSpec`
   parameters without Day. The user then chose Night as the sole interface and
   asked to merge the accepted chain: local `nocturne` now points at `dc95ced`.
   **N9's reversible Night-only cut was accepted on `nocturne-night-only`

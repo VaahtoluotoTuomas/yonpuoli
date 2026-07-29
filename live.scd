@@ -127,12 +127,8 @@ CQ.patch(\tri4, \castle3_spesal, 1);   // verkko re-patchaa itseaan ~13 s valein
 CQ.boot;
 CQ.deckA.load("field.wav");  CQ.hold(1, 0);
 
-// Space (FDN-kaiku, oletuksena pois): kumpikin tarvitaan, send + mix
-CQ.set(\coco1Send, 0.6);             // coco1 -> space (post-fader, pan-sijoitettu)
-CQ.set(\spaceMix, 0.4);              // paluutaso (16n F14)
-CQ.set(\spaceSize, 0.85);            // 0.3 tiukka .. 0.98 pitka hanta (feedback <= 0.98)
-CQ.set(\spaceDamp, 4500);            // 500 tumma .. 12000 kirkas
-CQ.set(\spaceMix, 0);                // pois
+// Sisainen Space/FDN on elakoity. 16n F14 on tietoisesti vapaa; ulkoiset
+// efektit voi kytkea normaalisti audiointerfacen tai DAW:n kautta.
 
 // Watchdog: aja kuumaksi -> auto-trim -6 dB 5 s jalkeen (config autoTrim)
 CQ.trimDb;                           // nykyinen trim (0 = ei trimmia)

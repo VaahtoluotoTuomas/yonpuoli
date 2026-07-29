@@ -143,6 +143,14 @@ CQNightGeometry {
 		^Point(a.x + ((b.x - a.x) * frac), a.y + ((b.y - a.y) * frac))
 	}
 
+	// The winding value still reaches exact 1, but its setting tick stops one
+	// sampled breath before the mouth jack. At the literal endpoint the jack
+	// and the tick would claim the same pixels; a maximum setting must remain
+	// legible rather than disappear under its neighbouring source dot.
+	*reelNotchNorm { |norm|
+		^norm.clip(0, CQNightMeasures.reelMaxNorm)
+	}
+
 	// the unit normal of the spiral's drawn line at `norm`. The reel notch
 	// crosses the groove, so it needs the line's own direction — not the
 	// shell's radius, which only coincides with it a quarter turn at a time.
@@ -165,7 +173,7 @@ CQNightGeometry {
 	}
 
 	// The castle's 6-o'clock rate ripple: its fixed-pixel touch rectangle is
-	// also the hover cue's geometry. The drawn 14x8 mark fits wholly inside it.
+	// also the hover cue's geometry. The drawn 22x11 mark fits wholly inside it.
 	*rangeBox { |castle|
 		^Rect.aboutPoint(castle[\rangeMark],
 			CQNightMeasures.rangeHitX, CQNightMeasures.rangeHitY)
@@ -376,8 +384,11 @@ CQNightGeometry {
 	// corners. The hand may travel outside after capture, so both axes clamp.
 	*compassNorm { |almanac, point|
 		var tide = almanac[\compass];
-		^Point(((point.x - tide.left) / max(1, tide.width)).clip(0, 1),
-			((point.y - tide.top) / max(1, tide.height)).clip(0, 1))
+		^Point(
+			this.prSnapEdge(((point.x - tide.left)
+				/ max(1, tide.width)).clip(0, 1)),
+			this.prSnapEdge(((point.y - tide.top)
+				/ max(1, tide.height)).clip(0, 1)))
 	}
 
 	// ...and back, used both by the active cross and exact corner recall.
@@ -477,6 +488,35 @@ CQNightGeometry {
 	*shellRimHit { |coco, point, margin|
 		^(this.distance(point, coco[\center]) - coco[\outerR]).abs
 			<= (margin ? CQNightMeasures.rimMargin)
+	}
+
+	// §4.5 made structural: ONE answer for what a point on a shell belongs to,
+	// asked by the hover cue and by the press alike. The two chains used to be
+	// written out separately and had drifted — the press consulted the heart,
+	// the cue did not — so at slow speeds the groove lit up under the hand and
+	// the press toggled the loop instead of winding. Measured before the fix:
+	// the norm-0 reel pearl sits 14 px from centre at the minimum stage and
+	// 21 px at 1920x855, both inside the heart's 22 px.
+	//
+	// The heart wins its own disc on purpose. It is small, central and fixed,
+	// and its act is consequential (a stray toggle starts or ends a recording),
+	// while winding is an ANGULAR gesture available along the whole five-turn
+	// groove — so giving the spiral's eye to the heart costs the reel nothing
+	// that cannot be done one turn out.
+	//
+	// Geometry only: cables, modifiers and buttons are NOT decided here.
+	// CQGuiNightTouch keeps §4.5's cable-first check ahead of this call.
+	*shellTargetAt { |coco, point|
+		if(this.distance(point, coco[\center]) <= coco[\heartRadius]) {
+			^\heart
+		};
+		if(this.markHit(coco[\chevron], point)) { ^\chevron };
+		if(this.markHit(coco[\skipMark], point)) { ^\skip };
+		if(this.spiralDistance(coco, point) <= CQNightMeasures.windGrab) {
+			^\wind
+		};
+		if(this.shellRimHit(coco, point)) { ^\rim };
+		^nil
 	}
 
 	// distance from a point to the ring's drawn line (the river itself)
@@ -601,7 +641,7 @@ CQNightGeometry {
 				// surface so the reel pearl and the grab reach the outer rim
 				spiralSamples: this.sampleSegments(segments, 6) ++ [mouth],
 				// §6.1 touch homes: the press-to-flip chevron hangs below the
-				// mouth — clear of the mouth jack's opaque 26 px view and
+				// mouth — clear of the mouth jack's 34 px interaction view and
 				// inside the shell box at every scale — plus the hold heart at
 				// the spiral's innermost eye, the shell's own opaque layer box
 				// and the tide crescents under the three continuous moons
@@ -611,8 +651,8 @@ CQNightGeometry {
 				// under the flip chevron, hanging in the one direction that is
 				// empty. The read-head
 				// comet lost the gesture because a moving target is not a
-				// control: past a crawl it cannot be hit at all, and a 5 Hz
-				// frame draws it stale. Above the mouth looked symmetrical and
+				// control: past a crawl it cannot be hit at all, and any
+				// telemetry frame is slightly stale. Above the mouth looked symmetrical and
 				// is wrong: the spiral *ends* at the mouth and arrives there
 				// from above, so that side is the groove itself (caught by the
 				// winding-surface assert, CQGuiNightTouchTest).
@@ -779,7 +819,7 @@ CQNightGeometry {
 
 		// decks as birds at the top; the rate moon under the wing with the
 		// deck-level tide crescent beside it, filename (10 px mono) beneath
-		birds = [0.24, 0.76].collect { |fraction|
+		birds = CQNightMeasures.birdFractions.collect { |fraction|
 			var center = Point(width * fraction,
 				CQNightMeasures.birdAltitude * scale);
 			(center: center, span: CQNightMeasures.birdSpan * scale,

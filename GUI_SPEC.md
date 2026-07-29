@@ -11,7 +11,7 @@ implementers — but every behavior, law, constant, contract and safety edge the
 need is here.
 
 > **N9 amendment, 2026-07-28:** Night is now the sole runtime instrument
-> surface. The persistent Master strip and four-page Drawer remain; the Day
+> surface. The persistent Master strip and five-page Drawer remain; the Day
 > stage, its toolbar destination and its two read-only overview drawings are
 > retired. Sections explicitly labelled as former Day design are historical
 > rationale, not a second interface to maintain.
@@ -67,7 +67,7 @@ deferred): **GUI = the eyes + the hands. Code = the memory + the rituals.
 |---|---|
 | **Night map** | the archipelago (§6): the sole topology-true performance landscape — bodies, gestures, jacks and bananas rather than transplanted knobs or numbers. |
 | **Master strip** | persistent, never covered: vol, dry, space, depth, GR meter, notice line, REC + elapsed, PANIC. |
-| **Drawer** | replaces Night in the central stage on demand (click, no key), never covers the Master strip. Tabs: **inspector** (the exact matrix loom), **workshop** (§8 — the ledger page completing SPEC §6.2 reachability), **spellbook** (§8), **memory** (snapshots + morph). |
+| **Drawer** | replaces Night in the central stage on demand (click, no key), never covers the Master strip. Tabs: **inspector** (the exact matrix loom), **workshop** (§8 — the ledger page completing SPEC §6.2 reachability), **spellbook** (§8), **memory** (snapshots + morph), **audio** (rightmost technical machine/engine boundary). |
 
 Keyboard: the sacred map is unchanged and global —
 `1/2` hold · `q/w` flip · `a/s` skip · `3..7` spesal · `r` rec · `space` panic
@@ -89,6 +89,13 @@ one law so implementers never have to decide case by case:
 - **Destination sockets** are ink rings; family-colored where SPEC assigns a
   family (spaf purple, fm blue, spesal green); gate/trig sockets carry a small
   glyph and a **charge lamp** (§9).
+- **Direction is shape first, invitation second** (accepted 2026-07-29).
+  A solid, symbol-free jack is a source; a hollow ring carrying the receiving
+  control's symbol is a destination. An empty destination has no idle hover
+  highlight because it cannot act without a banana. As soon as a source or a
+  planted banana is in hand, every legal destination gains one quiet, static
+  family-coloured halo; the nearest audition candidate answers more strongly.
+  No blinking: Night reserves motion for changing signal/state.
 - **Cables** are verso **amber** / inverso **blue** (the existing grid
   convention), drawn as gravity-sagged arcs; width and how deep the banana
   sits in its socket ∝ |w|; alpha pulses with the source's aura (§9).
@@ -203,8 +210,11 @@ funnel like any other client.
   cables recede to 46 % alpha. No pulse or telemetry aura is used for focus.
 - **Endpoints are cable territory.** Jack/socket/plug hover wins in its own
   geometry. A socket stack still fans out (§3.2), providing the precision path
-  when several bananas share an endpoint. At a control crossing, select the
-  cable from an exposed span or its endpoint instead.
+  when several bananas share an endpoint. A source jack answers at rest because
+  it can begin a banana; an empty destination does not light until a banana is
+  in hand. An occupied socket may still fan its stack without pretending the
+  empty ring itself is an action. At a control crossing, select the cable from
+  an exposed span or its endpoint instead.
 - **One hover language.** Every interactive Ink control responds immediately:
   knobs gain a quiet outer ring, slider/switch handles a small halo, and
   buttons a light wash plus stronger outline. Read-only meters and lamps do
@@ -220,6 +230,17 @@ funnel like any other client.
   by the application.
   In Qt this binds ordinary `mouseOverAction`; `mouseMoveAction` alone covers
   only movement while a button is held.
+- **One resolver per body, not two chains.** Where several marks share one view,
+  the cue and the press must not each walk their own list of hit tests: they ask
+  a single pure function which mark owns the point (the night shell's
+  `CQNightGeometry.shellTargetAt`), and the caller decides only what buttons and
+  modifiers mean. Two hand-written chains drift — the shell's press consulted the
+  hold heart and its cue did not, so at slow speeds the groove lit under the hand
+  while the press toggled the loop (found 2026-07-29). Deriving every cue from one
+  answer also makes them mutually exclusive by construction instead of by a
+  growing set of `.not`s. When marks overlap, the smaller, fixed, more
+  consequential one wins its own area, and its hover cue is drawn at that area's
+  real boundary so the hand can learn it.
 
 Deferred dense-patch escape hatches, recorded but **not current gestures**:
 
@@ -355,16 +376,16 @@ below; it does not silently grant priority to any other control.
 | touch | gesture | writes |
 |---|---|---|
 | **wind the shell** | left-drag along the spiral's drawn line (≤ 8 px); turning toward the mouth winds faster, against it slower — the two shells mirror like their spirals. The reel notch rides the line as the live hand, and hover brightens the grab (§16.6) | `cocoN speed` (relative, ~2 turns = full range) |
-| **the shell's heart** | **left tap** the small mark at the spiral's innermost eye: seal / crack the loop; red while sealed (one law with the outer seal and HOLD) | `cocoN hold` toggle |
+| **the shell's heart** | **left tap** the small mark at the spiral's innermost eye: seal / crack the loop; red while sealed (one law with the outer seal and HOLD). The heart owns its whole disc, including the innermost turn of the groove that runs through it, and says so: on hover it wears §4.5's quiet outer ring **at its true hit radius**, so the cue also draws where the reel stops. Winding is angular and available along the whole groove, so the eye of the spiral costs the reel nothing | `cocoN hold` toggle |
 | **the heart's punch** | **right press held** on the same heart mark: momentarily *invert* the seal for as long as it is held — a looper's punch-in (sealed → material drops into the ring; open → a fragment freezes), restored on release. The exact prior value is captured and restored on **every** exit path — mouse-up, Esc, Tab, panic, window close, GUI free, CmdPeriod — because a stuck punch leaves a loop recording over itself (a right press on a *cable* crossing the heart still rips, §4.5). No timer: the split from the left tap is the button, not the clock | `cocoN hold` (momentary invert, no undo) |
-| **the mouth chevron** | press the read-direction chevron at the mouth | `cocoN flip` toggle |
+| **the mouth chevron** | press the read-direction chevron at the mouth. Hover answers in **weight** (hairline → normal), not colour: the chevron already rests in `cas`, which is brighter than the `line` its two siblings brighten *to*, so a colour step could only dim it. Weight is the reel notch's channel on the same body | `cocoN flip` toggle |
 | **the mouth's skip mark** | press the spark glyph hanging under the chevron (10 px box, stationary). Momentary: 120 ms ink flash on *any* skip (§16.7) | `skip(n)` — the loop restarts from the eye |
-| **tide crescents** | a small crescent below each spaf / inVca / fbVca moon, luminous fill = value; vertical drag pours more or less. Socket beside its control — §1's proximity law, reborn at night. spaf wears purple | `cocoN spaf / in / fb` |
+| **tide crescents** | a small crescent below each spaf / inVca / fbVca moon; vertical drag pours more or less. Socket beside its control — §1's proximity law, reborn at night. Each scale names only a real consequence. **SP.AF** splits at its CQSpec-derived zero: inverso blue to the left, verso orange to the right, with fill growing from zero and a zero notch. **Input** is green through exact unity and amber in overdrive, divided by its CQSpec-owned unity mark. **Feedback** keeps its three audible bands: fading echo green, unity/bloom amber, mayhem red. Complete regions rest dimly behind the hand; the travelled region brightens and a pearl marks the current position. Fine notches keep boundaries legible without relying on colour vision. Feedback edges are its normalized taper breakpoints (0.5 / 0.9), never duplicated visual constants | `cocoN spaf / in / fb` |
 | **Dolby oysters** | beneath each in/fb tide crescent, tap the captionless paired arcs: open = off, nearly shut = gate, shut with a partner-facing arrival stroke = duck. Oyster hover and crescent hover are exclusive; a drag may begin only on the crescent's original square | `cocoN dolbyIn / dolbyFb`: `off → gate → duck → off` (CQSpec enum order) |
 | **the ring's eye** | the storm iris at the ring's center (§16.6); grab and drag — vertical = pitch, horizontal = chaos, and the iris itself answers on both axes. The weather of five castles from one fingertip | `qFreq` (y) + `qChaos` (x), relative |
 | **dial tap** | press a castle's inner clock — the dial face inside the body (§16.6): one step (same act as the day step button and keys 3..7). Hovering the castle first shows **which castle it reads** as an inner chord (§16.6's coupling chords), so the step's consequence is visible in the gesture that makes it | `spesal(k)` step |
 | **range ripple** | tap the drawn rate at a castle's 6 o'clock: one slow swell → one full cycle → five tight half-waves → one slow swell. The form is the whole regime display; no legacy `i/b/a` caption remains. Cable-first remains absolute, and ripple/clock/body hover cues are exclusive | `cNRange`: `infra → balcium → audio → infra` (CQSpec enum order) |
-| **bird fetch + drop + wing crescent** | tap the bird with < 8 px travel to open the asynchronous system file dialog at the configured samples folder; cancelling is inert. Dropping an audio file remains an equal load path, and the crescent under the wing remains the deck's level | deck load · `deckN level` |
+| **bird fetch + drop + wing crescent** | tap the bird with < 8 px travel to open the asynchronous system file dialog at the configured samples folder; cancelling is inert. Dropping an audio file remains an equal load path. The crescent under the wing is the deck's level and carries one exact CQSpec-derived unity tick: line ink through unity; only the travelled arc and pearl beyond that mark turn danger-red | deck load · `deckN level` |
 | **bird folder walk** | wheel down = next file, wheel up = previous. Qt momentum is gated to one sign-step per 150 ms so one flick cannot skip a handful of perches; before a load, the deck's own guard scans the samples folder | `deckN.next / prev` |
 | **bird ruffle** | horizontal drag travels ≥ 6 px and reverses once by ≥ 6 px — one natural out-and-back; release chooses a random file. Repeated or broad ruffling remains valid once that reversal is clear. A drag that is neither a tap nor a ruffle is inert | `deckN.random` |
 | **the sowing moon** | the bone moon in the top-right sky (§16.6). It opens as a small 0.22 crescent. A press that travels < 8 px — the lasso's own threshold — throws a shake at the moon's current phase, with a 120 ms bone flash on *any* shake (`p` key, moon, code or pattern: one action notice, one light). A **horizontal** drag pours the phase fuller (right) or darker (left), the way the terminator itself travels; the lit fraction is **how much gets sown**, through the slow-first quadratic fertility curve in §10, no number | `shake` (matrix op — one undo, one spellbook entry) · `shakeAmount` (GUI constant, no undo) |
@@ -373,8 +394,9 @@ Skip's night home moved at the G2 gate (2026-07-22, replacing the read-head
 tap that landed 2026-07-21; the `a/s` keys remain). **A moving target is not a
 control.** The comet was the only touch point in the night that travels, and
 the hand could only land on it while the loop crawled — past the innermost
-turn of the speed scale it was unhittable, and a 5 Hz frame draws it stale on
-top of that. Its home is now a stationary mark under the flip chevron: the Day
+turn of the speed scale it was unhittable, and any sampled telemetry position
+is slightly stale by definition on top of that. Its home is now a stationary
+mark under the flip chevron: the Day
 panel's own FLIP/SKIP pair, in the one direction around the mouth that is
 empty. Not above the jack, which looks symmetrical and is wrong — the spiral
 *ends* at the mouth and arrives there from above, so that side is the groove
@@ -435,8 +457,9 @@ aura and charge lamps make that visible instead of mysterious.
 - **Focused left-drag** on genuinely open water inside the four winds: the
   tide pours continuously after the lasso's own 8 px threshold (batched funnel
   write, one transient notification per frame, ≤ 60 Hz — implemented at
-  30 Hz, since the weights are unlagged control buses and faster stepping
-  buys no audible smoothness). Release **commits** (one undo op, one
+  30 Hz; the production readers have applied one shared 50 ms weight smoother
+  since M1, so faster language writes buy no useful control resolution).
+  Release **commits** (one undo op, one
   `// compass` spellbook batch). Outside water focus both a tap and an
   arbitrarily long left sweep are a **no-op**: exploratory movement cannot
   replace the patch accidentally.
@@ -512,14 +535,14 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
 
 ---
 
-## 8. Drawer — inspector, workshop, spellbook, memory
+## 8. Drawer — inspector, workshop, spellbook, memory, audio
 
 > **G1 feedback experiment, 2026-07-20 — core direction visually accepted;
 > the navigation/Memory polish below remains provisional until review.**
 > Prototype the Drawer as a stable **workbench**, not a resizable bottom dock.
 > A compact, always-labelled `drawer` tab sits in the persistent top toolbar:
 > its down chevron opens the workbench into the central area and its up chevron
-> returns to Night. Inspector/Workshop/Spellbook/Memory remain page names only
+> returns to Night. Inspector/Workshop/Spellbook/Memory/Audio remain page names only
 > inside the workbench. Master remains visible and
 > live; there is no Drawer resize, whole-instrument scroll, click-away close or
 > second window. The selected Drawer page persists across close/reopen.
@@ -554,27 +577,27 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
   here too: no aura, glowing borders, cable animation, texture, decorative
   gradients or organism wobble — only a changing parameter, hover/press,
   `micGain` danger or another real state may brighten a mark.
-  - It owns the **43 parameters** Night and Master do not, so that a player who
+  - It owns the **39 parameters** Night and Master do not, so that a player who
     starts in Night and uses only Night, the Drawer and the Master strip reaches
     every `CQSpec` parameter (SPEC §6.2). The interactive partition is
-    **Night 31 · Master 5 · Workshop 43**, disjoint, and its union is asserted
+    **Night 31 · Master 4 · Workshop 39**, disjoint, and its union is asserted
     against `CQSpec.names` itself rather than a copied count. Workshop ownership
     is an **explicit manifest**, never `CQSpec.names` minus the others: a newly
     added parameter must fail the audit instead of silently counting as covered.
-  - **Composition.** One centred **content rail**, shared by all four Drawer
+  - **Composition.** One centred **content rail**, shared by all five Drawer
     pages and always exactly the Inspector loom's own width, so the workbench
     reads as one surface. One continuous ground recess, not a board of rounded
     cards; hairline separators and gutters on the 8 px grid; the Drawer's own
-    soft edge stays the app's one shadow. A shallow service band (four equal
-    modules: `deck a · input trims · space · deck b`) sits over a
+    soft edge stays the app's one shadow. A shallow service band (three equal
+    modules: `deck a · input trims · deck b`) sits over a
     `coco 1 · quantussy · coco 2` body, whose three columns and two gutters sum
     back to the rail exactly — an odd split gives its remainder to the middle so
     the two Coco ledgers stay literally the same width. The page carries **no
     height constants**: each island is a stack of fixed-height rows over a
     trailing stretch, so the rail asks for exactly the height its content needs,
     spare room collects below as slate, and there is **no scroll view** at any
-    size. Space stays a neutral service module and gains no invented Night body.
-  - **One shared page frame.** All four Drawer pages open with exactly the same
+    size. The retired Space module has no hidden or disabled replacement.
+  - **One shared page frame.** All five Drawer pages open with exactly the same
     air between the tab row and their first ink, centre exactly the same rail,
     and begin their first ink at one **content inset** inside it — the
     Workshop's labels, the loom's row names and the seed bank's boxes all start
@@ -616,7 +639,7 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     Drawer alone.
   - Rows are grouped by **signal meaning**, never alphabetically: each Coco as
     *converter* (`bits`, `wrap`, `interp`) · *material* (`dust`, `organ`) ·
-    *output* (`level`, `pan`, `send`) · *input mix* (`pre`, `deck`, `q`, `x`);
+    *output* (`level`, `pan`) · *input mix* (`pre`, `deck`, `q`, `x`);
     the Quantussy as *s&h* (`qShLag`) · *detune* (`c1Off`…`c5Off`) · *audio
     sends* (`c1Send`…`c5Send`), castles running 1→5 in both so the lists compare
     without hunting. **Pair symmetry is structural**: both Coco ledgers are built
@@ -634,7 +657,7 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     ledgers as slate rather than stretching rows apart.
   - Semantic phosphor is used **sparingly**: slate is `recess`, rules and values
     are bone/whisper, and only `dust`, `organ`, the live input and the mic carry
-    a family accent. Neutral slots, levels, pan, sends and Space get no family —
+    a family accent. Neutral slots, levels and pan get no family —
     do not rainbow a column, and inline no color at the draw site.
   - **`micGain` lives here and nowhere else.** SPEC §6.2 forbids a second
     interactive mic path, and the night-first completeness gate needs the mic
@@ -651,6 +674,77 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     every pixel. The squint read must be **service band above · coco / quantussy
     / coco below · one red mic exception**; the close read must give every exact
     value.
+- **Audio** (AIO) = the fifth Drawer page and the machine/engine boundary, in
+  the fixed order `inspector · workshop · spellbook · memory · audio`. It is
+  neither a Night panel, popup, second window nor Workshop parameter row.
+  `CQGuiDrawer.tabs` and its page inventory remain the single ordered source
+  consumed by the shell.
+  - The page uses the same `CQGuiScale.pageFrame`, centred content rail, two
+    reviewed size steps, Ink palette/type/rules and no-scroll law as the other
+    pages. Its squint read is three horizontal zones: full-width
+    **host / engine**; equal **into yölahti / out of yölahti** islands; and a
+    full-width **restart gate**. It is recessed slate with straight hairlines,
+    never native preferences chrome, cards, jack balls or a patch bay.
+  - Host shows the active lifecycle/sample-rate/block/hardware-buffer line,
+    device mode and exact device String(s). Default/single mode uses one long
+    device row; split mode uses input/output rows. Long names preserve their
+    beginning and use a tail ellipsis before Qt receives the String, so both
+    text and highlight remain one row. Directional discovery runs only before
+    the first server boot or inside `Server.reboot`'s already-stopped callback;
+    the resulting in-memory snapshot is handed to the rebuilt runtime page.
+    Opening Audio, opening a menu, resizing, switching tabs and toggling driver
+    visibility perform zero `_ListAudioDevices` calls. The former live path was
+    withdrawn after it reproducibly wedged the physical Windows WASAPI server.
+    On Windows the default view keeps WASAPI, ASIO, unknown drivers and every
+    exact active/draft endpoint; exact MME, DirectSound and WDM-KS entries stay
+    available behind a local `show all drivers` / `recommended drivers` toggle.
+    It filters only those complete host prefixes, never fuzzy device text, and
+    never rewrites the draft. If no safe snapshot exists, the page falls back
+    to exact configured endpoints and the disabled `configured devices` label.
+  - Input keeps `live l`, `live r` and `mic off/on · ch n` in stable rows plus
+    three thin raw-presence tracks. Output keeps main L/R, stems off/on, both
+    stem channels and record-4ch in stable rows plus post-safety master
+    presence. Mic/stem off dims rows but never removes them. `micGain` remains
+    Workshop's only interactive mic-gain path; Audio merely repeats `MIC LIVE`
+    read-only when applicable.
+  - Active values use neutral bone/line ink. A dirty draft gets only an ochre
+    delta notch/underline; invalid gets a danger rule and one exact reason.
+    The footer keeps provenance/validation left, `discard changes` centre and
+    `apply & restart audio` right. First Apply only opens an inline,
+    non-modal confirmation naming the audio stop, unsaved-patch reset and
+    `Server.default` restart; `cancel` and `restart` are static Ink controls.
+  - AIO-1 is deliberately read-only through its visual acceptance gate:
+    refresh works, while discard/apply are structurally disabled. Later gates
+    activate the same composition without rebuilding the page on tab changes,
+    resize or restart. A successful restart reopens symbolic tab `\audio` on
+    the fresh GUI; no old Qt reference crosses a generation boundary.
+  - AIO-1's static layout was accepted by the user on 2026-07-29. AIO-2 makes
+    all nine startup fields draft-editable, marks changed rows with the small
+    ochre delta rule, preserves exact invalid values/reasons and enables
+    `discard changes`. AIO-3 activates the two-step Apply confirmation,
+    recorder gate and static `audio ready` / `running · not saved` /
+    rollback / failed result language. Only the rebuilt GUI consumes the
+    symbolic `\audio` reopen request. The page observes every recorder
+    `\state` transition: starting/recording/stopping lock Apply immediately,
+    and idle restores the current draft gate without another edit. A disabled
+    Ink control never advertises an active hover cue. Responsive is necessary
+    but not sufficient for candidate-ready: before building the graph, the
+    facade requires three reported actual-sample-rate readings, 0.75 seconds
+    apart, all within 80–120% of the requested rate. This prevents a stale first
+    watcher value from hiding a post-reboot clock collapse. A catastrophic
+    mismatch enters the same one-rollback state language and cannot promote the
+    pending profile.
+  - A clean draft labels its inert discard action `no changes` and keeps
+    `restart audio` available as an explicit recovery operation. A server that
+    remains registered but stops answering is shown as
+    `server not responding · restart audio`; confirmed recovery forces that
+    owned local process down before boot and does not write an Audio profile.
+  - AIO-4 taps raw live L/R/mic before their gains, reuses the existing
+    post-safety master pair and renders coarse quantized presence only. The GUI
+    caches both streams while hidden, combines their 15/20 Hz arrivals into one
+    ≤15 Hz listener stream, primes Audio on open and repaints only changed
+    presence geometry. Listener, pending generation and `/cq_io_inputs` OSCdef
+    are released with the page/window.
 - **Inspector** = the existing 16×22 grid, demoted but upgraded with
   **touch-and-listen**: press a cell = audition ± 0.3 (mouse button = sign)
   until release, same bookkeeping and revert law as §4.1; double-click =
@@ -700,15 +794,16 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
 Existing v1.0 streams: `/cq_cocometers` (in/out peaks, id 1/2), `/cq_castle`
 (5 tri values, 15 Hz), `/cq_gr`, `/cq_spesal`, `/cq_hot`.
 
-Additions — unconditional control-rate SendReply at ~15 Hz (`/cq_phase`
-deliberately slower, see its row), NRT-harmless, same pattern as the existing
+Additions — unconditional control-rate SendReply at ~15 Hz, NRT-harmless,
+same pattern as the existing
 meters:
 
 | phase | message | payload | drives |
 |---|---|---|---|
 | G1 | `/cq_aura` | 16 source magnitudes (lagged \|amp\|, canonical source order) | jack glow, cable pulse, root/castle/body glow |
-| G2 | `/cq_phase` | coco read-head position 0..1, **the read direction as an audio-rate mean** (`Lag.ar(dir, 0.15)`) and **the skip rate in Hz** (added 2026-07-22: impulses of height `SampleRate` through a one-pole settle at their own rate, because a `Lag`'s DC gain is 1 — so the value *is* triggers/second, over the combined reset `\t_skip + skipTrig` that Phasor actually obeys, smoothed 0.2 s and self-clearing. It exists because a rate this fast cannot be drawn as motion — see §16.6), replyID 1/2 (landed 2026-07-21 as its own message at **5 Hz** on purpose: the send rate is the two shells' repaint ceiling — §10, one shell repaint ≈ 30 Pen calls, so 15 Hz would spend the whole ~3 % GUI budget on two dots). The direction is a *mean*, not a sample, because a flip banana can reverse the loop far faster than 5 Hz can sample it: ±1 = settled, near 0 = shuttling. Deriving direction client-side from consecutive positions aliased and was replaced | the spiral spark, the comet's tail and the mouth chevron; the rate is the struck mark's weight |
+| G2 | `/cq_phase` | coco read-head position 0..1, **the read direction as an audio-rate mean** (`Lag.ar(dir, 0.15)`) and **the skip rate in Hz** (added 2026-07-22: impulses of height `SampleRate` through a one-pole settle at their own rate, because a `Lag`'s DC gain is 1 — so the value *is* triggers/second, over the combined reset `\t_skip + skipTrig` that Phasor actually obeys, smoothed 0.2 s and self-clearing. It exists because a rate this fast cannot be drawn as motion — see §16.6), replyID 1/2. Landed 2026-07-21 at 5 Hz; raised to the shared **15 Hz ambient ceiling** on 2026-07-29 after the comet was isolated on one transparent, hit-through layer per Coco. Ordinary phase motion now redraws only the dot and tail, never the ≈30-Pen-call shell. The direction is a *mean*, not a sample, because a flip banana can reverse the loop far faster than 15 Hz can sample it: ±1 = settled, near 0 = shuttling. Deriving direction client-side from consecutive positions aliased and was replaced | the spiral spark, the comet's tail and the mouth chevron; the rate is the struck mark's weight |
 | G2 | `/cq_charge` | the 9 gate/trig destination sums (post-weight, pre-Schmitt); landed 2026-07-21 as **three 15 Hz blocks** sent by the synths that already compute those sums — coco 1 (replyID 1) and coco 2 (replyID 2) report their own flip/skip pair, the quantussy (replyID 3) all five spesal sums. Each sum is **peak-held at audio rate** (instant rise, 0.15 s fall) before `A2K`, because a trigger crossing can last a single sample and a plain control-rate sample would miss it; the fall is also §16.8's fired bloom. No second copy of the sums exists in the graph, so a lamp can never disagree with its Schmitt | charge lamps — the answer to "why is my flip banana silent" — and, for `cocoN_skip`, the read head's struck mark (§16.6) |
+| AIO-4 | `/cq_io_inputs` | one ≤15 Hz three-channel raw-input presence block from `\cqInput`, canonical order `[rawLiveL, rawLiveR, rawMic]`, missing mic = 0; the taps precede `liveGain`, `micGain` and preamp source selection and write no bus/output | Audio page's three “does anything reach this configured port?” tracks; never evidence for a draft device |
 
 `/cq_charge` canonical channel order = the matrix destination order filtered
 to gates/trigs, nine channels: `coco1_flip, coco1_skip, coco2_flip,
@@ -767,6 +862,11 @@ sub-event in `config.scd`, clamped on load.
 - **Redraw discipline**: ambient animation at telemetry rate (≤ 15 Hz); 60 Hz
   only during an active drag; avoid whole-window repaints; GUI CPU ≤ ~3 % on
   the reference laptop — SPEC §9's 25 % envelope must hold with the GUI open.
+- **Coco read heads repaint alone** (landed 2026-07-29): each comet owns one
+  transparent, mouse-pass-through layer over its shell. A 15 Hz `/cq_phase`
+  frame redraws only the dot/tail or struck glyph. The opaque shell follows
+  hold, speed, hover, preamp underlay and genuine chevron-regime changes, never
+  ordinary phase motion; an unchanged phase frame repaints neither layer.
 - **Paced notification streams**: the ambient ceiling binds *every* repaint source,
   not just telemetry. A snapshot morph re-sets all 57 continuous parameters and
   rewrites its changed cells 30 times a second, i.e. twice the ceiling. Both the
@@ -873,10 +973,10 @@ gate, manual_checklist blocks in the established copy-pasteable format.
   opposite corners and crossfade ecosystems with one finger; right-drag
   wobble snaps back cleanly; breed offspring differs but rhymes.
 - **N8 — the Workshop** (§8): the fourth Drawer page and the ledger row.
-  Tests: a **dynamic coverage gate** proving the Night 31 / Master 5 /
-  Workshop 43 interactive sets disjoint and their union equal to
+  Tests: a **dynamic coverage gate** proving the current Night 31 / Master 4 /
+  Workshop 39 interactive sets disjoint and their union equal to
   `CQSpec.names` — the three inventories are declared independently and none
-  is a complement of the others; ownership tests for the four-tab order, page
+  is a complement of the others; ownership tests for the then-four-tab order, page
   persistence and the single `micGain` path; binding tests for num, bipolar
   num, int, toggle and enum rows writing clamped through `CQState` and
   following an external write without echoing; and the Drawer Qt smoke opening
@@ -886,6 +986,49 @@ gate, manual_checklist blocks in the established copy-pasteable format.
   The coverage test may not be satisfied by a test-only array, hidden or
   disabled controls, clipped rows or a computed complement: the rendered
   controls and the audited manifest must be the same data.
+- **AIO-1 — model + read-only Audio page** (§8, SPEC §7.1): exact allowed-key
+  overlay model, merge precedence, active/draft/dirty/valid separation,
+  one-based display roundtrip and sibling profile path; fifth tab/page, injected
+  explicit device refresh and complete compact/roomy three-zone composition.
+  Unit tests cover default/single/split devices, difficult Strings, invalid and
+  overlapping channels, default-marker resets and base immutability. Qt smoke
+  proves five-page order/shared rail, stable mic/stem-off layout, no hidden
+  writes, no resize-triggered device scan and clean Ink paint. Static layout
+  accepted by the user on 2026-07-29.
+- **AIO-2 — draft + atomic profile:** activate the fields and state ink;
+  pending roundtrip, last-working preservation, atomic promote/backup and
+  `running · not saved` recovery. Tests use only `tests/tmp` and injected file
+  adapters; no user's base config is touched. Implemented in the injected
+  serverless provider: directional/exact-deduplicated device menus, all nine
+  draft controls, invalid/dirty/discard
+  states, generated sibling load, validated pending roundtrip, atomic replace,
+  one backup and retryable not-saved state.
+- **AIO-3 — confirmed restart + rollback:** facade transaction, recorder gate,
+  generation checks, one candidate plus at most one rollback, and symbolic
+  Audio-tab reopen. Lifecycle doubles assert callback ordering and no stale
+  commit/retry loop. Implemented: first Apply is confirmation-only; cancel is
+  inert; confirmed restart captures data without a Qt reference; candidate
+  success commits only after the three-reading pre-graph actual-sample-rate
+  health gate and running, candidate failure preserves the rejected draft over one restored
+  last-working session, rollback failure stays silent, not-saved retries
+  persistence without a third reboot, and recorder state notifications update
+  both the lock text and enabled/hover truth immediately.
+- **AIO-4 — presence + physical gate:** implemented raw input telemetry, shared
+  post-safety master cache/listeners and visible-tab repaint ceiling/cleanup.
+  The raw tap was restored after the controlled no-tap baseline still hung and
+  removing live device enumeration restored a responsive engine. The isolated
+  split-WASAPI presence recheck passed; the broader default/single/absent-device,
+  mic, main, stem and REC listening checklist remains.
+- **AIO-5 — safe device discovery:** directional
+  `ServerOptions.inDevices/outDevices` enumeration runs once only while the
+  local server is confirmed stopped: before a fresh boot or inside the stopped
+  callback of a confirmed reboot. The normalized snapshot is memory-only and
+  survives GUI rebuilds; scan failure is nonfatal and retains exact configured
+  endpoints (plus a stale successful cache when available). Runtime never
+  refreshes the OS. Its one local button switches between recommended and all
+  cached drivers without incrementing the provider read count. Windows
+  recommendation hides only exact `MME : `, `Windows DirectSound : ` and
+  `Windows WDM-KS : ` prefixes; active/draft endpoints are always retained.
 
 ---
 
@@ -896,20 +1039,29 @@ gate, manual_checklist blocks in the established copy-pasteable format.
 - No parameter-knob undo (matrix ops only). No second window.
 - No touchscreen/tablet assumptions — hover is load-bearing by design.
 - No changes to the 16n or code layers beyond the spellbook bridge.
-- Space (`\cqSpace`) controls stay minimal pending the post-v1.0 space-concept
-  decision (`docs/history/PLAN_v1.0.md`, vaihe 7 kirjaukset) — the night map gives space no body
-  until it knows what space *is*.
+- No generic reverb/effect rack is part of the production GUI. The rejected
+  `\cqSpace` surface was retired on 2026-07-28; Master deliberately keeps the
+  released space as air until the final instrument-mode phase has earned a
+  concrete control.
 
 ---
 
 ## 15. Open seams (measure before polishing)
 
-- **Weight-write zipper**: matrix weights are unlagged control buses read at
-  audio rate; mouse-rate stepping is probably fine (a hardware banana contact
-  is a step too). If audible on sustained sources, thin GUI writes to ~30 Hz
-  or add a small client-side glide. Do not add server-side lag without
-  checking the norns diet note (`docs/history/PLAN_v1.0.md` post-v1.0: one Lag per dest is the
-  ceiling).
+- **Weight-write zipper (measured and accepted 2026-07-29):** factual
+  correction to the old seam description: `CQSynthDefs.prMatrixWeight` has
+  applied `Lag.kr(..., 0.05)` since M1, before multiplying by `patchDepth`.
+  The control buses themselves step, but no production destination reads those
+  steps unsmoothed. A 30 Hz, 0.9→0.1 shared-cell VCA glide measured −55.87 dB
+  residual RMS against a continuously ramped, equally lagged reference; the
+  deliberately unlagged positive control measured −55.15 dB. The user could
+  not distinguish zippering reliably and judged it probably inaudible, so no
+  DSP change was made. If later material exposes it repeatably, do not stack
+  another blanket Lag: try a
+  shared-cell client glide or split continuous destinations from gates/triggers.
+  The inherited 50 ms helper currently also precedes flip/skip/spesal Schmitt
+  sums; changing that gate timing is a separate behavior audit, never a hidden
+  zipper remedy. One Lag per destination remains the norns-diet ceiling.
 - **Overlay performance** on the reference laptop: if the full-window cable
   layer runs hot, split static and animated layers — implementers' craft.
 - **Night-map coordinates**: tune by eye; keep the topology truths (ring
@@ -1071,8 +1223,10 @@ Laws:
 
 ### 16.5 Glyphs — drawn, never typed
 
-All glyphs are Pen paths in a nominal 8×8 box. No unicode symbols, no icon
-fonts (their rendering varies across platforms; paths don't).
+All glyphs are Pen paths in a nominal 8×8 base box. Night endpoint views draw
+that shared vocabulary in a 12×12 box so the symbols keep pace with the larger
+playing surface; other callers retain the base size. No unicode symbols, no
+icon fonts (their rendering varies across platforms; paths don't).
 
 | glyph | marks | recipe |
 |---|---|---|
@@ -1080,7 +1234,7 @@ fonts (their rendering varies across platforms; paths don't).
 | opposed chevrons | flip | mirrored ‹ › pair |
 | spark | skip; fired lamps | 4-point star: two crossed strokes, long/short arms |
 | wave | castle fm | one sine cycle from two béziers |
-| rate ripple | castle range | a short common keel plus one long half-wave (`infra`), two half-waves / one full cycle (`balcium`), or five tight half-waves (`audio`), in a nominal 14×8 px box. A 3 px ground under-stroke follows the vector paths exactly where the river crosses; never a rectangular knockout |
+| rate ripple | castle range | a short common keel plus one long half-wave (`infra`), two half-waves / one full cycle (`balcium`), or five tight half-waves (`audio`), in a nominal 22×11 px box. A 3 px ground under-stroke follows the vector paths exactly where the river crosses; never a rectangular knockout |
 | oyster / eyelid | coco in/fb Dolby | paired short arcs: relaxed apart = `off`; hairline gap = `gate`; closed plus a short stroke entering from the partner channel = `duck`. Posture carries the state before hue; the mark never fakes gate telemetry |
 | tick-ring | spesal dial | 8 radial ticks, current one lit |
 | pendulum | deck rate | small wedge + off-vertical line |
@@ -1089,24 +1243,24 @@ fonts (their rendering varies across platforms; paths don't).
 
 Positions on bodies are given as clock angles — more precise than pictures.
 
-**Castle (×5).** Body = closed blob: 6 anchors on a 46×40 px ellipse with
+**Castle (×5).** Body = closed blob: 6 anchors on a 74×66 px ellipse with
 seeded ±8 % radial jitter, cubic curve through them; 1.5 px stroke, hollow
 fill. Aura = radial gradient inside the body (phosphor → transparent),
 intensity from `/cq_aura`. At 10–11 o'clock, a crown of three 4 px square
 teeth — this *is* the cas source (gray dot at its base). At 1–2 o'clock, an
 8 px triangular leaf on a 6 px stem — the tri source (orange dot). fm moon =
-blue ring Ø 12 orbiting at 4 o'clock, r ≈ 28; spesal moon = green ring +
-lamp at 8 o'clock, r ≈ 40 (moved out from 34 on 2026-07-21: the lamped view
-is 34 px wide and its detail/hit box must clear the inner clock). Spesal dial =
+blue ring Ø ≈ 14 orbiting at 4 o'clock, r ≈ 45; spesal moon = green ring +
+lamp at 8 o'clock, r ≈ 61. Its lamped view is 46 px wide and its detail/hit
+box must clear the inner clock. Spesal dial =
 the castle's **inner clock** (amended 2026-07-21 after the G2.3 review): a
-whisper face at r ≈ 10 *inside* the body — where no endpoint mark can
+whisper face at r ≈ 18 *inside* the body — where no endpoint mark can
 ever cover it — with 8 ticks and the current state as a lit spark bead with a
 halo; a static hover brightens the face so it reads as pressable (§4.5).
 The **flesh around the clock is the body's own §6 solo target**, and hovering
 it lights the quiet outer ring §4.5 gives every pressable control (added
 2026-07-21: a double-click affordance the hand could not otherwise guess).
 The two cues are exclusive — clock or body, never both. Cue and action share
-one geometry: the drawn blob grown by `bodyMargin` (10 px, so the body answers
+one geometry: the drawn blob grown by `bodyMargin` (12 px, so the body answers
 the approaching hand), and the echo is stroked exactly on that boundary. A cue
 that covers more or less ground than its action is a cue that lies.
 At 6 o'clock, a **rate ripple** is the playable range switch. Its form is the
@@ -1120,10 +1274,10 @@ the regime family distinct from the fm moon's free single-cycle wave. Where a
 ripple crosses the river, a 3 px ground under-stroke follows only the keel and
 wave paths before the visible hairline is drawn; it is a local vector
 separation, never the rectangular paper erasure §9 removed. Each anchor sits
-13 px below its seeded blob's actual lowest point, so irregular castles breathe
+17 px below its seeded blob's actual lowest point, so irregular castles breathe
 equally. The ripple, inner clock and body have exclusive cues and press priority
 in that order after the cable layer: a cable under the pointer still wins. The
-14×8 px drawn mark, its fixed-pixel touch rectangle and all endpoint/clock
+22×11 px drawn mark, its 30×24 px touch rectangle and all endpoint/clock
 clearances are pinned at both reference sizes by `CQNightGeometryTest`.
 
 **Layer amendment, 2026-07-27.** Castle paper and its four endpoint-detail
@@ -1133,7 +1287,7 @@ chords can run beneath each castle centre and emerge at the true body edge.
 No rectangular blank area may erase castle ink, and no synthetic “river
 stub” may protrude from a castle to repair such an erasure.
 
-**The ring.** Irregular circle R ≈ 150 px through the five castles, 1 px
+**The ring.** Irregular circle R ≈ 191 px through the five castles, 1 px
 hairline. Flow k → k+1 shown by two **firefly dots** per arc segment
 (Ø 2 px bone, ≈ 2 s per segment) — permitted ambient motion, because it
 depicts the always-running LocalIn loop: it *is* information. **Stillness law
@@ -1143,11 +1297,19 @@ instrument keeps still water.* On the wood, lights move with signal, not with
 the wall clock; this is the permanent behavior, not a budget stopgap, and it
 stays even after the post-G2 offscreen cable cache. At the ring's center sits
 its **eye**, the §6.1 handle for qFreq/qChaos, drawn as the **storm iris**
-(amended 2026-07-21): the pupil's aperture is qFreq (Ø ≈ 5..14) and twelve
+(amended 2026-07-28): the pupil's aperture is qFreq (Ø ≈ 11..32) and twelve
 rays scatter and reach with qChaos — an even, short corona is calm weather, a
-ragged reach is storm. The ink is the actual state, never decoration. The eye
-lives on its own opaque layer so a storm repaint never re-inks the ring
-(§10); it brightens while held and never displays a value.
+ragged reach is storm. Hover or drag reveals four planted, broken weather
+rings at radii 28/36/44/52 px for the hand's exact ¼, ½, ¾ and full
+positions; a living broken front
+travels through them with qChaos. They are unlabelled growth rings, not a
+meter, and the whole visible weather body shares the eye's cable-first hit.
+The ink is the actual state, never decoration. The eye lives on its own local
+layer so a storm repaint never re-inks the ring (§10), but that layer's
+rectangular paper is transparent: a round r 54 ground mask hides the river only
+behind the actual iris. Coupling chords may not acquire square bites at the
+layer's otherwise invisible corners. The eye brightens on hover and while held,
+and never displays a value.
 
 **The spesal coupling chords** (added 2026-07-22 — the night's answer to
 "which castle is this one attached to?"). The inner clock shows a castle's
@@ -1190,11 +1352,12 @@ Both ends stop where the castle's own opaque box begins (§16.6's law about
 lines laid under opaque layers), or the arrowhead would hide beneath the
 very body it points at.
 
-**Coco (×2).** Spiral = Archimedean, 2.5 turns, outer R ≈ 85 px, 1.5 px
+**Coco (×2).** Spiral = Archimedean, 2.5 turns, outer R ≈ 114 px, 1.5 px
 stroke; the mouth at the outer end carries the gray coco-voice source dot;
-the direction chevron (a §6.1 touch: press = flip) hangs ≈ 24 px below the
-mouth, centered on its anchor — clear of the mouth jack's opaque view and the
-shell box edge at every scale (down = forward, up = flipped; amended
+the direction chevron (a §6.1 touch: press = flip) hangs ≈ 38 px below the
+mouth, centered on its anchor — clear of the mouth jack's 34 px interaction
+view and the shell box edge at every scale (down = forward, up = flipped;
+amended
 2026-07-21 after the G2.3 review found the outward home clipped).
 **The chevron has three states, not two** (amended 2026-07-21 after the G2.5
 review): forward, flipped, and — when the flip gate is driven faster than an
@@ -1204,7 +1367,7 @@ state comes from `/cq_phase`'s audio-rate direction mean, settled past ±0.5.
 This is the general law for any mark whose value outruns the eye: **show the
 regime, not the value.** A frozen arrow and a guessed arrow are both lies.
 **Read-head spark** = Ø 4 px bone **comet** at the loop's true address
-(`/cq_phase`, §9 — 5 Hz tick; not drawn until the server has reported — no
+(`/cq_phase`, §9 — 15 Hz tick; not drawn until the server has reported — no
 telemetry is not zero): a dot with a short tail trailing where it came from, the
 tail's side read from the phase's actual travel (wrap-aware), so a
 matrix-driven flip shows truthfully — and the **mouth chevron reads that same
@@ -1214,13 +1377,15 @@ param alone, so a patched flip banana turned the loop and the comet while the
 chevron kept pointing the old way; §16.6 binds the two to one direction).
 The comet is **display only** (2026-07-22, G2 gate — see §6.1): it is the only
 mark in the night that travels, and a moving target is not a control.
-It draws over the reel notch and carries the night's bone-spark ink, which now
-belongs to **events** alone — the read head, fired lamps — while settings are
-drawn in line ink. The comet has a third state of its own, by the same regime
-law as the chevron: while the `cocoN_skip` charge is still lit on two
-consecutive `/cq_phase` frames — i.e. the loop is being restarted faster than
-5 Hz can show — the head is **struck**, and wears the §16.5 spark glyph
-instead of its tail. A bead crawling near zero would otherwise read as "almost
+It draws on its own transparent, mouse-pass-through layer over the reel notch
+and carries the night's bone-spark ink, which now belongs to **events** alone
+— the read head, fired lamps — while settings are drawn in line ink. The comet
+has a third state of its own, by the same regime law as the chevron: while the
+`cocoN_skip` charge remains lit across four
+consecutive `/cq_phase` frames (about 0.2 s at 15 Hz) — i.e. the loop is being
+restarted faster than the eye can follow — the head is **struck**, and wears
+the §16.5 spark glyph instead of its tail. A bead crawling near zero would
+otherwise read as "almost
 stopped", the exact opposite of the truth, and a direction means nothing under
 hammering. The condition itself needs no new telemetry and no client-side
 timer: the server's 0.15 s peak-hold on the charge already says it.
@@ -1234,15 +1399,16 @@ The **trigger rate is drawn as weight, never as motion** (2026-07-22, third
 attempt — the static mark read as *calm* while the loop was being hammered
 hundreds of times a second). This is the general law for any rate on this
 surface: above ~10 Hz the eye fuses a flicker into a steady light — a real
-panel LED does exactly the same — and this map only receives 5 Hz, so the
+panel LED does exactly the same — and this map receives only 15 Hz, so the
 fastest blink it could draw would be **slower than the truth**, at a rate the
 GUI invented. That is decoration (§16.12) and a lie at once. A tachometer, not
 a strobe: the spark's arms grow 4 → 10 px and a second diagonal pair opens
 past the midpoint, alpha 0.55 → 0.9, on a **logarithmic** 8 Hz → 2 kHz scale
 (a rate is a pitch to the ear, so it is an octave axis to the eye), quantized
 to the eight steps the drawing can distinguish so a drifting rate cannot
-repaint the shell for a difference nobody can see. The rate rides `/cq_phase`
-as a third value rather than opening a fourth stream (§15 leaves message
+repaint even the cheap read-head layer for a difference nobody can see. The
+rate rides `/cq_phase` as a third value rather than opening a fourth stream
+(§15 leaves message
 merging free; §10 counts messages and Pen calls, not floats).
 
 The struck mark **twinkles**, alternating on every telemetry frame — §16.9's
@@ -1257,30 +1423,37 @@ motion. It is not the trigger rate and never claims to be. Flip reverses comet
 and chevron.
 **Hold**: the outermost turn
 closes into a full circle and tints danger-red at 60 % — the loop is sealed;
-the **heart** at the spiral's innermost eye (small Ø ≈ 5 mark, red while
+the **heart** at the spiral's innermost eye (Ø ≈ 11 mark, red while
 sealed) is the §6.1 hold touch — a left tap toggles the seal, and a **right
 press held on it punches**: the seal inverts for as long as it is held and is
 restored on release and on every exit path (§6.1's punch row), so the same
 crack/close the display already draws animates the momentary hold for free. The **skip mark** hangs under the mouth
-chevron: the §16.5 spark glyph in a 9 px box, whisper at rest, line ink on
+chevron: the §16.5 spark glyph with ±8 px reach inside a 32 px touch square,
+whisper at rest, line ink on
 hover, a 120 ms bone-spark flash on any skip (§16.7's momentary law, one
 `CQInk.momentaryFlash` constant shared by every skip entrance). The spiral's line
 is the §6.1 winding surface; the **reel notch** (amended 2026-07-22) rides it
 at the speed's normalized position — inner eye = slowest, mouth = fastest — as
 the winding gesture's live hand and the resting speed display. It is a **tick
-drawn across the groove** in line ink, ±4 px, ±6 px and heavier on hover: a
+drawn across the groove** in line ink, ±8 px, ±12 px and heavier on hover: a
 speed is a setting on a scale, so it wears a scale mark, and the only
 travelling body on the shell keeps the bead. It was a bone bead until the G2
 gate, 0.2 px larger than the comet and the same hue — which is no difference a
 hand can use. §16.2's "no meaning by hue alone" is satisfied by **form first**;
-where hue can help too, let it. On spiral hover the line
+where hue can help too, let it. At exact maximum the value remains 1 but the
+display tick clamps to norm 0.99, one visible breath before the transparent
+mouth-jack paper; two objects may not claim the same pixels. On spiral hover the line
 brightens and the notch lengthens (static ink, §4.5). Org fruit =
 yellow Ø 7 dot on a 6 px stem from the second turn. Moons spaf / inVca /
 fbVca / flip / skip sit on an arc under the spiral, glyphs per §16.5, lamps
 on flip/skip; below the three continuous moons hang their **tide crescents**
-(§6.1): open arcs ~Ø 18, luminous fill = value, family-colored, no numbers.
+(§6.1): open arcs Ø ≈ 36 in 44 px drag squares, luminous fill = value, no
+numbers. SP.AF's signed
+fill grows away from its zero notch; input marks unity and the overdrive side;
+feedback shows its three audible taper regions. Their notches make the
+landmarks form-readable rather than hue-only.
 The in/fb crescent owners grow only downward and carry a **Dolby oyster**
-24 px below the unchanged crescent centre. The oyster is consulted first on
+36 px below the crescent centre. The oyster is consulted first on
 press; its tap box and the crescent's original drag square are disjoint.
 `off / gate / duck` are readable as open / nearly shut / partner-pressed shut,
 and the duck arrival stroke enters from the other channel's direction. Spaf
@@ -1288,7 +1461,7 @@ and deck crescents carry no oyster. Cable-first priority remains absolute.
 Because these crescents are native controls, the shared controller must publish
 the crossing cable's hover *after* the oyster/crescent cue yields; clearing both
 cues is forbidden. The same cable must then receive the press.
-The yellow org fruit jack keeps its opaque 30×30 owner, but that owner repaints
+The yellow org fruit jack keeps its opaque 34×34 owner, but that owner repaints
 the shell's exact curved spiral segment and radial stem beneath the jack. A
 generic vertical stub is not the same path and may not replace it.
 The spiral's stroke alpha breathes 0.55 → 1.0 with the coco's out level.
@@ -1319,7 +1492,9 @@ intake body, not an envelope on a stick:
   `preABias` / `preBBias`. Both use 240 px for the full range and map only
   afterwards through their CQSpec curves. Drive deepens the living centre;
   bias swells the outgoing lobe and pinches the intake lobe, so zero is
-  symmetric and increasing asymmetry is shape-first. A tap changes neither.
+  symmetric and increasing asymmetry is shape-first. At the minimum stage the
+  knots live at 12/88 % width, each lobe body has r ≈ 18 and the whole gesture
+  owns a 54 px-diameter hit body. A tap changes neither.
   Non-left presses are inert. Cable/Alt priority remains absolute.
 - A preamp-colored audio vein leaves the knot, bends outside the
   Coco's tide crescents and terminates on an actual outer turn of the
@@ -1345,7 +1520,7 @@ while `micChan` is set **and** `micGain` > 0. The sole interactive `micGain`
 control is the Workshop warning row (§8).
 
 **Birds (decks).** Three strokes each — two wing béziers + a body dot,
-span ≈ 30 px; filename in 10 px mono whisper beneath, in a line box of at
+span ≈ 64 px; filename in 10 px mono whisper beneath, in a line box of at
 least 200 × 20 px (fixed 2026-07-21: 14 px clipped the ascenders and
 descenders, and a 160 px box ate both ends of a long name — §16.4 fixes the
 type size, so the box gives way first). A name too long for even that box is
@@ -1361,7 +1536,10 @@ the Qt drag and a 60 Hz global-cursor fallback preserves motion samples if the
 pointer leaves its small UserView on Windows.
 A different drag is inert. Cable
 hit-testing remains first inside the bird view, while the rate socket and level
-crescent keep their higher sibling views and own geometry. Any successful
+crescent keep their higher sibling views and own geometry. The level crescent
+has one unity tick at the exact position returned by its curved CQSpec map.
+Its travelled arc stays neutral through unity; gain beyond the tick and the
+current pearl turn danger-red, while the unused region remains uncoloured. Any successful
 `\file` notification — dialog, wheel, ruffle, drop or code — flashes that bird
 for the shared 120 ms momentary interval and updates the one filename truth.
 Flutter = 1 px wing bob at ambient rate while the deck's level > 0.05
@@ -1379,11 +1557,12 @@ topological overlay above every landscape body and below actual patch cables.
 They therefore remain continuous across otherwise invisible Qt view
 rectangles instead of being repaired separately inside each object.
 
-**The moon and the tide field** (accepted for the next visual iteration with
-the user 2026-07-27). The weather machine is integrated by *gesture and
-relation*, not collected into a panel:
+**The moon and the tide field** (grammar accepted with the user 2026-07-27;
+the enlarged measures implemented 2026-07-28 and visually accepted
+2026-07-29). The weather machine is integrated by *gesture and relation*, not
+collected into a panel:
 
-- The sowing moon is a solitary Ø ≈ 56 body in the far upper-right, beyond
+- The sowing moon is a solitary Ø ≈ 70 body in the far upper-right, beyond
   bird B and slightly above its flight line. It opens as a 0.22 crescent;
   sowing density is `0.2 × phase²`, so quarter/half/full average roughly
   4/18/70 cables rather than crowding the first half. Tap throws shake;
@@ -1393,8 +1572,10 @@ relation*, not collected into a panel:
   sun 2.5…6 Hz) and visibly add drops/rays. Rain and sun are transient faces
   beside the moon and exist only while held — no static satellites remain.
 - There is no pond, shore or pad. Four inward-pointing memory seeds in the
-  NW/NE/SW/SE winds imply a large bilinear tide field through the bay. At
-  rest only those seeds are inked. During a voyage, a small cross and four
+  NW/NE/SW/SE winds at 31/69 % width and 18/96 % height imply a large
+  bilinear tide field through the bay. Their drawn kernels are 11×7 px and
+  each owns a 28 px-diameter touch body. At rest only those seeds are inked.
+  During a voyage, a small cross and four
   sparse wavefront pulls (≤ 8 % alpha) reveal the relation; there is no
   ambient animation and no rectangular boundary.
 - Filled seed tap recalls, Shift+tap stores/overwrites, and a latched Tab/gill
@@ -1406,7 +1587,8 @@ relation*, not collected into a panel:
   hit-transparent layer; a valid filled target catches the thread at its
   centre and opens a blue double bloom. No graft glyph or armed state exists.
 - Open-field left drag does nothing until water focus is open. Tab and the
-  clickable gill below the lower castles latch the mode; Shift is its
+  clickable gill below the lower castles latch the mode; its strokes span
+  40 px and its precise hit body has a 24 px radius. Shift is its
   momentary form. In focus, cable spans go behind the water and out of
   hit-testing while endpoints and bodies keep priority; left commits and
   right is elastic. Outside focus, right remains harvest. A captured voyage
@@ -1728,7 +1910,7 @@ never carry a rate the frames cannot resolve. Above roughly 10 Hz a rate is
 drawn as weight (§16.6's struck mark), because the fastest blink this surface
 could draw would be slower than the truth.
 
-### 16.10 Space & scale
+### 16.10 Spacing & scale
 
 Night bodies scale with the window (minimum 1280×720) but **stroke widths and
 font sizes stay in px** — ink does not thicken when the water grows. Sockets

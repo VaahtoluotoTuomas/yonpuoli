@@ -38,9 +38,10 @@ change into maintenance across two interfaces.
 
 The prerequisites are met:
 
-- the Drawer **workshop** carries the 43 remaining CQSpec parameters with
-  honest ledger controls. Together, Night 31 · Master 5 · Workshop 43 are
-  disjoint and their tested union is exactly all 79 `CQSpec.names`; `micGain`
+- the Drawer **workshop** carries the 39 remaining CQSpec parameters with
+  honest ledger controls. After the 2026-07-28 Space retirement, Night 31 ·
+  Master 4 · Workshop 39 are disjoint and their tested union is exactly all
+  74 `CQSpec.names`; `micGain`
   has one interactive home and keeps its warning;
 - Day's **spesal constellation is recorded dead**, not transplanted. Night's
   under-hand coupling chord carries the same partner, mode and signal direction
@@ -497,6 +498,12 @@ points, the method is binding):**
 | weather marks / hit | ~10–13 / 10 | ~14–18 / 12–14 | see §9 |
 | telemetry marks (comet, fireflies, chord lights) | Ø 4 / 1.2 / 1.8 | Ø 5–6 / 1.6 / 2.2 | information must not shrink relative to grown bodies |
 
+The comet's accepted 2026-07-29 motion pass keeps that mark on one transparent,
+mouse-pass-through layer per Coco. `/cq_phase` now shares the 15 Hz ambient
+ceiling with the castle fireflies; ordinary address motion redraws only the
+dot/tail layer, never the complete shell, and an unchanged frame redraws
+nothing. A real direction-regime change still repaints the shell chevron.
+
 Strokes, fonts, palette, alphas: **unchanged** (§16.3, §16.4, §16.10 —
 "ink does not thicken when the paper grows"). Pen-call counts are size-
 independent, so the flood costs the frame budget nothing; only the opaque
@@ -513,6 +520,13 @@ surface at the review, not something the implementer decides.
 **Third design, v3.2 accepted after visual/interaction review 2026-07-27
 (checklist N3).** The cluster is dissolved one step further: weather becomes
 an act of the moon and the compass becomes a property of the bay.
+
+**Full-scale polish build, implemented 2026-07-28 and visually accepted
+2026-07-29.**
+The accepted interaction and topology stay unchanged while the moon grows
+Ø 56 → 70, the seed rows move 22/91 → 18/96 % of stage height, each seed
+gains a 28 px-diameter touch body, and the gill gains a 48 px-diameter exact
+hit body. These measures do not reopen N3's grammar.
 
 - The **solitary moon** is Ø 56 in the far upper-right, beyond bird B and
   slightly above it. It opens as a 0.22 crescent and sows through
@@ -818,7 +832,7 @@ The old N8 sketch named examples but did not define “remaining”, a count, a
 machine-checkable partition, the fourth-page shell work, or the one-GUI-path
 rule for `micGain`. It was not sufficient handoff for implementation.
 
-`CQSpec` currently contains **79** parameters. “Reachable” in this gate means
+`CQSpec` currently contains **74** parameters. “Reachable” in this gate means
 all of the following:
 
 - the player starts in Night and uses only Night, the Drawer and the
@@ -839,22 +853,22 @@ The intended partition is exact and disjoint:
 | Surface | Count | CQSpec parameters |
 |---|---:|---|
 | Night | 31 | `deckALevel`, `deckBLevel`; `preASrc`, `preBSrc`, `preADrive`, `preBDrive`, `preABias`, `preBBias`; for each Coco: `In`, `Fb`, `Speed`, `Spaf`, `DolbyIn`, `DolbyFb`, `Hold`, `Flip`; `qFreq`, `qChaos`; `c1Range`…`c5Range` |
-| Master | 5 | `masterVol`, `masterDry`, `spaceMix`, `patchDepth`, `monitorMute` (the PANIC/resume control) |
-| Workshop | 43 | the explicit inventory below |
-| **Total** | **79** | must equal `CQSpec.names`, with no missing or duplicate owner |
+| Master | 4 | `masterVol`, `masterDry`, `patchDepth`, `monitorMute` (the PANIC/resume control) |
+| Workshop | 39 | the explicit inventory below |
+| **Total** | **74** | must equal `CQSpec.names`, with no missing or duplicate owner |
 
 This partition describes the night-first GUI, not every observer. For
 example, Night may keep reading `micGain` to draw its sprout without becoming
 an interactive owner.
 
-The **43 Workshop parameters** are:
+The **39 Workshop parameters** are:
 
 | Ledger island | Count | Exact names |
 |---|---:|---|
-| Inputs, decks and Space | 8 | `liveGain`, `micGain`, `deckARate`, `deckBRate`, `deckALoop`, `deckBLoop`, `spaceSize`, `spaceDamp` |
-| Coco 1 remainder | 12 | `coco1Bits`, `coco1Wrap`, `coco1Interp`, `coco1Dust`, `coco1Organ`, `coco1Level`, `coco1Pan`, `coco1Send`, `coco1SlotPre`, `coco1SlotDeck`, `coco1SlotQ`, `coco1SlotX` |
+| Inputs and decks | 6 | `liveGain`, `micGain`, `deckARate`, `deckBRate`, `deckALoop`, `deckBLoop` |
+| Coco 1 remainder | 11 | `coco1Bits`, `coco1Wrap`, `coco1Interp`, `coco1Dust`, `coco1Organ`, `coco1Level`, `coco1Pan`, `coco1SlotPre`, `coco1SlotDeck`, `coco1SlotQ`, `coco1SlotX` |
 | Quantussy remainder | 11 | `qShLag`, `c1Off`…`c5Off`, `c1Send`…`c5Send` |
-| Coco 2 remainder | 12 | `coco2Bits`, `coco2Wrap`, `coco2Interp`, `coco2Dust`, `coco2Organ`, `coco2Level`, `coco2Pan`, `coco2Send`, `coco2SlotPre`, `coco2SlotDeck`, `coco2SlotQ`, `coco2SlotX` |
+| Coco 2 remainder | 11 | `coco2Bits`, `coco2Wrap`, `coco2Interp`, `coco2Dust`, `coco2Organ`, `coco2Level`, `coco2Pan`, `coco2SlotPre`, `coco2SlotDeck`, `coco2SlotQ`, `coco2SlotX` |
 
 The other SPEC §6.2 obligations are already owned, but the N8 exit audit must
 name them too: Night owns hold/flip/skip, spesal step, dolby, ranges, patching
@@ -938,9 +952,9 @@ no island casts one.
 The page has one shallow service band over a three-ledger body:
 
 ```text
-┌──────── deck a ────────┬────── input trims ──────┬──────── space ─────────┬──────── deck b ────────┐
-│ rate · loop            │ live gain · mic gain    │ size · damping         │ rate · loop            │
-└────────────────────────┴──────────────────────────┴────────────────────────┴────────────────────────┘
+┌──────────── deck a ────────────┬────────── input trims ──────────┬──────────── deck b ────────────┐
+│ rate · loop                    │ live gain · mic gain             │ rate · loop                    │
+└────────────────────────────────┴──────────────────────────────────┴────────────────────────────────┘
 
 ┌──────────────── coco 1 ────────────────┬──────────────── quantussy ───────────────┬──────────────── coco 2 ────────────────┐
 │ converter · material · output · slots  │ s&h slew · detunes · castle sends       │ converter · material · output · slots  │
@@ -949,31 +963,28 @@ The page has one shallow service band over a three-ledger body:
 
 This is a restrained echo of Night's real geography: deck A and B hold the
 two outer ends, while the main body reads `coco 1 · quantussy · coco 2`.
-It is topology as ordering, not a picture. Space stays a neutral service
-module and gains no invented Night body; GUI_SPEC §14's deferred Space
-identity remains deferred.
+It is topology as ordering, not a picture. The retired Space module has no
+hidden or disabled placeholder.
 
-Use four equal 270 px service modules with three 16 px gutters
-(`4 × 270 + 3 × 16 = 1128`). Below a 16 px gap, use main widths
-`365 · 366 · 365` with two 16 px gutters. Pair symmetry is structural:
+Use three equal service modules with two gutters across the shared responsive
+rail. Below the band, split the same rail into the three main columns with two
+gutters. Pair symmetry is structural:
 both Coco ledgers are built by the same helper with only the index changed.
 The service band is 72 px high. Budget each main ledger at 392 px maximum:
-a 20 px title, 16 px subgroup labels and 24 px parameter rows put a
-12-parameter Coco at 372 px before its remaining bottom air. With 12 px
+a 20 px title, 16 px subgroup labels and 24 px parameter rows put an
+11-parameter Coco within the measured budget before its remaining bottom air. With 12 px
 top/bottom page margins, the complete rail is 504 px high and fits the
 minimum Drawer workspace without a scroll view.
 
 Group rows by signal meaning, never alphabetically:
 
 - each Coco: **converter** (`bits`, `wrap`, `interp`), **material** (`dust`,
-  `organ`), **output** (`level`, `pan`, `send`), **input mix** (`pre`,
+  `organ`), **output** (`level`, `pan`), **input mix** (`pre`,
   `deck`, `q`, `x`);
 - Quantussy: **s&h** (`qShLag`), **detune** (`c1Off`…`c5Off`), **audio
   sends** (`c1Send`…`c5Send`). Castle numbers run 1→5 in both groups, so the
   two lists can be compared without hunting;
-- the service band uses the exact pairs shown in the wireframe. Do not move
-  `spaceSize`/`spaceDamp` into Master: the persistent strip intentionally
-  keeps only performance `spaceMix`.
+- the service band uses the exact pairs shown in the wireframe.
 
 Island titles and ordinary row labels are lowercase 10 px sans; subgroup
 labels are 9 px whisper; exact values are 10 px mono. Labels sit close to
@@ -1006,8 +1017,8 @@ existing slider does not carry this exact-value contract:
 Use semantic phosphor sparingly. In Night skin, slate is `recess`, rules and
 ordinary values are bone/whisper, and established families accent only their
 own facts (`organ`, `dust`, input, Quantussy family, danger). Do not rainbow
-whole columns or invent a family for neutral slots, levels, pan, sends or
-Space. Day uses the same marks re-inked through the Day palette. No color is
+whole columns or invent a family for neutral slots, levels or pan. Day uses
+the same marks re-inked through the Day palette. No color is
 inlined at the Workshop draw site.
 
 `bits` uses the integer ledger; `wrap` and deck loops use the toggle ledger;
@@ -1045,7 +1056,7 @@ shape is:
 - add `classes/CQGuiWorkshop.sc` (under the project's ~400-line limit);
   its one explicit `parameterGroups`/manifest drives both layout construction
   and `paramNames`, so the audit never tests a second hand-copied list;
-- make that manifest list the 43 names above explicitly. **Do not** compute
+- make that manifest list the 39 names above explicitly. **Do not** compute
   Workshop ownership as `CQSpec.names - night - master`: that would silently
   make a newly added parameter “covered” without drawing a control;
 - expose semantic interactive inventories for Night and Master (for example
@@ -1071,7 +1082,7 @@ Use this green implementation sequence:
 1. Synchronize the proposed GUI contract in `GUI_SPEC.md`/`ARCHITECTURE.md`,
    add the three explicit owner inventories and their dynamic coverage unit
    test. No rendered layout is claimed yet.
-2. Add `CQGuiWorkshop` and build all 43 controls directly from its manifest.
+2. Add `CQGuiWorkshop` and build all 39 controls directly from its manifest.
    Test it serverlessly before putting it in the live shell. Because it is
    not constructed by `CQGui` yet, its mic control is not a second live GUI
    path.
@@ -1094,11 +1105,11 @@ Add the following contracts before calling the page complete:
 
 1. **Dynamic coverage unit test** (`CQGuiVisualContractTest` or a narrowly
    named new unit class):
-   - Workshop manifest has 43 unique real `CQSpec` names;
-   - Night has 31, Master 5, and the three interactive-owner sets are
+   - Workshop manifest has 39 unique real `CQSpec` names;
+   - Night has 31, Master 4, and the three interactive-owner sets are
      disjoint;
    - their union equals `CQSpec.names` exactly and has the same size.
-   Keep the current 79 as a diagnostic assertion if useful, but the equality
+   Keep the current 74 as a diagnostic assertion if useful, but the equality
    to `CQSpec.names` is the future-proof gate.
 2. **Ownership tests**:
    - all four Drawer tabs appear in the normative order;
@@ -1112,12 +1123,12 @@ Add the following contracts before calling the page complete:
      expected clamped value through `CQState`;
    - an external `state.set` repaints representative controls without firing
      a write echo; enum order and numeric mapping come from `CQSpec`;
-   - all 43 final controls are ledger rows, not native widgets or Day knobs,
+   - all 39 final controls are ledger rows, not native widgets or Day knobs,
      and bipolar/int/toggle/enum variants expose their required secondary
      shape channel.
 4. **Drawer Qt smoke**:
    - open Night → Drawer → Workshop at 1280×720 and assert the real page is
-     visible; the 1128 px rail is centred; the four service modules and three
+     visible; the shared rail is centred; the three service modules and three
      main ledgers have their specified widths; the last slot/send rows are
      contained; Master is visible; and `CQInkControl.drawErrors == 0`;
    - repeat in both Day and Night skins and in a 1920×1005 content window
@@ -1151,18 +1162,18 @@ Add an N8 block to the live checklist with two passes:
   external state following, and the single mic warning path;
 - **short listening pass:** with conservative master level, exercise one
   representative from every Workshop subgroup (deck rate/loop, Coco
-  converter/material/output/slot, castle detune/send, qShLag, Space
-  size/damp), reset to a known snapshot, then play a real session without
+  converter/material/output/slot, castle detune/send and qShLag), reset to a
+  known snapshot, then play a real session without
   opening Day. This is a control-provenance check, not permission to retune
   DSP.
 
 Stop for the user's visual and playing review before polish or N9. N8 exits
 only when:
 
-- the dynamic 31 + 5 + 43 partition proves all current CQSpec names reachable
+- the dynamic 31 + 4 + 39 partition proves all current CQSpec names reachable
   from Night + Drawer + Master and all other SPEC §6.2 obligations have a
   named owner;
-- all 43 Workshop controls are visible, enabled, exact-value-following and
+- all 39 Workshop controls are visible, enabled, exact-value-following and
   funnel-bound at the minimum size;
 - the accepted visual reads as Night's still measurement table — shared Ink
   species, deliberately different grammar — and passes §12.1.3's explicit
@@ -1197,6 +1208,28 @@ Suggested order by payoff over risk: **13.1 → 13.4 → 13.2 → 13.5 → 13.3*
 with 13.6 running inside the G3.1 review and 13.7 already planned as §2.
 
 ### 13.1 The feedback taper — more fader where the music lives
+
+**Implementation status (2026-07-28).** The first listening candidate is
+implemented on `nocturne-feedback-taper` as the generic CQSpec-owned
+breakpoint map described below. The automatic gate is green. The user
+accepted the taper and its full visual follow-up on 2026-07-28: the audible
+regimes land at their expected positions, and the feedback crescent draws the
+same three CQSpec-owned regions discretely — echo green, unity/bloom amber,
+mayhem red — with a current-position pearl. A continuous hue ramp was rejected
+because it would claim a uniform continuum across a deliberately piecewise
+musical map.
+
+**Adjacent-control scale audit (implemented 2026-07-28).** Green→red was not
+spread to every continuous hand: colour must name a consequence, not merely
+magnitude. SP.AF now has a CQSpec-derived zero notch and two signed halves
+(inverso blue / verso orange), with its live fill growing away from zero.
+Input has a CQSpec-owned unity boundary: green normal gain, amber overdrive.
+The bird level remains neutral through its exact unity tick; the actually
+travelled gain above it and its pearl turn danger-red. This is one real
+boundary (nominal level → boost), not a generic magnitude ramp. Speed, the
+storm iris and the root gestures have no honest discrete region boundaries
+today and intentionally remain continuous. Dolby and range already state
+their discrete modes by shape.
 
 **Hypothesis.** The instrument's juiciest zone is fb ≈ 0.95–1.15
 (echo → looper → blooming crunch), but the linear 0–1.25 spec gives it
@@ -1246,6 +1279,22 @@ CQ.set(\coco1SlotDeck, 1); CQ.set(\coco1In, 0.8);
 ```
 
 ### 13.2 The speed floor — darker honey
+
+**Implementation status (2026-07-29).** Option A is implemented on
+`nocturne-feedback-taper` and the full automated gate is green, including
+both NRT renders (the DSP clamp moved, so `nrt_safety` and
+`nrt_hold_integrity` are mandatory, not optional). `\mayhem`'s ±4 oct spaf
+now really drives the clock onto the 750 Hz floor and the DC assert holds
+with room to spare (8e-05 / 2.8e-04 against the 0.02 ceiling), so LeakDC
+does what the proposal hoped and option B is not forced by measurement.
+The clamp floor is no longer a literal inside `\cqCoco`: it lives in
+`CQSpec.speedClampFloor`, because it is a range fact of the Speed
+parameter, and a unit test pins it at exactly one octave under the knob
+floor so the ground-jack trick cannot silently drift. **Not accepted —
+this waits on the ear** (checklist 13.2). The honest risk the listening
+block asks about first is not the new bottom but the cost everywhere else:
+the fader now spans five octaves instead of four, so every centimetre of
+travel covers more. If the middle got too twitchy, that is option B.
 
 **Hypothesis.** Slower clocks = darker, more alias-shimmering, longer
 loops — very CL. The knob floor (3 000 Hz) is shy; the post-mod clamp
@@ -1297,27 +1346,80 @@ plain noise reads as tape hiss. Sparse bipolar grain, whose density
 follows the clock, would make the selfNoise workflow organic — and the
 link is physical: fewer conversions per second, fewer error events.
 
-**Proposal.** In `\cqCoco`, replace the dust source (verify its current
-form first) with a blend, injected at the same pre-converter point so
-safety invariant 2 (clip before quantize) is structurally untouched:
+**Implemented candidate (2026-07-29).** In `\cqCoco`, the dust source is a
+blend injected at the same pre-converter point, so safety invariant 2
+(clip before quantize) is structurally untouched:
 
 ```
 dustSig = (LPF.ar(WhiteNoise.ar, 9000) * 0.35
-    + Dust2.ar(clockHz * 0.02) * 1.2) * dustLevel
+    + Dust2.ar(SampleRate.ir * 0.02) * 1.2) * dustLevel
 ```
 
-- `clockHz * 0.02` ≈ 30 grains/s at the new 1 500 Hz floor, ~960/s at
-  48 k — crackle when slow, dense sizzle when fast, and dust *audibly
-  follows the speed knob* (the poetic coupling, free of charge).
+- The original draft's `clockHz * 0.02` was rejected after measuring the
+  actual clocked write. At 1 500 Hz, BufWr revisits a RAM cell for about 32
+  server samples and overwrites almost every one-sample impulse before the
+  address advances; clocking the raw impulse source would therefore make
+  surviving errors follow approximately clock squared.
+- A constant two-percent-per-server-sample error stream lets the RAM clock
+  do the physically meaningful thinning. Stored Dust2 errors are then
+  approximately `clockHz * 0.02`: ~30 grains/s at 1 500 Hz and ~960/s at
+  48 kHz. Dust still *audibly follows the speed knob*, now linearly.
 - Calibrate the two mix constants by ear so the default `dust = 0.02`
   keeps roughly the old loudness — old snapshots must not get louder.
 - No new parameters (the norns diet): the blend constants are fixed
   interpretation, commented with a reference in the SynthDef.
 
+The automated character render (`tests/nrt_dust_character.scd`) measures
+the real SynthDef at 1 500, 24 000 and 48 000 Hz. The candidate is 2.1–6.1
+dB below the legacy source in RMS, but its crest factor is ~9.2–9.5 and
+kurtosis ~15.5 instead of hiss-like values near 3. Stored change activity
+rises about 22x from the slow to fast end while RMS stays within 0.3 dB.
+At 48 kHz its spectral centroid is 9.43 kHz (legacy 11.97 kHz), with 40.3%
+of energy above 10 kHz (legacy 57.7%). This deliberately spends less energy
+on a masking, bright bed and more on audible events; the manual ear gate
+below still owns final acceptance.
+
+**Accepted 2026-07-29.** In the exact A/B the new source was consistently
+preferred: a quieter, breathing rain bed with more internal levels, where the
+legacy source broke into louder, flatter bursts and abrupt empty cuts. Live
+Speed sweeps kept one recognizable material from dark 1.5 kHz crackle through
+gravel and paper-dry chip dust to a pleasant 48 kHz hiss, without a piercing
+tone. `dust=0.02` stayed deliberately subtle in program material, `0.2` was
+already an obvious effect, maximum dust produced no hard spikes, and the source
+worked in the user's own patches. No global level correction: raising the
+source would spend the gained headroom on masking and accelerate selfNoise
+saturation.
+
+The slow-write follow-up also corrected the listening protocol's premise.
+Recording at 48 kHz then playing at 1.5 kHz and recording directly at 1.5 kHz
+should be statistically similar: in either case about two percent of stored
+RAM cells carry a Dust2 error. Speed changes temporal density on playback;
+write speed does not change that per-cell distribution.
+
+**Deferred, non-blocking:** the 5/8/12-bit comparison was masked by program
+material and insufficient recirculation time. Converter depth gets its own
+isolated capture test with identical quiet material and at least three complete
+write passes. It does not reopen the accepted dust source.
+
+**selfNoise follow-up.** The source passed in ordinary patches, but the old
+preset's regular triangle feedback accumulated into a nearly continuous
+ocean-swell mass. Lowering only feedback or dust softened/slowed that attractor
+without creating real clearings. The revised preset therefore rests below
+unity, lets held castle values create irregular above-unity plateaus, lowers
+the cross-feed valves far enough for castle steps to close them fully, and
+forces its four modulation castles back to infra range. A real 120 s
+Quantussy+Coco render changed from +9.6 dB monotonic growth to +3.4 dB,
+made an 8.2 dB clearing followed by a 7.2 dB rebloom, reduced 10 s envelope
+correlation from 0.87 to 0.49, and spent effectively no samples near the
+converter rail. `tests/nrt_selfnoise_character.scd` preserves those facts;
+the user accepted the revised preset on 2026-07-29 as musically better than
+the old ocean-swell version. The final ear gate is closed.
+
 **Consequences to check.** DSP change: full battery incl. A3 (its stress
-case runs dust at max — impulses hit the quantizer at full scale, bounded
-by clip2; the peak assert is the honest judge) and A4. M4's checklist
-figure (selfNoise) is the acceptance ear.
+case runs dust at max — impulses hit the quantizer hard and feedback can
+reach the full-scale converter rails, bounded by clip2; the peak assert is
+the honest judge) and A4. M4's checklist figure (selfNoise) is the
+acceptance ear.
 
 **Listening protocol:**
 
@@ -1340,15 +1442,24 @@ heart, and it deserves the widest band of the fader; hyperchaos can keep
 the top quarter.
 
 **Proposal.** Change only `qChaos`'s CQSpec curve (lin → an exp-like
-curve factor ≈ **+2.5**, try 2–3 at the review). Value semantics — the
+curve factor **+2.0**, selected because it gives the intended review
+landmarks). Value semantics — the
 internal 0–5 octave FM depth — are untouched, so snapshots, patterns and
 the DSP stay bit-identical; only the hand's mapping stretches. With
-+2.5: fader noon ↦ qChaos ≈ 0.27 (deep wander), 3/4 ↦ ≈ 0.55, and the
++2.0: fader noon ↦ qChaos ≈ 0.269 (deep wander), 3/4 ↦ ≈ 0.545, and the
 hyperchaos region 0.6–1.0 compresses into the last quarter.
 
 **Technique.** One curve field in CQSpec + SPEC §5.4 row note. The eye's
 horizontal axis at Night, the Workshop ledger and 16n all read through `unmap` —
 they follow. M3's sweep is the acceptance ear.
+
+**Accepted 2026-07-28.** SuperCollider's curve **+2.0** produced the intended
+hand landmarks (noon ≈ 0.269, 3/4 ≈ 0.545) more accurately than the draft's
++2.5 estimate. The first listening pass accepted the stable → wander →
+hyperchaos dramaturgy. The visual pass then added four planted broken weather
+rings at exact hand quarters, a living qChaos front and the missing
+cable-priority eye hover. The user accepted both the curve and this poetic
+position feedback.
 
 **Listening protocol:**
 
@@ -1366,24 +1477,69 @@ CQ.boot; CQ.patchPreset(\classic); CQ.set(\c5Send, 0.5);
 
 ### 13.5 The VCA law — the shell opens and closes
 
+**Accepted 2026-07-29: one fixed signed p = 2 law.** A same-session A/B/C
+compared the old linear contribution, signed p = 1.5 and signed p = 2 in the
+real Cocos. p = 2 kept weights 0.05–0.10 subtle, made phrases at 0.20, stayed
+deep but round-edged at 0.40 and cut complete holes only at 0.80. Its positive
+arc touched the real VCA ceiling without becoming a static plateau; feedback
+weights −0.20/−0.50 made two depths of recess without erasing empty blocks.
+SP.AF and whole-preset controls passed.
+
+p = 1.5 had no identity that cable depth could not supply. Linear retained a
+recognizable sliding character, but the session found no necessary musical job
+that justified another GUI/snapshot mode. No character switch ships. The
+temporary hidden crossfader and p = 1.5 branch were removed after the choice;
+`\cqCoco` contains only the accepted p = 2 graph.
+
+**The sketch below did not match the code, and the rake is why it was
+caught.** "Verify the current form first" was the right instruction: the
+real form is `gain = (knob + sum).clip(...)` — the knob is the VCA's rest
+and the matrix *adds* to it — not `gain = (1 + sum)`. Shaping the total
+would have recalibrated every knob, default and stored snapshot
+(`coco1In` 0.8 → 0.64) and would have destroyed a documented patching
+move: a banana into a VCA whose knob is shut can currently open it, and
+under a multiplicative law it never could. So the shaping is applied to
+the modulation's **contribution**:
+
+```
+shaped = (1 + sum) ** 2 - 1        // sum clamped ±2 first (the rake)
+inVca  = (knob + shaped).clip(0, 2)
+```
+
+At a knob of unity `1 + shaped = (1 + sum) ** 2` only **before the real
+VCA ceiling**. Input is subsequently clipped to 0..2 and feedback to 0..2.5,
+so the sketch's sum +1 → x4/+12 dB never reaches the converter; p = 2 reaches
+the existing rail earlier and spends longer there. Away from unity the knob
+keeps its zero-sum meaning, but sum −1 subtracts one rather than universally
+closing a knob above unity. `g.abs * g` is `g² · sign(g)` in two ops, and the
+sign keeps the pre-clip law monotonic below sum = −1 instead of folding up.
+
+**One consequence the sketch does not mention and the ear will meet
+first:** the p = 2 curve's slope at the origin is 2, so existing VCA
+modulation becomes substantially deeper. Choosing that exponent was the
+implementation's musical decision. This reaches `\selfNoise`, `\organMode`,
+`\mayhem` and the user's snapshots: knob values remain numerically calibrated,
+but a snapshot containing VCA bananas is **not sonically unchanged**. The
+accepted 0.05–0.10 subtle region is how the patch keeps nuance; high weights
+deliberately enter the instrument's experimental country. This law never
+touches pitch or speed modulation, so a seasick `_spaf` patch must be tuned at
+its own cable, SP.AF depth or `patchDepth`.
+
 **Hypothesis.** The matrix in/fb-VCAs sum linearly; an analog verso/
 inverso VCA breathes more exponentially. A gentle power shaping gives
 duckings and tremolos a "valve opens / valve shuts" body.
 
-**Proposal.** In `\cqCoco`, where the inVca/fbVca sums become gains
-(verify the current form and any existing sum clamp first — see the rake
-below), replace the linear law with:
+**Accepted implementation.** In `\cqCoco`, the matrix contribution is:
 
 ```
-gain = max(0, 1 + vcaSum) ** p
+shaped = sign(1 + clamp(vcaSum, -2, 2))
+       * abs(1 + clamp(vcaSum, -2, 2)) ** 2 - 1
+gain = clip(knob + shaped, 0, vcaCeiling)
 ```
 
-- Try **p = 2 first** (it is free: `g = max(0, 1 + x); g = g * g`), then
-  p = 1.5 if 2 is too dramatic. p is a fixed constant, commented — not a
-  parameter.
-- Full closure at sum = −1 is preserved (tremolo reaches silence);
-  unity at 0 is preserved; sum = +1 now gives +12 dB (p = 2) into the
-  converter instead of +6 — hotter overdrive, still bounded by clip2.
+- p = 2 is a fixed constant, not a parameter.
+- Sum 0 leaves the knob unchanged; sum −1 subtracts one; sum +1 contributes
+  +3 before the real input/feedback ceilings of 2/2.5.
 
 **Rake.** Check how the sum is clamped before shaping: `\mayhem` can swing
 a VCA sum far past ±1, and `(1 + x) ** 2` at x = +4 is a ×25 gain — safe
@@ -1397,34 +1553,31 @@ is in the stress patch — watch the peak margin) and A4. Document the
 chosen law in SPEC §5.5's destination notes and ARCHITECTURE's coco
 section (it is an interpretation, like the organ derivation).
 
-**Listening protocol:**
+**Listening evidence:** archived in `tests/manual_checklist.md` §13.5:
+small-weight nuance, three-depth inverso chop, positive ceiling arc, two-depth
+feedback duck, SP.AF isolation and whole-preset checks.
 
-```supercollider
-// 13.5 — VCA-lain korvakoe
-CQ.boot; CQ.patchPreset(\selfNoise);
-// 1. \selfNoise hengittää fb-VCA:ita infra-triangeleilla: vertaa muistiin
-//    - aukeaako ja sulkeutuuko kuori nyt "venttiilinä" (nopea sulku,
-//    pyöreä avaus) tasaisen liu'un sijaan?
-CQ.patchPreset(\empty);
-CQ.deckA.load("<rytmikäs äänite>"); CQ.set(\coco1SlotDeck, 1);
-CQ.set(\coco1In, 0.8);
-CQ.patch(\cas1, \coco1_inVca, -0.8);   // inverso chop
-// 2. cas1:n portaat leikkaavat sisääntuloa: chopin pitää PURRA - pohja
-//    kiinni asti, avaus muhkea. Käännä paino +0.8:aan: ylipaine puskee
-//    konvertteriin kuuluvasti mutta rajatusti.
-CQ.patch(\envA, \coco2_fbVca, -0.5);
-// 3. SPEC:n oma duck-esimerkki: puhu/soita liveen - feedbackin pitää
-//    väistää artikuloiden, ei liukuen.
-```
+### 13.6 The zipper seam — measured and closed without a DSP change
 
-### 13.6 The zipper seam — measured in G3.1, remedy ladder ready
+**Not a change — a measurement with a prepared answer.** Factual correction
+found while building the gate on 2026-07-29: the compass pours weights as a
+30 Hz stream into control buses, but production readers have never been
+unlagged. `CQSynthDefs.prMatrixWeight` has applied one 50 ms `Lag.kr` to every
+destination since M1, before `patchDepth`. The tide makes the remaining seam
+*mostly* moot — disjoint cables step whole, which is the banana idiom — but
+**shared cells glide**, and their 30 Hz writes over sustained VCA material are
+still the right place to verify the real implementation rather than trust its
+topology.
 
-**Not a change — a measurement with a prepared answer.** The compass now
-pours weights as a 30 Hz stream into unlagged control buses (§15's open
-seam, finally exercised for real). The tide makes this *mostly* moot —
-disjoint cables step whole, which is the banana idiom — but **shared
-cells glide**, and a glide in 30 Hz steps on a VCA cable over sustained
-material is where a zipper would live.
+The reproducible NRT gate `tests/nrt_zipper_measure.scd` now renders the
+production 30 Hz + 50 ms path, a continuously ramped reference with the same
+lag, and an intentionally unlagged positive control. On the slow 0.9→0.1
+shared-cell glide, production residual was −55.87 dB RMS relative to the
+signal; the positive control was −55.15 dB. The tiny 0.72 dB RMS difference
+does not decide audibility. In the 2026-07-29 listening gate the user could
+not distinguish zippering reliably and judged it probably inaudible.
+Production therefore stays unchanged; the remedy ladder below is retained
+only if later material exposes a repeatable problem.
 
 **Measurement (fold into the G3.1a session):**
 
@@ -1440,17 +1593,20 @@ CQ.patch(\cas1, \coco1_inVca, 0.9);
 ```
 
 **Remedy ladder if it grates (stop at the first rung that cures it):**
-1. Nothing — 30 Hz already is the "thin the writes" answer; a faint step
-   *is* the hardware's banana-contact truth (§15).
+1. Nothing — 30 Hz plus the inherited 50 ms reader smoothing may already be
+   clean; a faint disjoint-cable step *is* the hardware's banana-contact truth
+   (§15).
 2. Client-side glide: the touch layer splits each paced blend write into
    2–3 sub-writes ~10 ms apart, interpolating only the **shared** cells
    (the tide already knows which those are — disjoint cells must keep
    stepping whole, that is the design).
-3. Server-side `Lag.kr` ≈ 15–20 ms on the **continuous destinations
-   only** (spaf, inVca, fbVca, fm, deck rates) — within the norns-diet
-   ceiling (one Lag per dest). **Never on gate/trig destinations**: a
-   lagged flip/skip/spesal sum reshapes Schmitt crossings and charge-lamp
-   truth. This rung is a SPEC §15/§5.5 edit and needs the user's yes.
+3. Replace — do not stack — the inherited blanket 50 ms helper with a
+   destination-aware smoother on the **continuous destinations only** (spaf,
+   inVca, fbVca, fm, deck rates). **Never add lag to gate/trig destinations**:
+   a lagged flip/skip/spesal sum reshapes Schmitt crossings and charge-lamp
+   truth. The inherited helper currently does precede those Schmitt sums; its
+   removal is a separate gate-timing audit, not a free side effect. This rung
+   is a SPEC §15/§5.5 edit and needs the user's yes plus the full battery.
 
 ### 13.7 The punch — already planned
 
@@ -1472,11 +1628,38 @@ drive-dependent **partial makeup attenuation** after the waveshaper rather
 than automatic full loudness normalization. The goal is to expose saturation,
 not erase the preamp's pressure.
 
-Any accepted curve must be specified in `SPEC.md`/`CQSpec`, keep peak safety
+Any accepted curve must be specified in `SPEC.md` (and in `CQSpec` only if it
+introduces a parameter), keep peak safety
 and stereo symmetry, place the envelope follower after the audible compensated
 signal, pass the full NRT battery, and survive an equal-loudness listening
 comparison. Do not infer a curve from the GUI's normalized value alone or
 silently fold this experiment into a visual iteration.
+
+**File A/B accepted and production curve implemented 2026-07-29.**
+`tests/nrt_preamp_loudness.scd` peak-aligns the local speech, drum-loop and
+sustained-organ sources to the Deck contract, then repeats the exact same
+excerpt at drive 1/2/6/16/40 and at bias 0/0.15/0.6. It renders the current
+production path beside the legacy uncompensated path and the rejected stronger
+−1.5 dB per drive octave reference. The chosen production path is −1.0 dB per
+actual drive octave. These are partial attenuation curves, not
+material-dependent normalization, and remain anchored exactly at drive 1.
+At drive 40, RMS rise relative to drive 1 measured:
+
+| source | legacy uncompensated | accepted −1 dB/oct | stronger −1.5 dB/oct |
+|---|---:|---:|---:|
+| speech | +21.67 dB | +16.34 dB | +13.68 dB |
+| drums | +22.17 dB | +16.84 dB | +14.18 dB |
+| sustained organ | +16.09 dB | +10.77 dB | +8.11 dB |
+
+The user heard the legacy level rise as excessive and selected the middle curve
+as the most playable compromise: it limits runaway loudness without flattening
+the saturation pressure. Production now applies
+`dbamp(−log2(actualDrive))` after the asymmetric waveshaper and before the
+20 Hz HPF. The post-HPF envelope follower therefore tracks the same compensated
+audio that is sent to the Coco. No parameter, GUI control or snapshot migration
+was added. Marker `CQ_PREAMP_OK`, 13,340 unit assertions, safety, hold, dust and
+self-noise gates all pass. The selected production path passed its final
+live-input confirmation on 2026-07-29, closing §13.8.
 
 ---
 
@@ -1551,7 +1734,7 @@ them the hardware never had either. What ships / is replaced / is cut:
 
 | ships (identity) | replaced (norns gives it) | cut (politeness) |
 |---|---|---|
-| coco pair, in-loop clip→quantize, dust, organ, dolby | Space FDN → norns system reverb | stems |
+| coco pair, in-loop clip→quantize, dust, organ, dolby | optional ambience → norns system reverb | stems and the retired Space FDN |
 | quantussy: 5 castles, spesal, chaos — count is identity | recorder → norns tape | watchdog auto-trim (notice may stay) |
 | 16×22 matrix semantics, patchDepth, shake/tide/weather math | decks → **softcut as source**, its output feeding the coco input slot (softcut stays clean; the coco does the dirt) | `\smooth` interp (keep `\zoh` — the authentic one *is* the cheap one) |
 | master safety chain — **non-negotiable on headphones** | mic path → norns inputs as liveL/R | GUI telemetry rates (polls at 10 Hz grid / ~12 fps screen) |

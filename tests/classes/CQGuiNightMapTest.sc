@@ -20,13 +20,15 @@ CQGuiNightMapTest : UnitTest {
 	}
 
 	// The struck head wears its trigger rate as weight, never as motion: above
-	// ~10 Hz the eye fuses a flicker, and this surface only gets 5 Hz, so any
+	// ~10 Hz the eye fuses a flicker, and this surface gets 15 Hz, so any
 	// blink would be a rate the GUI invented — slower than the truth. The
 	// mapping is logarithmic (a rate is a pitch to the ear) and quantized to
 	// the steps the drawing can show, so a drifting rate cannot repaint the
-	// shell every frame for a difference nobody can see (§10, §16.6).
+	// read-head layer every frame for a difference nobody can see (§10, §16.6).
 	test_struckRateReadsAsWeightOnALogScale {
 		var steps = CQGuiNightMap.struckSteps;
+		this.assertEquals(CQGuiNightMap.struckFrames, 4,
+			"four 15 Hz frames preserve the old roughly 0.2 s struck threshold");
 		this.assertEquals(CQGuiNightMap.struckNorm(nil), 0,
 			"no telemetry weighs nothing — the mark cannot invent a rate");
 		this.assertEquals(CQGuiNightMap.struckNorm(8), 0,
@@ -42,7 +44,7 @@ CQGuiNightMapTest : UnitTest {
 			"the weight rises with the rate");
 		this.assertEquals(CQGuiNightMap.struckNorm(128),
 			CQGuiNightMap.struckNorm(132),
-			"a rate that drifts inside one step never repaints the shell");
+			"a rate that drifts inside one step never repaints the read-head layer");
 		this.assert((CQGuiNightMap.struckNorm(512) * steps).frac < 1e-9,
 			"every weight lands on one of the drawing's own steps");
 	}
@@ -149,6 +151,33 @@ CQGuiNightMapTest : UnitTest {
 			this.assert(CQSpec.at(name).notNil,
 				"crescent % maps a real CQSpec parameter".format(name));
 		};
+	}
+
+	test_crescentScalesNameOnlyHonestSemanticBoundaries {
+		var spaf = CQGuiNightMap.crescentScaleFor(\coco1Spaf);
+		var input = CQGuiNightMap.crescentScaleFor(\coco1In);
+		var feedback = CQGuiNightMap.crescentScaleFor(\coco1Fb);
+		var level = CQGuiNightMap.crescentScaleFor(\deckALevel);
+		this.assertEquals(spaf[\kind], \spaf,
+			"SP.AF names signed direction rather than danger");
+		this.assertFloatEquals(spaf[\center], 0.5,
+			"SP.AF zero is derived from its bipolar parameter map");
+		this.assertEquals(input[\kind], \input,
+			"input names normal gain and overdrive");
+		this.assertFloatEquals(input[\unity], 0.5,
+			"input unity is derived from CQSpec");
+		this.assertEquals(feedback[\kind], \feedback,
+			"feedback retains its audible three-region scale");
+		this.assertEquals(feedback[\edges], [0.0, 0.5, 0.9, 1.0],
+			"feedback scale follows its exact taper breakpoints");
+		this.assertEquals(level[\kind], \level,
+			"bird level exposes its one honest nominal/boost boundary");
+		this.assertFloatEquals(CQSpec.map(\deckALevel, level[\unity]), 1.0,
+			"the bird reference lands on exact unity despite its curved map");
+		this.assert(CQGuiNightMap.crescentScaleFor(\qFreq).isNil,
+			"a continuous control with no semantic boundary gets no scale");
+		this.assert(CQGuiNightMap.crescentScaleFor(\coco1DolbyIn).isNil,
+			"a similarly suffixed non-crescent cannot acquire a decorative scale");
 	}
 
 	test_onlyCocoChannelCrescentsCarryDolby {

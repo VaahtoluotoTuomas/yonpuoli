@@ -164,12 +164,12 @@ CQ.set(\qShLag, 0.004);        // takaisin: autenttiset kovat askeleet
 // M4 — \selfNoise: no-input digital-dust -workflow yhtenä eleenä
 // (vaiheen 2 dust-resepti presetiksi paketoituna + VCA-wobble).
 CQ.boot;                       // (tai jatka sessiota)
-CQ.patchPreset(\selfNoise);    // sulkee pre/deck-slotit, hold 0, fb 1.1,
-                               // dust ylös, slotX-ristisyöttö 0.3,
-                               // tri->fbVca-wobble + cas->inVca-portit + spaf-drift
-// 1. Kuuntele ~60 s ilman inputtia: rakeinen dust-pohja kertyy molempiin
-//    looppeihin PURSKEINA (ei tasaisesti); feedback-wobble hengittää
-//    tiheyttä hitaasti, cas-askeleet avaavat/sulkevat ristisyöttöä.
+CQ.patchPreset(\selfNoise);    // sulkee ulkoiset slotit, hold 0, fb alle unityn,
+                               // dust ylös, täysin sulkeutuva ristisyöttö,
+                               // held-cas feedback-sää + vastakkainen spaf-drift
+// 1. Kuuntele 120 s ilman inputtia: rakeinen dust-pohja rakentaa bloomin,
+//    held-feedback purkaa sen oikeaksi clearingiksi ja kasvattaa uuden.
+//    Tapahtumien ei pidä toistua säännöllisen meren rytmissä.
 //    Loopit eri kelloilla (24k/18k) - pari ei lukitu samaan fraasiin.
 CQ.set(\qChaos, 0.5);          // 2. villimmät askeleet wobble/gate-lähteisiin
 CQ.hold(1); CQ.hold(2);        // 3. lukitse tekstuuri looppipariksi...
@@ -309,8 +309,8 @@ CQ.hold(1, 0);                 // deck kiertää coco1:een
 // 1. Faderikartta (SPEC §6.1) — liikuta yksi kerrallaan ja varmista korvalla
 //    ja/tai CQ.get-kutsulla, että oikea parametri liikkuu:
 //    F1 coco1In     F5 coco2In     F9  qFreq                F13 deckA+B Level
-//    F2 coco1Speed  F6 coco2Speed  F10 qChaos               F14 spaceMix (ei DSP:tä
-//    F3 coco1Spaf   F7 coco2Spaf   F11 preA+B Drive              vielä -> ei ääntä)
+//    F2 coco1Speed  F6 coco2Speed  F10 qChaos               F14 vapaa (ei muutosta)
+//    F3 coco1Spaf   F7 coco2Spaf   F11 preA+B Drive
 //    F4 coco1Fb     F8 coco2Fb     F12 deckA+B Rate         F15 patchDepth
 //                                                           F16 masterVol
 CQ.get(\coco1Speed);           // esim. faderin F2 liikkeen jälkeen
@@ -343,11 +343,14 @@ CQ.midi.takeover = \jump;      // palaa oletukseen (tai jätä pickup päälle)
 
 ---
 
-## Avoin laitteistogate (aiemmilta vaiheilta)
+## Suljettu laitteistogate (aiemmilta vaiheilta)
 
-- [ ] **Stemien live-kuuntelu** (KUUNTELU 7, kohdat 7.4/7.5 — arkistossa):
-  vaatii ≥ nelikanavaisen äänikortin. NRT-turva on jo vihreä; live-todennus
-  odottaa laitteistoa. Ainoa vielä avoin manuaalitesti aiemmilta vaiheilta.
+- [x] **Stemien live-kuuntelu** (KUUNTELU 7, kohdat 7.4/7.5 — arkistossa):
+  vaadittu ≥ nelikanavainen äänikortti saatiin AIO-4:n fyysisessä
+  katselmuksessa. **Suljettu 2026-07-30:** K-Mixin fyysisistä ulostuloista 3/4
+  kuului stem 1/2 mainista erillään, vain Coco1 avasi 3:n ja vain Coco2 4:n, ja
+  PANIC hiljensi molemmat. NRT-turva oli jo vihreä; live-todennus on nyt tehty.
+  Ks. AIO-4-lohko tämän tiedoston lopussa.
 
 ---
 
@@ -749,9 +752,9 @@ CQ.patch(\envA, \coco1_spaf, 0.7);
 ### N8 — Drawer-workshop (§12.1)
 
 Drawerin neljäs pysyvä sivu `workshop` on **Nightin hiljainen mittapöytä**:
-sama soitin vastakkaisella kieliopilla. Kiinteä 1128 px raili, 72 px huoltorivi
-(`deck a · input trims · space · deck b`) ja sen alla `coco 1 · quantussy ·
-coco 2` (365 · 366 · 365). Kaikki 43 puuttuvaa CQSpec-parametria ovat
+sama soitin vastakkaisella kieliopilla. Jaettu raili, kolmen moduulin huoltorivi
+(`deck a · input trims · deck b`) ja sen alla `coco 1 · quantussy ·
+coco 2`. Kaikki 39 puuttuvaa CQSpec-parametria ovat
 ledger-rivejä: nimi vasemmalla, hiusviivaraili keskellä, **tarkka arvo**
 monolla oikealla. `micGain` **siirtyi** Daystä tänne — Dayhin jäi vain
 passiivinen osoitin, eikä koko GUI:ssa ole toista mic-kontrollia.
@@ -765,7 +768,7 @@ CQ.set(\masterVol, -24);
 //    SIRISTYSTESTI (katso 2 m päästä, älä lue): näetkö yhden matalan
 //    huoltorivin ja sen alla kolme ledgeriä — etkä neljää pyöreää korttia,
 //    natiivia asetuspaneelia, pienoiskoko-Daytä tai Nightin koristekuvastoa?
-// 2. Lue läheltä: jokaisella 43 rivillä pitää näkyä tarkka arvo. Vertaa
+// 2. Lue läheltä: jokaisella 39 rivillä pitää näkyä tarkka arvo. Vertaa
 //    coco 1:n ja coco 2:n ledgereitä: alaotsikoiden (converter · material ·
 //    output · input mix) pitää olla täsmälleen samalla korkeudella.
 // 3. Vedä `coco 1 · output · level` railia. Äänen pitää muuttua heti ja
@@ -852,7 +855,7 @@ CQGuiScale.minimumHeight(\roomy) + CQGuiScale.comfort;    // vaadittu korkeus
 5. Riittääkö ledger-rivin raili soitettavaksi, vai onko se liian lyhyt?
    Erottuvatko kahva, keskimerkki ja istuimet soittoetäisyydeltä?
 6. Ovatko tarkat arvot oikealla luettavia ja onko desimaalitarkkuus
-   kussakin ryhmässä järkevä (esim. `qShLag` 0.0040, `spaceDamp` 4500)?
+   kussakin ryhmässä järkevä (esim. `qShLag` 0.0040, `c5Off` -0.170)?
 7. Onko semanttista väriä liian vähän vai liikaa (vain dust · organ · live ·
    mic saavat perheen)?
 8. Tuntuuko nimipalstan klikkauksen inerttiys turvalta vai hämäävältä?
@@ -907,6 +910,691 @@ CQ.free;
 - [x] N9 hyväksytty (2026-07-28 — Night itsenäisenä soittimena, Drawer-paluu,
       yhden käyttöliittymän selkeys, spesal-tähdistön kirjattu kuolema ja
       muistipolkukartan kirjattu kuolema)
+
+### 13.1 — Feedback-taperin korvaportti
+
+Ensimmäinen kuuntelukandidaatti elää `nocturne-feedback-taper`-haaralla.
+Feedbackin arvoalue, oletus, snapshotit ja DSP ovat ennallaan; vain käden
+normalisoitu kartta muuttui. 16n:n `takeover: \pickup` on suositeltava, jos
+snapshot-palautuksen jälkeinen fyysisen faderin hyppy häiritsee.
+
+```supercollider
+// 13.1 — Ctrl+Shift+L ensin, koska CQSpec muuttui.
+CQ.free;
+CQ.boot;
+CQ.patchPreset(\empty);
+CQ.set(\masterVol, -24);
+CQ.deckA.load("<perkussiivinen kenttä-äänite>");
+CQ.set(\coco1SlotDeck, 1);
+CQ.set(\coco1In, 0.8);
+CQ.hold(1, 0);
+// 1. Aja vasemman Cocon feedback-sirppiä tai 16n:n F4:ää hitaasti alhaalta
+//    ylös ja takaisin. Kaiku → luuppi → rouhe ei saa enää ryöpsähtää faderin
+//    viimeisessä kuudenneksessa: 0.85→1.10 on nyt leveä 50→90 % kaista.
+// 2. Etsi ikuinen looppi (~1.0). Löytyykö se ilman mikrometriliikettä, ja
+//    pystyykö käsi palaamaan siihen luotettavasti?
+// 3. Ratsasta 0.95↔1.15 edestakaisin. Onko bloom-kynnys ennustettava, vai
+//    tuntuuko yläpään 1.10→1.25 viimeinen 10 % liian jyrkältä?
+// 4. Toista Coco 2:lla / F8:lla. Molempien pitää tuntua samalta.
+// 5. Katso samalla kummankin feedback-sirpin asteikkoa: koko vihreä /
+//    meripihka / punainen rata näkyy himmeänä, kuljettu osuus kirkkaana ja
+//    helmi nykykohdassa. Vaihtojen pitää osua kuultuihin 0.85- ja 1.10-rajoihin,
+//    eikä jälkimmäisen Dolby-osterin pidä hukkua värin alle.
+// 6. Aja SP.AF keskikohdan molemmin puolin: nollaloven pitää pysyä paikallaan,
+//    sinisen inverso- ja oranssin verso-osuuden kasvaa keskeltä ulospäin.
+// 7. Aja input unityn yli: vihreän normaalialueen pitää vaihtua lovella
+//    meripihkaiseen overdriveen. Sen alla olevan Dolby-osterin pitää yhä erottua.
+// 8. Katso kummankin linnun level-sirppiä: neutraalin unity-viivan pitää pysyä
+//    täsmälleen samassa paikassa arvosta riippumatta; värialueita ei ole.
+CQ.free;
+```
+
+- [x] 13.1 hyväksytty (2026-07-28 — taper sekä feedback-, SP.AF-, input- ja
+      linnun level-sirppien semanttiset lisäykset hyväksytty)
+
+### 13.2 — Speed-lattian korvaportti
+
+Kuuntelukandidaatti (§13.2 vaihtoehto **A**) elää `nocturne-feedback-taper`-
+haaralla. Nupin lattia 3000 → **1500 Hz** ja modulaation jälkeinen kova
+kellorajoitin 1500 → **750 Hz**, eli ground jack -temppu säilyy täsmälleen
+oktaavina nupin oman ulottuvuuden alapuolella. Katto (48 k), oletus (24000) ja
+exp-käyrä ovat ennallaan, samoin kaikki tallennetut snapshot-arvot.
+
+**Tämä on koko kädenkartan muutos, ei vain uusi alapää.** Speed-kaista on nyt
+viisi oktaavia neljän sijasta, joten *jokainen* faderin senttimetri kattaa
+enemmän. Kohta 4 on siksi portin tärkein kysymys: jos pimeys varasti liikaa
+matkaa keskialueelta, kirjataan vaihtoehto **B** (lattia 2000, rajoitin jää
+1500:aan) eikä tätä hyväksytä. 16n:llä `takeover: \pickup` on suositeltava —
+sama fyysinen faderin asento tarkoittaa nyt eri lukemaa.
+
+```supercollider
+// 13.2 — Ctrl+Shift+L ensin, koska CQSpec ja \cqCoco muuttuivat.
+// Huom: \empty eikä \classic, jotta kuulet kellon eikä preset'n omaa
+// tri1+tri3 -> spaf -modulaatiota. Yksi muuttuja kerrallaan.
+CQ.free;
+CQ.boot;
+CQ.patchPreset(\empty);
+CQ.set(\masterVol, -24);
+CQ.deckA.load("<kirkas kenttä-äänite>");
+CQ.set(\coco1SlotDeck, 1);
+CQ.set(\coco1In, 0.8);
+CQ.hold(1, 0);                 // kerää looppi...
+CQ.hold(1, 1);                 // ...ja lukitse se
+// 1. UUSI POHJA. Kelaa coco1:n kello pohjaan (Night: kierrä kuoren spiraalia;
+//    16n: F2). Oletusbufferilla looppi venyy pohjalla ~87 sekuntiin ja sointi
+//    tummuu ja rakeistuu. Kysymys korvalle: onko 1500–3000 Hz SOITETTAVAA
+//    pimeyttä vai mutaa? Missä kohtaa siitä tulee mutaa?
+CQ.get(\coco1Speed);           // ...lue tästä se kohta jossa se kääntyy
+// 2. URUT POHJALLA. Nosta organ ja kelaa uudestaan alas.
+CQ.set(\coco1Organ, 0.5);
+//    Urkupilli seuraa kelloa, joten se laskeutuu nyt oktaavin entistä alemmas
+//    — pohjalla se lakkaa olemasta sävelkorkeus ja muuttuu sykkeeksi.
+//    Onko se ääni jota käyttäisit, vai pelkkä rätinä? Kuuletko rajan?
+CQ.set(\coco1Organ, 0);
+// 3. GROUND JACK -TEMPUN SYVIN PÄÄ. Nupin oma lattia on 1500 Hz; modulaatio
+//    saa painaa sen alta 750 Hz:iin. Vie käsi ensin omaan pohjaansa:
+CQ.set(\coco1Speed, 1500);
+CQ.patch(\tri1, \coco1_spaf, 0.8);
+CQ.set(\coco1Spaf, -2.5);      // tri1 on infra-kolmio: odota koko hidas kierros
+//    Keinunnan alaosa viipyy 750 Hz:n rajoittimella ja nousee takaisin.
+//    Kimmellystä vai katastrofia? Rajoittimeen osuminen ei saa naksahtaa,
+//    vaimentaa looppia pysyvästi eikä jättää kelloa jumiin.
+CQ.unpatch(\tri1, \coco1_spaf);
+CQ.set(\coco1Spaf, 0);
+// 4. HINTA KESKIALUEELLA (portin ratkaiseva kohta). Palaa käyttökaistalle ja
+//    hae kädellä tuttuja pisteitä — 12000, 18000, 24000 — pelkällä sirpillä
+//    tai faderilla, ilman että katsot lukemaa:
+CQ.set(\coco1Speed, 24000);
+//    Osuuko käsi yhtä luotettavasti kuin ennen, vai tuntuuko keskialue nyt
+//    liian herkältä? Jos tuntuu: se on vaihtoehto B, ja portti hylätään.
+// 5. M1-REGRESSIO. Aja hidas sweep pohjasta kattoon ja takaisin minuutin ajan
+//    loopin ollessa lukittuna. Repitchin pitää yhä olla portaaton ja
+//    nauhamainen, eikä loopin sisältö saa rapistua matkalla.
+// 6. Tee sama coco2:lla (F6). Molempien pitää tuntua samalta.
+CQ.set(\coco1Speed, 24000);
+CQ.free;
+```
+
+- [x] 13.2 hyväksytty (2026-07-29 — äänialueet paikoin äärimmäisiä mutta
+      kokeelliseen musiikkiin sopivia; mahdollinen hienosäätö myöhemmin)
+
+### 13.3 — Digital dustin korvaportti
+
+Kandidaatti korvaa jatkuvan `WhiteNoise × LFNoise2` -maton kahdella kiinteällä
+kerroksella: hiljainen 9 kHz:iin pehmennetty pohja ja bipolaarinen chip-crackle.
+Uusia parametreja tai snapshot-semanttiikkaa ei ole. Tee testit kuulokkeilla tai
+hyvillä monitoreilla hiljaisella mutta yksityiskohdat paljastavalla tasolla;
+aloita aina `masterVol = -30`, sillä selfNoise ja maksimi-dust kasvavat nopeasti.
+
+#### A. Tarkka vanha/uusi A/B ilman patchin muita muuttujia
+
+Aja ensin:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_dust_character.scd
+```
+
+Se luo `tests/tmp/nrt_dust_1500.wav`, `nrt_dust_24000.wav` ja
+`nrt_dust_48000.wav`. Tuo yksi kerrallaan DAWiin, split stereo to mono ja keskitä
+molemmat raidat: **vasen = uusi**, **oikea = vanha**. Älä normalisoi, kompressoi
+tai tasaa gainia. Looppa viimeiset kolme sekuntia (5–8 s) ja solo-vaihda raitoja
+5–10 sekunnin välein.
+
+1. Aloita 24 kHz:stä. Uuden pitää olla vähemmän yhtenäinen kohinaverho ja enemmän
+   pieniä, epäsäännöllisiä tapahtumia. Se saa tuntua hieman hiljaisemmalta, mutta
+   ei tyhjältä.
+2. 1,5 kHz:ssä yksittäisten rakeiden ja nollan väliin pitää jäädä ilmaa. Hylkää,
+   jos tulos on harva napsutesti, tasainen bitcrush-surina tai bassoinen popitus.
+3. 48 kHz:ssä rakeet saavat sulautua kuivaksi kihinäksi, mutta ylä-ääni ei saa
+   muuttua valkoiseksi hissiksi, lasiseksi sirinäksi tai korvaa väsyttäväksi
+   neulaksi.
+4. Palaa 24 kHz:iin ja gain-matchaa uusi vain vertailun vuoksi noin +4 dB.
+   Karakterieron pitää säilyä. Palauta sitten gain nollaan: varsinainen
+   hyväksyntä tehdään ilman loudness-kompensaatiota.
+
+#### B. Sama materiaali koko Speed-kaistan läpi
+
+```supercollider
+// Ctrl+Shift+L ensin: SynthDef muuttui.
+CQ.free;
+CQ.boot;
+CQ.patchPreset(\empty);
+CQ.set(\masterVol, -30);
+// Eristä Coco 1 ja nollaa kaikki muu, myös aiempien presetien residuaalit.
+CQ.set(\coco2Level, 0);
+CQ.set(\coco1SlotPre, 0); CQ.set(\coco1SlotDeck, 0);
+CQ.set(\coco1SlotQ, 0);   CQ.set(\coco1SlotX, 0);
+CQ.set(\coco1In, 0);      CQ.set(\coco1Fb, 0);
+CQ.set(\coco1Organ, 0);   CQ.set(\coco1Bits, 8);
+CQ.set(\coco1Wrap, 0);    CQ.set(\coco1Interp, \zoh);
+CQ.set(\coco1Level, 1);   CQ.set(\coco1Dust, 0.08);
+CQ.set(\coco1Speed, 48000);
+CQ.hold(1, 0);            // kirjoita pölyä täydellä kellolla 4 s
+// odota 4 s
+CQ.hold(1, 1);            // jäädytä täsmälleen sama materiaali
+```
+
+Käy sitten `coco1Speed`-arvot 1500 → 3000 → 6000 → 12000 → 24000 → 48000 ja
+takaisin. Viivy jokaisessa 8–12 s.
+
+- 1500–3000 Hz: erillinen, tumma rapina; rouhea mutta ei rikkinäinen liitin.
+- 6000–12000 Hz: soramainen väli, jonka pitäisi olla erityisen käyttökelpoinen
+  rytmittömissä droneissa ja hiljaisissa kenttä-äänissä.
+- 24000 Hz: kuiva chip-pöly, joka antaa reunaa viemättä lähteeltä syvyyttä.
+- 48000 Hz: tiheä mutta ohut kihinä; ei leveää hissimattoa eikä kivuliasta
+  yläpäätä.
+- Vaihtojen pitää olla yhtä materiaalia eri nopeuksilla, ei neljä irrallista
+  efektiä. Mitään sävelkorkeuteen lukittuvaa vihellystä ei saa ilmaantua.
+
+Lähteen hitaalla kellolla kirjoittuvan jakauman voi varmistaa asettamalla
+lopuksi `hold = 0`, `speed = 1500` ja odottamalla yhden täyden oletusbufferin
+kierroksen (~87,4 s). Sen jälkeen lukitse hold uudelleen. Suoraan 1,5 kHz:llä
+kirjoitetun ja ensin 48 kHz:llä kirjoitetun mutta 1,5 kHz:llä toistetun
+materiaalin kuuluukin olla lähes yhtä tiheää: molemmissa noin 2 % RAM-soluista
+kantaa crackle-tapahtumaa. Nopeusero kuuluu, kun samaa bufferia **toistetaan**
+eri nopeuksilla; tallennusnopeuden ei pidä muuttaa solukohtaista jakaumaa.
+
+#### C. Oletus-dust oikean ohjelmamateriaalin sisällä
+
+```supercollider
+CQ.free;
+CQ.boot;
+CQ.patchPreset(\classic);
+CQ.set(\masterVol, -24);
+CQ.deckA.load("<hiljainen puhe, piano tai yksityiskohtainen kenttä-ääni>");
+CQ.set(\coco1SlotDeck, 1); CQ.set(\coco1In, 0.8);
+CQ.set(\coco1Fb, 0.85);    CQ.set(\coco1Speed, 24000);
+CQ.set(\coco1Bits, 8);     CQ.set(\coco1Dust, 0.02);
+CQ.hold(1, 0);
+```
+
+Kuuntele vähintään 30 s ja vaihda dust 0 ↔ 0.02 noin 10 s jaksoissa; anna aina
+vähintään yksi looppi muutoksen jälkeen. Oletuksen pitää karhentaa hiljaisia
+häntiä ja nollakohtia, mutta puheen konsonanttien, pianon atakin ja
+kenttä-äänen etäisyyden pitää säilyä. Hylkää, jos stereokuva kutistuu, hiljaiset
+yksityiskohdat peittyvät tai kokonaisuus vain kuulostaa gainilta.
+
+Toista dust-arvoilla 0.08 ja 0.20:
+
+- 0.08: crackle saa erottua, mutta ei varastaa ohjelmamateriaalia.
+- 0.20: kohina on jo oma selvä ääni; säätimen käyttömaa ei saa loppua tähän.
+
+##### 13.3b — Bits-eristys (myöhemmäksi kirjattu)
+
+Ensimmäinen 5/8/12-bitin vertailu jäi ohjelmamateriaalin ja bufferiin jääneen
+aiemman sisällön peittämäksi. Tee myöhemmin oma testi yhdellä identtisellä,
+hiljaisella loopilla: `dust = 0.08`, muut tulot ja feedback pois, kirjoita
+jokaisella bittisyvyydellä vähintään kolme täyttä kierrosta ja lukitse Hold
+ennen A/B:tä. Tämä ei estä hyväksyttyä dust-algoritmia.
+
+- [ ] 13.3b Bits 5/8/12 eristetty korvatesti (pvm: ______)
+
+#### D. `selfNoise` — varsinainen hyväksyntäkorva
+
+```supercollider
+CQ.free;
+CQ.boot;                    // fresh state: presetit ovat tarkoituksella overlay
+CQ.set(\masterVol, -30);
+CQ.patchPreset(\selfNoise);
+```
+
+1. Anna ekologian elää 120 s koskematta mihinkään. Sen pitää rakentaa vähintään
+   yksi selvä bloom, tyhjentyä kuultavasti ja rakentaa myöhemmin uusi bloom.
+   Ajankohtien ei pidä toistua merenaallon säännöllisyydellä. Hylkää, jos taso
+   vain kasvaa, kuolee pois tai asettuu yhdeksi jatkuvaksi kohinamassaksi.
+2. Nosta masteria vain tarpeen mukaan enintään −18 dB:iin. Kuuntele erityisesti
+   hiljaisten aukkojen reunoja: niissä pitää olla pientä digitaalista roskaa,
+   ei gate-naksua.
+3. Lukitse molemmat: `CQ.hold(1, 1); CQ.hold(2, 1);`. Tekstuurin pitää jäädä
+   kiinnostavaksi ilman uusia virheitä. Kelaa kumpaakin erikseen 1500, 6000,
+   18000/24000 ja 48000 Hz: hitaassa päässä kaunis rouheus, nopeassa kuiva
+   sizzle — ei piercing-hissiä.
+4. Avaa holdit ja kokeile lyhyesti `coco1Dust = 0.5`, `coco2Dust = 0.5`
+   masterin ollessa −30 dB. Maksimi saa olla väkivaltainen ja kyllästyvä, mutta
+   yksittäiset piikit eivät saa hypätä muun tekstuurin eteen eikä taso saa
+   karata kierros kierrokselta.
+5. Palauta `selfNoise`, soita sen päälle yksi oma tuttu patchi ja arvioi viimeinen
+   asia: onko pölyllä oma kaunis, rouhea identiteetti, mutta jättääkö se silti
+   tilaa patchin rytmille, korkeuksille ja dynamiikalle?
+
+Dust-lähteen korvaportti on valmis; tämä viimeinen D-osuus hyväksyy erikseen
+uudelleen viritetyn presetin.
+
+- [x] 13.3 dust-algoritmi hyväksytty (2026-07-29 — uusi A/B:ssa
+      miellyttävämpi ja hengittävämpi; koko Speed-kaista samaa materiaalia;
+      oletus ei peitä ohjelmaa; maksimi turvallinen; oma patch toimii)
+- [x] M4b selfNoise broken-weather -preset hyväksytty (2026-07-29 —
+      bloom → clearing → rebloom on vanhaa meriaalto-versiota kiinnostavampi;
+      preset toimii musiikillisesti paremmin eikä asetu rail-massaksi)
+
+### N10 — Kuoren sydän omistaa oman kiekkonsa (§4.5)
+
+Käyttäjän löytämä vika 2026-07-29: hitailla nopeuksilla kelan helmi on
+sydämen osuma-alueen sisällä, ja **hover lupasi kelauksen samalla kun
+painallus kytki loopin**. Osoitinkysymys kysytään nyt kerran
+(`CQNightGeometry.shellTargetAt`), joten vihje ja teko eivät voi enää erota.
+Sydän voittaa oman kiekkonsa, koska se on pieni, kiinteä ja seurauksiltaan
+raskas; kelaus on kulmaele ja onnistuu koko viisikierroksisen uran matkalta.
+Sydän sai myös oman hover-kehän — **piirretty sen todelliseen 22 px
+osumasäteeseen**, ei nupin ympärille, jotta vihje kertoo myös missä kela
+loppuu.
+
+```supercollider
+// N10 — Ctrl+Shift+L ensin. Riittää katsoa ja kokeilla, ei tarvitse ääntä.
+CQ.free;
+CQ.boot;
+CQ.set(\masterVol, -40);
+CQ.set(\coco1Speed, 1500);     // helmi kelan sisimpään päähän
+// 1. Vie osoitin uralle keskivaiheille: koko spiraali kirkastuu ja lovi
+//    kasvaa. Sydämen kehää EI näy. Raahaa: nopeus muuttuu.
+// 2. Vie osoitin nyt helmen päälle (aivan keskellä). Nyt pitää näkyä
+//    sydämen ohut kehä, ja spiraalin kirkastuksen pitää sammua.
+//    Lupaus on siis "sydän", ei "kela".
+// 3. Napauta siinä: hold-sinetti vaihtuu — juuri se minkä kehä lupasi.
+//    Raahaa napautuksen jälkeen ulospäin: nopeus EI saa muuttua.
+// 4. Pidä oikeaa nappia samassa kohdassa: punchin pitää toimia entiseen
+//    tapaan, ja irrotuksen palauttaa hold ennalleen.
+// 5. Kelaa nopeus takaisin ylös uran ULOMMALTA kierrokselta. Tämä on koko
+//    ratkaisun hinta: hitaimmassa päässä kelaus aloitetaan kierros ulompaa.
+//    Tuntuuko se luontevalta vai kiusalliselta?
+// 6. Vie osoitin suun chevronille (nuoli suujakin alla). Sen pitää nyt
+//    paksuntua hiusviivasta normaaliin — chevron oli yön viimeinen
+//    painettava kontrolli ilman vihjettä. Väri ei muutu: chevron lepää jo
+//    siskomerkkejään kirkkaammassa sävyssä, joten paino on ainoa rehellinen
+//    kanava. Napautus kääntää flipin kuten ennen.
+// 7. Tee sama coco2:lla. Tarkista myös 1280x570 ja maksimoituna: sydämen
+//    kiekko on kiinteä 22 px, ura skaalautuu, joten päällekkäisyys on eri
+//    kokoinen eri koossa — kehän pitää silti aina kertoa totuus.
+CQ.free;
+```
+
+- [x] N10 hyväksytty (pvm: 2026-07-29 — vihje ja teko samaa mieltä, sydämen
+      22 px kehä ja chevronin painovihje luettavat, kelaus ulomman kierroksen
+      kautta hyväksyttävä)
+
+### 13.5 — VCA-lain korvaportti
+
+Korvaportti tehtiin saman session A/B/C:nä kolmella lailla: vanha lineaarinen,
+etumerkillinen p = 1,5 ja etumerkillinen p = 2. Tilapäinen 30 ms
+ristihäivytetty kuuntelukytkin oli vain mittalaite; hyväksynnän jälkeen se ja
+p = 1,5 -haara poistettiin tuotanto-DSP:stä. Lopullinen laki on yksi kiinteä
+**p = 2**, ei uusi GUI-, API- tai snapshot-parametri.
+
+**Mitä laki todella tekee.** Nuppi säilyttää lepoasentonsa ja suljettu VCA
+voidaan yhä avata banaanilla. Sen sijaan VCA:ta moduloivia snapshotteja ja
+presettejä ei pidetä musiikillisesti ennallaan: niiden painot saavat uuden
+vasteen. p = 2:n kaksinkertainen pienen signaalin kulmakerroin on seuraus
+valitusta eksponentista, mutta p = 2:n valitseminen on nimenomaan tämän portin
+virityspäätös.
+
+Alla olevat luvut ovat modulaation osuuksia **ennen** todellisen VCA:n kattoa.
+Input-gain rajataan lopuksi 0–2:een ja feedback-gain 0–2,5:een; siksi summa +1
+ei toteudu ×4/+12 dB gainina. p = 2 saavuttaa katon aikaisemmin ja voi viipyä
+siellä pidempään, mutta kuuntelussa kaari ei jähmettynyt staattiseksi tasanteeksi.
+
+| summa | ennen (lineaari) | nyt (muotoiltu) |
+|---|---|---|
+| −1.0 | −1.00 | −1.00 |
+| −0.5 | −0.50 | −0.75 |
+| −0.1 | −0.10 | −0.19 |
+| +0.1 | +0.10 | +0.21 |
+| +0.5 | +0.50 | +1.25 |
+| +1.0 | +1.00 | +3.00 |
+
+**Kuuntelutulos 2026-07-29:**
+
+- p = 2 säilytti painoilla 0,05 ja 0,10 hienovaraisen hengityksen; vasta
+  noin 0,20–0,30 alkoi lukea selvänä modulaationa.
+- Inverso-chop −0,20 teki fraaseja ilman hiljaisuuksia. −0,40 kävi hyvin
+  matalalla mutta säilytti kulmikkaassa vaihdossa pyöreän reunan; −0,80 teki
+  vasta tarkoitukselliset täydet aukot. Painot eivät romahtaneet samaksi
+  on/off-eleeksi.
+- Positiivinen paine muodosti muhkean kaaren, kävi vain lyhyesti katossa ja
+  lähti takaisin alas ilman staattista tasannetta.
+- Feedback-duck −0,20 teki kuoppia ilman aukkoja; −0,50 syvensi huojuntaa
+  mutta ei pyyhkinyt loopista tyhjiä paloja.
+- SP.AF-verrokki pysyi samana, kuten pitää: §13.5 ei koske virettä/nopeutta.
+  `\selfNoise`, `\organMode`, oma patch ja kokonaissoitto hyväksyttiin.
+
+p = 1,5 ei saanut riittävän omaa identiteettiä p = 2:n rinnalla; saman
+käyttömaan saa VCA-kaapelin painolla. Lineaarisella lailla oli oma liukuva
+identiteettinsä, mutta testeissä ei löytynyt tehtävää, joka oikeuttaisi uuden
+character-kytkimen, snapshot-tilan ja GUI-kielen. Jos myöhempi säveltäminen
+toistuvasti tarvitsee p = 2:lla saavuttamattoman suoran, symmetrisen swellin,
+asia voidaan avata uudelleen kaksiasentoisena `slide/valve`-kysymyksenä ilman
+p = 1,5:tä.
+
+- [x] 13.5 hyväksytty (pvm: 2026-07-29 — kiinteä etumerkillinen p = 2:
+      hienovarainen 0,05–0,10, fraseeraava keskialue, täydet aukot vasta
+      korkealla painolla, hallittu positiivinen kaari ja feedback-duck;
+      ei character-kytkintä)
+
+### 13.6 — Matriisiliu’un zipper-portti
+
+Mittaus käyttää toteutuksen todellista lakia. Vanha suunnitelmateksti kutsui
+weight-busseja lagittomiksi, mutta `CQSynthDefs.prMatrixWeight` on silottanut
+kaikkia kohteita 50 ms:llä M1:stä asti. Portti vertaa tuotannon 30 Hz + 50 ms
+-polkua yhtä lailla silotettuun jatkuvaan ramppiin ja lagittomaan positiiviseen
+kontrolliin:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_zipper_measure.scd
+```
+
+Odotettu markkeri: `CQ_ZIPPER_MEASURED`. Kuuntelutiedostot syntyvät:
+
+- `tests/tmp/zipper_current_30hz.wav`
+- `tests/tmp/zipper_reference_continuous.wav`
+- `tests/tmp/zipper_unlagged_positive_control.wav`
+- `tests/tmp/zipper_unlagged_reference.wav`
+
+Mittaus 2026-07-29: nykyisen polun residual RMS oli −55,87 dB suhteessa
+signaaliin; lagiton kontrolli −55,15 dB. Numerot eivät ratkaise korvaporttia.
+Kuuntele ensin nykyinen vastaan jatkuva; käytä lagitonta paria vain etsimäsi
+portaikon opetteluun.
+
+- [x] 13.6 hyväksytty (pvm: 2026-07-29 — zipperiä ei erottunut
+      luotettavasti ja se on todennäköisesti kuulumaton; ei DSP-muutosta)
+- [ ] 13.6 tarvitsee korjauksen (havainto: ________________________________)
+
+Jos korjaus tarvitaan, älä lisää uutta blanket-lagia. Kokeile ensin vain
+jaettujen solujen client-glidea; serveriratkaisussa nykyinen helper korvataan
+continuous-only-polulla. Flip/skip/spesal eivät saa periä uutta lagia.
+Nykyinen historiallinen 50 ms helper osuu myös niiden Schmitt-summiin, joten
+sen mahdollinen poistaminen on oma porttiajoituskoe, ei huomaamaton sivumuutos.
+
+### 13.8 — Preampin equal-loudness-koe
+
+Labra tekee samasta peak-tasatusta puheesta, rumpuloopista ja sustain-urusta
+kolme versiota: vanha kompensoimaton polku, tuotantoon valittu −1 dB per
+todellinen Drive-oktaavi ja hylätty vahvempi −1,5 dB/okt-verrokki.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_preamp_loudness.scd
+```
+
+Odotettu markkeri: `CQ_PREAMP_OK`. Jokaisessa
+`tests/tmp/preamp_<materiaali>_<versio>.wav`-tiedostossa sama 2,5 s katkelma
+toistuu järjestyksessä Drive 1/2/6/16/40, Bias 0,15; lopuksi Bias
+0/0,15/0,6, Drive 12. Kuuntele:
+
+1. Peittääkö vanhan kompensoimattoman Driven tasohyppy itse särön eleen?
+2. Säilyttääkö ehdokas perkussion atakin ja sustainin paineen?
+3. Pysyykö puhe läsnä vai vetäytyykö se Driven kasvaessa oudosti?
+4. Onko bias-kolmikko musikaalisesti sama ele kaikissa versioissa?
+5. Vasta tiedostovalinnan jälkeen kokeile voittajaa live-inputilla.
+
+Drive 40:n mitattu RMS-nousu Drive 1:een nähden oli vanhalla kompensoimattomalla
++21,67/+22,17/+16,09 dB (puhe/rummut/urut), −1 dB/okt-versiolla
++16,34/+16,84/+10,77 dB ja −1,5 dB/okt-versiolla
++13,68/+14,18/+8,11 dB. Vahvempikin ehdokas jättää siis tarkoituksella paljon
+painetta; kumpikaan ei ole automaattinen loudness-normalisoija.
+
+- [x] 13.8 tiedostovalinta hyväksytty (pvm: 2026-07-29 — −1 dB/okt;
+      vanha polku kasvattaa äänenvoimakkuutta liikaa, valittu välimuoto
+      hillitsee karkaamista tasapäistämättä särön painetta)
+- [x] 13.8 valitun tuotantopolun live-input-vahvistus
+      (pvm: 2026-07-29 — vaihe hyväksytty)
+- [ ] 13.8 hylätty/uusi hienoviritys tarvitaan: ___________________________
+
+### AIO-1 — Audio I/O -sivun staattinen portti
+
+AIO-1 on tarkoituksella vain luku -versio. `refresh devices` saa päivittää
+exact laitelistauksen, mutta `discard changes` ja `apply & restart audio` ovat
+inerttejä, kunnes tämä sommittelu on hyväksytty. Tässä portissa ei kirjoiteta
+`config.scd`:tä tai `.audio.scd`:tä eikä restartata serveriä.
+
+Koneelliset portit ja katselukuvat:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/compile_check.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/run_all.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_audio_setup_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_drawer_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_shell_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_drawer_preview_reentry_smoke.scd
+```
+
+Odotetut markkerit: `CQ_COMPILE_OK`, `CQ_TESTS_PASSED`,
+`CQ_GUI_AUDIO_PASSED`, `CQ_GUI_DRAWER_PASSED`. Audio-smoke kirjoittaa:
+
+- `tests/tmp/audio-setup-compact.png`
+- `tests/tmp/audio-setup-roomy.png`
+
+Live-katselmus:
+
+```supercollider
+// Ctrl+Shift+L ensin, koska classes/ muuttui.
+CQ.boot;
+// Avaa Drawer → audio. Sivu näyttää nykyisen aktiivisen configin.
+// Kokeile refresh devices ja avaa mode/device-listat; valinta palautuu
+// AIO-1:ssä active-arvoon eikä muuta ääntä tai configia.
+```
+
+Katso compactissa ja roomyssa:
+
+1. Lukeeko sivu rauhallisena rantaporttina eikä yleisenä Preferences-ikkunana:
+   host/engine ylhäällä, kaksi yhtä vahvaa I/O-saarta keskellä ja restart gate
+   alhaalla?
+2. Ovatko device-mode ja exact device -rivit löydettävät ilman että ne
+   hallitsevat koko sivua? Säilyttääkö pitkä nimi alkunsa ja päättyykö se
+   ellipsiin?
+3. Pysyvätkö `mic off` sekä `stems off`, stem 1 ja stem 2 paikoillaan himmeinä
+   ilman layout-hyppyä?
+4. Ovatko `refresh devices`, `discard changes` ja
+   `apply & restart audio` oikeassa tärkeysjärjestyksessä? AIO-1:ssä vain
+   refresh saa toimia.
+5. Kasvaako roomy-versio luettavasti samalla raililla ilman että painikkeet,
+   rivit tai oikea reuna leikkautuvat?
+
+- [x] **AIO-1:n staattinen sommittelu hyväksytty**
+      (pvm: 2026-07-29 — compact/roomy, kolmen vyöhykkeen hierarkia,
+      device-menut, mic/stem-off-vakaus, restart-gaten tärkeysjärjestys;
+      hyväksynnän huomioina refresh oli liian oikealla ja pitkät popup-nimet
+      kietoutuivat kaksirivisiksi yksirivisen highlightin alla)
+- [ ] AIO-1 vaatii uuden visuaalisen kierroksen
+      (havainto: ei — refresh kohdistettiin samaan oikeaan railiin; popupit
+      ellipsoivat ennen piirtoa ja näyttävät enintään 16 vieritettävää riviä)
+
+### AIO-2 — draft ja atominen audio-overlay
+
+AIO-2:n kaikki kenttävalinnat koskevat vain `CQAudioConfig.draft`ia.
+`discard changes` palauttaa activen. Tässä historiallisessa portissa
+`apply & restart audio` oli vielä rakenteellisesti lukittu AIO-3:een.
+Injektoitu laitelista lukee erilliset
+`ServerOptions.inDevices/outDevices`-snapshotit, exact-dedupplikoi ne ja näyttää
+single-tilassa vain niiden exact-intersectionin. Se ei päättele kanavamääriä tai
+host APIa nimestä.
+
+Koneellinen näyttö:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/compile_check.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/run_all.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_audio_setup_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_drawer_smoke.scd
+```
+
+- [x] Refreshin oikea reuna = muiden host-kontrollien oikea rail
+- [x] Pitkä device String pysyy yhden rivin tekstinä ja yhden rivin highlightina
+- [x] Windows-endpointin sisäiset CR/LF/tab-merkit tiivistyvät vain
+      näyttötekstissä; exact malliarvo ei muutu
+- [x] Exact-duplikaatit poistuvat; input-only/output-only eivät vuoda väärään
+      suuntaan; single-lista sisältää vain molempiin suuntiin sopivat nimet
+- [x] Kaikki yhdeksän startup-kenttää kirjoittavat vain draftiin
+- [x] Invalid main/stem-kanava jää näkyviin tarkan syyn kanssa; ei clampia
+- [x] Discard palauttaa activen; Apply ei vielä kirjoita tai restarttaa
+- [x] Pending roundtrip, base-byte-immutability, atomic replace, yksi `.bak`
+      ja retryable `notSaved` on todistettu `tests/tmp`-poluilla
+
+### AIO-3 — vahvistettu restart ja rollback
+
+Ensimmäinen `apply & restart audio` avaa vain saman railin inline-
+vahvistuksen. `restart` käynnistää facaden data-only-transaktion; vanhan sivun
+Qt-viitettä ei säilytetä. Candidate saa korvata last-working-profiilin vasta,
+kun koko uusi sessio on `running`. Epäonnistuminen tekee täsmälleen yhden
+rollbackin.
+
+Koneellinen näyttö:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/compile_check.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/run_all.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_safety.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_hold_integrity.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_audio_setup_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_drawer_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_night_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_night_phase_layer_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_shell_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_drawer_preview_reentry_smoke.scd
+```
+
+- [x] Clean/invalid/non-running draft ei kirjoita pendingiä eikä reboottia
+- [x] Aktiivinen recorder näyttää `stop REC before restarting audio`
+- [x] REC-stop poistaa varoituksen heti ilman kenttämuutosta, palauttaa Applyn
+      ja disabled Apply ei piirrä hover-highlightia (split-WASAPI 2026-07-30)
+- [x] Ensimmäinen Apply vain vahvistaa; cancel säilyttää draftin
+- [x] Candidate success hyväksyy capturoidun datan ja promottaa vasta readyssä
+- [x] Candidate fail poistaa pendingin, säilyttää draftin ja tekee yhden rollbackin
+- [x] Rollback fail päättyy hiljaiseen `failed`-tilaan ilman kolmatta yritystä
+- [x] Stale callback ei muuta activea, profiilia eikä Audio-tabin tilaa
+- [x] `running · not saved` voidaan tallentaa uudelleen ilman reboottia
+- [x] Uusi GUI kuluttaa symbolisen `\audio`-reopenin vain kerran
+- [x] Fyysinen candidate-roundtrip (split-WASAPI 2026-07-29): server block
+      64→128→64 säilyy exact overlay-arvona, GUI/ääni/Night palautuvat
+      kummallakin restartilla ja lopullinen serveri vastaa `/status`-kyselyihin
+- [x] Fyysinen Discard/Cancel (2026-07-29): Discard palauttaa draftin ilman
+      kirjoitusta/restartia; confirmation Cancel säilyttää draftin mutta peruu
+      restartin. PID ja persisted block 64 pysyvät muuttumattomina
+
+### AIO-4 — signaalipresence ja fyysinen hardware-I/O-portti
+
+Koneellinen osa on valmis. `into yölahti` näyttää aktiivisten server-kanavien
+raakasignaalin ennen live/mic-gainia ja preamp-valintaa; `muted/live` kertoo
+erikseen gainin tilan. Oikean saaren otsikon master L/R tulee olemassa olevasta
+post-safety-mittarista. Raw-tap palautettiin, kun kontrolloitu baseline toisti
+WASAPI-jumin ilman sitä ja runtime-laitelistauksen poisto palautti äänen,
+Night-liikkeen ja `/status`-vastaukset. Presence ei todista draft-laitetta eikä
+fyysistä kaapelointia ennen restartia ja kuuntelua.
+
+Running Audio -sivu käyttää vain ennen bootia tai rebootin stopped-callbackissa
+otettua muistikuvaa. `show all drivers` vaihtaa paikallisesti recommended/all-
+näkymää eikä lue OS:ää uudelleen; aktiivinen/draft exact endpoint säilyy aina.
+Ilman turvallista snapshotia kontrolli näyttää disabled `configured devices`.
+Käynnissä oleva Windows WASAPI -palvelin ei saa enää millään UI-polulla
+`_ListAudioDevices`-kutsua.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/compile_check.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/run_all.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_audio_setup_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_audio_presence_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_drawer_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_shell_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_safety.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_hold_integrity.scd
+```
+
+- [x] Piilotettu Audio-sivu cachettaa telemetrian ilman callbackia/painttia
+- [x] Avattu Audio-sivu saa viimeisen cachen heti
+- [x] Yhdistetty 40 Hz testivirta tuottaa enintään 15 GUI-paint-batchia/s
+- [x] Sub-pixel-tasonmuutos ei repainttaa
+- [x] Free poistaa Audio-listenerin, `/cq_io_inputs`- ja master-OSCdefit
+- [x] Puhdas draft näyttää `no changes` ja aktiivisen `restart audio` -polun
+- [x] Vastaamaton rekisteröity serveri näkyy danger-tilana ja hermettinen
+      lifecycle-portti todistaa quit-before-boot-palautuksen
+- [x] Responsiivinen mutta epäterve audiokello ei julkaise readyä: kolme
+      0,75 s välein luettua arvoa vaaditaan terveiksi. 47 986–48 003 Hz
+      läpäisee 48 kHz:n pyynnön; mitattu 2610,8 Hz sekä vanha terve ensimmäinen
+      arvo ja romahdus `[48000, 7076.4, 7019.8]` hylätään ennen graafin
+      allokointia ja palauttavat yhden facade-failure-callbackin
+- [x] AIO-5: provider luetaan vain varmasti pysähtyneenä; boot/reboot-cache
+      sisältää exact directional listat
+- [x] Recommended piilottaa vain legacy-prefixit, show-all palauttaa ne ilman
+      provider-read-countin kasvua ja active/draft exact valinta säilyy
+- [x] Scan failure ei estä bootia; fallback/stale-cache näkyy rehellisesti
+- [x] Fyysinen AIO-5 split-WASAPI-portti (2026-07-29): tiivis recommended,
+      show-all ja paluu recommendediin toimivat Audio-sivu auki ilman äänen,
+      Night-liikkeen tai input/master-presencen katkeamista
+- [x] Clean `restart audio` pysäyttää serverin, ottaa uuden directional-cachen
+      ja rakentaa GUI:n takaisin; ääni ja Night-liike palautuvat ilman
+      unresponsive-tilaa (split-WASAPI 2026-07-29)
+- [x] Eristetty raw-input-uusintatesti (2026-07-29): split-WASAPI käynnistyi,
+      ääni/Night pysyivät elävinä, molemmat live-presence-rivit reagoivat ja
+      sama `scsynth` vastasi kolmeen ulkoiseen `/status`-kyselyyn
+- [ ] System default boot: tämän kannettavan testi 2026-07-30 ei ole
+      hyväksyttävissä. GUI ja live L/R -presence toimivat, mutta Night putosi
+      noin 1 FPS:ään ja ääni glitchasi; kolme vastausta raportoi nimellisen
+      48 kHz:n rinnalla vain 2610,8–2612,8 Hz toteutuvan sample raten.
+      Manuaalinen paluu split-WASAPI-overlayhin + `CQ.reboot` palautti normaalin
+      äänen/Night-liikkeen, 47 986–48 003 Hz:n kellon ja 7,8–9,5 % server-CPU:n.
+      Älä toista system-default-porttia tällä koneella; epäterveen audiokellon
+      pre-graph failure ja yhden rollbackin reitti on tämän jälkeen katettu
+      hermettisesti ilman uutta fyysistä riskiä.
+- [x] Yksi USB-interface single-device-tilassa (K-Mix ASIO 2026-07-30):
+      restart onnistui normaalilla äänellä ja GUI:lla, inputit 1/2 vastasivat
+      raw live L/R -presenceen ja main L/R kuuluivat fyysisistä ulostuloista 1/2
+- [ ] Windows split input/output samalla host APIlla: molemmat laitteet
+      käynnistyvät. Väärän/päättyneen nimen fyysinen rollback-osuus ei läpäissyt
+      2026-07-30: irrotetun ASIO-laitteen backend avasi näennäissession, jonka
+      ensimmäinen kellolukema oli vanha 48 kHz ja seuraavat noin 7076/7020 Hz.
+      Profiili ehti promotoitua ja split palautettiin manuaalisesti. Korjattu
+      kolmipisteinen kelloguard kattaa exact sarjan hermettisesti; fyysistä
+      riskikoetta ei toisteta tällä koneella
+- [x] Mic `off` → ch 1 säilytti gain 0:n ja näytti raw-presencen muted-tilassa;
+      Workshopin ainoa `micGain` avasi kuultavan dry-monitorin ja `live`-tilan
+      ilman restarttia, palasi nollaan ja explicit mic `off` persistoi takaisin
+      toimivaan audioon (split-WASAPI 2026-07-30)
+- [x] PANIC mykistää fyysiset main L/R -portit ja master-presence hiljenee;
+      raw live L/R jatkaa portin näyttämistä ja toinen painallus palauttaa äänen
+      (split-WASAPI 2026-07-29 sekä K-Mix main 1/2 ja stemit 3/4 2026-07-30)
+- [x] Vähintään 4-kanavainen interface (K-Mix 2026-07-30): stem 1/2 kuuluivat
+      mainista erillisistä fyysisistä porteista 3/4, vain Coco1 avasi 3:n ja
+      vain Coco2 4:n. PANIC hiljensi molemmat; yhteinen safety-katto on katettu
+      koodilla ja NRT-portilla
+- [x] REC stereo kirjoitti 2026-07-29 RIFF/WAVE-tiedoston: 2 ch, 48 kHz,
+      24-bit, 21,24 s; header ja tiedostokoko ovat ehjät
+- [x] `record 4ch` kirjoitti 2026-07-30 RIFF/WAVE-tiedoston: 4 ch, 48 kHz,
+      24-bit, 13,15 s; `recStems: true` persistoi exact ja palautus `off` /
+      `recStems: false` restarttasi takaisin toimivaan audioon
+- [x] Virtuaalinen loopback näkyy tavallisena driver-laitteena ilman lupausta
+      siitä, että Yölahti olisi luonut järjestelmäkytkennän (2026-07-30):
+      koneen valmiiksi aktiivinen Realtek `Stereo Mix` löytyi input-listalta
+      exact-nimenä vasta `show all drivers` -kytkimellä, koska sen host API on
+      `Windows WDM-KS` — yksi `CQAudioDeviceCatalog.legacyWindowsPrefixes`in
+      kolmesta. Recommended ei siis piilota laitetta vaan luokittelee sen
+      ei-suositelluksi, ja exact valinta säilyi. Vahingossa tehty valinta
+      palautui arvovertailulla puhtaaksi: gate luki jälleen `no changes`,
+      mitään ei kirjoitettu eikä serveriä restartattu. Sivulla ei ole
+      `connected`-väitettä, jackeja eikä johtoja
+- [ ] **Avoin: kaksisuuntainen DAW-reitti VB-CABLE A+B:llä.** WDM-KS-loopback
+      ei kelpaa tähän: split vaatii saman host API:n molemmissa päissä, ja
+      WDM-KS on exclusive-mode kernel streaming, jota DAW ei pysty pitämään
+      auki toisesta päästä yhtä aikaa. Portti tehdään omana päivänään, kun
+      ajuri on asennettu: DAW → `CABLE-A Input`, Yölahden input =
+      `CABLE-A Output`, Yölahden main out = `CABLE-B Input`, DAW monitoroi/
+      nauhoittaa `CABLE-B Output`ista. Molemmat Yölahden päät ovat WASAPI, eli
+      split-ehto täyttyy. Vaatii 48 kHz:n asettamisen kaapeleihin Windowsin
+      ääniasetuksista ja siirtää monitoroinnin DAW:lle. Todistettava:
+      exact-nimet recommended-listalla, presence kumpaankin suuntaan,
+      palautus split-baselineen
+- [x] 10 min tiheä `\mayhem`, molemmat Cocot, kaksi myöhemmin ladattua deckiä
+      ja Audio↔Night-vaihdot (2026-07-30): 21/21 vastausta samalla PID:llä,
+      actual SR 47 986–48 021 Hz, server avg enintään 12,55 % / peak 14,04 %.
+      Node-puu kasvoi 6→8 vain kahdella odotetulla `cqDeck`-synthillä; muisti
+      ja handlet tasaantuivat kertavarausten jälkeen. Ei kuultua dropoutia tai
+      glitchiä. Täyden 352-kaapelin Night-renderissä oli ajoittaista pientä,
+      ei kasvavaa hitautta; Drawer↔Night-vaihdot pysyivät nopeina.
+- [x] **Fyysinen AIO-hardware-katselmus hyväksytty 2026-07-30.** Hyväksytty
+      rajaus: split-WASAPI ja K-Mix ASIO single-device, inputit 1/2, main 1/2,
+      stemit 3/4, mic-turvaportti, PANIC, stereo/4ch REC, loopbackin näkyvyys
+      ja 10 minuutin tiheä patch. `system default` ja irrotetun laitteen
+      rollback ovat kirjattuja fyysisiä failureita, joita **ei toisteta tällä
+      koneella**; niiden yhteinen juurisyy on korjattu ja katettu hermettisellä
+      regressiolla. Avoimeksi jää vain yllä kuvattu VB-CABLE-DAW-portti, ja
+      tämä lyhyt vakauskoe **ei korvaa** jonossa seuraavaa pitkää koko
+      soittimen laitteisto-/resource-soakia.
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>

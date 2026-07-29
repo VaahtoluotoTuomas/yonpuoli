@@ -46,8 +46,8 @@ claims about the hardware:
 - the square-stack organ derivation from address-counter bits;
 - clock, feedback, converter, dust, preamp, and VCA response curves;
 - the 16×22 signed-weight routing matrix and its Schmitt-trigger destinations;
-- presets, snapshots, morphing, file decks, recording, stems, Space reverb, and
-  all computer/headphone safety layers;
+- presets, snapshots, morphing, file decks, recording, stems, the retired v1.0
+  Space experiment, and all computer/headphone safety layers;
 - the Day, Night, Drawer, compass, tide, and weather interfaces;
 - performance and CPU tradeoffs required by SuperCollider and Qt.
 

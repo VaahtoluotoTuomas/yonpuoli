@@ -7,7 +7,8 @@
 CQGui {
 	var state, matrix, config;
 	var <window, <widgets, updaters, <shellState, <shell, <drawer;
-	var stateCtl, gridPanel, meterFuncs, <audition;
+	var <audioConfig;
+	var stateCtl, serverCtl, gridPanel, meterFuncs, <audition;
 	var <bananaGrammar, <nightMap;
 	var <inkControls;
 	var <spesalStates;
@@ -15,6 +16,13 @@ CQGui {
 	// an audio-rate mean (§9) — ±1 settled, near 0 shuttling. Both nil until the
 	// server reports.
 	var <phaseNorms, <phaseDirs, <phaseSkipHz;
+	// AIO-4 caches raw hardware-input and post-safety master presence even while
+	// its Drawer page is hidden. Listeners are paced and notified only while the
+	// Audio tab is the visible workbench page.
+	var <ioInputPresence, <masterPresence, audioPresenceListeners;
+	var <audioPresenceNotifyCount = 0;
+	var audioPresencePending = false, audioPresenceGeneration = 0;
+	var lastAudioPresenceNotify = 0;
 	// GUI_SPEC §9: 16 source magnitudes, nil until the server has actually
 	// reported. No telemetry = no pulse, so serverless and headless surfaces
 	// keep exactly the reviewed static Night look.
@@ -61,6 +69,8 @@ CQGui {
 				or: { tail.endsWith("_spesal") }
 		}
 	}
+
+	*audioPresencePeriod { ^1 / 15 }
 
 	// which slots of the nine a given SendReply block carries (§9 order):
 	// the cocos report their own pair, the quantussy its five castles
@@ -130,6 +140,29 @@ CQGui {
 	// ---- view registration API ----
 
 	setMeter { |key, func| meterFuncs[key] = func }
+	addAudioPresenceListener { |owner, func|
+		audioPresenceListeners[owner] = func;
+		if(this.audioPageVisible) { this.prQueueAudioPresence };
+		^func
+	}
+	removeAudioPresenceListener { |owner|
+		audioPresenceListeners.removeAt(owner);
+		^this
+	}
+	audioPresenceListenerCount { ^audioPresenceListeners.size }
+	audioPageVisible {
+		^shellState.drawerOpen and: { shellState.drawerTab == \audio }
+	}
+	audioInputPresenceFrame { |values|
+		ioInputPresence = this.prPresenceValues(values, 3);
+		this.prQueueAudioPresence;
+		^this
+	}
+	masterPresenceFrame { |values|
+		masterPresence = this.prPresenceValues(values, 2);
+		this.prQueueAudioPresence;
+		^this
+	}
 	setDeckLabel { |which, view, ink|
 		deckLabels[which] = (deckLabels[which] ?? { List.new }).add(
 			(view: view, ink: ink ?? { CQInk.palette(\night)[\line] }));
@@ -139,38 +172,57 @@ CQGui {
 	recButton_ { |btn| recBtn = btn }
 	recTime_ { |view| recTimeView = view }
 	registerInkControl { |control| inkControls.add(control); ^control }
-	drawEndpoint { |name, kind, center, family, glyph, lamp = false, skin = \night|
-		var palette = CQInk.palette(skin), endpointState;
-		endpointState = if(kind == \jack) {
-			if(bananaGrammar.isSourceInHand(name)) { \inHand } {
+	endpointInkState { |name, kind|
+		if(kind == \jack) {
+			^if(bananaGrammar.isSourceInHand(name)) { \inHand } {
 				if(bananaGrammar.hoverEndpoint == name) { \hover } { \idle }
 			}
+		};
+		if(bananaGrammar.isCandidate(name)) { ^\candidate };
+		// A destination that cannot act does not promise an action on hover.
+		// Once a banana is in hand, every legal destination answers with one
+		// quiet static halo; the nearest/hovered candidate still grows stronger.
+		if(bananaGrammar.isInHand) {
+			^if(bananaGrammar.hoverEndpoint == name) { \hover } { \available }
+		};
+		^if(matrix.asArray.any { |patch| patch[1] == name }) {
+			\occupied
 		} {
-			if(bananaGrammar.isCandidate(name)) { \candidate } {
-				if(bananaGrammar.hoverEndpoint == name) { \hover } {
-					if(matrix.asArray.any { |patch| patch[1] == name }) {
-						\occupied
-					} {
-						\idle
-					}
-				}
-			}
+			\idle
+		}
+	}
+
+	drawEndpoint { |name, kind, center, family, glyph, lamp = false, skin = \night|
+		var palette = CQInk.palette(skin);
+		var endpointState = this.endpointInkState(name, kind);
+		var inkScale = if(skin == \night) {
+			CQNightMeasures.endpointInkScale
+		} {
+			1
 		};
 		if(kind == \jack) {
-			CQInk.drawJack(center, family, skin, endpointState, this.auraFor(name) ? 0)
+			CQInk.drawJack(center, family, skin, endpointState,
+				this.auraFor(name) ? 0, inkScale)
 		} {
 			CQInk.drawSocket(center, family, skin, endpointState,
-				bananaGrammar.handWeight);
+				bananaGrammar.handWeight, inkScale);
 			glyph !? {
+				var glyphHalf = if(skin == \night) {
+					CQNightMeasures.endpointGlyphExtent * 0.5
+				} {
+					4
+				};
 				CQInk.drawGlyph(glyph,
-					Rect(center.x - 4, center.y - 4, 8, 8), palette[family])
+					Rect.aboutPoint(center, glyphHalf, glyphHalf), palette[family])
 			};
 			if(lamp) {
 				var charge = this.chargeFor(name) ? 0;
 				// §16.8: fill = charge / 0.5; at and above the Schmitt's on-threshold
 				// the lamp is lit (steady for a gate, a decaying bloom for a trig —
 				// the server's own peak-hold fall, no client-side timer)
-				CQInk.drawLamp(center + Point(16, 0), charge, charge >= 0.5, skin)
+				CQInk.drawLamp(center + Point(
+					if(skin == \night) { CQNightMeasures.lampOffset } { 16 }, 0),
+					charge, charge >= 0.5, skin, inkScale)
 			};
 		};
 		^this
@@ -293,6 +345,7 @@ CQGui {
 	// ---- private ----
 
 	prInit {
+		audioConfig = Cocoquantus.audioConfigForGui(config);
 		audition = CQAudition(matrix);
 		bananaGrammar = CQBananaGrammar(matrix, audition);
 		shellState = CQGuiShellState(bananaGrammar);
@@ -304,6 +357,9 @@ CQGui {
 		phaseNorms = [nil, nil];   // nil until '/cq_phase' reports (§9: no telemetry ≠ 0)
 		phaseDirs = [nil, nil];
 		phaseSkipHz = [nil, nil];
+		ioInputPresence = [nil, nil, nil];
+		masterPresence = [nil, nil];
+		audioPresenceListeners = IdentityDictionary.new;
 		chargeNames = this.class.chargeNames;
 		chargeIndex = IdentityDictionary.new;
 		chargeNames.do { |name, i| chargeIndex[name] = i };
@@ -328,12 +384,13 @@ CQGui {
 		var minimum = shellState.minSize;
 		nightMap = CQGuiNightMap(this, state, matrix, config);
 		masterView = CQGuiPanels.master(this);
-		drawer = CQGuiDrawer(this, state, matrix, audition, bananaGrammar);
+		drawer = CQGuiDrawer(this, state, matrix, audition, bananaGrammar,
+			audioConfig);
 		shellState.audition = drawer;
 		gridPanel = drawer.grid;
 		shell = CQGuiShell(shellState, nightMap.stageView, masterView,
 			drawer.pages, { |skin| this.prApplySkin(skin) },
-			{ this.prSyncDrawerScale });
+			{ this.drawerShown });
 		// The workbench reads at two reviewed sizes (CQGuiScale): a windowed
 		// 1280x720 gives a Drawer page 1272x526, a maximized window far more,
 		// and a page that is nothing but text should spend that on legibility
@@ -371,6 +428,10 @@ CQGui {
 		window.onClose = { shellState.close; this.prCleanup };
 		window.view.children.do { |ch| this.prDefocus(ch) };
 		window.front;
+		if(Cocoquantus.consumeAudioReopen) {
+			shell.selectDrawer(\audio);
+			if(shellState.drawerOpen.not) { shell.toggleDrawer };
+		};
 	}
 
 	// Re-ask the Drawer which size step its stage now deserves. Deferred by one
@@ -397,7 +458,11 @@ CQGui {
 
 	// the Drawer became visible (or changed page): its stage may have been
 	// resized while it was hidden and therefore never laid out
-	drawerShown { this.prSyncDrawerScale; ^this }
+	drawerShown {
+		this.prSyncDrawerScale;
+		this.prQueueAudioPresence;
+		^this
+	}
 
 	// Qt hands keyboard focus to any clicked widget, and space/tab then act on
 	// that widget instead of the SPEC §6.2 key map (space would re-toggle a
@@ -416,10 +481,57 @@ CQGui {
 
 	// one SimpleController fans \param notifications out to the widget
 	// updaters; OSCdefs carry the server reports (meters, LEDs, spesal)
+	prPresenceValues { |values, size|
+		values = values ? [];
+		^Array.fill(size, { |index|
+			values[index] !? { |value| value.asFloat.abs }
+		})
+	}
+
+	// `/cq_meters` arrives at 20 Hz and `/cq_io_inputs` at 15 Hz. Coalesce both
+	// caches onto one page notification stream so their sum can never make the
+	// Audio workbench paint faster than its 15 Hz ambient ceiling.
+	prQueueAudioPresence {
+		var wait, generation;
+		if(cleaned or: { this.audioPageVisible.not }) { ^this };
+		if(audioPresencePending) { ^this };
+		wait = (this.class.audioPresencePeriod
+			- (Main.elapsedTime - lastAudioPresenceNotify)).max(0);
+		audioPresencePending = true;
+		audioPresenceGeneration = audioPresenceGeneration + 1;
+		generation = audioPresenceGeneration;
+		AppClock.sched(wait, {
+			if(generation == audioPresenceGeneration) {
+				audioPresencePending = false;
+				if(cleaned.not and: { this.audioPageVisible }) {
+					lastAudioPresenceNotify = Main.elapsedTime;
+					this.prNotifyAudioPresence;
+				};
+			};
+			nil
+		});
+		^this
+	}
+
+	prNotifyAudioPresence {
+		var inputs = ioInputPresence.copy, master = masterPresence.copy;
+		var gains = [state.get(\liveGain), state.get(\micGain)];
+		audioPresenceNotifyCount = audioPresenceNotifyCount + 1;
+		audioPresenceListeners.keysValuesDo { |owner, func|
+			func.value(inputs, master, gains)
+		};
+		^this
+	}
+
 	prListen {
 		stateCtl = SimpleController(state);
 		stateCtl.put(\param, { |obj, what, name, val|
-			{ this.prQueueParam(name, val) }.defer;
+			{
+				this.prQueueParam(name, val);
+				if(#[liveGain, micGain].includes(name)) {
+					this.prQueueAudioPresence
+				};
+			}.defer;
 		});
 		// Momentary actions with no persistent state light their Night marks.
 		stateCtl.put(\action, { |obj, what, action, n|
@@ -427,9 +539,25 @@ CQGui {
 			// Any shake (`p`, code, pattern) flashes the sowing moon.
 			if(action == \shake) { { this.prFlashShake }.defer };
 		});
+		Cocoquantus.server !? { |currentServer|
+			serverCtl = SimpleController(currentServer);
+			serverCtl.put(\serverRunning, {
+				{
+					drawer !? {
+						drawer.audioSetup !? { |page| page.serverHealthChanged }
+					}
+				}.defer;
+			});
+		};
 		OSCdef(\cq_gui_meters, { |msg|
-			{ meterFuncs[\master].value(msg[3], msg[5]) }.defer;
+			{
+				this.masterPresenceFrame([msg[3], msg[5]]);
+				meterFuncs[\master].value(msg[3], msg[5]);
+			}.defer;
 		}, '/cq_meters');
+		OSCdef(\cq_gui_io_inputs, { |msg|
+			{ this.audioInputPresenceFrame([msg[3], msg[5], msg[7]]) }.defer;
+		}, '/cq_io_inputs');
 		OSCdef(\cq_gui_gr, { |msg|
 			{ meterFuncs[\gr].value(max(msg[3] ? 0, msg[4] ? 0)) }.defer;
 		}, '/cq_gr');
@@ -460,8 +588,8 @@ CQGui {
 				nightMap !? { nightMap.spesalChanged };
 			}.defer;
 		}, '/cq_spesal');
-		// GUI_SPEC §9 loop phase: the read head's own message; its 5 Hz send
-		// rate IS the night shells' repaint ceiling (§10) — no timer added
+		// GUI_SPEC §9 loop phase: the read head's own 15 Hz message. Night gives
+		// the comet its own cheap layer, so no complete shell follows this stream.
 		OSCdef(\cq_gui_phase, { |msg|
 			{ this.prPhaseFrame(msg[2], msg[3], msg[4], msg[5]) }.defer;
 		}, '/cq_phase');
@@ -783,6 +911,8 @@ CQGui {
 		shellState.close;
 		stateCtl !? { stateCtl.remove };
 		stateCtl = nil;
+		serverCtl !? { serverCtl.remove };
+		serverCtl = nil;
 		deckCtls.do { |c| c.remove };
 		deckCtls = nil;
 		drawer !? { drawer.free };
@@ -794,9 +924,12 @@ CQGui {
 		recTask = nil;
 		hotTask !? { hotTask.stop };
 		hotTask = nil;
+		audioPresenceGeneration = audioPresenceGeneration + 1;
+		audioPresencePending = false;
+		audioPresenceListeners.clear;
 		#[cq_gui_meters, cq_gui_gr, cq_gui_coco, cq_gui_castle,
 			cq_gui_spesal, cq_gui_hot, cq_gui_aura, cq_gui_phase,
-			cq_gui_charge].do { |k|
+			cq_gui_charge, cq_gui_io_inputs].do { |k|
 			OSCdef.all[k] !? { |d| d.free }
 		};
 	}

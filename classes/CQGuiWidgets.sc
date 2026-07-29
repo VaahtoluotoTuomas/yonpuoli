@@ -113,7 +113,7 @@ CQGuiWidgets {
 
 	// How many decimals a parameter deserves on the ledger: enough for the
 	// printed number to resolve about a thousandth of its own range, so
-	// qShLag's 4 ms and spaceDamp's 4500 Hz are both readable at a glance and
+	// qShLag's 4 ms and ordinary gain values are both readable at a glance and
 	// neither is padded with meaningless digits. Derived from CQSpec's range,
 	// never from a per-parameter table.
 	*ledgerDecimals { |name|

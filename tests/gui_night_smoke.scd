@@ -640,6 +640,16 @@ punchChecks = { |map|
 				check.value(#[envA, envB].every { |name|
 					map.endpoints[name][\view].background.alpha == 0
 				}, "env output dots keep transparent paper over the exact curved branch");
+				check.value(map.eyeView.background.alpha == 0,
+					"the storm iris masks a circle, not an invisible square");
+				check.value(map.readHeadViews.size == 2
+					and: { map.readHeadViews.every { |view|
+						view.background.alpha == 0 and: { view.acceptsMouse.not }
+					} },
+					"Coco read heads own transparent hit-through animation layers");
+				check.value(#[coco1, coco2].every { |name|
+					map.endpoints[name][\view].background.alpha == 0
+				}, "coco mouth outputs cannot erase the full-speed reel mark");
 				check.value(map.tideGestureView.acceptsMouse.not
 					and: { CQNightGeometry.compute(1280, 570)[\castles]
 						.every { |castle|
@@ -663,6 +673,19 @@ punchChecks = { |map|
 				check.value(map.endpoints.values.every { |endpoint|
 					endpoint[\view].mouseDownAction.notNil
 				}, "the shared grammar controller binds every night endpoint");
+				gui.bananaGrammar.hoverEndpoint = \deckA_rate;
+				check.value(gui.endpointInkState(\deckA_rate, \socket) == \idle,
+					"an inert destination hover promises no unavailable action");
+				gui.bananaGrammar.startSource(\tri1);
+				gui.bananaGrammar.hoverEndpoint = nil;
+				check.value(CQMatrix.destNames.every { |name|
+					gui.endpointInkState(name, \socket) == \available
+				}, "a banana in hand gives every legal destination a quiet halo");
+				gui.bananaGrammar.hoverEndpoint = \deckA_rate;
+				check.value(gui.endpointInkState(\deckA_rate, \socket) == \hover,
+					"the destination under the held banana answers more strongly");
+				gui.bananaGrammar.releaseVoid;
+				gui.bananaGrammar.hoverEndpoint = nil;
 				check.value(map.holdStates[0] == (state.get(\coco1Hold) > 0.5),
 					"hold seal state mirrors the power-on param");
 				check.value(map.sproutState == \hidden,
@@ -686,6 +709,21 @@ punchChecks = { |map|
 							(view.bounds.left - (expected.x - anchor.x)).abs < 1
 							and: { (view.bounds.top - (expected.y - anchor.y)).abs < 1 },
 							"a castle leaf jack sits exactly on its computed home");
+						check.value(map.endpoints.keys.every { |name|
+							var endpoint = map.endpoints[name];
+							var center = geo[\endpoints][name];
+							var actual = endpoint[\view].bounds.leftTop
+								+ endpoint[\anchor];
+							CQNightGeometry.distance(center, actual) < 1
+						},
+							"all 38 endpoint views keep their computed cable anchor");
+						map.overlay.invalidate;
+						check.value(map.overlay.cableRecords.every { |record|
+							CQNightGeometry.distance(record[\start],
+								geo[\endpoints][record[\src]]) < 1
+							and: { CQNightGeometry.distance(record[\finish],
+								geo[\endpoints][record[\dest]]) < 1 }
+						}, "every planted cable lands on both moved endpoint centres");
 						check.value(map.overlay.cableCount == 2,
 							"night overlay renders every planted matrix cable");
 						sourceView = map.endpoints[\org2][\view];
@@ -794,7 +832,7 @@ punchChecks = { |map|
 														block { |touchDone|
 															var shell, coco, local, crescent, dolbyView;
 															var speedBefore, freqBefore, chaosBefore;
-															var samples, cablePoint, cableRecord;
+															var samples, cablePoint, cableRecord, heartPoint;
 															var castleTwo, castleView, dialPoint;
 															var rangePoint, rangeBefore, rangeBox, rangeCable;
 															var matrixBeforeRange;
@@ -964,9 +1002,68 @@ punchChecks = { |map|
 																samples[30].y - local.y);
 															check.value(map.shellHover[0],
 																"hovering the spiral lights the wind cue");
+															check.value(map.heartHover[0].not,
+																"and the heart stays dark out on the groove");
 															shell.mouseLeaveAction.value(shell);
 															check.value(map.shellHover[0].not,
 																"leaving the shell rests the cue");
+															// The slow end of the reel lies inside the
+															// heart's disc. Found in the user's hands
+															// 2026-07-29: the cue promised a wind there
+															// and the press toggled the loop instead.
+															// One resolver now answers both, so the
+															// promise and the act are tested together.
+															heartPoint = CQNightGeometry
+																.spiralPoint(coco, 0);
+															check.value(CQNightGeometry.distance(
+																heartPoint, coco[\center])
+																	<= coco[\heartRadius],
+																"precondition: the slowest reel pearl really "
+																"sits inside the heart");
+															shell.mouseOverAction.value(shell,
+																heartPoint.x - local.x,
+																heartPoint.y - local.y);
+															check.value(map.heartHover[0],
+																"the heart owns the cue where it owns the press");
+															check.value(map.shellHover[0].not,
+																"and the wind cue no longer lies over the heart");
+															speedBefore = state.get(\coco1Speed);
+															holdBefore = state.get(\coco1Hold);
+															shell.mouseDownAction.value(shell,
+																heartPoint.x - local.x,
+																heartPoint.y - local.y, 0, 0, 1);
+															shell.mouseMoveAction.value(shell,
+																samples[34].x - local.x,
+																samples[34].y - local.y, 0);
+															shell.mouseUpAction.value(shell,
+																samples[34].x - local.x,
+																samples[34].y - local.y, 0, 0);
+															check.value(state.get(\coco1Hold)
+																!= holdBefore,
+																"a press there does what the cue promised: hold");
+															check.value(state.get(\coco1Speed)
+																== speedBefore,
+																"and dragging off it never winds the reel behind "
+																"the cue's back");
+															state.set(\coco1Hold, holdBefore);
+															shell.mouseLeaveAction.value(shell);
+															check.value(map.heartHover[0].not,
+																"leaving rests the heart's ring too");
+															// the chevron was the last pressable night
+															// control with no cue at all (§4.5)
+															shell.mouseOverAction.value(shell,
+																coco[\chevron].x - local.x,
+																coco[\chevron].y - local.y);
+															check.value(map.chevronHover[0],
+																"hovering the mouth chevron answers in weight");
+															check.value(map.shellHover[0].not
+																and: { map.heartHover[0].not }
+																and: { map.skipHover[0].not }
+																and: { map.rimHover[0].not },
+																"and it is the only shell cue lit");
+															shell.mouseLeaveAction.value(shell);
+															check.value(map.chevronHover[0].not,
+																"leaving rests the chevron");
 															castleTwo = map.geometry[\castles][1];
 															castleView = map.castleViews[1];
 															dialPoint = CQNightGeometry.polar(
@@ -982,6 +1079,15 @@ punchChecks = { |map|
 															freqBefore = state.get(\qFreq);
 															chaosBefore = state.get(\qChaos);
 															local = map.geometry[\eye]
+																- map.eyeView.bounds.leftTop;
+															map.eyeView.mouseOverAction.value(
+																map.eyeView, local.x, local.y);
+															check.value(map.eyeHover,
+																"hovering the eye reveals its weather seasons");
+															map.eyeView.mouseLeaveAction.value(map.eyeView);
+															check.value(map.eyeHover.not,
+																"leaving the eye rests its weather seasons");
+															local = map.geometry[\eye]
 																- map.geometry[\ringBox].leftTop;
 															map.ringView.mouseDownAction.value(
 																map.ringView, local.x, local.y, 0, 0, 1);
@@ -995,7 +1101,7 @@ punchChecks = { |map|
 																"the ring's eye drags pitch and chaos together");
 															check.value(map.eyeView.notNil
 																and: { map.eyeView.mouseDownAction.notNil },
-																"the eye keeps its own opaque storm layer");
+																"the eye keeps its own local storm layer");
 															check.value((map.eyeFreqNorm
 																- CQSpec.unmap(\qFreq,
 																	state.get(\qFreq))).abs < 1e-6
@@ -1005,7 +1111,7 @@ punchChecks = { |map|
 																"the storm iris paints the funnel truth mid-drag");
 															// ---- the read head: '/cq_phase' spark, display only ----
 															check.value(map.sparkPoint(0).isNil,
-																"before telemetry the shell keeps its reviewed ink (no spark)");
+																"before telemetry the read-head layer invents no spark");
 															gui.prPhaseFrame(1, 0.62);
 															check.value((gui.phaseNorms[0] - 0.62).abs < 1e-9
 																and: { map.sparkPoint(0).notNil },
@@ -1174,8 +1280,12 @@ punchChecks = { |map|
 															check.value(map.struckOn[0].not,
 																"one lit frame is a skip, not yet a regime");
 															gui.prPhaseFrame(1, 0.03, 1, 12);
+															gui.prPhaseFrame(1, 0.025, 1, 12);
+															check.value(map.struckOn[0].not,
+																"three 15 Hz frames remain below the old time threshold");
+															gui.prPhaseFrame(1, 0.02, 1, 12);
 															check.value(map.struckOn[0],
-																"two lit frames running mark the head struck");
+																"four lit frames across about 0.2 s mark the head struck");
 															check.value(map.struckOn[1].not,
 																"the other shell's head is left alone");
 															// the rate is worn as weight, never as motion

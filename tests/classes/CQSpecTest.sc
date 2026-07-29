@@ -7,7 +7,7 @@ CQSpecTest : UnitTest {
 	tearDown { CQSpec.postWarnings = true }
 
 	test_registryMatchesSpec {
-		this.assertEquals(CQSpec.specs.size, 79, "SPEC §5 defines 79 parameters");
+		this.assertEquals(CQSpec.specs.size, 74, "SPEC §5 defines 74 parameters");
 		this.assertEquals(CQSpec.default(\coco1Fb), 0.35, "coco1Fb default");
 		this.assertEquals(CQSpec.default(\coco1Pan), -0.3, "coco1Pan default");
 		this.assertEquals(CQSpec.default(\coco2Pan), 0.3, "coco2Pan default");
@@ -30,8 +30,21 @@ CQSpecTest : UnitTest {
 		this.assertEquals(CQSpec.clamp(\coco1Fb, 99), 1.25, "over-range clips to max");
 		this.assertEquals(CQSpec.clamp(\coco1Fb, -1), 0.0, "under-range clips to min");
 		this.assertEquals(CQSpec.clamp(\masterVol, 20), 0.0, "masterVol tops at 0 dB");
-		this.assertEquals(CQSpec.clamp(\coco1Speed, 100), 3000.0,
-			"speed knob floor is 3000 Hz (SPEC §5.3)");
+		this.assertEquals(CQSpec.clamp(\coco1Speed, 100), 1500.0,
+			"speed knob floor is 1500 Hz (SPEC §5.3)");
+	}
+
+	// The two floors are one musical decision, not two numbers: modulation is
+	// allowed exactly one octave of country below the hand's own reach, and the
+	// clamp is the only thing standing between a ±4 oct spaf banana and DC.
+	test_speedClampFloorIsAnOctaveBelowTheKnob {
+		var knobFloor = CQSpec.at(\coco1Speed)[\spec].minval;
+		this.assertEquals(CQSpec.speedClampFloor, 750,
+			"post-modulation clock clamp floor is 750 Hz (SPEC §5.3)");
+		this.assertEquals(CQSpec.speedClampFloor * 2, knobFloor,
+			"the ground-jack trick is exactly one octave under the knob floor");
+		this.assertEquals(CQSpec.at(\coco2Speed)[\spec].minval, knobFloor,
+			"both cocos share one Speed floor (identical pair, SPEC §5.3)");
 	}
 
 	test_garbageFuzz {
@@ -114,7 +127,7 @@ CQSpecTest : UnitTest {
 			[\preADrive, \preBDrive],
 			[\deckARate, \deckBRate],
 			[\deckALevel, \deckBLevel],
-			[\spaceMix], [\patchDepth], [\masterVol]
+			[], [\patchDepth], [\masterVol]
 		];
 		this.assertEquals(CQSpec.map16n, expected, "16n default map mirrors SPEC §6.1");
 		CQSpec.map16n.flatten.do { |name|
@@ -123,8 +136,8 @@ CQSpecTest : UnitTest {
 	}
 
 	test_gainLags {
-		[\liveGain, \micGain, \deckALevel, \coco1In, \coco1Fb, \coco1Level, \coco1Send,
-			\coco1Dust, \coco1Organ, \masterDry, \spaceMix].do { |name|
+		[\liveGain, \micGain, \deckALevel, \coco1In, \coco1Fb, \coco1Level,
+			\coco1Dust, \coco1Organ, \masterDry].do { |name|
 			this.assert(CQSpec.lag(name) >= 0.03,
 				"gain param '%' lagged >= 30 ms (CLAUDE.md safety)".format(name));
 		};
@@ -140,5 +153,71 @@ CQSpecTest : UnitTest {
 			"map/unmap roundtrip");
 		this.assertEquals(CQSpec.map(\coco1Bits, 1), 12, "int map lands on integer max");
 		this.assertEquals(CQSpec.map(\coco1Hold, 0.9), 1, "toggle map thresholds at 0.5");
+	}
+
+	test_feedbackTaperIsExactAndInvertible {
+		var norms = [0, 0.1, 0.499999, 0.5, 0.7, 0.899999, 0.9, 0.95, 1];
+		[\coco1Fb, \coco2Fb].do { |name|
+			this.assertFloatEquals(CQSpec.map(name, 0.0), 0.0,
+				"% taper starts at silence".format(name), 1e-12);
+			this.assertFloatEquals(CQSpec.map(name, 0.5), 0.85,
+				"% taper enters the riding band at mid-fader".format(name), 1e-12);
+			this.assertFloatEquals(CQSpec.map(name, 0.9), 1.10,
+				"% taper leaves the riding band at 90%".format(name), 1e-12);
+			this.assertFloatEquals(CQSpec.map(name, 1.0), 1.25,
+				"% taper keeps the old maximum".format(name), 1e-12);
+			this.assertFloatEquals(CQSpec.map(name, 0.7), 0.975,
+				"% taper is piecewise linear between its breakpoints".format(name), 1e-12);
+			this.assertFloatEquals(CQSpec.unmap(name, 1.0), 0.74,
+				"% puts unity at a broad, repeatable fader position".format(name), 1e-12);
+			norms.do { |norm|
+				var back = CQSpec.unmap(name, CQSpec.map(name, norm));
+				this.assert((back - norm).abs <= 1e-9,
+					"% map/unmap roundtrip at % has error %"
+						.format(name, norm, (back - norm).abs));
+			};
+		};
+	}
+
+	test_feedbackTaperPublishesItsVisualRegionsWithoutLeakingOwnership {
+		var points = CQSpec.mapBreakpoints(\coco1Fb);
+		this.assertEquals(points,
+			[[0.0, 0.0], [0.5, 0.85], [0.9, 1.10], [1.0, 1.25]],
+			"the visual scale reads the exact registry-owned taper");
+		this.assert(CQSpec.mapBreakpoints(\coco1In).isNil,
+			"a linear control advertises no invented regions");
+		points[1][0] = 0.25;
+		this.assertEquals(CQSpec.mapBreakpoints(\coco1Fb)[1][0], 0.5,
+			"a caller cannot mutate CQSpec's breakpoint table");
+	}
+
+	test_chaosCurveWidensTheDrunkenCountry {
+		var norms = [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1];
+		this.assertFloatEquals(CQSpec.map(\qChaos, 0.0), 0.0,
+			"chaos hand starts at the unchanged stable value", 1e-12);
+		this.assertFloatEquals(CQSpec.map(\qChaos, 0.5), 0.2689414213699951,
+			"chaos noon lands in the deep-wander country", 1e-12);
+		this.assertFloatEquals(CQSpec.map(\qChaos, 0.75), 0.5449457660765887,
+			"hyperchaos is compressed into the last quarter", 1e-12);
+		this.assertFloatEquals(CQSpec.map(\qChaos, 1.0), 1.0,
+			"chaos hand keeps the unchanged DSP maximum", 1e-12);
+		norms.do { |norm|
+			var back = CQSpec.unmap(\qChaos, CQSpec.map(\qChaos, norm));
+			this.assert((back - norm).abs <= 1e-9,
+				"qChaos map/unmap roundtrip at % has error %"
+					.format(norm, (back - norm).abs));
+		};
+	}
+
+	test_semanticReferenceMarksUseTheParametersOwnMap {
+		var deckUnity = CQSpec.referenceNorm(\deckALevel, \unity);
+		this.assertFloatEquals(CQSpec.referenceNorm(\coco1In, \unity), 0.5,
+			"input unity sits at the midpoint of its own linear map");
+		this.assertFloatEquals(CQSpec.map(\deckALevel, deckUnity), 1.0,
+			"the bird mark roundtrips to exact unity through its curved map");
+		this.assert(CQSpec.referenceNorm(\coco1Fb, \unity).isNil,
+			"feedback does not invent a second scale beside its audible regions");
+		this.assert(CQSpec.referenceNorm(\bogus, \unity).isNil,
+			"an unknown parameter advertises no reference mark");
 	}
 }

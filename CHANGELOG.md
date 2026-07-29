@@ -10,6 +10,48 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Changed
 
+- Audio candidate readiness now requires three actual-sample-rate readings,
+  spaced 0.75 seconds apart, all within 80–120% of the request before allocating
+  or fading in the graph. The first watcher value may still belong to the
+  previous server: a physical unplugged-ASIO attempt exposed the stale-then-
+  collapsed sequence `48 kHz → 7.08 kHz → 7.02 kHz`, which the earlier
+  one-reading guard incorrectly promoted. The corrected gate also rejects the
+  Windows `system default` case that answered `/status` at only about 2.61 kHz;
+  candidate failure then uses the existing single last-working rollback.
+- Physical USB-interface review passed single-device 48 kHz boot, both raw
+  inputs, main outputs 1/2, independently mapped Coco stems on outputs 3/4 and
+  PANIC silence/resume. The unplugged-device automatic rollback was not
+  physically repeated after the three-reading correction; its exact failure
+  sequence is covered hermetically.
+- Audio now subscribes directly to recorder state changes, so
+  `starting/recording/stopping` locks the restart gate immediately and the
+  transition back to `idle` clears the warning without requiring another field
+  edit. Disabled Ink controls no longer draw an active hover cue. The physical
+  split-WASAPI recheck passed across REC start/stop with persisted block 64 and
+  a continuously responsive server.
+- Audio now distinguishes a responding engine from an unresponsive registered
+  server. A clean page exposes `restart audio` (with `no changes` in place of a
+  misleading inert discard), and recovery forces the exact hung local server
+  process down, waits for process/status teardown, then boots instead of racing
+  a second process onto its port.
+- Root-caused the apparent AIO-4 audio regression to live
+  `_ListAudioDevices` enumeration, not the raw-input telemetry: the hang
+  reproduced after `SendPeakRMS` was withdrawn, while removing enumeration
+  restored sound, Night motion and repeated `/status` replies. The reinstated
+  raw tap passed its isolated split-WASAPI recheck: both presence rows reacted
+  while the same server PID kept processing audio and answering three external
+  status probes.
+- Moved directional audio-device discovery to a confirmed stopped-server
+  boundary before a fresh boot or inside `Server.reboot`'s server-off callback.
+  The running Audio page now consumes only that memory snapshot and never calls
+  `_ListAudioDevices`. Its local recommended/all toggle hides exact legacy
+  Windows host prefixes by default while retaining every exact active/draft
+  endpoint; scan failure remains nonfatal and falls back to configured or stale
+  cached devices. The split-WASAPI physical gate passed with sound, Night
+  motion and presence uninterrupted while toggling both views, and a clean
+  Audio restart rebuilt the GUI and restored the same working audio session.
+- Moved the technical Audio page to the Drawer's rightmost tab, after the
+  Inspector, Workshop, Spellbook and Memory musical/workflow pages.
 - Adopted **Yölahti** as the independent product identity while retaining the
   `CQ` SuperCollider API and class namespace.
 - Reframed the project from a Cocoquantus emulation to an original feedback
@@ -18,13 +60,63 @@ tagged. Earlier tags describe internal development baselines.
   authorship, and current status.
 - Made Night the sole runtime instrument surface in the accepted N9 cut. The
   Day stage, toolbar destination, four-column builders and its
-  two read-only overview drawings are removed; Master and the four-page Drawer
+  two read-only overview drawings are removed; Master and the Drawer
   remain persistent. Night's under-hand coupling chord replaces the permanent
   spesal constellation, while the playable shells plus Workshop replace the
   static Coco memory-path diagram.
+- Retired the rejected production Space/FDN chain after comparative listening:
+  its five parameters, Coco sends, F14 mapping, GUI controls, buses, node and
+  master return are removed. F14 is intentionally unassigned, old snapshot
+  fields are ignored safely, and the Master keeps open air for the final
+  instrument-mode phase.
 
 ### Added
 
+- AIO-4 signal presence: `\cqInput` reports canonical raw live L/R/mic peaks
+  before gain and preamp selection at 15 Hz, while Audio reuses the existing
+  post-safety master meter. `CQGui` caches both streams, coalesces their
+  combined 20/15 Hz arrivals to at most 15 visible page notifications, skips
+  hidden Audio paints, primes from cache on open and releases the owner plus
+  namespaced OSCdef on teardown. Physical REC gates produced exact 2-channel
+  and 4-channel 48 kHz / 24-bit WAV files; returning `record 4ch` to off
+  persisted and restarted cleanly. The mic safety gate also passed: configuring
+  ch 1 retained gain 0 and raw presence while muted, Workshop's sole mic gain
+  opened/closed the audible dry path live, and the Audio profile returned
+  cleanly to mic off.
+- AIO-3 confirmed Audio restart: inline impact confirmation, active-recorder
+  gate, facade-owned generation-safe candidate reboot, exactly one automatic
+  last-working rollback, terminal silent failure diagnostics and symbolic
+  Audio-tab reopen. Successful audio is promoted only after the full graph
+  reaches running; a failed final rename remains `running · not saved` and can
+  be retried without another reboot. The physical split-WASAPI candidate
+  roundtrip also passed at server block 64→128→64: both values persisted
+  exactly, both rebuilt GUIs restored sound and Night motion, and the final
+  server remained externally responsive. Physical Discard and confirmation
+  Cancel checks left the same server PID and persisted value untouched while
+  preserving or reverting the draft at their documented boundaries.
+- `CQAudioReconfigure`, a serverless candidate/rollback coordinator with
+  explicit lifecycle callbacks and hermetic success, rollback, stale-callback,
+  recorder-block and retry tests.
+- AIO-2 draft editing for all nine Audio startup fields, with one-based channel
+  presentation, exact invalid/dirty states and discard that never touches the
+  running server. The injected serverless discovery adapter uses directional `inDevices`/
+  `outDevices`, removes only exact duplicates, limits long menus to sixteen
+  scrollable one-line rows and pre-ellipsizes long names so row highlight and
+  text cannot disagree. Embedded CR/LF/tab/control whitespace from Windows
+  endpoint names is collapsed only in display text; exact model data survives.
+- `CQAudioProfileStore`: validated `.pending` roundtrip, last-working
+  preservation, same-directory atomic promotion with one `.bak`, retryable
+  `notSaved` state, and boot-time merge of the ignored sibling Audio profile.
+- AIO-1's fifth persistent Drawer page, **audio**, as a deliberately read-only
+  visual gate before any config write or server restart. It shows exact active
+  engine/device/channel state on the shared compact/roomy rail, caches the
+  device list only at build/explicit refresh, keeps mic/stem-off rows stable,
+  and exposes Ink-painted mode/device lists while discard/apply remain inert.
+- `CQAudioConfig`, a serverless startup-profile model for the exact nine Audio
+  keys: defaults/base/overlay precedence, active/draft/dirty/valid separation,
+  single-owner 0↔1 channel display conversion and sibling profile paths.
+  Generated explicit nils use a private `\default` marker because
+  SuperCollider Events drop nil-valued keys; unknown generated keys hard-fail.
 - Source and interpretation bibliography.
 - Portfolio case study and AI-assisted development/ownership policy.
 - Contribution guide, GPL-3.0-or-later license, and Windows CI gates.
@@ -47,10 +139,24 @@ tagged. Earlier tags describe internal development baselines.
   complete intake body passed live review on 2026-07-28.
 - Recorded preamp loudness compensation as a later equal-loudness DSP
   experiment; N7 deliberately changes only interaction and route drawing.
+- Added reproducible §13.6/§13.8 listening labs: a 30 Hz shared-cell zipper
+  render against continuous and deliberately unlagged controls, plus
+  peak-aligned speech, drum and sustained-organ comparisons for the legacy
+  preamp and two conservative drive-derived attenuation curves. The user could
+  not distinguish the measured zipper reliably, so its DSP remains unchanged.
+- Accepted the middle preamp curve for production: fixed partial attenuation of
+  −1 dB per actual Drive octave after the asymmetric waveshaper. It is unity at
+  Drive 1, leaves substantial material-dependent pressure, and feeds the
+  envelope follower from the same compensated signal that reaches the Coco.
+  This adds no parameter, GUI control or snapshot migration. The selected
+  production path also passed its final live-input confirmation.
+- Completed the N10 shell-cue review: the heart's true 22 px hover disc and
+  the mouth chevron's weight cue passed visual acceptance on 2026-07-29.
 - A fourth persistent Drawer page, **workshop**: the bay's quiet measurement
-  table, carrying the 43 parameters Night and the Master strip do not own so
-  the whole instrument is reachable without the Day panel. One centred 1128 px
-  rail holds a shallow service band (`deck a · input trims · space · deck b`)
+  table, now carrying the 39 parameters Night and the Master strip do not own
+  after Space retirement, so the whole instrument is reachable without the
+  Day panel. One centred responsive rail holds a shallow service band
+  (`deck a · input trims · deck b`)
   over a `coco 1 · quantussy · coco 2` body, with no scroll view at the
   1280×720 minimum and surrounding slate — not stretched controls — in a
   larger window. Accepted after five visual and playing review rounds on
@@ -75,7 +181,24 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Changed (Nocturne)
 
-- Gave all four Drawer pages one shared page frame: the same air between the
+- Revoiced Coco digital dust from a breathing white-noise bed into a quieter
+  9 kHz-filtered floor plus sparse bipolar chip errors. Clocked RAM now thins
+  the errors into roughly 30–960 stored grains/s across the 1.5–48 kHz Speed
+  range, keeping slow crackle distinct and the fast end drier than legacy
+  hiss. A dedicated NRT character gate guards loudness, crest, density and
+  high-frequency balance alongside the existing maximum-dust safety render.
+  Rebalanced `selfNoise` around below-unity rest gains, irregular held-castle
+  blooms and fully closing cross-feed valves, so it can clear and regrow
+  instead of settling into a periodic saturated sea; a 120-second ecology gate
+  now guards clearing, rebloom, envelope irregularity and rail residence. The
+  new dust source and the revised preset were accepted by ear on 2026-07-29.
+- Widened the playable middle of the Quantussy Chaos hand with a `+2.0`
+  control curve while preserving direct values, snapshots and the 0–1 DSP
+  semantics. Night's storm iris now reveals four planted broken weather rings
+  at ¼, ½, ¾ and full, with a living front through them and a proper
+  cable-priority hover cue. The curve's listening pass and the rings' visual
+  review were accepted on 2026-07-28.
+- Gave the then-current four Drawer pages one shared page frame: the same air between the
   tab row and the first ink, the same centred rail, and one content inset so
   the Workshop's labels, the loom's row names and the seed bank's boxes begin
   on the same vertical line. The Inspector had been on a 4 px margin while the
@@ -125,7 +248,7 @@ tagged. Earlier tags describe internal development baselines.
   the shared runner uses daemon mode, a child-only watchdog, expected-marker
   validation and per-run diagnostic logs; agents and CI now use that same
   entry point.
-- Raised the Drawer's type above the Day panel's fixed 10 px and gave all four
+- Raised the Drawer's type above the Day panel's fixed 10 px and gave the then-current four
   pages one shared content rail — the Spellbook previously used neither.
   Subgroup headings gained their own rank (line ink, a lighter rule from the
   end of the name to the island's edge) instead of being a fainter whisper.

@@ -17,7 +17,19 @@ The active `nocturne` phase has made the Night surface the whole instrument:
 Night, the persistent Master strip and the Drawer now cover every parameter
 without maintaining a second performance interface. The Night-only instrument
 passed its live review on 2026-07-28; see [`PLAN.md`](PLAN.md) for current work
-rather than reading historical checklists as open tasks.
+rather than reading historical checklists as open tasks. The accepted Audio
+page now includes the AIO-3 transaction: it edits and validates an isolated
+draft, confirms the disruptive `Server.default` restart inline, commits the
+generated sibling profile only after a complete candidate boot, and restores
+the previous working Audio config once if that candidate fails. AIO-4 adds raw
+pre-gain live/mic presence and shared post-safety master presence without
+painting a hidden Audio page. Its isolated split-WASAPI recheck passed with
+responsive presence, sound and Night motion; the wider hardware-I/O review
+remains the next gate. The earlier WASAPI hang was isolated to live device
+enumeration, which is no longer performed while the server is running. The
+Audio restart gate also remains available with a clean draft: it
+reports an unresponsive engine explicitly and can rebuild the exact active
+configuration without writing a profile.
 
 ## What it offers
 
@@ -29,9 +41,10 @@ rather than reading historical checklists as open tasks.
 - A 16×22 signed routing matrix with cable-like audition, planting, moving,
   ripping, harvesting, undo, snapshots, and morphing.
 - The Ink & Phosphor GUI: one playable Night landscape, a persistent Master
-  strip, and a Drawer for precise patching, tuning, history, and memory.
+  strip, and a Drawer for precise patching, tuning, audio I/O status, history,
+  and memory.
 - File decks, live inputs, optional 16n faderbank control, recording, optional
-  stems, and a small studio reverb.
+  stems, snapshots, and morphing.
 - A fixed output-safety chain and offline render tests designed for unpredictable
   feedback patches.
 
@@ -52,17 +65,26 @@ plugins are required.
 1. Clone the repository and install SuperCollider.
 
 2. Copy `config.example.scd` to `config.scd`. The copy is ignored by Git and
-   holds machine-specific audio, MIDI, and path settings. List device names in
-   SuperCollider with `ServerOptions.devices`. If input and output are separate
-   Windows devices, use a pair from the same host API:
+   holds machine-specific audio, MIDI, and path settings. Device discovery is
+   captured only while the local audio server is stopped; the running Audio
+   page reads that memory snapshot and never invokes `_ListAudioDevices`. Its
+   default Windows view keeps WASAPI/ASIO choices and exact configured
+   endpoints concise, while `show all drivers` reveals cached MME, DirectSound
+   and WDM-KS alternatives without another scan. If input and output are
+   separate Windows devices, use a pair from the same host API:
 
    ```supercollider
    device: ["Windows WASAPI : Microphone (...)", "Windows WASAPI : Speakers (...)"]
    ```
 
+   Audio-page edits are stored in the ignored sibling `config.audio.scd`; the
+   hand-maintained `config.scd` is never rewritten. Apply first explains that
+   audio, unrelated synths on `Server.default`, and the unsaved Yölahti patch
+   will reset. An active recorder blocks the restart.
+
 3. In the SuperCollider IDE, open **Edit → Preferences → Interpreter → Include
    paths** and add `<repo>/classes`. Recompile the class library with
-   **Ctrl+Shift+L**. `CQSpec.specs.size` should return `79`. Developers running the
+   **Ctrl+Shift+L**. `CQSpec.specs.size` should return `74`. Developers running the
    unit suite also add `<repo>/tests/classes`.
 
 4. Put a few `.wav`, `.aiff`, or `.flac` files in the ignored `samples/`
@@ -134,14 +156,26 @@ large test count as a release claim:
 Headless developer gates:
 
 ```text
-sclang -l <conf> -i none tests/compile_check.scd      -> CQ_COMPILE_OK
-sclang -l <conf> -i none tests/run_all.scd            -> CQ_TESTS_PASSED
-sclang -l <conf> -i none tests/nrt_safety.scd         -> CQ_SAFETY_PASSED
-sclang -l <conf> -i none tests/nrt_hold_integrity.scd -> CQ_HOLD_OK
+powershell -File tests/run_sclang_gate.ps1 tests/compile_check.scd      -> CQ_COMPILE_OK
+powershell -File tests/run_sclang_gate.ps1 tests/run_all.scd            -> CQ_TESTS_PASSED
+powershell -File tests/run_sclang_gate.ps1 tests/nrt_safety.scd         -> CQ_SAFETY_PASSED
+powershell -File tests/run_sclang_gate.ps1 tests/nrt_hold_integrity.scd -> CQ_HOLD_OK
+powershell -File tests/run_sclang_gate.ps1 tests/nrt_dust_character.scd -> CQ_DUST_OK
+powershell -File tests/run_sclang_gate.ps1 tests/nrt_selfnoise_character.scd -> CQ_SELFNOISE_OK
+powershell -File tests/run_sclang_gate.ps1 tests/gui_audio_setup_smoke.scd -> CQ_GUI_AUDIO_PASSED
 ```
 
-`<conf>` is a local `sclang_conf` file whose include paths point to `classes/`
-and `tests/classes/`. The CI workflow generates its own isolated version. Current
+Focused measurement/listening gates (they render reproducible evidence; the
+human verdict is recorded separately in `tests/manual_checklist.md`):
+
+```text
+powershell -File tests/run_sclang_gate.ps1 tests/nrt_zipper_measure.scd  -> CQ_ZIPPER_MEASURED
+powershell -File tests/run_sclang_gate.ps1 tests/nrt_preamp_loudness.scd -> CQ_PREAMP_OK
+```
+
+The wrapper owns the headless process, timeout and success marker; its default
+test config includes `classes/` and `tests/classes/`. The CI workflow generates
+its own isolated version. Current
 hands-on checks are in [`tests/manual_checklist.md`](tests/manual_checklist.md);
 accepted historical evidence is archived under [`docs/history/`](docs/history/).
 
@@ -192,8 +226,16 @@ portfolio-oriented account of the project is in
 
 ## Known limits
 
-- Live stem routing still needs final verification on an interface with at least
-  four hardware outputs; NRT stem safety is covered.
+- On the current Windows laptop, SuperCollider's `system default` route can
+  start responsively yet advance a requested 48 kHz stream at only about
+  2.61 kHz. Yölahti now requires three healthy post-boot clock readings before
+  building the graph, because the first watcher value can still belong to the
+  previous server. The tested split-WASAPI input/output route remains the local
+  baseline. Automatic recovery from a physically unplugged ASIO candidate is
+  regression-covered but has not been re-run after this correction.
+- Main 1/2, independent Coco stems on physical outputs 3/4, raw inputs 1/2 and
+  PANIC were verified with a four-output USB interface; NRT covers the shared
+  stem safety ceiling.
 - Windows is the only currently tested release platform.
 - Nocturne is active development, so the final Night-only product surface and
   public-beta media are not released yet.
