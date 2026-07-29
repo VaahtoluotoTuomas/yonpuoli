@@ -56,10 +56,12 @@ PANIC-, stem-3/4-, stereo/4ch-REC- ja 10 minuutin patch-kohdiltaan; loopbackin
 näkyvyys kirjattiin samana päivänä, ja avoimeksi jäi vain kaksisuuntainen
 VB-CABLE-DAW-portti.**
 **Fyysinen AIO-hardware-katselmus hyväksyttiin 2026-07-30, joten koko AIO-vaihe
-on valmis.** Järjestys tästä on **erillinen pitkä laitteisto-/resource-soak →
-kolme huokoista soittotilaa → Norns-portti (§14)**, ja niiden rinnalla omana
-päivänään kaksisuuntainen VB-CABLE A+B -DAW-portti (ainoa avoin AIO-jatko).
-Yksi musiikillinen muuttuja käsitellään edelleen kerrallaan. **N10:n sydän/kela- ja chevron-vihjeet hyväksyttiin visuaalisesti
+on valmis.** Järjestys tästä on **käyttäjän 2026-07-30 päättämä tie 1.0:aan:
+ajonaikainen audiokelloguard → pitkä laitteisto-/resource-soak → VB-CABLE A+B
+-DAW-portti → merge `main`iin ja 1.0-tagi** (oma osio "Tie 1.0:aan" alla).
+Kolme huokoista soittotilaa **ei ole 1.0:n ehto** — se on oma haaransa 1.0:n
+jälkeen — ja Norns-portti (§14) tulee vasta niiden jälkeen. Yksi musiikillinen
+muuttuja käsitellään edelleen kerrallaan. **N10:n sydän/kela- ja chevron-vihjeet hyväksyttiin visuaalisesti
 2026-07-29**, joten erillistä GUI-velkaa ei enää ole.
 
 ## Auktoriteettijärjestys
@@ -1658,6 +1660,79 @@ laitevalinnan, kanavareitityksen, rollbackin ja telemetrian toiminnallisuuden;
 sen lyhyt vakauskoe **ei korvaa** jonossa seuraavaa erillistä pitkäkestoista
 koko soittimen laitteisto-/resource-soakia.
 
+## Tie 1.0:aan (käyttäjän päätös 2026-07-30)
+
+Käyttäjän arvio on, että soitin alkaa vasta nyt olla lähellä todellista
+1.0-tilaa. Järjestys on **AUD-W → soak → VB-CABLE → merge `main`iin ja tagi**,
+ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
+
+1. **AUD-W — ajonaikainen audiokelloguard.** Oma pieni portti, tehdään
+   **ennen** soakia, jotta soak voi ylipäätään havaita sen mitä tämä valvoo.
+   Sopimus alla.
+2. **Pitkä laitteisto-/resource-soak.** Koko soittimen pitkäkestoinen vakaus;
+   AIO:n 10 minuutin koe ei korvaa tätä.
+3. **VB-CABLE A+B -DAW-portti.** Ainoa avoin AIO-jatko; reitityskartta ja
+   ennakkoehdot ovat AIO.9:n hand-offissa.
+4. **Merge `main`iin ja 1.0-tagi.**
+
+### AUD-W:n sopimus
+
+**Ongelma, mitattu kahdesti fyysisesti.** Kelloguard ajetaan täsmälleen kerran,
+session buildissa ennen graafin allokointia
+(`Cocoquantus.prBuildSession`, `Cocoquantus.sc:706`). Ajonaikaista audiokellon
+valvontaa ei ole, ja `Cocoquantus.serverResponsive` (`Cocoquantus.sc:105`)
+tarkistaa vain `serverRunning && unresponsive.not` — **täsmälleen se mittari,
+joka valehteli molemmilla kerroilla.** Jos laite kuolee kesken session (kortti
+irti, ajurin degradoituminen, lepotilasta herääminen), sovellus on muodollisesti
+running, GUI näyttää normaalilta, ääni on roskaa eikä mikään pinta kerro
+totuutta.
+
+**Lait, joista ei oikaista:**
+
+- **Ei automaattista recoveryä.** Itsestään reboottaava soitin kesken esityksen
+  on pahempi kuin rehellinen virhetila. Tavoite on lakata valehtelemasta, ei
+  korjata itseään.
+- **Ei uutta serverliikennettä.** `Server.actualSampleRate` täyttyy jo olemassa
+  olevan status-watcherin `/status`-vastauksista, joten valvonta on pelkkä luku.
+  **Valvonta ei saa missään tilanteessa kutsua `_ListAudioDevices`ia** eikä
+  muuta käynnissä olevaa WASAPI-serveriä koskevaa laitelistausta — se on
+  2026-07-29 eristetty jumin syy.
+- **Matala taajuus.** Tarkistusväli luokkaa 2–5 s, ei telemetrian 15 Hz:ää.
+  Terve tila ei liikuta ainuttakaan mustetta (§16.3/§16.10 ja §9:n laki:
+  ambient-liike tulee telemetriakehyksistä, ei omasta kellosta).
+- **Rehellinen danger-tila ja tavoitettava `restart audio`.** Tila näkyy
+  Audio-sivun status-rivillä, mutta koska vika voi iskeä kun Drawer on kiinni,
+  se tarvitsee myös aina näkyvän pinnan. Muoto ratkaistaan omana katselmuksena;
+  se on staattinen ink-tila, ei vilkkuva hälytys.
+- **Sama epäterveyden määritelmä kuin boot-portissa.** `audioClockRatioBounds`
+  ja `prAudioClockHealthy` ovat jo olemassa; niitä käytetään, ei kirjoiteta
+  toista rajaa. Yksi huono lukema ei riitä tilan vaihtoon — sama settle-logiikka
+  kuin `prRequireSettledAudioClock`issa.
+- **Ei elinkaarivuotoja.** `CQ.free`, `CQ.reboot`, CmdPeriod ja epäonnistunut
+  session lopettavat valvonnan; sukupolvisuoja pätee kuten muihinkin
+  async-polkuihin. Testi todistaa, ettei routine/OSCdef jää eloon freen jälkeen.
+
+**Portit:** compile + unit + Audio/presence/Drawer/shell-smoket. DSP:hen ei
+kosketa, joten `CQ_SAFETY_PASSED` ja `CQ_HOLD_OK` kantavat, jos näin on.
+Fyysinen hyväksyntä vaatii yhden turvallisen provokaation — ei irtikytkentää
+kesken restartin (se on kirjattu ei-toistettava koe), vaan esimerkiksi
+lepotila/herätys tai soakissa itsestään ilmenevä tapaus.
+
+### 1.0-tagin rajaus ja avoin nimipäätös
+
+- **Tekninen 1.0 on eri asia kuin julkaisurata.** 1.0-tagi `main`issa on
+  tekninen virstanpylväs; rata C (public repo, media, beta-release) ja rata B
+  (omistajuuden itseopiskelu) eivät ole sen ehtoja. Repo voi olla tagatessa
+  yhä private.
+- **Versionumero ja nimi ovat avoinna eikä niitä lyödä lukkoon vielä.** `v1.0`
+  on käytössä (commit `43724f3`, vanha Cocoquantus-tutkielma), joten uusi tagi
+  tarvitsee oman tunnuksen. **Käyttäjä ilmoitti 2026-07-30, että nimi Yölahti
+  todennäköisesti vielä muuttuu ja identiteettipohdinta on edessä**, joten
+  tagia ei nimetä nykyisen tuotenimen mukaan ennen sitä päätöstä. Tämä on sama
+  päätös kuin alla olevan "Myöhemmin"-osion identiteetti- ja sisäosien
+  nimikohta sekä julkaisuradan nimi-/törmäystarkistus; ne ratkaistaan yhdessä,
+  ei kolmena erillisenä.
+
 ## Myöhemmin, ei tämän vaiheen scopea
 - **Identiteetti ja sisäosien nimet** (käyttäjän havainto 2026-07-28, N8:n
   katselmoinnissa). Nightissä Cocoquantus-sukulinja näkyy *muotona* —
@@ -1675,6 +1750,10 @@ koko soittimen laitteisto-/resource-soakia.
   Vaikuttaa `README.md`:hen, `SOURCES.md`:hen, GUI:n kaikkiin otsikoihin ja
   mahdollisesti `CQ*`-nimiavaruuteen, joten se on oma päätöksensä eikä osa
   N8:aa. Liittyy suoraan julkaisuradan "nimi ja törmäystarkistus" -kohtaan.
+  **Käyttäjän ilmoitus 2026-07-30: myös tuotenimi Yölahti todennäköisesti vielä
+  muuttuu, ja identiteettipohdinta on edessä.** Sen vuoksi 1.0-tagia ei nimetä
+  nykyisen tuotenimen mukaan ennen tätä päätöstä (ks. "Tie 1.0:aan"), eikä
+  nimeä lyödä lukkoon dokumenteissa sitä ennen.
 - **Kosketusnäyttö-optimointi Night-modeen** (multi-touch, ele-erottelu) —
   liittyy kevättulvaan (§8 kasvattaa kohteita jo ~40 px suuntaan); oma
   työvaihe kun mittakaava on lyöty lukkoon.
@@ -1689,11 +1768,11 @@ koko soittimen laitteisto-/resource-soakia.
 
 ## Viimeinen musiikillinen lisävaihe: kolme huokoista soittotilaa
 
-**Status 2026-07-28: hyväksytty jatkosuunta, mutta tarkoituksella jonon
-viimeinen.** Tähän palataan vasta, kun yllä olevat perustoiminnallisuuden,
-Night-polishin ja laitteistotodennuksen avoimet työt ovat valmiit. Tämä on
-viimeinen uusi soitinarkkitehtuurin vaihe ennen lopullista julkaisu- ja
-mediakierrosta, ei syy lykätä nykyisiä viimeistelytöitä.
+**Status 2026-07-30: hyväksytty jatkosuunta, oma haara, eikä 1.0:n ehto.**
+Käyttäjän päätös 2026-07-30: soittimen perustoiminta ei vaadi tätä, joten se
+toteutetaan omana haaranaan **1.0-tagin jälkeen** eikä sitä oteta mukaan
+tien 1.0:aan (AUD-W → soak → VB-CABLE → merge + tagi). Tämä on silti viimeinen
+uusi soitinarkkitehtuurin vaihe, ei syy lykätä nykyisiä viimeistelytöitä.
 
 ### Taiteellinen teesi ja rajaus
 
