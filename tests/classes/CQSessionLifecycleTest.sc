@@ -76,6 +76,36 @@ CQSessionLifecycleTest : UnitTest {
 			"CQ-AUD-003: CQ.reboot invokes Server.reboot, not only graph free/boot");
 	}
 
+	test_audioClockHealthRejectsResponsiveCatastrophicDrift {
+		this.assert(
+			Cocoquantus.prAudioClockHealthy(48000, 47986.317),
+			"ordinary hardware-clock drift passes the Audio readiness gate");
+		this.assert(
+			Cocoquantus.prAudioClockHealthy(48000, 48003.479),
+			"the measured recovered split-WASAPI clock passes");
+		this.assert(
+			Cocoquantus.prAudioClockHealthy(48000, 2610.783).not,
+			"the measured responsive system-default clock is rejected");
+		this.assert(
+			Cocoquantus.prAudioClockHealthy(48000, nil).not,
+			"missing clock truth cannot publish an Audio candidate");
+		this.assert(
+			[47986.317, 48003.479, 47986.317].every { |rate|
+				Cocoquantus.prAudioClockHealthy(48000, rate)
+			},
+			"three recovered split-WASAPI readings all pass");
+		this.assert(
+			[48000, 7076.4, 7019.8].every { |rate|
+				Cocoquantus.prAudioClockHealthy(48000, rate)
+			}.not,
+			"a stale healthy first reading cannot hide later clock collapse");
+		server.actualSampleRate = 2610.783;
+		this.assertException({
+			Cocoquantus.prRequireAudioClock(server, 48000)
+		}, Error,
+			"catastrophic drift becomes a facade failure before graph allocation");
+	}
+
 	test_deviceCaptureRefusesA_RUNNING_Server {
 		var reads = 0;
 		var accepted = Cocoquantus.prCaptureAudioDeviceCatalog(server, {
@@ -187,6 +217,34 @@ CQSessionLifecycleTest : UnitTest {
 		this.assert(failureText.notNil
 			and: { Cocoquantus.lifecycleState == \failed },
 			"facade failure leaves an exact diagnostic and failed lifecycle");
+	}
+
+	test_preparedAudioRebootRejectsResponsiveUnhealthyClock {
+		var ready = 0, failures = 0, failureText;
+		var prepared = CQConfig.validate((
+			headless: true,
+			sixteenN: (enabled: false),
+			sampleRate: 48000,
+			outChans: [0, 1]
+		));
+		server.actualSampleRateReadings = [48000, 7076.4, 7019.8];
+		Cocoquantus.prRebootPrepared(server, configPath, prepared,
+			{ ready = ready + 1 },
+			{ |failure|
+				failures = failures + 1;
+				failureText = failure.errorString
+			});
+		server.runServerBoot;
+		server.runNextBoot;
+		this.assertEquals(ready, 0,
+			"a responsive catastrophic clock cannot publish candidate ready");
+		this.assertEquals(failures, 1,
+			"the unhealthy candidate returns exactly one facade failure");
+		this.assert(failureText.notNil and: {
+			failureText.find("audio clock unhealthy").notNil
+		} and: {
+			Cocoquantus.lifecycleState == \failed
+		}, "stale-then-collapsed clock readings retain an actionable diagnostic");
 	}
 
 	test_unresponsivePreparedRebootForcesQuitBeforeBoot {

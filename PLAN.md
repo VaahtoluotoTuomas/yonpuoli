@@ -1483,52 +1483,132 @@ Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
   yhdistetty 40 Hz input/master-testivirta ylitä avoimella sivulla 15 Hz:ä
   eikä listener/OSCdef jää eloon freen jälkeen.
 - [x] Compile, unit, Audio/presence/Drawer/shell-smoket sekä muuttumattomat
-  safety- ja hold-portit ovat vihreitä: **13 492 passia / 0 failurea /
+  safety- ja hold-portit ovat vihreitä: **13 502 passia / 0 failurea /
   37/37 luokkaa**, `CQ_GUI_AUDIO_PASSED`,
   `CQ_GUI_AUDIO_PRESENCE_PASSED`, `CQ_GUI_DRAWER_PASSED`,
   `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_REENTRY_PASSED`,
   `CQ_SAFETY_PASSED` ja `CQ_HOLD_OK`.
+- [x] Responsiivinen mutta audiokelloltaan epäterve candidate ei enää saavuta
+  graafin allokointia, fade-iniä tai profile-promootiota. Facade vaatii kolme
+  0,75 s välein luettua toteutuvaa sample ratea 80–120 %:iin pyydetystä.
+  Mitattu 2610,8 Hz / 48 kHz sekä vanha terve ensimmäinen arvo ja sitä seuraava
+  romahdus `[48000, 7076.4, 7019.8]` palauttavat hermettisessä
+  lifecycle-portissa yhden failure-callbackin ja käyttävät transaktion olemassa
+  olevaa yhtä last-working-rollbackia. Portit:
+  `CQ_COMPILE_OK`; **13 502 / 0 / 37/37**; `CQ_GUI_AUDIO_PASSED`,
+  `CQ_GUI_AUDIO_PRESENCE_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+  `CQ_GUI_SHELL_PASSED`, `CQ_SAFETY_PASSED`, `CQ_HOLD_OK`.
 - [ ] Fyysinen hardware-I/O-katselmus, vähintään:
-  1. system default boot + aktiivinen live L/R -signaali;
-  2. yksi USB-interface single-device-tilassa;
+  1. system default boot + aktiivinen live L/R -signaali — tämän kannettavan
+     fyysinen portti epäonnistui 2026-07-30 alla kuvatulla tavalla;
+  2. yksi USB-interface single-device-tilassa — K-Mix ASIO, inputit 1/2,
+     main 1/2 ja vakaa 48 kHz hyväksytty 2026-07-30;
   3. Windows split in/out samalla host APIlla — boot, raw presence ja
      palvelinvakaus hyväksytty 2026-07-29;
-  4. tarkoituksella puuttuva laite → yksi turvallinen rollback;
+  4. tarkoituksella puuttuva laite → yksi turvallinen rollback — fyysinen koe
+     epäonnistui 2026-07-30: irrotettu ASIO-laite käynnistyi näennäisesti,
+     ensimmäinen kellolukema jäi vanhaksi ja profiili promotoitiin ennen
+     romahdusta; kolmipisteinen guard kattaa regression hermettisesti, eikä
+     riskikoetta toisteta tällä koneella;
   5. mic off→configured pysyy mykkänä, kunnes Workshopin micGain nostetaan —
      ch 1 raw-presence, muted/live-tila, kuultava dry-monitor, gainin palautus
      nollaan ja explicit mic-off-overlay hyväksytty 2026-07-30;
   6. main L/R fyysisesti oikeissa porteissa ja PANIC mykistää ne — split-
-     WASAPI-output, master-presence hiljeneminen, raw-presencen riippumattomuus
-     ja resume hyväksytty 2026-07-29;
+     WASAPI-output sekä K-Mix 1/2, master-presencen hiljeneminen,
+     raw-presencen riippumattomuus ja resume hyväksytty;
   7. vähintään nelikanavaisella interfacella stem 1/2 oikeissa, mainista
-     erillisissä porteissa ja saman safety-katon alla;
+     erillisissä porteissa ja saman safety-katon alla — K-Mixin fyysiset
+     ulostulot 3/4, itsenäinen Coco1/Coco2-kartoitus ja PANIC hyväksytty
+     2026-07-30; yhteinen safety-ketju on katettu koodilla ja NRT-portilla;
   8. REC stereo ja `record 4ch` tuottavat oikean kanavamäärän — 2 ch ja 4 ch
      RIFF/WAVE-headerit, 48 kHz / 24-bit, exact `recStems`-persistenssi sekä
      paluu off-tilaan hyväksytty 2026-07-30;
   9. virtuaalinen loopback/DAW näkyy tavallisena driver-laitteena, mutta GUI
      ei lupaa luoneensa järjestelmäkytkentää;
   10. 10–15 minuutin tiheä patch + molemmat Cocot + Audio-sivu auki/kiinni:
-      rajattu AIO-vakauskoe, ei dropoutia, listener-vuotoa tai kasvavaa
-      repainttia.
+      rajattu AIO-vakauskoe hyväksytty 2026-07-30 alla kuvatulla tavalla.
 
-**Jatkopiste 2026-07-30 — koneen uudelleenkäynnistys ennen system-default-porttia**
+**Jatkopiste 2026-07-30 — hardware-I/O-katselmus**
 
-- Käyttäjä käynnistää Windowsin uudelleen koneen yleisen jumittumisen vuoksi;
-  tätä ei ole tässä vaiheessa osoitettu Yölahden audio- tai serverivirheeksi.
-- Viimeinen varmennettu ja persisted baseline on split WASAPI:
+- Uudelleenkäynnistyksen jälkeen jo promotoitu `system default` avasi GUI:n ja
+  tuotti aktiiviset live L/R -presence-rivit, mutta Night eteni noin 1 FPS,
+  SuperCollider hidastui ja ulostulo oli pelkkää glitchaavaa korkeahkon
+  keskialueen häiriöääntä. Sama oire oli alkanut heti ensimmäisellä
+  system-default-vaihdolla ennen Windowsin uudelleenkäynnistystä.
+- Serveri ei ollut muodollisesti kuollut: se vastasi kolmeen 72 tavun
+  `/status.reply`-viestiin. Vastaukset paljastivat varsinaisen virheen:
+  nimellinen sample rate oli 48 000 Hz, mutta toteutuva vain
+  2612,8 → 2611,4 → 2610,8 Hz. Tyhjennettykin scsynth käytti noin 11,5 %
+  yhdestä CPU-ytimestä. Nykyinen ready-raja hyväksyi ja promotoi siis
+  responsiivisen mutta audiokelloltaan käyttökelvottoman candidate-session.
+- `CQ.free` hiljensi graafin, generated overlay palautettiin viimeiseen
+  split-WASAPI-arvoon ja `CQ.reboot` käynnisti uuden scsynth-PID:n. Käyttäjän
+  mukaan ääni ja Night-liike palautuivat normaaleiksi. Kolme ulkoista vastausta
+  raportoi 47 986–48 003 Hz, 7,8–9,5 % server-CPU:n ja 37,7 Mt working setin.
+- Palautettu ja persisted baseline on split WASAPI:
   input `Microphone Array (AMD Audio Device)`, output
   `Headphones (Realtek(R) Audio)`, 48 kHz, server block 64, hardware buffer
   256, live in ch 1/2, main out ch 1/2, mic off, stems off ja record 4ch off.
-  `config.audio.scd` on Git-ignored ja sisälsi tämän exact tilan.
-- Viimeinen fyysinen sessio vastasi kolmeen 72 tavun `/status.reply`-viestiin.
-  Työpuu oli puhdas commitissa `be2e08f`; REC-state-korjaus on commitissa
-  `bdd6ac4`.
-- **Jatka tästä:** boottaa uudelleenkäynnistyksen jälkeen normaalisti, varmista
-  ensin split-baseline (ääni, Night-liike, live L/R ja Audio-sivu). Testaa sitten
-  Audio → device mode `system default` → `apply & restart audio` → `restart`.
-  Onnistumisessa GUI palaa, device näyttää `system default` ja ääni/Night/live
-  presence toimivat. Rollbackissa älä yritä uudelleen, vaan tallenna
-  terminaalituloste.
+  `config.audio.scd` on Git-ignored ja sisältää jälleen tämän exact tilan.
+- Candidate-readinessin toteutuvan sample raten terveystarkistus ja hermettinen
+  regressio ovat nyt valmiit ja vihreät.
+- Split-baselinen 10 minuutin tiheä `\mayhem`-patch hyväksyttiin:
+  molemmat Cocot, myöhemmin ladatut kaksi deck-samplea sekä toistuvat
+  Audio↔Night-vaihdot pysyivät toimivina. Kaikki 21 ulkoista status-kyselyä
+  vastasivat samalla PID:llä; audiokello pysyi 47 986–48 021 Hz:ssä,
+  serverin avg CPU enintään 12,55 % ja peak enintään 14,04 %. Node-puu kasvoi
+  odotetusti 6→8 vain kahdella `cqDeck`-synthillä. Sclang/scsynth-muisti ja
+  handlemäärät tasaantuivat kertaluonteisten GUI-/samplevarausten jälkeen.
+  Käyttäjä kuuli nolla dropoutia tai glitchiä; massiivisen 352-kaapelin
+  renderöinnissä oli ajoittaista pientä mutta ei kasvavaa hitautta, samalla kun
+  Drawer↔Night-vaihdot pysyivät nopeina.
+- K-Mix ASIO hyväksyttiin single-device-tilassa: 48 kHz, block 64 ja hardware
+  buffer 256 käynnistyivät normaalilla äänellä ja GUI-liikkeellä, molemmat
+  fyysiset inputit näkyivät raw live L/R -presence-riveissä ja main kuului
+  ulostuloista 1/2. Kolme statusvastausta pysyi noin 47 986–48 003 Hz:ssa.
+- Neljän ulostulon portissa stem 1/2 kuuluivat erikseen K-Mixin fyysisistä
+  ulostuloista 3/4: vain Coco1 avasi 3:n ja vain Coco2 avasi 4:n. PANIC hiljensi
+  sekä mainin että stemit ja palautus toimi. Sen jälkeen toimiva split-WASAPI
+  palautettiin last-working-baselineksi.
+- Puuttuvan laitteen fyysinen rollback-koe ei läpäissyt: K-Mix irrotettiin
+  vahvistetun candidate-restartin edellä, mutta backend avasi responsiivisen
+  näennäissession. Ensimmäinen actual-SR-lukema oli edellisen terveen serverin
+  vanha 48 kHz; sen jälkeen kello romahti noin 7076 → 7020 Hz:iin, ääni
+  glitchasi ja Night putosi noin 1 FPS:ään. Yhden lukeman guard ehti siksi
+  promotoida profiilin. `CQ.free`, split-overlayn manuaalinen palautus ja reboot
+  palauttivat normaalin äänen ja GUI:n; uusi PID raportoi jälleen
+  47 986–48 003 Hz.
+- Guard lukee nyt kolme näytettä 0,75 s välein ja vaatii jokaisen terveeksi,
+  jolloin vanha ensimmäinen statusarvo ei voi peittää käynnistyksen romahdusta.
+  Exact fyysinen riskiportti ei toisteta; `[48000, 7076.4, 7019.8]` on
+  regressiotestattu hermettisesti. Compile ja unit ovat vihreät:
+  `CQ_COMPILE_OK`, **13 502 / 0 / 37/37**.
+- **Jatka tästä:** älä aja system default- tai puuttuvan laitteen koetta tällä
+  koneella uudelleen. Jäljellä oleva turvallinen fyysinen AIO-portti on
+  virtuaalinen loopback/DAW, jos sellainen on valmiiksi saatavilla.
+
+**Hand-off 2026-07-30 — jatka testaamista tästä**
+
+- Työpäivän lopussa K-Mix on irrotettu ja ignored `config.audio.scd` osoittaa
+  jälleen toimivaan split-WASAPI-baselineen: 48 kHz, block 64, hardware buffer
+  256, live/main 1/2, mic/stems/record-4ch off. Käyttäjä vahvisti viimeisen
+  rebootin jälkeen normaalin äänen ja GUI-liikkeen.
+- Lähdekoodissa oleva lopullinen guard ottaa kolme actual-SR-näytettä 0,75 s
+  välein. Fyysinen IDE-session class library ei välttämättä saanut tätä viimeistä
+  versiota ennen päivän lopetusta: seuraavan testipäivän alussa tee
+  `Ctrl+Shift+L`, käynnistä `CQ.boot` ja varmista ensin split-baselinella normaali
+  ääni, Night-liike ja live/master-presence.
+- Älä valitse tällä koneella `system default` -reittiä äläkä tee uudelleen
+  irrotetun/puuttuvan laitteen rollback-koetta. Molempien havaittu failure on
+  dokumentoitu yllä ja stale-first-reading-regressio on katettu hermettisesti.
+- Jos valmiiksi asennettu virtuaalinen loopback/DAW-ajuri on käytettävissä,
+  jäljellä oleva AIO-koe on vain sen näkyminen tavallisena exact driver
+  -valintana ilman lupausta järjestelmäkytkennän luomisesta. Älä asenna tai
+  muuta järjestelmän audioreititystä tätä koetta varten.
+- Muussa tapauksessa fyysinen AIO-katselmus voidaan päättää tässä rajauksessa:
+  split, USB single-device, inputit 1/2, main 1/2, stemit 3/4, PANIC, stereo/4ch
+  REC ja 10 minuutin tiheä patch on testattu. Erillinen pitkä koko soittimen
+  hardware/resource-soak jää omaksi seuraavaksi vaiheekseen.
 
 **Definition of done:** käyttäjä hyväksyy static layoutin sekä yhden oikean
 input→Coco→main-output-ketjun. Nelikanavainen stem-koe sulkee samalla vanhan

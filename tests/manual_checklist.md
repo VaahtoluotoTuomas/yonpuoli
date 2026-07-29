@@ -1501,6 +1501,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
 - [x] Puhdas draft näyttää `no changes` ja aktiivisen `restart audio` -polun
 - [x] Vastaamaton rekisteröity serveri näkyy danger-tilana ja hermettinen
       lifecycle-portti todistaa quit-before-boot-palautuksen
+- [x] Responsiivinen mutta epäterve audiokello ei julkaise readyä: kolme
+      0,75 s välein luettua arvoa vaaditaan terveiksi. 47 986–48 003 Hz
+      läpäisee 48 kHz:n pyynnön; mitattu 2610,8 Hz sekä vanha terve ensimmäinen
+      arvo ja romahdus `[48000, 7076.4, 7019.8]` hylätään ennen graafin
+      allokointia ja palauttavat yhden facade-failure-callbackin
 - [x] AIO-5: provider luetaan vain varmasti pysähtyneenä; boot/reboot-cache
       sisältää exact directional listat
 - [x] Recommended piilottaa vain legacy-prefixit, show-all palauttaa ne ilman
@@ -1515,20 +1520,36 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
 - [x] Eristetty raw-input-uusintatesti (2026-07-29): split-WASAPI käynnistyi,
       ääni/Night pysyivät elävinä, molemmat live-presence-rivit reagoivat ja
       sama `scsynth` vastasi kolmeen ulkoiseen `/status`-kyselyyn
-- [ ] System default boot: live L/R kuuluu valitun preamp/monitor-polun mukaan
-- [ ] Yksi USB-interface single-device-tilassa: restart onnistuu, presence ja
-      main L/R vastaavat sen fyysisiä portteja
+- [ ] System default boot: tämän kannettavan testi 2026-07-30 ei ole
+      hyväksyttävissä. GUI ja live L/R -presence toimivat, mutta Night putosi
+      noin 1 FPS:ään ja ääni glitchasi; kolme vastausta raportoi nimellisen
+      48 kHz:n rinnalla vain 2610,8–2612,8 Hz toteutuvan sample raten.
+      Manuaalinen paluu split-WASAPI-overlayhin + `CQ.reboot` palautti normaalin
+      äänen/Night-liikkeen, 47 986–48 003 Hz:n kellon ja 7,8–9,5 % server-CPU:n.
+      Älä toista system-default-porttia tällä koneella; epäterveen audiokellon
+      pre-graph failure ja yhden rollbackin reitti on tämän jälkeen katettu
+      hermettisesti ilman uutta fyysistä riskiä.
+- [x] Yksi USB-interface single-device-tilassa (K-Mix ASIO 2026-07-30):
+      restart onnistui normaalilla äänellä ja GUI:lla, inputit 1/2 vastasivat
+      raw live L/R -presenceen ja main L/R kuuluivat fyysisistä ulostuloista 1/2
 - [ ] Windows split input/output samalla host APIlla: molemmat laitteet
-      käynnistyvät ja väärä/päättynyt nimi tekee vain yhden turvallisen rollbackin
+      käynnistyvät. Väärän/päättyneen nimen fyysinen rollback-osuus ei läpäissyt
+      2026-07-30: irrotetun ASIO-laitteen backend avasi näennäissession, jonka
+      ensimmäinen kellolukema oli vanha 48 kHz ja seuraavat noin 7076/7020 Hz.
+      Profiili ehti promotoitua ja split palautettiin manuaalisesti. Korjattu
+      kolmipisteinen kelloguard kattaa exact sarjan hermettisesti; fyysistä
+      riskikoetta ei toisteta tällä koneella
 - [x] Mic `off` → ch 1 säilytti gain 0:n ja näytti raw-presencen muted-tilassa;
       Workshopin ainoa `micGain` avasi kuultavan dry-monitorin ja `live`-tilan
       ilman restarttia, palasi nollaan ja explicit mic `off` persistoi takaisin
       toimivaan audioon (split-WASAPI 2026-07-30)
 - [x] PANIC mykistää fyysiset main L/R -portit ja master-presence hiljenee;
       raw live L/R jatkaa portin näyttämistä ja toinen painallus palauttaa äänen
-      (split-WASAPI 2026-07-29)
-- [ ] Vähintään 4-kanavainen interface: stem 1/2 ovat mainista erillisissä
-      fyysisissä porteissa ja saman safety-katon alla
+      (split-WASAPI 2026-07-29 sekä K-Mix main 1/2 ja stemit 3/4 2026-07-30)
+- [x] Vähintään 4-kanavainen interface (K-Mix 2026-07-30): stem 1/2 kuuluivat
+      mainista erillisistä fyysisistä porteista 3/4, vain Coco1 avasi 3:n ja
+      vain Coco2 4:n. PANIC hiljensi molemmat; yhteinen safety-katto on katettu
+      koodilla ja NRT-portilla
 - [x] REC stereo kirjoitti 2026-07-29 RIFF/WAVE-tiedoston: 2 ch, 48 kHz,
       24-bit, 21,24 s; header ja tiedostokoko ovat ehjät
 - [x] `record 4ch` kirjoitti 2026-07-30 RIFF/WAVE-tiedoston: 4 ch, 48 kHz,
@@ -1536,8 +1557,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
       `recStems: false` restarttasi takaisin toimivaan audioon
 - [ ] Virtuaalinen loopback/DAW näkyy tavallisena driver-laitteena ilman
       lupausta siitä, että Yölahti olisi luonut järjestelmäkytkennän
-- [ ] 10–15 min tiheä patch, molemmat Cocot ja Audio auki/kiinni: ei dropoutia,
-      kasvavaa repainttia eikä listener-vuotoa
+- [x] 10 min tiheä `\mayhem`, molemmat Cocot, kaksi myöhemmin ladattua deckiä
+      ja Audio↔Night-vaihdot (2026-07-30): 21/21 vastausta samalla PID:llä,
+      actual SR 47 986–48 021 Hz, server avg enintään 12,55 % / peak 14,04 %.
+      Node-puu kasvoi 6→8 vain kahdella odotetulla `cqDeck`-synthillä; muisti
+      ja handlet tasaantuivat kertavarausten jälkeen. Ei kuultua dropoutia tai
+      glitchiä. Täyden 352-kaapelin Night-renderissä oli ajoittaista pientä,
+      ei kasvavaa hitautta; Drawer↔Night-vaihdot pysyivät nopeina.
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>

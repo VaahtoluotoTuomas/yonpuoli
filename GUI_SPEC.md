@@ -727,7 +727,13 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     symbolic `\audio` reopen request. The page observes every recorder
     `\state` transition: starting/recording/stopping lock Apply immediately,
     and idle restores the current draft gate without another edit. A disabled
-    Ink control never advertises an active hover cue.
+    Ink control never advertises an active hover cue. Responsive is necessary
+    but not sufficient for candidate-ready: before building the graph, the
+    facade requires three reported actual-sample-rate readings, 0.75 seconds
+    apart, all within 80–120% of the requested rate. This prevents a stale first
+    watcher value from hiding a post-reboot clock collapse. A catastrophic
+    mismatch enters the same one-rollback state language and cannot promote the
+    pending profile.
   - A clean draft labels its inert discard action `no changes` and keeps
     `restart audio` available as an explicit recovery operation. A server that
     remains registered but stops answering is shown as
@@ -1002,10 +1008,11 @@ gate, manual_checklist blocks in the established copy-pasteable format.
   Audio-tab reopen. Lifecycle doubles assert callback ordering and no stale
   commit/retry loop. Implemented: first Apply is confirmation-only; cancel is
   inert; confirmed restart captures data without a Qt reference; candidate
-  success commits after running, candidate failure preserves the rejected
-  draft over one restored last-working session, rollback failure stays silent,
-  not-saved retries persistence without a third reboot, and recorder state
-  notifications update both the lock text and enabled/hover truth immediately.
+  success commits only after the three-reading pre-graph actual-sample-rate
+  health gate and running, candidate failure preserves the rejected draft over one restored
+  last-working session, rollback failure stays silent, not-saved retries
+  persistence without a third reboot, and recorder state notifications update
+  both the lock text and enabled/hover truth immediately.
 - **AIO-4 — presence + physical gate:** implemented raw input telemetry, shared
   post-safety master cache/listeners and visible-tab repaint ceiling/cleanup.
   The raw tap was restored after the controlled no-tap baseline still hung and

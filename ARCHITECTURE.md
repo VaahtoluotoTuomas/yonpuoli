@@ -303,7 +303,7 @@ Language side on `\cq_hot`: engage −6 dB trim (a lagged synth arg), GUI notice
 
 | Class | Role | Key methods / notes |
 |---|---|---|
-| `Cocoquantus` | facade singleton; owns boot lifecycle and all subsystems | Explicit `stopped/booting/running/stopping/failed` state plus monotonically increasing session generation; stale callbacks self-cancel. `*boot(configPath)`, waitable `*free(onDone)`, strong `*reboot`, confirmed `*reconfigureAudio(model)` and profile-neutral `*restartCurrentAudio`. `*serverResponsive` distinguishes a status-watcher process record from a server that still answers. An unresponsive local server is quit through its owned PID before a fresh boot, avoiding a second process on the occupied port. `CQ : Cocoquantus {}` empty subclass = short alias (classvars shared) |
+| `Cocoquantus` | facade singleton; owns boot lifecycle and all subsystems | Explicit `stopped/booting/running/stopping/failed` state plus monotonically increasing session generation; stale callbacks self-cancel. `*boot(configPath)`, waitable `*free(onDone)`, strong `*reboot`, confirmed `*reconfigureAudio(model)` and profile-neutral `*restartCurrentAudio`. `*serverResponsive` distinguishes a status-watcher process record from a server that still answers; the pre-graph audio-clock gate additionally requires three reported actual-sample-rate readings, 0.75 s apart, each within 80–120% of the request before a session can become ready. An unresponsive local server is quit through its owned PID before a fresh boot, avoiding a second process on the occupied port. `CQ : Cocoquantus {}` empty subclass = short alias (classvars shared) |
 | `CQSpec` | parameter registry | `*specs` (IdentityDictionary name → ControlSpec+default+lag+16n slot), `*clamp(name, val)`, `*default(name)`, mirrors SPEC §5 tables 1:1 |
 | `CQConfig` | config load/validate | reads `config.scd`, fills defaults, validates channels/paths, hard-fails informatively |
 | `CQAudioConfig` | pure Audio profile model | Owns the exact nine Audio keys, `defaults < base < overlay` merge, active/draft/dirty/valid separation, 0↔1 channel display boundary and sibling profile path. Generated explicit nils use private `\default` because an Event drops nil-valued keys; the marker is decoded before the candidate reaches `CQGraph`. No Qt, file, server, CQSpec or snapshot dependency |
@@ -349,10 +349,10 @@ Audio page ──▶ CQAudioConfig draft/validate ──▶ Cocoquantus.reconfig
 
 It never passes through `CQState`/`CQSpec`, because a device or hardware channel
 is boot configuration rather than a musical parameter. AIO-3 implements the
-whole confirmed arrow: pending roundtrip, candidate boot, commit-after-running
-or exactly one last-working rollback. A clean draft can instead restart the
-exact active config without creating a profile. AIO-4 adds only
-signal-presence telemetry.
+whole confirmed arrow: pending roundtrip, candidate boot, three-reading
+pre-graph actual-sample-rate health gate, commit-after-running or exactly one last-working
+rollback. A clean draft can instead restart the exact active config without
+creating a profile. AIO-4 adds only signal-presence telemetry.
 
 ---
 
@@ -371,16 +371,21 @@ back GUI/controllers/OSCdefs/decks/recorder and the partial graph, then enters `
    the facade's memory-only `CQAudioDeviceCatalog`. If it is already running,
    skip discovery and retain the previous/fallback catalog.
 3. Build `ServerOptions` (device, SR, block, hardwareBufferSize, channel counts).
-4. `server.waitForBoot` → allocate buffers (2 coco RAM, deck placeholders) and buses;
-   create groups in order; `s.sync`.
-5. Add SynthDefs (`CQSynthDefs.add(config)` — defs parameterized by config where
+4. `server.waitForBoot` → read the reported actual sample rate three times over
+   1.5 seconds and require every value to be within 80–120% of the requested
+   rate. The sequence prevents a previous server's stale healthy watcher value
+   from hiding a new clock collapse. Failure happens before graph allocation
+   and follows the ordinary boot/candidate failure path.
+5. Allocate buffers (2 coco RAM, deck placeholders) and buses; create groups in
+   order; `s.sync`.
+6. Add SynthDefs (`CQSynthDefs.add(config)` — defs parameterized by config where
    needed); `s.sync`.
-6. Spawn synths in group order; write CQSpec defaults + power-on state (dust-filled
+7. Spawn synths in group order; write CQSpec defaults + power-on state (dust-filled
    buffers via one-shot noise-fill routine, `hold = 1`, matrix empty); `s.sync`.
-7. Init MIDI (guarded — absence of 16n is not an error), OSCdefs, recorder standby.
-8. Open GUI (unless `headless: true` in config).
-9. Release master fade → 2 s ramp to nominal (SPEC safety #5).
-10. Install `CmdPeriod` and server-quit hooks. Either invalidates the session; CmdPeriod
+8. Init MIDI (guarded — absence of 16n is not an error), OSCdefs, recorder standby.
+9. Open GUI (unless `headless: true` in config).
+10. Release master fade → 2 s ramp to nominal (SPEC safety #5).
+11. Install `CmdPeriod` and server-quit hooks. Either invalidates the session; CmdPeriod
    marks the killed graph, while an unexpected scsynth quit also tears down language-side
    clients. Both fail toward silence and require an explicit rebuild.
 
@@ -402,8 +407,9 @@ process. Discovery failure never prevents the audio boot.
 The Audio page's later `reconfigureAudio` operation reuses this ownership rather
 than duplicating it in Qt: validate and persist pending profile → generation-
 guarded free/reboot/build with the candidate → publish/atomically promote only
-after `running`. Candidate failure performs exactly one generation-guarded
-last-working rollback; rollback failure stays `failed` and silent. Recorder
+after the three-reading actual-sample-rate gate and `running`. Candidate failure performs
+exactly one generation-guarded last-working rollback; rollback failure stays
+`failed` and silent. Recorder
 `starting/recording/stopping` blocks the transaction. `CQGraph.applyOptions`
 remains the only writer of `ServerOptions`. With no draft changes the page labels
 discard as `no changes` and offers `restart audio`; that path restarts the exact

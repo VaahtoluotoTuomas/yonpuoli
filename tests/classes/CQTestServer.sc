@@ -2,7 +2,9 @@
 // until a test releases them, so async races are driven by events rather than sleep.
 
 CQTestServer {
-	var <name = \cqTest, <addr, <sampleRate = 48000, <bufferAllocator, <options;
+	var <name = \cqTest, <addr, <sampleRate = 48000, actualSampleRateOverride;
+	var actualSampleRateReadings, actualSampleRateReadIndex = 0;
+	var <bufferAllocator, <options;
 	var <messages, <syncGates, <bootCallbacks, <rebootCount = 0, <bindCount = 0;
 	var <quitCount = 0, <bootCount = 0, <>unresponsive = false;
 	var <>processRunning = true;
@@ -27,6 +29,27 @@ CQTestServer {
 		nextNode = nextNode + 1;
 		^id
 	}
+
+	actualSampleRate {
+		var value;
+		if(actualSampleRateReadings.notNil) {
+			value = actualSampleRateReadings[
+				actualSampleRateReadIndex.min(actualSampleRateReadings.size - 1)
+			];
+			actualSampleRateReadIndex = actualSampleRateReadIndex + 1;
+			^value
+		};
+		^actualSampleRateOverride ? (options.sampleRate ? sampleRate)
+	}
+
+	actualSampleRate_ { |value| actualSampleRateOverride = value }
+
+	actualSampleRateReadings_ { |values|
+		actualSampleRateReadings = values.asArray;
+		actualSampleRateReadIndex = 0;
+	}
+
+	cqAudioClockProbePeriod { ^0 }
 
 	listSendMsg { |msg| messages.add(msg.asArray) }
 

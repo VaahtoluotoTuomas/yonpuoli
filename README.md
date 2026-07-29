@@ -226,8 +226,16 @@ portfolio-oriented account of the project is in
 
 ## Known limits
 
-- Live stem routing still needs final verification on an interface with at least
-  four hardware outputs; NRT stem safety is covered.
+- On the current Windows laptop, SuperCollider's `system default` route can
+  start responsively yet advance a requested 48 kHz stream at only about
+  2.61 kHz. Yölahti now requires three healthy post-boot clock readings before
+  building the graph, because the first watcher value can still belong to the
+  previous server. The tested split-WASAPI input/output route remains the local
+  baseline. Automatic recovery from a physically unplugged ASIO candidate is
+  regression-covered but has not been re-run after this correction.
+- Main 1/2, independent Coco stems on physical outputs 3/4, raw inputs 1/2 and
+  PANIC were verified with a four-output USB interface; NRT covers the shared
+  stem safety ceiling.
 - Windows is the only currently tested release platform.
 - Nocturne is active development, so the final Night-only product surface and
   public-beta media are not released yet.

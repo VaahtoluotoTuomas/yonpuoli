@@ -570,11 +570,17 @@ Device, sample rate, server block, hardware buffer and hardware channel changes
 are not hot-swapped. Apply requires a visible inline confirmation that
 `Server.default` restarts, unrelated synths on it stop, and the current unsaved
 Yölahti patch resets. An active recorder blocks restart. A candidate becomes
-active/last-working and its pending profile becomes current only after the full
-server, SynthDef, graph, state, matrix and fade-in sequence reaches `running`.
-Candidate failure triggers exactly one automatic reboot of the previous
-last-working Event; rollback failure leaves the lifecycle failed and silent.
-No callback from an older session generation may publish state or files.
+active/last-working and its pending profile becomes current only after the
+responsive server reports three actual-sample-rate readings, separated by
+0.75 seconds, all within 80–120% of the requested rate, and the full SynthDef,
+graph, state, matrix and fade-in sequence reaches `running`. Multiple readings
+are normative because the status watcher may briefly retain the previous
+server's healthy value across reboot. The clock check runs before graph
+allocation or fade-in: a responsive process with a catastrophically stalled
+audio clock is a candidate failure, not working audio. Candidate failure
+triggers exactly one automatic reboot of the previous last-working Event;
+rollback failure leaves the lifecycle failed and silent. No callback from an
+older session generation may publish state or files.
 
 Audio I/O does not install drivers, create loopbacks/Aggregate Devices or
 bridge incompatible host APIs. The running page must not call

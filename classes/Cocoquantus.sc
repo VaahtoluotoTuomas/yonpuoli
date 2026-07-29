@@ -109,6 +109,59 @@ Cocoquantus {
 			and: { targetServer.unresponsive.not }
 	}
 
+	// A responsive process is not yet usable audio. The physical Windows
+	// system-default path once answered every /status probe while advancing its
+	// nominal 48 kHz stream at only ~2.61 kHz. Reject that catastrophic clock
+	// mismatch before allocating or fading in the graph, so an Audio candidate
+	// reaches its existing one-rollback path and can never replace last-working.
+	*audioClockRatioBounds { ^#[0.8, 1.2] }
+	*audioClockProbeCount { ^3 }
+	*audioClockProbePeriod { ^0.75 }
+
+	*prAudioClockHealthy { |requestedRate, actualRate|
+		var ratio, bounds = this.audioClockRatioBounds;
+		if(requestedRate.isNumber.not or: { requestedRate <= 0 }) { ^false };
+		if(actualRate.isNumber.not or: { actualRate <= 0 }) { ^false };
+		ratio = actualRate.asFloat / requestedRate.asFloat;
+		^(ratio >= bounds[0]) and: { ratio <= bounds[1] }
+	}
+
+	*prRequireAudioClock { |targetServer, requestedRate|
+		var actualRate = targetServer.tryPerform(\actualSampleRate);
+		if(this.prAudioClockHealthy(requestedRate, actualRate).not) {
+			Error(
+				"audio clock unhealthy — requested % Hz, server reports % Hz"
+				.format(requestedRate, actualRate ? "unavailable")
+			).throw;
+		};
+		^this
+	}
+
+	// ServerStatusWatcher's values survive Server.reboot until a reply from the
+	// replacement process overwrites them. One immediate read can therefore be
+	// the previous healthy server's stale truth. Require three readings across
+	// more than two watcher periods; every reading must be healthy. Test doubles
+	// opt into a zero interval without weakening the production boundary.
+	*prRequireSettledAudioClock { |generation, targetServer, requestedRate|
+		var readings = List.new;
+		var period = targetServer.tryPerform(\cqAudioClockProbePeriod)
+			? this.audioClockProbePeriod;
+		this.audioClockProbeCount.do { |index|
+			if(index > 0 and: { period > 0 }) { period.wait };
+			this.prRequireSession(generation);
+			readings.add(targetServer.tryPerform(\actualSampleRate));
+		};
+		if(readings.every { |rate|
+			this.prAudioClockHealthy(requestedRate, rate)
+		}.not) {
+			Error(
+				"audio clock unhealthy — requested % Hz, server reports %"
+				.format(requestedRate, readings.asArray.asCompileString)
+			).throw;
+		};
+		^this
+	}
+
 	*set { |name, value|
 		if(state.isNil) { "Cocoquantus: not booted.".warn; ^this };
 		state.set(name, value);
@@ -649,6 +702,9 @@ Cocoquantus {
 		sessionState, sessionMatrix, onReady, onFailure, beforeGui|
 		var completed = false;
 		try {
+			this.prRequireSession(generation);
+			this.prRequireSettledAudioClock(generation, sessionServer,
+				sessionConfig[\sampleRate]);
 			this.prRequireSession(generation);
 			sessionGraph.build;                // buses + groups, synced
 			this.prRequireSession(generation);

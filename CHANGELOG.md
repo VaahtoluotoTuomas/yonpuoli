@@ -10,6 +10,19 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Changed
 
+- Audio candidate readiness now requires three actual-sample-rate readings,
+  spaced 0.75 seconds apart, all within 80–120% of the request before allocating
+  or fading in the graph. The first watcher value may still belong to the
+  previous server: a physical unplugged-ASIO attempt exposed the stale-then-
+  collapsed sequence `48 kHz → 7.08 kHz → 7.02 kHz`, which the earlier
+  one-reading guard incorrectly promoted. The corrected gate also rejects the
+  Windows `system default` case that answered `/status` at only about 2.61 kHz;
+  candidate failure then uses the existing single last-working rollback.
+- Physical USB-interface review passed single-device 48 kHz boot, both raw
+  inputs, main outputs 1/2, independently mapped Coco stems on outputs 3/4 and
+  PANIC silence/resume. The unplugged-device automatic rollback was not
+  physically repeated after the three-reading correction; its exact failure
+  sequence is covered hermetically.
 - Audio now subscribes directly to recorder state changes, so
   `starting/recording/stopping` locks the restart gate immediately and the
   transition back to `idle` clears the warning without requiring another field
