@@ -999,9 +999,9 @@ gate, manual_checklist blocks in the established copy-pasteable format.
 - **AIO-4 — presence + physical gate:** implemented raw input telemetry, shared
   post-safety master cache/listeners and visible-tab repaint ceiling/cleanup.
   The raw tap was restored after the controlled no-tap baseline still hung and
-  removing live device enumeration restored a responsive engine. Its isolated
-  physical recheck plus the default/single/split/absent-device, mic, main, stem
-  and REC listening checklist remain.
+  removing live device enumeration restored a responsive engine. The isolated
+  split-WASAPI presence recheck passed; the broader default/single/absent-device,
+  mic, main, stem and REC listening checklist remains.
 - **AIO-5 — safe device discovery:** move directional
   `ServerOptions.inDevices/outDevices` enumeration to a stopped-server boundary
   before restoring the runtime `refresh devices` control. Running WASAPI must

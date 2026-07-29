@@ -49,8 +49,9 @@ AIO-2:n draft, suuntakohtainen exact-dedup-laitelista ja atominen
 sibling-overlay, AIO-3:n vahvistettu candidate/rollback-transaktio sekä
 AIO-4:n raw-input/master-presence ja GUI:n pacing toteutettiin
 `nocturne-audio-setup`-haaralle. Raw-tap palautettiin, kun kontrolloitu koe
-toisti jumin ilman sitä ja eristi syyksi käynnissä tehdyn laitelistauksen.**
-Järjestys tästä on **AIO-4:n raw-presencen fyysinen uusintaportti ja I/O-katselmus →
+toisti jumin ilman sitä ja eristi syyksi käynnissä tehdyn laitelistauksen;
+eristetty split-WASAPI-uusintaportti hyväksyttiin 2026-07-29.**
+Järjestys tästä on **AIO-4:n laajempi fyysinen I/O-katselmus →
 nelikanavainen laitteisto-/resource-soak → kolme huokoista soittotilaa →
 Norns-portti (§14).** Yksi musiikillinen muuttuja käsitellään edelleen
 kerrallaan. **N10:n sydän/kela- ja chevron-vihjeet hyväksyttiin visuaalisesti
@@ -1438,8 +1439,11 @@ Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
 
 **AIO-4 — signaalipresence ja rajattu hardware-I/O-katselmus**
 
-- [ ] Raw-input-telemetria on palautettu vihreiden koneporttien taakse; merkitse
-  valmiiksi vasta eristetyn fyysisen Windows WASAPI -uusintatestin jälkeen.
+- [x] Raw-input-telemetria palautettiin vihreiden koneporttien taakse ja
+  eristetty fyysinen split-WASAPI-uusintatesti hyväksyttiin 2026-07-29:
+  molemmat live-presence-rivit reagoivat, ääni ja Night-liike jatkuivat, sama
+  `scsynth`-PID vastasi kolmeen 72 tavun `/status.reply`-viestiin, CPU eteni
+  jokaisella kierroksella ja working set pysyi 37,4 Mt:ssa.
 - [ ] Täysi directional device discovery stopped-server-rajalla; running-sivun
   `_ListAudioDevices` on poistettu toistettavan WASAPI-jumin vuoksi.
 - [x] Master-cache/listener, visible-page refresh gate ja
@@ -1454,7 +1458,8 @@ Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
 - [ ] Fyysinen hardware-I/O-katselmus, vähintään:
   1. system default boot + aktiivinen live L/R -signaali;
   2. yksi USB-interface single-device-tilassa;
-  3. Windows split in/out samalla host APIlla;
+  3. Windows split in/out samalla host APIlla — boot, raw presence ja
+     palvelinvakaus hyväksytty 2026-07-29;
   4. tarkoituksella puuttuva laite → yksi turvallinen rollback;
   5. mic off→configured pysyy mykkänä, kunnes Workshopin micGain nostetaan;
   6. main L/R fyysisesti oikeissa porteissa ja PANIC mykistää ne;

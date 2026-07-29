@@ -1492,8 +1492,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
 - [x] Puhdas draft näyttää `no changes` ja aktiivisen `restart audio` -polun
 - [x] Vastaamaton rekisteröity serveri näkyy danger-tilana ja hermettinen
       lifecycle-portti todistaa quit-before-boot-palautuksen
-- [ ] Eristetty raw-input-uusintatesti: split-WASAPI käynnistyy, ääni/Night
-      pysyvät elävinä ja input-presence reagoi porttiin tulevaan signaaliin
+- [x] Eristetty raw-input-uusintatesti (2026-07-29): split-WASAPI käynnistyi,
+      ääni/Night pysyivät elävinä, molemmat live-presence-rivit reagoivat ja
+      sama `scsynth` vastasi kolmeen ulkoiseen `/status`-kyselyyn
 - [ ] System default boot: live L/R kuuluu valitun preamp/monitor-polun mukaan
 - [ ] Yksi USB-interface single-device-tilassa: restart onnistuu, presence ja
       main L/R vastaavat sen fyysisiä portteja

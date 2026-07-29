@@ -18,8 +18,10 @@ tagged. Earlier tags describe internal development baselines.
 - Root-caused the apparent AIO-4 audio regression to live
   `_ListAudioDevices` enumeration, not the raw-input telemetry: the hang
   reproduced after `SendPeakRMS` was withdrawn, while removing enumeration
-  restored sound, Night motion and repeated `/status` replies. The raw tap is
-  reinstated behind its own isolated physical WASAPI recheck.
+  restored sound, Night motion and repeated `/status` replies. The reinstated
+  raw tap passed its isolated split-WASAPI recheck: both presence rows reacted
+  while the same server PID kept processing audio and answering three external
+  status probes.
 - Removed runtime `_ListAudioDevices` enumeration from Audio construction:
   querying `ServerOptions.devices/inDevices/outDevices` after scsynth claimed
   a split Windows WASAPI pair reproducibly wedged the server. Runtime exposes

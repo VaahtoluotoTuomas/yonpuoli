@@ -23,10 +23,11 @@ draft, confirms the disruptive `Server.default` restart inline, commits the
 generated sibling profile only after a complete candidate boot, and restores
 the previous working Audio config once if that candidate fails. AIO-4 adds raw
 pre-gain live/mic presence and shared post-safety master presence without
-painting a hidden Audio page; its isolated physical recheck and the wider
-hardware-I/O review remain the next gates. The earlier WASAPI hang was isolated
-to live device enumeration, which is no longer performed while the server is
-running. The Audio restart gate also remains available with a clean draft: it
+painting a hidden Audio page. Its isolated split-WASAPI recheck passed with
+responsive presence, sound and Night motion; the wider hardware-I/O review
+remains the next gate. The earlier WASAPI hang was isolated to live device
+enumeration, which is no longer performed while the server is running. The
+Audio restart gate also remains available with a clean draft: it
 reports an unresponsive engine explicitly and can rebuild the exact active
 configuration without writing a profile.
 

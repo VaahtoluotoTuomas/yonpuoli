@@ -177,7 +177,9 @@ ordinary one-deck loads remain dual mono.
   writes no audio bus and the downstream gain/preamp expressions are unchanged.
   It was temporarily withdrawn during the WASAPI investigation, then restored
   after the same hang reproduced without it and stopped once live
-  `_ListAudioDevices` enumeration was removed.
+  `_ListAudioDevices` enumeration was removed. The isolated split-WASAPI
+  recheck then kept sound and Night motion alive, moved both raw presence rows
+  and returned three consecutive external `/status.reply` packets.
 - Outputs `aPreA`, `aPreB`.
 
 ### 4.3 `\cqQuantussy` (one synth, five castles)
