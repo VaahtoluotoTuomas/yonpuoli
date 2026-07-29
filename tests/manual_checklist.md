@@ -1555,8 +1555,27 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
 - [x] `record 4ch` kirjoitti 2026-07-30 RIFF/WAVE-tiedoston: 4 ch, 48 kHz,
       24-bit, 13,15 s; `recStems: true` persistoi exact ja palautus `off` /
       `recStems: false` restarttasi takaisin toimivaan audioon
-- [ ] Virtuaalinen loopback/DAW näkyy tavallisena driver-laitteena ilman
-      lupausta siitä, että Yölahti olisi luonut järjestelmäkytkennän
+- [x] Virtuaalinen loopback näkyy tavallisena driver-laitteena ilman lupausta
+      siitä, että Yölahti olisi luonut järjestelmäkytkennän (2026-07-30):
+      koneen valmiiksi aktiivinen Realtek `Stereo Mix` löytyi input-listalta
+      exact-nimenä vasta `show all drivers` -kytkimellä, koska sen host API on
+      `Windows WDM-KS` — yksi `CQAudioDeviceCatalog.legacyWindowsPrefixes`in
+      kolmesta. Recommended ei siis piilota laitetta vaan luokittelee sen
+      ei-suositelluksi, ja exact valinta säilyi. Vahingossa tehty valinta
+      palautui arvovertailulla puhtaaksi: gate luki jälleen `no changes`,
+      mitään ei kirjoitettu eikä serveriä restartattu. Sivulla ei ole
+      `connected`-väitettä, jackeja eikä johtoja
+- [ ] **Avoin: kaksisuuntainen DAW-reitti VB-CABLE A+B:llä.** WDM-KS-loopback
+      ei kelpaa tähän: split vaatii saman host API:n molemmissa päissä, ja
+      WDM-KS on exclusive-mode kernel streaming, jota DAW ei pysty pitämään
+      auki toisesta päästä yhtä aikaa. Portti tehdään omana päivänään, kun
+      ajuri on asennettu: DAW → `CABLE-A Input`, Yölahden input =
+      `CABLE-A Output`, Yölahden main out = `CABLE-B Input`, DAW monitoroi/
+      nauhoittaa `CABLE-B Output`ista. Molemmat Yölahden päät ovat WASAPI, eli
+      split-ehto täyttyy. Vaatii 48 kHz:n asettamisen kaapeleihin Windowsin
+      ääniasetuksista ja siirtää monitoroinnin DAW:lle. Todistettava:
+      exact-nimet recommended-listalla, presence kumpaankin suuntaan,
+      palautus split-baselineen
 - [x] 10 min tiheä `\mayhem`, molemmat Cocot, kaksi myöhemmin ladattua deckiä
       ja Audio↔Night-vaihdot (2026-07-30): 21/21 vastausta samalla PID:llä,
       actual SR 47 986–48 021 Hz, server avg enintään 12,55 % / peak 14,04 %.

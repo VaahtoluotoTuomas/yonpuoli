@@ -50,7 +50,11 @@ sibling-overlay, AIO-3:n vahvistettu candidate/rollback-transaktio sekä
 AIO-4:n raw-input/master-presence ja GUI:n pacing toteutettiin
 `nocturne-audio-setup`-haaralle. Raw-tap palautettiin, kun kontrolloitu koe
 toisti jumin ilman sitä ja eristi syyksi käynnissä tehdyn laitelistauksen;
-eristetty split-WASAPI-uusintaportti hyväksyttiin 2026-07-29.**
+eristetty split-WASAPI-uusintaportti hyväksyttiin 2026-07-29. AIO-4:n fyysinen
+hardware-katselmus on 2026-07-30 tehty split-, USB-single-device-, mic-,
+PANIC-, stem-3/4-, stereo/4ch-REC- ja 10 minuutin patch-kohdiltaan; loopbackin
+näkyvyys kirjattiin samana päivänä, ja avoimeksi jäi vain kaksisuuntainen
+VB-CABLE-DAW-portti.**
 Järjestys tästä on **AIO-4:n laajempi fyysinen I/O-katselmus →
 nelikanavainen laitteisto-/resource-soak → kolme huokoista soittotilaa →
 Norns-portti (§14).** Yksi musiikillinen muuttuja käsitellään edelleen
@@ -1523,8 +1527,12 @@ Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
   8. REC stereo ja `record 4ch` tuottavat oikean kanavamäärän — 2 ch ja 4 ch
      RIFF/WAVE-headerit, 48 kHz / 24-bit, exact `recStems`-persistenssi sekä
      paluu off-tilaan hyväksytty 2026-07-30;
-  9. virtuaalinen loopback/DAW näkyy tavallisena driver-laitteena, mutta GUI
-     ei lupaa luoneensa järjestelmäkytkentää;
+  9. virtuaalinen loopback näkyy tavallisena driver-laitteena, mutta GUI ei
+     lupaa luoneensa järjestelmäkytkentää — hyväksytty 2026-07-30 tässä
+     rajauksessa: koneen valmiiksi aktiivinen Realtek `Stereo Mix` on exact
+     input-valinta `show all drivers` -kytkimen takana, koska sen host API on
+     legacy `Windows WDM-KS`. **Kaksisuuntainen DAW-reitti on erillinen avoin
+     portti** (VB-CABLE A+B, ks. hand-off alla);
   10. 10–15 minuutin tiheä patch + molemmat Cocot + Audio-sivu auki/kiinni:
       rajattu AIO-vakauskoe hyväksytty 2026-07-30 alla kuvatulla tavalla.
 
@@ -1584,31 +1592,49 @@ Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
   regressiotestattu hermettisesti. Compile ja unit ovat vihreät:
   `CQ_COMPILE_OK`, **13 502 / 0 / 37/37**.
 - **Jatka tästä:** älä aja system default- tai puuttuvan laitteen koetta tällä
-  koneella uudelleen. Jäljellä oleva turvallinen fyysinen AIO-portti on
-  virtuaalinen loopback/DAW, jos sellainen on valmiiksi saatavilla.
+  koneella uudelleen. Loopback-näkyvyyden portti (kohta 9) on sen jälkeen tehty
+  ja kirjattu alla olevaan hand-offiin; jäljellä on vain kaksisuuntainen
+  VB-CABLE-portti, joka vaatii ajuriasennuksen.
 
-**Hand-off 2026-07-30 — jatka testaamista tästä**
+**Hand-off 2026-07-30 (b) — jatka testaamista tästä**
 
-- Työpäivän lopussa K-Mix on irrotettu ja ignored `config.audio.scd` osoittaa
-  jälleen toimivaan split-WASAPI-baselineen: 48 kHz, block 64, hardware buffer
-  256, live/main 1/2, mic/stems/record-4ch off. Käyttäjä vahvisti viimeisen
-  rebootin jälkeen normaalin äänen ja GUI-liikkeen.
-- Lähdekoodissa oleva lopullinen guard ottaa kolme actual-SR-näytettä 0,75 s
-  välein. Fyysinen IDE-session class library ei välttämättä saanut tätä viimeistä
-  versiota ennen päivän lopetusta: seuraavan testipäivän alussa tee
-  `Ctrl+Shift+L`, käynnistä `CQ.boot` ja varmista ensin split-baselinella normaali
-  ääni, Night-liike ja live/master-presence.
+- Split-WASAPI-baseline varmistettiin tämän session alussa: `Ctrl+Shift+L` +
+  `CQ.boot` tuotti normaalin äänen, sujuvan Night-liikkeen, rivin
+  `running · 48 kHz · block 64 · hw 256` sekä toimivan live L/R- ja
+  master-presencen. Kolmen näytteen actual-SR-guard on siis myös fyysisesti
+  ajetussa class libraryssä.
+- **Kohta 9 on tehty ja kirjattu siinä rajauksessa minkä se todistaa.** Realtek
+  `Stereo Mix` oli koneella valmiiksi aktiivinen, mutta se listautuu exact
+  input-valintana vasta `show all drivers` -kytkimen takaa, koska sen host API
+  on `Windows WDM-KS` — yksi `CQAudioDeviceCatalog.legacyWindowsPrefixes`in
+  kolmesta. Recommended ei siis piilota ajurin tarjoamaa loopbackia, vaan
+  luokittelee sen ei-suositelluksi; exact valinta säilyy. Sivu ei väitä
+  luoneensa kytkentää. Vahingossa tehty laitevalinta palautui puhtaaksi ilman
+  toimenpiteitä, koska `dirty` on arvovertailu (`CQAudioConfig.sc:221`): gate
+  luki jälleen `no changes`, mitään ei kirjoitettu eikä serveriä restartattu.
+- **Avoin, käyttäjän pyytämä oikea DAW-portti: VB-CABLE A+B, oma päivä.**
+  WDM-KS-loopback ei kelpaa kaksisuuntaiseksi reitiksi: split vaatii saman host
+  API:n molemmissa päissä, ja WDM-KS on exclusive-mode kernel streaming, jota
+  DAW ei pysty pitämään auki toisesta päästä yhtä aikaa. Yölahti ei myöskään
+  saa luoda kytkentää itse (AIO.1), joten silta on oltava olemassa ennen
+  bootia. Suunniteltu reitti: DAW → `CABLE-A Input`, Yölahden input =
+  `CABLE-A Output`, Yölahden main out = `CABLE-B Input`, DAW monitoroi ja
+  nauhoittaa `CABLE-B Output`ista; molemmat Yölahden päät ovat WASAPI. Ennen
+  koetta: käyttäjä asentaa ajurin (agentti ei asenna eikä muuta järjestelmän
+  audioreititystä) ja asettaa kaapeleille 48 kHz Windowsin ääniasetuksista.
+  Huomioi kokeessa kaksi asiaa: monitorointi siirtyy DAW:lle, koska main out
+  menee kaapeliin, ja **restart palauttaa patchin oletuksiin**, joten
+  `preASrc`/`preBSrc` ovat jälleen `liveL`/`liveR` heti restartin jälkeen —
+  tarkista se ennen kuin syötät kaapeliin mitään, jos lähde voi kuulla
+  Yölahden oman ulostulon.
 - Älä valitse tällä koneella `system default` -reittiä äläkä tee uudelleen
   irrotetun/puuttuvan laitteen rollback-koetta. Molempien havaittu failure on
   dokumentoitu yllä ja stale-first-reading-regressio on katettu hermettisesti.
-- Jos valmiiksi asennettu virtuaalinen loopback/DAW-ajuri on käytettävissä,
-  jäljellä oleva AIO-koe on vain sen näkyminen tavallisena exact driver
-  -valintana ilman lupausta järjestelmäkytkennän luomisesta. Älä asenna tai
-  muuta järjestelmän audioreititystä tätä koetta varten.
-- Muussa tapauksessa fyysinen AIO-katselmus voidaan päättää tässä rajauksessa:
-  split, USB single-device, inputit 1/2, main 1/2, stemit 3/4, PANIC, stereo/4ch
-  REC ja 10 minuutin tiheä patch on testattu. Erillinen pitkä koko soittimen
-  hardware/resource-soak jää omaksi seuraavaksi vaiheekseen.
+- Muut fyysiset AIO-kohdat on testattu: split, USB single-device, inputit 1/2,
+  main 1/2, stemit 3/4, PANIC, stereo/4ch REC ja 10 minuutin tiheä patch.
+  Fyysinen AIO-katselmus voidaan siis päättää heti kun käyttäjä hyväksyy tämän
+  rajauksen; VB-CABLE-portti kulkee sen jälkeen omanaan. Erillinen pitkä koko
+  soittimen hardware/resource-soak jää seuraavaksi vaiheeksi.
 
 **Definition of done:** käyttäjä hyväksyy static layoutin sekä yhden oikean
 input→Coco→main-output-ketjun. Nelikanavainen stem-koe sulkee samalla vanhan
