@@ -22,11 +22,14 @@ tagged. Earlier tags describe internal development baselines.
   raw tap passed its isolated split-WASAPI recheck: both presence rows reacted
   while the same server PID kept processing audio and answering three external
   status probes.
-- Removed runtime `_ListAudioDevices` enumeration from Audio construction:
-  querying `ServerOptions.devices/inDevices/outDevices` after scsynth claimed
-  a split Windows WASAPI pair reproducibly wedged the server. Runtime exposes
-  only exact configured endpoints and labels discovery `configured devices`;
-  full discovery awaits a stopped-server boundary.
+- Moved directional audio-device discovery to a confirmed stopped-server
+  boundary before a fresh boot or inside `Server.reboot`'s server-off callback.
+  The running Audio page now consumes only that memory snapshot and never calls
+  `_ListAudioDevices`. Its local recommended/all toggle hides exact legacy
+  Windows host prefixes by default while retaining every exact active/draft
+  endpoint; scan failure remains nonfatal and falls back to configured or stale
+  cached devices. The split-WASAPI physical gate passed with sound, Night
+  motion and presence uninterrupted while toggling both views.
 - Moved the technical Audio page to the Drawer's rightmost tab, after the
   Inspector, Workshop, Spellbook and Memory musical/workflow pages.
 - Adopted **Yölahti** as the independent product identity while retaining the

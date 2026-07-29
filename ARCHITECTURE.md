@@ -307,6 +307,7 @@ Language side on `\cq_hot`: engage −6 dB trim (a lagged synth arg), GUI notice
 | `CQSpec` | parameter registry | `*specs` (IdentityDictionary name → ControlSpec+default+lag+16n slot), `*clamp(name, val)`, `*default(name)`, mirrors SPEC §5 tables 1:1 |
 | `CQConfig` | config load/validate | reads `config.scd`, fills defaults, validates channels/paths, hard-fails informatively |
 | `CQAudioConfig` | pure Audio profile model | Owns the exact nine Audio keys, `defaults < base < overlay` merge, active/draft/dirty/valid separation, 0↔1 channel display boundary and sibling profile path. Generated explicit nils use private `\default` because an Event drops nil-valued keys; the marker is decoded before the candidate reaches `CQGraph`. No Qt, file, server, CQSpec or snapshot dependency |
+| `CQAudioDeviceCatalog` | pure normalized device snapshot/filter boundary | Calls an injected provider once, exact-deduplicates directional names, merges exact active/draft endpoints, derives the single-device intersection and produces reversible recommended/all cached views. The Windows recommendation recognizes only complete legacy host prefixes; it never fuzzily parses endpoint names, touches Qt, persists machine names or scans by itself after construction |
 | `CQAudioProfileStore` | generated Audio overlay persistence | Writes only the sibling `.audio.scd.pending`, loads it back, hard-gates its keys and validates the merged candidate before exposure. Promotion is a same-directory atomic replacement, preserves one `.bak`, never writes `config.scd`, and keeps a validated pending file retryable after rename failure |
 | `CQAudioReconfigure` | serverless AIO-3 transaction coordinator | Gates lifecycle and recorder state, captures previous/candidate data, drives one candidate restart and at most one rollback through an injected facade runner, ignores stale generations, promotes only after ready and keeps rename failure retryable without a reboot. No Qt or server dependency |
 | `CQGraph` | server plumbing | allocates buses/groups/buffers, builds ServerOptions from config, spawn order, `s.sync` between stages, teardown, CmdPeriod re-arm hook |
@@ -316,7 +317,7 @@ Language side on `\cq_hot`: engage −6 dB trim (a lagged synth arg), GUI notice
 | `CQInspector` | Drawer precision gesture state | Shares `CQAudition`; press previews ±0.3, vertical frames are transient, and release publishes one committed fine-edit plus one shared GUI-undo entry; lifecycle cancellation restores the pre-gesture cell |
 | `CQGuiScale` | the Drawer's two size steps | Pure arithmetic, no Qt and no state: the measured page inset, the `compact`/`roomy` thresholds, both type/metric records, ascent/descent-safe short text-band height, the shared rail width (derived from the Inspector loom's clamped cell), the column split that keeps the Coco pair equal, and caption measurement for buttons. Every Drawer page asks it rather than holding a literal; `CQGui` feeds it the drawer stage's own resize callback |
 | `CQGuiWorkshop` | Drawer ledger page (GUI_SPEC §8) | One explicit manifest of the 39 parameters Night and Master do not own drives **both** the built layout and `paramNames`, so the coverage audit and the rendered page are the same data — Workshop ownership is never computed as `CQSpec.names` minus the other surfaces. The shared responsive rail carries three source-service modules over a coco/quantussy/coco body, with one `islandLayout` score feeding both the Qt layout and the island's painted titles. Owns the GUI's single interactive `micGain` row and its persistent warning subscription; builds with the GUI, not on demand. Pure view: every row writes through `CQGuiWidgets` → `CQState` |
-| `CQGuiAudioSetup` | fifth/rightmost Drawer page (SPEC §7.1 / GUI_SPEC §8) | Three-zone Ink composition on the shared rail: host/engine, stable input/output islands and restart gate. The running page builds a non-scanning catalog from the exact active config and labels its disabled discovery control `configured devices`; `_ListAudioDevices` must not touch an owned Windows WASAPI endpoint. Edits only `CQAudioConfig`'s draft; first Apply enters the static inline confirmation, while confirmed restart passes only the non-Qt model to the facade. Renders ready/not-saved/rollback/failed truth. AIO-4 draws coarse raw-input tracks plus shared post-safety master L/R presence from a GUI-owned cache. Quantized deltas and the visible-tab gate prevent hidden or sub-pixel repaint work. The page unregisters its listener on free and never retains a view callback across reboot |
+| `CQGuiAudioSetup` | fifth/rightmost Drawer page (SPEC §7.1 / GUI_SPEC §8) | Three-zone Ink composition on the shared rail: host/engine, stable input/output islands and restart gate. The running page consumes the facade's stopped-server snapshot and never calls `_ListAudioDevices`; its local button toggles recommended/all cached drivers, or stays disabled as `configured devices` when no safe snapshot exists. Edits only `CQAudioConfig`'s draft; first Apply enters the static inline confirmation, while confirmed restart passes only the non-Qt model to the facade. Renders ready/not-saved/rollback/failed truth. AIO-4 draws coarse raw-input tracks plus shared post-safety master L/R presence from a GUI-owned cache. Quantized deltas and the visible-tab gate prevent hidden or sub-pixel repaint work. The page unregisters its listener on free and never retains a view callback across reboot |
 | `CQGuiMatrix` | experimental Inspector patch loom | Exact canonical 16×22 single-`UserView` field with 48×24 px hit cells, grouped destination islands, family-marked rows, weighted/polarity-shaped knots, persistent route selection, quiet hover row/column focus and an exact-cell spark cue; no inner scroll or new state funnel |
 | `CQInkMenu` | Drawer choice box | Replaces Qt's only-partly-styleable `PopUpMenu` for Inspector presets, Memory's Morph Bridge and Audio setup fields. The collapsed box and temporary borderless choice list are both painted from the active Ink palette; CR/LF/tab/control whitespace is collapsed only in display text, long labels are ellipsized before drawing, disabled choices keep the same subdued geometry, and large lists are capped at 16 wheel-scrollable rows. The popup enables mouse-over on its own top-level window, opens upward near the screen edge, and teardown owns the temporary window |
 | `CQInkList` | Drawer persistent single-selection list | Replaces native `ListView` where selectable row geometry must be exact. One application-owned `rowHeight` drives paint, ordinary no-button hover and click selection, preventing platform frame/content metrics from moving the highlight to an adjacent row; Memory's saved snapshots are its first client |
@@ -366,17 +367,20 @@ back GUI/controllers/OSCdefs/decks/recorder and the partial graph, then enters `
 1. Load the hand-maintained config (`CQConfig`), then merge an existing
    generated sibling Audio overlay through `CQAudioConfig`; fail hard with a
    readable message if either or the final candidate is invalid.
-2. Build `ServerOptions` (device, SR, block, hardwareBufferSize, channel counts).
-3. `server.waitForBoot` → allocate buffers (2 coco RAM, deck placeholders) and buses;
+2. If the local server is confirmed stopped, read directional devices once into
+   the facade's memory-only `CQAudioDeviceCatalog`. If it is already running,
+   skip discovery and retain the previous/fallback catalog.
+3. Build `ServerOptions` (device, SR, block, hardwareBufferSize, channel counts).
+4. `server.waitForBoot` → allocate buffers (2 coco RAM, deck placeholders) and buses;
    create groups in order; `s.sync`.
-4. Add SynthDefs (`CQSynthDefs.add(config)` — defs parameterized by config where
+5. Add SynthDefs (`CQSynthDefs.add(config)` — defs parameterized by config where
    needed); `s.sync`.
-5. Spawn synths in group order; write CQSpec defaults + power-on state (dust-filled
+6. Spawn synths in group order; write CQSpec defaults + power-on state (dust-filled
    buffers via one-shot noise-fill routine, `hold = 1`, matrix empty); `s.sync`.
-6. Init MIDI (guarded — absence of 16n is not an error), OSCdefs, recorder standby.
-7. Open GUI (unless `headless: true` in config).
-8. Release master fade → 2 s ramp to nominal (SPEC safety #5).
-9. Install `CmdPeriod` and server-quit hooks. Either invalidates the session; CmdPeriod
+7. Init MIDI (guarded — absence of 16n is not an error), OSCdefs, recorder standby.
+8. Open GUI (unless `headless: true` in config).
+9. Release master fade → 2 s ramp to nominal (SPEC safety #5).
+10. Install `CmdPeriod` and server-quit hooks. Either invalidates the session; CmdPeriod
    marks the killed graph, while an unexpected scsynth quit also tears down language-side
    clients. Both fail toward silence and require an explicit rebuild.
 
@@ -391,6 +395,9 @@ If SuperCollider's status watcher marks the local server unresponsive, the facad
 does not use stock `Server.reboot` (which would attempt a second boot on the occupied
 port): it invokes `Server.quit`'s exact-PID forced stop, then waits until both the
 process is gone and the status watcher has cleared `unresponsive` before booting.
+Both responsive `Server.reboot` and forced-quit recovery capture directional
+devices only after that stopped boundary and before launching the replacement
+process. Discovery failure never prevents the audio boot.
 
 The Audio page's later `reconfigureAudio` operation reuses this ownership rather
 than duplicating it in Qt: validate and persist pending profile → generation-

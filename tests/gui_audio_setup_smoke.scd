@@ -28,7 +28,8 @@ var catalog = (
 	inputs: [longInput, longInput, common] ++ extraInputs,
 	outputs: [longOutput, common, common]
 );
-var page, window, ok = true, applies = 0, cleanRestarts = 0, retries = 0;
+var page, cachedPage, cachedModel, window, ok = true;
+var applies = 0, cleanRestarts = 0, retries = 0, cachedReads = 0;
 var restartStatus = \idle, restartError, recorderState = \idle;
 var responsive = true;
 var capturedProfile;
@@ -64,6 +65,9 @@ var check = { |condition, message|
 		ok = false;
 		("FAIL: " ++ message).postln;
 	};
+};
+var hasText = { |items, text|
+	items.any { |item| item.asString == text.asString }
 };
 var selectMenu = { |menu, index|
 	var rowH;
@@ -364,6 +368,70 @@ render = { |path|
 									and: { applies == 1 }
 									and: { capturedProfile[\device] == common },
 									"confirmed restart sends only captured model data to the facade");
+								restartStatus = \idle;
+								restartError = nil;
+								cachedModel = CQAudioConfig(CQConfig.validate((
+									headless: true,
+									device: [
+										wrappedInput,
+										"Windows DirectSound : Active Output"
+									]
+								)), Cocoquantus.repoDir +/+ "tests" +/+ "tmp"
+									+/+ "aio-cached-base.scd");
+								cachedPage = CQGuiAudioSetup(nil, cachedModel, {
+									cachedReads = cachedReads + 1;
+									(
+										source: \scanned,
+										inputs: [
+											wrappedInput,
+											"MME : Mapper Input",
+											"Windows WDM-KS : Hidden Input",
+											"Windows WASAPI : Mic",
+											common
+										],
+										outputs: [
+											"Windows DirectSound : Active Output",
+											"MME : Mapper Output",
+											"Windows WDM-KS : Hidden Output",
+											"Windows WASAPI : Phones",
+											common
+										]
+									)
+								}, controller);
+								check.value(cachedReads == 1
+									and: { cachedPage.deviceRefreshAvailable.not }
+									and: { cachedPage.refreshButton.label
+										== "show all drivers" }
+									and: { cachedPage.refreshButton.enabled },
+									"stopped-server cache becomes a local driver-view toggle");
+								check.value(hasText.value(cachedPage.inputDeviceSnapshot,
+									"MME : Mapper Input").not
+									and: { hasText.value(cachedPage.outputDeviceSnapshot,
+										"Windows WDM-KS : Hidden Output").not }
+									and: { hasText.value(
+										cachedPage.inputDeviceSnapshot, wrappedInput) }
+									and: { hasText.value(cachedPage.outputDeviceSnapshot,
+										"Windows DirectSound : Active Output") },
+									"recommended hides only unselected legacy drivers and keeps exact active endpoints");
+								cachedPage.refreshButton.view.mouseDownAction.value(
+									cachedPage.refreshButton.view, 4, 4);
+								cachedPage.refreshButton.view.mouseUpAction.value(
+									cachedPage.refreshButton.view, 4, 4);
+								check.value(cachedReads == 1
+									and: { cachedPage.showAllDrivers }
+									and: { cachedPage.refreshButton.label
+										== "recommended drivers" }
+									and: { hasText.value(cachedPage.inputDeviceSnapshot,
+										"MME : Mapper Input") }
+									and: { hasText.value(cachedPage.outputDeviceSnapshot,
+										"Windows WDM-KS : Hidden Output") },
+									"show-all reveals the memory snapshot without another provider read");
+								cachedPage.toggleDriverView;
+								check.value(cachedReads == 1
+									and: { cachedModel.dirty.not }
+									and: { cachedPage.showAllDrivers.not },
+									"recommended roundtrip preserves the exact draft and read count");
+								cachedPage.free;
 								window.close;
 								if(ok) {
 									"CQ_GUI_AUDIO_PASSED".postln;

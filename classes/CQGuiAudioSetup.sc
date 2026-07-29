@@ -17,8 +17,12 @@ CQGuiAudioSetup {
 	var devicePrimaryStack, deviceOutputStack;
 	var <deviceSnapshot = #[], <inputDeviceSnapshot = #[];
 	var <outputDeviceSnapshot = #[], <singleDeviceSnapshot = #[];
+	var fullDeviceSnapshot = #[], fullInputDeviceSnapshot = #[];
+	var fullOutputDeviceSnapshot = #[];
 	var <deviceReadCount = 0, <deviceError;
 	var <deviceRefreshAvailable = true;
+	var <deviceCatalogSource = \configured, <showAllDrivers = false;
+	var <advancedDeviceCount = 0;
 	var <step = \compact, <metrics, <pageWidth = 1272, <skin = \night;
 	var ioBand, railLayout, topPad, hostGap, restartGap, bottomPad;
 	var hostFirstSpacer, hostTitleSpacer, refreshRightSpacer;
@@ -68,24 +72,7 @@ CQGuiAudioSetup {
 	// only the exact configured endpoint(s); full discovery belongs to a
 	// separately gated stopped-server workflow.
 	*configuredDeviceCatalog { |device|
-		var mode = CQAudioConfig.deviceMode(device);
-		var inputs = [], outputs = [], all;
-		switch(mode,
-			\single, {
-				inputs = [device.asString];
-				outputs = [device.asString];
-			},
-			\split, {
-				device[0] !? { |name| inputs = [name.asString] };
-				device[1] !? { |name| outputs = [name.asString] };
-			}
-		);
-		all = CQAudioConfig.uniqueDeviceNames(inputs ++ outputs);
-		^(
-			all: all,
-			inputs: CQAudioConfig.uniqueDeviceNames(inputs),
-			outputs: CQAudioConfig.uniqueDeviceNames(outputs)
-		)
+		^CQAudioDeviceCatalog.configured(device)
 	}
 
 	*presenceThreshold { ^(-48).dbamp }
@@ -122,14 +109,27 @@ CQGuiAudioSetup {
 			result = deviceProvider.value;
 			this.prInstallDeviceCatalog(result);
 		} { |error|
+			fullDeviceSnapshot = #[];
+			fullInputDeviceSnapshot = #[];
+			fullOutputDeviceSnapshot = #[];
 			deviceSnapshot = #[];
 			inputDeviceSnapshot = #[];
 			outputDeviceSnapshot = #[];
 			singleDeviceSnapshot = #[];
+			deviceCatalogSource = \configured;
+			advancedDeviceCount = 0;
 			deviceError = error.errorString;
 		};
 		this.prSyncDraft;
 		^this
+	}
+
+	toggleDriverView {
+		if(advancedDeviceCount <= 0) { ^false };
+		showAllDrivers = showAllDrivers.not;
+		this.prApplyDeviceFilter;
+		this.prSyncDraft;
+		^true
 	}
 
 	transactionStatus {
@@ -490,13 +490,12 @@ CQGuiAudioSetup {
 		presenceGains = [
 			CQSpec.default(\liveGain), CQSpec.default(\micGain)
 		];
+		deviceRefreshAvailable = deviceProvider.notNil;
 		if(deviceProvider.isNil) {
-			deviceRefreshAvailable = false;
 			deviceProvider = {
-				this.class.configuredDeviceCatalog(model.activeAt(\device))
+				Cocoquantus.audioDeviceCatalogForGui(
+					model.activeAt(\device))
 			};
-		} {
-			deviceRefreshAvailable = true;
 		};
 		transactionController = transactionController ?? {
 			(
@@ -531,16 +530,11 @@ CQGuiAudioSetup {
 		var palette = CQInk.palette(skin), sizes = this.class.layoutFor(step);
 		var railW = CQGuiScale.railWidth(step, pageWidth);
 		var columns = CQGuiScale.columns(railW, 2, metrics[\gutter]);
-		refreshButton = this.prButton(
-			if(deviceRefreshAvailable) {
-				"refresh devices"
-			} {
-				"configured devices"
-			},
-			deviceRefreshAvailable);
+		refreshButton = this.prButton(this.prDeviceControlLabel,
+			this.prDeviceControlEnabled);
 		discardButton = this.prButton("discard changes", false);
 		applyButton = this.prButton("apply & restart audio", false);
-		refreshButton.action = { this.refreshDevices };
+		refreshButton.action = { this.prDeviceControlAction };
 		discardButton.action = { this.prDiscardOrCancel };
 		applyButton.action = { this.prApplyAction };
 		this.prBuildMenus;
@@ -695,24 +689,87 @@ CQGuiAudioSetup {
 	}
 
 	prInstallDeviceCatalog { |result|
-		var all, inputs, outputs;
+		var normalized = CQAudioDeviceCatalog.normalize(result);
 		if(result.isKindOf(Event)) {
-			inputs = CQAudioConfig.uniqueDeviceNames(
-				result[\inputs] ? result[\all] ? []);
-			outputs = CQAudioConfig.uniqueDeviceNames(
-				result[\outputs] ? result[\all] ? []);
-			all = CQAudioConfig.uniqueDeviceNames(
-				(result[\all] ? []) ++ inputs ++ outputs);
+			deviceCatalogSource = result[\source] ? \injected;
+			deviceError = result[\error];
 		} {
-			all = CQAudioConfig.uniqueDeviceNames(result ? []);
-			inputs = all.copy;
-			outputs = all.copy;
+			deviceCatalogSource = \injected;
 		};
-		deviceSnapshot = all;
-		inputDeviceSnapshot = inputs;
-		outputDeviceSnapshot = outputs;
+		if(#[scanned, stale, configured, failed].includes(
+			deviceCatalogSource)) {
+			deviceRefreshAvailable = false;
+		};
+		fullDeviceSnapshot = normalized[\all];
+		fullInputDeviceSnapshot = normalized[\inputs];
+		fullOutputDeviceSnapshot = normalized[\outputs];
+		this.prApplyDeviceFilter;
+		^this
+	}
+
+	prApplyDeviceFilter {
+		var full = (
+			all: fullDeviceSnapshot,
+			inputs: fullInputDeviceSnapshot,
+			outputs: fullOutputDeviceSnapshot
+		);
+		var recommended = CQAudioDeviceCatalog.recommended(
+			full, model.draftAt(\device));
+		var visible = if(showAllDrivers or: {
+			#[scanned, stale].includes(deviceCatalogSource).not
+		}) {
+			CQAudioDeviceCatalog.withConfigured(
+				full, model.draftAt(\device))
+		} {
+			recommended
+		};
+		advancedDeviceCount =
+			(fullDeviceSnapshot.size - recommended[\all].size).max(0);
+		deviceSnapshot = visible[\all];
+		inputDeviceSnapshot = visible[\inputs];
+		outputDeviceSnapshot = visible[\outputs];
 		singleDeviceSnapshot =
-			CQAudioConfig.bidirectionalDeviceNames(inputs, outputs);
+			CQAudioConfig.bidirectionalDeviceNames(
+				inputDeviceSnapshot, outputDeviceSnapshot);
+		this.prUpdateDeviceControl;
+		^this
+	}
+
+	prDeviceControlLabel {
+		if(deviceRefreshAvailable) { ^"refresh devices" };
+		if(advancedDeviceCount > 0) {
+			^if(showAllDrivers) {
+				"recommended drivers"
+			} {
+				"show all drivers"
+			}
+		};
+		^if(#[scanned, stale].includes(deviceCatalogSource)) {
+			"scanned at boot"
+		} {
+			"configured devices"
+		}
+	}
+
+	prDeviceControlEnabled {
+		^deviceRefreshAvailable or: { advancedDeviceCount > 0 }
+	}
+
+	prDeviceControlAction {
+		if(deviceRefreshAvailable) {
+			this.refreshDevices
+		} {
+			this.toggleDriverView
+		};
+		^this
+	}
+
+	prUpdateDeviceControl {
+		refreshButton !? {
+			refreshButton.label = this.prDeviceControlLabel;
+			refreshButton.enabled = this.prDeviceControlEnabled;
+			this.prScaleButtons;
+		};
 		^this
 	}
 
@@ -955,7 +1012,7 @@ CQGuiAudioSetup {
 				allMenus.do { |menu| menu.enabled = false };
 				refreshButton.enabled = false;
 			} {
-				refreshButton.enabled = deviceRefreshAvailable;
+				this.prUpdateDeviceControl;
 			};
 			if(confirming) {
 				discardButton.label = "cancel";

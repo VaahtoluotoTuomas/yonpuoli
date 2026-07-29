@@ -65,11 +65,13 @@ plugins are required.
 1. Clone the repository and install SuperCollider.
 
 2. Copy `config.example.scd` to `config.scd`. The copy is ignored by Git and
-   holds machine-specific audio, MIDI, and path settings. During the current
-   Windows stability gate, the running Audio page exposes only the exact
-   configured endpoint(s): live `_ListAudioDevices` discovery was withdrawn
-   because it reproducibly wedged an already-running WASAPI server. If input
-   and output are separate Windows devices, use a pair from the same host API:
+   holds machine-specific audio, MIDI, and path settings. Device discovery is
+   captured only while the local audio server is stopped; the running Audio
+   page reads that memory snapshot and never invokes `_ListAudioDevices`. Its
+   default Windows view keeps WASAPI/ASIO choices and exact configured
+   endpoints concise, while `show all drivers` reveals cached MME, DirectSound
+   and WDM-KS alternatives without another scan. If input and output are
+   separate Windows devices, use a pair from the same host API:
 
    ```supercollider
    device: ["Windows WASAPI : Microphone (...)", "Windows WASAPI : Speakers (...)"]

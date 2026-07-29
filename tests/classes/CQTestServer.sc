@@ -67,7 +67,9 @@ CQTestServer {
 
 	reboot { |func, onFailure|
 		rebootCount = rebootCount + 1;
+		processRunning = false;
 		func.value;
+		processRunning = true;
 	}
 
 	quit { |onComplete, onFailure, watchShutDown = true|
@@ -88,7 +90,7 @@ CQTestServer {
 		func.value;
 	}
 
-	serverRunning { ^true }
+	serverRunning { ^processRunning }
 	applicationRunning { ^processRunning }
 	hasBooted { ^true }
 }

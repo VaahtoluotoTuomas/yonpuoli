@@ -689,12 +689,18 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     device mode and exact device String(s). Default/single mode uses one long
     device row; split mode uses input/output rows. Long names preserve their
     beginning and use a tail ellipsis before Qt receives the String, so both
-    text and highlight remain one row. The runtime catalog is constructed from
-    the exact configured endpoint(s), without host discovery while scsynth is
-    running; the disabled control reads `configured devices`. The former live
-    `_ListAudioDevices` path was withdrawn after it reproducibly wedged the
-    physical Windows WASAPI server. Full directional discovery is reopened as
-    a stopped-server workflow.
+    text and highlight remain one row. Directional discovery runs only before
+    the first server boot or inside `Server.reboot`'s already-stopped callback;
+    the resulting in-memory snapshot is handed to the rebuilt runtime page.
+    Opening Audio, opening a menu, resizing, switching tabs and toggling driver
+    visibility perform zero `_ListAudioDevices` calls. The former live path was
+    withdrawn after it reproducibly wedged the physical Windows WASAPI server.
+    On Windows the default view keeps WASAPI, ASIO, unknown drivers and every
+    exact active/draft endpoint; exact MME, DirectSound and WDM-KS entries stay
+    available behind a local `show all drivers` / `recommended drivers` toggle.
+    It filters only those complete host prefixes, never fuzzy device text, and
+    never rewrites the draft. If no safe snapshot exists, the page falls back
+    to exact configured endpoints and the disabled `configured devices` label.
   - Input keeps `live l`, `live r` and `mic off/on · ch n` in stable rows plus
     three thin raw-presence tracks. Output keeps main L/R, stems off/on, both
     stem channels and record-4ch in stable rows plus post-safety master
@@ -1002,10 +1008,16 @@ gate, manual_checklist blocks in the established copy-pasteable format.
   removing live device enumeration restored a responsive engine. The isolated
   split-WASAPI presence recheck passed; the broader default/single/absent-device,
   mic, main, stem and REC listening checklist remains.
-- **AIO-5 — safe device discovery:** move directional
-  `ServerOptions.inDevices/outDevices` enumeration to a stopped-server boundary
-  before restoring the runtime `refresh devices` control. Running WASAPI must
-  never be queried through `_ListAudioDevices`.
+- **AIO-5 — safe device discovery:** directional
+  `ServerOptions.inDevices/outDevices` enumeration runs once only while the
+  local server is confirmed stopped: before a fresh boot or inside the stopped
+  callback of a confirmed reboot. The normalized snapshot is memory-only and
+  survives GUI rebuilds; scan failure is nonfatal and retains exact configured
+  endpoints (plus a stale successful cache when available). Runtime never
+  refreshes the OS. Its one local button switches between recommended and all
+  cached drivers without incrementing the provider read count. Windows
+  recommendation hides only exact `MME : `, `Windows DirectSound : ` and
+  `Windows WDM-KS : ` prefixes; active/draft endpoints are always retained.
 
 ---
 

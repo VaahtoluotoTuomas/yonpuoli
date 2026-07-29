@@ -1302,8 +1302,20 @@ Drawer-sivua tai muuttaa uuden session statusriviä.
 - Running Audio -sivu ei kutsu `_ListAudioDevices`-primitiiviä lainkaan.
   Fyysinen Windows WASAPI -portti osoitti konstruktorin
   `ServerOptions.devices/inDevices/outDevices`-kyselyn jumittavan jo endpointit
-  omistavan `scsynth`in. Runtime-katalogi sisältää exact konfiguroidut nimet ja
-  `system default` -valinnan; täysi discovery siirretään stopped-server-porttiin.
+  omistavan `scsynth`in. AIO-5 kerää `inDevices/outDevices`-snapshotin vain
+  varmasti pysähtyneenä ennen ensimmäistä bootia tai `Server.reboot`in
+  stopped-callbackissa. Facade säilyttää snapshotin vain muistissa ja uusi GUI
+  lukee sen kerran; tab/menu/resize/filter eivät koskaan skannaa OS:ää.
+- Windowsin recommended-näkymä säilyttää WASAPI-, ASIO- ja tuntemattomat
+  ajurit sekä jokaisen exact active/draft-endpointin. Vain täydet `MME : `,
+  `Windows DirectSound : ` ja `Windows WDM-KS : ` -prefixit piilotetaan
+  oletuksena paikallisen `show all drivers` / `recommended drivers` -kytkimen
+  taakse. Kytkin suodattaa cachea, ei laitteistoa. Muilla alustoilla tai
+  tuntemattomilla prefixeillä mitään ei piiloteta.
+- Jos turvallista snapshotia ei ole, runtime-katalogi sisältää exact
+  konfiguroidut nimet ja `system default` -valinnan ja näyttää disabled
+  `configured devices`. Scan failure ei estä audiobootia; viimeinen onnistunut
+  cache saa jäädä stale-varoituksella.
 - Jos aktiivinen tai draft-laitenimi ei enää ole listassa, säilytä ja näytä
   exact String danger-/warning-tilassa `device not currently reported`;
   älä vaihda sitä automaattisesti ensimmäiseen laitteeseen.
@@ -1444,17 +1456,23 @@ Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
   molemmat live-presence-rivit reagoivat, ääni ja Night-liike jatkuivat, sama
   `scsynth`-PID vastasi kolmeen 72 tavun `/status.reply`-viestiin, CPU eteni
   jokaisella kierroksella ja working set pysyi 37,4 Mt:ssa.
-- [ ] Täysi directional device discovery stopped-server-rajalla; running-sivun
-  `_ListAudioDevices` on poistettu toistettavan WASAPI-jumin vuoksi.
+- [x] AIO-5 stopped-server directional discovery, memory-cache,
+  recommended/all-toggle ja failure/fallback-portit; running-sivulla on
+  edelleen nolla `_ListAudioDevices`-kutsua. Fyysinen split-WASAPI-portti
+  hyväksyttiin 2026-07-29: recommended-listat olivat tiiviit, show-all palautti
+  legacy-ajurit, exact aktiiviset endpointit säilyivät ja ääni, Night-liike
+  sekä presence jatkuivat Audio-sivu auki.
 - [x] Master-cache/listener, visible-page refresh gate ja
   paint-count-/cleanup-testit.
 - [x] Qt-paint-batch-portti todistaa, ettei piilotettu Audio-sivu piirrä,
   yhdistetty 40 Hz input/master-testivirta ylitä avoimella sivulla 15 Hz:ä
   eikä listener/OSCdef jää eloon freen jälkeen.
 - [x] Compile, unit, Audio/presence/Drawer/shell-smoket sekä muuttumattomat
-  safety- ja hold-portit ovat vihreitä: **13 466 passia / 0 failurea /
-  36/36 luokkaa**, `CQ_GUI_AUDIO_PRESENCE_PASSED`, `CQ_SAFETY_PASSED` ja
-  `CQ_HOLD_OK`.
+  safety- ja hold-portit ovat vihreitä: **13 492 passia / 0 failurea /
+  37/37 luokkaa**, `CQ_GUI_AUDIO_PASSED`,
+  `CQ_GUI_AUDIO_PRESENCE_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+  `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_REENTRY_PASSED`,
+  `CQ_SAFETY_PASSED` ja `CQ_HOLD_OK`.
 - [ ] Fyysinen hardware-I/O-katselmus, vähintään:
   1. system default boot + aktiivinen live L/R -signaali;
   2. yksi USB-interface single-device-tilassa;
@@ -1462,7 +1480,9 @@ Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
      palvelinvakaus hyväksytty 2026-07-29;
   4. tarkoituksella puuttuva laite → yksi turvallinen rollback;
   5. mic off→configured pysyy mykkänä, kunnes Workshopin micGain nostetaan;
-  6. main L/R fyysisesti oikeissa porteissa ja PANIC mykistää ne;
+  6. main L/R fyysisesti oikeissa porteissa ja PANIC mykistää ne — split-
+     WASAPI-output, master-presence hiljeneminen, raw-presencen riippumattomuus
+     ja resume hyväksytty 2026-07-29;
   7. vähintään nelikanavaisella interfacella stem 1/2 oikeissa, mainista
      erillisissä porteissa ja saman safety-katon alla;
   8. REC stereo ja `record 4ch` tuottavat oikean kanavamäärän;

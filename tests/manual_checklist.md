@@ -1467,11 +1467,12 @@ WASAPI-jumin ilman sitä ja runtime-laitelistauksen poisto palautti äänen,
 Night-liikkeen ja `/status`-vastaukset. Presence ei todista draft-laitetta eikä
 fyysistä kaapelointia ennen restartia ja kuuntelua.
 
-Running Audio -sivu näyttää nyt `configured devices` ja vain aktiivisen
-configin exact endpointit. Kontrolli on tarkoituksella disabled:
-`_ListAudioDevices`-rescan jumitti fyysisessä portissa jo käynnissä olevan
-Windows WASAPI -palvelimen. Täysi lista palautetaan vasta stopped-server-
-discoveryllä.
+Running Audio -sivu käyttää vain ennen bootia tai rebootin stopped-callbackissa
+otettua muistikuvaa. `show all drivers` vaihtaa paikallisesti recommended/all-
+näkymää eikä lue OS:ää uudelleen; aktiivinen/draft exact endpoint säilyy aina.
+Ilman turvallista snapshotia kontrolli näyttää disabled `configured devices`.
+Käynnissä oleva Windows WASAPI -palvelin ei saa enää millään UI-polulla
+`_ListAudioDevices`-kutsua.
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/compile_check.scd
@@ -1492,6 +1493,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
 - [x] Puhdas draft näyttää `no changes` ja aktiivisen `restart audio` -polun
 - [x] Vastaamaton rekisteröity serveri näkyy danger-tilana ja hermettinen
       lifecycle-portti todistaa quit-before-boot-palautuksen
+- [x] AIO-5: provider luetaan vain varmasti pysähtyneenä; boot/reboot-cache
+      sisältää exact directional listat
+- [x] Recommended piilottaa vain legacy-prefixit, show-all palauttaa ne ilman
+      provider-read-countin kasvua ja active/draft exact valinta säilyy
+- [x] Scan failure ei estä bootia; fallback/stale-cache näkyy rehellisesti
+- [x] Fyysinen AIO-5 split-WASAPI-portti (2026-07-29): tiivis recommended,
+      show-all ja paluu recommendediin toimivat Audio-sivu auki ilman äänen,
+      Night-liikkeen tai input/master-presencen katkeamista
 - [x] Eristetty raw-input-uusintatesti (2026-07-29): split-WASAPI käynnistyi,
       ääni/Night pysyivät elävinä, molemmat live-presence-rivit reagoivat ja
       sama `scsynth` vastasi kolmeen ulkoiseen `/status`-kyselyyn
@@ -1502,7 +1511,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
       käynnistyvät ja väärä/päättynyt nimi tekee vain yhden turvallisen rollbackin
 - [ ] Mic `off` → configured pysyy mykkänä, kunnes Workshopin ainoa `micGain`
       nostetaan; raw presence saa silti kertoa porttiin tulevasta signaalista
-- [ ] PANIC mykistää fyysiset main L/R -portit ja master-presence hiljenee
+- [x] PANIC mykistää fyysiset main L/R -portit ja master-presence hiljenee;
+      raw live L/R jatkaa portin näyttämistä ja toinen painallus palauttaa äänen
+      (split-WASAPI 2026-07-29)
 - [ ] Vähintään 4-kanavainen interface: stem 1/2 ovat mainista erillisissä
       fyysisissä porteissa ja saman safety-katon alla
 - [ ] REC stereo ja `record 4ch` tuottavat oikean kanavamäärän

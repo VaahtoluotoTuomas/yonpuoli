@@ -13,6 +13,8 @@ Cocoquantus {
 	classvar <audioReconfigureError, <audioReconfigureResult;
 	classvar audioTransaction, audioReopenPending = false;
 	classvar pendingBoot, serverQuitAction, serverBootAction;
+	classvar <audioDeviceCatalog, <audioDeviceCatalogState = \unavailable;
+	classvar <audioDeviceCatalogError, <audioDeviceScanCount = 0;
 
 	*boot { |path, onReady, preparedConfig, onFailure, beforeGui|
 		var generation, sessionConfig, sessionServer, sessionGraph, sessionState;
@@ -65,6 +67,9 @@ Cocoquantus {
 			^this
 		};
 		sessionServer = Server.default;
+		// AIO-5: this method is a no-op if an existing server still owns its
+		// endpoints. A fresh local boot captures devices before scsynth starts.
+		this.prCaptureAudioDeviceCatalog(sessionServer);
 		sessionGraph = CQGraph(sessionServer, sessionConfig);
 		sessionGraph.applyOptions;
 		sessionState = CQState(sessionGraph);
@@ -436,6 +441,73 @@ Cocoquantus {
 		^audioConfigModel
 	}
 
+	// A running GUI receives memory data only. Exact configured endpoints are
+	// merged even when the last stopped-server scan is absent, stale or no
+	// longer reports them; no caller of this method can reach ServerOptions.
+	*audioDeviceCatalogForGui { |device|
+		var result = if(audioDeviceCatalog.notNil) {
+			CQAudioDeviceCatalog.withConfigured(audioDeviceCatalog, device)
+		} {
+			CQAudioDeviceCatalog.configured(device)
+		};
+		result[\source] = if(audioDeviceCatalog.notNil) {
+			audioDeviceCatalogState
+		} {
+			\configured
+		};
+		if(audioDeviceCatalogError.notNil) {
+			result[\error] = audioDeviceCatalogError
+		};
+		^result
+	}
+
+	// Tests reset the process-lifetime memory cache explicitly. Ordinary
+	// CQ.free must not clear it: free leaves Server.default running, where a new
+	// discovery call would be unsafe.
+	*prResetAudioDeviceCatalog {
+		audioDeviceCatalog = nil;
+		audioDeviceCatalogState = \unavailable;
+		audioDeviceCatalogError = nil;
+		audioDeviceScanCount = 0;
+		^this
+	}
+
+	// The one production entry into `_ListAudioDevices`. A provider is accepted
+	// only for hermetic lifecycle tests; fake servers never hit real discovery.
+	// Failure is diagnostic data, not an audio-boot failure.
+	*prCaptureAudioDeviceCatalog { |targetServer, provider|
+		var success = false;
+		if(targetServer.isNil) { ^false };
+		if(targetServer.applicationRunning or: { targetServer.serverRunning }) {
+			^false
+		};
+		if(provider.isNil and: { targetServer.isKindOf(Server).not }) {
+			^false
+		};
+		audioDeviceScanCount = audioDeviceScanCount + 1;
+		try {
+			audioDeviceCatalog = CQAudioDeviceCatalog.scan(provider);
+			audioDeviceCatalogState = \scanned;
+			audioDeviceCatalogError = nil;
+			success = true;
+			("Cocoquantus: cached % input / % output audio devices "
+				++ "before server boot.").format(
+					audioDeviceCatalog[\inputs].size,
+					audioDeviceCatalog[\outputs].size).postln;
+		} { |error|
+			audioDeviceCatalogState = if(audioDeviceCatalog.isNil) {
+				\failed
+			} {
+				\stale
+			};
+			audioDeviceCatalogError = error.errorString;
+			("Cocoquantus: device scan failed while server was stopped — "
+				++ "continuing with configured/cached devices: "
+				++ audioDeviceCatalogError).warn;
+		};
+		^success
+	}
+
 	*audioReopenRequested { ^audioReopenPending }
 
 	*consumeAudioReopen {
@@ -695,7 +767,8 @@ Cocoquantus {
 		});
 	}
 
-	*prRebootPrepared { |targetServer, path, preparedConfig, onReady, onFailure|
+	*prRebootPrepared { |targetServer, path, preparedConfig, onReady, onFailure,
+		deviceProvider|
 		var optionGraph, generation, action, fail, bootAfterForcedQuit;
 		var forcedQuitPolls = 0, launchBoot, pollForcedQuit;
 		path = path ?? { this.repoDir +/+ "config.scd" };
@@ -739,6 +812,7 @@ Cocoquantus {
 			if((sessionGeneration == generation) and: {
 				lifecycleState == \booting
 			}) {
+				this.prCaptureAudioDeviceCatalog(targetServer, deviceProvider);
 				try {
 					targetServer.boot(onFailure: {
 						if(sessionGeneration == generation) {
@@ -759,6 +833,7 @@ Cocoquantus {
 					nil
 				} {
 					if(targetServer.applicationRunning
+						or: { targetServer.serverRunning }
 						or: { targetServer.unresponsive }) {
 						forcedQuitPolls = forcedQuitPolls + 1;
 						if(forcedQuitPolls >= 60) {
@@ -788,7 +863,10 @@ Cocoquantus {
 					};
 				}, false);
 			} {
-				targetServer.reboot({}, {
+				targetServer.reboot({
+					this.prCaptureAudioDeviceCatalog(
+						targetServer, deviceProvider)
+				}, {
 					if(sessionGeneration == generation) {
 						fail.value(Error("server reboot failed"));
 					};
