@@ -11,7 +11,7 @@ CQGuiSpellbook {
 	*new { |gui, model| ^super.newCopyArgs(gui, model).prBuild }
 
 	// The journal shares the workbench's content rail and size step, so the
-	// four Drawer pages line up on one edge and read at one size (GUI_SPEC §8).
+	// all Drawer pages line up on one edge and read at one size (GUI_SPEC §8).
 	applyScale { |nextStep, width|
 		var m;
 		step = nextStep ? step;

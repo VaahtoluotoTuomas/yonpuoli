@@ -172,7 +172,7 @@ CQGuiCoverageTest : UnitTest {
 
 	// A CQSpec-only audit is necessary but not sufficient (§12.1.1): the other
 	// §6.2 obligations must still have a named owner after the page lands.
-	// The Drawer's own four-page order is asserted where the pages are
+	// The Drawer's own five-page order is asserted where the pages are
 	// published, in CQGuiVisualContractTest.
 	test_theRemainingObligationsAreOwnedElsewhere {
 		this.assertEquals(CQGuiMatrix.cellSize(\compact, 1272), [52, 24],

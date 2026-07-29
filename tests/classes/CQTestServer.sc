@@ -2,7 +2,7 @@
 // until a test releases them, so async races are driven by events rather than sleep.
 
 CQTestServer {
-	var <addr, <sampleRate = 48000, <bufferAllocator, <options;
+	var <name = \cqTest, <addr, <sampleRate = 48000, <bufferAllocator, <options;
 	var <messages, <syncGates, <bootCallbacks, <rebootCount = 0, <bindCount = 0;
 	var <>failSyncAt, <syncCallCount = 0;
 	var nextNode = 1000, releasedSyncs = 0;
@@ -61,6 +61,8 @@ CQTestServer {
 		callback.value;
 	}
 
+	runServerBoot { ServerBoot.run(this); ^this }
+
 	reboot { |func, onFailure|
 		rebootCount = rebootCount + 1;
 		func.value;
@@ -72,4 +74,5 @@ CQTestServer {
 	}
 
 	serverRunning { ^true }
+	hasBooted { ^true }
 }

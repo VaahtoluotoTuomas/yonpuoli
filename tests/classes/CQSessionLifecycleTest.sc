@@ -73,4 +73,49 @@ CQSessionLifecycleTest : UnitTest {
 		this.assertEquals(server.rebootCount, 1,
 			"CQ-AUD-003: CQ.reboot invokes Server.reboot, not only graph free/boot");
 	}
+
+	test_preparedAudioRebootUsesCapturedConfigAndReturnsOneFailure {
+		var ready = 0, failures = 0, failureText;
+		var prepared = CQConfig.validate((
+			headless: true,
+			sixteenN: (enabled: false),
+			sampleRate: 96000,
+			outChans: [0, 1]
+		));
+		Cocoquantus.prRebootPrepared(server, configPath, prepared,
+			{ ready = ready + 1 },
+			{ |failure|
+				failures = failures + 1;
+				failureText = failure.errorString
+			});
+		this.assertEquals(server.rebootCount, 1,
+			"prepared Audio candidate crosses the real facade reboot boundary once");
+		server.runServerBoot;
+		this.assertEquals(Cocoquantus.config[\sampleRate], 96000,
+			"post-reboot boot uses captured data rather than rereading the profile");
+		server.runNextBoot;
+		this.assertEquals(failures, 1,
+			"candidate graph failure returns exactly one facade failure callback");
+		this.assertEquals(ready, 0,
+			"failed candidate cannot publish ready");
+		this.assert(failureText.notNil
+			and: { Cocoquantus.lifecycleState == \failed },
+			"facade failure leaves an exact diagnostic and failed lifecycle");
+	}
+
+	test_audioResultRequestsOneSymbolicAudioReopen {
+		Cocoquantus.prPublishAudioReconfigure((
+			status: \rollbackReady,
+			error: "candidate failed",
+			candidateError: "candidate failed",
+			rollbackError: nil,
+			attemptCount: 2
+		));
+		this.assert(Cocoquantus.audioReopenRequested,
+			"rollback-ready data requests the symbolic Audio page");
+		this.assert(Cocoquantus.consumeAudioReopen,
+			"the rebuilt GUI consumes the reopen request once");
+		this.assert(Cocoquantus.consumeAudioReopen.not,
+			"no stale page-open callback survives after consumption");
+	}
 }

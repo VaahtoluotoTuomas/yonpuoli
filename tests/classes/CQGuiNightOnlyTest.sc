@@ -43,7 +43,7 @@ CQGuiNightOnlyTest : UnitTest {
 			CQSpec.names,
 			"Night + Drawer + Master still reaches every CQSpec parameter");
 		this.assertEquals(CQGuiDrawer.tabs,
-			#[inspector, workshop, spellbook, memory],
-			"the complete four-page workbench remains");
+			#[inspector, workshop, spellbook, memory, audio],
+			"the complete five-page workbench remains");
 	}
 }

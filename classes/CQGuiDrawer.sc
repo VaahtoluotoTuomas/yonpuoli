@@ -1,25 +1,25 @@
 // CQGuiDrawer — the Drawer composition: precision Inspector, the Workshop
-// ledger page, notification-stream Spellbook and existing snapshot/morph
-// Memory (GUI_SPEC §8).
+// ledger page, notification-stream Spellbook, snapshot/morph Memory and the
+// technical Audio I/O setup (GUI_SPEC §8).
 
 CQGuiDrawer {
-	var gui, state, matrix, grammar;
-	var <spellbookGui, <memoryGui, <workshop, <presetMenu;
+	var gui, state, matrix, grammar, audioConfig;
+	var <spellbookGui, <memoryGui, <workshop, <audioSetup, <presetMenu;
 	var <inspector, <grid, <spellbook;
-	var <inspectorView, <workshopView, <spellbookView, <memoryView;
+	var <inspectorView, <workshopView, <audioView, <spellbookView, <memoryView;
 	// the Drawer's shared size step (CQGuiScale) and the Inspector chrome that
 	// follows the loom's rail
 	var <step = \compact, <pageSize, applyButton, gestureHelp, topRail, footerRail;
 	var inspectorTop, inspectorGap;
 
-	*new { |gui, state, matrix, audition, grammar|
-		^super.newCopyArgs(gui, state, matrix, grammar).prBuild(audition)
+	*new { |gui, state, matrix, audition, grammar, audioModel|
+		^super.newCopyArgs(gui, state, matrix, grammar, audioModel).prBuild(audition)
 	}
 
-	*tabs { ^#[inspector, workshop, spellbook, memory] }
+	*tabs { ^#[inspector, workshop, spellbook, memory, audio] }
 
 	// always in `tabs` order — the shell indexes one against the other
-	pages { ^[inspectorView, workshopView, spellbookView, memoryView] }
+	pages { ^[inspectorView, workshopView, spellbookView, memoryView, audioView] }
 
 	viewToggle { inspector.cancel; grammar.viewToggle; ^this }
 	windowClose { inspector.cancel; grammar.windowClose; ^this }
@@ -33,6 +33,7 @@ CQGuiDrawer {
 		spellbookGui !? { spellbookGui.free };
 		memoryGui !? { memoryGui.free };
 		workshop !? { workshop.free };
+		audioSetup !? { audioSetup.free };
 		spellbook !? { spellbook.free };
 		inspector !? { inspector.free };
 	}
@@ -43,6 +44,7 @@ CQGuiDrawer {
 		spellbookGui.applySkin(skin);
 		memoryGui.applySkin(skin);
 		workshop.applySkin(skin);
+		audioSetup.applySkin(skin);
 		presetMenu.skin = skin;
 		inspectorView.background = palette[\recess];
 		^this
@@ -61,7 +63,7 @@ CQGuiDrawer {
 
 	// ---- private ----
 
-	// One size step for the whole workbench, so the four pages read as one
+	// One size step for the whole workbench, so the five pages read as one
 	// surface (GUI_SPEC §8). The stage's own rect decides it; every page then
 	// re-measures rather than rebuilding, so a resize can never re-register a
 	// funnel binding or leave a stale control behind.
@@ -78,6 +80,7 @@ CQGuiDrawer {
 		grid.applyScale(step, size.width);
 		this.prScaleInspectorChrome;
 		workshop.applyScale(step, size.width);
+		audioSetup.applyScale(step, size.width);
 		spellbookGui.applyScale(step, grid.loomSize.width);
 		memoryGui.applyScale(step, grid.loomSize.width);
 		^true
@@ -119,6 +122,10 @@ CQGuiDrawer {
 		// may not silence that (NIGHT_STANDALONE_PLAN §12.1.3).
 		workshop = CQGuiWorkshop(gui, state);
 		workshopView = workshop.view;
+		// The complete Audio page is built once with the GUI. Its AIO-3
+		// transaction keeps only the non-Qt model across a confirmed reboot.
+		audioSetup = CQGuiAudioSetup(gui, audioConfig);
+		audioView = audioSetup.view;
 		presetMenu = CQInkMenu(presetNames.collect { |name| name.asString }, \night)
 			.font_(CQInk.font(\number, m[\mono]))
 			.fixedSize_(Size(

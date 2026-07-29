@@ -11,7 +11,7 @@ implementers — but every behavior, law, constant, contract and safety edge the
 need is here.
 
 > **N9 amendment, 2026-07-28:** Night is now the sole runtime instrument
-> surface. The persistent Master strip and four-page Drawer remain; the Day
+> surface. The persistent Master strip and five-page Drawer remain; the Day
 > stage, its toolbar destination and its two read-only overview drawings are
 > retired. Sections explicitly labelled as former Day design are historical
 > rationale, not a second interface to maintain.
@@ -535,14 +535,14 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
 
 ---
 
-## 8. Drawer — inspector, workshop, spellbook, memory
+## 8. Drawer — inspector, workshop, spellbook, memory, audio
 
 > **G1 feedback experiment, 2026-07-20 — core direction visually accepted;
 > the navigation/Memory polish below remains provisional until review.**
 > Prototype the Drawer as a stable **workbench**, not a resizable bottom dock.
 > A compact, always-labelled `drawer` tab sits in the persistent top toolbar:
 > its down chevron opens the workbench into the central area and its up chevron
-> returns to Night. Inspector/Workshop/Spellbook/Memory remain page names only
+> returns to Night. Inspector/Workshop/Spellbook/Memory/Audio remain page names only
 > inside the workbench. Master remains visible and
 > live; there is no Drawer resize, whole-instrument scroll, click-away close or
 > second window. The selected Drawer page persists across close/reopen.
@@ -584,7 +584,7 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     against `CQSpec.names` itself rather than a copied count. Workshop ownership
     is an **explicit manifest**, never `CQSpec.names` minus the others: a newly
     added parameter must fail the audit instead of silently counting as covered.
-  - **Composition.** One centred **content rail**, shared by all four Drawer
+  - **Composition.** One centred **content rail**, shared by all five Drawer
     pages and always exactly the Inspector loom's own width, so the workbench
     reads as one surface. One continuous ground recess, not a board of rounded
     cards; hairline separators and gutters on the 8 px grid; the Drawer's own
@@ -597,7 +597,7 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     trailing stretch, so the rail asks for exactly the height its content needs,
     spare room collects below as slate, and there is **no scroll view** at any
     size. The retired Space module has no hidden or disabled replacement.
-  - **One shared page frame.** All four Drawer pages open with exactly the same
+  - **One shared page frame.** All five Drawer pages open with exactly the same
     air between the tab row and their first ink, centre exactly the same rail,
     and begin their first ink at one **content inset** inside it — the
     Workshop's labels, the loom's row names and the seed bank's boxes all start
@@ -674,6 +674,51 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     every pixel. The squint read must be **service band above · coco / quantussy
     / coco below · one red mic exception**; the close read must give every exact
     value.
+- **Audio** (AIO) = the fifth Drawer page and the machine/engine boundary, in
+  the fixed order `inspector · workshop · spellbook · memory · audio`. It is
+  neither a Night panel, popup, second window nor Workshop parameter row.
+  `CQGuiDrawer.tabs` and its page inventory remain the single ordered source
+  consumed by the shell.
+  - The page uses the same `CQGuiScale.pageFrame`, centred content rail, two
+    reviewed size steps, Ink palette/type/rules and no-scroll law as the other
+    pages. Its squint read is three horizontal zones: full-width
+    **host / engine**; equal **into yölahti / out of yölahti** islands; and a
+    full-width **restart gate**. It is recessed slate with straight hairlines,
+    never native preferences chrome, cards, jack balls or a patch bay.
+  - Host shows the active lifecycle/sample-rate/block/hardware-buffer line,
+    device mode and exact device String(s). Default/single mode uses one long
+    device row; split mode uses input/output rows. Long names preserve their
+    beginning and use a tail ellipsis before Qt receives the String, so both
+    text and highlight remain one row. Device discovery occurs once at page
+    construction and only again through `refresh devices`. It reads directional
+    `ServerOptions.inDevices/outDevices`, removes only exact duplicate Strings,
+    offers only their exact intersection in single-device mode, and uses each
+    directional list in split mode. An opened list shows at most sixteen
+    scrollable rows; no fuzzy name/host-API parsing hides endpoints.
+  - Input keeps `live l`, `live r` and `mic off/on · ch n` in stable rows plus
+    three thin raw-presence tracks. Output keeps main L/R, stems off/on, both
+    stem channels and record-4ch in stable rows plus post-safety master
+    presence. Mic/stem off dims rows but never removes them. `micGain` remains
+    Workshop's only interactive mic-gain path; Audio merely repeats `MIC LIVE`
+    read-only when applicable.
+  - Active values use neutral bone/line ink. A dirty draft gets only an ochre
+    delta notch/underline; invalid gets a danger rule and one exact reason.
+    The footer keeps provenance/validation left, `discard changes` centre and
+    `apply & restart audio` right. First Apply only opens an inline,
+    non-modal confirmation naming the audio stop, unsaved-patch reset and
+    `Server.default` restart; `cancel` and `restart` are static Ink controls.
+  - AIO-1 is deliberately read-only through its visual acceptance gate:
+    refresh works, while discard/apply are structurally disabled. Later gates
+    activate the same composition without rebuilding the page on tab changes,
+    resize or restart. A successful restart reopens symbolic tab `\audio` on
+    the fresh GUI; no old Qt reference crosses a generation boundary.
+  - AIO-1's static layout was accepted by the user on 2026-07-29. AIO-2 makes
+    all nine startup fields draft-editable, marks changed rows with the small
+    ochre delta rule, preserves exact invalid values/reasons and enables
+    `discard changes`. AIO-3 activates the two-step Apply confirmation,
+    recorder gate and static `audio ready` / `running · not saved` /
+    rollback / failed result language. Only the rebuilt GUI consumes the
+    symbolic `\audio` reopen request.
 - **Inspector** = the existing 16×22 grid, demoted but upgraded with
   **touch-and-listen**: press a cell = audition ± 0.3 (mouse button = sign)
   until release, same bookkeeping and revert law as §4.1; double-click =
@@ -732,6 +777,7 @@ meters:
 | G1 | `/cq_aura` | 16 source magnitudes (lagged \|amp\|, canonical source order) | jack glow, cable pulse, root/castle/body glow |
 | G2 | `/cq_phase` | coco read-head position 0..1, **the read direction as an audio-rate mean** (`Lag.ar(dir, 0.15)`) and **the skip rate in Hz** (added 2026-07-22: impulses of height `SampleRate` through a one-pole settle at their own rate, because a `Lag`'s DC gain is 1 — so the value *is* triggers/second, over the combined reset `\t_skip + skipTrig` that Phasor actually obeys, smoothed 0.2 s and self-clearing. It exists because a rate this fast cannot be drawn as motion — see §16.6), replyID 1/2. Landed 2026-07-21 at 5 Hz; raised to the shared **15 Hz ambient ceiling** on 2026-07-29 after the comet was isolated on one transparent, hit-through layer per Coco. Ordinary phase motion now redraws only the dot and tail, never the ≈30-Pen-call shell. The direction is a *mean*, not a sample, because a flip banana can reverse the loop far faster than 15 Hz can sample it: ±1 = settled, near 0 = shuttling. Deriving direction client-side from consecutive positions aliased and was replaced | the spiral spark, the comet's tail and the mouth chevron; the rate is the struck mark's weight |
 | G2 | `/cq_charge` | the 9 gate/trig destination sums (post-weight, pre-Schmitt); landed 2026-07-21 as **three 15 Hz blocks** sent by the synths that already compute those sums — coco 1 (replyID 1) and coco 2 (replyID 2) report their own flip/skip pair, the quantussy (replyID 3) all five spesal sums. Each sum is **peak-held at audio rate** (instant rise, 0.15 s fall) before `A2K`, because a trigger crossing can last a single sample and a plain control-rate sample would miss it; the fall is also §16.8's fired bloom. No second copy of the sums exists in the graph, so a lamp can never disagree with its Schmitt | charge lamps — the answer to "why is my flip banana silent" — and, for `cocoN_skip`, the read head's struck mark (§16.6) |
+| AIO-4 | `/cq_io_inputs` | one ≤15 Hz three-channel raw-input presence block from `\cqInput`, canonical order `[rawLiveL, rawLiveR, rawMic]`, missing mic = 0; the taps precede `liveGain`, `micGain` and preamp source selection and write no bus/output | Audio page's three “does anything reach this configured port?” tracks; never evidence for a draft device |
 
 `/cq_charge` canonical channel order = the matrix destination order filtered
 to gates/trigs, nine channels: `coco1_flip, coco1_skip, coco2_flip,
@@ -904,7 +950,7 @@ gate, manual_checklist blocks in the established copy-pasteable format.
   Tests: a **dynamic coverage gate** proving the current Night 31 / Master 4 /
   Workshop 39 interactive sets disjoint and their union equal to
   `CQSpec.names` — the three inventories are declared independently and none
-  is a complement of the others; ownership tests for the four-tab order, page
+  is a complement of the others; ownership tests for the then-four-tab order, page
   persistence and the single `micGain` path; binding tests for num, bipolar
   num, int, toggle and enum rows writing clamped through `CQState` and
   following an external write without echoing; and the Drawer Qt smoke opening
@@ -914,6 +960,33 @@ gate, manual_checklist blocks in the established copy-pasteable format.
   The coverage test may not be satisfied by a test-only array, hidden or
   disabled controls, clipped rows or a computed complement: the rendered
   controls and the audited manifest must be the same data.
+- **AIO-1 — model + read-only Audio page** (§8, SPEC §7.1): exact allowed-key
+  overlay model, merge precedence, active/draft/dirty/valid separation,
+  one-based display roundtrip and sibling profile path; fifth tab/page, injected
+  explicit device refresh and complete compact/roomy three-zone composition.
+  Unit tests cover default/single/split devices, difficult Strings, invalid and
+  overlapping channels, default-marker resets and base immutability. Qt smoke
+  proves five-page order/shared rail, stable mic/stem-off layout, no hidden
+  writes, no resize-triggered device scan and clean Ink paint. Static layout
+  accepted by the user on 2026-07-29.
+- **AIO-2 — draft + atomic profile:** activate the fields and state ink;
+  pending roundtrip, last-working preservation, atomic promote/backup and
+  `running · not saved` recovery. Tests use only `tests/tmp` and injected file
+  adapters; no user's base config is touched. Implemented: directional/exact-
+  deduplicated device menus, all nine draft controls, invalid/dirty/discard
+  states, generated sibling load, validated pending roundtrip, atomic replace,
+  one backup and retryable not-saved state.
+- **AIO-3 — confirmed restart + rollback:** facade transaction, recorder gate,
+  generation checks, one candidate plus at most one rollback, and symbolic
+  Audio-tab reopen. Lifecycle doubles assert callback ordering and no stale
+  commit/retry loop. Implemented: first Apply is confirmation-only; cancel is
+  inert; confirmed restart captures data without a Qt reference; candidate
+  success commits after running, candidate failure preserves the rejected
+  draft over one restored last-working session, rollback failure stays silent,
+  and not-saved retries persistence without a third reboot.
+- **AIO-4 — presence + physical gate:** raw input telemetry, shared post-safety
+  master cache/listeners, visible-tab repaint ceiling/cleanup, then real
+  default/single/split/absent-device, mic, main, stem and REC listening checks.
 
 ---
 

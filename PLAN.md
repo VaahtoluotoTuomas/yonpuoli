@@ -42,8 +42,13 @@ kiinteä p = 2 VCA-laki sekä 13.3:n uusi dust-lähde ja sen uudelleen viritetty
 `selfNoise`-preset hyväksyttiin 2026-07-29. §13.6:n zipperiä ei erotettu
 luotettavasti, joten se suljettiin ilman DSP-muutosta. §13.8:ssa valittiin ja
 toteutettiin maltillinen −1 dB / todellinen Drive-oktaavi -kompensaatio, joka
-hyväksyttiin myös live-inputilla.** Seuraava vaihe on
-**Audio I/O Setup Drawerissa (AIO, alla) →
+hyväksyttiin myös live-inputilla.** **AIO-1:n compact/roomy-sommittelu
+hyväksyttiin käyttäjäkatselmuksessa 2026-07-29. Katselmuksen refresh-linjaus
+ja Windows-nimien sisäiset rivinvaihdot korjattiin vain näyttötekstissä.
+AIO-2:n draft, suuntakohtainen exact-dedup-laitelista ja atominen
+sibling-overlay sekä AIO-3:n vahvistettu candidate/rollback-transaktio
+toteutettiin `nocturne-audio-setup`-haaralle.**
+Järjestys tästä on **AIO-4 telemetria ja fyysinen I/O-portti →
 nelikanavainen laitteisto-/resource-soak → kolme huokoista soittotilaa →
 Norns-portti (§14).** Yksi musiikillinen muuttuja käsitellään edelleen
 kerrallaan. **N10:n sydän/kela- ja chevron-vihjeet hyväksyttiin visuaalisesti
@@ -1011,11 +1016,10 @@ Portit: compile OK; 13 144 assertionia / 0 virhettä / 32 testiluokkaa;
 `CQ_GUI_DRAWER_REENTRY_PASSED`.
 
 **Sijainti etenemisessä:** Space-päätös, hallittu eläköitys, yhtenäinen
-koko-/layout-passi ja 100–200 % fyysisen skaalauksen katselmus ovat valmiit.
-Seuraava vaihe on korvapassin 13.2 speed-lattia. Jäljellä olevien korvakokeiden
-jälkeen tehdään alla määritelty Audio I/O Setup ennen nelikanavaista
-laitteisto-/resource-soakia; vasta niiden ja viimeisen soittotilavaiheen
-jälkeen alkaa Norns-portti.
+koko-/layout-passi, 100–200 % fyysisen skaalauksen katselmus ja koko korvapassi
+ovat valmiit. AIO-1:n sommittelu on hyväksytty, AIO-2:n draft/profile-
+inkrementti ja AIO-3:n vahvistettu restart/rollback on toteutettu.
+Seuraava inkrementti on AIO-4:n rajattu signaalipresence ja fyysinen I/O-portti.
 
 ## Valmistunut polish-passissa 2026-07-28
 
@@ -1040,13 +1044,16 @@ jälkeen alkaa Norns-portti.
   Night 31 · Master 4 · Workshop 39 kattaa kaikki 74 elävää parametria.
   MemoryHalo säilyy vain arkistoidussa prototyyppitutkimuksessa.
 
-## Tuleva työvaihe AIO — Audio I/O Setup Drawerissa
+## Käynnissä oleva työvaihe AIO — Audio I/O Setup Drawerissa
 
-**Jonopaikka:** jäljellä olevan korvapassin jälkeen, mutta ennen
-nelikanavaista laitteisto-/resource-soakia. **Status:** suunniteltu
-2026-07-29, ei vielä normatiivinen eikä toteutettu. Ennen ensimmäistä
-koodimuutosta tämän luvun hyväksytyt päätökset siirretään `SPEC.md` §7:n ja
-`GUI_SPEC.md` §8/§9/§13:n normatiivisiin kohtiin samassa incrementissä.
+**Jonopaikka:** korvapassin jälkeen, mutta ennen nelikanavaista
+laitteisto-/resource-soakia. **Status 2026-07-29:** AIO-sopimus on siirretty
+`SPEC.md` §7.1:n, `GUI_SPEC.md` §8/§9/§13:n ja `ARCHITECTURE.md` §5/§6:n
+normatiivisiin kohtiin. AIO-1:n sommittelu hyväksyttiin 2026-07-29. AIO-2
+aktivoi kaikki yhdeksän draft-kenttää ja discardin, erottaa directional
+in/out-laitteet, exact-dedupplikoi ne ja toteuttaa validoidun pending-
+roundtripin sekä atomisen sibling-profile-promootion. Apply/restart pysyy
+lukittuna AIO-3:een.
 
 ### AIO.1 Tavoite ja vastuuraja
 
@@ -1081,9 +1088,8 @@ paneeli, popup-ikkuna eikä Workshopin 40. parametririvi.
 
 - Välilehtisymboli ja näkyvä nimi ovat `\audio` / `audio`.
 - Sitova järjestys on
-  `#[inspector, workshop, audio, spellbook, memory]`. Audio kuuluu
-  Workshopin viereen, koska molemmat ovat tarkkuus-/huoltopintoja; loki ja
-  muistot jäävät niiden jälkeen.
+  `#[inspector, workshop, spellbook, memory, audio]`. Audio on oikeanpuoleisin
+  sivu, koska se on tekninen kone-/engine-raja eikä soitannollinen pinta.
 - `CQGuiDrawer.tabs` ja `pages` muuttuvat yhdessä. Shell ei saa kovakoodata
   viittä indeksiä muualla, vaan sivu ja tab sidotaan edelleen saman
   järjestetyn inventaarion kautta.
@@ -1214,6 +1220,13 @@ gitignorettavan overlayn:
   jälkeen validointi tehdään **kerran lopulliselle Eventille**;
 - overlay saa sisältää vain AIO.4-taulukon config-avaimet. Tuntematon avain on
   generated-overlayn hard error, ei pelkkä warning.
+
+SuperColliderin `Event` poistaa avaimen, jos sen arvoksi asetetaan `nil`.
+Siksi generoitu overlay käyttää neljän nilattavan avaimen (`device`,
+`hardwareBufferSize`, `micChan`, `stemOuts`) arvona sisäistä `\default`-
+merkkiä; `CQAudioConfig` purkaa sen takaisin todelliseksi puuttuvaksi/nil-
+config-arvoksi ennen kuin candidate saavuttaa `CQGraph`in. Tämä on tiedoston
+esitysmuoto, ei uusi käyttäjälle näkyvä config-arvo.
 
 Tee puhdas ei-Qt-luokka (työnimi `CQAudioConfig`) omistamaan allowed keys,
 base+overlay-merge, active/draft-vertailu, 0/1-kanavamuunnos, validointi,
@@ -1349,42 +1362,70 @@ telemetriaa ja koko sivua yhteen vaikeasti diagnosoitavaan diffiin.
 
 **AIO-1 — puhdas malli ja read-only-sivu**
 
-- `CQAudioConfig`: allowed keys, merge precedence, active/draft/dirty/valid,
+- [x] `CQAudioConfig`: allowed keys, merge precedence, active/draft/dirty/valid,
   channel display roundtrip ja profile-path.
-- `CQGuiAudioSetup`: viides sivu, yhteinen rail/pageFrame, compact+roomy,
+- [x] `CQGuiAudioSetup`: viides sivu, yhteinen rail/pageFrame, compact+roomy,
   aktiivisen configin näyttö, device-listan explicit refresh; ei vielä savea
   tai reboottia.
-- Unit: nil/single/split device; Unicode-, lainausmerkki- ja backslash-
+- [x] Unit: nil/single/split device; Unicode-, lainausmerkki- ja backslash-
   device-stringit; custom config path; 0↔1 channel roundtrip; overlap/
   duplicate/invalid range; base Event ei muutu.
-- Drawer smoke: viisi tabia/sivua samassa järjestyksessä ja railissa,
+- [x] Drawer/Audio smoke: viisi tabia/sivua samassa järjestyksessä ja railissa,
   Audio-sivu mahtuu 1280×720:een ja roomyyn, Ink-menujen avatut rivit hoveravat,
   mic/stem off ei muuta layoutia, close/open säilyttää sivun.
-- **Visuaalinen käyttäjästoppi:** hyväksy sommittelu ennen kirjoittavaa koodia.
+- [x] **Visuaalinen käyttäjästoppi:** sommittelu hyväksyttiin 2026-07-29.
+  Katselmuksen jälkeen refresh kohdistettiin oikeaan railiin ja laitenimien
+  popup-rivit tehtiin yhden rivin ellipsoiduiksi. Katselukuvat:
+  `tests/tmp/audio-setup-compact.png` ja
+  `tests/tmp/audio-setup-roomy.png`. Live-polku: Ctrl+Shift+L → `CQ.boot` →
+  Drawer → `audio`.
+
+Portit AIO-1-baselinella: `CQ_COMPILE_OK`;
+**13 386 unit-passia / 0 failurea / 34/34 luokkaa**;
+`CQ_GUI_AUDIO_PASSED`, `CQ_GUI_DRAWER_PASSED`, `CQ_GUI_SHELL_PASSED` ja
+`CQ_GUI_DRAWER_REENTRY_PASSED`; muuttumaton audiograafi vahvistettiin lisäksi
+markkereilla `CQ_SAFETY_PASSED` ja `CQ_HOLD_OK`.
 
 **AIO-2 — draft ja atominen overlay**
 
-- Kaikki AIO.4-kentät, invalid/dirty/provenance-tilat, discard, pending-
+- [x] Kaikki AIO.4-kentät, invalid/dirty/provenance-tilat, discard, pending-
   roundtrip ja gitignore.
-- Unit käyttää aina `tests/tmp`-polkuja: base säilyy byte-for-byte,
+- [x] Unit käyttää aina `tests/tmp`-polkuja: base säilyy byte-for-byte,
   epäonnistunut serialisointi/validointi ei koske activea, pending ei korvaa
   last workingiä, rename-failure näkyy `running · not saved` -tilana.
-- GUI smoke injektoi laitelistan ja file-adapterin; se ei lue oikeita OS-
-  laitteita eikä kirjoita käyttäjän configia.
+- [x] GUI smoke injektoi directional laitelistan; profile-store-testit
+  injektoivat file-adapterin. GUI ei lue oikeita OS-laitteita eikä kumpikaan
+  kirjoita käyttäjän configia.
+- [x] Exact-duplikaatit poistetaan säilyttäen järjestys; single-lista on
+  in/out-intersection, split-listat suuntakohtaisia. Popup on enintään 16
+  vieritettävää yhden rivin nimeä.
+- [x] Boot lataa olemassa olevan generated sibling-overlayn base-configin
+  päälle; `config.scd`:tä ei kirjoiteta.
+
+Portit AIO-2:ssa ja Windows-rivinvaihtokorjauksessa: `CQ_COMPILE_OK`;
+**13 408 unit-passia / 0 failurea /
+35/35 luokkaa**; `CQ_GUI_AUDIO_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+`CQ_GUI_SHELL_PASSED` ja `CQ_GUI_DRAWER_REENTRY_PASSED`.
 
 **AIO-3 — vahvistettu restart ja rollback**
 
-- Facaden reconfigure-operaatio, generation-suoja, recorder-portti,
+- [x] Facaden reconfigure-operaatio, generation-suoja, recorder-portti,
   candidate success, candidate fail→yksi rollback, rollback fail ja
   symbolinen Audio-tab-reopen.
-- Laajenna `CQTestServer`/lifecycle-doublea; testaa reboot-count, callback-
+- [x] Laajenna `CQTestServer`/lifecycle-doublea; testaa reboot-count, callback-
   järjestys, ettei stale callback committaa tiedostoa, eikä retryjä tule yli
   kahta (candidate + rollback).
-- GUI smoke todistaa: edit ei reboottaa; invalid ei armaudu; ensimmäinen Apply
+- [x] GUI smoke todistaa: edit ei reboottaa; invalid ei armaudu; ensimmäinen Apply
   vain vahvistaa; cancel palaa; recorder estää; success/fail/rollback-state
   käyttää oikeaa staattista ink-kieltä.
-- Aja compile → run_all → `nrt_safety` → `nrt_hold_integrity` sekä kaikki
+- [x] Aja compile → run_all → `nrt_safety` → `nrt_hold_integrity` sekä kaikki
   Drawer/Night/shell-smoket, koska boot-lifecycle ja config ovat muuttuneet.
+
+Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
+36/36 luokkaa**; `CQ_SAFETY_PASSED`, `CQ_HOLD_OK`,
+`CQ_GUI_AUDIO_PASSED`, `CQ_GUI_DRAWER_PASSED`, `CQ_GUI_NIGHT_PASSED`,
+`CQ_GUI_PHASE_LAYER_PASSED`, `CQ_GUI_SHELL_PASSED` ja
+`CQ_GUI_DRAWER_REENTRY_PASSED`.
 
 **AIO-4 — signaalipresence ja rajattu hardware-I/O-katselmus**
 

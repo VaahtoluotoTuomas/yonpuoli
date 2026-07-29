@@ -5,7 +5,7 @@
 CQInkControl {
 	classvar <drawErrors = 0;
 	var <view, <kind, <value = 0, <label, <skin, <family, <options, <diameter = 26;
-	var <action, <display = "", pressed = false, <hover = false, enabled = true;
+	var <action, <display = "", pressed = false, <hover = false, <enabled = true;
 	var toggle = false, momentary = false, glyph, danger = false, downward = false;
 	var surface = \ground, startX = 0, startY = 0, startValue = 0;
 	// the Workshop ledger row's own shape channel: \num · \int · \toggle · \enum,

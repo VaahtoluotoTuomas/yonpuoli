@@ -37,12 +37,12 @@ CQGuiVisualContractTest : UnitTest {
 		};
 	}
 
-	// N8 added the Workshop as a fourth persistent page — not a replacement for
-	// Inspector and not a mode inside Memory (NIGHT_STANDALONE_PLAN §12.1.3).
-	test_drawerPublishesTheFourNormativePages {
+	// AIO-1 adds Audio without replacing a musical page; it remains last because
+	// it is the technical machine/engine boundary.
+	test_drawerPublishesTheFiveNormativePages {
 		this.assertEquals(CQGuiDrawer.tabs,
-			#[inspector, workshop, spellbook, memory],
-			"Drawer exposes Inspector, Workshop, Spellbook and Memory in order");
+			#[inspector, workshop, spellbook, memory, audio],
+			"Drawer exposes Inspector, Workshop, Spellbook, Memory and Audio in order");
 	}
 
 	// A page the shell state would refuse is a page the toolbar cannot reach:
@@ -60,7 +60,7 @@ CQGuiVisualContractTest : UnitTest {
 	}
 
 	// The loom keeps large playable knots at every Drawer size step; its cell
-	// width is what sets the rail all four pages align to (CQGuiScale).
+	// width is what sets the rail all five pages align to (CQGuiScale).
 	test_inspectorUsesPlayablePatchLoomCellsAtEveryStep {
 		CQGuiScale.steps.do { |step|
 			var page = if(step == \roomy) { 1434 } { 1272 };

@@ -17,7 +17,12 @@ The active `nocturne` phase has made the Night surface the whole instrument:
 Night, the persistent Master strip and the Drawer now cover every parameter
 without maintaining a second performance interface. The Night-only instrument
 passed its live review on 2026-07-28; see [`PLAN.md`](PLAN.md) for current work
-rather than reading historical checklists as open tasks.
+rather than reading historical checklists as open tasks. The accepted Audio
+page now includes the AIO-3 transaction: it edits and validates an isolated
+draft, confirms the disruptive `Server.default` restart inline, commits the
+generated sibling profile only after a complete candidate boot, and restores
+the previous working Audio config once if that candidate fails. AIO-4 signal
+presence and the physical hardware-I/O review remain the next gate.
 
 ## What it offers
 
@@ -29,7 +34,8 @@ rather than reading historical checklists as open tasks.
 - A 16×22 signed routing matrix with cable-like audition, planting, moving,
   ripping, harvesting, undo, snapshots, and morphing.
 - The Ink & Phosphor GUI: one playable Night landscape, a persistent Master
-  strip, and a Drawer for precise patching, tuning, history, and memory.
+  strip, and a Drawer for precise patching, tuning, audio I/O status, history,
+  and memory.
 - File decks, live inputs, optional 16n faderbank control, recording, optional
   stems, snapshots, and morphing.
 - A fixed output-safety chain and offline render tests designed for unpredictable
@@ -52,13 +58,19 @@ plugins are required.
 1. Clone the repository and install SuperCollider.
 
 2. Copy `config.example.scd` to `config.scd`. The copy is ignored by Git and
-   holds machine-specific audio, MIDI, and path settings. List device names in
-   SuperCollider with `ServerOptions.devices`. If input and output are separate
-   Windows devices, use a pair from the same host API:
+   holds machine-specific audio, MIDI, and path settings. The Drawer’s Audio
+   page reads `ServerOptions.inDevices` and `outDevices`, removes only exact
+   duplicates, and keeps input/output choices directional. If input and output
+   are separate Windows devices, use a pair from the same host API:
 
    ```supercollider
    device: ["Windows WASAPI : Microphone (...)", "Windows WASAPI : Speakers (...)"]
    ```
+
+   Audio-page edits are stored in the ignored sibling `config.audio.scd`; the
+   hand-maintained `config.scd` is never rewritten. Apply first explains that
+   audio, unrelated synths on `Server.default`, and the unsaved Yölahti patch
+   will reset. An active recorder blocks the restart.
 
 3. In the SuperCollider IDE, open **Edit → Preferences → Interpreter → Include
    paths** and add `<repo>/classes`. Recompile the class library with
@@ -140,6 +152,7 @@ powershell -File tests/run_sclang_gate.ps1 tests/nrt_safety.scd         -> CQ_SA
 powershell -File tests/run_sclang_gate.ps1 tests/nrt_hold_integrity.scd -> CQ_HOLD_OK
 powershell -File tests/run_sclang_gate.ps1 tests/nrt_dust_character.scd -> CQ_DUST_OK
 powershell -File tests/run_sclang_gate.ps1 tests/nrt_selfnoise_character.scd -> CQ_SELFNOISE_OK
+powershell -File tests/run_sclang_gate.ps1 tests/gui_audio_setup_smoke.scd -> CQ_GUI_AUDIO_PASSED
 ```
 
 Focused measurement/listening gates (they render reproducible evidence; the

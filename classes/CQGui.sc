@@ -7,6 +7,7 @@
 CQGui {
 	var state, matrix, config;
 	var <window, <widgets, updaters, <shellState, <shell, <drawer;
+	var <audioConfig;
 	var stateCtl, gridPanel, meterFuncs, <audition;
 	var <bananaGrammar, <nightMap;
 	var <inkControls;
@@ -312,6 +313,7 @@ CQGui {
 	// ---- private ----
 
 	prInit {
+		audioConfig = Cocoquantus.audioConfigForGui(config);
 		audition = CQAudition(matrix);
 		bananaGrammar = CQBananaGrammar(matrix, audition);
 		shellState = CQGuiShellState(bananaGrammar);
@@ -347,7 +349,8 @@ CQGui {
 		var minimum = shellState.minSize;
 		nightMap = CQGuiNightMap(this, state, matrix, config);
 		masterView = CQGuiPanels.master(this);
-		drawer = CQGuiDrawer(this, state, matrix, audition, bananaGrammar);
+		drawer = CQGuiDrawer(this, state, matrix, audition, bananaGrammar,
+			audioConfig);
 		shellState.audition = drawer;
 		gridPanel = drawer.grid;
 		shell = CQGuiShell(shellState, nightMap.stageView, masterView,
@@ -390,6 +393,10 @@ CQGui {
 		window.onClose = { shellState.close; this.prCleanup };
 		window.view.children.do { |ch| this.prDefocus(ch) };
 		window.front;
+		if(Cocoquantus.consumeAudioReopen) {
+			shell.selectDrawer(\audio);
+			if(shellState.drawerOpen.not) { shell.toggleDrawer };
+		};
 	}
 
 	// Re-ask the Drawer which size step its stage now deserves. Deferred by one

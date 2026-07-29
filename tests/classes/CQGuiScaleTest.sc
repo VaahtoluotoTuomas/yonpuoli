@@ -217,7 +217,7 @@ CQGuiScaleTest : UnitTest {
 
 	// ---- the shared page frame ----
 
-	// All four Drawer pages open with the same air under the tab row and centre
+	// All five Drawer pages open with the same air under the tab row and centre
 	// the same rail, so the workbench reads as one surface rather than four
 	// adjacent layouts (the user's N8 feedback: Inspector and Workshop had
 	// different margins from Spellbook and Memory).

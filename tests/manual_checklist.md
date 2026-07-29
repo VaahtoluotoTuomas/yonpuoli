@@ -1334,6 +1334,129 @@ painetta; kumpikaan ei ole automaattinen loudness-normalisoija.
       (pvm: 2026-07-29 — vaihe hyväksytty)
 - [ ] 13.8 hylätty/uusi hienoviritys tarvitaan: ___________________________
 
+### AIO-1 — Audio I/O -sivun staattinen portti
+
+AIO-1 on tarkoituksella vain luku -versio. `refresh devices` saa päivittää
+exact laitelistauksen, mutta `discard changes` ja `apply & restart audio` ovat
+inerttejä, kunnes tämä sommittelu on hyväksytty. Tässä portissa ei kirjoiteta
+`config.scd`:tä tai `.audio.scd`:tä eikä restartata serveriä.
+
+Koneelliset portit ja katselukuvat:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/compile_check.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/run_all.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_audio_setup_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_drawer_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_shell_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_drawer_preview_reentry_smoke.scd
+```
+
+Odotetut markkerit: `CQ_COMPILE_OK`, `CQ_TESTS_PASSED`,
+`CQ_GUI_AUDIO_PASSED`, `CQ_GUI_DRAWER_PASSED`. Audio-smoke kirjoittaa:
+
+- `tests/tmp/audio-setup-compact.png`
+- `tests/tmp/audio-setup-roomy.png`
+
+Live-katselmus:
+
+```supercollider
+// Ctrl+Shift+L ensin, koska classes/ muuttui.
+CQ.boot;
+// Avaa Drawer → audio. Sivu näyttää nykyisen aktiivisen configin.
+// Kokeile refresh devices ja avaa mode/device-listat; valinta palautuu
+// AIO-1:ssä active-arvoon eikä muuta ääntä tai configia.
+```
+
+Katso compactissa ja roomyssa:
+
+1. Lukeeko sivu rauhallisena rantaporttina eikä yleisenä Preferences-ikkunana:
+   host/engine ylhäällä, kaksi yhtä vahvaa I/O-saarta keskellä ja restart gate
+   alhaalla?
+2. Ovatko device-mode ja exact device -rivit löydettävät ilman että ne
+   hallitsevat koko sivua? Säilyttääkö pitkä nimi alkunsa ja päättyykö se
+   ellipsiin?
+3. Pysyvätkö `mic off` sekä `stems off`, stem 1 ja stem 2 paikoillaan himmeinä
+   ilman layout-hyppyä?
+4. Ovatko `refresh devices`, `discard changes` ja
+   `apply & restart audio` oikeassa tärkeysjärjestyksessä? AIO-1:ssä vain
+   refresh saa toimia.
+5. Kasvaako roomy-versio luettavasti samalla raililla ilman että painikkeet,
+   rivit tai oikea reuna leikkautuvat?
+
+- [x] **AIO-1:n staattinen sommittelu hyväksytty**
+      (pvm: 2026-07-29 — compact/roomy, kolmen vyöhykkeen hierarkia,
+      device-menut, mic/stem-off-vakaus, restart-gaten tärkeysjärjestys;
+      hyväksynnän huomioina refresh oli liian oikealla ja pitkät popup-nimet
+      kietoutuivat kaksirivisiksi yksirivisen highlightin alla)
+- [ ] AIO-1 vaatii uuden visuaalisen kierroksen
+      (havainto: ei — refresh kohdistettiin samaan oikeaan railiin; popupit
+      ellipsoivat ennen piirtoa ja näyttävät enintään 16 vieritettävää riviä)
+
+### AIO-2 — draft ja atominen audio-overlay
+
+AIO-2:n kaikki kenttävalinnat koskevat vain `CQAudioConfig.draft`ia.
+`discard changes` palauttaa activen. Tässä historiallisessa portissa
+`apply & restart audio` oli vielä rakenteellisesti lukittu AIO-3:een.
+Laitelista lukee erilliset
+`ServerOptions.inDevices/outDevices`-snapshotit, exact-dedupplikoi ne ja näyttää
+single-tilassa vain niiden exact-intersectionin. Se ei päättele kanavamääriä tai
+host APIa nimestä.
+
+Koneellinen näyttö:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/compile_check.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/run_all.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_audio_setup_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_drawer_smoke.scd
+```
+
+- [x] Refreshin oikea reuna = muiden host-kontrollien oikea rail
+- [x] Pitkä device String pysyy yhden rivin tekstinä ja yhden rivin highlightina
+- [x] Windows-endpointin sisäiset CR/LF/tab-merkit tiivistyvät vain
+      näyttötekstissä; exact malliarvo ei muutu
+- [x] Exact-duplikaatit poistuvat; input-only/output-only eivät vuoda väärään
+      suuntaan; single-lista sisältää vain molempiin suuntiin sopivat nimet
+- [x] Kaikki yhdeksän startup-kenttää kirjoittavat vain draftiin
+- [x] Invalid main/stem-kanava jää näkyviin tarkan syyn kanssa; ei clampia
+- [x] Discard palauttaa activen; Apply ei vielä kirjoita tai restarttaa
+- [x] Pending roundtrip, base-byte-immutability, atomic replace, yksi `.bak`
+      ja retryable `notSaved` on todistettu `tests/tmp`-poluilla
+
+### AIO-3 — vahvistettu restart ja rollback
+
+Ensimmäinen `apply & restart audio` avaa vain saman railin inline-
+vahvistuksen. `restart` käynnistää facaden data-only-transaktion; vanhan sivun
+Qt-viitettä ei säilytetä. Candidate saa korvata last-working-profiilin vasta,
+kun koko uusi sessio on `running`. Epäonnistuminen tekee täsmälleen yhden
+rollbackin.
+
+Koneellinen näyttö:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/compile_check.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/run_all.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_safety.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_hold_integrity.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_audio_setup_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_drawer_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_night_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_night_phase_layer_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_shell_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_drawer_preview_reentry_smoke.scd
+```
+
+- [x] Clean/invalid/non-running draft ei kirjoita pendingiä eikä reboottia
+- [x] Aktiivinen recorder näyttää `stop REC before restarting audio`
+- [x] Ensimmäinen Apply vain vahvistaa; cancel säilyttää draftin
+- [x] Candidate success hyväksyy capturoidun datan ja promottaa vasta readyssä
+- [x] Candidate fail poistaa pendingin, säilyttää draftin ja tekee yhden rollbackin
+- [x] Rollback fail päättyy hiljaiseen `failed`-tilaan ilman kolmatta yritystä
+- [x] Stale callback ei muuta activea, profiilia eikä Audio-tabin tilaa
+- [x] `running · not saved` voidaan tallentaa uudelleen ilman reboottia
+- [x] Uusi GUI kuluttaa symbolisen `\audio`-reopenin vain kerran
+
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>
 

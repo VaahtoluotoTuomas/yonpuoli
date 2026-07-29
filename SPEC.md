@@ -523,7 +523,70 @@ gitignored):
 )
 ```
 
-Notes:
+### 7.1 Audio I/O Setup
+
+The Drawer exposes the existing machine-specific audio configuration without
+turning it into musical state. Audio I/O owns only:
+
+`device · sampleRate · blockSize · hardwareBufferSize · inChans[0..1] ·
+micChan · outChans · stemOuts · recStems`.
+
+These fields are not `CQSpec` parameters and never enter snapshots, matrix undo,
+Spellbook, presets or the banana grammar. Night still selects among `live l`,
+`live r`, `mic`, `deck a` and `deck b`; Audio I/O only decides which hardware or
+virtual channels feed the three live sources. Likewise, main and optional Coco
+stems still pass through the fixed post-safety master graph before their
+configured hardware outputs. The page may not add an `Out.ar` bypass.
+
+Channel indices remain zero-based in config and are displayed one-based in the
+GUI through one shared conversion helper. `inChans` remains backward-compatible
+with its existing 1…8-element config form, but the page reads/writes only the
+first two channels because `\cqInput` consumes only those. Main L/R must be
+different; enabled stem outputs must be different from one another and disjoint
+from main. Deliberate live L/R mono duplication and sharing the mic channel with
+a live channel are allowed. Selecting a mic channel never raises `micGain`.
+
+The model distinguishes:
+
+- **active** — the config of the successfully running graph;
+- **draft** — the page's unapplied Audio-owned values;
+- **dirty** — draft differs from active;
+- **valid** — `CQConfig` accepts the complete candidate structurally;
+- **last working** — the last candidate whose whole graph reached `running`.
+
+The hand-maintained base config is never rewritten. A generated, gitignored
+profile lives beside it: `config.scd → config.audio.scd`, or
+`foo.scd → foo.audio.scd`. Merge precedence is
+`CQConfig.defaults < base config < audio profile`, followed by validation of the
+complete candidate. Generated profiles may contain only the nine keys above;
+an unknown key is corruption and hard-fails. SuperCollider `Event` cannot retain
+an explicit `nil` value, so the generated profile uses the private value
+`\default` under `device`, `hardwareBufferSize`, `micChan` or `stemOuts`; the
+Audio model decodes it to the corresponding real `nil` config truth before the
+candidate reaches `CQGraph`. Device Strings remain exact, escaped data and are
+never parsed from or evaluated as UI text.
+
+Device, sample rate, server block, hardware buffer and hardware channel changes
+are not hot-swapped. Apply requires a visible inline confirmation that
+`Server.default` restarts, unrelated synths on it stop, and the current unsaved
+Yölahti patch resets. An active recorder blocks restart. A candidate becomes
+active/last-working and its pending profile becomes current only after the full
+server, SynthDef, graph, state, matrix and fade-in sequence reaches `running`.
+Candidate failure triggers exactly one automatic reboot of the previous
+last-working Event; rollback failure leaves the lifecycle failed and silent.
+No callback from an older session generation may publish state or files.
+
+Audio I/O can select only devices the OS/driver reports. It does not install
+drivers, create loopbacks/Aggregate Devices or bridge incompatible host APIs.
+Discovery uses `ServerOptions.inDevices` and `outDevices`: exact duplicate
+Strings collapse in driver order, single-device mode offers their exact
+intersection, and split mode keeps the directions separate. Similar names are
+never fuzzy-merged or parsed as host-API metadata. Device-list membership is
+not evidence of channel capacity. Structural validation therefore cannot
+replace the physical input/main/stem listening gate.
+
+### 7.2 Existing safety and hardware notes
+
 - **Mic feedback safety:** when `micChan` is set and output device is the laptop's
   speakers, GUI shows a persistent warning; `micGain` defaults to 0 and is never
   included in snapshots' recalled gains above 0 unless explicitly saved by the user.

@@ -18,7 +18,7 @@ tagged. Earlier tags describe internal development baselines.
   authorship, and current status.
 - Made Night the sole runtime instrument surface in the accepted N9 cut. The
   Day stage, toolbar destination, four-column builders and its
-  two read-only overview drawings are removed; Master and the four-page Drawer
+  two read-only overview drawings are removed; Master and the Drawer
   remain persistent. Night's under-hand coupling chord replaces the permanent
   spesal constellation, while the playable shells plus Workshop replace the
   static Coco memory-path diagram.
@@ -30,6 +30,35 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Added
 
+- AIO-3 confirmed Audio restart: inline impact confirmation, active-recorder
+  gate, facade-owned generation-safe candidate reboot, exactly one automatic
+  last-working rollback, terminal silent failure diagnostics and symbolic
+  Audio-tab reopen. Successful audio is promoted only after the full graph
+  reaches running; a failed final rename remains `running · not saved` and can
+  be retried without another reboot.
+- `CQAudioReconfigure`, a serverless candidate/rollback coordinator with
+  explicit lifecycle callbacks and hermetic success, rollback, stale-callback,
+  recorder-block and retry tests.
+- AIO-2 draft editing for all nine Audio startup fields, with one-based channel
+  presentation, exact invalid/dirty states and discard that never touches the
+  running server. Device discovery now uses directional `inDevices`/
+  `outDevices`, removes only exact duplicates, limits long menus to sixteen
+  scrollable one-line rows and pre-ellipsizes long names so row highlight and
+  text cannot disagree. Embedded CR/LF/tab/control whitespace from Windows
+  endpoint names is collapsed only in display text; exact model data survives.
+- `CQAudioProfileStore`: validated `.pending` roundtrip, last-working
+  preservation, same-directory atomic promotion with one `.bak`, retryable
+  `notSaved` state, and boot-time merge of the ignored sibling Audio profile.
+- AIO-1's fifth persistent Drawer page, **audio**, as a deliberately read-only
+  visual gate before any config write or server restart. It shows exact active
+  engine/device/channel state on the shared compact/roomy rail, caches the
+  device list only at build/explicit refresh, keeps mic/stem-off rows stable,
+  and exposes Ink-painted mode/device lists while discard/apply remain inert.
+- `CQAudioConfig`, a serverless startup-profile model for the exact nine Audio
+  keys: defaults/base/overlay precedence, active/draft/dirty/valid separation,
+  single-owner 0↔1 channel display conversion and sibling profile paths.
+  Generated explicit nils use a private `\default` marker because
+  SuperCollider Events drop nil-valued keys; unknown generated keys hard-fail.
 - Source and interpretation bibliography.
 - Portfolio case study and AI-assisted development/ownership policy.
 - Contribution guide, GPL-3.0-or-later license, and Windows CI gates.
@@ -111,7 +140,7 @@ tagged. Earlier tags describe internal development baselines.
   at ¼, ½, ¾ and full, with a living front through them and a proper
   cable-priority hover cue. The curve's listening pass and the rings' visual
   review were accepted on 2026-07-28.
-- Gave all four Drawer pages one shared page frame: the same air between the
+- Gave the then-current four Drawer pages one shared page frame: the same air between the
   tab row and the first ink, the same centred rail, and one content inset so
   the Workshop's labels, the loom's row names and the seed bank's boxes begin
   on the same vertical line. The Inspector had been on a 4 px margin while the
@@ -161,7 +190,7 @@ tagged. Earlier tags describe internal development baselines.
   the shared runner uses daemon mode, a child-only watchdog, expected-marker
   validation and per-run diagnostic logs; agents and CI now use that same
   entry point.
-- Raised the Drawer's type above the Day panel's fixed 10 px and gave all four
+- Raised the Drawer's type above the Day panel's fixed 10 px and gave the then-current four
   pages one shared content rail — the Spellbook previously used neither.
   Subgroup headings gained their own rank (line ink, a lighter rule from the
   end of the name to the island's edge) instead of being a fainter whisper.

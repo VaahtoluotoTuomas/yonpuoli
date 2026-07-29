@@ -1,5 +1,8 @@
 # machine-specific (CLAUDE.md: no absolute paths in the repo)
 config.scd
+*.audio.scd
+*.audio.scd.pending
+*.audio.scd.bak
 tests/dev_paths.scd
 tests/sclang_conf_dev.yaml
 

@@ -8,9 +8,13 @@ Cocoquantus {
 	classvar guiPanel;
 	classvar spesalCache, micWatcher, micWasLive = false, trimDb = 0;
 	classvar <lifecycleState = \stopped, <sessionGeneration = 0, <lifecycleError;
+	classvar <audioProfilePresent = false;
+	classvar <audioConfigModel, <audioReconfigureState = \idle;
+	classvar <audioReconfigureError, <audioReconfigureResult;
+	classvar audioTransaction, audioReopenPending = false;
 	classvar pendingBoot, serverQuitAction, serverBootAction;
 
-	*boot { |path, onReady|
+	*boot { |path, onReady, preparedConfig, onFailure, beforeGui|
 		var generation, sessionConfig, sessionServer, sessionGraph, sessionState;
 		var sessionMatrix;
 		if(lifecycleState == \running) {
@@ -22,16 +26,24 @@ Cocoquantus {
 			^this
 		};
 		if(lifecycleState == \stopping) {
-			pendingBoot = [path, onReady];
+			pendingBoot = [path, onReady, preparedConfig, onFailure, beforeGui];
 			"Cocoquantus: boot queued until teardown completes.".postln;
 			^this
 		};
 		// A killed/failed session may retain a dead graph solely so teardown can
 		// release language resources. Queue the new boot behind that teardown.
 		if(graph.notNil) {
-			pendingBoot = [path, onReady];
+			pendingBoot = [path, onReady, preparedConfig, onFailure, beforeGui];
 			this.free;
 			^this
+		};
+		if(preparedConfig.isNil) {
+			audioConfigModel = nil;
+			audioTransaction = nil;
+			audioReconfigureState = \idle;
+			audioReconfigureError = nil;
+			audioReconfigureResult = nil;
+			audioReopenPending = false;
 		};
 		configPath = path ?? { this.repoDir +/+ "config.scd" };
 		lifecycleError = nil;
@@ -40,11 +52,16 @@ Cocoquantus {
 		generation = sessionGeneration;
 		trimDb = 0;                            // watchdog trim resets each boot (SPEC §5.6)
 		try {
-			sessionConfig = this.prLoadConfig(configPath);
+			sessionConfig = if(preparedConfig.isNil) {
+				this.prLoadConfig(configPath)
+			} {
+				CQConfig.validate(preparedConfig).copy
+			};
 		} { |err|
 			lifecycleState = \failed;
 			lifecycleError = err.errorString;
 			("Cocoquantus: config failed — " ++ lifecycleError).warn;
+			onFailure.value(err);
 			^this
 		};
 		sessionServer = Server.default;
@@ -60,10 +77,11 @@ Cocoquantus {
 		this.prRegisterCqEvent; // \cq pattern event type (SPEC §6.4)
 		sessionServer.waitForBoot({
 			this.prBuildSession(generation, sessionConfig, sessionServer,
-				sessionGraph, sessionState, sessionMatrix, onReady);
+				sessionGraph, sessionState, sessionMatrix, onReady,
+				onFailure, beforeGui);
 		}, onFailure: {
 			this.prBootFailed(generation, sessionGraph,
-				Error("server failed to boot"));
+				Error("server failed to boot"), onFailure);
 		});
 	}
 
@@ -349,13 +367,21 @@ Cocoquantus {
 				onDone.value(this);
 				queued = pendingBoot;
 				pendingBoot = nil;
-				queued !? { this.boot(queued[0], queued[1]) };
+				queued !? {
+					this.boot(queued[0], queued[1], queued[2], queued[3], queued[4])
+				};
 			};
 		}.fork(AppClock);
 	}
 
 	*reboot {
 		var path = configPath, targetServer = server ?? { Server.default };
+		audioConfigModel = nil;
+		audioTransaction = nil;
+		audioReconfigureState = \idle;
+		audioReconfigureError = nil;
+		audioReconfigureResult = nil;
+		audioReopenPending = false;
 		this.free({ this.prRebootServer(targetServer, path) });
 	}
 
@@ -380,9 +406,77 @@ Cocoquantus {
 		^this.filenameSymbol.asString.dirname.dirname
 	}
 
+	// The Audio Drawer needs the base path only to derive its generated sibling
+	// profile. It never parses or writes config.scd itself.
+	*configFilePath {
+		^(configPath ?? { this.repoDir +/+ "config.scd" }).asString
+	}
+
+	// The non-Qt Audio model survives only the two boot attempts of one AIO-3
+	// transaction. A rebuilt GUI asks for it so rollback can reopen the rejected
+	// draft instead of constructing a stale page callback.
+	*audioConfigForGui { |activeConfig|
+		if(audioConfigModel.isNil or: { audioTransaction.isNil }) {
+			audioConfigModel = CQAudioConfig(activeConfig ? config,
+				this.configFilePath, audioProfilePresent);
+		};
+		^audioConfigModel
+	}
+
+	*audioReopenRequested { ^audioReopenPending }
+
+	*consumeAudioReopen {
+		var answer = audioReopenPending;
+		audioReopenPending = false;
+		^answer
+	}
+
+	// Confirmed Audio I/O restart. The GUI passes only its non-Qt model; all
+	// pending-file, server and rollback ownership remains below the facade.
+	*reconfigureAudio { |model|
+		var path = this.configFilePath;
+		var base, store, runner, transaction;
+		if(model.isNil) {
+			audioReconfigureState = \invalid;
+			audioReconfigureError = "missing Audio configuration model";
+			^false
+		};
+		try {
+			base = this.prLoadBaseConfig(path);
+		} { |failure|
+			audioReconfigureState = \failed;
+			audioReconfigureError = failure.errorString;
+			^false
+		};
+		store = CQAudioProfileStore(model.profilePath);
+		runner = (
+			lifecycle: { lifecycleState },
+			recorderState: {
+				if(recorder.isNil) { \idle } { recorder.state }
+			},
+			restart: { |candidate, onReady, onFailure|
+				this.prRestartAudioConfig(candidate, onReady, onFailure)
+			}
+		);
+		audioConfigModel = model;
+		transaction = CQAudioReconfigure(model, base, store, runner,
+			{ |result|
+				if(audioTransaction === transaction) {
+					this.prPublishAudioReconfigure(result)
+				}
+			});
+		audioTransaction = transaction;
+		^audioTransaction.start
+	}
+
+	*retryAudioProfileSave {
+		if(audioTransaction.isNil) { ^false };
+		^audioTransaction.retrySave
+	}
+
 	// ---- private ----
 
-	*prLoadConfig { |path|
+	*prLoadBaseConfig { |path|
 		^if(File.exists(path.asString)) {
 			CQConfig.load(path)
 		} {
@@ -392,11 +486,25 @@ Cocoquantus {
 		}
 	}
 
+	*prLoadConfig { |path|
+		var base, profilePath;
+		base = this.prLoadBaseConfig(path);
+		profilePath = CQAudioConfig.profilePathFor(path);
+		audioProfilePresent = CQAudioProfileStore.profileExists(profilePath);
+		^if(audioProfilePresent) {
+			CQAudioConfig.merge(base,
+				CQAudioProfileStore.loadProfile(profilePath))
+		} {
+			base
+		}
+	}
+
 	// Every blocking boot stage is bracketed by a generation check. A free,
 	// reboot, CmdPeriod or failed session increments the generation immediately,
 	// so stale async work can only enter the local cleanup path (CQ-AUD-004).
 	*prBuildSession { |generation, sessionConfig, sessionServer, sessionGraph,
-		sessionState, sessionMatrix, onReady|
+		sessionState, sessionMatrix, onReady, onFailure, beforeGui|
+		var completed = false;
 		try {
 			this.prRequireSession(generation);
 			sessionGraph.build;                // buses + groups, synced
@@ -424,16 +532,19 @@ Cocoquantus {
 			this.prRequireSession(generation);
 			lifecycleState = \running;
 			this.prWatchServer(sessionServer, generation);
-			if(sessionConfig[\headless] != true) { this.gui };
 			sessionGraph.fadeIn;               // silent until verified → 2 s ramp
+			// AIO-3 publishes the exact captured candidate only here: every
+			// server/graph/state/matrix stage has completed and fade-in is armed.
+			beforeGui.value(this);
+			if(sessionConfig[\headless] != true) { this.gui };
 			CmdPeriod.add(this);
 			"Cocoquantus: ready — output fading in over 2 s.".postln;
-			onReady.value(this);
+			completed = true;
 		} { |err|
 			if((sessionGeneration == generation) and: {
 				lifecycleState == \booting
 			}) {
-				this.prBootFailed(generation, sessionGraph, err);
+				this.prBootFailed(generation, sessionGraph, err, onFailure);
 			} {
 				try { sessionGraph.free } { |cleanupError|
 					("Cocoquantus: stale-session cleanup failed — "
@@ -441,6 +552,7 @@ Cocoquantus {
 				};
 			};
 		};
+		if(completed) { onReady.value(this) };
 	}
 
 	*prRequireSession { |generation|
@@ -449,7 +561,7 @@ Cocoquantus {
 		};
 	}
 
-	*prBootFailed { |generation, sessionGraph, err|
+	*prBootFailed { |generation, sessionGraph, err, onFailure|
 		if(sessionGeneration != generation) { ^this };
 		sessionGeneration = sessionGeneration + 1;
 		lifecycleState = \failed;
@@ -483,22 +595,51 @@ Cocoquantus {
 		matrix = nil;
 		config = nil;
 		("Cocoquantus: boot failed and rolled back — " ++ lifecycleError).warn;
+		onFailure.value(err);
 	}
 
 	// CQ.reboot is deliberately the strong operation: it restarts Server.default
 	// so boot-only options take effect. Because that also stops unrelated synths,
 	// callers must invoke it explicitly; normal CQ.free/CQ.boot never quits scsynth.
 	*prRebootServer { |targetServer, path|
-		var preparedConfig, optionGraph, generation, action;
+		var preparedConfig;
 		path = path ?? { this.repoDir +/+ "config.scd" };
 		try {
 			preparedConfig = this.prLoadConfig(path);
-			optionGraph = CQGraph(targetServer, preparedConfig);
-			optionGraph.applyOptions;
 		} { |err|
 			lifecycleState = \failed;
 			lifecycleError = err.errorString;
 			("Cocoquantus: reboot config failed — " ++ lifecycleError).warn;
+			^this
+		};
+		this.prRebootPrepared(targetServer, path, preparedConfig);
+	}
+
+	*prRestartAudioConfig { |preparedConfig, onReady, onFailure|
+		var targetServer = server ?? { Server.default };
+		var path = this.configFilePath;
+		this.free({
+			this.prRebootPrepared(targetServer, path, preparedConfig,
+				onReady, onFailure)
+		});
+	}
+
+	*prRebootPrepared { |targetServer, path, preparedConfig, onReady, onFailure|
+		var optionGraph, generation, action, fail;
+		path = path ?? { this.repoDir +/+ "config.scd" };
+		fail = { |failure|
+			this.prRemoveServerBootAction;
+			lifecycleState = \failed;
+			lifecycleError = failure.errorString;
+			("Cocoquantus: server reboot failed — " ++ lifecycleError).warn;
+			onFailure.value(failure);
+		};
+		try {
+			preparedConfig = CQConfig.validate(preparedConfig).copy;
+			optionGraph = CQGraph(targetServer, preparedConfig);
+			optionGraph.applyOptions;
+		} { |failure|
+			fail.value(failure);
 			^this
 		};
 		configPath = path;
@@ -516,7 +657,7 @@ Cocoquantus {
 					lifecycleState == \booting
 				}) {
 					lifecycleState = \stopped;
-					this.boot(path);
+					this.boot(path, nil, preparedConfig, onFailure, onReady);
 				};
 			};
 		};
@@ -525,17 +666,37 @@ Cocoquantus {
 		try {
 			targetServer.reboot({}, {
 				if(sessionGeneration == generation) {
-					this.prRemoveServerBootAction;
-					lifecycleState = \failed;
-					lifecycleError = "server reboot failed";
+					fail.value(Error("server reboot failed"));
 				};
 			});
 		} { |err|
-			this.prRemoveServerBootAction;
-			lifecycleState = \failed;
-			lifecycleError = err.errorString;
-			("Cocoquantus: server reboot failed — " ++ lifecycleError).warn;
+			if(sessionGeneration == generation) { fail.value(err) };
 		};
+	}
+
+	*prPublishAudioReconfigure { |result|
+		audioReconfigureResult = result.copy;
+		audioReconfigureState = result[\status];
+		audioReconfigureError = result[\error];
+		if(#[ready, notSaved, rollbackReady].includes(audioReconfigureState)) {
+			audioConfigModel !? {
+				audioProfilePresent = audioConfigModel.profilePresent
+			};
+			if(guiPanel.isNil) { audioReopenPending = true };
+		};
+		if(audioReconfigureState == \failed) {
+			if(result[\rollbackError].notNil) {
+				("Cocoquantus: Audio candidate failed: %; rollback failed: %. "
+					++ "Base/profile: % / %. Output remains silent. Recovery: CQ.reboot")
+					.format(result[\candidateError], result[\rollbackError],
+						this.configFilePath,
+						CQAudioConfig.profilePathFor(this.configFilePath)).warn;
+			} {
+				("Cocoquantus: Audio reconfigure failed — "
+					++ audioReconfigureError).warn;
+			};
+		};
+		^result
 	}
 
 	*prRemoveServerBootAction {

@@ -136,7 +136,7 @@ CQGuiScale {
 	// ---- the shared page frame ----
 
 	// Every Drawer page opens with exactly this much air between the tab row
-	// and its first ink, and centres the same rail, so the four pages read as
+	// and its first ink, and centres the same rail, so the five pages read as
 	// one workbench rather than four layouts that happen to be adjacent. The
 	// bottom is deliberately free: the pages hold different amounts of content.
 	*pageFrame { |step, railWidth, pageWidth|
@@ -147,7 +147,7 @@ CQGuiScale {
 
 	// ---- the shared content rail ----
 
-	// One rail width serves every Drawer page, so the four pages line up as one
+	// One rail width serves every Drawer page, so the five pages line up as one
 	// workbench. Its width is the Inspector loom's own: the loom is the widest
 	// fixed grid in the app, so letting it set the rail keeps the ledger, the
 	// journal and the seed bank on the same edge. The cell grows with the page

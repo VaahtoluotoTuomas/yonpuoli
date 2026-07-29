@@ -5,7 +5,9 @@
 	blockSize: 64,
 	device: nil,                // "ASIO : Fireface" | nil = system default |
 	                            // [inDev, outDev] pair (same host API), e.g. WASAPI
-	                            // laptop mic in + headphones out; list: ServerOptions.devices
+	                            // laptop mic in + headphones out. Drawer's Audio
+	                            // page lists exact inDevices/outDevices and writes
+	                            // only a generated sibling config.audio.scd overlay.
 	hardwareBufferSize: 256,    // latency vs. stability for live modular processing
 	inChans: [0, 1],            // live stereo pair from modular/mixer
 	micChan: nil,               // nil = mic path disabled entirely

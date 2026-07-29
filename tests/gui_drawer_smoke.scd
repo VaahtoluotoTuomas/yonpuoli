@@ -55,10 +55,10 @@ centred = { |inner, outer|
 					var beforePreset;
 					check.value(drawer.notNil
 						and: { CQGuiDrawer.tabs
-							== #[inspector, workshop, spellbook, memory] }
+							== #[inspector, workshop, spellbook, memory, audio] }
 						and: { drawer.pages.size == CQGuiDrawer.tabs.size }
 						and: { drawer.pages.every { |page| page.notNil } },
-						"real Drawer owns the four normative pages");
+						"real Drawer owns the five normative pages");
 					check.value(gui.shellState.drawerOpen
 						and: { gui.shell.workspaceStack.index == 1 }
 						and: { drawer.inspectorView.visible },
@@ -227,6 +227,15 @@ centred = { |inner, outer|
 								and: { drawer.spellbookGui.rail.bounds.width
 									== drawer.memoryGui.railWidth },
 								"every Drawer page shares one content rail");
+							gui.shell.selectDrawer(\audio);
+							check.value(gui.shellState.drawerTab == \audio
+								and: { drawer.audioSetup.deviceReadCount == 1 },
+								"the fifth Audio page is selectable without rescanning devices");
+							gui.shell.toggleDrawer;
+							gui.shell.toggleDrawer;
+							check.value(gui.shellState.drawerTab == \audio
+								and: { drawer.audioSetup.deviceReadCount == 1 },
+								"Audio selection persists across close/open without rebuild");
 							gui.shell.selectDrawer(\spellbook);
 							check.value(gui.shellState.drawerTab == \spellbook,
 								"open workbench returns to the live Spellbook page");
@@ -316,11 +325,12 @@ centred = { |inner, outer|
 											// The user's N8 rounds: one shared page frame.
 											// Measured parent-relative, because a hidden
 											// StackLayout page reports stale ABSOLUTE
-											// bounds — all four have been laid out at
+											// bounds — all five have been laid out at
 											// this step by now.
 											pages = [
 												[drawer.inspectorView, drawer.grid.status.parent],
 												[drawer.workshopView, workshop.rail],
+												[drawer.audioView, drawer.audioSetup.rail],
 												[drawer.spellbookView, drawer.spellbookGui.rail],
 												[drawer.memoryView, drawer.memoryGui.header]];
 											check.value(pages.collect { |pair|
@@ -439,12 +449,14 @@ centred = { |inner, outer|
 																> CQGuiScale.metrics(\compact)[\cellHeight]
 																and: { drawer.spellbookGui.rail.bounds.width
 																	== workshop.railWidth }
+																and: { drawer.audioSetup.railWidth
+																	== workshop.railWidth }
 																and: { drawer.memoryGui.railWidth
 																	== workshop.railWidth },
-																"the loom grows too and all four pages keep one rail");
+																"the loom grows too and all five pages keep one rail");
 															check.value(CQInkControl.drawErrors == 0,
 																"the Night skin paints cleanly at both size steps");
-															// The user's N8 rounds: all four pages must
+															// Every Drawer page must
 															// open with the same air under the tab row.
 															// Measure the first CONTENT row, not the top
 															// pad — a correct pad with extra layout
