@@ -64,7 +64,9 @@ tagged. Earlier tags describe internal development baselines.
   post-safety master meter. `CQGui` caches both streams, coalesces their
   combined 20/15 Hz arrivals to at most 15 visible page notifications, skips
   hidden Audio paints, primes from cache on open and releases the owner plus
-  namespaced OSCdef on teardown.
+  namespaced OSCdef on teardown. Physical REC gates produced exact 2-channel
+  and 4-channel 48 kHz / 24-bit WAV files; returning `record 4ch` to off
+  persisted and restarted cleanly.
 - AIO-3 confirmed Audio restart: inline impact confirmation, active-recorder
   gate, facade-owned generation-safe candidate reboot, exactly one automatic
   last-working rollback, terminal silent failure diagnostics and symbolic

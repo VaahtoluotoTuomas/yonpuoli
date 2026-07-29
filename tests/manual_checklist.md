@@ -1529,7 +1529,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
       fyysisissä porteissa ja saman safety-katon alla
 - [x] REC stereo kirjoitti 2026-07-29 RIFF/WAVE-tiedoston: 2 ch, 48 kHz,
       24-bit, 21,24 s; header ja tiedostokoko ovat ehjät
-- [ ] `record 4ch` tuottaa nelikanavaisen tiedoston
+- [x] `record 4ch` kirjoitti 2026-07-30 RIFF/WAVE-tiedoston: 4 ch, 48 kHz,
+      24-bit, 13,15 s; `recStems: true` persistoi exact ja palautus `off` /
+      `recStems: false` restarttasi takaisin toimivaan audioon
 - [ ] Virtuaalinen loopback/DAW näkyy tavallisena driver-laitteena ilman
       lupausta siitä, että Yölahti olisi luonut järjestelmäkytkennän
 - [ ] 10–15 min tiheä patch, molemmat Cocot ja Audio auki/kiinni: ei dropoutia,

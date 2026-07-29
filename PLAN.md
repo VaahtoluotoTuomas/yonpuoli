@@ -1500,7 +1500,9 @@ Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
      ja resume hyväksytty 2026-07-29;
   7. vähintään nelikanavaisella interfacella stem 1/2 oikeissa, mainista
      erillisissä porteissa ja saman safety-katon alla;
-  8. REC stereo ja `record 4ch` tuottavat oikean kanavamäärän;
+  8. REC stereo ja `record 4ch` tuottavat oikean kanavamäärän — 2 ch ja 4 ch
+     RIFF/WAVE-headerit, 48 kHz / 24-bit, exact `recStems`-persistenssi sekä
+     paluu off-tilaan hyväksytty 2026-07-30;
   9. virtuaalinen loopback/DAW näkyy tavallisena driver-laitteena, mutta GUI
      ei lupaa luoneensa järjestelmäkytkentää;
   10. 10–15 minuutin tiheä patch + molemmat Cocot + Audio-sivu auki/kiinni:
