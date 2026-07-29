@@ -1583,6 +1583,15 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
       ja handlet tasaantuivat kertavarausten jälkeen. Ei kuultua dropoutia tai
       glitchiä. Täyden 352-kaapelin Night-renderissä oli ajoittaista pientä,
       ei kasvavaa hitautta; Drawer↔Night-vaihdot pysyivät nopeina.
+- [x] **Fyysinen AIO-hardware-katselmus hyväksytty 2026-07-30.** Hyväksytty
+      rajaus: split-WASAPI ja K-Mix ASIO single-device, inputit 1/2, main 1/2,
+      stemit 3/4, mic-turvaportti, PANIC, stereo/4ch REC, loopbackin näkyvyys
+      ja 10 minuutin tiheä patch. `system default` ja irrotetun laitteen
+      rollback ovat kirjattuja fyysisiä failureita, joita **ei toisteta tällä
+      koneella**; niiden yhteinen juurisyy on korjattu ja katettu hermettisellä
+      regressiolla. Avoimeksi jää vain yllä kuvattu VB-CABLE-DAW-portti, ja
+      tämä lyhyt vakauskoe **ei korvaa** jonossa seuraavaa pitkää koko
+      soittimen laitteisto-/resource-soakia.
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>

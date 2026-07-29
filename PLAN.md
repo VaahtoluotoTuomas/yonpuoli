@@ -55,10 +55,11 @@ hardware-katselmus on 2026-07-30 tehty split-, USB-single-device-, mic-,
 PANIC-, stem-3/4-, stereo/4ch-REC- ja 10 minuutin patch-kohdiltaan; loopbackin
 näkyvyys kirjattiin samana päivänä, ja avoimeksi jäi vain kaksisuuntainen
 VB-CABLE-DAW-portti.**
-Järjestys tästä on **AIO-4:n laajempi fyysinen I/O-katselmus →
-nelikanavainen laitteisto-/resource-soak → kolme huokoista soittotilaa →
-Norns-portti (§14).** Yksi musiikillinen muuttuja käsitellään edelleen
-kerrallaan. **N10:n sydän/kela- ja chevron-vihjeet hyväksyttiin visuaalisesti
+**Fyysinen AIO-hardware-katselmus hyväksyttiin 2026-07-30, joten koko AIO-vaihe
+on valmis.** Järjestys tästä on **erillinen pitkä laitteisto-/resource-soak →
+kolme huokoista soittotilaa → Norns-portti (§14)**, ja niiden rinnalla omana
+päivänään kaksisuuntainen VB-CABLE A+B -DAW-portti (ainoa avoin AIO-jatko).
+Yksi musiikillinen muuttuja käsitellään edelleen kerrallaan. **N10:n sydän/kela- ja chevron-vihjeet hyväksyttiin visuaalisesti
 2026-07-29**, joten erillistä GUI-velkaa ei enää ole.
 
 ## Auktoriteettijärjestys
@@ -1054,16 +1055,20 @@ hardware-I/O-katselmus.
   Night 31 · Master 4 · Workshop 39 kattaa kaikki 74 elävää parametria.
   MemoryHalo säilyy vain arkistoidussa prototyyppitutkimuksessa.
 
-## Käynnissä oleva työvaihe AIO — Audio I/O Setup Drawerissa
+## Valmis työvaihe AIO — Audio I/O Setup Drawerissa
 
-**Jonopaikka:** korvapassin jälkeen, mutta ennen nelikanavaista
-laitteisto-/resource-soakia. **Status 2026-07-29:** AIO-sopimus on siirretty
-`SPEC.md` §7.1:n, `GUI_SPEC.md` §8/§9/§13:n ja `ARCHITECTURE.md` §5/§6:n
-normatiivisiin kohtiin. AIO-1:n sommittelu hyväksyttiin 2026-07-29. AIO-2
-aktivoi kaikki yhdeksän draft-kenttää ja discardin, erottaa directional
-in/out-laitteet, exact-dedupplikoi ne ja toteuttaa validoidun pending-
-roundtripin sekä atomisen sibling-profile-promootion. Apply/restart pysyy
-lukittuna AIO-3:een.
+**Status 2026-07-30: AIO on valmis ja käyttäjän hyväksymä.** AIO-1…AIO-5 ovat
+toteutettuja ja gatettuja, ja fyysinen hardware-I/O-katselmus hyväksyttiin
+2026-07-30 (AIO.9:n rajaus ja kaksi ei-toistettavaa failurea kirjattu siellä).
+**Ainoa avoin AIO-jatko on kaksisuuntainen VB-CABLE A+B -DAW-portti**, joka
+vaatii käyttäjän ajuriasennuksen ja tehdään omana päivänään; sen reitityskartta
+ja ennakkoehdot ovat AIO.9:n hand-offissa. **Seuraava jonossa on erillinen pitkä
+koko soittimen laitteisto-/resource-soak**, jota AIO:n 10 minuutin vakauskoe ei
+korvaa.
+
+AIO-sopimus asuu normatiivisesti `SPEC.md` §7.1:ssä, `GUI_SPEC.md`
+§8/§9/§13:ssa ja `ARCHITECTURE.md` §5/§6:ssa; alla oleva §AIO.1–§AIO.9 on
+vaiheen suunnittelu- ja todistusaineisto.
 
 ### AIO.1 Tavoite ja vastuuraja
 
@@ -1502,7 +1507,12 @@ Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
   `CQ_COMPILE_OK`; **13 502 / 0 / 37/37**; `CQ_GUI_AUDIO_PASSED`,
   `CQ_GUI_AUDIO_PRESENCE_PASSED`, `CQ_GUI_DRAWER_PASSED`,
   `CQ_GUI_SHELL_PASSED`, `CQ_SAFETY_PASSED`, `CQ_HOLD_OK`.
-- [ ] Fyysinen hardware-I/O-katselmus, vähintään:
+- [x] Fyysinen hardware-I/O-katselmus. **Käyttäjä hyväksyi katselmuksen
+  2026-07-30 tässä rajauksessa:** kohdat 2, 3, 5, 6, 7, 8 ja 10 ovat fyysisesti
+  hyväksytyt, kohta 9 hyväksyttiin näkyvyysväitteensä laajuudessa, ja kohdat 1
+  ja 4 ovat kirjatut fyysiset failuret, joita **ei toisteta tällä koneella** —
+  molempien juurisyy (responsiivinen mutta audiokelloltaan kuollut candidate)
+  on korjattu ja katettu hermettisellä regressiolla. Vaadittu vähimmäissisältö:
   1. system default boot + aktiivinen live L/R -signaali — tämän kannettavan
      fyysinen portti epäonnistui 2026-07-30 alla kuvatulla tavalla;
   2. yksi USB-interface single-device-tilassa — K-Mix ASIO, inputit 1/2,
@@ -1636,8 +1646,9 @@ Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
   rajauksen; VB-CABLE-portti kulkee sen jälkeen omanaan. Erillinen pitkä koko
   soittimen hardware/resource-soak jää seuraavaksi vaiheeksi.
 
-**Definition of done:** käyttäjä hyväksyy static layoutin sekä yhden oikean
-input→Coco→main-output-ketjun. Nelikanavainen stem-koe sulkee samalla vanhan
+**Definition of done — täyttyi 2026-07-30:** käyttäjä hyväksyi static layoutin
+(AIO-1, 2026-07-29) sekä oikeat input→Coco→main-output-ketjut split-WASAPIlla ja
+K-Mix ASIOlla, ja lopuksi koko fyysisen hardware-I/O-katselmuksen 2026-07-30. Nelikanavainen stem-koe sulkee samalla vanhan
 KUUNTELU 7:n 7.4/7.5-laitteistovelan. `SPEC`, `GUI_SPEC`, README/config.example,
 testit ja tämä status päivitetään samassa hyväksyntäcommitissa; overlayt ja
 oikeat device-nimet eivät näy Git-diffissä. Tämä AIO-portti todistaa
