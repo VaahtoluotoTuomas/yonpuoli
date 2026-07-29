@@ -1494,7 +1494,9 @@ Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
   3. Windows split in/out samalla host APIlla — boot, raw presence ja
      palvelinvakaus hyväksytty 2026-07-29;
   4. tarkoituksella puuttuva laite → yksi turvallinen rollback;
-  5. mic off→configured pysyy mykkänä, kunnes Workshopin micGain nostetaan;
+  5. mic off→configured pysyy mykkänä, kunnes Workshopin micGain nostetaan —
+     ch 1 raw-presence, muted/live-tila, kuultava dry-monitor, gainin palautus
+     nollaan ja explicit mic-off-overlay hyväksytty 2026-07-30;
   6. main L/R fyysisesti oikeissa porteissa ja PANIC mykistää ne — split-
      WASAPI-output, master-presence hiljeneminen, raw-presencen riippumattomuus
      ja resume hyväksytty 2026-07-29;

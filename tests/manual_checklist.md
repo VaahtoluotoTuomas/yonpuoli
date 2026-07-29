@@ -1520,8 +1520,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
       main L/R vastaavat sen fyysisiä portteja
 - [ ] Windows split input/output samalla host APIlla: molemmat laitteet
       käynnistyvät ja väärä/päättynyt nimi tekee vain yhden turvallisen rollbackin
-- [ ] Mic `off` → configured pysyy mykkänä, kunnes Workshopin ainoa `micGain`
-      nostetaan; raw presence saa silti kertoa porttiin tulevasta signaalista
+- [x] Mic `off` → ch 1 säilytti gain 0:n ja näytti raw-presencen muted-tilassa;
+      Workshopin ainoa `micGain` avasi kuultavan dry-monitorin ja `live`-tilan
+      ilman restarttia, palasi nollaan ja explicit mic `off` persistoi takaisin
+      toimivaan audioon (split-WASAPI 2026-07-30)
 - [x] PANIC mykistää fyysiset main L/R -portit ja master-presence hiljenee;
       raw live L/R jatkaa portin näyttämistä ja toinen painallus palauttaa äänen
       (split-WASAPI 2026-07-29)

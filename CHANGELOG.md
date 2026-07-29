@@ -66,7 +66,10 @@ tagged. Earlier tags describe internal development baselines.
   hidden Audio paints, primes from cache on open and releases the owner plus
   namespaced OSCdef on teardown. Physical REC gates produced exact 2-channel
   and 4-channel 48 kHz / 24-bit WAV files; returning `record 4ch` to off
-  persisted and restarted cleanly.
+  persisted and restarted cleanly. The mic safety gate also passed: configuring
+  ch 1 retained gain 0 and raw presence while muted, Workshop's sole mic gain
+  opened/closed the audible dry path live, and the Audio profile returned
+  cleanly to mic off.
 - AIO-3 confirmed Audio restart: inline impact confirmation, active-recorder
   gate, facade-owned generation-safe candidate reboot, exactly one automatic
   last-working rollback, terminal silent failure diagnostics and symbolic
