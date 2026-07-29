@@ -343,11 +343,14 @@ CQ.midi.takeover = \jump;      // palaa oletukseen (tai jätä pickup päälle)
 
 ---
 
-## Avoin laitteistogate (aiemmilta vaiheilta)
+## Suljettu laitteistogate (aiemmilta vaiheilta)
 
-- [ ] **Stemien live-kuuntelu** (KUUNTELU 7, kohdat 7.4/7.5 — arkistossa):
-  vaatii ≥ nelikanavaisen äänikortin. NRT-turva on jo vihreä; live-todennus
-  odottaa laitteistoa. Ainoa vielä avoin manuaalitesti aiemmilta vaiheilta.
+- [x] **Stemien live-kuuntelu** (KUUNTELU 7, kohdat 7.4/7.5 — arkistossa):
+  vaadittu ≥ nelikanavainen äänikortti saatiin AIO-4:n fyysisessä
+  katselmuksessa. **Suljettu 2026-07-30:** K-Mixin fyysisistä ulostuloista 3/4
+  kuului stem 1/2 mainista erillään, vain Coco1 avasi 3:n ja vain Coco2 4:n, ja
+  PANIC hiljensi molemmat. NRT-turva oli jo vihreä; live-todennus on nyt tehty.
+  Ks. AIO-4-lohko tämän tiedoston lopussa.
 
 ---
 

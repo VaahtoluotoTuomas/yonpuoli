@@ -1642,13 +1642,15 @@ Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
   dokumentoitu yllä ja stale-first-reading-regressio on katettu hermettisesti.
 - Muut fyysiset AIO-kohdat on testattu: split, USB single-device, inputit 1/2,
   main 1/2, stemit 3/4, PANIC, stereo/4ch REC ja 10 minuutin tiheä patch.
-  Fyysinen AIO-katselmus voidaan siis päättää heti kun käyttäjä hyväksyy tämän
-  rajauksen; VB-CABLE-portti kulkee sen jälkeen omanaan. Erillinen pitkä koko
-  soittimen hardware/resource-soak jää seuraavaksi vaiheeksi.
+  **Käyttäjä hyväksyi fyysisen AIO-katselmuksen tässä rajauksessa 2026-07-30**,
+  joten AIO on valmis vaihe ja VB-CABLE-portti kulkee omanaan. Sama K-Mixin
+  4-kanavainen stem-portti sulki myös vanhan KUUNTELU 7:n 7.4/7.5-laitteistovelan.
+  Erillinen pitkä koko soittimen hardware/resource-soak on seuraava vaihe.
 
 **Definition of done — täyttyi 2026-07-30:** käyttäjä hyväksyi static layoutin
 (AIO-1, 2026-07-29) sekä oikeat input→Coco→main-output-ketjut split-WASAPIlla ja
-K-Mix ASIOlla, ja lopuksi koko fyysisen hardware-I/O-katselmuksen 2026-07-30. Nelikanavainen stem-koe sulkee samalla vanhan
+K-Mix ASIOlla, ja lopuksi koko fyysisen hardware-I/O-katselmuksen 2026-07-30.
+Nelikanavainen stem-koe sulki samalla vanhan
 KUUNTELU 7:n 7.4/7.5-laitteistovelan. `SPEC`, `GUI_SPEC`, README/config.example,
 testit ja tämä status päivitetään samassa hyväksyntäcommitissa; overlayt ja
 oikeat device-nimet eivät näy Git-diffissä. Tämä AIO-portti todistaa
@@ -1676,12 +1678,14 @@ koko soittimen laitteisto-/resource-soakia.
 - **Kosketusnäyttö-optimointi Night-modeen** (multi-touch, ele-erottelu) —
   liittyy kevättulvaan (§8 kasvattaa kohteita jo ~40 px suuntaan); oma
   työvaihe kun mittakaava on lyöty lukkoon.
-- **Stemien live-kuuntelu** — ainoa vielä avoin manuaalitesti aiemmilta
-  vaiheilta (`manual_checklist.md` KUUNTELU 7, kohdat 7.4/7.5): vaatii
-  ≥ nelikanavaisen äänikortin, joten se on erillinen laitteistogate. NRT-turva
-  on jo vihreä; live-todennus odottaa laitteistoa. Muut checklistin
-  rastittamattomat rivit ovat vanhentunutta jäännöstä valmiista v1.0/G1-
-  vaiheista (v1.0 tagattu, G1 Drawer sulautui hyväksyttyyn G1-loppuporttiin).
+- ~~**Stemien live-kuuntelu**~~ — **suljettu 2026-07-30.** Aiempien vaiheiden
+  viimeinen avoin manuaalitesti (`manual_checklist.md` KUUNTELU 7, kohdat
+  7.4/7.5) vaati ≥ nelikanavaisen äänikortin, ja AIO-4:n fyysinen K-Mix-portti
+  todensi sen: stem 1/2 kuuluivat mainista erillisistä ulostuloista 3/4,
+  Coco1/Coco2-kartoitus oli itsenäinen ja PANIC hiljensi molemmat. Muut
+  checklistin rastittamattomat rivit ovat vanhentunutta jäännöstä valmiista
+  v1.0/G1-vaiheista (v1.0 tagattu, G1 Drawer sulautui hyväksyttyyn
+  G1-loppuporttiin).
 
 ## Viimeinen musiikillinen lisävaihe: kolme huokoista soittotilaa
 
