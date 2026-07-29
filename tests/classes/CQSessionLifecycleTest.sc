@@ -110,7 +110,7 @@ CQSessionLifecycleTest : UnitTest {
 		));
 		server.unresponsive = true;
 		Cocoquantus.prRebootPrepared(server, configPath, prepared);
-		0.05.wait;
+		0.15.wait;
 		this.assertEquals(server.quitCount, 1,
 			"an unresponsive server is explicitly stopped by its owned PID");
 		this.assertEquals(server.rebootCount, 0,

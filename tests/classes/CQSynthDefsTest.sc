@@ -6,11 +6,6 @@
 
 CQSynthDefsTest : UnitTest {
 
-	test_ioPresenceNeverExceedsTheAmbientCeiling {
-		this.assertEquals(CQSynthDefs.ioPresenceReplyHz, 15,
-			"raw input presence reports at the shared 15 Hz ambient ceiling");
-	}
-
 	// §13.5's VCA law. It is applied to the matrix modulation alone, because
 	// in this instrument the knob is the VCA's base and the matrix adds to it
 	// (SPEC §5.5). The anchors keep the zero-sum knob/default calibration;

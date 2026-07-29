@@ -47,9 +47,10 @@ hyväksyttiin käyttäjäkatselmuksessa 2026-07-29. Katselmuksen refresh-linjaus
 ja Windows-nimien sisäiset rivinvaihdot korjattiin vain näyttötekstissä.
 AIO-2:n draft, suuntakohtainen exact-dedup-laitelista ja atominen
 sibling-overlay, AIO-3:n vahvistettu candidate/rollback-transaktio sekä
-AIO-4:n rajattu presence-telemetria toteutettiin
-`nocturne-audio-setup`-haaralle.**
-Järjestys tästä on **AIO-4:n fyysinen I/O-portti →
+AIO-4:n master-presence ja GUI:n pacing toteutettiin
+`nocturne-audio-setup`-haaralle; ensimmäinen raw-input-telemetria vedettiin
+takaisin toistettavan Windows WASAPI -jumituksen jälkeen.**
+Järjestys tästä on **AIO-4:n vakaa raw-input-lähde ja fyysinen I/O-portti →
 nelikanavainen laitteisto-/resource-soak → kolme huokoista soittotilaa →
 Norns-portti (§14).** Yksi musiikillinen muuttuja käsitellään edelleen
 kerrallaan. **N10:n sydän/kela- ja chevron-vihjeet hyväksyttiin visuaalisesti
@@ -1306,15 +1307,15 @@ Drawer-sivua tai muuttaa uuden session statusriviä.
 - Ensimmäiseen versioon ei tule test tonea. Väärään hardware-outputiin
   automaattisesti lähetetty ääni on turvallisuusriski eikä todista fyysistä
   kytkentää.
-- Input-vahvistus on kolme read-only presence-uraa aktiivisten hardware-
+- Tavoiteltu input-vahvistus on kolme read-only presence-uraa aktiivisten hardware-
   kanavien **raakasignaalille ennen `liveGain`/`micGain`-kertoimia ja ennen
   preampin source-valintaa**. Presence vastaa “tuleeko porttiin mitään”, ei
   “kuuluuko tämä nyt”; rinnalla oleva muted/live-tila kertoo gainin. Jaa
-  `\cqInput`issa nykyinen SoundIn ensin `rawLiveL/rawLiveR/rawMic`-muuttujiin
-  ja pidä varsinainen audiolaskenta bit-identtisenä niiden jälkeen. Lähetä
-  tarvittaessa yksi kolmekanavainen `/cq_io_inputs`-`SendPeakRMS`-blokki
-  enintään 15 Hz:llä; canonical order on `[rawLiveL, rawLiveR, rawMic]`,
-  puuttuva mic = 0. Viesti on telemetriaa eikä saa koskea audioon.
+  Ensimmäinen tätä varten lisätty kolmekanavainen
+  `/cq_io_inputs`-`SendPeakRMS`-blokki vedettiin takaisin, koska fyysinen
+  Windows WASAPI -testi jätti `scsynth`in toistettavasti vastaamattomaksi.
+  Nykyinen `\cqInput` on palautettu viimeiseen hardware-testattuun muotoon ja
+  input-presence näyttää `—`; korvaava ratkaisu tarvitsee oman fyysisen portin.
 - Output-ura käyttää jo olemassa olevan post-safety `/cq_meters`-masterin
   stereoarvoja. Älä rekisteröi toista samannimistä OSCdefiä tai varasta
   nykyistä yksipaikkaista `meterFuncs[\master]`-callbackia. Laajenna CQGui
@@ -1433,13 +1434,15 @@ Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
 
 **AIO-4 — signaalipresence ja rajattu hardware-I/O-katselmus**
 
-- [x] Input-telemetria, master-cache/listener, visible-page refresh gate ja
+- [ ] Vakaa raw-input-telemetria; ensimmäinen `SendPeakRMS`-toteutus vedettiin
+  takaisin Windows WASAPI -jumituksen vuoksi.
+- [x] Master-cache/listener, visible-page refresh gate ja
   paint-count-/cleanup-testit.
 - [x] Qt-paint-batch-portti todistaa, ettei piilotettu Audio-sivu piirrä,
   yhdistetty 40 Hz input/master-testivirta ylitä avoimella sivulla 15 Hz:ä
   eikä listener/OSCdef jää eloon freen jälkeen.
 - [x] Compile, unit, Audio/presence/Drawer/shell-smoket sekä muuttumattomat
-  safety- ja hold-portit ovat vihreitä: **13 461 passia / 0 failurea /
+  safety- ja hold-portit ovat vihreitä: **13 460 passia / 0 failurea /
   36/36 luokkaa**, `CQ_GUI_AUDIO_PRESENCE_PASSED`, `CQ_SAFETY_PASSED` ja
   `CQ_HOLD_OK`.
 - [ ] Fyysinen hardware-I/O-katselmus, vähintään:

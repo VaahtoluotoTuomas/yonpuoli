@@ -697,6 +697,7 @@ Cocoquantus {
 
 	*prRebootPrepared { |targetServer, path, preparedConfig, onReady, onFailure|
 		var optionGraph, generation, action, fail, bootAfterForcedQuit;
+		var forcedQuitPolls = 0, launchBoot, pollForcedQuit;
 		path = path ?? { this.repoDir +/+ "config.scd" };
 		fail = { |failure|
 			this.prRemoveServerBootAction;
@@ -734,26 +735,47 @@ Cocoquantus {
 		};
 		serverBootAction = action;
 		ServerBoot.add(action, targetServer);
-		bootAfterForcedQuit = {
-			// Match Server.reboot's defer: the forced local-process termination
-			// completes before a new process attempts to bind the same UDP port.
-			defer {
-				if((sessionGeneration == generation) and: {
-					lifecycleState == \booting
-				}) {
-					try {
-						targetServer.boot(onFailure: {
-							if(sessionGeneration == generation) {
-								fail.value(Error(
-									"server boot after forced quit failed"));
-							};
-						});
-					} { |err|
-						if(sessionGeneration == generation) { fail.value(err) };
-					};
+		launchBoot = {
+			if((sessionGeneration == generation) and: {
+				lifecycleState == \booting
+			}) {
+				try {
+					targetServer.boot(onFailure: {
+						if(sessionGeneration == generation) {
+							fail.value(Error(
+								"server boot after forced quit failed"));
+						};
+					});
+				} { |err|
+					if(sessionGeneration == generation) { fail.value(err) };
 				};
 			};
 		};
+		pollForcedQuit = {
+			AppClock.sched(0.05, {
+				if((sessionGeneration != generation) or: {
+					lifecycleState != \booting
+				}) {
+					nil
+				} {
+					if(targetServer.applicationRunning
+						or: { targetServer.unresponsive }) {
+						forcedQuitPolls = forcedQuitPolls + 1;
+						if(forcedQuitPolls >= 60) {
+							fail.value(Error(
+								"unresponsive server process did not stop"));
+							nil
+						} {
+							0.05
+						}
+					} {
+						launchBoot.value;
+						nil
+					}
+				}
+			});
+		};
+		bootAfterForcedQuit = { pollForcedQuit.value };
 		try {
 			if(targetServer.unresponsive) {
 				// Server.reboot skips quit when statusWatcher.unresponsive is

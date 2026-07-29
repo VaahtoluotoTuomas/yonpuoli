@@ -1459,11 +1459,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
 
 ### AIO-4 — signaalipresence ja fyysinen hardware-I/O-portti
 
-Koneellinen osa on valmis. `into yölahti` näyttää aktiivisten server-kanavien
-raakasignaalin ennen live/mic-gainia ja preamp-valintaa; `muted/live` kertoo
-erikseen gainin tilan. Oikean saaren otsikon master L/R tulee olemassa olevasta
-post-safety-mittarista. Presence ei todista draft-laitetta eikä fyysistä
-kaapelointia ennen restartia ja kuuntelua.
+Master-presencen koneellinen osa on valmis. Oikean saaren otsikon master L/R
+tulee olemassa olevasta post-safety-mittarista. Ensimmäinen raw-input-
+`SendPeakRMS` vedettiin takaisin toistettavan Windows WASAPI -jumituksen
+jälkeen, joten `into yölahti` -presence näyttää nyt rehellisesti `—`. Presence
+ei todista draft-laitetta eikä fyysistä kaapelointia ennen restartia ja
+kuuntelua.
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/compile_check.scd
@@ -1480,12 +1481,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
 - [x] Avattu Audio-sivu saa viimeisen cachen heti
 - [x] Yhdistetty 40 Hz testivirta tuottaa enintään 15 GUI-paint-batchia/s
 - [x] Sub-pixel-tasonmuutos ei repainttaa
-- [x] Free poistaa Audio-listenerin, `/cq_io_inputs`- ja master-OSCdefit
+- [x] Free poistaa Audio-listenerin ja master-OSCdefin; withdrawn
+      `/cq_io_inputs`-vastaanotinta ei rekisteröidä
 - [x] Puhdas draft näyttää `no changes` ja aktiivisen `restart audio` -polun
 - [x] Vastaamaton rekisteröity serveri näkyy danger-tilana ja hermettinen
       lifecycle-portti todistaa quit-before-boot-palautuksen
-- [ ] System default boot: aktiivinen live L/R näkyy oikeissa raw-presence-
-      riveissä ja kuuluu valitun preamp/monitor-polun mukaan
+- [ ] Vakaa raw-input-lähde ennen fyysisiä presence-väitteitä
+- [ ] System default boot: live L/R kuuluu valitun preamp/monitor-polun mukaan
 - [ ] Yksi USB-interface single-device-tilassa: restart onnistuu, presence ja
       main L/R vastaavat sen fyysisiä portteja
 - [ ] Windows split input/output samalla host APIlla: molemmat laitteet
