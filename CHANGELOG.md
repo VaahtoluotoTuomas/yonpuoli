@@ -81,6 +81,17 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Changed (Nocturne)
 
+- Revoiced Coco digital dust from a breathing white-noise bed into a quieter
+  9 kHz-filtered floor plus sparse bipolar chip errors. Clocked RAM now thins
+  the errors into roughly 30–960 stored grains/s across the 1.5–48 kHz Speed
+  range, keeping slow crackle distinct and the fast end drier than legacy
+  hiss. A dedicated NRT character gate guards loudness, crest, density and
+  high-frequency balance alongside the existing maximum-dust safety render.
+  Rebalanced `selfNoise` around below-unity rest gains, irregular held-castle
+  blooms and fully closing cross-feed valves, so it can clear and regrow
+  instead of settling into a periodic saturated sea; a 120-second ecology gate
+  now guards clearing, rebloom, envelope irregularity and rail residence. The
+  new dust source and the revised preset were accepted by ear on 2026-07-29.
 - Widened the playable middle of the Quantussy Chaos hand with a `+2.0`
   control curve while preserving direct values, snapshots and the 0–1 DSP
   semantics. Night's storm iris now reveals four planted broken weather rings

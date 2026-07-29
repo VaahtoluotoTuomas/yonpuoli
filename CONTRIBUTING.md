@@ -45,6 +45,8 @@ DSP-behavior changes also require:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_hold_integrity.scd -Sclang "C:\Program Files\SuperCollider-3.14.1\sclang.exe"
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_dust_character.scd -Sclang "C:\Program Files\SuperCollider-3.14.1\sclang.exe"
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_selfnoise_character.scd -Sclang "C:\Program Files\SuperCollider-3.14.1\sclang.exe"
 ```
 
 A marker missing from the end of output counts as failure even if the process exits

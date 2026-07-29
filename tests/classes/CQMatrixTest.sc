@@ -135,10 +135,20 @@ CQMatrixTest : UnitTest {
 		var om = CQMatrix.presets[\organMode][\params];
 		this.assertEquals(sn[\coco1Hold], 0,
 			"\\selfNoise records (dust cannot accumulate under hold)");
-		this.assert(sn[\coco1Fb] >= 1.0, "\\selfNoise loops its dust (fb >= unity)");
+		this.assert(sn[\coco1Fb].inclusivelyBetween(0.75, 0.95),
+			"\\selfNoise rests below unity so only held CV plateaus bloom");
+		this.assert(sn[\coco2Fb].inclusivelyBetween(0.75, 0.95),
+			"\\selfNoise gives the second loop the same clearing room");
 		this.assert(sn[\coco1Dust] > 0.1, "\\selfNoise raises the dust knob");
+		this.assert(sn[\coco1In] <= 0.5,
+			"\\selfNoise lowers the input valve so cas can cut cross-feed fully");
 		this.assertEquals(sn[\coco1SlotPre], 0, "\\selfNoise is no-input (pre slot shut)");
 		this.assertEquals(sn[\coco1SlotDeck], 0, "\\selfNoise is no-input (deck slot shut)");
+		this.assertEquals(sn[\coco1SlotQ], 0, "\\selfNoise shuts inherited qMix audio");
+		[\c1Range, \c2Range, \c3Range, \c4Range].do { |name|
+			this.assertEquals(sn[name], \infra,
+				"\\selfNoise keeps modulation source % slow".format(name));
+		};
 		this.assertEquals(qd[\c1Range], \audio, "\\quantumDrone lifts castles to audio");
 		this.assert(qd[\coco1SlotQ] > 0, "\\quantumDrone opens the qMix slot");
 		this.assert(qd[\c1Send] > 0, "\\quantumDrone sends the castles out");

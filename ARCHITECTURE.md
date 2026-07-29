@@ -224,7 +224,9 @@ var inVca   = (inLevel + CQSynthDefs.prVcaLaw(inVcaSum)).clip(0, 2);
 var fbVca   = (fbLevel + CQSynthDefs.prVcaLaw(fbVcaSum)).clip(0, 2.5);
 var inCh    = dolby(inSig, dolbyInMode, keyEnv: fbEnv);   // 3-mode gate/duck helper
 var fbCh    = dolby(here,  dolbyFbMode, keyEnv: inEnv);
-var record  = (inCh * inVca) + (fbCh * fbVca) + (WhiteNoise.ar(dust) * LFNoise2.ar(3));
+var dustSig = (LPF.ar(WhiteNoise.ar, 9000) * 0.35)
+    + (Dust2.ar(SampleRate.ir * 0.02) * 1.2);
+var record  = (inCh * inVca) + (fbCh * fbVca) + (dustSig * dust);
 record      = Select.ar(wrap, [record.clip2(1), record.wrap2(1)]);   // ADC rails
 record      = record.round(2 ** (1 - bits));                        // requantize EVERY pass
 var write   = Select.ar(hold, [record, here]);       // hold = identity rewrite (lossless)

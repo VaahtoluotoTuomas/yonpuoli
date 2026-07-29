@@ -38,12 +38,14 @@ kaapeliprioriteetti ja snapshot-kansion erotus — valmistui 2026-07-28.
 käyttäjän kuuntelu- ja näkökatselmuksessa 2026-07-28. Space-kuuntelupäätös,
 tuotantoketjun hallittu eläköitys ja Nightin täyden mittakaavan GUI-passi
 hyväksyttiin 2026-07-28–29. 13.2 speed-lattia (vaihtoehto A) ja 13.5:n
-kiinteä p = 2 VCA-laki hyväksyttiin 2026-07-29.** Seuraava avoin portti on
-**13.3 dust**, jonka jälkeen järjestys on **13.6 zipper-mittaus +
-13.8 preampin equal-loudness-koe → Audio I/O Setup Drawerissa (AIO, alla) →
+kiinteä p = 2 VCA-laki sekä 13.3:n uusi dust-lähde ja sen uudelleen viritetty
+`selfNoise`-preset hyväksyttiin 2026-07-29.** Seuraava varsinainen portti on
+**13.6 zipper-mittaus + 13.8 preampin equal-loudness-koe**, jonka jälkeen
+järjestys on **Audio I/O Setup Drawerissa (AIO, alla) →
 nelikanavainen laitteisto-/resource-soak → kolme huokoista soittotilaa →
 Norns-portti (§14).** Yksi musiikillinen muuttuja käsitellään edelleen
-kerrallaan.
+kerrallaan. N10:n sydän/kela- ja chevron-vihjeiden lyhyt visuaalinen
+hyväksyntä pysyy erillisenä avoimena GUI-velkana.
 
 ## Auktoriteettijärjestys
 
@@ -420,7 +422,8 @@ efektinä. Nykyistä Space/FDN-linjaa ei jatketa.
 
 - [x] 13.1 feedback-taper (**hyväksytty 2026-07-28, myös asteikkolisäykset**) ·
   [x] 13.2 speed-lattia (**hyväksytty 2026-07-29, vaihtoehto A**) ·
-  [ ] 13.3 dust ·
+  [x] 13.3 dust + `selfNoise` (**hyväksytty 2026-07-29; Bits-eristys on
+  myöhempi ei-estävä testi**) ·
   [x] 13.4 chaos-käyrä (**hyväksytty 2026-07-28, myös sääkehät**) ·
   [x] 13.5 VCA-laki (**hyväksytty 2026-07-29, kiinteä p = 2**) ·
   [ ] 13.6 zipper-mittaus ·

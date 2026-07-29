@@ -113,7 +113,10 @@ The implementation MUST reproduce these behaviors (these drive the acceptance te
 4. **Bounded chaos.** Feedback > unity must escalate into saturated, quantized mayhem
    that is *loudness-stable* (bounded by the converter clip), never a runaway level.
 5. **Digital dust.** With no input, feedback raised collects a granular noise floor
-   that can be caught into loops (self-noise source, level controllable in SC).
+   that can be caught into loops (self-noise source, level controllable in SC). A
+   quiet 9 kHz-filtered bed carries continuity while sparse bipolar converter errors
+   provide the chip-crackle; the RAM clock thins those errors so stored grain density
+   follows Speed (roughly 30–960 errors/s across 1.5–48 kHz).
 6. **Lossless hold.** Loop-hold plays the buffer indefinitely with zero degradation,
    and Speed changes during hold re-pitch the loop without destroying it.
 7. **Quantussy feel.** Master Frequency + Chaos as the two-knob macro: 0 = stable
@@ -227,7 +230,7 @@ Per Coco `n` ∈ {1,2} (names shown for n=1):
 | `coco1Bits` | 3–12 | 8 | lin (int) | converter depth. 8 = authentic |
 | `coco1Wrap` | 0/1 | 0 | — | 0 = converter clips (authentic-safe); 1 = digital wraparound overflow (evil mode, still level-bounded downstream) |
 | `coco1Interp` | enum | `\zoh` | — | `\zoh` (authentic stair-step DAC) / `\smooth` (cubic read, tamer top end) |
-| `coco1Dust` | 0–0.5 | 0.02 | exp | self-noise injected pre-converter; the "digital dust" source |
+| `coco1Dust` | 0–0.5 | 0.02 | exp | filtered low bed + sparse bipolar chip errors injected pre-converter; stored error density follows Speed |
 | `coco1Organ` | 0–1 | 0 | lin | level of the organ square-stack voice (pitch tracks Speed) into this Coco's output mix |
 | `coco1Level` | 0–1.5 | 0.8 | exp | output level to mix |
 | `coco1Pan` | −1–1 | −0.3 (coco2: +0.3) | bipolar | |
@@ -307,8 +310,9 @@ Outputs published to the mod source bus: `tri1..tri5` (±1 triangle), `cas1..cas
   Existing callers are unaffected: the default is the historical ~10%.
 - Named presets shipped in v1 (derived from documented hardware patches):
   `\empty`, `\classic` (tri→spaf both Cocos, castle→castle FM ring),
-  `\selfNoise` (dust looping + VCA wobble), `\quantumDrone` (castles as audio, skip/flip
-  animation), `\organMode` (organ outs as voices, cas→VCAs, tri→spaf light),
+  `\selfNoise` (dust looping as irregular held-feedback weather with true cross-feed
+  clearings), `\quantumDrone` (castles as audio, skip/flip animation),
+  `\organMode` (organ outs as voices, cas→VCAs, tri→spaf light),
   `\mayhem` (dense random, capped depths).
 
 ### 5.6 Master

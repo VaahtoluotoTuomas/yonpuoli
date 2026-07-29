@@ -1346,27 +1346,80 @@ plain noise reads as tape hiss. Sparse bipolar grain, whose density
 follows the clock, would make the selfNoise workflow organic — and the
 link is physical: fewer conversions per second, fewer error events.
 
-**Proposal.** In `\cqCoco`, replace the dust source (verify its current
-form first) with a blend, injected at the same pre-converter point so
-safety invariant 2 (clip before quantize) is structurally untouched:
+**Implemented candidate (2026-07-29).** In `\cqCoco`, the dust source is a
+blend injected at the same pre-converter point, so safety invariant 2
+(clip before quantize) is structurally untouched:
 
 ```
 dustSig = (LPF.ar(WhiteNoise.ar, 9000) * 0.35
-    + Dust2.ar(clockHz * 0.02) * 1.2) * dustLevel
+    + Dust2.ar(SampleRate.ir * 0.02) * 1.2) * dustLevel
 ```
 
-- `clockHz * 0.02` ≈ 30 grains/s at the new 1 500 Hz floor, ~960/s at
-  48 k — crackle when slow, dense sizzle when fast, and dust *audibly
-  follows the speed knob* (the poetic coupling, free of charge).
+- The original draft's `clockHz * 0.02` was rejected after measuring the
+  actual clocked write. At 1 500 Hz, BufWr revisits a RAM cell for about 32
+  server samples and overwrites almost every one-sample impulse before the
+  address advances; clocking the raw impulse source would therefore make
+  surviving errors follow approximately clock squared.
+- A constant two-percent-per-server-sample error stream lets the RAM clock
+  do the physically meaningful thinning. Stored Dust2 errors are then
+  approximately `clockHz * 0.02`: ~30 grains/s at 1 500 Hz and ~960/s at
+  48 kHz. Dust still *audibly follows the speed knob*, now linearly.
 - Calibrate the two mix constants by ear so the default `dust = 0.02`
   keeps roughly the old loudness — old snapshots must not get louder.
 - No new parameters (the norns diet): the blend constants are fixed
   interpretation, commented with a reference in the SynthDef.
 
+The automated character render (`tests/nrt_dust_character.scd`) measures
+the real SynthDef at 1 500, 24 000 and 48 000 Hz. The candidate is 2.1–6.1
+dB below the legacy source in RMS, but its crest factor is ~9.2–9.5 and
+kurtosis ~15.5 instead of hiss-like values near 3. Stored change activity
+rises about 22x from the slow to fast end while RMS stays within 0.3 dB.
+At 48 kHz its spectral centroid is 9.43 kHz (legacy 11.97 kHz), with 40.3%
+of energy above 10 kHz (legacy 57.7%). This deliberately spends less energy
+on a masking, bright bed and more on audible events; the manual ear gate
+below still owns final acceptance.
+
+**Accepted 2026-07-29.** In the exact A/B the new source was consistently
+preferred: a quieter, breathing rain bed with more internal levels, where the
+legacy source broke into louder, flatter bursts and abrupt empty cuts. Live
+Speed sweeps kept one recognizable material from dark 1.5 kHz crackle through
+gravel and paper-dry chip dust to a pleasant 48 kHz hiss, without a piercing
+tone. `dust=0.02` stayed deliberately subtle in program material, `0.2` was
+already an obvious effect, maximum dust produced no hard spikes, and the source
+worked in the user's own patches. No global level correction: raising the
+source would spend the gained headroom on masking and accelerate selfNoise
+saturation.
+
+The slow-write follow-up also corrected the listening protocol's premise.
+Recording at 48 kHz then playing at 1.5 kHz and recording directly at 1.5 kHz
+should be statistically similar: in either case about two percent of stored
+RAM cells carry a Dust2 error. Speed changes temporal density on playback;
+write speed does not change that per-cell distribution.
+
+**Deferred, non-blocking:** the 5/8/12-bit comparison was masked by program
+material and insufficient recirculation time. Converter depth gets its own
+isolated capture test with identical quiet material and at least three complete
+write passes. It does not reopen the accepted dust source.
+
+**selfNoise follow-up.** The source passed in ordinary patches, but the old
+preset's regular triangle feedback accumulated into a nearly continuous
+ocean-swell mass. Lowering only feedback or dust softened/slowed that attractor
+without creating real clearings. The revised preset therefore rests below
+unity, lets held castle values create irregular above-unity plateaus, lowers
+the cross-feed valves far enough for castle steps to close them fully, and
+forces its four modulation castles back to infra range. A real 120 s
+Quantussy+Coco render changed from +9.6 dB monotonic growth to +3.4 dB,
+made an 8.2 dB clearing followed by a 7.2 dB rebloom, reduced 10 s envelope
+correlation from 0.87 to 0.49, and spent effectively no samples near the
+converter rail. `tests/nrt_selfnoise_character.scd` preserves those facts;
+the user accepted the revised preset on 2026-07-29 as musically better than
+the old ocean-swell version. The final ear gate is closed.
+
 **Consequences to check.** DSP change: full battery incl. A3 (its stress
-case runs dust at max — impulses hit the quantizer at full scale, bounded
-by clip2; the peak assert is the honest judge) and A4. M4's checklist
-figure (selfNoise) is the acceptance ear.
+case runs dust at max — impulses hit the quantizer hard and feedback can
+reach the full-scale converter rails, bounded by clip2; the peak assert is
+the honest judge) and A4. M4's checklist figure (selfNoise) is the
+acceptance ear.
 
 **Listening protocol:**
 

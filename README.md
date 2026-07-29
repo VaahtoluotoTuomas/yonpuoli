@@ -138,6 +138,8 @@ powershell -File tests/run_sclang_gate.ps1 tests/compile_check.scd      -> CQ_CO
 powershell -File tests/run_sclang_gate.ps1 tests/run_all.scd            -> CQ_TESTS_PASSED
 powershell -File tests/run_sclang_gate.ps1 tests/nrt_safety.scd         -> CQ_SAFETY_PASSED
 powershell -File tests/run_sclang_gate.ps1 tests/nrt_hold_integrity.scd -> CQ_HOLD_OK
+powershell -File tests/run_sclang_gate.ps1 tests/nrt_dust_character.scd -> CQ_DUST_OK
+powershell -File tests/run_sclang_gate.ps1 tests/nrt_selfnoise_character.scd -> CQ_SELFNOISE_OK
 ```
 
 The wrapper owns the headless process, timeout and success marker; its default

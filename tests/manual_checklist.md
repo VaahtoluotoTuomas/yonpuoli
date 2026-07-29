@@ -164,12 +164,12 @@ CQ.set(\qShLag, 0.004);        // takaisin: autenttiset kovat askeleet
 // M4 — \selfNoise: no-input digital-dust -workflow yhtenä eleenä
 // (vaiheen 2 dust-resepti presetiksi paketoituna + VCA-wobble).
 CQ.boot;                       // (tai jatka sessiota)
-CQ.patchPreset(\selfNoise);    // sulkee pre/deck-slotit, hold 0, fb 1.1,
-                               // dust ylös, slotX-ristisyöttö 0.3,
-                               // tri->fbVca-wobble + cas->inVca-portit + spaf-drift
-// 1. Kuuntele ~60 s ilman inputtia: rakeinen dust-pohja kertyy molempiin
-//    looppeihin PURSKEINA (ei tasaisesti); feedback-wobble hengittää
-//    tiheyttä hitaasti, cas-askeleet avaavat/sulkevat ristisyöttöä.
+CQ.patchPreset(\selfNoise);    // sulkee ulkoiset slotit, hold 0, fb alle unityn,
+                               // dust ylös, täysin sulkeutuva ristisyöttö,
+                               // held-cas feedback-sää + vastakkainen spaf-drift
+// 1. Kuuntele 120 s ilman inputtia: rakeinen dust-pohja rakentaa bloomin,
+//    held-feedback purkaa sen oikeaksi clearingiksi ja kasvattaa uuden.
+//    Tapahtumien ei pidä toistua säännöllisen meren rytmissä.
 //    Loopit eri kelloilla (24k/18k) - pari ei lukitu samaan fraasiin.
 CQ.set(\qChaos, 0.5);          // 2. villimmät askeleet wobble/gate-lähteisiin
 CQ.hold(1); CQ.hold(2);        // 3. lukitse tekstuuri looppipariksi...
@@ -1014,6 +1014,155 @@ CQ.free;
 
 - [x] 13.2 hyväksytty (2026-07-29 — äänialueet paikoin äärimmäisiä mutta
       kokeelliseen musiikkiin sopivia; mahdollinen hienosäätö myöhemmin)
+
+### 13.3 — Digital dustin korvaportti
+
+Kandidaatti korvaa jatkuvan `WhiteNoise × LFNoise2` -maton kahdella kiinteällä
+kerroksella: hiljainen 9 kHz:iin pehmennetty pohja ja bipolaarinen chip-crackle.
+Uusia parametreja tai snapshot-semanttiikkaa ei ole. Tee testit kuulokkeilla tai
+hyvillä monitoreilla hiljaisella mutta yksityiskohdat paljastavalla tasolla;
+aloita aina `masterVol = -30`, sillä selfNoise ja maksimi-dust kasvavat nopeasti.
+
+#### A. Tarkka vanha/uusi A/B ilman patchin muita muuttujia
+
+Aja ensin:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_dust_character.scd
+```
+
+Se luo `tests/tmp/nrt_dust_1500.wav`, `nrt_dust_24000.wav` ja
+`nrt_dust_48000.wav`. Tuo yksi kerrallaan DAWiin, split stereo to mono ja keskitä
+molemmat raidat: **vasen = uusi**, **oikea = vanha**. Älä normalisoi, kompressoi
+tai tasaa gainia. Looppa viimeiset kolme sekuntia (5–8 s) ja solo-vaihda raitoja
+5–10 sekunnin välein.
+
+1. Aloita 24 kHz:stä. Uuden pitää olla vähemmän yhtenäinen kohinaverho ja enemmän
+   pieniä, epäsäännöllisiä tapahtumia. Se saa tuntua hieman hiljaisemmalta, mutta
+   ei tyhjältä.
+2. 1,5 kHz:ssä yksittäisten rakeiden ja nollan väliin pitää jäädä ilmaa. Hylkää,
+   jos tulos on harva napsutesti, tasainen bitcrush-surina tai bassoinen popitus.
+3. 48 kHz:ssä rakeet saavat sulautua kuivaksi kihinäksi, mutta ylä-ääni ei saa
+   muuttua valkoiseksi hissiksi, lasiseksi sirinäksi tai korvaa väsyttäväksi
+   neulaksi.
+4. Palaa 24 kHz:iin ja gain-matchaa uusi vain vertailun vuoksi noin +4 dB.
+   Karakterieron pitää säilyä. Palauta sitten gain nollaan: varsinainen
+   hyväksyntä tehdään ilman loudness-kompensaatiota.
+
+#### B. Sama materiaali koko Speed-kaistan läpi
+
+```supercollider
+// Ctrl+Shift+L ensin: SynthDef muuttui.
+CQ.free;
+CQ.boot;
+CQ.patchPreset(\empty);
+CQ.set(\masterVol, -30);
+// Eristä Coco 1 ja nollaa kaikki muu, myös aiempien presetien residuaalit.
+CQ.set(\coco2Level, 0);
+CQ.set(\coco1SlotPre, 0); CQ.set(\coco1SlotDeck, 0);
+CQ.set(\coco1SlotQ, 0);   CQ.set(\coco1SlotX, 0);
+CQ.set(\coco1In, 0);      CQ.set(\coco1Fb, 0);
+CQ.set(\coco1Organ, 0);   CQ.set(\coco1Bits, 8);
+CQ.set(\coco1Wrap, 0);    CQ.set(\coco1Interp, \zoh);
+CQ.set(\coco1Level, 1);   CQ.set(\coco1Dust, 0.08);
+CQ.set(\coco1Speed, 48000);
+CQ.hold(1, 0);            // kirjoita pölyä täydellä kellolla 4 s
+// odota 4 s
+CQ.hold(1, 1);            // jäädytä täsmälleen sama materiaali
+```
+
+Käy sitten `coco1Speed`-arvot 1500 → 3000 → 6000 → 12000 → 24000 → 48000 ja
+takaisin. Viivy jokaisessa 8–12 s.
+
+- 1500–3000 Hz: erillinen, tumma rapina; rouhea mutta ei rikkinäinen liitin.
+- 6000–12000 Hz: soramainen väli, jonka pitäisi olla erityisen käyttökelpoinen
+  rytmittömissä droneissa ja hiljaisissa kenttä-äänissä.
+- 24000 Hz: kuiva chip-pöly, joka antaa reunaa viemättä lähteeltä syvyyttä.
+- 48000 Hz: tiheä mutta ohut kihinä; ei leveää hissimattoa eikä kivuliasta
+  yläpäätä.
+- Vaihtojen pitää olla yhtä materiaalia eri nopeuksilla, ei neljä irrallista
+  efektiä. Mitään sävelkorkeuteen lukittuvaa vihellystä ei saa ilmaantua.
+
+Lähteen hitaalla kellolla kirjoittuvan jakauman voi varmistaa asettamalla
+lopuksi `hold = 0`, `speed = 1500` ja odottamalla yhden täyden oletusbufferin
+kierroksen (~87,4 s). Sen jälkeen lukitse hold uudelleen. Suoraan 1,5 kHz:llä
+kirjoitetun ja ensin 48 kHz:llä kirjoitetun mutta 1,5 kHz:llä toistetun
+materiaalin kuuluukin olla lähes yhtä tiheää: molemmissa noin 2 % RAM-soluista
+kantaa crackle-tapahtumaa. Nopeusero kuuluu, kun samaa bufferia **toistetaan**
+eri nopeuksilla; tallennusnopeuden ei pidä muuttaa solukohtaista jakaumaa.
+
+#### C. Oletus-dust oikean ohjelmamateriaalin sisällä
+
+```supercollider
+CQ.free;
+CQ.boot;
+CQ.patchPreset(\classic);
+CQ.set(\masterVol, -24);
+CQ.deckA.load("<hiljainen puhe, piano tai yksityiskohtainen kenttä-ääni>");
+CQ.set(\coco1SlotDeck, 1); CQ.set(\coco1In, 0.8);
+CQ.set(\coco1Fb, 0.85);    CQ.set(\coco1Speed, 24000);
+CQ.set(\coco1Bits, 8);     CQ.set(\coco1Dust, 0.02);
+CQ.hold(1, 0);
+```
+
+Kuuntele vähintään 30 s ja vaihda dust 0 ↔ 0.02 noin 10 s jaksoissa; anna aina
+vähintään yksi looppi muutoksen jälkeen. Oletuksen pitää karhentaa hiljaisia
+häntiä ja nollakohtia, mutta puheen konsonanttien, pianon atakin ja
+kenttä-äänen etäisyyden pitää säilyä. Hylkää, jos stereokuva kutistuu, hiljaiset
+yksityiskohdat peittyvät tai kokonaisuus vain kuulostaa gainilta.
+
+Toista dust-arvoilla 0.08 ja 0.20:
+
+- 0.08: crackle saa erottua, mutta ei varastaa ohjelmamateriaalia.
+- 0.20: kohina on jo oma selvä ääni; säätimen käyttömaa ei saa loppua tähän.
+
+##### 13.3b — Bits-eristys (myöhemmäksi kirjattu)
+
+Ensimmäinen 5/8/12-bitin vertailu jäi ohjelmamateriaalin ja bufferiin jääneen
+aiemman sisällön peittämäksi. Tee myöhemmin oma testi yhdellä identtisellä,
+hiljaisella loopilla: `dust = 0.08`, muut tulot ja feedback pois, kirjoita
+jokaisella bittisyvyydellä vähintään kolme täyttä kierrosta ja lukitse Hold
+ennen A/B:tä. Tämä ei estä hyväksyttyä dust-algoritmia.
+
+- [ ] 13.3b Bits 5/8/12 eristetty korvatesti (pvm: ______)
+
+#### D. `selfNoise` — varsinainen hyväksyntäkorva
+
+```supercollider
+CQ.free;
+CQ.boot;                    // fresh state: presetit ovat tarkoituksella overlay
+CQ.set(\masterVol, -30);
+CQ.patchPreset(\selfNoise);
+```
+
+1. Anna ekologian elää 120 s koskematta mihinkään. Sen pitää rakentaa vähintään
+   yksi selvä bloom, tyhjentyä kuultavasti ja rakentaa myöhemmin uusi bloom.
+   Ajankohtien ei pidä toistua merenaallon säännöllisyydellä. Hylkää, jos taso
+   vain kasvaa, kuolee pois tai asettuu yhdeksi jatkuvaksi kohinamassaksi.
+2. Nosta masteria vain tarpeen mukaan enintään −18 dB:iin. Kuuntele erityisesti
+   hiljaisten aukkojen reunoja: niissä pitää olla pientä digitaalista roskaa,
+   ei gate-naksua.
+3. Lukitse molemmat: `CQ.hold(1, 1); CQ.hold(2, 1);`. Tekstuurin pitää jäädä
+   kiinnostavaksi ilman uusia virheitä. Kelaa kumpaakin erikseen 1500, 6000,
+   18000/24000 ja 48000 Hz: hitaassa päässä kaunis rouheus, nopeassa kuiva
+   sizzle — ei piercing-hissiä.
+4. Avaa holdit ja kokeile lyhyesti `coco1Dust = 0.5`, `coco2Dust = 0.5`
+   masterin ollessa −30 dB. Maksimi saa olla väkivaltainen ja kyllästyvä, mutta
+   yksittäiset piikit eivät saa hypätä muun tekstuurin eteen eikä taso saa
+   karata kierros kierrokselta.
+5. Palauta `selfNoise`, soita sen päälle yksi oma tuttu patchi ja arvioi viimeinen
+   asia: onko pölyllä oma kaunis, rouhea identiteetti, mutta jättääkö se silti
+   tilaa patchin rytmille, korkeuksille ja dynamiikalle?
+
+Dust-lähteen korvaportti on valmis; tämä viimeinen D-osuus hyväksyy erikseen
+uudelleen viritetyn presetin.
+
+- [x] 13.3 dust-algoritmi hyväksytty (2026-07-29 — uusi A/B:ssa
+      miellyttävämpi ja hengittävämpi; koko Speed-kaista samaa materiaalia;
+      oletus ei peitä ohjelmaa; maksimi turvallinen; oma patch toimii)
+- [x] M4b selfNoise broken-weather -preset hyväksytty (2026-07-29 —
+      bloom → clearing → rebloom on vanhaa meriaalto-versiota kiinnostavampi;
+      preset toimii musiikillisesti paremmin eikä asetu rail-massaksi)
 
 ### N10 — Kuoren sydän omistaa oman kiekkonsa (§4.5)
 

@@ -194,7 +194,7 @@ CQSynthDefs {
 		^SynthDef(\cqCoco, {
 			var buf, frames, speed, spafKnob, clockHz, ratio, dir, phase;
 			var here, hereSmooth, dolby, inSig, inVca, fbVca, inEnv, fbEnv;
-			var inCh, fbCh, record, write, outTap, organ, voice, lvl;
+			var inCh, fbCh, dustLevel, dustSig, record, write, outTap, organ, voice, lvl;
 			var patchDepth, mods, wSpaf, wInVca, wFbVca, wFlip, wSkip;
 			var spafSum, inVcaSum, fbVcaSum, flipSum, skipSum, flipGate, skipTrig;
 			buf = \buf.ir(0);
@@ -258,9 +258,17 @@ CQSynthDefs {
 				inEnv, fbEnv);
 			fbCh = dolby.value(here, \dolbyFb.kr(enumIdx.value(\coco1DolbyFb)),
 				fbEnv, inEnv);
-			record = (inCh * inVca) + (fbCh * fbVca)
-				+ (WhiteNoise.ar(\dust.kr(CQSpec.default(\coco1Dust), CQSpec.lag(\coco1Dust)))
-					* LFNoise2.ar(3));
+			// §13.3: chip debris, not a tape-hiss control. The quiet filtered bed
+			// keeps low dust settings continuous; sparse bipolar errors give the
+			// converter its own rough grain. Dust2's source rate is 2% of SR rather
+			// than 2% of clockHz on purpose: at slow clocks BufWr revisits one RAM
+			// cell for many server samples and only the last error survives. That
+			// natural thinning makes the STORED crackle density follow clockHz
+			// linearly (~30..960 grains/s at 1.5k..48k), instead of quadratically.
+			dustLevel = \dust.kr(CQSpec.default(\coco1Dust), CQSpec.lag(\coco1Dust));
+			dustSig = (LPF.ar(WhiteNoise.ar, 9000) * 0.35)
+				+ (Dust2.ar(SampleRate.ir * 0.02) * 1.2);
+			record = (inCh * inVca) + (fbCh * fbVca) + (dustSig * dustLevel);
 			record = Select.ar(\wrap.kr(CQSpec.default(\coco1Wrap)),
 				[record.clip2(1), record.wrap2(1)]);       // ADC rails — safety #2
 			record = record.round(2 ** (1 - \bits.kr(CQSpec.default(\coco1Bits))));
