@@ -1442,6 +1442,10 @@ Portit AIO-2:ssa ja Windows-rivinvaihtokorjauksessa: `CQ_COMPILE_OK`;
   käyttää oikeaa staattista ink-kieltä.
 - [x] Aja compile → run_all → `nrt_safety` → `nrt_hold_integrity` sekä kaikki
   Drawer/Night/shell-smoket, koska boot-lifecycle ja config ovat muuttuneet.
+- [x] Fyysinen split-WASAPI candidate-roundtrip 2026-07-29: server block
+  64→128→64 tallentui exact generated overlayhin, GUI palasi kummankin
+  restartin jälkeen, ääni ja Night-liike jatkuivat ja lopullinen `scsynth`
+  vastasi kolmeen ulkoiseen `/status`-kyselyyn.
 
 Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
 36/36 luokkaa**; `CQ_SAFETY_PASSED`, `CQ_HOLD_OK`,

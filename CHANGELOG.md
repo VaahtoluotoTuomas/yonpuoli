@@ -64,7 +64,10 @@ tagged. Earlier tags describe internal development baselines.
   last-working rollback, terminal silent failure diagnostics and symbolic
   Audio-tab reopen. Successful audio is promoted only after the full graph
   reaches running; a failed final rename remains `running · not saved` and can
-  be retried without another reboot.
+  be retried without another reboot. The physical split-WASAPI candidate
+  roundtrip also passed at server block 64→128→64: both values persisted
+  exactly, both rebuilt GUIs restored sound and Night motion, and the final
+  server remained externally responsive.
 - `CQAudioReconfigure`, a serverless candidate/rollback coordinator with
   explicit lifecycle callbacks and hermetic success, rollback, stale-callback,
   recorder-block and retry tests.

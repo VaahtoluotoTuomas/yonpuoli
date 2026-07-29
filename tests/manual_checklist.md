@@ -1456,6 +1456,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
 - [x] Stale callback ei muuta activea, profiilia eikä Audio-tabin tilaa
 - [x] `running · not saved` voidaan tallentaa uudelleen ilman reboottia
 - [x] Uusi GUI kuluttaa symbolisen `\audio`-reopenin vain kerran
+- [x] Fyysinen candidate-roundtrip (split-WASAPI 2026-07-29): server block
+      64→128→64 säilyy exact overlay-arvona, GUI/ääni/Night palautuvat
+      kummallakin restartilla ja lopullinen serveri vastaa `/status`-kyselyihin
 
 ### AIO-4 — signaalipresence ja fyysinen hardware-I/O-portti
 
