@@ -1461,7 +1461,8 @@ Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
   edelleen nolla `_ListAudioDevices`-kutsua. Fyysinen split-WASAPI-portti
   hyväksyttiin 2026-07-29: recommended-listat olivat tiiviit, show-all palautti
   legacy-ajurit, exact aktiiviset endpointit säilyivät ja ääni, Night-liike
-  sekä presence jatkuivat Audio-sivu auki.
+  sekä presence jatkuivat Audio-sivu auki. Clean `restart audio` käytti saman
+  stopped-server-rajan; GUI palasi ja ääni sekä Night-liike palautuivat.
 - [x] Master-cache/listener, visible-page refresh gate ja
   paint-count-/cleanup-testit.
 - [x] Qt-paint-batch-portti todistaa, ettei piilotettu Audio-sivu piirrä,

@@ -1501,6 +1501,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
 - [x] Fyysinen AIO-5 split-WASAPI-portti (2026-07-29): tiivis recommended,
       show-all ja paluu recommendediin toimivat Audio-sivu auki ilman äänen,
       Night-liikkeen tai input/master-presencen katkeamista
+- [x] Clean `restart audio` pysäyttää serverin, ottaa uuden directional-cachen
+      ja rakentaa GUI:n takaisin; ääni ja Night-liike palautuvat ilman
+      unresponsive-tilaa (split-WASAPI 2026-07-29)
 - [x] Eristetty raw-input-uusintatesti (2026-07-29): split-WASAPI käynnistyi,
       ääni/Night pysyivät elävinä, molemmat live-presence-rivit reagoivat ja
       sama `scsynth` vastasi kolmeen ulkoiseen `/status`-kyselyyn

@@ -29,7 +29,8 @@ tagged. Earlier tags describe internal development baselines.
   Windows host prefixes by default while retaining every exact active/draft
   endpoint; scan failure remains nonfatal and falls back to configured or stale
   cached devices. The split-WASAPI physical gate passed with sound, Night
-  motion and presence uninterrupted while toggling both views.
+  motion and presence uninterrupted while toggling both views, and a clean
+  Audio restart rebuilt the GUI and restored the same working audio session.
 - Moved the technical Audio page to the Drawer's rightmost tab, after the
   Inspector, Workshop, Spellbook and Memory musical/workflow pages.
 - Adopted **Yölahti** as the independent product identity while retaining the
