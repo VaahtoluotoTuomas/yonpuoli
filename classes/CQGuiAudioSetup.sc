@@ -1,4 +1,4 @@
-// CQGuiAudioSetup — the Drawer's fifth page (AIO-3).
+// CQGuiAudioSetup — the Drawer's fifth/rightmost page (AIO-4).
 //
 // The page edits CQAudioConfig's draft only. No dropdown touches the running
 // server. Apply first enters a static inline confirmation; only its restart
@@ -23,6 +23,10 @@ CQGuiAudioSetup {
 	var hostFirstSpacer, hostTitleSpacer, refreshRightSpacer;
 	var inputTitleSpacer, outputTitleSpacer, restartButtonSpacer;
 	var <confirming = false, <localStatus, <localError;
+	var <inputPresence, <masterPresence, inputPresenceDraw, masterPresenceDraw;
+	var presenceGains;
+	var <presenceFrameCount = 0, <presenceRefreshCount = 0;
+	var <presencePaintCount = 0, presenceSerial = 0, paintedPresenceSerial = 0;
 
 	*new { |gui, audioConfig, provider, controller|
 		^super.newCopyArgs(gui, audioConfig, provider, controller).prInit
@@ -55,6 +59,18 @@ CQGuiAudioSetup {
 
 	*hardwareBufferText { |frames|
 		^if(frames.isNil) { "driver default" } { frames.asString }
+	}
+
+	*presenceThreshold { ^(-48).dbamp }
+
+	// A presence rail is deliberately coarse: it answers whether a physical
+	// port carries anything, not how loud the instrument is. Quantizing the
+	// -60..0 dB range prevents sub-pixel meter noise from asking Qt to repaint.
+	*presenceNorm { |value|
+		var norm;
+		if(value.isNil) { ^nil };
+		norm = ((value.asFloat.abs.max(1e-6).ampdb + 60) / 60).clip(0, 1);
+		^(norm * 20).round / 20
 	}
 
 	*deviceModeText { |device|
@@ -122,9 +138,13 @@ CQGuiAudioSetup {
 		confirming = false;
 		localStatus = \restarting;
 		localError = nil;
-		// Only the detached model crosses this boundary. The transaction keeps
-		// no reference to this page, its controls or its soon-to-close window.
-		accepted = transactionController[\apply].value(model) == true;
+		// A dirty draft crosses into the transactional profile flow. A clean
+		// page instead restarts the exact active config without writing a file.
+		accepted = if(model.dirty) {
+			transactionController[\apply].value(model) == true
+		} {
+			transactionController[\restart].value == true
+		};
 		if(accepted.not) {
 			localStatus = transactionController[\status].value ? \failed;
 			localError = transactionController[\error].value;
@@ -148,8 +168,14 @@ CQGuiAudioSetup {
 		^this
 	}
 
+	serverHealthChanged {
+		this.prSyncDraft;
+		^this
+	}
+
 	hostRows {
 		var cfg = model.draft, device = model.draftAt(\device), mode;
+		var responsive = this.prServerResponsive;
 		var suffix = if(deviceError.notNil) {
 			" · device scan failed"
 		} {
@@ -160,13 +186,21 @@ CQGuiAudioSetup {
 		mode = CQAudioConfig.deviceMode(device);
 		rows = [
 			(label: "engine", value: ("% · active % · block % · hw %"
-				.format(Cocoquantus.lifecycleState,
+				.format(if(responsive) {
+					transactionController[\lifecycle].value
+				} {
+					"server not responding"
+				},
 					this.class.sampleRateText(model.activeAt(\sampleRate)),
 					model.activeAt(\blockSize),
 					this.class.hardwareBufferText(
 						model.activeAt(\hardwareBufferSize)))
 				++ suffix),
-				family: if(deviceError.notNil) { \danger } { \line }),
+				family: if(deviceError.notNil or: { responsive.not }) {
+					\danger
+				} {
+					\line
+				}),
 			(label: "device mode", value: this.class.deviceModeText(device),
 				control: true, dirty: model.dirtyAt(\device))
 		];
@@ -201,6 +235,7 @@ CQGuiAudioSetup {
 	inputRows {
 		var input = model.draftAt(\inChans);
 		var mic = model.draftAt(\micChan);
+		var activeMic = model.activeAt(\micChan);
 		^[
 			(label: "live l", value: this.class.channelText(input[0]),
 				control: true, dirty: model.dirtyAt(\inChans)),
@@ -209,13 +244,57 @@ CQGuiAudioSetup {
 			(label: "mic", value: if(mic.isNil) { "off" } {
 				"on · " ++ this.class.channelText(mic)
 			}, control: true, dirty: model.dirtyAt(\micChan), muted: mic.isNil),
-			(label: "live l signal", value: "awaiting AIO-4",
-				family: \input, presence: true, muted: true),
-			(label: "live r signal", value: "awaiting AIO-4",
-				family: \input, presence: true, muted: true),
-			(label: "mic signal", value: if(mic.isNil) { "off" } { "awaiting AIO-4" },
-				family: \input, presence: true, muted: mic.isNil)
+			this.prPresenceRow("live l signal", inputPresence[0],
+				inputPresenceDraw[0], presenceGains[0], true),
+			this.prPresenceRow("live r signal", inputPresence[1],
+				inputPresenceDraw[1], presenceGains[0], true),
+			this.prPresenceRow("mic signal", inputPresence[2],
+				inputPresenceDraw[2], presenceGains[1], activeMic.notNil)
 		]
+	}
+
+	masterPresenceText {
+		^"master l % · r %".format(
+			this.prPresenceWord(masterPresence[0]),
+			this.prPresenceWord(masterPresence[1]))
+	}
+
+	masterPresenceFamily {
+		^if(masterPresence.any { |value|
+			value.notNil and: { value >= this.class.presenceThreshold }
+		}) { \input } { \whisper }
+	}
+
+	presenceFrame { |inputs, master, gains|
+		var nextInputs = this.prPresenceValues(inputs, 3);
+		var nextMaster = this.prPresenceValues(master, 2);
+		var nextInputDraw = nextInputs.collect { |value|
+			this.class.presenceNorm(value)
+		};
+		var nextMasterDraw = nextMaster.collect { |value|
+			this.class.presenceNorm(value)
+		};
+		var inputChanged = nextInputDraw != inputPresenceDraw;
+		var masterChanged = nextMasterDraw != masterPresenceDraw;
+		presenceFrameCount = presenceFrameCount + 1;
+		inputPresence = nextInputs;
+		masterPresence = nextMaster;
+		inputPresenceDraw = nextInputDraw;
+		masterPresenceDraw = nextMasterDraw;
+		if(gains.notNil) {
+			gains = this.prPresenceValues(gains, 2);
+			if(gains != presenceGains) {
+				presenceGains = gains;
+				inputChanged = true;
+			};
+		};
+		if(inputChanged or: { masterChanged }) {
+			presenceRefreshCount = presenceRefreshCount + 1;
+			presenceSerial = presenceSerial + 1;
+			if(inputChanged) { inputView !? { inputView.refresh } };
+			if(masterChanged) { outputView !? { outputView.refresh } };
+		};
+		^(inputChanged or: { masterChanged })
 	}
 
 	outputRows {
@@ -258,6 +337,10 @@ CQGuiAudioSetup {
 		}
 		{ this.prRecorderBusy } {
 			validation = "stop REC before restarting audio";
+			family = \danger;
+		}
+		{ this.prServerResponsive.not } {
+			validation = "server not responding · restart audio";
 			family = \danger;
 		}
 		{ status == \restarting or: { status == \preparing } } {
@@ -320,6 +403,7 @@ CQGuiAudioSetup {
 	}
 
 	free {
+		gui !? { gui.removeAudioPresenceListener(this) };
 		allMenus.do { |menu| menu.free };
 		^this
 	}
@@ -372,6 +456,13 @@ CQGuiAudioSetup {
 	// ---- private ----
 
 	prInit {
+		inputPresence = [nil, nil, nil];
+		masterPresence = [nil, nil];
+		inputPresenceDraw = [nil, nil, nil];
+		masterPresenceDraw = [nil, nil];
+		presenceGains = [
+			CQSpec.default(\liveGain), CQSpec.default(\micGain)
+		];
 		deviceProvider = deviceProvider ?? { {
 			(
 				all: ServerOptions.devices,
@@ -388,9 +479,11 @@ CQGuiAudioSetup {
 				},
 				status: { Cocoquantus.audioReconfigureState },
 				error: { Cocoquantus.audioReconfigureError },
+				responsive: { Cocoquantus.serverResponsive },
 				apply: { |audioModel|
 					Cocoquantus.reconfigureAudio(audioModel)
 				},
+				restart: { Cocoquantus.restartCurrentAudio },
 				retry: { Cocoquantus.retryAudioProfileSave }
 			)
 		};
@@ -398,6 +491,11 @@ CQGuiAudioSetup {
 		metrics = CQGuiScale.metrics(step);
 		this.refreshDevices;
 		this.prBuild;
+		gui !? {
+			gui.addAudioPresenceListener(this, { |inputs, master, gains|
+				this.presenceFrame(inputs, master, gains)
+			})
+		};
 		^this
 	}
 
@@ -426,6 +524,7 @@ CQGuiAudioSetup {
 			.background_(palette[\recess]);
 		inputView.drawFunc = {
 			try {
+				this.prNotePresencePaint;
 				this.prDrawSection(inputView, "into yölahti", this.inputRows, \input)
 			} { |error| CQInkControl.noteDrawError(error) }
 		};
@@ -439,7 +538,9 @@ CQGuiAudioSetup {
 			.background_(palette[\recess]);
 		outputView.drawFunc = {
 			try {
-				this.prDrawSection(outputView, "out of yölahti", this.outputRows, \line)
+				this.prNotePresencePaint;
+				this.prDrawSection(outputView, "out of yölahti", this.outputRows,
+					\line, this.masterPresenceText, this.masterPresenceFamily)
 			} { |error| CQInkControl.noteDrawError(error) }
 		};
 		outputTitleSpacer = View().fixedHeight_(metrics[\titleHeight]);
@@ -790,11 +891,16 @@ CQGuiAudioSetup {
 			transactionController[\recorderState].value ? \idle)
 	}
 
+	prServerResponsive {
+		var responder = transactionController[\responsive];
+		^if(responder.isNil) { true } { responder.value == true }
+	}
+
 	prCanApply {
 		var device = model.draftAt(\device);
 		var reported = this.prDeviceReported(device,
 			CQAudioConfig.deviceMode(device));
-		^model.dirty and: { model.valid }
+		^model.valid
 			and: { reported }
 			and: { transactionController[\lifecycle].value == \running }
 			and: { this.prRecorderBusy.not }
@@ -823,13 +929,21 @@ CQGuiAudioSetup {
 				applyButton.label = "restart";
 				applyButton.enabled = true;
 			} {
-				discardButton.label = "discard changes";
+				discardButton.label = if(model.dirty) {
+					"discard changes"
+				} {
+					"no changes"
+				};
 				discardButton.enabled = model.dirty;
 				if(this.transactionStatus == \notSaved) {
 					applyButton.label = "retry save";
 					applyButton.enabled = true;
 				} {
-					applyButton.label = "apply & restart audio";
+					applyButton.label = if(model.dirty) {
+						"apply & restart audio"
+					} {
+						"restart audio"
+					};
 					applyButton.enabled = this.prCanApply;
 				};
 			};
@@ -906,6 +1020,47 @@ CQGuiAudioSetup {
 		^this
 	}
 
+	prPresenceValues { |values, size|
+		values = values ? [];
+		^Array.fill(size, { |index|
+			values[index] !? { |value| value.asFloat.abs }
+		})
+	}
+
+	prPresenceWord { |value|
+		if(value.isNil) { ^"—" };
+		^if(value >= this.class.presenceThreshold) { "signal" } { "quiet" }
+	}
+
+	prPresenceRow { |label, value, level, gain, configured|
+		var muted = configured.not or: { (gain ? 0) <= 0 };
+		var word = if(configured) { this.prPresenceWord(value) } { "off" };
+		^(
+			label: label,
+			value: if(configured) {
+				"% · %".format(word, if(muted) { "muted" } { "live" })
+			} {
+				"off"
+			},
+			family: if(configured and: {
+				value.notNil and: { value >= this.class.presenceThreshold }
+			}) { \input } { \line },
+			presence: true,
+			level: if(configured) { level } { nil },
+			muted: muted
+		)
+	}
+
+	// Both I/O UserViews can paint in one Qt refresh batch. Count the batch once
+	// by serial rather than pretending its two child callbacks are two frames.
+	prNotePresencePaint {
+		if(presenceSerial > paintedPresenceSerial) {
+			paintedPresenceSerial = presenceSerial;
+			presencePaintCount = presencePaintCount + 1;
+		};
+		^this
+	}
+
 	prDeviceRow { |label, value, reported|
 		var text = value;
 		if(value.isNil) { text = "system default" };
@@ -946,7 +1101,8 @@ CQGuiAudioSetup {
 		^Array.fill(64, { |index| this.class.channelText(index) })
 	}
 
-	prDrawSection { |surface, title, rows, titleFamily = \line|
+	prDrawSection { |surface, title, rows, titleFamily = \line,
+		titleRight, titleRightFamily = \whisper|
 		var palette = CQInk.palette(skin), rect = surface.bounds.moveTo(0, 0);
 		var left = metrics[\contentInset], right = rect.width - metrics[\contentInset];
 		var titleY = metrics[\titleHeight] - 3;
@@ -954,6 +1110,11 @@ CQGuiAudioSetup {
 		Pen.stringLeftJustIn(title,
 			Rect(left, 2, right - left, metrics[\titleHeight]),
 			CQInk.font(\label, metrics[\title]), palette[titleFamily]);
+		titleRight !? {
+			Pen.stringRightJustIn(titleRight.asString,
+				Rect(left, 2, right - left, metrics[\titleHeight]),
+				CQInk.font(\number, metrics[\mono]), palette[titleRightFamily]);
+		};
 		Pen.strokeColor = palette[\whisper];
 		Pen.width = CQInk.strokes[\hairline];
 		Pen.line(Point(left, titleY), Point(right, titleY));
@@ -995,6 +1156,12 @@ CQGuiAudioSetup {
 					Pen.line(Point(valueLeft, y + metrics[\rowHeight] - 3),
 						Point(right, y + metrics[\rowHeight] - 3));
 					Pen.stroke;
+					if(row[\presence] == true and: { row[\level].notNil }) {
+						Pen.fillColor = color.copy.alpha_(alpha * 0.78);
+						Pen.fillRect(Rect(valueLeft,
+							y + metrics[\rowHeight] - 5,
+							valueWidth * row[\level].clip(0, 1), 3));
+					};
 				};
 			};
 		};

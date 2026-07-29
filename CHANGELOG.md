@@ -10,6 +10,12 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Changed
 
+- Audio now distinguishes a responding engine from an unresponsive registered
+  server. A clean page exposes `restart audio` (with `no changes` in place of a
+  misleading inert discard), and recovery forces the exact hung local server
+  process down before boot instead of attempting a second process on its port.
+- Moved the technical Audio page to the Drawer's rightmost tab, after the
+  Inspector, Workshop, Spellbook and Memory musical/workflow pages.
 - Adopted **Yölahti** as the independent product identity while retaining the
   `CQ` SuperCollider API and class namespace.
 - Reframed the project from a Cocoquantus emulation to an original feedback
@@ -30,6 +36,12 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Added
 
+- AIO-4 signal presence: `\cqInput` reports canonical raw live L/R/mic peaks
+  before gain and preamp selection at 15 Hz, while Audio reuses the existing
+  post-safety master meter. `CQGui` caches both streams, coalesces their
+  combined 20/15 Hz arrivals to at most 15 visible page notifications, skips
+  hidden Audio paints, primes from cache on open and releases the owner plus
+  namespaced OSCdef on teardown.
 - AIO-3 confirmed Audio restart: inline impact confirmation, active-recorder
   gate, facade-owned generation-safe candidate reboot, exactly one automatic
   last-working rollback, terminal silent failure diagnostics and symbolic

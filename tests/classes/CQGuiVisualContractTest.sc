@@ -59,6 +59,21 @@ CQGuiVisualContractTest : UnitTest {
 			"and still refuses a page that does not exist");
 	}
 
+	test_audioPresenceUsesCoarseStableDisplaySteps {
+		this.assert(CQGuiAudioSetup.presenceNorm(0).isNumber
+			and: { CQGuiAudioSetup.presenceNorm(0) == 0 },
+			"silence sits at the start of the presence rail");
+		this.assertEquals(
+			CQGuiAudioSetup.presenceNorm(0.1),
+			CQGuiAudioSetup.presenceNorm(0.1001),
+			"sub-pixel amplitude noise does not request a new Qt frame");
+		this.assert(CQGuiAudioSetup.presenceThreshold > 0
+			and: { CQGuiAudioSetup.presenceThreshold < 0.01 },
+			"the signal/quiet threshold remains a low raw-port presence test");
+		this.assertEquals(CQGui.audioPresencePeriod, 1 / 15,
+			"combined input/master presence is paced to 15 Hz");
+	}
+
 	// The loom keeps large playable knots at every Drawer size step; its cell
 	// width is what sets the rail all five pages align to (CQGuiScale).
 	test_inspectorUsesPlayablePatchLoomCellsAtEveryStep {

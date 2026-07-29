@@ -67,7 +67,7 @@ deferred): **GUI = the eyes + the hands. Code = the memory + the rituals.
 |---|---|
 | **Night map** | the archipelago (§6): the sole topology-true performance landscape — bodies, gestures, jacks and bananas rather than transplanted knobs or numbers. |
 | **Master strip** | persistent, never covered: vol, dry, space, depth, GR meter, notice line, REC + elapsed, PANIC. |
-| **Drawer** | replaces Night in the central stage on demand (click, no key), never covers the Master strip. Tabs: **inspector** (the exact matrix loom), **workshop** (§8 — the ledger page completing SPEC §6.2 reachability), **spellbook** (§8), **memory** (snapshots + morph). |
+| **Drawer** | replaces Night in the central stage on demand (click, no key), never covers the Master strip. Tabs: **inspector** (the exact matrix loom), **workshop** (§8 — the ledger page completing SPEC §6.2 reachability), **spellbook** (§8), **memory** (snapshots + morph), **audio** (rightmost technical machine/engine boundary). |
 
 Keyboard: the sacred map is unchanged and global —
 `1/2` hold · `q/w` flip · `a/s` skip · `3..7` spesal · `r` rec · `space` panic
@@ -719,6 +719,17 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     recorder gate and static `audio ready` / `running · not saved` /
     rollback / failed result language. Only the rebuilt GUI consumes the
     symbolic `\audio` reopen request.
+  - A clean draft labels its inert discard action `no changes` and keeps
+    `restart audio` available as an explicit recovery operation. A server that
+    remains registered but stops answering is shown as
+    `server not responding · restart audio`; confirmed recovery forces that
+    owned local process down before boot and does not write an Audio profile.
+  - AIO-4 taps raw live L/R/mic before their gains, reuses the existing
+    post-safety master pair and renders coarse quantized presence only. The GUI
+    caches both streams while hidden, combines their 15/20 Hz arrivals into one
+    ≤15 Hz listener stream, primes Audio on open and repaints only changed
+    presence geometry. Listener, pending generation and `/cq_io_inputs` OSCdef
+    are released with the page/window.
 - **Inspector** = the existing 16×22 grid, demoted but upgraded with
   **touch-and-listen**: press a cell = audition ± 0.3 (mouse button = sign)
   until release, same bookkeeping and revert law as §4.1; double-click =
@@ -984,9 +995,10 @@ gate, manual_checklist blocks in the established copy-pasteable format.
   success commits after running, candidate failure preserves the rejected
   draft over one restored last-working session, rollback failure stays silent,
   and not-saved retries persistence without a third reboot.
-- **AIO-4 — presence + physical gate:** raw input telemetry, shared post-safety
-  master cache/listeners, visible-tab repaint ceiling/cleanup, then real
-  default/single/split/absent-device, mic, main, stem and REC listening checks.
+- **AIO-4 — presence + physical gate:** implemented raw input telemetry, shared
+  post-safety master cache/listeners and visible-tab repaint ceiling/cleanup.
+  The remaining gate is the real default/single/split/absent-device, mic, main,
+  stem and REC listening checklist.
 
 ---
 

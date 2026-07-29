@@ -103,6 +103,22 @@ CQSessionLifecycleTest : UnitTest {
 			"facade failure leaves an exact diagnostic and failed lifecycle");
 	}
 
+	test_unresponsivePreparedRebootForcesQuitBeforeBoot {
+		var prepared = CQConfig.validate((
+			headless: true,
+			sixteenN: (enabled: false)
+		));
+		server.unresponsive = true;
+		Cocoquantus.prRebootPrepared(server, configPath, prepared);
+		0.05.wait;
+		this.assertEquals(server.quitCount, 1,
+			"an unresponsive server is explicitly stopped by its owned PID");
+		this.assertEquals(server.rebootCount, 0,
+			"the stock reboot path cannot boot over an unresponsive occupied port");
+		this.assertEquals(server.bootCount, 1,
+			"a fresh server boot follows the forced stop");
+	}
+
 	test_audioResultRequestsOneSymbolicAudioReopen {
 		Cocoquantus.prPublishAudioReconfigure((
 			status: \rollbackReady,

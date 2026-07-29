@@ -4,6 +4,7 @@
 CQTestServer {
 	var <name = \cqTest, <addr, <sampleRate = 48000, <bufferAllocator, <options;
 	var <messages, <syncGates, <bootCallbacks, <rebootCount = 0, <bindCount = 0;
+	var <quitCount = 0, <bootCount = 0, <>unresponsive = false;
 	var <>failSyncAt, <syncCallCount = 0;
 	var nextNode = 1000, releasedSyncs = 0;
 
@@ -66,6 +67,16 @@ CQTestServer {
 	reboot { |func, onFailure|
 		rebootCount = rebootCount + 1;
 		func.value;
+	}
+
+	quit { |onComplete, onFailure, watchShutDown = true|
+		quitCount = quitCount + 1;
+		onComplete.value;
+	}
+
+	boot { |register = true, onComplete, onFailure|
+		bootCount = bootCount + 1;
+		onComplete.value;
 	}
 
 	bind { |func|

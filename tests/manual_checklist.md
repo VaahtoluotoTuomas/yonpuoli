@@ -1457,6 +1457,50 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
 - [x] `running · not saved` voidaan tallentaa uudelleen ilman reboottia
 - [x] Uusi GUI kuluttaa symbolisen `\audio`-reopenin vain kerran
 
+### AIO-4 — signaalipresence ja fyysinen hardware-I/O-portti
+
+Koneellinen osa on valmis. `into yölahti` näyttää aktiivisten server-kanavien
+raakasignaalin ennen live/mic-gainia ja preamp-valintaa; `muted/live` kertoo
+erikseen gainin tilan. Oikean saaren otsikon master L/R tulee olemassa olevasta
+post-safety-mittarista. Presence ei todista draft-laitetta eikä fyysistä
+kaapelointia ennen restartia ja kuuntelua.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/compile_check.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/run_all.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_audio_setup_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_audio_presence_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_drawer_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/gui_shell_smoke.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_safety.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_hold_integrity.scd
+```
+
+- [x] Piilotettu Audio-sivu cachettaa telemetrian ilman callbackia/painttia
+- [x] Avattu Audio-sivu saa viimeisen cachen heti
+- [x] Yhdistetty 40 Hz testivirta tuottaa enintään 15 GUI-paint-batchia/s
+- [x] Sub-pixel-tasonmuutos ei repainttaa
+- [x] Free poistaa Audio-listenerin, `/cq_io_inputs`- ja master-OSCdefit
+- [x] Puhdas draft näyttää `no changes` ja aktiivisen `restart audio` -polun
+- [x] Vastaamaton rekisteröity serveri näkyy danger-tilana ja hermettinen
+      lifecycle-portti todistaa quit-before-boot-palautuksen
+- [ ] System default boot: aktiivinen live L/R näkyy oikeissa raw-presence-
+      riveissä ja kuuluu valitun preamp/monitor-polun mukaan
+- [ ] Yksi USB-interface single-device-tilassa: restart onnistuu, presence ja
+      main L/R vastaavat sen fyysisiä portteja
+- [ ] Windows split input/output samalla host APIlla: molemmat laitteet
+      käynnistyvät ja väärä/päättynyt nimi tekee vain yhden turvallisen rollbackin
+- [ ] Mic `off` → configured pysyy mykkänä, kunnes Workshopin ainoa `micGain`
+      nostetaan; raw presence saa silti kertoa porttiin tulevasta signaalista
+- [ ] PANIC mykistää fyysiset main L/R -portit ja master-presence hiljenee
+- [ ] Vähintään 4-kanavainen interface: stem 1/2 ovat mainista erillisissä
+      fyysisissä porteissa ja saman safety-katon alla
+- [ ] REC stereo ja `record 4ch` tuottavat oikean kanavamäärän
+- [ ] Virtuaalinen loopback/DAW näkyy tavallisena driver-laitteena ilman
+      lupausta siitä, että Yölahti olisi luonut järjestelmäkytkennän
+- [ ] 10–15 min tiheä patch, molemmat Cocot ja Audio auki/kiinni: ei dropoutia,
+      kasvavaa repainttia eikä listener-vuotoa
+
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>
 

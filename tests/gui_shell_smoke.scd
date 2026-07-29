@@ -109,7 +109,8 @@ abort = { |error|
 									"GUI free reaches closed");
 								#[cq_gui_meters, cq_gui_gr, cq_gui_coco,
 									cq_gui_spesal, cq_gui_hot, cq_gui_aura,
-									cq_gui_phase, cq_gui_charge].do { |key|
+									cq_gui_phase, cq_gui_charge,
+									cq_gui_io_inputs].do { |key|
 									check.value(OSCdef.all[key].isNil,
 										"cleanup removed %".format(key));
 								};

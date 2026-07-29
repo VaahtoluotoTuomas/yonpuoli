@@ -21,8 +21,12 @@ rather than reading historical checklists as open tasks. The accepted Audio
 page now includes the AIO-3 transaction: it edits and validates an isolated
 draft, confirms the disruptive `Server.default` restart inline, commits the
 generated sibling profile only after a complete candidate boot, and restores
-the previous working Audio config once if that candidate fails. AIO-4 signal
-presence and the physical hardware-I/O review remain the next gate.
+the previous working Audio config once if that candidate fails. AIO-4 now adds
+raw pre-gain live/mic presence and shared post-safety master presence without
+painting a hidden Audio page; the physical hardware-I/O review remains the
+next gate. The Audio restart gate also remains available with a clean draft:
+it reports an unresponsive engine explicitly and can rebuild the exact active
+configuration without writing a profile.
 
 ## What it offers
 

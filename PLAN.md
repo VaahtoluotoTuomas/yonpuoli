@@ -46,9 +46,10 @@ hyväksyttiin myös live-inputilla.** **AIO-1:n compact/roomy-sommittelu
 hyväksyttiin käyttäjäkatselmuksessa 2026-07-29. Katselmuksen refresh-linjaus
 ja Windows-nimien sisäiset rivinvaihdot korjattiin vain näyttötekstissä.
 AIO-2:n draft, suuntakohtainen exact-dedup-laitelista ja atominen
-sibling-overlay sekä AIO-3:n vahvistettu candidate/rollback-transaktio
-toteutettiin `nocturne-audio-setup`-haaralle.**
-Järjestys tästä on **AIO-4 telemetria ja fyysinen I/O-portti →
+sibling-overlay, AIO-3:n vahvistettu candidate/rollback-transaktio sekä
+AIO-4:n rajattu presence-telemetria toteutettiin
+`nocturne-audio-setup`-haaralle.**
+Järjestys tästä on **AIO-4:n fyysinen I/O-portti →
 nelikanavainen laitteisto-/resource-soak → kolme huokoista soittotilaa →
 Norns-portti (§14).** Yksi musiikillinen muuttuja käsitellään edelleen
 kerrallaan. **N10:n sydän/kela- ja chevron-vihjeet hyväksyttiin visuaalisesti
@@ -245,7 +246,9 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
      interaktiivisella mic-polulla ei ollut missään vaiheessa.
   4. Drawer-smoke avaa nyt Night → Drawer → Workshop 1280×720:ssä ja
      uudelleen 1920×1005:ssä molemmilla skineillä.
-  Drawerin järjestys on nyt `inspector · workshop · spellbook · memory`, ja
+  Drawerin järjestys oli tässä N8-inkrementissä
+  `inspector · workshop · spellbook · memory` (AIO lisää myöhemmin oikealle
+  teknisen Audio-sivun), ja
   sivulista julkaistaan kerran (`CQGuiDrawer.tabs`) shellin välilehtiriville,
   pinoindeksille ja `CQGuiShellState`in valkolistalle. Ei DSP-, CQSpec-
   semantiikka-, Day-poisto- tai undo-muutoksia. **Valmis ja hyväksytty
@@ -1018,8 +1021,9 @@ Portit: compile OK; 13 144 assertionia / 0 virhettä / 32 testiluokkaa;
 **Sijainti etenemisessä:** Space-päätös, hallittu eläköitys, yhtenäinen
 koko-/layout-passi, 100–200 % fyysisen skaalauksen katselmus ja koko korvapassi
 ovat valmiit. AIO-1:n sommittelu on hyväksytty, AIO-2:n draft/profile-
-inkrementti ja AIO-3:n vahvistettu restart/rollback on toteutettu.
-Seuraava inkrementti on AIO-4:n rajattu signaalipresence ja fyysinen I/O-portti.
+inkrementti, AIO-3:n vahvistettu restart/rollback ja AIO-4:n rajattu
+signaalipresence on toteutettu. Seuraava portti on AIO-4:n fyysinen
+hardware-I/O-katselmus.
 
 ## Valmistunut polish-passissa 2026-07-28
 
@@ -1429,11 +1433,16 @@ Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
 
 **AIO-4 — signaalipresence ja rajattu hardware-I/O-katselmus**
 
-- Input-telemetria, master-cache/listener, visible-page refresh gate ja
+- [x] Input-telemetria, master-cache/listener, visible-page refresh gate ja
   paint-count-/cleanup-testit.
-- Mittaa Qt paint-eventistä, ettei piilotettu Audio-sivu piirrä eikä avoin
-  sivu ylitä 15 Hz:ä. Tarkista OSCdef/listener-cleanup free/reboot/CmdPeriod.
-- Manuaalinen checklist vähintään:
+- [x] Qt-paint-batch-portti todistaa, ettei piilotettu Audio-sivu piirrä,
+  yhdistetty 40 Hz input/master-testivirta ylitä avoimella sivulla 15 Hz:ä
+  eikä listener/OSCdef jää eloon freen jälkeen.
+- [x] Compile, unit, Audio/presence/Drawer/shell-smoket sekä muuttumattomat
+  safety- ja hold-portit ovat vihreitä: **13 461 passia / 0 failurea /
+  36/36 luokkaa**, `CQ_GUI_AUDIO_PRESENCE_PASSED`, `CQ_SAFETY_PASSED` ja
+  `CQ_HOLD_OK`.
+- [ ] Fyysinen hardware-I/O-katselmus, vähintään:
   1. system default boot + aktiivinen live L/R -signaali;
   2. yksi USB-interface single-device-tilassa;
   3. Windows split in/out samalla host APIlla;

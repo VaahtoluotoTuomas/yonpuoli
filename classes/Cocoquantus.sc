@@ -87,8 +87,21 @@ Cocoquantus {
 
 	*isBooted {
 		^(lifecycleState == \running) and: {
-			graph.notNil and: { graph.isRunning }
+			graph.notNil and: {
+				graph.isRunning and: { this.serverResponsive }
+			}
 		}
+	}
+
+	// `serverRunning` alone is not enough on Windows: the status watcher keeps
+	// the process registered while repeated /status probes establish that it is
+	// alive but no longer answering. Keep that state distinct so the GUI can
+	// offer recovery instead of presenting a stale "running" session.
+	*serverResponsive {
+		var targetServer = server ?? { Server.default };
+		^targetServer.notNil
+			and: { targetServer.serverRunning }
+			and: { targetServer.unresponsive.not }
 	}
 
 	*set { |name, value|
@@ -469,6 +482,64 @@ Cocoquantus {
 		^audioTransaction.start
 	}
 
+	// A clean Audio page still needs a recovery operation. This restarts the
+	// exact active configuration without creating or rewriting an audio profile.
+	// It is deliberately separate from CQAudioReconfigure: there is no candidate
+	// to commit and retrying the same config as a rollback would add no safety.
+	*restartCurrentAudio {
+		var preparedConfig;
+		if(lifecycleState != \running) {
+			audioReconfigureState = \failed;
+			audioReconfigureError = "audio session is not running";
+			^false
+		};
+		if(recorder.notNil and: {
+			#[starting, recording, stopping].includes(recorder.state)
+		}) {
+			audioReconfigureState = \blocked;
+			audioReconfigureError = "stop REC before restarting audio";
+			^false
+		};
+		try {
+			preparedConfig = CQConfig.validate(config).copy;
+		} { |failure|
+			audioReconfigureState = \failed;
+			audioReconfigureError = failure.errorString;
+			^false
+		};
+		audioTransaction = nil;
+		audioConfigModel = nil;
+		audioReconfigureState = \restarting;
+		audioReconfigureError = nil;
+		audioReconfigureResult = (
+			status: \restarting,
+			error: nil,
+			cleanRestart: true
+		);
+		this.prRestartAudioConfig(preparedConfig, {
+			audioReconfigureState = \ready;
+			audioReconfigureError = nil;
+			audioReconfigureResult = (
+				status: \ready,
+				error: nil,
+				cleanRestart: true
+			);
+			// This callback runs before the rebuilt GUI is constructed.
+			audioReopenPending = true;
+		}, { |failure|
+			audioReconfigureState = \failed;
+			audioReconfigureError = failure.errorString;
+			audioReconfigureResult = (
+				status: \failed,
+				error: failure.errorString,
+				cleanRestart: true
+			);
+			("Cocoquantus: Audio restart failed — "
+				++ audioReconfigureError).warn;
+		});
+		^true
+	}
+
 	*retryAudioProfileSave {
 		if(audioTransaction.isNil) { ^false };
 		^audioTransaction.retrySave
@@ -625,7 +696,7 @@ Cocoquantus {
 	}
 
 	*prRebootPrepared { |targetServer, path, preparedConfig, onReady, onFailure|
-		var optionGraph, generation, action, fail;
+		var optionGraph, generation, action, fail, bootAfterForcedQuit;
 		path = path ?? { this.repoDir +/+ "config.scd" };
 		fail = { |failure|
 			this.prRemoveServerBootAction;
@@ -663,12 +734,44 @@ Cocoquantus {
 		};
 		serverBootAction = action;
 		ServerBoot.add(action, targetServer);
-		try {
-			targetServer.reboot({}, {
-				if(sessionGeneration == generation) {
-					fail.value(Error("server reboot failed"));
+		bootAfterForcedQuit = {
+			// Match Server.reboot's defer: the forced local-process termination
+			// completes before a new process attempts to bind the same UDP port.
+			defer {
+				if((sessionGeneration == generation) and: {
+					lifecycleState == \booting
+				}) {
+					try {
+						targetServer.boot(onFailure: {
+							if(sessionGeneration == generation) {
+								fail.value(Error(
+									"server boot after forced quit failed"));
+							};
+						});
+					} { |err|
+						if(sessionGeneration == generation) { fail.value(err) };
+					};
 				};
-			});
+			};
+		};
+		try {
+			if(targetServer.unresponsive) {
+				// Server.reboot skips quit when statusWatcher.unresponsive is
+				// true, then starts a second process on the occupied port. Use
+				// Server.quit's exact-PID forced stop before booting.
+				targetServer.quit(bootAfterForcedQuit, {
+					if(sessionGeneration == generation) {
+						fail.value(Error(
+							"unresponsive server forced quit failed"));
+					};
+				}, false);
+			} {
+				targetServer.reboot({}, {
+					if(sessionGeneration == generation) {
+						fail.value(Error("server reboot failed"));
+					};
+				});
+			};
 		} { |err|
 			if(sessionGeneration == generation) { fail.value(err) };
 		};

@@ -28,17 +28,24 @@ var catalog = (
 	inputs: [longInput, longInput, common] ++ extraInputs,
 	outputs: [longOutput, common, common]
 );
-var page, window, ok = true, applies = 0, retries = 0;
+var page, window, ok = true, applies = 0, cleanRestarts = 0, retries = 0;
 var restartStatus = \idle, restartError, recorderState = \idle;
+var responsive = true;
 var capturedProfile;
 var controller = (
 	lifecycle: { \running },
 	recorderState: { recorderState },
 	status: { restartStatus },
 	error: { restartError },
+	responsive: { responsive },
 	apply: { |audioModel|
 		applies = applies + 1;
 		capturedProfile = audioModel.draftProfile.copy;
+		restartStatus = \restarting;
+		true
+	},
+	restart: {
+		cleanRestarts = cleanRestarts + 1;
 		restartStatus = \restarting;
 		true
 	},
@@ -122,6 +129,11 @@ render = { |path|
 				check.value(CQGuiAudioSetup.writable
 					and: { model.dirty.not and: { model.valid } },
 					"AIO-3 starts as a clean active/draft pair");
+				check.value(page.discardButton.label == "no changes"
+					and: { page.discardButton.enabled.not }
+					and: { page.applyButton.label == "restart audio" }
+					and: { page.applyButton.enabled },
+					"a clean page names the no-op discard and offers audio recovery");
 				check.value(hostRows[1][\value] == "split devices"
 					and: { hostRows[2][\value] == longInput }
 					and: { hostRows[3][\value] == longOutput },
@@ -146,6 +158,45 @@ render = { |path|
 					"compact Audio uses the shared rail and needs no scroll");
 				check.value(CQInkControl.drawErrors == 0,
 					"compact Audio page paints without callback errors");
+				responsive = false;
+				page.serverHealthChanged;
+				check.value(page.hostRows[0][\value]
+					.beginsWith("server not responding")
+					and: { page.hostRows[0][\family] == \danger }
+					and: { page.restartRows[0][\value]
+						== "server not responding · restart audio" }
+					and: { page.applyButton.enabled },
+					"an unresponsive server is visible and remains recoverable");
+				responsive = true;
+				page.serverHealthChanged;
+				check.value(page.requestApply
+					and: { page.confirmRestart }
+					and: { cleanRestarts == 1 }
+					and: { applies == 0 },
+					"a confirmed clean restart bypasses profile persistence");
+				restartStatus = \idle;
+				page.refreshTransaction;
+				check.value(page.inputRows[3][\value] == "— · live"
+					and: { page.inputRows[5][\value] == "off" }
+					and: { page.masterPresenceText == "master l — · r —" },
+					"missing telemetry and an unconfigured mic never invent signal");
+				page.presenceFrame(
+					[0.02, 0.0001, 0.8], [0.12, 0.0001], [1, 0]);
+				check.value(page.inputPresence == [0.02, 0.0001, 0.8]
+					and: { page.inputRows[3][\value] == "signal · live" }
+					and: { page.inputRows[4][\value] == "quiet · live" }
+					and: { page.inputRows[5][\value] == "off" }
+					and: { page.masterPresenceText
+						== "master l signal · r quiet" },
+					"canonical raw L/R/mic and post-safety master presence paint honestly");
+				{
+					var beforeRefresh = page.presenceRefreshCount;
+					check.value(page.presenceFrame(
+						[0.02001, 0.000101, 0.7],
+						[0.12001, 0.000101], [1, 0]).not
+						and: { page.presenceRefreshCount == beforeRefresh },
+						"sub-step telemetry updates the cache without another Qt refresh");
+				}.value;
 
 				page.deviceMenus.first.open;
 				check.value(page.deviceMenus.first.popupView.bounds.height
