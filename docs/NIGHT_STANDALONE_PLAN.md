@@ -1424,9 +1424,19 @@ CQ.boot; CQ.patchPreset(\classic); CQ.set(\c5Send, 0.5);
 
 ### 13.5 The VCA law — the shell opens and closes
 
-**Implementation status (2026-07-29).** Implemented on
-`nocturne-feedback-taper`; the full battery including both NRT renders is
-green and it **waits on the ear** (checklist 13.5).
+**Accepted 2026-07-29: one fixed signed p = 2 law.** A same-session A/B/C
+compared the old linear contribution, signed p = 1.5 and signed p = 2 in the
+real Cocos. p = 2 kept weights 0.05–0.10 subtle, made phrases at 0.20, stayed
+deep but round-edged at 0.40 and cut complete holes only at 0.80. Its positive
+arc touched the real VCA ceiling without becoming a static plateau; feedback
+weights −0.20/−0.50 made two depths of recess without erasing empty blocks.
+SP.AF and whole-preset controls passed.
+
+p = 1.5 had no identity that cable depth could not supply. Linear retained a
+recognizable sliding character, but the session found no necessary musical job
+that justified another GUI/snapshot mode. No character switch ships. The
+temporary hidden crossfader and p = 1.5 branch were removed after the choice;
+`\cqCoco` contains only the accepted p = 2 graph.
 
 **The sketch below did not match the code, and the rake is why it was
 caught.** "Verify the current form first" was the right instruction: the
@@ -1443,42 +1453,40 @@ shaped = (1 + sum) ** 2 - 1        // sum clamped ±2 first (the rake)
 inVca  = (knob + shaped).clip(0, 2)
 ```
 
-At a knob of unity this is *exactly* the law proposed below, since
-`1 + shaped = (1 + sum) ** 2`; away from unity the knob keeps its meaning.
-Fixed points: 0 contributes nothing, −1 still shuts the valve completely,
-+1 pushes +3. `g.abs * g` is `g² · sign(g)` in two ops, and the sign is
-what keeps the law monotonic below sum = −1 instead of folding back up.
-This is the second time a plan paragraph was the defect rather than the
-implementation (cf. §7.2/§9) — **the sketch is a hypothesis about the
-code, not a description of it.**
+At a knob of unity `1 + shaped = (1 + sum) ** 2` only **before the real
+VCA ceiling**. Input is subsequently clipped to 0..2 and feedback to 0..2.5,
+so the sketch's sum +1 → x4/+12 dB never reaches the converter; p = 2 reaches
+the existing rail earlier and spends longer there. Away from unity the knob
+keeps its zero-sum meaning, but sum −1 subtracts one rather than universally
+closing a knob above unity. `g.abs * g` is `g² · sign(g)` in two ops, and the
+sign keeps the pre-clip law monotonic below sum = −1 instead of folding up.
 
 **One consequence the sketch does not mention and the ear will meet
-first:** the curve's slope at the origin is 2, so *all* existing VCA
-modulation roughly doubles in depth — an old weight of −0.4 now behaves
-about like −0.8 did. That is a property of `(1 + x) ** 2` itself, not of
-the re-expression, and it reaches `\selfNoise`, `\organMode`, `\mayhem`
-and the user's snapshots. The expansion is also asymmetric (3× open, 1×
-shut, since −1 is a fixed point): the valve opens wider than it closes.
-p = 1.5 remains the documented gentler option.
+first:** the p = 2 curve's slope at the origin is 2, so existing VCA
+modulation becomes substantially deeper. Choosing that exponent was the
+implementation's musical decision. This reaches `\selfNoise`, `\organMode`,
+`\mayhem` and the user's snapshots: knob values remain numerically calibrated,
+but a snapshot containing VCA bananas is **not sonically unchanged**. The
+accepted 0.05–0.10 subtle region is how the patch keeps nuance; high weights
+deliberately enter the instrument's experimental country. This law never
+touches pitch or speed modulation, so a seasick `_spaf` patch must be tuned at
+its own cable, SP.AF depth or `patchDepth`.
 
 **Hypothesis.** The matrix in/fb-VCAs sum linearly; an analog verso/
 inverso VCA breathes more exponentially. A gentle power shaping gives
 duckings and tremolos a "valve opens / valve shuts" body.
 
-**Proposal.** In `\cqCoco`, where the inVca/fbVca sums become gains
-(verify the current form and any existing sum clamp first — see the rake
-below), replace the linear law with:
+**Accepted implementation.** In `\cqCoco`, the matrix contribution is:
 
 ```
-gain = max(0, 1 + vcaSum) ** p
+shaped = sign(1 + clamp(vcaSum, -2, 2))
+       * abs(1 + clamp(vcaSum, -2, 2)) ** 2 - 1
+gain = clip(knob + shaped, 0, vcaCeiling)
 ```
 
-- Try **p = 2 first** (it is free: `g = max(0, 1 + x); g = g * g`), then
-  p = 1.5 if 2 is too dramatic. p is a fixed constant, commented — not a
-  parameter.
-- Full closure at sum = −1 is preserved (tremolo reaches silence);
-  unity at 0 is preserved; sum = +1 now gives +12 dB (p = 2) into the
-  converter instead of +6 — hotter overdrive, still bounded by clip2.
+- p = 2 is a fixed constant, not a parameter.
+- Sum 0 leaves the knob unchanged; sum −1 subtracts one; sum +1 contributes
+  +3 before the real input/feedback ceilings of 2/2.5.
 
 **Rake.** Check how the sum is clamped before shaping: `\mayhem` can swing
 a VCA sum far past ±1, and `(1 + x) ** 2` at x = +4 is a ×25 gain — safe
@@ -1492,25 +1500,9 @@ is in the stress patch — watch the peak margin) and A4. Document the
 chosen law in SPEC §5.5's destination notes and ARCHITECTURE's coco
 section (it is an interpretation, like the organ derivation).
 
-**Listening protocol:**
-
-```supercollider
-// 13.5 — VCA-lain korvakoe
-CQ.boot; CQ.patchPreset(\selfNoise);
-// 1. \selfNoise hengittää fb-VCA:ita infra-triangeleilla: vertaa muistiin
-//    - aukeaako ja sulkeutuuko kuori nyt "venttiilinä" (nopea sulku,
-//    pyöreä avaus) tasaisen liu'un sijaan?
-CQ.patchPreset(\empty);
-CQ.deckA.load("<rytmikäs äänite>"); CQ.set(\coco1SlotDeck, 1);
-CQ.set(\coco1In, 0.8);
-CQ.patch(\cas1, \coco1_inVca, -0.8);   // inverso chop
-// 2. cas1:n portaat leikkaavat sisääntuloa: chopin pitää PURRA - pohja
-//    kiinni asti, avaus muhkea. Käännä paino +0.8:aan: ylipaine puskee
-//    konvertteriin kuuluvasti mutta rajatusti.
-CQ.patch(\envA, \coco2_fbVca, -0.5);
-// 3. SPEC:n oma duck-esimerkki: puhu/soita liveen - feedbackin pitää
-//    väistää artikuloiden, ei liukuen.
-```
+**Listening evidence:** archived in `tests/manual_checklist.md` §13.5:
+small-weight nuance, three-depth inverso chop, positive ceiling arc, two-depth
+feedback duck, SP.AF isolation and whole-preset checks.
 
 ### 13.6 The zipper seam — measured in G3.1, remedy ladder ready
 

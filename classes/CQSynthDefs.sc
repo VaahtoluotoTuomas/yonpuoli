@@ -244,8 +244,10 @@ CQSynthDefs {
 					* \slotQ.kr(CQSpec.default(\coco1SlotQ), CQSpec.lag(\coco1SlotQ)))
 				+ (InFeedback.ar(\crossBus.ir(0))   // other coco, one block late by design
 					* \slotX.kr(CQSpec.default(\coco1SlotX), CQSpec.lag(\coco1SlotX)));
-			// the knob is the valve's rest, the matrix opens and shuts it —
-			// shaped, never linear (§13.5, CQSynthDefs.prVcaLaw)
+			// The knob is the valve's rest and the matrix opens and shuts it.
+			// §13.5's ear pass accepted one fixed signed p=2 contribution law:
+			// low cable weights still shade continuously, medium weights phrase,
+			// and only deliberate high weights cut full holes.
 			inVca = (\inLevel.kr(CQSpec.default(\coco1In), CQSpec.lag(\coco1In))
 				+ CQSynthDefs.prVcaLaw(inVcaSum)).clip(0, 2);
 			fbVca = (\fbLevel.kr(CQSpec.default(\coco1Fb), CQSpec.lag(\coco1Fb))
@@ -474,18 +476,18 @@ CQSynthDefs {
 	// The plan sketched that as the gain itself. It cannot be, because in this
 	// instrument the knob is the VCA's base and the matrix ADDS to it
 	// (`knob + sum`, SPEC §5.5) — shaping the total would silently recalibrate
-	// every knob, default and stored snapshot, and a banana could no longer
-	// open a shut VCA, which is a documented patching move. So the shaping is
-	// applied to the modulation alone, as the contribution it makes:
+	// every knob/default and a banana could no longer open a shut VCA, which is
+	// a documented patching move. So the shaping is applied to the modulation
+	// alone, as the contribution it makes:
 	//
 	//     shaped = (1 + sum) ** 2 - 1
 	//
-	// At knob = unity this is EXACTLY the plan's law (1 + shaped = (1 + sum)**2);
-	// away from unity the knob keeps the meaning it always had. Its fixed
-	// points are the ones that matter: sum 0 contributes nothing, sum -1 still
-	// closes the valve completely, and sum +1 now pushes +3 instead of +1 —
-	// the hotter overdrive §13.5 asked for, still bounded by the same clip and
-	// by clip2 inside the loop (safety #2 untouched).
+	// At knob=unity this is the plan's law BEFORE the real VCA ceiling
+	// (1 + shaped = (1 + sum)**2); input then clips to 2 and feedback to 2.5.
+	// Away from unity the knob keeps its zero-sum meaning. The contribution's
+	// anchors are: sum 0 -> 0, sum -1 -> -1 (therefore it closes a knob at or
+	// below unity, but only subtracts one above unity), sum +1 -> +3 before the
+	// ceiling. clip2 inside the loop remains safety invariant #2.
 	//
 	// `g.abs * g` is g**2 * g.sign in two ops: signed, so the law stays
 	// monotonic below sum = -1 instead of folding back up.

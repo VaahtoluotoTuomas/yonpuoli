@@ -217,9 +217,9 @@ var inSig   = Mix([aPreX * slotPre, deck * slotDeck, qmix * slotQ, cross * slotX
 // verso/inverso via signed weights. The knob is the valve's rest; the matrix
 // contribution is SHAPED, not linear — (1+sum)^2 - 1, sum clamped +-2 first
 // (SPEC §5.3/§5.5, interpretation §13.5, exactly like the organ derivation).
-// Shaping the contribution rather than the total is what keeps every knob,
-// default and stored snapshot calibrated, and keeps a banana able to open a
-// shut VCA. See CQSynthDefs.prVcaLaw.
+// Shaping the contribution rather than the total keeps every knob/default at
+// its zero-sum value and keeps a banana able to open a shut VCA. Snapshot VCA
+// weights keep their numbers but are sonically revoiced. See prVcaLaw.
 var inVca   = (inLevel + CQSynthDefs.prVcaLaw(inVcaSum)).clip(0, 2);
 var fbVca   = (fbLevel + CQSynthDefs.prVcaLaw(fbVcaSum)).clip(0, 2.5);
 var inCh    = dolby(inSig, dolbyInMode, keyEnv: fbEnv);   // 3-mode gate/duck helper

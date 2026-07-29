@@ -8,22 +8,20 @@ CQSynthDefsTest : UnitTest {
 
 	// §13.5's VCA law. It is applied to the matrix modulation alone, because
 	// in this instrument the knob is the VCA's base and the matrix adds to it
-	// (SPEC §5.5). The fixed points below are what make that safe: they are
-	// the whole reason the shaping can be introduced without recalibrating a
-	// single knob, default or stored snapshot.
+	// (SPEC §5.5). The anchors keep the zero-sum knob/default calibration;
+	// stored VCA cable weights keep their numbers but are sonically revoiced.
 	test_vcaLawFixedPoints {
 		this.assertEquals(CQSynthDefs.prVcaLaw(0), 0.0,
 			"no modulation contributes nothing — every knob keeps its meaning");
 		this.assertEquals(CQSynthDefs.prVcaLaw(-1), -1.0,
-			"sum -1 still shuts the valve completely (tremolo reaches silence)");
+			"sum -1 subtracts one (closing a knob at or below unity)");
 		this.assertEquals(CQSynthDefs.prVcaLaw(1), 3.0,
 			"sum +1 pushes +3 where linear pushed +1 (§13.5's hotter overdrive)");
 	}
 
-	// At unity the shaped contribution must reproduce the plan's own law
-	// exactly: 1 + shaped(x) == (1 + x) ** 2. This is the assert that says the
-	// re-expression is a re-expression and not a different idea.
-	test_vcaLawIsThePlansLawAtUnity {
+	// At unity the shaped contribution reproduces the plan's own law BEFORE
+	// the real VCA's 2.0/2.5 ceiling: 1 + shaped(x) == (1 + x) ** 2.
+	test_vcaLawIsThePlansPreClipLawAtUnity {
 		[-1, -0.5, -0.25, 0, 0.25, 0.5, 1, 1.5, 2].do { |sum|
 			var shaped = 1 + CQSynthDefs.prVcaLaw(sum);
 			var plan = (1 + sum) ** 2;
@@ -31,6 +29,18 @@ CQSynthDefsTest : UnitTest {
 				"at unity, sum % gives the plan's (1+x)**2 = % (got %)"
 					.format(sum, plan, shaped));
 		};
+	}
+
+	// The final gain ceiling is musically important: the accepted p=2 law reaches
+	// the rail sooner, but it never realizes the sketch's unbounded x4 gain.
+	// At knob=1, sum=1, input is x2 and feedback x2.5 after their real clips.
+	test_vcaLawKeepsTheRealGainCeilings {
+		var preClip = 1 + CQSynthDefs.prVcaLaw(1);
+		this.assertEquals(preClip, 4.0, "the helper produces the pre-clip x4 value");
+		this.assertEquals(preClip.clip(0, 2), 2.0,
+			"the actual input VCA remains capped at x2");
+		this.assertEquals(preClip.clip(0, 2.5), 2.5,
+			"the actual feedback VCA remains capped at x2.5");
 	}
 
 	// A VCA that folds back up as its control drives further negative would
@@ -62,4 +72,5 @@ CQSynthDefsTest : UnitTest {
 			"the clamped ceiling stays a sane gain contribution (got %)"
 				.format(ceiling));
 	}
+
 }

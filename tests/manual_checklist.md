@@ -1062,26 +1062,23 @@ CQ.free;
 
 ### 13.5 — VCA-lain korvaportti
 
-Matriisin in/fb-VCA:t summautuivat lineaarisesti; analoginen verso/inverso-VCA
-hengittää eksponentiaalisemmin. Modulaation osuus on nyt **muotoiltu**:
-`shaped = (1 + sum)² − 1`, summa rajattu ±2 ennen muotoilua.
+Korvaportti tehtiin saman session A/B/C:nä kolmella lailla: vanha lineaarinen,
+etumerkillinen p = 1,5 ja etumerkillinen p = 2. Tilapäinen 30 ms
+ristihäivytetty kuuntelukytkin oli vain mittalaite; hyväksynnän jälkeen se ja
+p = 1,5 -haara poistettiin tuotanto-DSP:stä. Lopullinen laki on yksi kiinteä
+**p = 2**, ei uusi GUI-, API- tai snapshot-parametri.
 
-**Tärkeää: nuppi ei muuttunut.** Muotoilu koskee vain banaanien tuomaa
-modulaatiota, ei nupin omaa arvoa — siksi yksikään oletus, snapshot tai
-13.1:ssä hyväksytty sirpin asteikko ei siirry, ja banaani osaa yhä avata
-kiinni käännetyn VCA:n. Kiinteät pisteet: summa 0 ei tee mitään, −1 sulkee
-venttiilin täysin, +1 työntää +3 siinä missä lineaarinen työnsi +1.
+**Mitä laki todella tekee.** Nuppi säilyttää lepoasentonsa ja suljettu VCA
+voidaan yhä avata banaanilla. Sen sijaan VCA:ta moduloivia snapshotteja ja
+presettejä ei pidetä musiikillisesti ennallaan: niiden painot saavat uuden
+vasteen. p = 2:n kaksinkertainen pienen signaalin kulmakerroin on seuraus
+valitusta eksponentista, mutta p = 2:n valitseminen on nimenomaan tämän portin
+virityspäätös.
 
-**Odotettavissa oleva sivuvaikutus, jonka pitää kuulua heti.** Käyrän
-kulmakerroin nollassa on **2**, joten *kaikki* olemassa oleva VCA-modulaatio
-noin kaksinkertaistuu syvyydeltään. Tämä on §13.5:n oman lain ominaisuus,
-ei toteutuksen valinta — `(1+x)²` nousee kaksi kertaa niin jyrkästi kuin
-`1+x`. Käytännössä: `\selfNoise`, `\organMode`, `\mayhem` ja omat snapshotit
-hengittävät noin tuplasti entiseen verrattuna, ja vanha paino −0.4 vastaa
-suunnilleen entistä −0.8:aa. Vaimennus ei myöskään ole symmetristä:
-osuus kasvaa 3× auki-suunnassa mutta vain 1× kiinni-suunnassa (−1 on
-kiinteä piste), eli **venttiili aukeaa leveämmin kuin se sulkeutuu**.
-Jos tämä on liikaa, dokumentoitu vaihtoehto on p = 1.5.
+Alla olevat luvut ovat modulaation osuuksia **ennen** todellisen VCA:n kattoa.
+Input-gain rajataan lopuksi 0–2:een ja feedback-gain 0–2,5:een; siksi summa +1
+ei toteudu ×4/+12 dB gainina. p = 2 saavuttaa katon aikaisemmin ja voi viipyä
+siellä pidempään, mutta kuuntelussa kaari ei jähmettynyt staattiseksi tasanteeksi.
 
 | summa | ennen (lineaari) | nyt (muotoiltu) |
 |---|---|---|
@@ -1092,48 +1089,33 @@ Jos tämä on liikaa, dokumentoitu vaihtoehto on p = 1.5.
 | +0.5 | +0.50 | +1.25 |
 | +1.0 | +1.00 | +3.00 |
 
-```supercollider
-// 13.5 — Ctrl+Shift+L ensin, koska \cqCoco muuttui.
-CQ.free;
-CQ.boot;
-CQ.set(\masterVol, -24);
-CQ.patchPreset(\selfNoise);
-// 1. \selfNoise hengittää fb-VCA:ita infra-kolmioilla. Vertaa muistikuvaan:
-//    aukeaako ja sulkeutuuko kuori nyt VENTTIILINÄ — nopeampi sulku,
-//    pyöreämpi avaus — tasaisen liu'un sijaan? Tämä on portin ydinkysymys.
-CQ.patchPreset(\empty);
-CQ.deckA.load("<rytmikäs äänite>");
-CQ.set(\coco1SlotDeck, 1);
-CQ.set(\coco1In, 0.8);
-CQ.hold(1, 0);
-CQ.patch(\cas1, \coco1_inVca, -0.8);
-// 2. INVERSO CHOP. cas1:n portaat leikkaavat sisääntuloa. Pureeko chop nyt:
-//    pohja aidosti kiinni, avaus muhkea?
-CQ.patch(\cas1, \coco1_inVca, -0.4);
-//    ...ja tässä on se sivuvaikutus kuultavaksi: puolitettu paino ei puolita
-//    vaikutusta, vaan -0.4 kuulostaa suunnilleen siltä miltä -0.8 ennen.
-//    Onko se hyvä (banaanit ovat nyt ilmaisuvoimaisempia) vai huono
-//    (vanhat patchit ylimoduloituvat ja hienovaraisuus katosi)?
-CQ.patch(\cas1, \coco1_inVca, 0.8);
-// 3. YLIPAINE. Käännä paino +0.8:aan. Nyt osuus on selvästi kuumempi kuin
-//    ennen (+2.24 vs +0.8) — puskeeko se konvertteriin KUULUVASTI mutta
-//    hallitusti, vai onko se pelkkää säröä? Jos jälkimmäinen, kokeillaan
-//    p = 1.5 tilalla p = 2.
-CQ.clearPatch;
-CQ.patch(\envA, \coco2_fbVca, -0.5);
-CQ.set(\coco2SlotPre, 1);
-// 4. DUCK. Soita tai puhu liveen (tai aja deck A:ta preampin läpi):
-//    feedbackin pitää väistää ARTIKULOIDEN, ei liukuen.
-// 5. TURVATARKISTUS KORVALLA: aja CQ.shake tiheäksi ja nosta patchDepth
-//    ykköseen. Tason pitää pysyä kurissa kuten ennenkin — mittaus sanoo
-//    että pysyy (mayhem-huippu 0.889 -> 0.890), mutta kuuntele silti.
-CQ.clearPatch;
-CQ.free;
-```
+**Kuuntelutulos 2026-07-29:**
 
-- [ ] 13.5 hyväksytty (pvm: ______ — venttiilin luonne, chopin purenta,
-      ylipaineen hallittavuus, duckin artikulaatio) — TAI kirjattu siirtymä
-      arvoon p = 1.5
+- p = 2 säilytti painoilla 0,05 ja 0,10 hienovaraisen hengityksen; vasta
+  noin 0,20–0,30 alkoi lukea selvänä modulaationa.
+- Inverso-chop −0,20 teki fraaseja ilman hiljaisuuksia. −0,40 kävi hyvin
+  matalalla mutta säilytti kulmikkaassa vaihdossa pyöreän reunan; −0,80 teki
+  vasta tarkoitukselliset täydet aukot. Painot eivät romahtaneet samaksi
+  on/off-eleeksi.
+- Positiivinen paine muodosti muhkean kaaren, kävi vain lyhyesti katossa ja
+  lähti takaisin alas ilman staattista tasannetta.
+- Feedback-duck −0,20 teki kuoppia ilman aukkoja; −0,50 syvensi huojuntaa
+  mutta ei pyyhkinyt loopista tyhjiä paloja.
+- SP.AF-verrokki pysyi samana, kuten pitää: §13.5 ei koske virettä/nopeutta.
+  `\selfNoise`, `\organMode`, oma patch ja kokonaissoitto hyväksyttiin.
+
+p = 1,5 ei saanut riittävän omaa identiteettiä p = 2:n rinnalla; saman
+käyttömaan saa VCA-kaapelin painolla. Lineaarisella lailla oli oma liukuva
+identiteettinsä, mutta testeissä ei löytynyt tehtävää, joka oikeuttaisi uuden
+character-kytkimen, snapshot-tilan ja GUI-kielen. Jos myöhempi säveltäminen
+toistuvasti tarvitsee p = 2:lla saavuttamattoman suoran, symmetrisen swellin,
+asia voidaan avata uudelleen kaksiasentoisena `slide/valve`-kysymyksenä ilman
+p = 1,5:tä.
+
+- [x] 13.5 hyväksytty (pvm: 2026-07-29 — kiinteä etumerkillinen p = 2:
+      hienovarainen 0,05–0,10, fraseeraava keskialue, täydet aukot vasta
+      korkealla painolla, hallittu positiivinen kaari ja feedback-duck;
+      ei character-kytkintä)
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>

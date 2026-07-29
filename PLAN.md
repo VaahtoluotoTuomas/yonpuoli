@@ -37,10 +37,9 @@ kaapeliprioriteetti ja snapshot-kansion erotus — valmistui 2026-07-28.
 **13.1 feedback-taper sekä 13.4 chaos-käyrä ja sen sääkehät hyväksyttiin
 käyttäjän kuuntelu- ja näkökatselmuksessa 2026-07-28. Space-kuuntelupäätös,
 tuotantoketjun hallittu eläköitys ja Nightin täyden mittakaavan GUI-passi
-hyväksyttiin 2026-07-28–29. 13.2 speed-lattia (vaihtoehto A) hyväksyttiin
-2026-07-29.** Avoin portti on **13.5 VCA-laki**, jonka kandidaatti on
-toteutettu 2026-07-29 ja odottaa käyttäjän korvaa (checklist 13.5).
-Sen jälkeen järjestys on **13.3 dust → 13.6 zipper-mittaus +
+hyväksyttiin 2026-07-28–29. 13.2 speed-lattia (vaihtoehto A) ja 13.5:n
+kiinteä p = 2 VCA-laki hyväksyttiin 2026-07-29.** Seuraava avoin portti on
+**13.3 dust**, jonka jälkeen järjestys on **13.6 zipper-mittaus +
 13.8 preampin equal-loudness-koe → Audio I/O Setup Drawerissa (AIO, alla) →
 nelikanavainen laitteisto-/resource-soak → kolme huokoista soittotilaa →
 Norns-portti (§14).** Yksi musiikillinen muuttuja käsitellään edelleen
@@ -361,36 +360,41 @@ vain himmentää sen, ja `spark` tarkoittaa jo "jokin juuri laukesi". Paino on
 saman kuoren kelalovi-vihjeen kanaava, joten yksi keho puhuu yhtä
 hover-kieltä eikä yksikään lepotilan muste liiku (§16.3/§16.10).
 
-**13.5 VCA-lain kandidaatti (2026-07-29, odottaa korvaa).** §13.5:n luonnos
-esitti lain muodossa `gain = (1 + sum) ** p`, mutta koodin todellinen muoto
-on `gain = (nuppi + summa).clip(...)` — nuppi on VCA:n lepoasento ja matriisi
-lisää siihen. Luonnos itse käski varmistaa nykymuodon ensin, ja varmistus
-osoitti sen eroavan: **suunnitelmakappale ei vastannut toteutusta.** Koko
-arvon muotoilu olisi kalibroinut jokaisen nupin, oletuksen ja tallennetun
-snapshotin uudelleen (esim. `coco1In` 0.8 → 0.64) ja tehnyt mahdottomaksi
-dokumentoidun tavan avata kiinni käännetty VCA banaanilla. Siksi muotoilu
-kohdistuu modulaation **osuuteen**: `shaped = (1 + sum)² − 1`, summa rajattu
-±2 ennen muotoilua (§13.5:n oma karikko). Nupin ollessa ykkösessä tämä on
-täsmälleen luonnoksen laki, koska `1 + shaped = (1 + sum)²`; muualla nuppi
-säilyttää merkityksensä. Kiinteät pisteet: 0 ei tee mitään, −1 sulkee
-venttiilin täysin, +1 työntää +3. `g.abs * g` on `g² · sign(g)` kahdella
-operaatiolla, ja etumerkki on se mikä pitää lain monotonisena summan −1
-alapuolella sen sijaan että se taittuisi takaisin ylös.
+**13.5 VCA-laki (hyväksytty 2026-07-29, kiinteä p = 2).** §13.5:n
+luonnos esitti lain muodossa `gain = (1 + sum) ** p`, mutta koodin todellinen
+muoto oli `gain = (nuppi + summa).clip(...)`: nuppi on VCA:n lepoasento ja
+matriisi lisää siihen. Koko gainin suora muotoilu olisi siirtänyt nupin
+kalibrointia ja uhannut dokumentoitua tapaa avata kiinni käännetty VCA
+banaanilla. Siksi hyväksytty laki muotoilee vain modulaation **osuuden**:
+`shaped = sign(1+sum)·|1+sum|² − 1`; summa rajataan ±2 ennen muotoilua.
 
-**Kuultava sivuvaikutus, joka on kirjattava:** käyrän kulmakerroin nollassa
-on 2, joten kaikki olemassa oleva VCA-modulaatio noin kaksinkertaistuu
-syvyydeltään — vanha paino −0.4 vastaa suunnilleen entistä −0.8:aa. Tämä on
-`(1+x)²`:n oma ominaisuus eikä toteutuksen valinta, ja se koskee `\selfNoise`-,
-`\organMode`- ja `\mayhem`-presetejä sekä käyttäjän snapshotteja. Vaimennus
-on lisäksi epäsymmetristä (3× auki, 1× kiinni), eli venttiili aukeaa
-leveämmin kuin sulkeutuu. Jos se on liikaa, dokumentoitu vaihtoehto on
-p = 1.5. Portti: `CQ_COMPILE_OK`, **13 273 unit-passia / 0 failurea / 33/33
-luokkaa** (uusi `CQSynthDefsTest` lukitsee lain kiinteät pisteet,
-monotonisuuden, ±2-rajauksen ja sen että laki on ykkösessä *täsmälleen*
-luonnoksen laki), `CQ_SAFETY_PASSED`, `CQ_HOLD_OK` (A4-korrelaatio 1.0,
-A5-drift 0.0 dB) ja kaikki neljä GUI-markkeria. `\mayhem`in huippu ei
-käytännössä liikkunut (0.889 → 0.890): silmukan sisäinen `clip2` ja
-masterin limitteri ottavat kuumemman ajon vastaan kuten pitääkin.
+Tämä säilyttää nupin arvon silloin kun summa on nolla, mutta **ei** säilytä
+VCA-banaaneja sisältävän snapshotin tai presetin soundia: sen painot saavat
+uuden vasteen. Myös alkuperäinen “täsmälleen sama laki ykkösessä” pätee vain
+muotoiltuun väliarvoon. Todellinen input-VCA rajataan sen jälkeen 0–2:een ja
+feedback-VCA 0–2,5:een, joten luonnoksen summa +1 → ×4/+12 dB ei toteudu;
+p = 2 saavuttaa olemassa olevan katon aikaisemmin ja viipyy siellä pidempään.
+Vastaavasti summa −1 **vähentää yhden**; se sulkee VCA:n vain, jos nuppi on
+enintään ykkösessä. Nämä eivät ole turvallisuusvikoja vaan portin keskeisiä
+musikaalisia eroja.
+
+Saman session A/B/C vertasi lineaarista, p = 1,5:tä ja p = 2:ta. p = 2
+säilytti 0,05–0,10-painoilla hienovaraisen hengityksen; 0,20 teki fraaseja,
+0,40 syvän mutta pyöreäreunaisen liikkeen ja vasta 0,80 täydet aukot.
+Positiivinen kaari kävi katossa jähmettymättä, feedback-painot −0,20/−0,50
+tekivät erisyvyisiä kuoppia ilman tyhjiä paloja, ja SP.AF-verrokki sekä
+kokonaiset presetit pysyivät hallinnassa. p = 1,5 jäi p = 2:n
+kaapelipainolla saavutettavaksi välimuodoksi. Lineaarisella oli oma identiteetti,
+mutta ei testeissä omaa välttämätöntä soittotehtävää; siksi uutta
+character-kytkintä ei lisätty. Tilapäinen audition-kytkin ja p = 1,5 -DSP-haara
+poistettiin hyväksynnässä.
+
+Lopullinen portti: `CQ_COMPILE_OK`, **13 276 unit-passia /
+0 failurea / 33/33 luokkaa**, `CQ_SAFETY_PASSED` ja `CQ_HOLD_OK`
+(A4-korrelaatio 1.0, A5-drift 0.0 dB). `\mayhem` pysyy turvallisesti
+masterin 0,89-limitterin alla, mutta limitteriin osuva huippu todistaa
+turvallisuuden, ei tekstuurin tai dynamiikan säilymistä; ne hyväksyttiin
+erikseen manuaalisessa portissa.
 
 Space-keskustelun ensimmäinen päätös 2026-07-28: Silhouette hylättiin tämän
 soittimen sisältä. Tuotanto-FDN:ään, `CQSpec`iin tai GUI:hin koskematon
@@ -418,7 +422,8 @@ efektinä. Nykyistä Space/FDN-linjaa ei jatketa.
   [x] 13.2 speed-lattia (**hyväksytty 2026-07-29, vaihtoehto A**) ·
   [ ] 13.3 dust ·
   [x] 13.4 chaos-käyrä (**hyväksytty 2026-07-28, myös sääkehät**) ·
-  [ ] 13.5 VCA-laki · [ ] 13.6 zipper-mittaus ·
+  [x] 13.5 VCA-laki (**hyväksytty 2026-07-29, kiinteä p = 2**) ·
+  [ ] 13.6 zipper-mittaus ·
   [ ] 13.8 preamp loudness compensation
 
 ## Norns-portti (§14) — jonon viimeinen, ei korvapassin välitön seuraaja
