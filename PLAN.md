@@ -1,6 +1,6 @@
 # Yölahti — ajantasainen kehityssuunnitelma (Nocturne-vaihe)
 
-Päivitetty 2026-07-29. Tämä tiedosto kertoo, **mitä tehdään seuraavaksi** ja
+Päivitetty 2026-07-30. Tämä tiedosto kertoo, **mitä tehdään seuraavaksi** ja
 **missä järjestyksessä**. Vaiheen yksityiskohtainen *miten* — jokaisen osan
 suunnittelu, geometria, karikot, korvakokeet — on
 [`docs/NIGHT_STANDALONE_PLAN.md`](docs/NIGHT_STANDALONE_PLAN.md):ssä; tämä
@@ -1510,6 +1510,25 @@ Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
   10. 10–15 minuutin tiheä patch + molemmat Cocot + Audio-sivu auki/kiinni:
       rajattu AIO-vakauskoe, ei dropoutia, listener-vuotoa tai kasvavaa
       repainttia.
+
+**Jatkopiste 2026-07-30 — koneen uudelleenkäynnistys ennen system-default-porttia**
+
+- Käyttäjä käynnistää Windowsin uudelleen koneen yleisen jumittumisen vuoksi;
+  tätä ei ole tässä vaiheessa osoitettu Yölahden audio- tai serverivirheeksi.
+- Viimeinen varmennettu ja persisted baseline on split WASAPI:
+  input `Microphone Array (AMD Audio Device)`, output
+  `Headphones (Realtek(R) Audio)`, 48 kHz, server block 64, hardware buffer
+  256, live in ch 1/2, main out ch 1/2, mic off, stems off ja record 4ch off.
+  `config.audio.scd` on Git-ignored ja sisälsi tämän exact tilan.
+- Viimeinen fyysinen sessio vastasi kolmeen 72 tavun `/status.reply`-viestiin.
+  Työpuu oli puhdas commitissa `be2e08f`; REC-state-korjaus on commitissa
+  `bdd6ac4`.
+- **Jatka tästä:** boottaa uudelleenkäynnistyksen jälkeen normaalisti, varmista
+  ensin split-baseline (ääni, Night-liike, live L/R ja Audio-sivu). Testaa sitten
+  Audio → device mode `system default` → `apply & restart audio` → `restart`.
+  Onnistumisessa GUI palaa, device näyttää `system default` ja ääni/Night/live
+  presence toimivat. Rollbackissa älä yritä uudelleen, vaan tallenna
+  terminaalituloste.
 
 **Definition of done:** käyttäjä hyväksyy static layoutin sekä yhden oikean
 input→Coco→main-output-ketjun. Nelikanavainen stem-koe sulkee samalla vanhan
