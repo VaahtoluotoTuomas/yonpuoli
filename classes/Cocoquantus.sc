@@ -1023,11 +1023,19 @@ Cocoquantus {
 		^this
 	}
 
+	// Stopping the guard must retract a danger it published. The first version
+	// cleared the state silently, on the assumption that a stop only ever
+	// happens while the GUI is going away too — false for a restarted guard,
+	// which left the toolbar claiming a fault the model no longer claimed (user
+	// review 2026-07-31). A state that can be entered but not left is a defect
+	// however rare the route out is.
 	*prStopAudioClockWatch {
+		var wasDanger = (audioClockState == \danger);
 		audioClockRoutine !? { |routine| routine.stop };
 		audioClockRoutine = nil;
 		audioClockWatch = nil;
 		audioClockState = \ok;
+		if(wasDanger) { this.changed(\audioClock, false) };
 		^this
 	}
 

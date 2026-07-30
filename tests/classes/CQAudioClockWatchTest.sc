@@ -134,6 +134,32 @@ CQAudioClockWatchTest : UnitTest {
 
 	// ---- the facade's runtime guard (AUD-W lifecycle + announcement laws) ----
 
+	// User review 2026-07-31: restarting the guard left the toolbar mark lit,
+	// because the stop path cleared the state without saying so. A state that
+	// can be entered but not left is a defect however rare the route out is.
+	test_stoppingTheGuardRetractsItsDanger {
+		var server = CQTestServer();
+		var events = List.new;
+		var listener = SimpleController(Cocoquantus);
+		listener.put(\audioClock, { |obj, what, danger| events.add(danger) });
+		Cocoquantus.prStartAudioClockWatch(server, Cocoquantus.sessionGeneration,
+			48000, 0);
+		server.actualSampleRate = 2610.783;
+		30.do { |i| Cocoquantus.prAudioClockTick(server, i * 2.5) };
+		this.assert(Cocoquantus.audioClockDanger, "precondition: danger is published");
+		Cocoquantus.prStartAudioClockWatch(server, Cocoquantus.sessionGeneration,
+			48000, 0);
+		this.assert(Cocoquantus.audioClockDanger.not,
+			"a restarted guard starts from ok");
+		this.assertEquals(events.size, 2,
+			"and it retracts the danger it published, so no surface stays lit");
+		this.assertEquals(events.last, false, "the retraction says danger is over");
+		Cocoquantus.prStopAudioClockWatch;
+		this.assertEquals(events.size, 2,
+			"stopping an already-ok guard announces nothing");
+		listener.remove;
+	}
+
 	test_guardDoesNotOutliveTheSession {
 		var server = CQTestServer();
 		Cocoquantus.prStartAudioClockWatch(server, Cocoquantus.sessionGeneration);

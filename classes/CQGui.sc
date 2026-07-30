@@ -547,13 +547,17 @@ CQGui {
 		clockCtl = SimpleController(Cocoquantus);
 		clockCtl.put(\audioClock, { |obj, what, danger|
 			{
-				// The fault can strike with the Drawer closed, so the always
-				// visible toolbar carries it too (AUD-W, user decision
-				// 2026-07-31); the page states the measured rate.
-				shell !? { |current| current.audioClockDanger = danger };
-				drawer !? {
-					drawer.audioSetup !? { |page| page.serverHealthChanged }
-				}
+				// The retraction can arrive from a session teardown, so this
+				// deferred block can outlive the views it writes to.
+				if(cleaned.not) {
+					// The fault can strike with the Drawer closed, so the always
+					// visible toolbar carries it too (AUD-W, user decision
+					// 2026-07-31); the page states the measured rate.
+					shell !? { |current| current.audioClockDanger = danger };
+					drawer !? {
+						drawer.audioSetup !? { |page| page.serverHealthChanged }
+					};
+				};
 			}.defer;
 		});
 		Cocoquantus.server !? { |currentServer|

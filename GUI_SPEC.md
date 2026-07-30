@@ -741,6 +741,11 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     room the words drop and the dot alone remains — the dot is the state, the
     words are the courtesy. A GUI built while the clock is already stuck opens
     with the mark already lit: the guard's state is older than the window.
+    **Whatever ends the danger must retract it**, including a stopped or
+    restarted guard — a first version cleared the model silently and left the
+    toolbar claiming a fault nothing claimed any more (user review 2026-07-31).
+    A visible state that can be entered but not left is a defect however rare
+    the route out is.
   - Input keeps `live l`, `live r` and `mic off/on · ch n` in stable rows plus
     three thin raw-presence tracks. Output keeps main L/R, stems off/on, both
     stem channels and record-4ch in stable rows plus post-safety master
