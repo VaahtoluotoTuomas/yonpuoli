@@ -35,6 +35,7 @@ abort = { |error|
 				var master = gui.shell.masterView;
 				var volKnob, recControl, panicControl, oldVol;
 				var map = gui.nightMap;
+				var clockLayout;
 				check.value(gui.window.notNil and: { gui.window.isClosed.not },
 					"real Qt window constructed");
 				check.value(gui.window.acceptsMouseOver,
@@ -90,6 +91,27 @@ abort = { |error|
 					and: { gui.auraFor(\tri1).isNil }
 					and: { gui.chargeFor(\coco1_flip).isNil },
 					"missing telemetry never invents aura or charge");
+				// AUD-W's always-visible surface. The mark is static ink drawn
+				// on the toolbar beside the drawer button — the route to the
+				// only remedy — and it may exist only in danger.
+				check.value(gui.shell.audioClockDanger.not,
+					"a healthy clock leaves no danger mark on the toolbar");
+				gui.shell.audioClockDanger = true;
+				check.value(gui.shell.audioClockDanger,
+					"the guard's danger reaches the always-visible chrome");
+				clockLayout = CQGuiShell.clockDangerLayout(34,
+					gui.shell.drawerButton.view.bounds.left,
+					0, CQGuiScale.chrome[\label]);
+				check.value(clockLayout[\showText]
+					and: { clockLayout[\textRect].left > 0 }
+					and: { clockLayout[\textRect].right
+						< gui.shell.drawerButton.view.bounds.left }
+					and: { clockLayout[\dotCenter].x
+						< gui.shell.drawerButton.view.bounds.left },
+					"at the 1280 minimum the mark fits left of the drawer button");
+				check.value(CQGuiShell.clockDangerLayout(34, 120, 100,
+					CQGuiScale.chrome[\label])[\showText].not,
+					"and where the title leaves no room the dot survives alone");
 				gui.shell.toggleDrawer;
 				AppClock.sched(0.15, {
 					try {

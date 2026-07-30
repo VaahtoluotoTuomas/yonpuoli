@@ -10,6 +10,7 @@ CQGuiShell {
 	var drawerStack, drawerPages, toolbarView, toolbarTitle;
 	var tabButtons, skinAction, shownAction;
 	var toolbarInset = 6;
+	var <audioClockDanger = false;
 
 	*new { |state, nightView, masterView, pages, skinAction, shownAction|
 		^super.new.prInit(state, nightView, masterView, pages,
@@ -48,6 +49,11 @@ CQGuiShell {
 			Pen.width = CQInk.strokes[\hairline];
 			Pen.line(Point(inset, y), Point(toolbarView.bounds.width - inset, y));
 			Pen.stroke;
+			// AUD-W's always-visible surface (user decision 2026-07-31). The mark
+			// sits on the drawer button, which is the only route to the only
+			// remedy — cue and action share one geometry (GUI_SPEC §4.5). It is
+			// static ink: no blink, no pulse, and it exists only in danger.
+			if(audioClockDanger) { this.prDrawClockDanger };
 		};
 		toolbarView.layout = HLayout(toolbarTitle, nil, drawerButton.view)
 			.margins_(toolbarInset).spacing_(6);
@@ -75,6 +81,63 @@ CQGuiShell {
 		view.layout = VLayout(toolbarView, View().layout_(workspaceStack), masterView)
 			.margins_(0).spacing_(0);
 		this.applyState;
+		^this
+	}
+
+	// One write door for the guard's visible truth. A repaint costs a Pen round
+	// trip (§10), so an unchanged state must not ask for one — the facade
+	// already announces only on change, and this refuses a second time.
+	audioClockDanger_ { |flag|
+		flag = (flag == true);
+		if(flag == audioClockDanger) { ^this };
+		audioClockDanger = flag;
+		toolbarView !? { toolbarView.refresh };
+		^this
+	}
+
+	*clockDangerLabel { ^"audio clock stuck" }
+	*clockDangerDotRadius { ^4 }
+	*clockDangerGap { ^8 }
+
+	// Pure geometry, so the mark's placement can be tested without a paint
+	// event. `titleRight` is the floor it may never cross: the toolbar's title
+	// owns the left end, and a mark that slides under it would be unreadable
+	// exactly when it matters most. When the room runs out the words drop and
+	// the dot alone remains — the dot is the state, the words are the courtesy.
+	*clockDangerLayout { |toolbarHeight, buttonLeft, titleRight = 0, labelSize = 11|
+		var dotR = this.clockDangerDotRadius;
+		var gap = this.clockDangerGap;
+		var label = this.clockDangerLabel;
+		var textW = CQGuiScale.textWidth(label, labelSize);
+		var cy = (toolbarHeight - 1) / 2;
+		var dotX = buttonLeft - gap - dotR;
+		var textLeft = dotX - dotR - gap - textW;
+		var showText = textLeft > (titleRight + gap);
+		^(
+			dotCenter: Point(dotX, cy),
+			dotRadius: dotR,
+			showText: showText,
+			textRect: Rect(textLeft, cy - (labelSize * 0.75), textW,
+				labelSize * 1.5),
+			label: label
+		)
+	}
+
+	prDrawClockDanger {
+		var palette = CQInk.palette(\night);
+		var chrome = CQGuiScale.chrome;
+		var size = chrome[\label];
+		var layout = this.class.clockDangerLayout(toolbarView.bounds.height,
+			drawerButton.view.bounds.left, toolbarTitle.bounds.right, size);
+		// The words are the ones the Audio page repeats, so the two surfaces
+		// cannot disagree about what happened.
+		if(layout[\showText]) {
+			Pen.stringRightJustIn(layout[\label], layout[\textRect],
+				CQInk.font(\label, size), palette[\danger]);
+		};
+		Pen.fillColor = palette[\danger];
+		Pen.addArc(layout[\dotCenter], layout[\dotRadius], 0, 2pi);
+		Pen.fill;
 		^this
 	}
 

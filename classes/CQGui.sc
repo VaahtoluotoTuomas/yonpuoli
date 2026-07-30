@@ -402,6 +402,9 @@ CQGui {
 		// with the Drawer closed would otherwise leave a stale size behind. The
 		// window's own view always resizes, and reopening the Drawer re-asks.
 		shell.drawerView.onResize = { this.prSyncDrawerScale };
+		// A GUI built while the clock is already stuck must not open clean: the
+		// guard's state is older than this window.
+		shell.audioClockDanger = Cocoquantus.audioClockDanger;
 		this.prApplySkin(\night);
 		window = Window("Yölahti",
 			Rect(50, 50, minimum[0], minimum[1]));
@@ -542,8 +545,12 @@ CQGui {
 		// AUD-W: the runtime clock guard announces only when the *visible* truth
 		// changes, so this listener costs nothing while the clock is healthy.
 		clockCtl = SimpleController(Cocoquantus);
-		clockCtl.put(\audioClock, {
+		clockCtl.put(\audioClock, { |obj, what, danger|
 			{
+				// The fault can strike with the Drawer closed, so the always
+				// visible toolbar carries it too (AUD-W, user decision
+				// 2026-07-31); the page states the measured rate.
+				shell !? { |current| current.audioClockDanger = danger };
 				drawer !? {
 					drawer.audioSetup !? { |page| page.serverHealthChanged }
 				}

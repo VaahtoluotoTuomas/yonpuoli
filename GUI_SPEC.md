@@ -725,6 +725,17 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     all: the guard's `watching` state is deliberately invisible, because a
     transient that is on its way back is not a fault (§16.3/§16.10, and §9's law
     that ambient state moves only on real telemetry).
+  - **The same danger also marks the persistent toolbar** (user decision
+    2026-07-31), because the fault can strike with the Drawer closed. The mark
+    is static ink on the toolbar beside the `drawer` button — the one route to
+    the only remedy, so cue and action share one geometry (§4.5): a filled
+    danger dot plus the same words the Audio page uses, right-aligned against
+    the button. It exists only in danger, never blinks or pulses, and never
+    animates. Its placement is pure geometry (`CQGuiShell.clockDangerLayout`)
+    so it can be tested without a paint event; where the title would leave no
+    room the words drop and the dot alone remains — the dot is the state, the
+    words are the courtesy. A GUI built while the clock is already stuck opens
+    with the mark already lit: the guard's state is older than the window.
   - Input keeps `live l`, `live r` and `mic off/on · ch n` in stable rows plus
     three thin raw-presence tracks. Output keeps main L/R, stems off/on, both
     stem channels and record-4ch in stable rows plus post-safety master

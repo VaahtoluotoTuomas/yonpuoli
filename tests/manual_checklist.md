@@ -1726,12 +1726,24 @@ Cocoquantus.audioClockDanger;   // -> false
 // 3. PANIC ja Audio-sivun "restart audio" pitaa olla tavoitettavissa koko ajan
 //    myos danger-tilassa (turvainvariantti #3).
 CQ.panic;
+
+// 4. AINA NAKYVA MERKKI. Talla voi katsoa merkin ilman etta mitaan on rikki
+//    -- se kirjoittaa vain nakymaan, ei guardin tilaan:
+CQ.gui.shell.audioClockDanger = true;
+//    Tyokalurivilla, drawer-napin vasemmalla puolella, pitaa nyt olla
+//    danger-varinen piste ja teksti "audio clock stuck". Katso etta:
+//      - se ei vilku eika liiku
+//      - se ei mene yolahti-otsikon eika drawer-napin paalle
+//      - se nakyy myos Drawer auki ja Drawer kiinni
+//      - kavenna ikkuna minimiin (1280): teksti saa pudota, piste ei
+CQ.gui.shell.audioClockDanger = false;
+//    Merkin pitaa kadota kokonaan, eika tyokaluriville saa jaada jalkea.
 ```
 
 - [ ] AUD-W hyväksytty (pvm: ______ — terve tila hiljainen, provokaatio,
       itsestään palautuminen, PANIC tavoitettavissa)
-- [ ] AUD-W:n aina näkyvä pinta (Nightin staattinen ink-tila) — oma
-      katselmuksensa, muotoa ei ole vielä päätetty
+- [ ] AUD-W:n aina näkyvä merkki hyväksytty (pvm: ______ — paikka, koko,
+      luettavuus, katoaa jäljettä)
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>

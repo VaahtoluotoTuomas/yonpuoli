@@ -1970,10 +1970,20 @@ lepotila/herätys tai soakissa itsestään ilmenevä tapaus.
   `CQ_GUI_DRAWER_REENTRY_PASSED`, `CQ_GUI_NIGHT_PASSED`. `CQ_HOLD_OK` kantaa,
   DSP:hen ei koskettu.
 
-**Avoinna, käyttäjän päätös:** sopimuksen kohta "aina näkyvä pinta" on
-tarkoituksella tekemättä. Vika voi iskeä kun Drawer on kiinni, joten Nightissä
-tarvitaan staattinen ink-tila — mutta sen muoto ja paikka on oma katselmuksensa,
-ei arvaus. Tämä on ainoa asia joka erottaa AUD-W:n valmiista.
+- **Aina näkyvä pinta: työkalurivin drawer-nappi** (käyttäjän päätös
+  2026-07-31). Merkki on staattista mustetta pysyvässä kromissa — täytetty
+  danger-piste ja samat sanat kuin Audio-sivulla, oikeaan reunaan napin viereen.
+  Se istuu **ainoalla tiellä ainoaan korjaukseen**, eli vihje ja teko jakavat
+  saman geometrian (§4.5). Ei vilku, ei sykki, eikä sitä ole olemassa muulloin
+  kuin vikatilassa. Sijoittelu on puhdasta geometriaa
+  (`CQGuiShell.clockDangerLayout`), joten se testataan ilman piirtotapahtumaa;
+  jos otsikko ei jätä tilaa, sanat putoavat ja piste jää — piste on tila, sanat
+  ovat kohteliaisuus. Vikatilassa avattu GUI aukeaa merkki jo päällä.
+- Portit ajettu uudelleen merkin kanssa 2026-07-31: `CQ_COMPILE_OK`,
+  **13 595 passia / 0 / 38 luokkaa**, ja kaikki kuusi GUI-smokea vihreinä
+  (`CQ_GUI_SHELL_PASSED` sisältää nyt merkin mahtumisen 1280 px:n minimissä).
+
+**Avoinna:** enää fyysinen provokaatiohyväksyntä (checklist AUD-W).
 
 ### 1.0-tagin rajaus ja avoin nimipäätös
 
