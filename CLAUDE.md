@@ -402,8 +402,23 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   single-device mode while REAPER keeps K-Mix ASIO and does the monitoring. The
   working recipe, its two REAPER traps (the hardware-output row's own `M`; input
   monitoring, without which an armed track still shows input on its meter but
-  passes nothing) and the round-trip-latency debt are in PLAN.md. Next on the road
-  to 1.0 is AUD-W, the runtime audio-clock guard.
+  passes nothing) and the round-trip-latency debt are in PLAN.md.
+- **AUD-W, the runtime audio-clock guard (step 2), is built and its part 1 was
+  accepted 2026-07-31** (checklist AUD-W). `CQAudioClockWatch` is the pure model
+  and now owns the bound and predicate the boot gate delegates to — one
+  definition, guarded by a test. The fault condition is a *stuck* clock
+  (unhealthy for 60 s AND not converging), never a mere out-of-bounds reading,
+  because a Modern Standby wake measurably travels outside both bounds while
+  nothing is broken. The guard adds no server traffic, never lists devices, has
+  no automatic recovery, and is silent unless the *visible* truth changes; its
+  `watching` state is deliberately invisible. Danger shows on the Audio page and
+  as a static mark on the toolbar's drawer button — the route to the only remedy.
+  Two review defects are recorded there as laws: **a visible state that can be
+  entered but not left is a defect** (the stop path cleared danger silently), and
+  a row that already overflows must be split rather than shortened. **Step 3, the
+  long hardware/resource soak, is next, and it carries AUD-W's part 2** — but
+  `tests/soak_monitor.ps1` holds the system awake, so the sleep/wake provocation
+  needs its own window after the monitor stops.
 - `Cocoquantus.sc` is currently about 645 lines after the lifecycle work. The user
   explicitly accepts that size for now; split it when ownership becomes clearer or
   further growth would make the class harder to maintain, not as a risky handoff-only

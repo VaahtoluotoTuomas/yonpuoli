@@ -1727,8 +1727,23 @@ Cocoquantus.audioClockDanger;   // -> false
 //    myos danger-tilassa (turvainvariantti #3).
 CQ.panic;
 
-// 4. AINA NAKYVA MERKKI. Talla voi katsoa merkin ilman etta mitaan on rikki
-//    -- se kirjoittaa vain nakymaan, ei guardin tilaan:
+// 4. KOKO KETJU LAPI TURVALLISESTI (osa 1). Kerrotaan guardille etta pyydettiin
+//    96 kHz vaikka laite ajaa 48 kHz: aaneen ei kosketa lainkaan, vain guardin
+//    vertailukohta on vaara, joten se nakee "kello kay puolinopeudella eika
+//    korjaannu" ja tekee tasan sen mita oikeassa viassa.
+Cocoquantus.prStartAudioClockWatch(CQ.server, Cocoquantus.sessionGeneration, 96000);
+//    Odota ~65 s. Sen jalkeen pitaa olla totta:
+//      - tyokalurivilla palaa "audio clock stuck"
+//      - Drawer -> Audio: engine-rivi danger-varilla, "reports 47986.3 Hz"
+//      - status-rivi: "audio clock stuck - restart audio"
+//      - post-ikkunassa YKSI varoitus, ei toistuvaa spammia
+Cocoquantus.audioClockState;   // -> danger
+CQ.panic;                      // soittimen pitaa olla kaytettavissa danger-tilassa
+//    Palautus. Merkin pitaa kadota HETI, ilman odotusta:
+Cocoquantus.prStartAudioClockWatch(CQ.server, Cocoquantus.sessionGeneration);
+
+// 5. AINA NAKYVA MERKKI ERIKSEEN. Talla voi katsoa merkin ilman etta mitaan on
+//    rikki -- se kirjoittaa vain nakymaan, ei guardin tilaan:
 CQ.gui.shell.audioClockDanger = true;
 //    Tyokalurivilla, drawer-napin vasemmalla puolella, pitaa nyt olla
 //    danger-varinen piste ja teksti "audio clock stuck". Katso etta:
@@ -1740,10 +1755,23 @@ CQ.gui.shell.audioClockDanger = false;
 //    Merkin pitaa kadota kokonaan, eika tyokaluriville saa jaada jalkea.
 ```
 
-- [ ] AUD-W hyväksytty (pvm: ______ — terve tila hiljainen, provokaatio,
-      itsestään palautuminen, PANIC tavoitettavissa)
-- [ ] AUD-W:n aina näkyvä merkki hyväksytty (pvm: ______ — paikka, koko,
-      luettavuus, katoaa jäljettä)
+- [x] **AUD-W osa 1 hyväksytty 2026-07-31.** Terve tila hiljainen, simuloitu
+      jumi sytytti merkin ja Audio-sivun mitatun taajuuden, PANIC vastasi
+      danger-tilassa, ja palautus sammutti merkin heti.
+      Katselmus löysi kaksi vikaa, molemmat korjattu ennen hyväksyntää:
+      pysäytys nollasi tilan **hiljaa** eikä merkki siksi koskaan sammunut
+      (`bbcad67`), ja laitelistan huomautus paisutti engine-rivin `show all
+      drivers` -napin alle (`d331ff4`).
+- [x] **AUD-W:n aina näkyvä merkki hyväksytty 2026-07-31** — paikka, koko ja
+      luettavuus työkalurivillä drawer-napin vieressä, katoaa jäljettä.
+- [ ] **AUD-W osa 2 — oikea lepotilaprovokaatio.** Tehdään osana pitkää soakia
+      (käyttäjän päätös 2026-07-31). **Huomaa:** `tests/soak_monitor.ps1` pitää
+      järjestelmän hereillä koko ajonsa ajan (`SetThreadExecutionState`), juuri
+      siksi ettei valvomaton soak mittaisi Modern Standby -artefaktia. Osa 2
+      vaatii siis **oman ikkunansa monitorin pysäytyksen jälkeen** (tai ajon
+      ilman monitoria) — muuten kone ei nukahda eikä provokaatiota tapahdu.
+      Odotus: guard **ei** saa huutaa toipuvasta heräämisestä; mitattu sarja
+      7419 → 69 184 → 47 986 Hz on suppeneva eikä vika.
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>

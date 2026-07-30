@@ -58,9 +58,10 @@ VB-CABLE-DAW-portti.**
 **Fyysinen AIO-hardware-katselmus hyväksyttiin 2026-07-30, joten koko AIO-vaihe
 on valmis.** Järjestys tästä on **käyttäjän 2026-07-30 päättämä tie 1.0:aan:
 ~~MOR-1~~ (hyväksytty) → ~~DAW-silta ReaRoutella~~ (toimii molempiin suuntiin
-2026-07-31) → ajonaikainen audiokelloguard →
-pitkä laitteisto-/resource-soak → merge `main`iin ja 1.0-tagi** (oma osio
-"Tie 1.0:aan" alla).
+2026-07-31) → ~~ajonaikainen audiokelloguard~~ (AUD-W osa 1 hyväksytty
+2026-07-31; osa 2 kulkee soakin mukana) →
+**pitkä laitteisto-/resource-soak ← tässä ollaan** → merge `main`iin ja
+1.0-tagi** (oma osio "Tie 1.0:aan" alla).
 Kolme huokoista soittotilaa **ei ole 1.0:n ehto** — se on oma haaransa 1.0:n
 jälkeen — ja Norns-portti (§14) tulee vasta niiden jälkeen. Yksi musiikillinen
 muuttuja käsitellään edelleen kerrallaan. **N10:n sydän/kela- ja chevron-vihjeet hyväksyttiin visuaalisesti
@@ -1679,11 +1680,15 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    (checklist DAW-1); toimiva resepti ja sen karikot ovat alla.
 2. **AUD-W — ajonaikainen audiokelloguard.** Oma pieni portti, tehdään
    **ennen** soakia, jotta soak voi ylipäätään havaita sen mitä tämä valvoo.
-   Sopimus alla. **Malli, guard ja Audio-sivun rehellinen tila toteutettu ja
-   portit vihreät 2026-07-31; auki on enää sopimuksen "aina näkyvä pinta"
-   (Nightin staattinen ink-tila) ja fyysinen provokaatiohyväksyntä.**
+   Sopimus alla. **Toteutettu, portit vihreät ja osa 1 hyväksytty 2026-07-31**
+   (malli, guard, Audio-sivun rehellinen tila ja työkalurivin aina näkyvä
+   merkki). Auki on enää osa 2, oikea lepotilaprovokaatio, joka tehdään soakin
+   yhteydessä.
 3. **Pitkä laitteisto-/resource-soak.** Koko soittimen pitkäkestoinen vakaus;
-   AIO:n 10 minuutin koe ei korvaa tätä.
+   AIO:n 10 minuutin koe ei korvaa tätä. **Kantaa nyt myös AUD-W:n osan 2**
+   (käyttäjän päätös 2026-07-31) — mutta soak-monitori pitää koneen hereillä,
+   joten lepotilaprovokaatio tarvitsee oman ikkunansa monitorin pysäytyksen
+   jälkeen.
 4. **Merge `main`iin ja 1.0-tagi.**
 
 ### DAW-sillan keino: ReaRoute, ei VB-CABLE
@@ -1983,7 +1988,28 @@ lepotila/herätys tai soakissa itsestään ilmenevä tapaus.
   **13 595 passia / 0 / 38 luokkaa**, ja kaikki kuusi GUI-smokea vihreinä
   (`CQ_GUI_SHELL_PASSED` sisältää nyt merkin mahtumisen 1280 px:n minimissä).
 
-**Avoinna:** enää fyysinen provokaatiohyväksyntä (checklist AUD-W).
+**Osa 1 hyväksyttiin 2026-07-31** (checklist AUD-W): simuloitu jumi — guardille
+kerrotaan että pyydettiin 96 kHz vaikka laite ajaa 48 kHz, jolloin ääneen ei
+kosketa lainkaan mutta guard näkee todellisen vikatilanteen — sytytti merkin ja
+Audio-sivun mitatun taajuuden, PANIC vastasi danger-tilassa, ja palautus sammutti
+merkin heti. **Katselmus löysi kaksi vikaa, molemmat korjattu:**
+
+1. **Pysäytys nollasi tilan hiljaa** (`bbcad67`), joten valvonnan
+   uudelleenkäynnistys jätti työkalurivin väittämään vikaa jota malli ei enää
+   väittänyt. Oletukseni oli, että pysäytys tapahtuu vain kun GUI on muutenkin
+   katoamassa. **Näkyvä tila johon pääsee sisään muttei ulos on vika**, olipa
+   ulosreitti kuinka harvinainen tahansa; laki on nyt `GUI_SPEC`issä.
+2. **Laitelistan huomautus paisutti engine-rivin** `show all drivers` -napin alle
+   (`d331ff4`). Lyhentäminen olisi vain siirtänyt törmäystä, koska AUD-W kasvattaa
+   samaa riviä juuri silloin kun sen pitää olla luettavin — laskurit ja huomautus
+   saivat oman `device list` -rivin.
+
+**Avoinna: osa 2, oikea lepotilaprovokaatio.** Käyttäjän päätös 2026-07-31 on
+tehdä se **osana pitkää soakia**. Yksi ehto on tiedettävä etukäteen:
+`tests/soak_monitor.ps1` pitää järjestelmän hereillä koko ajonsa ajan, juuri
+siksi ettei valvomaton soak mittaisi Modern Standby -artefaktia — joten osa 2
+tarvitsee **oman ikkunansa monitorin pysäytyksen jälkeen** tai ajon ilman
+monitoria. Muuten kone ei nukahda eikä provokaatiota tapahdu.
 
 ### 1.0-tagin rajaus ja avoin nimipäätös
 
