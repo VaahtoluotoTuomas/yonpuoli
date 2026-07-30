@@ -15,6 +15,8 @@ Cocoquantus {
 	classvar pendingBoot, serverQuitAction, serverBootAction;
 	classvar <audioDeviceCatalog, <audioDeviceCatalogState = \unavailable;
 	classvar <audioDeviceCatalogError, <audioDeviceScanCount = 0;
+	classvar audioClockWatch, audioClockRoutine;
+	classvar <audioClockState = \ok, <audioClockTickCount = 0;
 
 	*boot { |path, onReady, preparedConfig, onFailure, beforeGui|
 		var generation, sessionConfig, sessionServer, sessionGraph, sessionState;
@@ -114,16 +116,15 @@ Cocoquantus {
 	// nominal 48 kHz stream at only ~2.61 kHz. Reject that catastrophic clock
 	// mismatch before allocating or fading in the graph, so an Audio candidate
 	// reaches its existing one-rollback path and can never replace last-working.
-	*audioClockRatioBounds { ^#[0.8, 1.2] }
+	// AUD-W: the bound and the predicate now live in CQAudioClockWatch so the
+	// boot gate and the runtime guard can never drift apart. Behaviour here is
+	// unchanged — these are pass-throughs, not a second definition.
+	*audioClockRatioBounds { ^CQAudioClockWatch.ratioBounds }
 	*audioClockProbeCount { ^3 }
 	*audioClockProbePeriod { ^0.75 }
 
 	*prAudioClockHealthy { |requestedRate, actualRate|
-		var ratio, bounds = this.audioClockRatioBounds;
-		if(requestedRate.isNumber.not or: { requestedRate <= 0 }) { ^false };
-		if(actualRate.isNumber.not or: { actualRate <= 0 }) { ^false };
-		ratio = actualRate.asFloat / requestedRate.asFloat;
-		^(ratio >= bounds[0]) and: { ratio <= bounds[1] }
+		^CQAudioClockWatch.healthy(requestedRate, actualRate)
 	}
 
 	*prRequireAudioClock { |targetServer, requestedRate|
@@ -975,6 +976,7 @@ Cocoquantus {
 			};
 		};
 		ServerQuit.add(serverQuitAction, sessionServer);
+		this.prStartAudioClockWatch(sessionServer, generation);
 	}
 
 	*prUnwatchServer {
@@ -982,6 +984,82 @@ Cocoquantus {
 			ServerQuit.remove(serverQuitAction, server);
 		};
 		serverQuitAction = nil;
+		this.prStopAudioClockWatch;
+	}
+
+	// AUD-W (PLAN.md "AUD-W:n sopimus"). A read-only runtime guard: it reads the
+	// value the existing status watcher already fills from /status replies, so it
+	// adds no server traffic, and it must NEVER reach for a device listing — that
+	// is the isolated 2026-07-29 wedge. Low frequency by design; a healthy clock
+	// changes nothing and moves no ink. No automatic recovery: an instrument that
+	// reboots itself mid-performance is worse than an honest error state.
+	*audioClockWatchPeriod { ^CQAudioClockWatch.watchPeriod }
+
+	// `requestedRate`/`period` exist for hermetic tests only: a test drives the
+	// tick itself with period 0 rather than waiting on a real clock. Production
+	// passes neither and gets the session's own rate and the 2.5 s period.
+	*prStartAudioClockWatch { |sessionServer, generation, requestedRate, period|
+		period = period ?? {
+			sessionServer.tryPerform(\cqAudioClockWatchPeriod)
+				? this.audioClockWatchPeriod
+		};
+		requestedRate = requestedRate ?? { config !? { |cfg| cfg[\sampleRate] } };
+		this.prStopAudioClockWatch;
+		audioClockWatch = CQAudioClockWatch(requestedRate);
+		if(period <= 0) { ^this }; // hermetic tests drive prAudioClockTick directly
+		audioClockRoutine = Routine {
+			var live = true;
+			while { live } {
+				period.wait;
+				if((sessionGeneration != generation)
+					or: { lifecycleState != \running }
+					or: { audioClockWatch.isNil }) {
+					live = false;
+				} {
+					this.prAudioClockTick(sessionServer, Main.elapsedTime);
+				};
+			};
+		}.play(AppClock);
+		^this
+	}
+
+	*prStopAudioClockWatch {
+		audioClockRoutine !? { |routine| routine.stop };
+		audioClockRoutine = nil;
+		audioClockWatch = nil;
+		audioClockState = \ok;
+		^this
+	}
+
+	// Only a change of the *visible* truth is announced. `\watching` is the
+	// converging-transient state and must stay invisible, or the guard becomes
+	// the false alarm it exists to avoid.
+	*prAudioClockTick { |targetServer, time|
+		var rate, next, wasDanger = (audioClockState == \danger);
+		if(audioClockWatch.isNil) { ^\ok };
+		audioClockTickCount = audioClockTickCount + 1;
+		rate = targetServer.tryPerform(\actualSampleRate);
+		next = audioClockWatch.push(rate, time ? Main.elapsedTime);
+		audioClockState = next;
+		if((next == \danger) != wasDanger) {
+			if(next == \danger) {
+				("Cocoquantus: audio clock stuck — requested % Hz, server reports %."
+					++ " The sound cannot be trusted; restart audio from the Audio"
+					++ " page. No automatic recovery by design.").format(
+						audioClockWatch.requestedRate, rate ? "nothing").warn;
+			} {
+				"Cocoquantus: audio clock recovered.".postln;
+			};
+			this.changed(\audioClock, this.audioClockDanger);
+		};
+		^next
+	}
+
+	*audioClockDanger { ^(audioClockState == \danger) }
+	*audioClockRatio { ^audioClockWatch !? { |watch| watch.lastRatio } }
+	*audioClockRate { ^audioClockWatch !? { |watch| watch.lastRate } }
+	*prAudioClockWatchRunning {
+		^audioClockRoutine.notNil and: { audioClockRoutine.isPlaying }
 	}
 
 	*prUnexpectedServerQuit {

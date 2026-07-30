@@ -1679,7 +1679,9 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    (checklist DAW-1); toimiva resepti ja sen karikot ovat alla.
 2. **AUD-W — ajonaikainen audiokelloguard.** Oma pieni portti, tehdään
    **ennen** soakia, jotta soak voi ylipäätään havaita sen mitä tämä valvoo.
-   Sopimus alla.
+   Sopimus alla. **Malli, guard ja Audio-sivun rehellinen tila toteutettu ja
+   portit vihreät 2026-07-31; auki on enää sopimuksen "aina näkyvä pinta"
+   (Nightin staattinen ink-tila) ja fyysinen provokaatiohyväksyntä.**
 3. **Pitkä laitteisto-/resource-soak.** Koko soittimen pitkäkestoinen vakaus;
    AIO:n 10 minuutin koe ei korvaa tätä.
 4. **Merge `main`iin ja 1.0-tagi.**
@@ -1929,6 +1931,49 @@ kosketa, joten `CQ_SAFETY_PASSED` ja `CQ_HOLD_OK` kantavat, jos näin on.
 Fyysinen hyväksyntä vaatii yhden turvallisen provokaation — ei irtikytkentää
 kesken restartin (se on kirjattu ei-toistettava koe), vaan esimerkiksi
 lepotila/herätys tai soakissa itsestään ilmenevä tapaus.
+
+**Toteutettu 2026-07-31, odottaa fyysistä hyväksyntää (checklist AUD-W).**
+
+- `CQAudioClockWatch` on portin puhdas malli: ei serveriä, ei GUI:ta, ei omaa
+  kelloa. **Boot-portin raja ja predikaatti muuttivat sinne**, ja
+  `Cocoquantus.audioClockRatioBounds` / `prAudioClockHealthy` ovat nyt
+  läpivientejä — yksi määritelmä, ei toista rajaa, ja testi vahtii että ne
+  pysyvät samana.
+- **Vian ehto on jumi, ei rajan ylitys.** Tila on `\danger` vasta kun lukemat
+  ovat epäterveitä koko ikkunan ajan **eivätkä suppene** kohti pyydettyä
+  taajuutta. Mitattu Modern Standby -sarja on regressiotestinä sekä alkuperäisinä
+  kolmena näytteenä että tiheämpänä versiona; kumpikaan ei laukaise guardia.
+- **Ikkuna on 60 s eikä 20 s**, ja se on tietoinen kauppa. Suppenemistarkistus
+  lukee vain jakson päät, joten lyhyt ikkuna julistaisi vian ehjästä koneesta jos
+  toipuva striimi viipyy tasanteella. Väärä hälytys on tässä pahempi kuin
+  myöhäinen totuus, koska guardin koko tarkoitus on lakata valehtelemasta.
+  Vakiot ovat `CQAudioClockWatch`in luokkametodeja, joten fyysinen katselmus voi
+  muuttaa niitä yhdestä paikasta.
+- **Elinkaari tuli ilmaiseksi oikeasta koukusta:** valvonta syntyy
+  `prWatchServer`issa ja kuolee `prUnwatchServer`issa, jonka kautta kulkevat jo
+  `free`, CmdPeriod, epäonnistunut boot ja odottamaton scsynthin kuolema. Testi
+  todistaa ettei routine jää eloon.
+- **Vain näkyvän totuuden muutos ilmoitetaan.** `\watching` on tarkoituksella
+  näkymätön, terve kello on täysin hiljainen, eikä guard piirrä mitään omasta
+  kellostaan. Lukeminen on `Server.actualSampleRate` eli status-watcherin jo
+  keräämä arvo: ei uutta serverliikennettä, ei laitelistausta.
+- **Audio-sivu kertoo sen kahdessa paikassa:** engine-rivi
+  `audio clock stuck · reports N Hz` danger-perheessä pyydetyn taajuuden
+  *rinnalla*, ja status-rivi `audio clock stuck · restart audio`. Automaattista
+  recoveryä ei ole eikä tule.
+- Samassa portissa korjattiin luvattu tekstivelka: laitelistan huomautus on nyt
+  `scanned at boot · restart audio to rescan · new driver: restart sclang`
+  (`GUI_SPEC.md` §Audio, testi mukana).
+- Portit ajettu 2026-07-31: `CQ_COMPILE_OK`, **13 595 unit-passia / 0
+  epäonnistumista / 38/38 luokkaa**, `CQ_SAFETY_PASSED`, `CQ_GUI_AUDIO_PASSED`,
+  `CQ_GUI_AUDIO_PRESENCE_PASSED`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+  `CQ_GUI_DRAWER_REENTRY_PASSED`, `CQ_GUI_NIGHT_PASSED`. `CQ_HOLD_OK` kantaa,
+  DSP:hen ei koskettu.
+
+**Avoinna, käyttäjän päätös:** sopimuksen kohta "aina näkyvä pinta" on
+tarkoituksella tekemättä. Vika voi iskeä kun Drawer on kiinni, joten Nightissä
+tarvitaan staattinen ink-tila — mutta sen muoto ja paikka on oma katselmuksensa,
+ei arvaus. Tämä on ainoa asia joka erottaa AUD-W:n valmiista.
 
 ### 1.0-tagin rajaus ja avoin nimipäätös
 

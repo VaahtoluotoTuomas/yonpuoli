@@ -67,6 +67,12 @@ CQGuiAudioSetup {
 		^if(frames.isNil) { "driver default" } { frames.asString }
 	}
 
+	// AUD-W: the measured clock, never rounded into agreement with the request.
+	*clockRateText { |rate|
+		if(rate.isNumber.not) { ^"nothing" };
+		^"% Hz".format(rate.asFloat.round(1))
+	}
+
 	// `_ListAudioDevices` touches the host audio subsystem. On the physical
 	// Windows WASAPI split-device path, invoking it while scsynth owns the
 	// endpoints reproducibly wedged the running server. The runtime page uses
@@ -229,20 +235,31 @@ CQGuiAudioSetup {
 					deviceRefreshAvailable))
 		};
 		var rows;
+		var clockDanger = this.prAudioClockDanger;
 		mode = CQAudioConfig.deviceMode(device);
 		rows = [
 			(label: "engine", value: ("% · active % · block % · hw %"
-				.format(if(responsive) {
-					transactionController[\lifecycle].value
-				} {
+				.format(if(responsive.not) {
 					"server not responding"
+				} {
+					// AUD-W: a responsive server whose clock is stuck is the exact
+					// case this row used to report as healthy. Say the measured
+					// truth beside the requested rate, never instead of it.
+					if(clockDanger) {
+						"audio clock stuck · reports %".format(
+							this.class.clockRateText(this.prAudioClockRate))
+					} {
+						transactionController[\lifecycle].value
+					}
 				},
 					this.class.sampleRateText(model.activeAt(\sampleRate)),
 					model.activeAt(\blockSize),
 					this.class.hardwareBufferText(
 						model.activeAt(\hardwareBufferSize)))
 				++ suffix),
-				family: if(deviceError.notNil or: { responsive.not }) {
+				family: if(deviceError.notNil
+					or: { responsive.not }
+					or: { clockDanger }) {
 					\danger
 				} {
 					\line
@@ -389,6 +406,16 @@ CQGuiAudioSetup {
 			validation = "server not responding · restart audio";
 			family = \danger;
 		}
+		// AUD-W. This case is the whole point of the guard: the server answers,
+		// the lifecycle says running, and the sound is still not trustworthy.
+		// No automatic recovery is offered — only the reachable restart.
+		{ this.prAudioClockDanger } {
+			validation = "audio clock stuck · restart audio";
+			provenance = "server reports % against the requested %".format(
+				this.class.clockRateText(this.prAudioClockRate),
+				this.class.sampleRateText(model.activeAt(\sampleRate)));
+			family = \danger;
+		}
 		{ status == \restarting or: { status == \preparing } } {
 			validation = "restarting audio";
 			family = \warning;
@@ -529,6 +556,8 @@ CQGuiAudioSetup {
 				status: { Cocoquantus.audioReconfigureState },
 				error: { Cocoquantus.audioReconfigureError },
 				responsive: { Cocoquantus.serverResponsive },
+				clockDanger: { Cocoquantus.audioClockDanger },
+				clockRate: { Cocoquantus.audioClockRate },
 				apply: { |audioModel|
 					Cocoquantus.reconfigureAudio(audioModel)
 				},
@@ -780,10 +809,18 @@ CQGuiAudioSetup {
 	// engine row's business, not the control's: the control can only ever show
 	// one of three things, and on a machine with any legacy driver the
 	// `show all drivers` toggle wins that slot forever.
+	//
+	// The second clause was added 2026-07-31, after a correctly installed
+	// ReaRoute stayed invisible through several audio restarts: the driver list
+	// is enumerated inside the interpreter process (`_ListAudioDevices` ->
+	// PortAudio), so restarting audio can renew a *reconnected* device but never
+	// a *newly installed* driver. The old note promised both. A note that can
+	// lie about how to renew the list is the same defect class as a gate that
+	// can lie about passing.
 	*deviceListNote { |source, refreshAvailable = false|
 		if(refreshAvailable) { ^"refresh devices to rescan" };
 		^if(#[scanned, stale].includes(source)) {
-			"scanned at boot · restart audio to rescan"
+			"scanned at boot · restart audio to rescan · new driver: restart sclang"
 		} {
 			"configured devices only"
 		}
@@ -1039,6 +1076,18 @@ CQGuiAudioSetup {
 	prServerResponsive {
 		var responder = transactionController[\responsive];
 		^if(responder.isNil) { true } { responder.value == true }
+	}
+
+	// A page with no clock provider (older hermetic doubles) is not in danger:
+	// absent telemetry is not the same as bad telemetry (GUI_SPEC §4.5).
+	prAudioClockDanger {
+		var provider = transactionController[\clockDanger];
+		^if(provider.isNil) { false } { provider.value == true }
+	}
+
+	prAudioClockRate {
+		var provider = transactionController[\clockRate];
+		^provider !? { provider.value }
 	}
 
 	prCanApply {

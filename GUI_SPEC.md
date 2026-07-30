@@ -704,13 +704,27 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     **The engine row states what the list is and how to renew it**
     (`CQGuiAudioSetup.deviceListNote`), beside the in/out counts: `refresh
     devices to rescan` while a rescan is safe, `scanned at boot · restart audio
-    to rescan` while the server runs, `configured devices only` without a
+    to rescan · new driver: restart sclang` while the server runs, `configured
+    devices only` without a
     snapshot. It may not live on the device control's label, which can show only
     one of three things and loses that slot to `show all drivers` on any machine
     that has a legacy driver — so on such a machine the age of the list was
     never visible at all, and a device reconnected mid-session read as missing
     (user review 2026-07-30). **A stopped-server snapshot must always say it is
-    one.**
+    one.** The `restart sclang` clause is normative too (2026-07-31): the driver
+    list is enumerated inside the interpreter process, so restarting audio
+    renews a *reconnected* device but can never reveal a *newly installed*
+    driver — a correctly installed ReaRoute stayed invisible through several
+    audio restarts. **The note must not promise a renewal the process cannot
+    perform.**
+  - **The engine row carries the runtime audio-clock truth (AUD-W).** A
+    responsive server whose clock is stuck reads `audio clock stuck · reports
+    N Hz` in the `danger` family beside the requested rate, and the status line
+    offers only `audio clock stuck · restart audio` — never an automatic
+    recovery. A healthy clock and a converging wake-up transient show nothing at
+    all: the guard's `watching` state is deliberately invisible, because a
+    transient that is on its way back is not a fault (§16.3/§16.10, and §9's law
+    that ambient state moves only on real telemetry).
   - Input keeps `live l`, `live r` and `mic off/on · ch n` in stable rows plus
     three thin raw-presence tracks. Output keeps main L/R, stems off/on, both
     stem channels and record-4ch in stable rows plus post-safety master

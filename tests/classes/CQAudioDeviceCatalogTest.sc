@@ -95,11 +95,17 @@ CQAudioDeviceCatalogTest : UnitTest {
 			"a safe rescan is offered as the action when one is possible");
 		this.assertEquals(
 			CQGuiAudioSetup.deviceListNote(\scanned, false),
-			"scanned at boot · restart audio to rescan",
+			"scanned at boot · restart audio to rescan · new driver: restart sclang",
 			"a running server's list names its age AND the way to renew it");
+		this.assert(
+			CQGuiAudioSetup.deviceListNote(\scanned, false)
+				.find("restart sclang").notNil,
+			"and admits that restarting audio cannot find a newly installed "
+			++ "driver — the list is enumerated in the interpreter process "
+			++ "(measured on ReaRoute 2026-07-31)");
 		this.assertEquals(
 			CQGuiAudioSetup.deviceListNote(\stale, false),
-			"scanned at boot · restart audio to rescan",
+			"scanned at boot · restart audio to rescan · new driver: restart sclang",
 			"a stale cache is still a boot scan, not a configured fallback");
 		this.assertEquals(
 			CQGuiAudioSetup.deviceListNote(\configured, false),

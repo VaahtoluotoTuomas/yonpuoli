@@ -8,7 +8,7 @@ CQGui {
 	var state, matrix, config;
 	var <window, <widgets, updaters, <shellState, <shell, <drawer;
 	var <audioConfig;
-	var stateCtl, serverCtl, gridPanel, meterFuncs, <audition;
+	var stateCtl, serverCtl, clockCtl, gridPanel, meterFuncs, <audition;
 	var <bananaGrammar, <nightMap;
 	var <inkControls;
 	var <spesalStates;
@@ -539,6 +539,16 @@ CQGui {
 			// Any shake (`p`, code, pattern) flashes the sowing moon.
 			if(action == \shake) { { this.prFlashShake }.defer };
 		});
+		// AUD-W: the runtime clock guard announces only when the *visible* truth
+		// changes, so this listener costs nothing while the clock is healthy.
+		clockCtl = SimpleController(Cocoquantus);
+		clockCtl.put(\audioClock, {
+			{
+				drawer !? {
+					drawer.audioSetup !? { |page| page.serverHealthChanged }
+				}
+			}.defer;
+		});
 		Cocoquantus.server !? { |currentServer|
 			serverCtl = SimpleController(currentServer);
 			serverCtl.put(\serverRunning, {
@@ -918,6 +928,8 @@ CQGui {
 		stateCtl = nil;
 		serverCtl !? { serverCtl.remove };
 		serverCtl = nil;
+		clockCtl !? { clockCtl.remove };
+		clockCtl = nil;
 		deckCtls.do { |c| c.remove };
 		deckCtls = nil;
 		drawer !? { drawer.free };

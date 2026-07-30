@@ -1691,6 +1691,48 @@ CQ.patchPreset(\empty);
 - [ ] Kierrosviiveen mittaus ja `Media playback offset` -kompensaatio (ei 1.0:n
       ehto — paluuraidalle nauhoitettu materiaali on siihen asti aikasiirtynyt)
 
+### AUD-W — ajonaikainen audiokelloguard
+
+Guard lukee `Server.actualSampleRate`ia 2,5 s välein ja julistaa vian vasta kun
+kello on **jumissa**: epäterve 60 s ajan eikä suppene kohti pyydettyä taajuutta.
+Ei automaattista recoveryä — tavoite on lakata valehtelemasta, ei korjata
+itseään. **Älä provosoi irrottamalla laitetta kesken restartin** (kirjattu
+ei-toistettava koe); käytä lepotilaa/herätystä tai soakissa itsestään osuvaa
+tapausta.
+
+```supercollider
+// AUD-W. Ctrl+Shift+L ensin (classit muuttuivat), sitten:
+CQ.boot;
+CQ.set(\masterVol, -24);
+CQ.patchPreset(\selfNoise);
+
+// 1. TERVE TILA EI SAA NAKYA. Drawer -> Audio, katso engine-rivia pari
+//    minuuttia: tavallinen lifecycle-teksti, ei danger-varia, ei valahdyksia.
+//    Mitaan ei saa liikkua guardin takia.
+Cocoquantus.audioClockState;    // -> ok
+Cocoquantus.audioClockRate;     // -> mitattu taajuus, esim 47986.3
+Cocoquantus.audioClockDanger;   // -> false
+
+// 2. PROVOKAATIO. Anna naytön sammua / koneen mennä matalatehotilaan ja hera
+//    se. Modern Standby pysayttaa striimin ja tuottaa mitatun transientin.
+//    Kerro kumpi tapahtui:
+//      (a) Yolahti toipui HILJAA eika sanonut mitaan  -> guard toimii oikein
+//      (b) engine-rivi sanoi "audio clock stuck - reports N Hz" danger-varilla
+//          ja palautui itsestaan kun aani palasi     -> guard toimii oikein
+//      (c) hallytys jai paalle vaikka aani oli kunnossa -> VIKA, kerro N
+//      (d) aani oli roskaa mutta mikaan ei sanonut mitaan -> VIKA, kerro
+//          mita Cocoquantus.audioClockRate sanoi silloin
+
+// 3. PANIC ja Audio-sivun "restart audio" pitaa olla tavoitettavissa koko ajan
+//    myos danger-tilassa (turvainvariantti #3).
+CQ.panic;
+```
+
+- [ ] AUD-W hyväksytty (pvm: ______ — terve tila hiljainen, provokaatio,
+      itsestään palautuminen, PANIC tavoitettavissa)
+- [ ] AUD-W:n aina näkyvä pinta (Nightin staattinen ink-tila) — oma
+      katselmuksensa, muotoa ei ole vielä päätetty
+
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>
 
