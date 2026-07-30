@@ -397,6 +397,13 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   recorded in the spec and `PLAN.md`: nine charge channels, the G1 harvest lasso,
   display-only mic sprout and static REC transition/error states. Do not reopen or
   reinterpret them without the user's approval.
+- **The ReaRoute DAW bridge (road-to-1.0 step 1) works in both directions as of
+  2026-07-31** (checklist DAW-1): Yölahti opens `ASIO : ReaRoute ASIO (x64)` in
+  single-device mode while REAPER keeps K-Mix ASIO and does the monitoring. The
+  working recipe, its two REAPER traps (the hardware-output row's own `M`; input
+  monitoring, without which an armed track still shows input on its meter but
+  passes nothing) and the round-trip-latency debt are in PLAN.md. Next on the road
+  to 1.0 is AUD-W, the runtime audio-clock guard.
 - `Cocoquantus.sc` is currently about 645 lines after the lifecycle work. The user
   explicitly accepts that size for now; split it when ownership becomes clearer or
   further growth would make the class harder to maintain, not as a risky handoff-only
@@ -432,6 +439,16 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   without the GUI (headless config).
 - Windows: device names in `ServerOptions.device` ("ASIO : ..."); don't assume more
   than 2 in/out channels exist — read config.
+- **A newly installed audio driver needs a fresh `sclang`, not a server restart.**
+  `ServerOptions.inDevices`/`outDevices` → `_ListAudioDevices` → PortAudio: the
+  driver list is enumerated inside the *interpreter* process, so a driver installed
+  while the IDE was open is invisible to every boot and reboot of that session —
+  silently, with no error. Measured on ReaRoute 2026-07-30: registry and REAPER were
+  both correct, a standalone sclang saw 20 in / 27 out, the IDE session saw exactly
+  one device fewer per direction. Fix: IDE → Language → Reboot Interpreter. The
+  Audio page's `restart audio to rescan` note therefore over-promises for a
+  just-installed driver (`CQGuiAudioSetup.deviceListNote`, `GUI_SPEC.md` §Audio) —
+  known text debt, recorded in PLAN.md.
 - NRT scripts: remember `Score` needs the SynthDefs written into the score
   (`d_recv`) — they run in a fresh scsynth.
 - `Collection:includes` compares identity (`===`), not equality: membership

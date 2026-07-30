@@ -57,7 +57,8 @@ näkyvyys kirjattiin samana päivänä, ja avoimeksi jäi vain kaksisuuntainen
 VB-CABLE-DAW-portti.**
 **Fyysinen AIO-hardware-katselmus hyväksyttiin 2026-07-30, joten koko AIO-vaihe
 on valmis.** Järjestys tästä on **käyttäjän 2026-07-30 päättämä tie 1.0:aan:
-~~MOR-1~~ (hyväksytty) → DAW-silta ReaRoutella → ajonaikainen audiokelloguard →
+~~MOR-1~~ (hyväksytty) → ~~DAW-silta ReaRoutella~~ (toimii molempiin suuntiin
+2026-07-31) → ajonaikainen audiokelloguard →
 pitkä laitteisto-/resource-soak → merge `main`iin ja 1.0-tagi** (oma osio
 "Tie 1.0:aan" alla).
 Kolme huokoista soittotilaa **ei ole 1.0:n ehto** — se on oma haaransa 1.0:n
@@ -1671,9 +1672,11 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    2026-07-30 ja **hyväksyttiin samana päivänä** (checklist MOR-1); ks. sopimus
    alla. Oli ensimmäisenä, koska rikkoi turvainvarianttia #3 (panic aina
    tavoitettavissa).
-1. **DAW-silta (ReaRoute).** **Käyttäjä siirsi tämän jonon kärkeen 2026-07-30**,
-   koska soittimen kytkeminen Reaperiin on hänen seuraava käytännön tarpeensa.
-   **Keino vaihtui samalla VB-CABLEsta ReaRouteen**, ks. perustelu alla.
+1. [x] **DAW-silta (ReaRoute).** **Käyttäjä siirsi tämän jonon kärkeen
+   2026-07-30**, koska soittimen kytkeminen Reaperiin on hänen seuraava
+   käytännön tarpeensa. **Keino vaihtui samalla VB-CABLEsta ReaRouteen**, ks.
+   perustelu alla. **Silta todettiin toimivaksi molempiin suuntiin 2026-07-31**
+   (checklist DAW-1); toimiva resepti ja sen karikot ovat alla.
 2. **AUD-W — ajonaikainen audiokelloguard.** Oma pieni portti, tehdään
    **ennen** soakia, jotta soak voi ylipäätään havaita sen mitä tämä valvoo.
    Sopimus alla.
@@ -1695,32 +1698,71 @@ suunnitteluvirhe hand-offissa, ei toteutuksessa; teksti jää tähän varoitukse
 **ReaRoute** on REAPERin oma virtuaalinen ASIO-ajuri (16 kanavaa kumpaankin
 suuntaan), asennusohjelman valinnainen osa. Reaper pysyy **oikealla
 laitteistollaan**, joten monitorointi toimii tavallisesti; Yölahti avaa
-`ReaRoute ASIO`:n **single-device-tilassa**, ja kanavia riittää myös stemeille
+`ASIO : ReaRoute ASIO (x64)`:n **single-device-tilassa**, ja kanavia riittää myös stemeille
 3/4. Kolmannen osapuolen ajuria ei asenneta. Rajat, jotka on tiedettävä:
 ASIO-only, vanhaa koodia, ja **REAPERin on oltava käynnissä ennen Yölahden
 boottia** — muuten laitetta ei ole olemassa. Se koskee myös laitelistaa: AIO
 lukee laitteet vain pysähtyneenä, joten ReaRoute ilmestyy Audio-sivun listaan
 vasta kun REAPER oli käynnissä sitä edeltävällä boot-/reboot-hetkellä.
+**Ja vasta tuoreessa tulkissa** — ks. mitattu laki alla.
+
+**Mitattu 2026-07-30: vasta asennettu ASIO-ajuri ei ilmesty käynnissä olevan
+`sclang`-prosessin laitelistaan lainkaan.** ReaRoute oli asennettu oikein
+(`HKLM:\SOFTWARE\ASIO\ReaRoute ASIO (x64)` → CLSID → olemassa oleva
+`rearoute.dll`) ja REAPER oli päällä koko ajan, mutta Audio-sivu ei näyttänyt
+sitä `single`- eikä `split`-listassa edes `show all drivers` päällä eikä
+puhtaan `CQ.boot`in jälkeen. Tuore sclang näki sen heti: erillisajo löysi
+20 in / 27 out, joista dedupin jälkeen 20/24, kun IDE:n sessio näytti 19/23 ja
+recommended 4/5 — **erotus oli tasan yksi laite kumpaankin suuntaan, ReaRoute,
+ja kaikki muu täsmäsi riviltä riville.** Syy on se, että ajuriluettelo elää
+tulkkiprosessissa (`ServerOptions.inDevices` → `_ListAudioDevices` → PortAudio),
+ei scsynthissä; palvelimen restart ei siis voi uusia sitä. **Laki: uusi
+ääniajuri vaatii uuden sclangin (IDE → Language → Reboot Interpreter), ei
+palvelimen restarttia.** Sama koskee mitä tahansa myöhemmin asennettavaa
+ASIO-ajuria. Tästä seuraa yksi tunnettu tekstivelka: Audio-sivun engine-rivi
+lupaa `restart audio to rescan`, mikä ei pidä paikkaansa juuri asennetulle
+ajurille (`CQGuiAudioSetup.deviceListNote`, `GUI_SPEC.md` §Audio).
 
 Yölahden puolella tämä on tavallinen AIO-laitevaihto: se kulkee Audio-sivun
 vahvistetun apply & restart -transaktion läpi ja palautuu yhdellä rollbackilla,
 jos laitetta ei saada auki. Split-WASAPI jää last-working-baselineksi.
 
-**Jatkopiste 2026-07-30: pysähdytty vaiheen 1 alkuun, ReaRoutea ei ole vielä
-asennettu.** Vaiheet ovat:
-1. **Asenna ReaRoute.** Aja REAPERin asennusohjelma uudelleen järjestelmän-
-   valvojana ja rastita komponenttilistalta **ReaRoute ASIO** (ei ole
-   oletuksena päällä — siksi sitä ei koneella ole). Sulje Yölahti (`CQ.free`)
-   ensin. Varmistus: `HKLM:\SOFTWARE\ASIO` saa rivin `ReaRoute ASIO`
-   nykyisten `K-MixUSBAudio ASIO Driver`- ja `Realtek ASIO` -rivien rinnalle.
-2. **Reaperin sample rate 48 000 Hz.** Ketjun tärkein yksittäinen asetus:
-   ReaRoute kulkee Reaperin kellolla, ja Yölahti ajaa 48 kHz:llä.
-3. **Yölahden laitevaihto.** Käynnistä ensin REAPER, vasta sitten `CQ.boot`;
-   Audio-sivu → `single device` → `ReaRoute ASIO` → apply & restart.
-4. **Reaperin raidat.** Yksi lähettää, toinen ottaa vastaan ja monitoroi.
-   Reititys rakennetaan niin, ettei lähettävä raita kuule paluuta —
-   muuten syntyy vahingossa silmukka (turvaketju rajaa tason, mutta se ei ole
-   haettu ääni).
+**Valmis ja todettu toimivaksi molempiin suuntiin 2026-07-31** (checklist
+DAW-1). Toimiva resepti, tässä järjestyksessä:
+1. **Asenna ReaRoute.** REAPERin asennusohjelma uudelleen järjestelmän-
+   valvojana, komponenttilistalta **ReaRoute ASIO** (ei ole oletuksena päällä).
+   Varmistus: `HKLM:\SOFTWARE\ASIO` saa rivin `ReaRoute ASIO (x64)` — huomaa
+   `(x64)`, 64-bittinen nimi on eri kuin 32-bittisen puolen `ReaRoute ASIO`.
+2. **REAPER ASIOlle omalla laitteistollaan.** Audio system **ASIO**,
+   driver `K-MixUSBAudio ASIO Driver`. Tämä ei ole makuasia: **ReaRoute on
+   olemassa vain kun REAPER itse ajaa ASIOlla** — WASAPI/DirectSound-tilassa
+   sen kanavia ei ole lainkaan. Sample rate **48 000** (`Request sample rate`
+   rastittuna): ReaRoute kulkee REAPERin kellolla ja Yölahti ajaa 48 kHz:llä.
+   Lisäksi **"Close audio device when stopped and application is inactive" pois
+   päältä** — muuten laite katoaa aina kun REAPER menee taustalle ja Yölahden
+   palvelin putoaa mukana, mikä näyttäisi satunnaiselta kaatumiselta.
+3. **Tuore sclang.** Language → Reboot Interpreter. Ilman tätä ajuri ei näy
+   listassa millään; ks. mitattu laki yllä.
+4. **Yölahden laitevaihto.** REAPER ensin pystyyn, sitten `CQ.boot`; Audio-sivu
+   → `single device` → `ASIO : ReaRoute ASIO (x64)` → apply & restart. Tämän
+   jälkeen Yölahti ei soi omiin korviin lainkaan — koko ulostulo menee
+   REAPERiin, ja monitorointi on REAPERin puolella K-Mixillä.
+5. **REAPERin raidat.** Paluuraita: input `ReaRoute 1/2`, record arm **ja input
+   monitoring** päällä, master send päällä. Lähetysraita: lähde + Route → Add
+   new hardware output → `ReaRoute 1/2`. Suunnat ovat toisistaan riippumattomat
+   vaikka numerot ovat samat. Silmukka syntyy vain jos paluuraidalle lisätään
+   hardware output ReaRouteen — sitä ei tehdä.
+
+Kaksi kompastuskiveä, jotka veivät katselmuksessa aikaa ja jotka on syytä
+tunnistaa uudelleen: **hardware output -rivin oma `M`** reititysikkunassa
+(eri nappi kuin raidan mute; punaisena mitään ei lähde) ja **input monitoring**
+— armattu raita näyttää mittarissa sisääntulon *vaikka monitorointi olisi
+pois*, mutta silloin signaali ei mene mastereille eikä hardware outputeihin.
+**Mittarin liike ei siis todista että ääni virtaa eteenpäin.**
+
+Avoin, ei 1.0:n ehto: paluun kierrosviive ei kompensoidu automaattisesti, joten
+paluuraidalle nauhoitettu materiaali on aikasiirtynyt. REAPERin oma
+`Media playback offset` on paikka korjata se, kun se kerran mitataan.
 
 ### MOR-1:n sopimus — morph ei saa jäädyttää käyttöliittymää
 

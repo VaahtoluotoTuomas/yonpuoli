@@ -1646,6 +1646,51 @@ CQ.morph(\mor1_a, \mor1_b, 5);
       fokuksen vapautus mistä tahansa muualta sivulta, kokonaan piirtyvä
       `arrived` ja kaksipäinen swap-nuoli päiden välissä.
 
+### DAW-1 — ReaRoute-silta REAPERiin
+
+Yölahti avaa `ASIO : ReaRoute ASIO (x64)` single-device-tilassa; REAPER pysyy
+omalla laitteistollaan (K-Mix ASIO), joten monitorointi on REAPERin puolella.
+Esiehdot ja karikot: PLAN.md → "DAW-sillan keino: ReaRoute, ei VB-CABLE".
+**REAPERin on oltava pystyssä ennen `CQ.boot`ia**, ja vasta asennettu ajuri
+vaatii tuoreen tulkin (Language → Reboot Interpreter), ei palvelimen restarttia.
+
+```supercollider
+// DAW-1. Esiehdot: REAPER ASIOlla (K-Mix), 48000 Hz, "Close audio device when
+// stopped and application is inactive" POIS. REAPER pystyyn ENNEN boottia.
+// Audio-sivu -> single device -> "ASIO : ReaRoute ASIO (x64)" -> apply&restart.
+CQ.boot;
+
+// 1. SUUNTA YOLAHTI -> REAPER. Paluuraita: input ReaRoute 1/2, record arm JA
+//    input monitoring paalla, master send paalla.
+CQ.set(\masterVol, -24);       // aloita hiljaa, selfNoise kasvaa nopeasti
+CQ.patchPreset(\selfNoise);    // soi ilman mitaan sisaantuloa
+//    Todennus: REAPERin paluuraidan mittari liikkuu ja aani kuuluu K-Mixista.
+//    Nosta masterVol maltilla kunnes taso on mukava.
+
+// 2. SUUNTA REAPER -> YOLAHTI. Lahetysraita: lahde + Route -> Add new hardware
+//    output -> ReaRoute 1/2. Tarkista molemmat mykistykset:
+//      - hardware output -rivin OMA M reititysikkunassa (ei raidan M)
+//      - raidan input monitoring
+//    Armattu raita nayttaa mittarissa sisaantulon vaikka monitorointi olisi
+//    pois -- mittarin liike ei todista etta aani virtaa eteenpain.
+CQ.patchPreset(\empty);
+//    Todennus SILMALLA, ei korvalla: Drawer -> Audio -> input presence -palkki
+//    liikkuu kun lahetysraita soittaa. Se lukee raakaa sisaantuloa, joten se
+//    kertoo saapuuko signaali riippumatta siita mita patchi sille tekee.
+//    Oletukset riittavat: preASrc \liveL, preBSrc \liveR, liveGain 1.0.
+
+// 3. Silmukan valttaminen: paluuraidalle EI koskaan hardware outputia
+//    ReaRouteen. Turvaketju rajaa tason mutta se ei ole haettu aani.
+```
+
+- [x] **DAW-1 todettu toimivaksi molempiin suuntiin 2026-07-31.** Yölahti →
+      REAPER kuului paluuraidan kautta K-Mixistä, ja REAPER → Yölahti näkyi
+      input presence -palkissa. Molemmat kompastuskivet osuivat kohdalle
+      katselmuksessa: hardware output -rivin oma `M` oli päällä ja input
+      monitoring oli pois.
+- [ ] Kierrosviiveen mittaus ja `Media playback offset` -kompensaatio (ei 1.0:n
+      ehto — paluuraidalle nauhoitettu materiaali on siihen asti aikasiirtynyt)
+
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>
 
