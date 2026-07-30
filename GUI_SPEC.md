@@ -869,12 +869,22 @@ sub-event in `config.scd`, clamped on load.
   ordinary phase motion; an unchanged phase frame repaints neither layer.
 - **Paced notification streams**: the ambient ceiling binds *every* repaint source,
   not just telemetry. A snapshot morph re-sets all 57 continuous parameters and
-  rewrites its changed cells 30 times a second, i.e. twice the ceiling. Both the
+  rewrites every changed cell on every frame. Both the
   parameter fan-out (`CQGui.paramFlushPeriod`) and the cable layer's matrix-driven
   repaint are therefore paced to 15 Hz with a leading edge: the first change after a
   quiet moment lands at once, so a knob turn, a 16n fader, a code `set`, a plant and
   a rip stay instant, and only a continuous stream is thinned. Pacing may drop
   intermediate frames but never the last value.
+- **Pacing a repaint does not pace a notification** (MOR-1, measured 2026-07-30).
+  The cable layer's paced `prRefresh` was working exactly as written, and the
+  window still froze for 320 s during a dense 90 s morph with **panic
+  unreachable** — because the morph emitted one `\patch` per changed cell, and
+  every one costs a `.defer` in three observers before any pacing gate is
+  consulted. Tens of thousands of deferred closures a second entered a Qt queue
+  that drains on the same language thread that was filling it. **A stream must
+  therefore be thinned at its source as well as at its painter:** a writer that
+  touches many cells at once emits one `CQMatrix.writeMatrix`, never a `patch`
+  per cell. Any future bulk matrix writer inherits this.
 - **Charge lamps repaint one at a time, on change only** (landed 2026-07-21): a
   `/cq_charge` block refreshes just those lamp views whose own charge moved by
   ≥ 0.02. An unpatched gate sums to exactly zero forever and costs nothing at

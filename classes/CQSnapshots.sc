@@ -57,9 +57,19 @@ CQSnapshots {
 	// (curve) space + matrix weights at 30 Hz, toggles/enums/spesal switch at the
 	// midpoint, final tick applies 'to' exactly (== recall(to), incl. mic policy).
 	// Cells patched in neither snapshot are cleared only by that final apply.
+	// MOR-1 (measured 2026-07-30): morph frames redraw the cable overlay, so the
+	// frame rate is GUI_SPEC §10's 15 Hz ambient ceiling, not 30 Hz. Matrix
+	// weights are already smoothed 50 ms server-side and every gain-affecting
+	// arg is lagged >= 30 ms, so a 66 ms frame is inaudible as a step.
+	*morphTickPeriod { ^1/15 }
+	// A frame that overruns still yields this much, so the Qt event loop drains
+	// and panic stays reachable no matter how dense the pair is.
+	*morphMinYield { ^0.004 }
+	*morphMinDur { ^0.001 }
+
 	morph { |from, to, dur = 10|
 		var a = this.read(from), b = this.read(to);
-		var contNames, aNorm, bNorm, cells, nSteps;
+		var contNames, aNorm, bNorm, cells, cellIndex, startTime;
 		if(a.isNil or: { b.isNil }) { ^this };
 		this.stopMorph;
 		morphFrom = from.asSymbol;
@@ -74,39 +84,70 @@ CQSnapshots {
 		bNorm = contNames.collect { |n| CQSpec.unmap(n, b[\params][n] ?? { state.get(n) }) };
 		// unknown src/dest names are dropped here (not each tick) — patch() would
 		// warn 30×/s otherwise; prApply's matrix.load still warns once at the end
-		cells = Dictionary.new;
+		// MOR-1: keep the union as resolved [dest, src] indices so a frame writes
+		// one dense matrix instead of looking a name pair up per cell per tick.
+		cells = List.new;
+		cellIndex = Dictionary.new;
 		a[\matrix].do { |t|
-			if(CQMatrix.srcIndex(t[0]).notNil and: { CQMatrix.destIndex(t[1]).notNil }) {
-				cells[[t[0], t[1]]] = [CQMatrix.clampWeight(t[2]), 0.0];
+			var si = CQMatrix.srcIndex(t[0]), di = CQMatrix.destIndex(t[1]);
+			if(si.notNil and: { di.notNil }) {
+				cellIndex[[di, si]] = cells.size;
+				cells.add([di, si, CQMatrix.clampWeight(t[2]), 0.0]);
 			};
 		};
 		b[\matrix].do { |t|
-			var pair;
-			if(CQMatrix.srcIndex(t[0]).notNil and: { CQMatrix.destIndex(t[1]).notNil }) {
-				pair = cells[[t[0], t[1]]] ?? { [0.0, 0.0] };
-				pair[1] = CQMatrix.clampWeight(t[2]);
-				cells[[t[0], t[1]]] = pair;
+			var si = CQMatrix.srcIndex(t[0]), di = CQMatrix.destIndex(t[1]);
+			var at;
+			if(si.notNil and: { di.notNil }) {
+				at = cellIndex[[di, si]];
+				if(at.isNil) {
+					cellIndex[[di, si]] = cells.size;
+					cells.add([di, si, 0.0, CQMatrix.clampWeight(t[2])]);
+				} {
+					cells[at][3] = CQMatrix.clampWeight(t[2]);
+				};
 			};
 		};
-		nSteps = max(1, (dur * 30).round.asInteger);
+		cells = cells.asArray;
+		dur = dur.max(this.class.morphMinDur);
+		// MOR-1: a morph is a function of elapsed time, not of a fixed tick count.
+		// Under load it drops frames and still lands on the requested duration,
+		// instead of falling behind for minutes with the language thread pinned.
+		startTime = Main.elapsedTime;
 		morphRoutine = Routine {
-			var switched = false;
-			nSteps.do { |i|
-				var t = (i + 1) / nSteps;
+			var switched = false, t = 0, tickStart, dense;
+			while { t < 1 } {
+				tickStart = Main.elapsedTime;
+				t = ((tickStart - startTime) / dur).clip(0, 1);
 				morphProgress = t;
 				this.changed(\morph, morphProgress, morphFrom, morphTo, \running);
 				contNames.do { |n, j|
 					state.set(n, CQSpec.map(n, aNorm[j] + ((bNorm[j] - aNorm[j]) * t)));
 				};
-				cells.keysValuesDo { |key, w|
-					matrix.patch(key[0], key[1], w[0] + ((w[1] - w[0]) * t),
-						origin: \morph, committed: false, operation: \morphFrame);
+				// One dense write per frame, not one per cell. Per-cell patching
+				// cost a server push AND a dependant notification each, so a dense
+				// pair drove tens of thousands of deferred GUI closures per second
+				// into a Qt queue that filled faster than it drained: the window
+				// froze and PANIC could not be reached (safety invariant #3).
+				// Reading the live matrix each frame keeps cells outside both
+				// snapshots exactly as untouched as per-cell patching left them.
+				if(cells.size > 0) {
+					dense = matrix.fullMatrix;
+					cells.do { |cell|
+						dense[cell[0]][cell[1]] =
+							cell[2] + ((cell[3] - cell[2]) * t);
+					};
+					matrix.writeMatrix(dense, origin: \morph, committed: false,
+						operation: \morphFrame);
 				};
 				if(switched.not and: { t >= 0.5 }) {
 					switched = true;
 					this.prApplyDiscrete(b);
 				};
-				(1/30).wait;
+				// Always hand the event loop a slice, however late this frame is.
+				// SystemClock would otherwise re-run an overdue routine at once.
+				(this.class.morphTickPeriod - (Main.elapsedTime - tickStart))
+					.max(this.class.morphMinYield).wait;
 			};
 			morphRoutine = nil;
 			this.prApply(b, \snapshot, true, \morph);

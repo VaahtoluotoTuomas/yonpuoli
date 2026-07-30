@@ -1720,6 +1720,36 @@ pyydetystä. (5) Mitattu tapaus ajetaan regressiona: tiheä lähtö- ja
 kohdesnapshot, ei pelkkä harva pari. Portit: compile + unit + GUI-smoket;
 DSP:hen ei kosketa.
 
+**Toteutettu `nocturne-morph-freeze`-haaralla 2026-07-30, odottaa käyttäjän
+livekatselmusta.** Kolme muutosta `CQSnapshots.morph`iin:
+1. **Yksi tiheä kirjoitus per kehys.** Unioni ratkaistaan kerran
+   `[dest, src, wA, wB]`-indekseiksi, ja kehys lukee elävän matriisin, korvaa
+   vain unionin solut ja kutsuu `CQMatrix.writeMatrix`iä kerran. Elävän
+   matriisin lukeminen säilyttää molempien snapshotien ulkopuoliset solut
+   täsmälleen yhtä koskemattomina kuin per-solu-patchaus jätti ne — tälle on
+   oma testinsä.
+2. **Kehykset ajastaa kulunut aika, ei tikkilaskuri.** Hidas kehys pudotetaan,
+   joten morph osuu pyydettyyn kestoon sen sijaan että venyisi 3,6-kertaiseksi.
+3. **Jokainen kehys luovuttaa vähintään `morphMinYield` (4 ms)**, olipa se
+   miten myöhässä tahansa; muuten SystemClock ajaa myöhästyneen rutiinin heti
+   uudelleen eikä tapahtumasilmukka tyhjene koskaan. Kehystaajuus on nyt
+   `morphTickPeriod` = §10:n 15 Hz katto (matriisipainot on jo silotettu 50 ms
+   ja gain-argumentit lagattu ≥ 30 ms, joten 66 ms askel ei kuulu portaana).
+
+Katselmuksessa löytyi myös **spec-ajautuma, joka on nyt korjattu**: GUI_SPEC §10
+lupasi että "the cable layer's matrix-driven repaint" on pacattu — ja se
+todella on (`CQGuiCableOverlay.prRefresh`). Pacattu **piirto** ei kuitenkaan
+pacaa **ilmoitusta**: jokainen `\patch` maksaa `.defer`in kolmessa
+kuuntelijassa ennen kuin yhtäkään pacing-porttia kysytään. Siksi §10:een on
+lisätty laki "a stream must be thinned at its source as well as at its
+painter".
+
+Portit 2026-07-30: `CQ_COMPILE_OK`; **13 514 unit-passia / 0 failurea /
+37/37 luokkaa**; `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+`CQ_GUI_DRAWER_REENTRY_PASSED`, `CQ_GUI_NIGHT_PASSED`, `CQ_GUI_AUDIO_PASSED`
+ja `CQ_GUI_AUDIO_PRESENCE_PASSED`. `CQ_SAFETY_PASSED` ja `CQ_HOLD_OK` kantavat:
+DSP:hen ei koskettu, vain kielen puolen kirjoitus- ja ajastustapaan.
+
 ### AUD-W:n sopimus
 
 **Ongelma, mitattu kahdesti fyysisesti.** Kelloguard ajetaan täsmälleen kerran,

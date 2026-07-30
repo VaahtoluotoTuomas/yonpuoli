@@ -645,7 +645,11 @@ an optional comfort feature (sustained-loud notice; opt-in −6 dB auto-ease via
   couple of points while the pointer crosses cables and falling back at once. A
   snapshot morph is a deliberate, temporary exception at ~5–6%: it drives the whole
   parameter set continuously, and the transparent cable layer re-strokes every cable
-  whenever any control beneath it repaints. See `GUI_SPEC.md` §10 for the pacing and
+  whenever any control beneath it repaints. **That figure predates MOR-1
+  (2026-07-30) and is not a measurement of the current path:** it was taken while
+  a morph frame emitted one notification per changed cell, which with a dense pair
+  froze the window outright. A frame now writes the matrix once, so the exception
+  needs re-measuring before it is quoted again. See `GUI_SPEC.md` §10 for the pacing and
   density rules that keep the resting figure.
 - Control latency: 16n fader → audible ≤ 20 ms perceived (smoothing included).
 - Live throughput latency: bounded by `hardwareBufferSize`; no added latency in the
