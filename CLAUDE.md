@@ -439,6 +439,13 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 - Repo files contain UTF-8 (Finnish text, `±`, `→`): never edit them with PowerShell
   text cmdlets (`Get-Content`/`Set-Content` mangle the encoding) — use the agent's
   file tools or an editor.
+- **`.ps1` files must stay pure ASCII.** Windows PowerShell 5.1 reads a script
+  without a BOM as ANSI, so a UTF-8 em dash (`E2 80 94`) decodes in CP1252 as
+  `â€”` whose `0x94` is a *smart closing quote* — it terminates whatever string it
+  lands in and the parse then fails hundreds of lines later, pointing at innocent
+  code. Cost one debugging round in `tests/soak_monitor.ps1` on 2026-07-30.
+  Comments survive it; strings do not. Verify with
+  `grep -n -P '[^\x00-\x7F]' <file>`.
 - `CQGuiWidgets.register` is the **CQSpec param** registry: it primes the updater
   immediately with `state.get(name)`, so registering a GUI-only constant there
   paints the widget with `nil` on the very first build (it took down every GUI

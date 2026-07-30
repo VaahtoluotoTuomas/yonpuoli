@@ -1,9 +1,14 @@
-# soak_monitor.ps1 — unattended hardware/resource soak telemetry.
+# soak_monitor.ps1 -- unattended hardware/resource soak telemetry.
+#
+# ASCII ONLY. Windows PowerShell 5.1 reads a .ps1 without a BOM as ANSI, so a
+# UTF-8 em dash (E2 80 94) decodes as CP1252 "a<euro>" where 0x94 is a smart
+# closing quote -- which terminates any string it lands in and breaks the parse
+# far below. Do not paste typographic punctuation into this file.
 #
 # Samples the running scsynth over OSC and both SC processes over the OS, then
 # appends one CSV row per sample. Nothing here touches the instrument: the only
 # packet sent is /status, which sclang's own status watcher already sends
-# continuously. It never enumerates audio devices — a running Windows WASAPI
+# continuously. It never enumerates audio devices -- a running Windows WASAPI
 # server must never receive _ListAudioDevices (the 2026-07-29 hang).
 #
 # Usage (run in its own PowerShell window so it outlives any editor session):
@@ -27,6 +32,32 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+# This laptop is a Modern Standby machine: it drops into low-power idle when the
+# screen goes off, no matter what `powercfg` reports for the sleep timeout. A
+# 2026-07-30 unattended run proved it: the system entered Modern Standby at
+# 03:45 and the suspended audio stream dragged scsynth's running sample-rate
+# average down to 7.4 kHz until it resumed. Hold the system awake for exactly as
+# long as this monitor runs, and release it on every exit path, so the soak needs
+# no permanent change to the user's power settings.
+$keepAwakeType = @'
+using System;
+using System.Runtime.InteropServices;
+public static class CQKeepAwake {
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern uint SetThreadExecutionState(uint esFlags);
+    public const uint ES_CONTINUOUS       = 0x80000000;
+    public const uint ES_SYSTEM_REQUIRED  = 0x00000001;
+    public const uint ES_AWAYMODE_REQUIRED= 0x00000040;
+}
+'@
+$keepAwakeOk = $false
+try {
+    Add-Type -TypeDefinition $keepAwakeType -ErrorAction Stop
+    $flags = [CQKeepAwake]::ES_CONTINUOUS -bor [CQKeepAwake]::ES_SYSTEM_REQUIRED `
+        -bor [CQKeepAwake]::ES_AWAYMODE_REQUIRED
+    if ([CQKeepAwake]::SetThreadExecutionState($flags) -ne 0) { $keepAwakeOk = $true }
+} catch { }
 
 $root    = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $outDir  = Join-Path $root 'tests\tmp\soak'
@@ -87,7 +118,7 @@ function Get-ServerStatus([System.Net.Sockets.UdpClient] $client,
     $address = Read-OscString $buf ([ref] $i)
     if ($address -ne '/status.reply') { throw "unexpected reply '$address'" }
     $tags = Read-OscString $buf ([ref] $i)
-    # Never name this $args — that is a PowerShell automatic variable.
+    # Never name this $args: that is a PowerShell automatic variable.
     $oscArgs = New-Object System.Collections.Generic.List[object]
     foreach ($ch in $tags.ToCharArray()) {
         switch ($ch) {
@@ -163,6 +194,11 @@ $lastClockOk = $true
 
 Write-Output "soak monitor -> $csvPath"
 Write-Output "sampling every $IntervalSeconds s until $($deadline.ToString('yyyy-MM-dd HH:mm:ss')) (Ctrl+C stops)"
+if ($keepAwakeOk) {
+    Write-Output "keep-awake held (system will not enter Modern Standby while this runs)"
+} else {
+    Write-Warning "keep-awake FAILED: an unattended run may sleep and produce a suspended-stream artefact"
+}
 Write-Output ''
 
 try {
@@ -244,6 +280,9 @@ try {
     }
 } finally {
     $client.Close()
+    if ($keepAwakeOk) {
+        [void] [CQKeepAwake]::SetThreadExecutionState([CQKeepAwake]::ES_CONTINUOUS)
+    }
     $ranFor = [math]::Round(((Get-Date) - $startedAt).TotalHours, 2)
     if ($minSr -eq [double]::PositiveInfinity) { $minSr = 0 }
     $minSr = [math]::Round($minSr, 1)
