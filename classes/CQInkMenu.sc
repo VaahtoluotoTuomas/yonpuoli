@@ -8,7 +8,7 @@
 
 CQInkMenu {
 	var <view, <items = #[], <value, <skin = \day, <hover = false, <isOpen = false;
-	var popupWindow, <popupView, <popupHover, menuFont, action;
+	var popupWindow, <popupView, <popupHover, menuFont, <action;
 	var <enabled = true, <maxVisibleRows = 16, <scrollOffset = 0;
 
 	*new { |items = #[], skin = \day|

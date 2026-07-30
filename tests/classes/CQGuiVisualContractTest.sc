@@ -306,6 +306,16 @@ CQGuiVisualContractTest : UnitTest {
 			"with no previous value the default stands");
 	}
 
+	test_durationTextAnswersInTheUsersOwnTerms {
+		this.assertEquals(CQGuiMemory.durationText(20), "20",
+			"a whole number of seconds is not answered with a decimal point");
+		this.assertEquals(CQGuiMemory.durationText(12.5), "12.5",
+			"a fractional duration keeps its fraction");
+		this.assertEquals(
+			CQGuiMemory.durationText(CQGuiMemory.morphDurationDefault), "10",
+			"the box opens on a clean default");
+	}
+
 	test_textEntryBorrowsInkHoverAndSelection {
 		#[day, night].do { |skin|
 			var rest = CQInk.textEntryInk(skin, false);
