@@ -1706,6 +1706,22 @@ Yölahden puolella tämä on tavallinen AIO-laitevaihto: se kulkee Audio-sivun
 vahvistetun apply & restart -transaktion läpi ja palautuu yhdellä rollbackilla,
 jos laitetta ei saada auki. Split-WASAPI jää last-working-baselineksi.
 
+**Jatkopiste 2026-07-30: pysähdytty vaiheen 1 alkuun, ReaRoutea ei ole vielä
+asennettu.** Vaiheet ovat:
+1. **Asenna ReaRoute.** Aja REAPERin asennusohjelma uudelleen järjestelmän-
+   valvojana ja rastita komponenttilistalta **ReaRoute ASIO** (ei ole
+   oletuksena päällä — siksi sitä ei koneella ole). Sulje Yölahti (`CQ.free`)
+   ensin. Varmistus: `HKLM:\SOFTWARE\ASIO` saa rivin `ReaRoute ASIO`
+   nykyisten `K-MixUSBAudio ASIO Driver`- ja `Realtek ASIO` -rivien rinnalle.
+2. **Reaperin sample rate 48 000 Hz.** Ketjun tärkein yksittäinen asetus:
+   ReaRoute kulkee Reaperin kellolla, ja Yölahti ajaa 48 kHz:llä.
+3. **Yölahden laitevaihto.** Käynnistä ensin REAPER, vasta sitten `CQ.boot`;
+   Audio-sivu → `single device` → `ReaRoute ASIO` → apply & restart.
+4. **Reaperin raidat.** Yksi lähettää, toinen ottaa vastaan ja monitoroi.
+   Reititys rakennetaan niin, ettei lähettävä raita kuule paluuta —
+   muuten syntyy vahingossa silmukka (turvaketju rajaa tason, mutta se ei ole
+   haettu ääni).
+
 ### MOR-1:n sopimus — morph ei saa jäädyttää käyttöliittymää
 
 **Mitattu 2026-07-30 soakin aikana, `tests/tmp/soak/soak-20260730-130127.csv`.**
