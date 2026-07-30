@@ -1666,6 +1666,9 @@ Käyttäjän arvio on, että soitin alkaa vasta nyt olla lähellä todellista
 1.0-tilaa. Järjestys on **AUD-W → soak → VB-CABLE → merge `main`iin ja tagi**,
 ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
 
+0. **MOR-1 — morph ei saa jäädyttää käyttöliittymää.** Löytyi soakissa
+   2026-07-30, ks. sopimus alla. Ensimmäisenä, koska tämä rikkoo
+   turvainvarianttia #3 (panic aina tavoitettavissa).
 1. **AUD-W — ajonaikainen audiokelloguard.** Oma pieni portti, tehdään
    **ennen** soakia, jotta soak voi ylipäätään havaita sen mitä tämä valvoo.
    Sopimus alla.
@@ -1674,6 +1677,48 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
 3. **VB-CABLE A+B -DAW-portti.** Ainoa avoin AIO-jatko; reitityskartta ja
    ennakkoehdot ovat AIO.9:n hand-offissa.
 4. **Merge `main`iin ja 1.0-tagi.**
+
+### MOR-1:n sopimus — morph ei saa jäädyttää käyttöliittymää
+
+**Mitattu 2026-07-30 soakin aikana, `tests/tmp/soak/soak-20260730-130127.csv`.**
+Kahden tiheän snapshotin morph Memory-sivulla, pyydetty kesto **90 s**:
+`sclang` nousi 100 %:iin yhdestä ytimestä klo 13:09:59 ja palasi normaaliin
+13:15:15–13:15:30, eli **noin 320 s — 3,6-kertaisesti pyydettyyn nähden.**
+Koko sen ajan GUI oli jäässä eikä **PANIC vastannut**. `scsynth` oli koko ajan
+täysin terve (vastasi, kello 47 986 Hz, 8 synthiä, muisti vakaa), joten ääni
+jatkui — soittaja ei siis saanut ääntä kiinni. `sclang`in working set kasvoi
+354 → 523 MB ja tasaantui; kyse **ei** ole runaway-silmukasta vaan
+kyllästymisestä. Kone oli akulla, mikä noin kaksinkertaistaa kertoimen, mutta
+ei ole syy: verkkovirrassakin morph ylittäisi pyydetyn keston.
+
+**Mekanismi.** `CQSnapshots.morph` (`CQSnapshots.sc:92`) ajaa `dur × 30` tikkiä
+ja tekee joka tikillä `state.set`in jokaiselle jatkuvalle parametrille **sekä
+erillisen `matrix.patch`in jokaiselle kahden snapshotin matriisisolujen
+unionille**. `CQMatrix.patch` (`CQMatrix.sc:53`) tekee per solu sekä `prPush`in
+serverille että `changed`-ilmoituksen. Tiheillä snapshoteilla se on luokkaa
+400 + 400 tapahtumaa per tikki × 30 tikkiä/s. Kun tikin hinta ylittää 33 ms:n
+budjetin, SystemClock-rutiini on pysyvästi myöhässä eikä tulkki palaa Qt:n
+tapahtumasilmukkaan — PANIC-klikkaus jonottaa tulkille joka ei jouda.
+**`stopMorph` on samasta syystä yhtä tavoittamaton**, joten morphia ei voi
+myöskään keskeyttää.
+
+**Korjaussuunta.** Primitiivi on jo olemassa eikä morph käytä sitä:
+`CQMatrix.writeMatrix` (`CQMatrix.sc:87`) validoi ja clamppaa koko tiheän
+matriisin, tekee `prPushAll`in (yksi push per destination, 22) ja **yhden**
+ilmoituksen. Yhden tikin matriisikustannus romahtaa sadoista noin
+kahteenkymmeneen. Lisäksi harkittava tikkitaajuuden pudotus §10:n 15 Hz
+kattoon. Huom: ilmoituksen tyyppi vaihtuu `\patch`istä `\matrix`iin, joten
+GUI:n ja undon kuuntelupolut on tarkistettava — `origin`/`committed`/
+`operation` kulkevat `writeMatrix`in läpi, joten `\morphFrame`-semantiikka
+säilyy.
+
+**Hyväksyntäehdot.** (1) Kahden tiheän snapshotin morph pitää kielisäikeen
+responsiivisena koko ajon. (2) **PANIC vastaa morphin aikana** — tämä on
+invariantti #3, ei suorituskykytoive. (3) `stopMorph` keskeyttää morphin
+kesken. (4) Morphin todellinen kesto pysyy määritellyn toleranssin sisällä
+pyydetystä. (5) Mitattu tapaus ajetaan regressiona: tiheä lähtö- ja
+kohdesnapshot, ei pelkkä harva pari. Portit: compile + unit + GUI-smoket;
+DSP:hen ei kosketa.
 
 ### AUD-W:n sopimus
 
