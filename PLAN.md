@@ -57,8 +57,9 @@ näkyvyys kirjattiin samana päivänä, ja avoimeksi jäi vain kaksisuuntainen
 VB-CABLE-DAW-portti.**
 **Fyysinen AIO-hardware-katselmus hyväksyttiin 2026-07-30, joten koko AIO-vaihe
 on valmis.** Järjestys tästä on **käyttäjän 2026-07-30 päättämä tie 1.0:aan:
-ajonaikainen audiokelloguard → pitkä laitteisto-/resource-soak → VB-CABLE A+B
--DAW-portti → merge `main`iin ja 1.0-tagi** (oma osio "Tie 1.0:aan" alla).
+~~MOR-1~~ (hyväksytty) → DAW-silta ReaRoutella → ajonaikainen audiokelloguard →
+pitkä laitteisto-/resource-soak → merge `main`iin ja 1.0-tagi** (oma osio
+"Tie 1.0:aan" alla).
 Kolme huokoista soittotilaa **ei ole 1.0:n ehto** — se on oma haaransa 1.0:n
 jälkeen — ja Norns-portti (§14) tulee vasta niiden jälkeen. Yksi musiikillinen
 muuttuja käsitellään edelleen kerrallaan. **N10:n sydän/kela- ja chevron-vihjeet hyväksyttiin visuaalisesti
@@ -1670,14 +1671,40 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    2026-07-30 ja **hyväksyttiin samana päivänä** (checklist MOR-1); ks. sopimus
    alla. Oli ensimmäisenä, koska rikkoi turvainvarianttia #3 (panic aina
    tavoitettavissa).
-1. **AUD-W — ajonaikainen audiokelloguard.** Oma pieni portti, tehdään
+1. **DAW-silta (ReaRoute).** **Käyttäjä siirsi tämän jonon kärkeen 2026-07-30**,
+   koska soittimen kytkeminen Reaperiin on hänen seuraava käytännön tarpeensa.
+   **Keino vaihtui samalla VB-CABLEsta ReaRouteen**, ks. perustelu alla.
+2. **AUD-W — ajonaikainen audiokelloguard.** Oma pieni portti, tehdään
    **ennen** soakia, jotta soak voi ylipäätään havaita sen mitä tämä valvoo.
    Sopimus alla.
-2. **Pitkä laitteisto-/resource-soak.** Koko soittimen pitkäkestoinen vakaus;
+3. **Pitkä laitteisto-/resource-soak.** Koko soittimen pitkäkestoinen vakaus;
    AIO:n 10 minuutin koe ei korvaa tätä.
-3. **VB-CABLE A+B -DAW-portti.** Ainoa avoin AIO-jatko; reitityskartta ja
-   ennakkoehdot ovat AIO.9:n hand-offissa.
 4. **Merge `main`iin ja 1.0-tagi.**
+
+### DAW-sillan keino: ReaRoute, ei VB-CABLE
+
+**VB-CABLE A+B ei pysty siihen mitä AIO.9:n hand-off siltä odotti.** Reaperilla
+on yksi äänilaite kerrallaan. Jos sen ulostulo on `CABLE-A Input`, se ei voi
+samaan aikaan soittaa kuulokkeisiin; ja jos se monitoroi Yölahdeltä palaavaa
+raitaa, monitorointi menee suoraan takaisin `CABLE-A`:han eli Yölahteen —
+takaisinkytkentä. Yölahti ei voi paikata tätä soittamalla kuulokkeisiin, koska
+sen ulostulon pitää mennä `CABLE-B`:hen. **Kaksi stereokaapelia ja yksi laite
+per sovellus eivät riitä molempiin suuntiin ja korviin yhtä aikaa.** Tämä on
+suunnitteluvirhe hand-offissa, ei toteutuksessa; teksti jää tähän varoitukseksi.
+
+**ReaRoute** on REAPERin oma virtuaalinen ASIO-ajuri (16 kanavaa kumpaankin
+suuntaan), asennusohjelman valinnainen osa. Reaper pysyy **oikealla
+laitteistollaan**, joten monitorointi toimii tavallisesti; Yölahti avaa
+`ReaRoute ASIO`:n **single-device-tilassa**, ja kanavia riittää myös stemeille
+3/4. Kolmannen osapuolen ajuria ei asenneta. Rajat, jotka on tiedettävä:
+ASIO-only, vanhaa koodia, ja **REAPERin on oltava käynnissä ennen Yölahden
+boottia** — muuten laitetta ei ole olemassa. Se koskee myös laitelistaa: AIO
+lukee laitteet vain pysähtyneenä, joten ReaRoute ilmestyy Audio-sivun listaan
+vasta kun REAPER oli käynnissä sitä edeltävällä boot-/reboot-hetkellä.
+
+Yölahden puolella tämä on tavallinen AIO-laitevaihto: se kulkee Audio-sivun
+vahvistetun apply & restart -transaktion läpi ja palautuu yhdellä rollbackilla,
+jos laitetta ei saada auki. Split-WASAPI jää last-working-baselineksi.
 
 ### MOR-1:n sopimus — morph ei saa jäädyttää käyttöliittymää
 
