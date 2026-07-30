@@ -270,4 +270,61 @@ CQGuiVisualContractTest : UnitTest {
 			"an out-of-range magnitude clamps instead of overdriving alpha");
 	}
 
+	// ---- text entry, user review 2026-07-30 (the morph bridge) ----
+
+	test_morphReadoutFitsEveryLabelItCanPrint {
+		#[10, 11, 12].do { |mono|
+			var width = CQGuiMemory.morphReadoutWidth(mono);
+			CQGuiMemory.morphMeterLabels.do { |label|
+				this.assert(width >= (CQGuiScale.textWidth(label, mono, true) + 2),
+					"the % px readout clips '%' at mono %"
+						.format(width.round(0.1), label, mono));
+			};
+		};
+		// `includes` is identity on a String collection (CLAUDE.md pitfall)
+		this.assert(CQGuiMemory.morphMeterLabels.any { |l| l == "arrived" },
+			"the completion word is one of the sized labels");
+	}
+
+	test_durationReadsWhatTheBoxShows {
+		// The morph button cannot take focus, so Enter may never be pressed and
+		// NumberBox's committed value can lag the text the user is looking at.
+		this.assertFloatEquals(CQGuiMemory.durationFrom("45", 90), 45,
+			"an uncommitted entry is the duration that runs");
+		this.assertFloatEquals(CQGuiMemory.durationFrom(" 12.5 ", 90), 12.5,
+			"surrounding whitespace does not defeat the reading");
+		this.assertFloatEquals(CQGuiMemory.durationFrom("", 90), 90,
+			"an empty box keeps the previous duration");
+		this.assertFloatEquals(CQGuiMemory.durationFrom("abc", 90), 90,
+			"a wordless entry keeps the previous duration");
+		this.assertFloatEquals(CQGuiMemory.durationFrom("9000", 90),
+			CQGuiMemory.morphDurationHi, "an over-long entry clamps to the ceiling");
+		this.assertFloatEquals(CQGuiMemory.durationFrom("-4", 90),
+			CQGuiMemory.morphDurationLo, "a negative entry clamps to the floor");
+		this.assertFloatEquals(CQGuiMemory.durationFrom("abc", nil),
+			CQGuiMemory.morphDurationDefault,
+			"with no previous value the default stands");
+	}
+
+	test_textEntryBorrowsInkHoverAndSelection {
+		#[day, night].do { |skin|
+			var rest = CQInk.textEntryInk(skin, false);
+			var hovered = CQInk.textEntryInk(skin, true);
+			var palette = CQInk.palette(skin);
+			this.assertEquals(rest[\background], palette[\ground],
+				"a resting entry keeps the ordinary ground (%)".format(skin));
+			this.assert(hovered[\background] != rest[\background],
+				"hover is visible on a text entry at all (%)".format(skin));
+			// native highlight blue is Color(0.3, 0.5, 0.75) / (0.25, 0.37, 0.57)
+			this.assert(rest[\highlight] != Color(0.3, 0.5, 0.75)
+				and: { rest[\highlight] != Color(0.25, 0.37, 0.57) },
+				"selection never shows the OS highlight blue (%)".format(skin));
+			this.assertEquals(rest[\text], palette[\line],
+				"entry text is ordinary line ink, never Qt's red typing colour (%)"
+					.format(skin));
+			this.assertEquals(hovered[\text], rest[\text],
+				"hover moves the ground, not the type (%)".format(skin));
+		};
+	}
+
 }

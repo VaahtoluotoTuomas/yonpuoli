@@ -28,6 +28,33 @@ CQGuiMemory {
 	// live rail is `railWidth` and follows CQGuiScale
 	*contentWidth { ^contentW }
 	*ownedItems { ^#[snapshotName, snapshotSave, snapshotRecall, morph] }
+
+	*morphDurationDefault { ^10 }
+	*morphDurationLo { ^0.1 }
+	*morphDurationHi { ^600 }
+
+	// Every word the meter can print. Sizing the readout from "100%" alone
+	// clipped "arrived" to "rived" in the user's 2026-07-30 review.
+	*morphMeterLabels { ^#["100%", "arrived", "ready"] }
+
+	*morphReadoutWidth { |mono|
+		^(this.morphMeterLabels.collect { |label|
+			CQGuiScale.textWidth(label, mono, true)
+		}.maxItem + 12).ceil
+	}
+
+	// A box's live text is the truth, because the page is mouse-only and the
+	// buttons beside it cannot take focus -- so Enter may never be pressed and
+	// NumberBox's committed `value` can lag what the user is looking at.
+	// Anything without a digit in it is not a duration; keep the old value.
+	*durationFrom { |text, fallback|
+		var trimmed = text.asString.stripWhiteSpace;
+		var lo = this.morphDurationLo, hi = this.morphDurationHi;
+		if(trimmed.any { |ch| ch.isDecDigit }.not) {
+			^(fallback ? this.morphDurationDefault).clip(lo, hi)
+		};
+		^trimmed.asFloat.clip(lo, hi)
+	}
 	*detailMargins { ^[8, 0, 8, 0] }
 	*detailHintTexts {
 		^[
@@ -119,10 +146,10 @@ CQGuiMemory {
 		};
 		snapshotList.skin = skin;
 		menus.do { |menu| menu.skin = skin };
-		nameField.background = palette[\ground];
-		nameField.stringColor = palette[\line];
-		durationBox.background = palette[\ground];
-		durationBox.stringColor = palette[\line];
+		// text entry carries hover and selection ink too, so a skin swap has to
+		// go through the same door the build used
+		this.prInkEntry(nameField);
+		this.prInkEntry(durationBox);
 		fingerprint.background = palette[\ground];
 		morphMeter.background = palette[\ground];
 		detailHint.background = palette[\ground];
@@ -165,9 +192,10 @@ CQGuiMemory {
 			.fixedWidth_(railWidth);
 		nameField = TextField().string_("snapshot")
 			.font_(CQInk.font(\number, m[\mono]))
-			.stringColor_(palette[\line]).background_(palette[\ground])
 			.fixedSize_(Size(column - 14 - saveW - 6, m[\boxHeight]))
 			.action_({ |field| field.focus(false) });
+		this.prInkEntry(nameField);
+		this.prWatchEntryHover(nameField);
 		snapshotList = CQInkList([], skin, m[\listRow])
 			.font_(CQInk.font(\spellbook, m[\mono]))
 			.fixedWidth_(column - 14);
@@ -230,10 +258,20 @@ CQGuiMemory {
 		aMenu = this.prMenu;
 		bMenu = this.prMenu;
 		menus = [aMenu, bMenu];
-		durationBox = NumberBox().value_(10).clipLo_(0.1).clipHi_(600)
-			.font_(CQInk.font(\number, m[\mono])).stringColor_(palette[\line])
-			.background_(palette[\ground]).fixedSize_(Size(64, m[\boxHeight]))
+		durationBox = NumberBox().value_(this.class.morphDurationDefault)
+			.clipLo_(this.class.morphDurationLo).clipHi_(this.class.morphDurationHi)
+			.font_(CQInk.font(\number, m[\mono]))
+			.fixedSize_(Size(64, m[\boxHeight]))
 			.action_({ |box| box.focus(false) });
+		// Losing focus commits too, for the paths that do take focus away. The
+		// morph button itself cannot: the page is mouse-only (`prDefocus` gives
+		// text entry Qt::ClickFocus and everything else canFocus = false), so
+		// prMorph reads the live text rather than trusting a committed value.
+		durationBox.focusLostAction = { |box|
+			box.value = this.class.durationFrom(box.string, box.value)
+		};
+		this.prInkEntry(durationBox);
+		this.prWatchEntryHover(durationBox);
 		morphButton = this.prButton("morph",
 			CQGuiScale.buttonWidth(step, "morph"), \spaf, { this.prMorph });
 		morphMeter = UserView().fixedSize_(Size(310, m[\boxHeight]))
@@ -380,9 +418,28 @@ CQGuiMemory {
 		^this
 	}
 
+	// One place turns a hover flag into entry ink, so the build, the hover
+	// actions and a skin swap can never disagree.
+	prInkEntry { |entry, hovered = false|
+		CQInk.applyTextEntryInk(entry, skin, hovered);
+		^entry
+	}
+
+	prWatchEntryHover { |entry|
+		entry.acceptsMouseOver = true;
+		entry.mouseEnterAction = { this.prInkEntry(entry, true) };
+		entry.mouseLeaveAction = { this.prInkEntry(entry, false) };
+		^entry
+	}
+
 	prMorph {
+		var dur;
 		if(snapshots.notNil and: { aMenu.item.notNil } and: { bMenu.item.notNil }) {
-			snapshots.morph(aMenu.item.asSymbol, bMenu.item.asSymbol, durationBox.value)
+			// Read what the box shows, not what it last committed, then write it
+			// back so the box agrees with the morph it just started.
+			dur = this.class.durationFrom(durationBox.string, durationBox.value);
+			durationBox.value = dur;
+			snapshots.morph(aMenu.item.asSymbol, bMenu.item.asSymbol, dur)
 		} {
 			this.prSetDetailHint("choose two saved snapshots before morph");
 		};
@@ -481,7 +538,7 @@ CQGuiMemory {
 	prDrawMorphMeter {
 		var palette = CQInk.palette(skin), progress, label, rail;
 		var m = CQGuiScale.metrics(step), box = morphMeter.bounds.moveTo(0, 0);
-		var readout = (CQGuiScale.textWidth("100%", m[\mono], true) + 12).ceil;
+		var readout = this.class.morphReadoutWidth(m[\mono]);
 		progress = if(snapshots.isNil) { 0.0 } { snapshots.morphProgress ? 0.0 };
 		rail = Rect(5, (box.height / 2) - 5, box.width - readout - 12, 10);
 		Pen.fillColor = palette[\recess];

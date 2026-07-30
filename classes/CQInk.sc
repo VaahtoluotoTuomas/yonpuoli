@@ -49,6 +49,38 @@ CQInk {
 	// §16.7: a momentary control shows a 120 ms ink flash. One constant keeps
 	// every action entrance in step.
 	*momentaryFlash { ^0.12 }
+
+	// A Qt text entry cannot be Pen-drawn, so it borrows the Ink hover and
+	// selection language through its own Qt palette instead of showing the OS
+	// default. Hover is `spark` at the same weight a menu box uses; selection is
+	// `spaf`, the weight a list row uses -- never native highlight blue.
+	// User review 2026-07-30 (the morph bridge's seconds box).
+	*textEntryInk { |skin = \day, hovered = false|
+		var p = this.palette(skin);
+		^(
+			text: p[\line],
+			background: if(hovered) { p[\ground].blend(p[\spark], 0.10) } {
+				p[\ground]
+			},
+			highlight: p[\ground].blend(p[\spaf], 0.34),
+			highlightText: p[\line]
+		)
+	}
+
+	*applyTextEntryInk { |view, skin = \day, hovered = false|
+		var ink = this.textEntryInk(skin, hovered);
+		view.palette = view.palette
+			.base_(ink[\background]).baseText_(ink[\text])
+			.highlight_(ink[\highlight]).highlightText_(ink[\highlightText]);
+		if(view.isKindOf(NumberBox)) {
+			view.normalColor_(ink[\text]);
+			// Qt's default typing colour is red, which reads as an error. It is
+			// not even a pending state any more: a box's live text is what its
+			// action reads, so what you see is what happens.
+			view.typingColor_(ink[\text]);
+		};
+		^view
+	}
 	*metrics {
 		^(grid: 8, labelSize: 10, numberSize: 10, noticeSize: 11,
 			rangeSize: 9, knobDiameter: 26, featuredKnobDiameter: 34,
