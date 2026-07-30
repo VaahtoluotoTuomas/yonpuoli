@@ -1596,6 +1596,56 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
       tämä lyhyt vakauskoe **ei korvaa** jonossa seuraavaa pitkää koko
       soittimen laitteisto-/resource-soakia.
 
+### MOR-1 — morph ei jäädytä käyttöliittymää
+
+Löytyi soakissa 2026-07-30: 90 s morph kahden tiheän snapshotin välillä piti
+`sclang`in 100 %:ssa noin 320 s, GUI oli jäässä ja **PANIC tavoittamattomissa**
+samalla kun `scsynth` soi terveenä. Korjaus: yksi tiheä `writeMatrix` per kehys,
+kuluneeseen aikaan sidotut kehykset ja taattu vähimmäisluovutus.
+
+```supercollider
+// Ctrl+Shift+L ensin, sitten CQ.boot.
+CQ.patchPreset(\mayhem);
+CQ.snap(\mor1_a);
+CQ.shake;
+CQ.snap(\mor1_b);
+
+// 1. Pitka morph tiheilla snapshoteilla. Kerro morphin AIKANA:
+//    - liikkuuko Night sujuvasti
+//    - vastaako PANIC heti (tama on ratkaiseva)
+//    - liikkuvatko kaapelit ja nupit tasaisesti, ei portaittain
+CQ.morph(\mor1_a, \mor1_b, 90);
+
+// 2. Kestaako morph noin pyydetyn ajan (kellota karkeasti)?
+// 3. Uusi morph kesken morphin: GUI:n pitaa vastata koko ajan.
+// 4. Kolme lyhytta morphia perakkain, odota valissa etta edellinen paattyy:
+CQ.morph(\mor1_a, \mor1_b, 5);
+CQ.morph(\mor1_b, \mor1_a, 5);
+CQ.morph(\mor1_a, \mor1_b, 5);
+
+// 5. Drawer -> memory, sekuntilaatikko ja swap:
+//    - klikkaa laatikkoa KERRAN: tuleeko vilkkuva kursori heti
+//    - korostuuko laatikko hoverissa, onko valinta violetti (ei natiivi sininen)
+//    - onko kirjoitettu teksti tavallisen varista (ei punaista)
+//    - kirjoita "20" ILMAN enteria, klikkaa muualta: katoaako kursori
+//    - kirjoita "20" ILMAN enteria ja paina morph: kestaako 20 s
+//    - kirjoita roskaa ja paina morph: palaako edellinen kelpo arvo
+//    - vaihtaako kaksipainen nuoli a:n ja b:n paittain, ja onko sen hover nakyva
+//    - lukeeko mittarin oikeassa reunassa lopussa kokonaan "arrived"
+```
+
+- [x] **Hyväksytty 2026-07-30.** 90 s morph tiheillä snapshoteilla ei enää
+      jäädytä GUI:ta, morph kesken morphin toimii, ja kolme peräkkäistä 5 s
+      morphia eivät jäädytä mitään. Ensimmäisen katselmuskierroksen ~5 s
+      jäätyminen oli **kertaluonteinen lämmittely** boottauksen jälkeisessä
+      ensimmäisessä tiheässä morphissa, ei kehyskustannus: sama koe toistettuna
+      kolmesti peräkkäin on täysin puhdas.
+- [x] **Sekuntilaatikko ja swap hyväksytty 2026-07-30** kahden
+      korjauskierroksen jälkeen: yhden klikkauksen kursori, hover, violetti
+      valinta, tavallisen värinen teksti, elävän tekstin luku ilman Enteriä,
+      fokuksen vapautus mistä tahansa muualta sivulta, kokonaan piirtyvä
+      `arrived` ja kaksipäinen swap-nuoli päiden välissä.
+
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>
 
