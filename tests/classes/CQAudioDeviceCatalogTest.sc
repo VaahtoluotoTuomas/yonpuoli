@@ -83,4 +83,32 @@ CQAudioDeviceCatalogTest : UnitTest {
 		this.assert(defaults[\all].isEmpty,
 			"system default needs no invented device name");
 	}
+
+	// A reconnected K-Mix could not be found on 2026-07-30: the list is a
+	// stopped-server snapshot, and nothing on the page said so. The `scanned at
+	// boot` wording existed but lived on the device control's label, which loses
+	// that slot to `show all drivers` on any machine that has a legacy driver.
+	test_deviceListNoteAlwaysSaysHowToRenewTheList {
+		this.assertEquals(
+			CQGuiAudioSetup.deviceListNote(\scanned, true),
+			"refresh devices to rescan",
+			"a safe rescan is offered as the action when one is possible");
+		this.assertEquals(
+			CQGuiAudioSetup.deviceListNote(\scanned, false),
+			"scanned at boot · restart audio to rescan",
+			"a running server's list names its age AND the way to renew it");
+		this.assertEquals(
+			CQGuiAudioSetup.deviceListNote(\stale, false),
+			"scanned at boot · restart audio to rescan",
+			"a stale cache is still a boot scan, not a configured fallback");
+		this.assertEquals(
+			CQGuiAudioSetup.deviceListNote(\configured, false),
+			"configured devices only",
+			"without a snapshot the note admits the list is not a scan");
+		#[scanned, stale, configured, failed, injected].do { |source|
+			this.assert(
+				CQGuiAudioSetup.deviceListNote(source, false).isEmpty.not,
+				"every catalog source has a note (%)".format(source));
+		};
+	}
 }

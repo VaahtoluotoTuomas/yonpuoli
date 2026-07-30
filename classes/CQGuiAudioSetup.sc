@@ -216,8 +216,17 @@ CQGuiAudioSetup {
 		var suffix = if(deviceError.notNil) {
 			" · device scan failed"
 		} {
-			" · % in / % out".format(
-				inputDeviceSnapshot.size, outputDeviceSnapshot.size)
+			// The list is a stopped-server snapshot, so a device plugged in
+			// mid-session cannot appear until the next start. Say so where the
+			// counts already are: the `scanned at boot` wording used to live on
+			// the device control's label, which on any machine with a legacy
+			// driver always loses that slot to `show all drivers` -- so the age
+			// of the list was never visible at all (user review 2026-07-30,
+			// after a reconnected K-Mix could not be found).
+			" · % in / % out · %".format(
+				inputDeviceSnapshot.size, outputDeviceSnapshot.size,
+				this.class.deviceListNote(deviceCatalogSource,
+					deviceRefreshAvailable))
 		};
 		var rows;
 		mode = CQAudioConfig.deviceMode(device);
@@ -765,6 +774,19 @@ CQGuiAudioSetup {
 				inputDeviceSnapshot, outputDeviceSnapshot);
 		this.prUpdateDeviceControl;
 		^this
+	}
+
+	// What the device list is and how to renew it, in one phrase. This is the
+	// engine row's business, not the control's: the control can only ever show
+	// one of three things, and on a machine with any legacy driver the
+	// `show all drivers` toggle wins that slot forever.
+	*deviceListNote { |source, refreshAvailable = false|
+		if(refreshAvailable) { ^"refresh devices to rescan" };
+		^if(#[scanned, stale].includes(source)) {
+			"scanned at boot · restart audio to rescan"
+		} {
+			"configured devices only"
+		}
 	}
 
 	prDeviceControlLabel {
