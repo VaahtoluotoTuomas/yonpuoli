@@ -140,10 +140,21 @@ render = { |path|
 					and: { page.applyButton.label == "restart audio" }
 					and: { page.applyButton.enabled },
 					"a clean page names the no-op discard and offers audio recovery");
-				check.value(hostRows[1][\value] == "split devices"
-					and: { hostRows[2][\value] == longInput }
-					and: { hostRows[3][\value] == longOutput },
+				check.value(hostRows[2][\value] == "split devices"
+					and: { hostRows[3][\value] == longInput }
+					and: { hostRows[4][\value] == longOutput },
 					"split input/output device Strings remain exact model data");
+				// The device list rides its own row (2026-07-31): the engine row
+				// ran under `show all drivers` once the note grew, and AUD-W's
+				// danger text lengthens the engine value further.
+				check.value(hostRows[1][\label] == "device list"
+					and: { hostRows[1][\value].find(" in / ").notNil }
+					and: { hostRows[1][\value].find(
+						CQGuiAudioSetup.deviceListNote(page.deviceCatalogSource,
+							page.deviceRefreshAvailable)).notNil }
+					and: { hostRows[0][\value].find(" in / ").isNil }
+					and: { hostRows[0][\value].find("devices").isNil },
+					"counts and their age share one row, and it is not engine's");
 				check.value((refreshRight - menuRight).abs <= 1,
 					"refresh devices shares the controls' right-hand rail");
 				check.value(page.inputRows[0][\value] == "ch 4"

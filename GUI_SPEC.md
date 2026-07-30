@@ -701,7 +701,7 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     It filters only those complete host prefixes, never fuzzy device text, and
     never rewrites the draft. If no safe snapshot exists, the page falls back
     to exact configured endpoints and the disabled `configured devices` label.
-    **The engine row states what the list is and how to renew it**
+    **A `device list` row states what the list is and how to renew it**
     (`CQGuiAudioSetup.deviceListNote`), beside the in/out counts: `refresh
     devices to rescan` while a rescan is safe, `scanned at boot · restart audio
     to rescan · new driver: restart sclang` while the server runs, `configured
@@ -716,7 +716,12 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     renews a *reconnected* device but can never reveal a *newly installed*
     driver — a correctly installed ReaRoute stayed invisible through several
     audio restarts. **The note must not promise a renewal the process cannot
-    perform.**
+    perform.** The counts and the note occupy their own row rather than the
+    engine row's tail (user review 2026-07-31): the combined line ran under the
+    `show all drivers` button, and the engine row must stay readable exactly
+    when AUD-W lengthens it with `audio clock stuck · reports N Hz`. Counts and
+    note stay together — that, not the row they sit on, is what makes the age
+    of the list visible.
   - **The engine row carries the runtime audio-clock truth (AUD-W).** A
     responsive server whose clock is stuck reads `audio clock stuck · reports
     N Hz` in the `danger` family beside the requested rate, and the status line

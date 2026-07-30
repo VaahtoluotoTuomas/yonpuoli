@@ -219,17 +219,24 @@ CQGuiAudioSetup {
 	hostRows {
 		var cfg = model.draft, device = model.draftAt(\device), mode;
 		var responsive = this.prServerResponsive;
-		var suffix = if(deviceError.notNil) {
-			" · device scan failed"
+		// The list is a stopped-server snapshot, so a device plugged in
+		// mid-session cannot appear until the next start. Say so where the
+		// counts already are: the `scanned at boot` wording used to live on
+		// the device control's label, which on any machine with a legacy
+		// driver always loses that slot to `show all drivers` -- so the age
+		// of the list was never visible at all (user review 2026-07-30,
+		// after a reconnected K-Mix could not be found).
+		//
+		// It rides its OWN row since 2026-07-31. Riding the engine row was fine
+		// while the note was short, but it ran under the `show all drivers`
+		// button once the sclang clause was added, and AUD-W's danger text grows
+		// the engine value further exactly when it must stay readable. Counts and
+		// note stay together, which is all the 2026-07-30 review required.
+		var listValue = if(deviceError.notNil) {
+			"% in / % out · device scan failed".format(
+				inputDeviceSnapshot.size, outputDeviceSnapshot.size)
 		} {
-			// The list is a stopped-server snapshot, so a device plugged in
-			// mid-session cannot appear until the next start. Say so where the
-			// counts already are: the `scanned at boot` wording used to live on
-			// the device control's label, which on any machine with a legacy
-			// driver always loses that slot to `show all drivers` -- so the age
-			// of the list was never visible at all (user review 2026-07-30,
-			// after a reconnected K-Mix could not be found).
-			" · % in / % out · %".format(
+			"% in / % out · %".format(
 				inputDeviceSnapshot.size, outputDeviceSnapshot.size,
 				this.class.deviceListNote(deviceCatalogSource,
 					deviceRefreshAvailable))
@@ -255,15 +262,14 @@ CQGuiAudioSetup {
 					this.class.sampleRateText(model.activeAt(\sampleRate)),
 					model.activeAt(\blockSize),
 					this.class.hardwareBufferText(
-						model.activeAt(\hardwareBufferSize)))
-				++ suffix),
-				family: if(deviceError.notNil
-					or: { responsive.not }
-					or: { clockDanger }) {
+						model.activeAt(\hardwareBufferSize)))),
+				family: if(responsive.not or: { clockDanger }) {
 					\danger
 				} {
 					\line
 				}),
+			(label: "device list", value: listValue,
+				family: if(deviceError.notNil) { \danger } { \line }),
 			(label: "device mode", value: this.class.deviceModeText(device),
 				control: true, dirty: model.dirtyAt(\device))
 		];
