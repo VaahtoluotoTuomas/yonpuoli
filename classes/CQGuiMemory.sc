@@ -14,7 +14,10 @@ CQGuiMemory {
 	var gui, state, matrix, snapshots, matrixCtl, morphCtl;
 	var skin = \night, snapshotNames, selectedData, labels, menus, panels;
 	var detailHintText;
-	var nameField, <aMenu, <bMenu, durationBox, detailTitle, <detailHint;
+	var <nameField, <aMenu, <bMenu, <durationBox, detailTitle, <detailHint;
+	// the last committed morph duration, so an unreadable edit can fall back to
+	// something true instead of to a widget's stale idea of itself
+	var durationValue;
 	var <view, <snapshotList, <fingerprint, <morphMeter, <selectedName, <header;
 	// the seed bank shares the workbench's content rail and size step
 	var <step = \compact, <railWidth, buttons, body, snapshotPanel, morphPanel;
@@ -28,6 +31,44 @@ CQGuiMemory {
 	// live rail is `railWidth` and follows CQGuiScale
 	*contentWidth { ^contentW }
 	*ownedItems { ^#[snapshotName, snapshotSave, snapshotRecall, morph] }
+
+	// The a -> b separator doubles as the swap control. A two-headed arrow says
+	// "these two exchange places" without a word.
+	*swapGlyph { ^"⇄" }
+	*swapButtonWidth { ^28 }
+
+	*morphDurationDefault { ^10 }
+	*morphDurationLo { ^0.1 }
+	*morphDurationHi { ^600 }
+
+	// Every word the meter can print. Sizing the readout from "100%" alone
+	// clipped "arrived" to "rived" in the user's 2026-07-30 review.
+	*morphMeterLabels { ^#["100%", "arrived", "ready"] }
+
+	*morphReadoutWidth { |mono|
+		^(this.morphMeterLabels.collect { |label|
+			CQGuiScale.textWidth(label, mono, true)
+		}.maxItem + 12).ceil
+	}
+
+	// A box's live text is the truth, because the page is mouse-only and the
+	// buttons beside it cannot take focus -- so Enter may never be pressed and
+	// NumberBox's committed `value` can lag what the user is looking at.
+	// Anything without a digit in it is not a duration; keep the old value.
+	*durationFrom { |text, fallback|
+		var trimmed = text.asString.stripWhiteSpace;
+		var lo = this.morphDurationLo, hi = this.morphDurationHi;
+		if(trimmed.any { |ch| ch.isDecDigit }.not) {
+			^(fallback ? this.morphDurationDefault).clip(lo, hi)
+		};
+		^trimmed.asFloat.clip(lo, hi)
+	}
+
+	// A whole number of seconds reads as one, so the box does not answer "20"
+	// with "20.0".
+	*durationText { |dur|
+		^if(dur == dur.round) { dur.asInteger.asString } { dur.asString }
+	}
 	*detailMargins { ^[8, 0, 8, 0] }
 	*detailHintTexts {
 		^[
@@ -119,10 +160,10 @@ CQGuiMemory {
 		};
 		snapshotList.skin = skin;
 		menus.do { |menu| menu.skin = skin };
-		nameField.background = palette[\ground];
-		nameField.stringColor = palette[\line];
-		durationBox.background = palette[\ground];
-		durationBox.stringColor = palette[\line];
+		// text entry carries hover and selection ink too, so a skin swap has to
+		// go through the same door the build used
+		this.prInkEntry(nameField);
+		this.prInkEntry(durationBox);
 		fingerprint.background = palette[\ground];
 		morphMeter.background = palette[\ground];
 		detailHint.background = palette[\ground];
@@ -150,7 +191,7 @@ CQGuiMemory {
 
 	prBuild {
 		var palette = CQInk.palette(\night);
-		var saveButton, recallButton, refreshButton, morphButton;
+		var saveButton, recallButton, refreshButton, morphButton, swapButton;
 		var m = CQGuiScale.metrics(step), column, print, saveW;
 		labels = List.new;
 		menus = List.new;
@@ -165,9 +206,10 @@ CQGuiMemory {
 			.fixedWidth_(railWidth);
 		nameField = TextField().string_("snapshot")
 			.font_(CQInk.font(\number, m[\mono]))
-			.stringColor_(palette[\line]).background_(palette[\ground])
 			.fixedSize_(Size(column - 14 - saveW - 6, m[\boxHeight]))
 			.action_({ |field| field.focus(false) });
+		this.prInkEntry(nameField);
+		this.prWatchEntryHover(nameField);
 		snapshotList = CQInkList([], skin, m[\listRow])
 			.font_(CQInk.font(\spellbook, m[\mono]))
 			.fixedWidth_(column - 14);
@@ -230,10 +272,23 @@ CQGuiMemory {
 		aMenu = this.prMenu;
 		bMenu = this.prMenu;
 		menus = [aMenu, bMenu];
-		durationBox = NumberBox().value_(10).clipLo_(0.1).clipHi_(600)
-			.font_(CQInk.font(\number, m[\mono])).stringColor_(palette[\line])
-			.background_(palette[\ground]).fixedSize_(Size(64, m[\boxHeight]))
-			.action_({ |box| box.focus(false) });
+		// A plain text field, not a NumberBox: QcNumberBox spends a single click
+		// on its value-drag gesture, so the caret only appeared on a double
+		// click, and its committed `value` could lag its own text. This box is
+		// read as text anyway (`durationFrom` clamps it), so the numeric widget
+		// bought nothing and cost the ordinary click-to-type the name field
+		// beside it already had. User review 2026-07-30.
+		durationValue = this.class.morphDurationDefault;
+		durationBox = TextField()
+			.string_(this.class.durationText(this.class.morphDurationDefault))
+			.font_(CQInk.font(\number, m[\mono]))
+			.fixedSize_(Size(64, m[\boxHeight]))
+			.action_({ |field| this.prCommitDuration(field) });
+		durationBox.focusLostAction = { |field| this.prCommitDuration(field) };
+		this.prInkEntry(durationBox);
+		this.prWatchEntryHover(durationBox);
+		swapButton = this.prButton(this.class.swapGlyph,
+			this.class.swapButtonWidth, \line, { this.prSwapMorphEnds });
 		morphButton = this.prButton("morph",
 			CQGuiScale.buttonWidth(step, "morph"), \spaf, { this.prMorph });
 		morphMeter = UserView().fixedSize_(Size(310, m[\boxHeight]))
@@ -251,7 +306,10 @@ CQGuiMemory {
 		morphPanel.layout = VLayout(
 			View().fixedHeight_(m[\barHeight] - 4),
 			HLayout(this.prLabel("a", \whisper, \label).fixedWidth_(10), aMenu.view,
-				this.prLabel("→", \whisper, \label).fixedWidth_(12), bMenu.view,
+				// the separator between the two ends IS the control that
+				// exchanges them, so the swap costs no extra rail (user request
+				// 2026-07-30)
+				swapButton.view, bMenu.view,
 				durationBox,
 				this.prLabel("seconds", \whisper, \label).fixedWidth_(58),
 				morphButton.view,
@@ -259,6 +317,11 @@ CQGuiMemory {
 		).margins_(7).spacing_(4);
 
 		panels = [snapshotPanel, fingerprint, morphPanel, morphMeter];
+		// Clicking bare page ends a text edit as well, so "click somewhere else"
+		// works everywhere and not only on the controls.
+		(panels ++ [detailHint]).do { |panel|
+			panel.mouseDownAction = { this.prReleaseEntries }
+		};
 		// the shared page frame (CQGuiScale.pageFrame). The body carries the
 		// stretch, so the saved-snapshot column and the fingerprint reach down
 		// to the morph bridge instead of stopping at a fixed height — the
@@ -268,7 +331,9 @@ CQGuiMemory {
 		// spacing 0: a VLayout's spacing applies above the first item too, which
 		// pushed this page's whole content lower than every other Drawer page.
 		// The gaps are explicit spacers instead.
-		view = View().background_(palette[\recess]).layout_(VLayout(
+		view = View().background_(palette[\recess]);
+		view.mouseDownAction = { this.prReleaseEntries };
+		view.layout_(VLayout(
 			topPad,
 			HLayout(nil, header, nil),
 			View().fixedHeight_(m[\rowGap]),
@@ -294,6 +359,7 @@ CQGuiMemory {
 		var m = CQGuiScale.metrics(step);
 		^CQInkMenu([], skin).font_(CQInk.font(\number, m[\mono]))
 			.fixedSize_(Size(if(step == \roomy) { 210 } { 170 }, m[\boxHeight]))
+			.action_({ this.prReleaseEntries })
 	}
 
 	prLabel { |text, color = \whisper, role = \label|
@@ -336,7 +402,8 @@ CQGuiMemory {
 	prButton { |label, width, accent, action|
 		var button = CQInkControl.button(label, width, \night, false, true, accent);
 		button.surface = \recess;
-		button.action = action;
+		// pressing anything on the page also ends a text edit
+		button.action = { this.prReleaseEntries; action.value };
 		button.scale = CQGuiScale.metrics(step);
 		gui.registerInkControl(button);
 		buttons.add(button);
@@ -345,6 +412,7 @@ CQGuiMemory {
 
 	prSelectSnapshot {
 		var index = snapshotList.value ? 0;
+		this.prReleaseEntries;
 		if(index <= 0) {
 			selectedName = nil;
 			selectedData = nil;
@@ -380,9 +448,53 @@ CQGuiMemory {
 		^this
 	}
 
+	// One place turns a hover flag into entry ink, so the build, the hover
+	// actions and a skin swap can never disagree.
+	prInkEntry { |entry, hovered = false|
+		CQInk.applyTextEntryInk(entry, skin, hovered);
+		^entry
+	}
+
+	prWatchEntryHover { |entry|
+		entry.acceptsMouseOver = true;
+		entry.mouseEnterAction = { this.prInkEntry(entry, true) };
+		entry.mouseLeaveAction = { this.prInkEntry(entry, false) };
+		^entry
+	}
+
+	// Reads the box's live text, remembers it, and writes the clamped value back
+	// so the box always shows the duration that will actually run.
+	prCommitDuration { |field|
+		durationValue = this.class.durationFrom(field.string, durationValue);
+		field.string = this.class.durationText(durationValue);
+		field.focus(false);
+		^durationValue
+	}
+
+	// Nothing else on this page can take focus (`CQGui.prDefocus` leaves only
+	// text entry focusable), so a caret would otherwise blink on until the
+	// window closed. Every other control on the page hands focus back here.
+	prReleaseEntries {
+		[nameField, durationBox].do { |entry|
+			if(entry.notNil and: { entry.hasFocus }) { entry.focus(false) }
+		};
+		^this
+	}
+
+	prSwapMorphEnds {
+		var a = aMenu.value, b = bMenu.value;
+		aMenu.value = b;
+		bMenu.value = a;
+		^this
+	}
+
 	prMorph {
+		var dur;
 		if(snapshots.notNil and: { aMenu.item.notNil } and: { bMenu.item.notNil }) {
-			snapshots.morph(aMenu.item.asSymbol, bMenu.item.asSymbol, durationBox.value)
+			// Read what the box shows, not what it last committed, then write it
+			// back so the box agrees with the morph it just started.
+			dur = this.prCommitDuration(durationBox);
+			snapshots.morph(aMenu.item.asSymbol, bMenu.item.asSymbol, dur)
 		} {
 			this.prSetDetailHint("choose two saved snapshots before morph");
 		};
@@ -481,7 +593,7 @@ CQGuiMemory {
 	prDrawMorphMeter {
 		var palette = CQInk.palette(skin), progress, label, rail;
 		var m = CQGuiScale.metrics(step), box = morphMeter.bounds.moveTo(0, 0);
-		var readout = (CQGuiScale.textWidth("100%", m[\mono], true) + 12).ceil;
+		var readout = this.class.morphReadoutWidth(m[\mono]);
 		progress = if(snapshots.isNil) { 0.0 } { snapshots.morphProgress ? 0.0 };
 		rail = Rect(5, (box.height / 2) - 5, box.width - readout - 12, 10);
 		Pen.fillColor = palette[\recess];

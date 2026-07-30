@@ -894,8 +894,13 @@ CQGui {
 
 	prReinkText { |view, palette|
 		if(view.isKindOf(StaticText)) { view.stringColor = palette[\whisper] };
-		if(view.isKindOf(TextField) or: { view.isKindOf(NumberBox) }
-			or: { view.isKindOf(PopUpMenu) }) {
+		if(view.isKindOf(TextField) or: { view.isKindOf(NumberBox) }) {
+			// one door for entry ink, so hover and selection colours survive a
+			// re-ink instead of reverting to the OS default (2026-07-30).
+			// Night is the only runtime skin, as prApplySkin declares.
+			CQInk.applyTextEntryInk(view, \night)
+		};
+		if(view.isKindOf(PopUpMenu)) {
 			view.stringColor = palette[\line];
 			view.background = palette[\ground];
 		};

@@ -212,6 +212,31 @@ centred = { |inner, outer|
 							check.value(drawer.memoryGui.aMenu.popupHover == 1,
 								"Morph Bridge's opened rows follow ordinary pointer hover");
 							drawer.memoryGui.aMenu.close;
+							// the a -> b separator IS the swap control
+							drawer.memoryGui.bMenu.items = ["alpha", "beta"];
+							drawer.memoryGui.aMenu.value = 0;
+							drawer.memoryGui.bMenu.value = 1;
+							drawer.memoryGui.prSwapMorphEnds;
+							check.value(drawer.memoryGui.aMenu.value == 1
+								and: { drawer.memoryGui.bMenu.value == 0 },
+								"the morph bridge exchanges its two ends in place");
+							// plain text entry: one click gives a caret, and the
+							// live text is the duration that runs
+							check.value(drawer.memoryGui.durationBox.isKindOf(TextField),
+								"the seconds box is ordinary text entry, not a drag widget");
+							drawer.memoryGui.durationBox.string = "20";
+							check.value(drawer.memoryGui.prCommitDuration(
+								drawer.memoryGui.durationBox) == 20
+								and: { drawer.memoryGui.durationBox.string == "20" },
+								"an uncommitted seconds edit is the duration that runs");
+							drawer.memoryGui.durationBox.string = "nonsense";
+							check.value(drawer.memoryGui.prCommitDuration(
+								drawer.memoryGui.durationBox) == 20,
+								"an unreadable edit falls back to the last good duration");
+							check.value(drawer.memoryGui.view.mouseDownAction.notNil
+								and: { drawer.memoryGui.morphMeter.mouseDownAction.notNil }
+								and: { drawer.memoryGui.aMenu.action.notNil },
+								"every other surface on the page ends a text edit");
 							// width is the rail's remainder; height now stretches to
 							// the morph bridge, so the matrix gets the page's room
 							check.value(drawer.memoryGui.fingerprint.bounds.width

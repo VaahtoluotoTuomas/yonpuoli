@@ -1666,9 +1666,10 @@ Käyttäjän arvio on, että soitin alkaa vasta nyt olla lähellä todellista
 1.0-tilaa. Järjestys on **AUD-W → soak → VB-CABLE → merge `main`iin ja tagi**,
 ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
 
-0. **MOR-1 — morph ei saa jäädyttää käyttöliittymää.** Löytyi soakissa
-   2026-07-30, ks. sopimus alla. Ensimmäisenä, koska tämä rikkoo
-   turvainvarianttia #3 (panic aina tavoitettavissa).
+0. [x] **MOR-1 — morph ei saa jäädyttää käyttöliittymää.** Löytyi soakissa
+   2026-07-30 ja **hyväksyttiin samana päivänä** (checklist MOR-1); ks. sopimus
+   alla. Oli ensimmäisenä, koska rikkoi turvainvarianttia #3 (panic aina
+   tavoitettavissa).
 1. **AUD-W — ajonaikainen audiokelloguard.** Oma pieni portti, tehdään
    **ennen** soakia, jotta soak voi ylipäätään havaita sen mitä tämä valvoo.
    Sopimus alla.
@@ -1719,6 +1720,71 @@ kesken. (4) Morphin todellinen kesto pysyy määritellyn toleranssin sisällä
 pyydetystä. (5) Mitattu tapaus ajetaan regressiona: tiheä lähtö- ja
 kohdesnapshot, ei pelkkä harva pari. Portit: compile + unit + GUI-smoket;
 DSP:hen ei kosketa.
+
+**Toteutettu ja käyttäjän hyväksymä `nocturne-morph-freeze`-haaralla
+2026-07-30 (checklist MOR-1).** Kolme muutosta `CQSnapshots.morph`iin:
+1. **Yksi tiheä kirjoitus per kehys.** Unioni ratkaistaan kerran
+   `[dest, src, wA, wB]`-indekseiksi, ja kehys lukee elävän matriisin, korvaa
+   vain unionin solut ja kutsuu `CQMatrix.writeMatrix`iä kerran. Elävän
+   matriisin lukeminen säilyttää molempien snapshotien ulkopuoliset solut
+   täsmälleen yhtä koskemattomina kuin per-solu-patchaus jätti ne — tälle on
+   oma testinsä.
+2. **Kehykset ajastaa kulunut aika, ei tikkilaskuri.** Hidas kehys pudotetaan,
+   joten morph osuu pyydettyyn kestoon sen sijaan että venyisi 3,6-kertaiseksi.
+3. **Jokainen kehys luovuttaa vähintään `morphMinYield` (4 ms)**, olipa se
+   miten myöhässä tahansa; muuten SystemClock ajaa myöhästyneen rutiinin heti
+   uudelleen eikä tapahtumasilmukka tyhjene koskaan. Kehystaajuus on nyt
+   `morphTickPeriod` = §10:n 15 Hz katto (matriisipainot on jo silotettu 50 ms
+   ja gain-argumentit lagattu ≥ 30 ms, joten 66 ms askel ei kuulu portaana).
+
+Katselmuksessa löytyi myös **spec-ajautuma, joka on nyt korjattu**: GUI_SPEC §10
+lupasi että "the cable layer's matrix-driven repaint" on pacattu — ja se
+todella on (`CQGuiCableOverlay.prRefresh`). Pacattu **piirto** ei kuitenkaan
+pacaa **ilmoitusta**: jokainen `\patch` maksaa `.defer`in kolmessa
+kuuntelijassa ennen kuin yhtäkään pacing-porttia kysytään. Siksi §10:een on
+lisätty laki "a stream must be thinned at its source as well as at its
+painter".
+
+**Hyväksyntäkierroksen tulokset.** 90 s morph tiheillä snapshoteilla ei enää
+jäädytä GUI:ta, PANIC vastaa, ja uusi morph kesken morphin toimii. Ensimmäisen
+kierroksen ~5 sekunnin jäätyminen lyhyellä morphilla oli **kertaluonteinen
+lämmittely** boottauksen jälkeisessä ensimmäisessä tiheässä morphissa, ei
+kehyskustannus: kolme peräkkäistä 5 s morphia ovat täysin puhtaita. Kirjattu
+lämmittelynä, ei avoimena vikana.
+
+**Sama katselmus löysi Memory-sivun tekstikentät kelvottomiksi, ja ne korjattiin
+kahdella kierroksella (hyväksytty 2026-07-30).** Löydökset ja niiden syyt:
+1. **Kirjoitettu kesto ei mennyt perille ilman Enteriä.** `NumberBox` committoi
+   `value`n vain Enterillä, ja koska `CQGui.prDefocus` jättää tekstikentät
+   sivun ainoiksi fokusoitaviksi, mikään nappi ei vie fokusta eikä
+   `focusLost` laukea. Nimikentässä vikaa ei ollut, koska se luki jo `.string`
+   — juuri se epäsymmetria teki laatikosta yllättävän.
+2. **Kursori vaati tuplaklikkauksen.** `QcNumberBox` käyttää yksöisklikkauksen
+   arvonvetoeleeseensä eikä sitä voi kytkeä pois. Koska laatikko luetaan
+   tekstinä joka tapauksessa, numerowidget ei tuonut mitään: se on nyt
+   `TextField`, ja `prCommitDuration` on ainoa ovi joka jäsentää, muistaa ja
+   kirjoittaa clampatun arvon takaisin.
+3. **Punainen kirjoitusväri** oli Qt:n oletus (`typingColor = Color.red`), joka
+   lukee virheenä. Nyt tavallinen `line`-muste.
+4. **Natiivi sininen valinta ja puuttuva hover.** Molemmat kentät lainaavat nyt
+   Ink-kielen oman Qt-palettinsa kautta: hover `spark` valikkolaatikon
+   painolla, valinta `spaf` listarivin painolla. Yksi ovi,
+   `CQInk.applyTextEntryInk`.
+5. **Fokus ei vapautunut mistään.** Napit, snapshot-lista, molemmat valikot,
+   paneelit ja paljas sivupohja palauttavat sen nyt `prReleaseEntries`in kautta.
+6. **`arrived` leikkautui**, koska lukemaleveys mitattiin pelkästä `"100%"`:sta.
+   Nyt jokaisesta sanasta jonka mittari voi tulostaa, testillä pinnattuna.
+7. **Käyttäjän pyytämä swap:** `a → b` -erottimesta tuli itse vaihtokontrolli
+   (kaksipäinen nuoli), joten se ei vie lisätilaa kiskolta.
+
+Koko GUI:ssa on täsmälleen kaksi tekstikenttää, molemmat Memory-sivulla, ja
+molemmat saivat saman kohtelun.
+
+Portit 2026-07-30: `CQ_COMPILE_OK`; **13 544 unit-passia / 0 failurea /
+37/37 luokkaa**; `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+`CQ_GUI_DRAWER_REENTRY_PASSED`, `CQ_GUI_NIGHT_PASSED`, `CQ_GUI_AUDIO_PASSED`
+ja `CQ_GUI_AUDIO_PRESENCE_PASSED`. `CQ_SAFETY_PASSED` ja `CQ_HOLD_OK` kantavat:
+DSP:hen ei koskettu, vain kielen puolen kirjoitus- ja ajastustapaan.
 
 ### AUD-W:n sopimus
 

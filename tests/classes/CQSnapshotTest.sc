@@ -233,4 +233,117 @@ CQSnapshotTest : UnitTest {
 		this.assertEquals(state.get(\micGain), 0,
 			"morph target was auto-saved — mic stays closed");
 	}
+
+	// ---- MOR-1: a morph may never starve the language thread ----
+	//
+	// Measured 2026-07-30: a 90 s morph of two dense snapshots pinned sclang at
+	// 100 % of one core for ~320 s with the window frozen and PANIC unreachable,
+	// because every frame patched each union cell one at a time and every patch
+	// costs a server push plus a dependant notification.
+
+	prSaveDensePair {
+		var srcs = CQMatrix.sourceNames, dests = CQMatrix.destNames;
+		dests.do { |dest, di|
+			srcs.do { |src, si|
+				matrix.patch(src, dest, ((di + si) % 7 + 1) / 10)
+			};
+		};
+		snaps.save(\dense_a);
+		dests.do { |dest, di|
+			srcs.do { |src, si|
+				matrix.patch(src, dest, ((di * si) % 5 + 1) / 10 * -1)
+			};
+		};
+		snaps.save(\dense_b);
+		^dests.size * srcs.size
+	}
+
+	test_morphFrameCostsOneMatrixNotification {
+		var cellCount, patches = 0, frames = 0, listener;
+		cellCount = this.prSaveDensePair;
+		listener = SimpleController(matrix)
+			.put(\patch, { patches = patches + 1 })
+			.put(\matrix, { |obj, what, origin, committed, operation|
+				if(operation == \morphFrame) { frames = frames + 1 }
+			});
+		snaps.morph(\dense_a, \dense_b, 0.4);
+		1.2.wait;
+		listener.remove;
+		this.assert(snaps.isMorphing.not, "dense morph completed");
+		this.assertEquals(patches, 0,
+			"a morph frame emits no per-cell patch notification at all");
+		this.assert(frames > 0, "a morph frame emits one dense matrix write");
+		// The old path emitted cellCount notifications per frame; anything near
+		// that number means the dense write was lost again.
+		this.assert(frames < cellCount,
+			"% frames for % cells — a frame must not scale with cell count"
+				.format(frames, cellCount));
+	}
+
+	test_morphFrameRateStaysUnderTheAmbientCeiling {
+		var frames = 0, listener, dur = 0.6;
+		this.prSaveDensePair;
+		listener = SimpleController(matrix).put(\matrix, {
+			frames = frames + 1
+		});
+		snaps.morph(\dense_a, \dense_b, dur);
+		(dur + 0.8).wait;
+		listener.remove;
+		// GUI_SPEC §10 caps ambient redraw at 15 Hz and every frame repaints the
+		// cable overlay. Allow the closing prApply write plus a frame of slack.
+		this.assert(frames <= ((dur / CQSnapshots.morphTickPeriod) + 3),
+			"% frames in % s exceeds the 15 Hz ambient ceiling".format(frames, dur));
+	}
+
+	test_morphYieldsToOtherScheduledWork {
+		var ticks = 0, competitor;
+		this.prSaveDensePair;
+		competitor = Routine {
+			20.do { ticks = ticks + 1; 0.02.wait };
+		}.play(SystemClock);
+		snaps.morph(\dense_a, \dense_b, 0.4);
+		0.9.wait;
+		competitor.stop;
+		this.assert(snaps.isMorphing.not, "dense morph completed");
+		// If a frame never yielded, nothing else on the clock would have run —
+		// which is exactly why the panic button could not be reached.
+		this.assert(ticks >= 10,
+			"only % competing ticks ran during a dense morph".format(ticks));
+	}
+
+	test_morphHonoursItsRequestedDuration {
+		var started, elapsed, dur = 0.5;
+		this.prSaveDensePair;
+		started = Main.elapsedTime;
+		snaps.morph(\dense_a, \dense_b, dur);
+		while { snaps.isMorphing and: { (Main.elapsedTime - started) < 4 } } {
+			0.02.wait
+		};
+		elapsed = Main.elapsedTime - started;
+		this.assert(snaps.isMorphing.not, "morph ended");
+		// Time-driven, so a slow frame is dropped instead of extending the morph.
+		// The old fixed tick count overran by 3.6x under load.
+		this.assert(elapsed < (dur * 2),
+			"a % s morph took % s".format(dur, elapsed.round(0.01)));
+	}
+
+	test_morphLeavesCellsOutsideBothSnapshotsAlone {
+		var foreign = 0.42;
+		state.set(\coco1Fb, 0.2);
+		matrix.patch(\tri1, \coco1_spaf, 0.8);
+		snaps.save(\ma);
+		state.set(\coco1Fb, 1.1);
+		matrix.patch(\tri1, \coco1_spaf, 0.1);
+		snaps.save(\mb);
+		snaps.recall(\ma);
+		// planted after both saves, so it belongs to neither snapshot
+		matrix.patch(\cas2, \castle3_fm, foreign);
+		snaps.morph(\ma, \mb, 0.4);
+		0.2.wait;
+		this.assert(snaps.isMorphing, "morph still in flight");
+		this.assertFloatEquals(matrix.getPatch(\cas2, \castle3_fm), foreign,
+			"a dense frame must not zero cells outside both snapshots");
+		0.8.wait;
+		this.assert(snaps.isMorphing.not, "morph ended");
+	}
 }
