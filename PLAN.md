@@ -1708,6 +1708,22 @@ totuutta.
   ja `prAudioClockHealthy` ovat jo olemassa; niitä käytetään, ei kirjoiteta
   toista rajaa. Yksi huono lukema ei riitä tilan vaihtoon — sama settle-logiikka
   kuin `prRequireSettledAudioClock`issa.
+- **Guard ei saa laueta suppenevaan transienttiin.** Mitattu 2026-07-30:
+  `actualSampleRate` on juokseva keskiarvo, joten Modern Standbystä palaava
+  istunto kulkee **molempien** rajojen ulkopuolella ennen asettumistaan — mitattu
+  sarja oli 7419 Hz (ratio 0,15) → ylitys 69 184 Hz (ratio 1,44) → 47 986 Hz noin
+  90 sekunnissa. Naiivi kolmen näytteen tarkistus olisi julistanut vian kahteen
+  kertaan, molempiin suuntiin, vaikka mikään ei ollut rikki. Ajonaikaisen guardin
+  ehto on siis **jumissa oleva** lukema, ei pelkkä rajan ulkopuolinen: vaadi
+  suunnan ja suppenemisen tarkastelu tai riittävän pitkä ikkuna, ja kirjoita
+  tämä mitattu sarja regressiotestiksi samalla tavalla kuin
+  `[48000, 7076.4, 7019.8]`. Boot-portin kertaluonteinen tarkistus ei kärsi
+  tästä, koska se ajetaan vasta uuden serverin omista lukemista.
+- **Modern Standby kuuluu tähän ilmiöön, ei vikoihin.** Kone menee
+  matalatehotilaan näytön sammuessa riippumatta `powercfg`in lepotila-arvosta;
+  se pysäyttää audiostriimin ja tuottaa juuri yllä kuvatun transientin.
+  `tests/soak_monitor.ps1` pitää järjestelmän hereillä ajonsa ajan, jotta
+  valvomaton soak ei mittaa tätä artefaktia.
 - **Ei elinkaarivuotoja.** `CQ.free`, `CQ.reboot`, CmdPeriod ja epäonnistunut
   session lopettavat valvonnan; sukupolvisuoja pätee kuten muihinkin
   async-polkuihin. Testi todistaa, ettei routine/OSCdef jää eloon freen jälkeen.
