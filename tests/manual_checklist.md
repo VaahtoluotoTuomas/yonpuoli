@@ -2080,8 +2080,12 @@ Cocoquantus.audioClockRate;    // -> nil, EI eilista jaatynytta lukemaa
 //      (c) GUI katosi eika palannut                -> VIKA, kerro post-ikkuna
 ```
 
-- [ ] **SOAK-FIX osa 1 (A) hyväksytty** — morph ei jäädytä, PANIC vastaa,
-      molemmilla sivuilla, myös nupit liikkuvalla parilla
+- [x] **SOAK-FIX osa 1 (A) hyväksytty 2026-07-31** — morph ei enää jäädytä
+      GUI:ta ja **PANIC vastaa aina**. Turvainvariantti #3 on jälleen ehjä
+      352 kaapelin tiheydellä. Ensimmäinen korjausyritys (parametrivirran
+      niputus) oli oikea muttei ratkaiseva; todellinen syy löytyi vasta kun
+      tavoitettavuudesta tehtiin mitattava suure
+      (`tests/morph_profile_gui.scd`, 8 % → 67 %).
 - [ ] **SOAK-FIX osa 2 (B, näkyvä) hyväksytty** — kaksi sanamuotoa, sama piste,
       mahtuu minimiin, katoaa jäljettä
 - [ ] **SOAK-FIX osa 3 (B + C oikeassa viassa) hyväksytty** — guard ei väitä

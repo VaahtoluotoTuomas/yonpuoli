@@ -2240,6 +2240,21 @@ cache jättäisi reiän ikuisesti) ja **yösmoken liikkuneiden päätepisteiden
 assertio on se testi joka pitää tämän rehellisenä** — se kaatui ensimmäisestä
 cache-versiosta ja pakotti avaimeen todelliset sijainnit.
 
+**Löydös A hyväksyttiin käyttäjän katselmuksessa 2026-07-31** (checklist
+SOAK-FIX osa 1): morph ei enää jäädytä käyttöliittymää ja PANIC vastaa aina.
+Turvainvariantti #3 on jälleen ehjä 352 kaapelin tiheydellä. Tiheän morphin
+kaapelianimaatio on tietoisesti karkeampi kuin ennen; tavallinen patch ei
+muutu, koska sen muste on murto-osan hinnasta.
+
+**Auki löydöksistä ovat B ja C**, joiden fyysinen todistus vaatii uuden
+lepotilaprovokaation (SOAK-FIX osa 3), sekä **koko soakin uusinta-ajo**: kolme
+kriteeriä (5 muisti, 8 vasteet, 9 lepotila) jäivät edellisessä ajossa auki tai
+kaatuivat, joten soakia ei voi hyväksyä ilman puhdasta ajoa korjatulla koodilla.
+Muistiramppi kannattaa lukea uudestaan juuri tässä ajossa: kaapelikerros
+allokoi ennen korjausta jokaisella matriisikirjoituksella 352 käyrän verran
+uusia Pointeja, mikä on uskottava mutta **todistamaton** osasyy +20 MB/h
+-ramppiin.
+
 Portit 2026-07-31: `CQ_COMPILE_OK`, **13 681 unit-passia / 0 failurea / 39
 luokkaa**, `CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
 `CQ_GUI_DRAWER_REENTRY_PASSED`, `CQ_GUI_NIGHT_PASSED`, `CQ_GUI_AUDIO_PASSED`,
