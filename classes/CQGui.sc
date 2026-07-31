@@ -150,9 +150,12 @@ CQGui {
 		^this
 	}
 	audioPresenceListenerCount { ^audioPresenceListeners.size }
-	audioPageVisible {
-		^shellState.drawerOpen and: { shellState.drawerTab == \audio }
+	// One definition of "the hand can see this page", so a page cannot count as
+	// hidden for one purpose and visible for another.
+	drawerPageVisible { |tab|
+		^shellState.drawerOpen and: { shellState.drawerTab == tab }
 	}
+	audioPageVisible { ^this.drawerPageVisible(\audio) }
 	audioInputPresenceFrame { |values|
 		ioInputPresence = this.prPresenceValues(values, 3);
 		this.prQueueAudioPresence;
@@ -464,6 +467,8 @@ CQGui {
 	drawerShown {
 		this.prSyncDrawerScale;
 		this.prQueueAudioPresence;
+		// a page that skipped drawing while it was hidden catches up here
+		drawer !? { |page| page.pageShown };
 		^this
 	}
 

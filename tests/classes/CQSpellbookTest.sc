@@ -1,4 +1,5 @@
-// GUI_SPEC §8: append-only matrix language learned from CQMatrix notifications.
+// GUI_SPEC §8: matrix language learned from CQMatrix notifications, appended in
+// order and bounded by a line limit (SOAK-1 criterion 5).
 
 CQSpellbookTest : UnitTest {
 	var matrix, spellbook;
@@ -81,6 +82,58 @@ CQSpellbookTest : UnitTest {
 		matrix.shake(0.3, 1234, origin: \gui, operation: \shake);
 		this.assertEquals(spellbook.lastEntry[\lines].first, "// shake",
 			"shake is one named batch operation");
+	}
+
+	// SOAK-1 criterion 5 (measured 2026-07-31): an uncapped journal was the whole
+	// sclang memory ramp. Dense acts are the case that mattered — one of them
+	// writes a line per changed cell, hundreds at a time.
+	test_journalIsBoundedInLinesAndOnlyWholeEntriesLeave {
+		var limit = CQSpellbook.lineLimit;
+		var cells = CQMatrix.destNames.size * CQMatrix.sourceNames.size;
+		var writes = (limit / cells).ceil.asInteger + 4;
+		var fields = [0.5, -0.5].collect { |w|
+			matrix.fullMatrix.collect { |row| row.collect { w } }
+		};
+		var sum = 0;
+		writes.do { |i|
+			matrix.writeMatrix(fields[i % 2], origin: \gui, committed: true,
+				operation: \harvest);
+		};
+		this.assert(spellbook.entryCount < writes,
+			"a journal past its line limit has dropped entries");
+		this.assert(spellbook.lineCount <= limit,
+			"the journal never holds more lines than its limit");
+		spellbook.entries.do { |entry| sum = sum + entry[\lines].size };
+		this.assertEquals(spellbook.lines.size, sum,
+			"only whole entries leave: every remaining operation keeps all its lines");
+		this.assertEquals(spellbook.lineCount, sum,
+			"the counted lines are the rendered lines");
+		this.assertEquals(spellbook.lastEntry[\lines].first, "// harvest",
+			"the act a hand just made is never the one that is dropped");
+	}
+
+	// The page reads one row per selection change; it must not have to build a
+	// record for every other row to get it.
+	test_recordAtAnswersOneRowWithoutBuildingTheRest {
+		var dense = matrix.fullMatrix;
+		matrix.patch(\tri1, \coco1_spaf, 0.4);
+		dense[0][0] = 0.5;
+		dense[1][1] = -0.25;
+		matrix.writeMatrix(dense, origin: \gui, committed: true,
+			operation: \harvest);
+		this.assertEquals(spellbook.recordAt(0), spellbook.lineRecords[0],
+			"the first row reads the same either way");
+		spellbook.lines.size.do { |index|
+			this.assertEquals(spellbook.recordAt(index), spellbook.lineRecords[index],
+				"row % agrees with the whole-journal form".format(index));
+		};
+		this.assertEquals(spellbook.recordAt(0)[\text], spellbook.lines.first,
+			"a record's text is the line the page renders");
+		this.assert(spellbook.recordAt(spellbook.lines.size).isNil,
+			"a row past the end is nil, not the last row");
+		this.assert(spellbook.recordAt(-1).isNil, "a negative row is nil");
+		this.assert(spellbook.recordAt(nil).isNil,
+			"no selection is nil (ListView.value is nil with an empty journal)");
 	}
 
 	test_presetExportUsesCommittedImageOnly {

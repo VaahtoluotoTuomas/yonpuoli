@@ -38,6 +38,13 @@ CQGuiDrawer {
 		inspector !? { inspector.free };
 	}
 
+	// CQGui.drawerShown: the workbench became visible, or switched page. Pages
+	// that skip drawing while nobody can see them catch up here.
+	pageShown {
+		spellbookGui !? { spellbookGui.pageShown };
+		^this
+	}
+
 	applySkin { |skin|
 		var palette = CQInk.palette(skin);
 		grid.skin = skin;

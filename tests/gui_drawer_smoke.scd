@@ -119,9 +119,18 @@ centred = { |inner, outer|
 					check.value(matrix.getPatch(\tri1, \coco1_spaf) == 0.0,
 						"knot release reverts Inspector audition");
 
+					// Inspector is the visible tab here, so the journal page is hidden:
+					// its model must stay current while its picture waits, because
+					// rebuilding the whole list is the price of showing the page and
+					// not the price of the act.
+					spellbookGui.listView.items = [];
 					matrix.patch(\envA, \deckA_rate, -0.4);
 					check.value(spellbook.lines.last.find("envA").notNil,
 						"Spellbook receives an external code-layer notification");
+					check.value(spellbookGui.pageVisible.not
+						and: { spellbookGui.missedEntries }
+						and: { spellbookGui.listView.items.isEmpty },
+						"an act logged onto a hidden journal page costs no list rebuild");
 					spellbookGui.listView.items = spellbook.lines;
 					spellbookGui.listView.value = spellbook.lines.size - 1;
 					check.value(spellbookGui.listView.selectionMode == \single
@@ -269,6 +278,12 @@ centred = { |inner, outer|
 							gui.shell.selectDrawer(\spellbook);
 							check.value(gui.shellState.drawerTab == \spellbook,
 								"open workbench returns to the live Spellbook page");
+							check.value(drawer.spellbookGui.missedEntries.not
+								and: { drawer.spellbookGui.listView.items.size
+									== spellbook.lines.size }
+								and: { drawer.spellbookGui.listView.items.last
+									== spellbook.lines.last },
+								"showing the journal pays every hidden act's debt in one redraw");
 							gui.shell.drawerButton.view.mouseDownAction.value(
 								gui.shell.drawerButton.view, 4, 4);
 							check.value(gui.shellState.drawerOpen.not,

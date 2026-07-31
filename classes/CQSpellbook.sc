@@ -6,11 +6,29 @@
 CQSpellbook {
 	var matrix, ctl, committedMatrix;
 	var <entries;
+	var <lineCount;
+
+	// SOAK-1 criterion 5, measured 2026-07-31: this journal had no cap, and it
+	// was the sclang memory ramp the soak saw twice (~20 MB/h, never settling).
+	// Every committed act appends one line per changed cell, and a dense act — a
+	// snapshot morph, a recall, a preset, a shake — changes hundreds at once, so
+	// an evening of playing retained hundreds of megabytes that nothing read
+	// again. The probe isolated it here rather than anywhere else in the GUI
+	// because prObserve is the only place in the app that tells a committed write
+	// from an uncommitted one: the same notification stream at 15 Hz, uncommitted,
+	// was flat for the whole measurement.
+	//
+	// The bound is counted in LINES because the page is a line list — the limit is
+	// in the same unit as the thing a player reads. Whole oldest entries leave,
+	// never part of one, so every operation that remains stays legible as a block.
+	// It does not touch export: presetDataString reads committedMatrix.
+	*lineLimit { ^20000 }
 
 	*new { |matrix| ^super.newCopyArgs(matrix).prInit }
 
 	prInit {
 		entries = List.new;
+		lineCount = 0;
 		committedMatrix = this.prCopyMatrix(matrix.fullMatrix);
 		ctl = SimpleController(matrix);
 		ctl.put(\patch, { |obj, what, src, dest, weight,
@@ -61,6 +79,29 @@ CQSpellbook {
 		^result.asArray
 	}
 
+	// One row's ownership, without building a record for every other row first.
+	// The page asks this on every selection change, and lineRecords answered it
+	// by allocating an Event per line in the whole journal — 20 000 of them at
+	// the line limit, to read one.
+	recordAt { |index|
+		var seen = 0;
+		if(index.isNil or: { index < 0 }) { ^nil };
+		entries.do { |entry, entryIndex|
+			var size = entry[\lines].size;
+			if(index < (seen + size)) {
+				^(
+					text: entry[\lines][index - seen],
+					entryIndex: entryIndex,
+					lineIndex: index - seen,
+					lineCount: size,
+					operation: entry[\operation]
+				)
+			};
+			seen = seen + size;
+		};
+		^nil
+	}
+
 	text { ^this.lines.join(Char.nl.asString) }
 
 	// Export the committed image, never a banana that happens to be auditioning.
@@ -98,12 +139,25 @@ CQSpellbook {
 				diff: diff.asArray
 			);
 			entries.add(entry);
+			lineCount = lineCount + entry[\lines].size;
+			this.prTrim;
 			this.changed(\entry, entry);
 		};
 		if(signal == \patch) {
 			this.prCommitCell(after, src, dest)
 		} {
 			committedMatrix = this.prCopyMatrix(after)
+		};
+		^this
+	}
+
+	// The newest entry is never dropped, however long it is: a journal that
+	// answered "nothing happened" to the act a hand just made would be a worse
+	// defect than a long one.
+	prTrim {
+		var limit = this.class.lineLimit;
+		while { (lineCount > limit) and: { entries.size > 1 } } {
+			lineCount = lineCount - entries.removeAt(0)[\lines].size;
 		};
 		^this
 	}

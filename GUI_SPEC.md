@@ -800,10 +800,19 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
   quiet row/column focus, so the selectable target is visible before press.
   The preset choice box uses the same cue. Its opened choices are Ink-painted
   ground/line rows with a `spark` hover, not an unstyled native Qt menu.
-- **Spellbook**: an append-only log of *committed* matrix ops from **all
+- **Spellbook**: an ordered log of *committed* matrix ops from **all
   layers** (GUI gestures, code, presets, shake, compass commits — never
   auditions or per-frame compass writes), each as a copyable line in the
-  code layer's own tongue: `CQ.patch(\tri3, \coco1_spaf, 0.4)`. Batch
+  code layer's own tongue: `CQ.patch(\tri3, \coco1_spaf, 0.4)`. **The journal
+  is bounded at `CQSpellbook.lineLimit` = 20 000 lines**, and past it the
+  oldest **whole** entries leave, never a fragment of one, so every operation
+  that remains is still legible as a block and the newest act is never the one
+  dropped. The bound is counted in lines because the page is a line list. It
+  was uncapped until 2026-07-31, when the SOAK-1 memory probe measured that the
+  journal *is* criterion 5's sclang ramp: a dense act (morph, recall, preset,
+  shake) appends a line per changed cell, hundreds at once, and an evening of
+  playing retained hundreds of megabytes nothing ever read again. Export is
+  untouched — *copy all as preset data* reads the committed image, not the log. Batch
   commits (harvest, breed, compass release, preset, shake) log as one
   `// tool` comment line followed by the diffed cell lines — a harvest reads
   as `// harvest` plus its `CQ.patch(\src, \dest, 0)` lines. Buttons:

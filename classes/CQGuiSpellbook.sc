@@ -7,6 +7,8 @@ CQGuiSpellbook {
 	var <listView;
 	var <view, <rail, header, copyLine, copyPreset, topPad;
 	var <step = \compact;
+	// acts that landed while nobody could see this page
+	var <missedEntries = false;
 
 	*new { |gui, model| ^super.newCopyArgs(gui, model).prBuild }
 
@@ -50,12 +52,20 @@ CQGuiSpellbook {
 
 	selectedIndex { ^listView.value }
 	selectedLine {
-		var index = listView.value;
-		if(index.isNil) { ^"" };
-		^model.lines.at(index) ? ""
+		var record = model.recordAt(listView.value);
+		^(record !? { |found| found[\text] }) ? ""
 	}
 	copySelectedLine { this.prCopy(this.selectedLine); ^this }
 	copyPresetData { this.prCopy(model.presetDataString); ^this }
+
+	pageVisible { ^gui.drawerPageVisible(\spellbook) }
+
+	// CQGuiDrawer.pageShown — the debt from every act that landed while this page
+	// was hidden is paid here, once, whatever its size.
+	pageShown {
+		if(missedEntries and: { this.pageVisible }) { { this.prRedraw }.defer };
+		^this
+	}
 
 	// ---- private ----
 
@@ -94,13 +104,22 @@ CQGuiSpellbook {
 			HLayout(nil, rail, nil).margins_(0).spacing_(0)
 		).margins_(0).spacing_(0));
 		ctl = SimpleController(model);
+		// Redrawing the journal is the price of *showing* it, not the price of the
+		// act that was logged. Every committed act used to pay it — a whole list
+		// rebuilt into Qt with the Drawer closed, on the Night stage, with this
+		// page not even the selected tab. The model is always current; only the
+		// picture waits, and pageShown collects the debt in one redraw.
 		ctl.put(\entry, {
-			{
-				listView.items = model.lines;
-				listView.value = (model.lines.size - 1).max(0);
-				this.prShowSelection;
-			}.defer
+			if(this.pageVisible) { { this.prRedraw }.defer } { missedEntries = true }
 		});
+		^this
+	}
+
+	prRedraw {
+		missedEntries = false;
+		listView.items = model.lines;
+		listView.value = (model.lines.size - 1).max(0);
+		this.prShowSelection;
 		^this
 	}
 
@@ -110,7 +129,7 @@ CQGuiSpellbook {
 			operationStatus.string = "no committed operation selected";
 			^this
 		};
-		record = model.lineRecords.at(index);
+		record = model.recordAt(index);
 		if(record.isNil) { ^this };
 		operationStatus.string = "operation % · row %/%".format(
 			record[\operation], record[\lineIndex] + 1, record[\lineCount]);
