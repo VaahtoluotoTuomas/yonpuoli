@@ -135,9 +135,17 @@ abort = { |error|
 				gui.shell.audioAlert = \none;
 				check.value(gui.shell.audioAlert == \none,
 					"and every mark can be left, not only entered");
+				// The setter working proves nothing about the guard reaching it.
+				// User review 2026-07-31: the model said \serverDown and the
+				// toolbar stayed blank, so the notification path itself is
+				// asserted here — the same door the running guard publishes on.
+				Cocoquantus.changed(\audioClock, \serverDown);
 				gui.shell.toggleDrawer;
 				AppClock.sched(0.15, {
 					try {
+						check.value(gui.shell.audioAlert == \serverDown,
+							"the guard's own notification reaches the toolbar mark");
+						Cocoquantus.changed(\audioClock, \none);
 						check.value(gui.shellState.drawerOpen
 							and: { gui.shell.workspaceStack.index == 1 }
 							and: { gui.shell.drawerButton.label == "drawer" },
