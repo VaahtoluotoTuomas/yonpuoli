@@ -2147,6 +2147,66 @@ ennallaan). MOR-1:ssä mitattiin vastaava kasvu joka **tasaantui** ~523 MB:hen,
 joten katto voi vielä tulla. Ratkaistaan löydöksen A yhteydessä, koska
 korrelaatio morphin hinnan kanssa on vahva.
 
+#### Korjaukset 2026-07-31 (C → B → A), portit vihreät, fyysinen hyväksyntä auki
+
+**C — `CQServerProcess` ja kaksi rakenteellista lakia.** Uusi luokka on ainoa
+ovi, joka pysäyttää palvelinprosessin väkisin, ja ainoa paikka joka kysyy
+käyttöjärjestelmältä kuka porttia pitää. **Portti on todiste:** palvelin on
+pysähtynyt kun sen soketti on vapaa, ei kun tappokomento tulosti SUCCESSin.
+**Mitään ei tapeta ennen kuin imagen nimi on varmistettu:** `netstat` kertoo
+pitäjän PID:n, `tasklist` sen imagen, ja vain `scsynth`/`supernova` on kelvollinen
+kohde — tuntematon tai vieras pitäjä on rehellinen kieltäytyminen, jonka viesti
+nimeää pitäjän. Kirjaston oma sokea tappo ei enää laukea: `Server:quit` ampuu
+`unixCmd`in palauttamaan pid:iin (`Server.sc:1042`, Windowsilla käynnistävä
+kuori), joten vastaamattomassa polussa pysäytämme varmistetun pitäjän itse ja
+nollaamme sen jälkeen kirjaston muistaman pid:n. Parserit ovat puhtaita ja
+testattuja; **testikaksoiskappale ei pääse käyttöjärjestelmään lainkaan** ilman
+eksplisiittistä fixtureä, koska sen nimeämä portti voisi olla soittajan elävä
+palvelin. Mitattu tapaus (orpo 17716 pitää UDP 57110:tä, kirjattu pid 6012) on
+regressiotesti sekä `CQServerProcess`issa että elinkaaressa.
+
+**B — tuoreusvaatimus.** `CQAudioClockWatch.push` sai `responding`-argumentin ja
+`\stale`-tilan: kun lukemaa ei ole, viimeinen lukema unohdetaan (`lastRate` →
+nil), jottei mikään pinta piirrä sitä mitattuna, eikä epäterve sarja jatku
+evidenssin katkon yli. Facade julkaisee nyt **symbolin eikä boolia**:
+`\clockStuck`, `\serverDown` tai `\none`. Työkalurivin merkki on sama piste ja
+sama muste, mutta omat sanansa kummallekin vialle (käyttäjän päätös
+2026-07-31) — `clockDangerLayout` mittaa käytettävät sanat, joten pidempi
+"server not responding" ei luota lyhyemmän mittoihin. Pysäytys retraktoi
+molemmat merkit, eli aiempi "sisään mutta ei ulos" -laki kattaa myös uuden.
+
+**A — morph kirjoittaa vain sen mikä liikkuu.** Käyttäjän oma havainto osui:
+Nightin vuorovesi on kevyempi koska se kirjoittaa **vain matriisin**
+(`CQGuiNightMap.commitBlend` → `writeMatrix`, 30 Hz), kun taas snapshot-morph
+teki lisäksi `state.set`in **jokaiselle** jatkuvalle parametrille joka kehyksellä
+— ~60 kirjoitusta ilmoituksineen, ja jokainen kuuntelija defer-kutsuu erikseen,
+eli ~2 700 deferrattua sulkeumaa sekunnissa Qt:n jonoon joka täyttyi nopeammin
+kuin tyhjeni. MOR-1 tiivisti vain matriisipuolen. Nyt `CQState.setAll` on sama
+primitiivi parametreille kuin `writeMatrix` on matriisille: sama clamppaus, sama
+serveripush, **yksi ilmoitus**. Lisäksi morph erottaa liikkuvat parametrit
+paikallaan pysyvistä — pari joka eroaa vain matriisissa (yön oma tapaus) ei
+maksa kehyksessä parametriliikennettä lainkaan. Sama niputus koskee `prApply`ta
+ja `prApplyDiscrete`ta, joten myös tavallinen recall on yksi teko eikä 74.
+
+Mitattu `tests/morph_profile.scd`illa (headless, serverless):
+
+| pari | kehyksiä | tila-ilmoituksia | per kehys |
+|---|---|---|---|
+| vain matriisi (yön oma pari) | 64 | 4 | **0,02** |
+| myös nupit liikkuvat | 64 | 72 | **1,08** |
+
+Ennen korjausta jokainen kehys ilmoitti kerran per jatkuva parametri: ~60 per
+kehys, ~900/s. Kesto osui molemmissa 4,14–4,15 s pyydetystä 4 s:stä.
+**Poistamista ei tarvittu** — käyttäjän esittämä vaihtoehto luopua morphista
+jää käyttämättä, koska korjaus on sama primitiivi joka koodipohjassa jo oli.
+
+Portit 2026-07-31: `CQ_COMPILE_OK`, **13 681 unit-passia / 0 failurea / 39
+luokkaa**, `CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+`CQ_GUI_DRAWER_REENTRY_PASSED`, `CQ_GUI_NIGHT_PASSED`, `CQ_GUI_AUDIO_PASSED`,
+`CQ_GUI_AUDIO_PRESENCE_PASSED` ja `CQ_MORPH_PROFILE_DONE`. `CQ_HOLD_OK` kantaa:
+DSP:hen ei koskettu. **Fyysinen hyväksyntä on auki** — checklist-lohko
+`SOAK-FIX`, jonka osa 3 vaatii uuden lepotilaprovokaation.
+
 #### Työkaluvelka — `soak_monitor.ps1` voi hukata oman yhteenvetonsa
 
 Ctrl+C `Start-Sleep`in aikana ohittaa skriptin `finally`-lohkon, joten

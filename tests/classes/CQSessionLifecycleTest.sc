@@ -262,13 +262,95 @@ CQSessionLifecycleTest : UnitTest {
 		});
 		0.15.wait;
 		this.assertEquals(server.quitCount, 1,
-			"an unresponsive server is explicitly stopped by its owned PID");
+			"an unresponsive server is explicitly stopped");
 		this.assertEquals(server.rebootCount, 0,
 			"the stock reboot path cannot boot over an unresponsive occupied port");
 		this.assertEquals(server.bootCount, 1,
 			"a fresh server boot follows the forced stop");
 		this.assert(reads == 1 and: { scanRunning.not },
 			"forced-quit recovery scans once after process and watcher teardown");
+	}
+
+	// ---- SOAK-1 finding C: the port is the evidence ----
+
+	// The operating system releases the socket, not the kill command, so the
+	// fixture only frees the port after taskkill has actually run — which is what
+	// makes the poll's post-condition mean something.
+	prMeasuredHolder { |image = "scsynth.exe"|
+		var stopped = false;
+		^{ |cmd|
+			case
+			{ cmd.contains("netstat") } {
+				if(stopped) {
+					"  UDP     0.0.0.0:57120          *:*                    2696\r\n"
+				} {
+					"  UDP     127.0.0.1:59999        *:*                    17716\r\n"
+				}
+			}
+			{ cmd.contains("tasklist") } {
+				"\"%\",\"17716\",\"Console\",\"1\",\"92,480 K\"\r\n".format(image)
+			}
+			{ cmd.contains("taskkill") } {
+				stopped = true;
+				"SUCCESS: The process with PID 17716 has been terminated.\r\n"
+			}
+			{ true } { "" }
+		}
+	}
+
+	// Measured 2026-07-31: the restart force-killed the pid the library recorded
+	// (6012) while the real server, 17716, kept its port and every later boot had
+	// nowhere to bind. The instrument never came back.
+	test_forcedRestartStopsTheProcessThatHoldsThePort {
+		var commands = List.new, previous = CQServerProcess.commandRunner;
+		var runner = this.prMeasuredHolder;
+		var prepared = CQConfig.validate((headless: true, sixteenN: (enabled: false)));
+		CQServerProcess.commandRunner = { |cmd| commands.add(cmd); runner.value(cmd) };
+		server.unresponsive = true;
+		Cocoquantus.prRebootPrepared(server, configPath, prepared, nil, nil, {
+			(inputs: ["input"], outputs: ["output"])
+		});
+		0.25.wait;
+		CQServerProcess.commandRunner = previous;
+		this.assert(commands.any { |c|
+			c.contains("taskkill") and: { c.contains("17716") }
+		}, "the holder of the port is what gets stopped");
+		this.assertEquals(server.bootCount, 1,
+			"and the boot follows once the socket is actually free");
+	}
+
+	test_forcedRestartRefusesWhenThePortIsHeldByAStranger {
+		var commands = List.new, previous = CQServerProcess.commandRunner;
+		var runner = this.prMeasuredHolder("chrome.exe");
+		var failure, prepared;
+		prepared = CQConfig.validate((headless: true, sixteenN: (enabled: false)));
+		CQServerProcess.commandRunner = { |cmd| commands.add(cmd); runner.value(cmd) };
+		server.unresponsive = true;
+		Cocoquantus.prRebootPrepared(server, configPath, prepared, nil,
+			{ |err| failure = err }, {
+				(inputs: ["input"], outputs: ["output"])
+			});
+		0.25.wait;
+		CQServerProcess.commandRunner = previous;
+		this.assert(commands.any { |c| c.contains("taskkill") }.not,
+			"a pid that is not a server is never force-killed, however stuck we are");
+		this.assertEquals(server.bootCount, 0,
+			"and no boot is attempted into a port somebody else owns");
+		this.assert(failure.notNil, "the restart fails out loud");
+		this.assert(failure.errorString.contains("chrome.exe"),
+			"naming the holder, because 'restart failed' alone is the old surface");
+		this.assertEquals(Cocoquantus.lifecycleState, \failed,
+			"the session says so too");
+	}
+
+	// A double must not be able to reach the operating system: the port it names
+	// could be the player's live server, and a unit test would stop it.
+	test_aDoubleWithoutAFixtureNeverAsksTheOperatingSystem {
+		var clearance;
+		CQServerProcess.commandRunner = nil;
+		clearance = Cocoquantus.prClearServerPort(server);
+		this.assertEquals(clearance[\status], \free,
+			"no fixture, no query — the OS is reached only for a real Server");
 	}
 
 	test_audioResultRequestsOneSymbolicAudioReopen {

@@ -404,7 +404,7 @@ CQGui {
 		shell.drawerView.onResize = { this.prSyncDrawerScale };
 		// A GUI built while the clock is already stuck must not open clean: the
 		// guard's state is older than this window.
-		shell.audioClockDanger = Cocoquantus.audioClockDanger;
+		shell.audioAlert = Cocoquantus.audioClockAlert;
 		this.prApplySkin(\night);
 		window = Window("Yölahti",
 			Rect(50, 50, minimum[0], minimum[1]));
@@ -536,6 +536,19 @@ CQGui {
 				};
 			}.defer;
 		});
+		// SOAK-1 finding A: the dense write's single announcement. One deferred
+		// closure for the whole frame instead of one per parameter — the queue
+		// below is the same, so widgets still repaint at §10's paced rate.
+		stateCtl.put(\params, { |obj, what, event|
+			{
+				var presence = false;
+				event.keysValuesDo { |name, val|
+					this.prQueueParam(name, val);
+					if(#[liveGain, micGain].includes(name)) { presence = true };
+				};
+				if(presence) { this.prQueueAudioPresence };
+			}.defer;
+		});
 		// Momentary actions with no persistent state light their Night marks.
 		stateCtl.put(\action, { |obj, what, action, n|
 			if(action == \skip) { { this.prFlashSkip(n) }.defer };
@@ -545,7 +558,7 @@ CQGui {
 		// AUD-W: the runtime clock guard announces only when the *visible* truth
 		// changes, so this listener costs nothing while the clock is healthy.
 		clockCtl = SimpleController(Cocoquantus);
-		clockCtl.put(\audioClock, { |obj, what, danger|
+		clockCtl.put(\audioClock, { |obj, what, alert|
 			{
 				// The retraction can arrive from a session teardown, so this
 				// deferred block can outlive the views it writes to.
@@ -553,7 +566,7 @@ CQGui {
 					// The fault can strike with the Drawer closed, so the always
 					// visible toolbar carries it too (AUD-W, user decision
 					// 2026-07-31); the page states the measured rate.
-					shell !? { |current| current.audioClockDanger = danger };
+					shell !? { |current| current.audioAlert = alert };
 					drawer !? {
 						drawer.audioSetup !? { |page| page.serverHealthChanged }
 					};

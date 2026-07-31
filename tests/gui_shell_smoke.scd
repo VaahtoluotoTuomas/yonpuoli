@@ -35,7 +35,7 @@ abort = { |error|
 				var master = gui.shell.masterView;
 				var volKnob, recControl, panicControl, oldVol;
 				var map = gui.nightMap;
-				var clockLayout;
+				var clockLayout, downLayout;
 				check.value(gui.window.notNil and: { gui.window.isClosed.not },
 					"real Qt window constructed");
 				check.value(gui.window.acceptsMouseOver,
@@ -112,6 +112,29 @@ abort = { |error|
 				check.value(CQGuiShell.clockDangerLayout(34, 120, 100,
 					CQGuiScale.chrome[\label])[\showText].not,
 					"and where the title leaves no room the dot survives alone");
+				// SOAK-1 finding B: the same mark, its own sentence. The longer
+				// words must be measured, not assumed to fit where the clock's
+				// shorter ones did.
+				gui.shell.audioAlert = \serverDown;
+				check.value(gui.shell.audioAlert == \serverDown
+					and: { gui.shell.audioClockDanger.not },
+					"a silent server lights the mark without claiming a stuck clock");
+				downLayout = CQGuiShell.clockDangerLayout(34,
+					gui.shell.drawerButton.view.bounds.left,
+					0, CQGuiScale.chrome[\label], \serverDown);
+				check.value(downLayout[\label] == "server not responding"
+					and: { downLayout[\label] != clockLayout[\label] },
+					"two faults, two sentences, one mark");
+				check.value(downLayout[\showText]
+					and: { downLayout[\textRect].left > 0 }
+					and: { downLayout[\textRect].width > clockLayout[\textRect].width }
+					and: { downLayout[\textRect].right
+						< gui.shell.drawerButton.view.bounds.left }
+					and: { downLayout[\dotCenter] == clockLayout[\dotCenter] },
+					"the longer sentence still fits at 1280 and the dot never moves");
+				gui.shell.audioAlert = \none;
+				check.value(gui.shell.audioAlert == \none,
+					"and every mark can be left, not only entered");
 				gui.shell.toggleDrawer;
 				AppClock.sched(0.15, {
 					try {

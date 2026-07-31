@@ -280,6 +280,91 @@ CQSnapshotTest : UnitTest {
 				.format(frames, cellCount));
 	}
 
+	// ---- SOAK-1 finding A: the parameter half of the same frame ----
+	//
+	// MOR-1 collapsed the matrix side and left the parameters one write, one
+	// push and one notification each. Measured over the night of 2026-07-31: an
+	// isolated 20 s morph still pinned one core for 40-60 s every 8 minutes,
+	// the GUI froze and PANIC did not answer — invariant #3, reopened.
+
+	test_morphFrameCostsOneParamNotification {
+		var singles = 0, bulk = 0, frames = 0, listener, stateListener;
+		this.prSaveDensePair;
+		state.set(\coco1Fb, 0.2);
+		snaps.save(\dense_a);          // same matrix, one moving parameter
+		state.set(\coco1Fb, 1.1);
+		snaps.save(\dense_b);
+		stateListener = SimpleController(state)
+			.put(\param, { singles = singles + 1 })
+			.put(\params, { bulk = bulk + 1 });
+		listener = SimpleController(matrix).put(\matrix, {
+			|obj, what, origin, committed, operation|
+			if(operation == \morphFrame) { frames = frames + 1 }
+		});
+		snaps.morph(\dense_a, \dense_b, 0.4);
+		1.2.wait;
+		listener.remove;
+		stateListener.remove;
+		this.assert(snaps.isMorphing.not, "dense morph completed");
+		this.assertEquals(singles, 0,
+			"a morph frame never fires the per-parameter stream any more");
+		this.assert(bulk <= (frames + 3),
+			"% bulk writes for % frames — a frame is one write, not one per param"
+				.format(bulk, frames));
+		this.assertFloatEquals(state.get(\coco1Fb), 1.1,
+			"and the moving parameter still lands exactly on the target");
+	}
+
+	// The soak's own pair: two dense snapshots that differ ONLY in the matrix.
+	// Every continuous parameter reads the same in both, so a frame has nothing
+	// to say about parameters at all.
+	test_morphWritesOnlyWhatMoves {
+		var writes = 0, frames = 0, listener, matrixListener;
+		this.prSaveDensePair;
+		listener = SimpleController(state)
+			.put(\param, { writes = writes + 1 })
+			.put(\params, { writes = writes + 1 });
+		matrixListener = SimpleController(matrix).put(\matrix, {
+			|obj, what, origin, committed, operation|
+			if(operation == \morphFrame) { frames = frames + 1 }
+		});
+		snaps.morph(\dense_a, \dense_b, 0.4);
+		1.0.wait;
+		listener.remove;
+		matrixListener.remove;
+		this.assert(frames > 3,
+			"precondition: the morph actually ran frames (% of them)".format(frames));
+		// Three one-off acts remain and always will: the opening write of the
+		// still set, the midpoint discrete switch and the closing recall. What
+		// must NOT scale is the per-frame traffic, so this stays at three however
+		// many frames run.
+		this.assert(writes <= 3,
+			"% parameter writes across % frames — a pair whose parameters agree"
+				.format(writes, frames)
+			++ " must cost nothing per frame");
+	}
+
+	test_morphStillLandsEveryParameterEvenWhenItDidNotMove {
+		var listener;
+		state.set(\coco1Fb, 0.2);
+		state.set(\qFreq, 3.0);
+		matrix.patch(\tri1, \coco1_spaf, 0.8);
+		snaps.save(\still_a);
+		matrix.patch(\tri1, \coco1_spaf, 0.1);
+		snaps.save(\still_b);           // parameters identical, matrix different
+		// Move both away from the snapshots before morphing: the still set must
+		// still be written, or a morph would silently keep the current values.
+		state.set(\coco1Fb, 0.9);
+		state.set(\qFreq, 8.0);
+		snaps.morph(\still_a, \still_b, 0.3);
+		0.8.wait;
+		this.assertFloatEquals(state.get(\coco1Fb), 0.2,
+			"an unmoving parameter is still written, once, to where both agree");
+		this.assertFloatEquals(state.get(\qFreq), 3.0, "all of them");
+		this.assertFloatEquals(matrix.getPatch(\tri1, \coco1_spaf), 0.1,
+			"and the matrix still arrives at the target");
+	}
+
 	test_morphFrameRateStaysUnderTheAmbientCeiling {
 		var frames = 0, listener, dur = 0.6;
 		this.prSaveDensePair;

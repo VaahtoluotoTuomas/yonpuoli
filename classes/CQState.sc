@@ -30,6 +30,35 @@ CQState {
 		this.changed(\param, name, clamped);
 	}
 
+	// SOAK-1 finding A (measured 2026-07-31): one dense write per frame, the
+	// same primitive CQMatrix.writeMatrix already is for the other half of a
+	// morph. Per-param `set` costs a clamp, a server push AND a dependant
+	// notification each; every listener defers, so ~60 parameters at 15 Hz drove
+	// some 2 700 deferred closures a second into a Qt queue that filled faster
+	// than it drained. The window froze and PANIC could not be reached — safety
+	// invariant #3, reopened after MOR-1 fixed only the matrix side.
+	//
+	// The values still travel through exactly the same funnel: every one is
+	// clamped by CQSpec and pushed to its own synth. Only the announcement is
+	// collapsed, from one per parameter to one per write.
+	setAll { |event|
+		var applied = Event.new;
+		if(event.isNil) { ^applied };
+		event.keysValuesDo { |name, value|
+			var clamped;
+			if(CQSpec.includes(name)) {
+				clamped = CQSpec.clamp(name, value);
+				values[name] = clamped;
+				this.prSend(name, clamped);
+				applied[name] = clamped;
+			} {
+				("CQState: unknown parameter '" ++ name ++ "' ignored").warn;
+			};
+		};
+		if(applied.size > 0) { this.changed(\params, applied) };
+		^applied
+	}
+
 	get { |name| ^values[name] }
 
 	asEvent {

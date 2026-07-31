@@ -64,8 +64,28 @@ CQAudioClockWatch {
 
 	// Lukemien väli tulee kutsujalta, ei tämän luokan kellosta: sama sarja
 	// testataan sekunneissa ilman että testi odottaa oikeaa aikaa.
-	push { |rate, time|
+	//
+	// `responding` on SOAK-1:n löydös B (mitattu 2026-07-31). `actualSampleRate`
+	// päivittyy vain `/status`-vastauksista, joten vastausten loputtua se jäätyy
+	// viimeiseen terveeseen lukemaansa — ja suhdetesti sitä vastaan ei voi enää
+	// koskaan epäonnistua. Mitattu tapaus: palvelin ei vastannut yhteenkään
+	// neljästä koetuksesta ja sen ääniketju oli kuollut, mutta guard sanoi `ok`
+	// ja 48 003,47 Hz. **Välimuistista lukevan vartijan on vaadittava tuoreutta
+	// — hiljaisuus ei ole terveys.** Kun lukemaa ei ole, ei ole myöskään mitään
+	// mitä väittää: tila on `\stale` ja viimeinen lukema unohdetaan, jottei
+	// mikään pinta piirrä sitä mitattuna.
+	push { |rate, time, responding = true|
 		var err, span, converging;
+		if(responding == false) {
+			state = \stale;
+			healthyRun = 0;
+			lastRate = nil;
+			lastRatio = nil;
+			// Evidenssin katkos katkaisee myös "jumissa 60 s" -väitteen: sitä ei
+			// voi jatkaa sarjasta jonka keskeltä puuttuu kaikki tieto.
+			streak = List.new;
+			^state
+		};
 		// Ilman pyydettyä taajuutta ei ole mitään mihin verrata. Silloin oikea
 		// vastaus on vaieta, ei julistaa vikaa (headless-sessio ilman configia).
 		if(requestedRate.isNumber.not or: { requestedRate <= 0 }) {

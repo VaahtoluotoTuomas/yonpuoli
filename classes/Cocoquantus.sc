@@ -824,10 +824,38 @@ Cocoquantus {
 		});
 	}
 
+	*prServerPort { |targetServer|
+		^(targetServer.addr !? { |addr| addr.port }) ? 57110
+	}
+
+	// Degrades to the pre-2026-07-31 behaviour if the query itself fails (no
+	// netstat, another platform): the boot then simply attempts as it always
+	// did. Silently skipping the check would be the lie; saying so is not.
+	*prClearServerPort { |targetServer|
+		var port = this.prServerPort(targetServer);
+		// A test double must never reach the operating system through here. The
+		// port it names is just a number, and if it ever matched a real one the
+		// query would answer about the player's live server — a unit test could
+		// then stop the instrument it is testing. Doubles opt in explicitly by
+		// installing CQServerProcess.commandRunner, which answers from fixtures.
+		if(targetServer.isKindOf(Server).not
+			and: { CQServerProcess.commandRunner.isNil }) {
+			^(status: \free)
+		};
+		^try {
+			CQServerProcess.clearPort(port)
+		} { |err|
+			("Cocoquantus: could not ask who holds udp %".format(port)
+				++ " — " ++ err.errorString
+				++ " (booting without that evidence)").warn;
+			(status: \free)
+		}
+	}
+
 	*prRebootPrepared { |targetServer, path, preparedConfig, onReady, onFailure,
 		deviceProvider|
 		var optionGraph, generation, action, fail, bootAfterForcedQuit;
-		var forcedQuitPolls = 0, launchBoot, pollForcedQuit;
+		var forcedQuitPolls = 0, launchBoot, pollForcedQuit, forcedClearance;
 		path = path ?? { this.repoDir +/+ "config.scd" };
 		fail = { |failure|
 			this.prRemoveServerBootAction;
@@ -882,8 +910,15 @@ Cocoquantus {
 				};
 			};
 		};
+		// SOAK-1 finding C (measured 2026-07-31): the language's bookkeeping is
+		// not evidence that the process died. Server:quit's forced stop killed
+		// the pid it had recorded — 6012 — while the real server, 17716, kept
+		// UDP 57110 and every following boot had no port to bind. The socket is
+		// the only witness, so the port is polled here and a surviving holder is
+		// stopped through CQServerProcess, which verifies the image first.
 		pollForcedQuit = {
 			AppClock.sched(0.05, {
+				var clearance;
 				if((sessionGeneration != generation) or: {
 					lifecycleState != \booting
 				}) {
@@ -901,8 +936,29 @@ Cocoquantus {
 							0.05
 						}
 					} {
-						launchBoot.value;
-						nil
+						clearance = this.prClearServerPort(targetServer);
+						switch(clearance[\status],
+							\free, {
+								launchBoot.value;
+								nil
+							},
+							\stopped, {
+								// the OS releases the socket, not us: poll on
+								forcedQuitPolls = forcedQuitPolls + 1;
+								if(forcedQuitPolls >= 60) {
+									fail.value(Error(
+										"forced-stopped server kept its port"));
+									nil
+								} {
+									0.05
+								}
+							},
+							{
+								fail.value(Error(CQServerProcess.refusalMessage(
+									this.prServerPort(targetServer), clearance)));
+								nil
+							}
+						)
 					}
 				}
 			});
@@ -911,14 +967,35 @@ Cocoquantus {
 		try {
 			if(targetServer.unresponsive) {
 				// Server.reboot skips quit when statusWatcher.unresponsive is
-				// true, then starts a second process on the occupied port. Use
-				// Server.quit's exact-PID forced stop before booting.
-				targetServer.quit(bootAfterForcedQuit, {
-					if(sessionGeneration == generation) {
-						fail.value(Error(
-							"unresponsive server forced quit failed"));
+				// true, then starts a second process on the occupied port, so the
+				// forced path is taken here — but not Server:quit's blind kill.
+				//
+				// SOAK-1 finding C: that kill aims at the pid `unixCmd` returned
+				// when the server was launched (Server.sc:1042), which on Windows
+				// is the launching shell. Measured 2026-07-31: it reported
+				// "SUCCESS: The process with PID 6012 has been terminated" while
+				// the server was 17716, which kept UDP 57110 and left every later
+				// boot without a port. So we stop the verified holder of the port
+				// ourselves first, and then clear the recorded pid so the library
+				// can no longer fire a second, unverified kill at whatever now
+				// owns that number. Nil-ing it also makes Server:applicationRunning
+				// and its pid-release wait answer honestly instead of about a
+				// process nobody owns.
+				forcedClearance = this.prClearServerPort(targetServer);
+				if(#[foreign, unverified].includes(forcedClearance[\status])) {
+					fail.value(Error(CQServerProcess.refusalMessage(
+						this.prServerPort(targetServer), forcedClearance)));
+				} {
+					if(targetServer.respondsTo(\pid)) {
+						targetServer.instVarPut(\pid, nil);
 					};
-				}, false);
+					targetServer.quit(bootAfterForcedQuit, {
+						if(sessionGeneration == generation) {
+							fail.value(Error(
+								"unresponsive server forced quit failed"));
+						};
+					}, false);
+				};
 			} {
 				targetServer.reboot({
 					this.prCaptureAudioDeviceCatalog(
@@ -1030,12 +1107,14 @@ Cocoquantus {
 	// review 2026-07-31). A state that can be entered but not left is a defect
 	// however rare the route out is.
 	*prStopAudioClockWatch {
-		var wasDanger = (audioClockState == \danger);
+		var wasAlert = this.audioClockAlert;
 		audioClockRoutine !? { |routine| routine.stop };
 		audioClockRoutine = nil;
 		audioClockWatch = nil;
 		audioClockState = \ok;
-		if(wasDanger) { this.changed(\audioClock, false) };
+		// The same law now covers both marks: whatever was published must be
+		// retracted, or the toolbar keeps claiming a fault the model dropped.
+		if(wasAlert != \none) { this.changed(\audioClock, \none) };
 		^this
 	}
 
@@ -1043,24 +1122,52 @@ Cocoquantus {
 	// converging-transient state and must stay invisible, or the guard becomes
 	// the false alarm it exists to avoid.
 	*prAudioClockTick { |targetServer, time|
-		var rate, next, wasDanger = (audioClockState == \danger);
+		var rate, next, responding, wasAlert = this.audioClockAlert;
 		if(audioClockWatch.isNil) { ^\ok };
 		audioClockTickCount = audioClockTickCount + 1;
+		responding = this.prServerAnswering(targetServer);
 		rate = targetServer.tryPerform(\actualSampleRate);
-		next = audioClockWatch.push(rate, time ? Main.elapsedTime);
+		next = audioClockWatch.push(rate, time ? Main.elapsedTime, responding);
 		audioClockState = next;
-		if((next == \danger) != wasDanger) {
-			if(next == \danger) {
-				("Cocoquantus: audio clock stuck — requested % Hz, server reports %."
-					++ " The sound cannot be trusted; restart audio from the Audio"
-					++ " page. No automatic recovery by design.").format(
-						audioClockWatch.requestedRate, rate ? "nothing").warn;
-			} {
-				"Cocoquantus: audio clock recovered.".postln;
-			};
-			this.changed(\audioClock, this.audioClockDanger);
+		if(this.audioClockAlert != wasAlert) {
+			switch(this.audioClockAlert,
+				\clockStuck, {
+					("Cocoquantus: audio clock stuck — requested % Hz, server reports %."
+						++ " The sound cannot be trusted; restart audio from the Audio"
+						++ " page. No automatic recovery by design.").format(
+							audioClockWatch.requestedRate, rate ? "nothing").warn;
+				},
+				\serverDown, {
+					("Cocoquantus: the server has stopped answering — its last"
+						++ " reading is not evidence of anything. Restart audio from"
+						++ " the Audio page. No automatic recovery by design.").warn;
+				},
+				{ "Cocoquantus: audio recovered.".postln }
+			);
+			this.changed(\audioClock, this.audioClockAlert);
 		};
 		^next
+	}
+
+	// SOAK-1 finding B: a stale reading is not a healthy one. A double that
+	// answers neither question is not evidence of a dead server either — absent
+	// telemetry is not the same as bad telemetry (GUI_SPEC §4.5), so only an
+	// explicit "not running" or "unresponsive" counts as silence.
+	*prServerAnswering { |targetServer|
+		var running = targetServer.tryPerform(\serverRunning);
+		var mute = targetServer.tryPerform(\unresponsive);
+		if(running.isNil and: { mute.isNil }) { ^true };
+		^(running != false) and: { mute != true }
+	}
+
+	// One symbol for the one always-visible surface. The words differ because
+	// the faults differ (user decision 2026-07-31): a stuck clock and a silent
+	// server are not the same thing, and a mark that said "audio clock stuck"
+	// about a dead server would be the next lie.
+	*audioClockAlert {
+		if(audioClockState == \stale) { ^\serverDown };
+		if(audioClockState == \danger) { ^\clockStuck };
+		^\none
 	}
 
 	*audioClockDanger { ^(audioClockState == \danger) }
@@ -1152,16 +1259,25 @@ Cocoquantus {
 	// warn once per 0 → live transition, through any entry point
 	*prInitMicWatch {
 		micWatcher = SimpleController(state);
-		micWatcher.put(\param, { |obj, what, name, val|
-			if(name == \micGain) {
-				if((val > 0) and: { micWasLive.not }) {
-					micWasLive = true;
-					("Cocoquantus: micGain > 0 — the mic is LIVE. Feedback risk "
-						++ "with builtin speakers; CQ.set(\\micGain, 0) to mute.").warn;
-				};
-				if(val <= 0) { micWasLive = false };
-			};
+		// A bulk write must not be able to smuggle a live mic past the warning:
+		// both doors into CQState reach this watcher (SOAK-1 finding A).
+		micWatcher.put(\params, { |obj, what, event|
+			event[\micGain] !? { |val| this.prMicGainChanged(val) };
 		});
+		micWatcher.put(\param, { |obj, what, name, val|
+			if(name == \micGain) { this.prMicGainChanged(val) };
+		});
+	}
+
+	*prMicGainChanged { |val|
+		if(val.isNil) { ^this };
+		if((val > 0) and: { micWasLive.not }) {
+			micWasLive = true;
+			("Cocoquantus: micGain > 0 — the mic is LIVE. Feedback risk "
+				++ "with builtin speakers; CQ.set(\\micGain, 0) to mute.").warn;
+		};
+		if(val <= 0) { micWasLive = false };
+		^this
 	}
 
 	// SPEC §6.4 — Pbind sequencing of discrete actions on a TempoClock: a

@@ -141,7 +141,7 @@ CQAudioClockWatchTest : UnitTest {
 		var server = CQTestServer();
 		var events = List.new;
 		var listener = SimpleController(Cocoquantus);
-		listener.put(\audioClock, { |obj, what, danger| events.add(danger) });
+		listener.put(\audioClock, { |obj, what, alert| events.add(alert) });
 		Cocoquantus.prStartAudioClockWatch(server, Cocoquantus.sessionGeneration,
 			48000, 0);
 		server.actualSampleRate = 2610.783;
@@ -153,7 +153,7 @@ CQAudioClockWatchTest : UnitTest {
 			"a restarted guard starts from ok");
 		this.assertEquals(events.size, 2,
 			"and it retracts the danger it published, so no surface stays lit");
-		this.assertEquals(events.last, false, "the retraction says danger is over");
+		this.assertEquals(events.last, \none, "the retraction says the fault is over");
 		Cocoquantus.prStopAudioClockWatch;
 		this.assertEquals(events.size, 2,
 			"stopping an already-ok guard announces nothing");
@@ -178,7 +178,7 @@ CQAudioClockWatchTest : UnitTest {
 		var server = CQTestServer();
 		var events = List.new;
 		var listener = SimpleController(Cocoquantus);
-		listener.put(\audioClock, { |obj, what, danger| events.add(danger) });
+		listener.put(\audioClock, { |obj, what, alert| events.add(alert) });
 		Cocoquantus.prStartAudioClockWatch(server, Cocoquantus.sessionGeneration,
 			48000, 0);
 		this.assert(Cocoquantus.prAudioClockWatchRunning.not,
@@ -189,12 +189,116 @@ CQAudioClockWatchTest : UnitTest {
 			"a minute of a stuck clock reaches danger through the facade");
 		this.assertEquals(events.size, 1,
 			"danger is announced once, not on every tick — a state is not a stream");
-		this.assertEquals(events[0], true, "and it is announced as danger");
+		this.assertEquals(events[0], \clockStuck, "and it is announced by its own name");
 		server.actualSampleRate = 47986.317;
 		3.do { |i| Cocoquantus.prAudioClockTick(server, 100 + (i * 2.5)) };
 		this.assertEquals(events.size, 2, "recovery is announced exactly once too");
-		this.assertEquals(events[1], false, "and it clears the danger");
+		this.assertEquals(events[1], \none, "and it clears the mark");
 		listener.remove;
+		Cocoquantus.prStopAudioClockWatch;
+	}
+
+	// ---- SOAK-1 finding B: a stale reading is not a healthy one ----
+
+	// The measured case, 2026-07-31: the server answered none of four probes and
+	// its audio thread was dead (CPU frozen, threads 9 -> 7), while
+	// actualSampleRate still read 48003.47925608 from before the sleep. The old
+	// guard called that `ok`, because a ratio test on a frozen healthy value can
+	// never fail.
+	test_frozenReadingFromASilentServerIsNotHealth {
+		var watch = CQAudioClockWatch(48000);
+		this.assertEquals(watch.push(48003.47925608, 0), \ok,
+			"precondition: while the server answers, this reading is healthy");
+		20.do { |i| watch.push(48003.47925608, (i + 1) * 2.5, false) };
+		this.assertEquals(watch.state, \stale,
+			"the same number, no longer fresh, is not evidence of anything");
+		this.assertEquals(watch.lastRate, nil,
+			"and the stale value is forgotten, so no surface can draw it as measured");
+		this.assertEquals(watch.lastRatio, nil, "nor its ratio");
+	}
+
+	test_silenceBreaksTheStuckClaimRatherThanFeedingIt {
+		var watch = CQAudioClockWatch(48000);
+		10.do { |i| watch.push(2610.783, i * 2.5) };
+		this.assertEquals(watch.state, \watching,
+			"precondition: an unhealthy series is building, not yet danger");
+		watch.push(2610.783, 25, false);
+		this.assertEquals(watch.state, \stale, "silence replaces the claim");
+		watch.push(2610.783, 27.5);
+		this.assertEquals(watch.state, \watching,
+			"and the 60 s window restarts: a gap in evidence cannot be counted as evidence");
+	}
+
+	test_answeringAgainLeavesStaleAtOnce {
+		var watch = CQAudioClockWatch(48000);
+		watch.push(48003.479, 0, false);
+		this.assertEquals(watch.state, \stale, "precondition");
+		this.assertEquals(watch.push(47986.317, 2.5), \ok,
+			"a server that answers is itself the recovery evidence — no settle delay");
+	}
+
+	// The facade half: the same case must reach the always-visible mark with its
+	// own words (user decision 2026-07-31), and must not claim the clock is stuck.
+	test_facadeCallsASilentServerByItsOwnName {
+		var server = CQTestServer();
+		var events = List.new;
+		var listener = SimpleController(Cocoquantus);
+		listener.put(\audioClock, { |obj, what, alert| events.add(alert) });
+		Cocoquantus.prStartAudioClockWatch(server, Cocoquantus.sessionGeneration,
+			48000, 0);
+		server.actualSampleRate = 48003.47925608;
+		Cocoquantus.prAudioClockTick(server, 0);
+		this.assertEquals(Cocoquantus.audioClockAlert, \none,
+			"precondition: a healthy answering server lights nothing");
+		server.unresponsive = true;
+		4.do { |i| Cocoquantus.prAudioClockTick(server, (i + 1) * 2.5) };
+		this.assertEquals(Cocoquantus.audioClockState, \stale,
+			"the guard stops asserting health the moment the answers stop");
+		this.assertEquals(Cocoquantus.audioClockAlert, \serverDown,
+			"and the mark says what actually happened");
+		this.assert(Cocoquantus.audioClockDanger.not,
+			"a silent server is not a stuck clock — two faults, two sentences");
+		this.assertEquals(Cocoquantus.audioClockRate, nil,
+			"the frozen reading is never reported as a measurement");
+		this.assertEquals(events.size, 1,
+			"announced once: a state is not a stream");
+		this.assertEquals(events[0], \serverDown, "by name");
+		server.unresponsive = false;
+		server.actualSampleRate = 47986.317;
+		Cocoquantus.prAudioClockTick(server, 20);
+		this.assertEquals(Cocoquantus.audioClockAlert, \none,
+			"and it is retracted as soon as the server answers again");
+		this.assertEquals(events.last, \none, "with its own announcement");
+		listener.remove;
+		Cocoquantus.prStopAudioClockWatch;
+	}
+
+	test_stoppingTheGuardRetractsAServerDownToo {
+		var server = CQTestServer();
+		var events = List.new;
+		var listener = SimpleController(Cocoquantus);
+		listener.put(\audioClock, { |obj, what, alert| events.add(alert) });
+		Cocoquantus.prStartAudioClockWatch(server, Cocoquantus.sessionGeneration,
+			48000, 0);
+		server.unresponsive = true;
+		2.do { |i| Cocoquantus.prAudioClockTick(server, i * 2.5) };
+		this.assertEquals(Cocoquantus.audioClockAlert, \serverDown, "precondition");
+		Cocoquantus.prStopAudioClockWatch;
+		this.assertEquals(Cocoquantus.audioClockAlert, \none,
+			"the entered-but-not-left defect covers the new mark as well");
+		this.assertEquals(events.last, \none, "and the retraction is announced");
+		listener.remove;
+	}
+
+	// A double that answers neither question is not evidence of a dead server:
+	// absent telemetry is not the same as bad telemetry.
+	test_aServerThatSaysNothingAboutItselfIsNotDeclaredDown {
+		var quiet = Object.new;   // answers no lifecycle question at all
+		var watch;
+		Cocoquantus.prStartAudioClockWatch(CQTestServer(),
+			Cocoquantus.sessionGeneration, 48000, 0);
+		watch = Cocoquantus.prServerAnswering(quiet);
+		this.assert(watch, "silence about the question is not an answer of 'dead'");
 		Cocoquantus.prStopAudioClockWatch;
 	}
 
@@ -203,7 +307,7 @@ CQAudioClockWatchTest : UnitTest {
 		var events = List.new;
 		var listener = SimpleController(Cocoquantus);
 		var rates = [7419, 12000, 21000, 30000, 36000, 69184, 65000, 62000];
-		listener.put(\audioClock, { |obj, what, danger| events.add(danger) });
+		listener.put(\audioClock, { |obj, what, alert| events.add(alert) });
 		Cocoquantus.prStartAudioClockWatch(server, Cocoquantus.sessionGeneration,
 			48000, 0);
 		rates.do { |rate, i|
@@ -222,7 +326,7 @@ CQAudioClockWatchTest : UnitTest {
 		var server = CQTestServer();
 		var events = List.new;
 		var listener = SimpleController(Cocoquantus);
-		listener.put(\audioClock, { |obj, what, danger| events.add(danger) });
+		listener.put(\audioClock, { |obj, what, alert| events.add(alert) });
 		Cocoquantus.prStartAudioClockWatch(server, Cocoquantus.sessionGeneration,
 			48000, 0);
 		server.actualSampleRate = 47986.317;

@@ -69,7 +69,7 @@ CQSnapshots {
 
 	morph { |from, to, dur = 10|
 		var a = this.read(from), b = this.read(to);
-		var contNames, aNorm, bNorm, cells, cellIndex, startTime;
+		var contNames, aNorm, bNorm, cells, cellIndex, startTime, moving, still;
 		if(a.isNil or: { b.isNil }) { ^this };
 		this.stopMorph;
 		morphFrom = from.asSymbol;
@@ -82,6 +82,25 @@ CQSnapshots {
 		// sparse files interpolate from/to the current value (unmap clamps)
 		aNorm = contNames.collect { |n| CQSpec.unmap(n, a[\params][n] ?? { state.get(n) }) };
 		bNorm = contNames.collect { |n| CQSpec.unmap(n, b[\params][n] ?? { state.get(n) }) };
+		// SOAK-1 finding A: a morph writes what moves. A parameter that reads the
+		// same in both snapshots is not interpolating — re-sending its unchanged
+		// value 15 times a second is pure cost, and for a pair that differs only
+		// in its matrix (the soak's own case) it was the entire per-frame param
+		// load. The still ones are written once, below, and then left alone.
+		moving = List.new;
+		still = Event.new;
+		contNames.do { |n, j|
+			if(aNorm[j] == bNorm[j]) {
+				still[n] = CQSpec.map(n, aNorm[j]);
+			} {
+				moving.add([n, aNorm[j], bNorm[j]]);
+			};
+		};
+		moving = moving.asArray;
+		// The still ones land once, at the start, exactly where both snapshots
+		// already agree. A hand that moves one of them mid-morph now keeps it,
+		// where the old per-frame rewrite overruled the player 15 times a second.
+		if(still.size > 0) { state.setAll(still) };
 		// unknown src/dest names are dropped here (not each tick) — patch() would
 		// warn 30×/s otherwise; prApply's matrix.load still warns once at the end
 		// MOR-1: keep the union as resolved [dest, src] indices so a frame writes
@@ -115,14 +134,18 @@ CQSnapshots {
 		// instead of falling behind for minutes with the language thread pinned.
 		startTime = Main.elapsedTime;
 		morphRoutine = Routine {
-			var switched = false, t = 0, tickStart, dense;
+			var switched = false, t = 0, tickStart, dense, frame;
 			while { t < 1 } {
 				tickStart = Main.elapsedTime;
 				t = ((tickStart - startTime) / dur).clip(0, 1);
 				morphProgress = t;
 				this.changed(\morph, morphProgress, morphFrom, morphTo, \running);
-				contNames.do { |n, j|
-					state.set(n, CQSpec.map(n, aNorm[j] + ((bNorm[j] - aNorm[j]) * t)));
+				if(moving.size > 0) {
+					frame = Event.new;
+					moving.do { |m|
+						frame[m[0]] = CQSpec.map(m[0], m[1] + ((m[2] - m[1]) * t));
+					};
+					state.setAll(frame);
 				};
 				// One dense write per frame, not one per cell. Per-cell patching
 				// cost a server push AND a dependant notification each, so a dense
@@ -261,7 +284,11 @@ CQSnapshots {
 	}
 
 	// apply everything through the funnels; sparse params leave the rest untouched
+	// A recall is one act, so it is one write and one announcement — not 74 of
+	// each. The filtering (panic is not memory, unknown names are skipped) still
+	// happens here, before anything reaches the funnel (SOAK-1 finding A).
 	prApply { |data, origin = \snapshot, committed = true, operation = \recall|
+		var wanted = Event.new;
 		data[\params].keysValuesDo { |k, v|
 			case
 			{ k == \monitorMute } {
@@ -270,8 +297,9 @@ CQSnapshots {
 			{ CQSpec.includes(k).not } {
 				this.class.prWarn("unknown param '%' skipped".format(k));
 			}
-			{ state.set(k, v) };
+			{ wanted[k] = v };
 		};
+		state.setAll(wanted);
 		if(data[\params].includesKey(\micGain) and: { (state.get(\micGain) ? 0) > 0 }) {
 			this.class.prWarn("this snapshot OPENS THE MIC (micGain = "
 				++ state.get(\micGain) ++ ") — CQ.set(\\micGain, 0) to mute");
@@ -282,11 +310,13 @@ CQSnapshots {
 
 	// toggles + enums + spesal only — the morph midpoint switch
 	prApplyDiscrete { |data|
+		var wanted = Event.new;
 		data[\params].keysValuesDo { |k, v|
 			if(#[toggle, enum].includes(CQSpec.kind(k)) and: { k != \monitorMute }) {
-				state.set(k, v);
+				wanted[k] = v;
 			};
 		};
+		state.setAll(wanted);
 		data[\spesal] !? { |st| setSpesal.value(st) };
 	}
 

@@ -10,7 +10,7 @@ CQGuiShell {
 	var drawerStack, drawerPages, toolbarView, toolbarTitle;
 	var tabButtons, skinAction, shownAction;
 	var toolbarInset = 6;
-	var <audioClockDanger = false;
+	var <audioAlert = \none;
 
 	*new { |state, nightView, masterView, pages, skinAction, shownAction|
 		^super.new.prInit(state, nightView, masterView, pages,
@@ -53,7 +53,7 @@ CQGuiShell {
 			// sits on the drawer button, which is the only route to the only
 			// remedy — cue and action share one geometry (GUI_SPEC §4.5). It is
 			// static ink: no blink, no pulse, and it exists only in danger.
-			if(audioClockDanger) { this.prDrawClockDanger };
+			if(audioAlert != \none) { this.prDrawClockDanger };
 		};
 		toolbarView.layout = HLayout(toolbarTitle, nil, drawerButton.view)
 			.margins_(toolbarInset).spacing_(6);
@@ -88,14 +88,38 @@ CQGuiShell {
 	// trip (§10), so an unchanged state must not ask for one — the facade
 	// already announces only on change, and this refuses a second time.
 	audioClockDanger_ { |flag|
-		flag = (flag == true);
-		if(flag == audioClockDanger) { ^this };
-		audioClockDanger = flag;
+		^this.audioAlert_(if(flag == true) { \clockStuck } { \none })
+	}
+
+	audioClockDanger { ^(audioAlert == \clockStuck) }
+
+	// SOAK-1 finding B (user decision 2026-07-31): one mark, one ink, one route
+	// to the only remedy — but two faults, so two sentences. A dead server told
+	// with the clock's words would be the next lie.
+	audioAlert_ { |kind|
+		kind = this.class.alertKind(kind);
+		if(kind == audioAlert) { ^this };
+		audioAlert = kind;
 		toolbarView !? { toolbarView.refresh };
 		^this
 	}
 
-	*clockDangerLabel { ^"audio clock stuck" }
+	*alertKind { |kind|
+		^if(this.alertLabels.includesKey(kind)) { kind } { \none }
+	}
+
+	*alertLabels {
+		^(
+			clockStuck: "audio clock stuck",
+			serverDown: "server not responding"
+		)
+	}
+
+	// The words the Audio page uses for the same fault, so the two surfaces
+	// cannot disagree about what happened.
+	*alertLabel { |kind| ^this.alertLabels[this.alertKind(kind)] }
+
+	*clockDangerLabel { ^this.alertLabel(\clockStuck) }
 	*clockDangerDotRadius { ^4 }
 	*clockDangerGap { ^8 }
 
@@ -104,10 +128,14 @@ CQGuiShell {
 	// owns the left end, and a mark that slides under it would be unreadable
 	// exactly when it matters most. When the room runs out the words drop and
 	// the dot alone remains — the dot is the state, the words are the courtesy.
-	*clockDangerLayout { |toolbarHeight, buttonLeft, titleRight = 0, labelSize = 11|
+	// `kind` decides the words, and the words decide the geometry: the longer
+	// "server not responding" must be measured, not assumed to fit where the
+	// clock's shorter sentence did.
+	*clockDangerLayout { |toolbarHeight, buttonLeft, titleRight = 0, labelSize = 11,
+		kind = \clockStuck|
 		var dotR = this.clockDangerDotRadius;
 		var gap = this.clockDangerGap;
-		var label = this.clockDangerLabel;
+		var label = this.alertLabel(kind) ? this.alertLabel(\clockStuck);
 		var textW = CQGuiScale.textWidth(label, labelSize);
 		var cy = (toolbarHeight - 1) / 2;
 		var dotX = buttonLeft - gap - dotR;
@@ -128,9 +156,8 @@ CQGuiShell {
 		var chrome = CQGuiScale.chrome;
 		var size = chrome[\label];
 		var layout = this.class.clockDangerLayout(toolbarView.bounds.height,
-			drawerButton.view.bounds.left, toolbarTitle.bounds.right, size);
-		// The words are the ones the Audio page repeats, so the two surfaces
-		// cannot disagree about what happened.
+			drawerButton.view.bounds.left, toolbarTitle.bounds.right, size,
+			audioAlert);
 		if(layout[\showText]) {
 			Pen.stringRightJustIn(layout[\label], layout[\textRect],
 				CQInk.font(\label, size), palette[\danger]);

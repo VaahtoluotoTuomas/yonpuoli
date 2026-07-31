@@ -2013,6 +2013,80 @@ mekanismit ja hyväksyntäehdot: PLAN.md → "SOAK-1:n tulos 2026-07-31".
 - **Työkaluvelka:** Ctrl+C `Start-Sleep`in aikana ohitti skriptin
   `finally`-lohkon, joten `CQ_SOAK_SUMMARY` jäi tulostumatta. CSV oli tallessa.
 
+### SOAK-FIX — löydösten A, B ja C korjaukset
+
+Korjattu 2026-07-31 käyttäjän valitsemassa järjestyksessä C → B → A. Automaattinen
+portti: `CQ_COMPILE_OK`, **13 681 unit-passia / 0 failurea / 39 luokkaa**,
+`CQ_SAFETY_PASSED`, kaikki kuusi GUI-smokea ja `CQ_MORPH_PROFILE_DONE`.
+`CQ_HOLD_OK` kantaa: DSP:hen ei koskettu.
+
+```supercollider
+// SOAK-FIX osa 1 (löydös A) -- morph ei saa jäädyttää. Ctrl+Shift+L ensin.
+CQ.boot;
+CQ.patchPreset(\selfNoise);
+CQ.patchPreset(\mayhem);      // 352 kaapelia: sama tiheys kuin yon soakissa
+CQ.snap(\fix_a);
+CQ.shake(0.3, density: 0.35);
+CQ.snap(\fix_b);
+
+// 1. Night nakyvissa. Aja morph ja KOKEILE PANICIA sen aikana:
+CQ.morph(\fix_a, \fix_b, 20);
+//    - liikkuuko Night sujuvasti koko ajan
+//    - vastaako PANIC (Space TAI nappi) HETI morphin aikana  <- ratkaiseva
+//    - kuuluuko glitcheja jotka eivat kuulu patchiin
+CQ.resume;
+
+// 2. Sama Drawer auki (Night piilossa) -- eilen molemmat jaatyivat:
+CQ.morph(\fix_b, \fix_a, 20);
+
+// 3. Kolme perakkain, ja yksi kesken toisen:
+CQ.morph(\fix_a, \fix_b, 5);
+CQ.morph(\fix_b, \fix_a, 5);
+CQ.morph(\fix_a, \fix_b, 20); CQ.morph(\fix_b, \fix_a, 5);
+
+// 4. Nyt pari jonka NUPIT liikkuvat (yon pari muutti vain matriisia):
+CQ.set(\coco1Fb, 0.2); CQ.set(\coco1Speed, 30000); CQ.snap(\fix_c);
+CQ.set(\coco1Fb, 1.1); CQ.set(\coco2Speed, 9000);  CQ.snap(\fix_d);
+CQ.morph(\fix_c, \fix_d, 20);
+//    - liikkuvatko nupit ja sirpit tasaisesti, ei portaittain
+//    - paatyvatko ne tasan kohteeseen (Workshop-sivulta luettavissa)
+```
+
+```supercollider
+// SOAK-FIX osa 2 (löydös B) -- merkin uudet sanat. Kirjoittaa vain nakymaan:
+CQ.gui.shell.audioAlert = \serverDown;
+//    Tyokalurivilla, drawer-napin vasemmalla: danger-piste ja
+//    "server not responding". Katso etta:
+//      - se ei vilku eika liiku, ja piste on samassa kohdassa kuin ennen
+//      - teksti mahtuu myos 1280 px minimissa (kavenna ikkuna)
+CQ.gui.shell.audioAlert = \clockStuck;
+//    Sama piste, mutta "audio clock stuck" -- kaksi vikaa, kaksi lausetta.
+CQ.gui.shell.audioAlert = \none;
+//    Merkin pitaa kadota jaljettomasti.
+```
+
+```supercollider
+// SOAK-FIX osa 3 (löydökset B ja C oikeassa viassa) -- vaatii uuden
+// lepotilaprovokaation, koska juuri se tappoi palvelimen ääniketjun.
+// Soitin pystyyn, Start -> Power -> Sleep, ~10 min, herata.
+Cocoquantus.audioClockState;   // -> \stale jos palvelin ei vastaa (EI \ok)
+Cocoquantus.audioClockAlert;   // -> \serverDown
+Cocoquantus.audioClockRate;    // -> nil, EI eilista jaatynytta lukemaa
+//    Tyokalurivilla pitaa lukea "server not responding · restart audio"
+//    ILMAN etta Drawer on auki.
+//    Sitten Audio-sivu -> restart audio. Kerro kumpi tapahtui:
+//      (a) soitin palasi ja aani toimii            -> C korjattu
+//      (b) restart kertoi mika porttia pitaa       -> C:n rehellinen kieltaytyminen
+//      (c) GUI katosi eika palannut                -> VIKA, kerro post-ikkuna
+```
+
+- [ ] **SOAK-FIX osa 1 (A) hyväksytty** — morph ei jäädytä, PANIC vastaa,
+      molemmilla sivuilla, myös nupit liikkuvalla parilla
+- [ ] **SOAK-FIX osa 2 (B, näkyvä) hyväksytty** — kaksi sanamuotoa, sama piste,
+      mahtuu minimiin, katoaa jäljettä
+- [ ] **SOAK-FIX osa 3 (B + C oikeassa viassa) hyväksytty** — guard ei väitä
+      `ok`, merkki näkyy Drawer kiinni, `restart audio` palauttaa soittimen
+
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>
 
