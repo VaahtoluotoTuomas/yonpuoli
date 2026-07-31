@@ -962,9 +962,41 @@ sub-event in `config.scd`, clamped on load.
   event** — QtCollider's Pen is one global painter, and opening the image's
   painter while a drawFunc's own is active deadlocks the whole GUI thread
   (the same family as the queued-view-swap law). Renders happen on the
-  AppClock before the refresh they prepare; a paint that finds its image
-  stale draws direct at today's price and schedules the render for the
-  next damage.
+  AppClock before the refresh they prepare.
+- **A stale blit beats a frozen window** (SOAK-1 finding A, measured
+  2026-07-31). The clause above used to end "a paint that finds its image
+  stale draws direct at today's price", and that clause was the freeze. During
+  a snapshot morph a matrix write lands between every render and its paint, so
+  the image is *never* fresh and every paint took the direct route — 352
+  cables inked inside the paint event. Measured with the real GUI: only 22 of
+  60 competing AppClock ticks ran, i.e. PANIC was unreachable (safety
+  invariant #3). A paint that finds a usable image of the right size now blits
+  it and schedules the render; one frame of slightly old cable ink is
+  invisible mid-glide, and the trailing render still puts the final state on
+  paper. The direct draw survives only where nothing else is possible: no
+  image yet, a different extent, or a platform with no Image API.
+- **A stream is paced by the cost of its own work, not by a fixed rate**
+  (same finding). §10's 15 Hz ambient ceiling assumes the drawing fits inside
+  the frame; at 352 cables one re-ink costs ~41 ms, so a 15 Hz stream asks for
+  62 % of the language thread. The cable layer now spends at most one slice in
+  `CQGuiCableOverlay.renderDuty` (3) on redrawing: the next render waits
+  `max(15 Hz period, last render cost × duty)`. A dense patch therefore
+  animates more coarsely under a morph instead of freezing the instrument,
+  while a sparse patch never leaves the ceiling. Single acts — plant, rip,
+  harvest — still render and repaint at once.
+- **Geometry is not a quantity** (same finding). A cable's curve depends on the
+  two endpoint positions and the fan spread, never on its weight, so a morph
+  must not rebuild it. Rebuilding the records cost **122.9 ms at 352 cables**,
+  more than the full re-ink it exists to spare, and every matrix write asked
+  for it; two of those milliseconds were an accidental O(n²) (`select` inside
+  `collect`), the rest was 704 endpoint lookups and 352 bezier samplings. The
+  records now cache their geometry keyed by endpoint position: ask each of the
+  38 endpoints once, drop the whole cache if any of them moved, and a
+  weight-only write reuses every curve (3.5 ms). Two traps the measurement
+  found: a position taken before the views are laid out must never be cached
+  (the old path healed itself every frame, a cache would keep the hole
+  forever), and the night smoke's moved-endpoint assertion is the test that
+  keeps this honest.
 - **Overlay hit-testing**: the cable layer must not steal knob/button
   interactions; only jacks/sockets/cables are targets (≥ 12 px, magnetic
   candidate halo). The one exception is the harvest lasso's right-drag

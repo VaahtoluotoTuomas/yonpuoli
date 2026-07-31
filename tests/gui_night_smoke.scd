@@ -695,6 +695,7 @@ punchChecks = { |map|
 				AppClock.sched(0.2, {
 					try {
 						var geo = map.geometry, expected, view, anchor;
+						var geometryProbe, reusedProbe;
 						var sourceView, destView, destPoint, dragPoint, sourceAnchor;
 						var before, triView, target, movePoint, triAnchor;
 						check.value(geo.notNil, "night geometry is laid out");
@@ -724,6 +725,21 @@ punchChecks = { |map|
 							and: { CQNightGeometry.distance(record[\finish],
 								geo[\endpoints][record[\dest]]) < 1 }
 						}, "every planted cable lands on both moved endpoint centres");
+					// SOAK-1 finding A: a weight-only write must not rebuild a
+					// single curve. Measured 2026-07-31, rebuilding them cost
+					// 122.9 ms at 352 cables and starved the event loop, so this
+					// pins the geometry as shared objects: a morph frame is
+					// allowed to change what a cable weighs, never where it runs.
+					geometryProbe = map.overlay.cableRecords
+						.detect { |r| r[\src] == \tri1 };
+					matrix.patch(\tri1, \coco1_spaf, 0.31);
+					map.overlay.invalidate;
+					reusedProbe = map.overlay.cableRecords
+						.detect { |r| r[\src] == \tri1 };
+					check.value(reusedProbe.notNil
+						and: { reusedProbe[\points] === geometryProbe[\points] }
+						and: { reusedProbe[\weight] != geometryProbe[\weight] },
+						"a weight change reuses the cable's curve and only its weight moves");
 						check.value(map.overlay.cableCount == 2,
 							"night overlay renders every planted matrix cable");
 						sourceView = map.endpoints[\org2][\view];

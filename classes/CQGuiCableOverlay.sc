@@ -5,8 +5,8 @@
 CQGuiCableOverlay {
 	var matrix, endpoints, grammar, auraFunc, ctl, gestureCtl;
 	var <view, <skin = \night;
-	var recordCache, cacheExtent, cacheHover;
-	var refreshScheduled = false, lastRefresh = 0;
+	var recordCache, cacheExtent, cacheHover, geometryCache, geometryPositions;
+	var refreshScheduled = false, lastRefresh = 0, lastRenderCost = 0;
 	// The offscreen cache (measured 2026-07-22 inside the real Qt paint event:
 	// a full-ink repaint costs 2.1 ms at 12 cables and 82.7 ms at 352 on the
 	// dev machine — roughly half the reference laptop's figures — so any repaint
@@ -139,6 +139,28 @@ CQGuiCableOverlay {
 	// asked for a full re-stroke of the cable layer. Plant, rip and harvest are single
 	// acts and still repaint at once — only a stream is paced down to the ceiling, and
 	// the trailing repaint guarantees the last state is the one left on paper.
+	// SOAK-1 finding A: 15 Hz was the wrong pace, not because §10's ceiling is
+	// wrong but because a ceiling in Hz assumes the work fits inside the frame.
+	// Measured 2026-07-31 at 352 cables: one re-ink costs ~41 ms, so the paced
+	// stream asked for 62 % of the language thread and only 22 of 60 competing
+	// AppClock ticks ran — PANIC could not be reached. **A stream is paced by
+	// the cost of its own work, not by a fixed rate**: never spend more than one
+	// slice in `duty` on redrawing, so a dense patch animates more coarsely
+	// instead of freezing the instrument. A sparse patch is far under the
+	// ceiling and keeps the full 15 Hz.
+	*renderDuty { ^3 }
+
+	prRefreshPeriod {
+		^max(CQGui.paramFlushPeriod, lastRenderCost * this.class.renderDuty)
+	}
+
+	prRenderImage {
+		var t0 = Main.elapsedTime;
+		this.prEnsureImage;
+		lastRenderCost = Main.elapsedTime - t0;
+		^this
+	}
+
 	prRefresh {
 		var wait;
 		// under weather, only an actual change of the planted set (or a
@@ -150,10 +172,10 @@ CQGuiCableOverlay {
 			stormSig = sig;
 		};
 		if(refreshScheduled) { ^this };
-		wait = CQGui.paramFlushPeriod - (Main.elapsedTime - lastRefresh);
+		wait = this.prRefreshPeriod - (Main.elapsedTime - lastRefresh);
 		if(wait <= 0) {
 			lastRefresh = Main.elapsedTime;
-			if(stormMode.not) { this.prEnsureImage };
+			if(stormMode.not) { this.prRenderImage };
 			view.refresh;
 			^this
 		};
@@ -162,7 +184,7 @@ CQGuiCableOverlay {
 			refreshScheduled = false;
 			lastRefresh = Main.elapsedTime;
 			if(view.isClosed.not) {
-				this.prEnsureImage;   // off the paint event, so the paint blits
+				this.prRenderImage;   // off the paint event, so the paint blits
 				view.refresh;
 			};
 			nil
@@ -174,6 +196,12 @@ CQGuiCableOverlay {
 		if(recordCache.isNil
 			or: { cacheExtent != extent }
 			or: { cacheHover != hover }) {
+			// A cable's curve depends on the two endpoint positions and the fan
+			// spread — that is, on the layout and on which endpoint is hovered.
+			// It does not depend on the weight, so a morph must not pay for it.
+			if((cacheExtent != extent) or: { cacheHover != hover }) {
+				geometryCache = nil;
+			};
 			cacheExtent = extent;
 			cacheHover = hover;
 			recordCache = this.prBuildRecords;
@@ -181,27 +209,75 @@ CQGuiCableOverlay {
 		^recordCache
 	}
 
+	// SOAK-1 finding A, measured 2026-07-31 with the real GUI: rebuilding these
+	// records cost 122.9 ms at 352 cables — more than the full re-ink (42.2 ms)
+	// it exists to avoid, and every matrix write invalidates them. A morph frame
+	// therefore asked for 165 ms of work every 66 ms and the event loop starved:
+	// only 5 of 60 competing AppClock ticks ran, which is why PANIC could not be
+	// reached (safety invariant #3).
+	//
+	// The cost was one line: `patches.select` inside `patches.collect` is O(n²),
+	// and `indexOf` on top of it walks the same list again. Grouping by
+	// destination once makes the per-cable work O(1) and changes no output — a
+	// fan's spread order is still the order the matrix reports.
 	prBuildRecords {
-		var patches;
+		var patches, byDest, seen, positions;
 		patches = matrix.asArray;
+		byDest = IdentityDictionary.new;
+		patches.do { |patch|
+			byDest[patch[1]] = (byDest[patch[1]] ? 0) + 1;
+		};
+		seen = IdentityDictionary.new;
+		// Ask each endpoint where it is exactly once — 38 of them instead of two
+		// lookups per cable — and treat that set of positions as the geometry's
+		// identity. If any endpoint moved, every curve is stale and the cache
+		// goes; the night smoke's moved-endpoint assertion is what proves it,
+		// and it is what caught the first version of this cache.
+		positions = IdentityDictionary.new;
+		endpoints.keysDo { |name| positions[name] = this.pointFor(name) };
+		if(positions != geometryPositions) {
+			geometryCache = Dictionary.new;
+			geometryPositions = positions;
+		};
+		geometryCache ?? { geometryCache = Dictionary.new };
 		^patches.collect { |patch|
-			var sameDest, index, count, spread, start, finish, distance, segments;
-			var points;
-			sameDest = patches.select { |other| other[1] == patch[1] };
-			index = sameDest.indexOf(patch) ? 0;
-			count = sameDest.size;
-			spread = grammar.hoverEndpoint == patch[1] and: { count > 1 };
-			start = this.pointFor(patch[0]);
-			finish = this.pointFor(patch[1]);
-			if(spread) {
-				finish = finish + Point((index - ((count - 1) * 0.5)) * 5, 0)
+			var index, count, key, geometry, start, finish;
+			count = byDest[patch[1]] ? 1;
+			index = seen[patch[1]] ? 0;
+			seen[patch[1]] = index + 1;
+			start = positions[patch[0]];
+			finish = positions[patch[1]];
+			// The fan's own offset is part of the geometry, so it belongs in the
+			// key: two cables into the same socket curve differently.
+			key = [patch[0], patch[1], index, count];
+			geometry = geometryCache[key];
+			if(geometry.isNil) {
+				geometry = this.prGeometryFor(patch, index, count, start, finish);
+				// A view that has not been laid out yet answers no position, and
+				// that absence must never be cached: the old path recomputed
+				// everything every frame and so healed itself silently, this one
+				// would keep a hole forever (found by the profile, 2026-07-31).
+				if(geometry[\start].notNil and: { geometry[\finish].notNil }) {
+					geometryCache[key] = geometry;
+				};
 			};
-			distance = this.prDistance(start, finish);
-			segments = max(8, (distance / 12).ceil.asInteger);
-			points = CQInk.cablePoints(start, finish, segments);
-			(src: patch[0], dest: patch[1], weight: patch[2], start: start,
-				finish: finish, points: points, bounds: this.prBoundsOf(points))
+			(src: patch[0], dest: patch[1], weight: patch[2],
+				start: geometry[\start], finish: geometry[\finish],
+				points: geometry[\points], bounds: geometry[\bounds])
 		}
+	}
+
+	prGeometryFor { |patch, index, count, start, finish|
+		var spread, distance, segments, points;
+		spread = grammar.hoverEndpoint == patch[1] and: { count > 1 };
+		if(spread) {
+			finish = finish + Point((index - ((count - 1) * 0.5)) * 5, 0)
+		};
+		distance = this.prDistance(start, finish);
+		segments = max(8, (distance / 12).ceil.asInteger);
+		points = CQInk.cablePoints(start, finish, segments);
+		^(start: start, finish: finish, points: points,
+			bounds: this.prBoundsOf(points))
 	}
 
 	// Hover runs a hit test on every mouse move, and a cable that the pointer is
@@ -324,6 +400,19 @@ CQGuiCableOverlay {
 	prBlitPlanted {
 		if(cacheOk.not) { ^this.prDrawPlanted };
 		if(this.prImageFresh) { ^image.drawAtPoint(Point(0, 0)) };
+		// SOAK-1 finding A, the last term. During a morph a write lands between
+		// the render and the paint every single time, so the image was never
+		// "fresh" and every paint took the direct route — 352 cables inked
+		// inside the paint event, which is the 175 ms path §11 measured and the
+		// reason PANIC could not be reached. **A stale blit beats a frozen
+		// window**: one frame of slightly old cable ink is invisible mid-glide,
+		// and the trailing render still puts the final state on paper. The
+		// direct draw remains for the only case that needs it — no usable image
+		// yet, or one built for a different size.
+		if(image.notNil and: { imageExtent == view.bounds.extent }) {
+			image.drawAtPoint(Point(0, 0));
+			^this.prScheduleRender
+		};
 		this.prDrawPlanted;
 		this.prScheduleRender;
 	}

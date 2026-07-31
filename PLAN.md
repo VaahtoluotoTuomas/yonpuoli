@@ -2200,6 +2200,46 @@ kehys, ~900/s. Kesto osui molemmissa 4,14–4,15 s pyydetystä 4 s:stä.
 **Poistamista ei tarvittu** — käyttäjän esittämä vaihtoehto luopua morphista
 jää käyttämättä, koska korjaus on sama primitiivi joka koodipohjassa jo oli.
 
+**Mutta se ei riittänyt: käyttäjän katselmus 2026-07-31 osoitti jäätymisen
+jatkuvan.** Ilmoitusmäärä laski 55-kertaisesti mitatusti, eikä se ollut
+dominoiva termi. Kolmas arvaus jätettiin tekemättä ja tilalle rakennettiin
+mittari: **`tests/morph_profile_gui.scd` ajaa morphin oikean Qt-GUI:n kanssa ja
+laskee, montako 20 Hz kilpailevaa AppClock-tikkiä ehtii ajoon** — tasan se
+jono, johon PANIC-klikkaus menisi. Tavoitettavuus on siis mitattavissa ilman
+ihmistä, ja se paljasti todellisen syyn:
+
+| vaihe | records | ink | tavoitettavuus (Night näkyvissä) |
+|---|---|---|---|
+| ennen | 122,9 ms | 42,2 ms | **8 %** (5/60 tikkiä) |
+| O(n²) pois | 75,0 ms | 48,5 ms | 12 % |
+| geometriacache | 3,5 ms | 41,3 ms | 37 % |
+| vanhentunut blit + kustannustahdistus | 4,0 ms | 43,2 ms | **67 %** |
+
+Vertailukohta ilman GUI:ta on 80 %, ja Drawer auki (Night piilossa) 72 %.
+Kolme lakia, kaikki nyt `GUI_SPEC` §11:ssä:
+
+1. **Geometria ei ole suure.** Kaapelin käyrä riippuu päätepisteiden
+   sijainneista, ei painosta, joten morph ei saa rakentaa sitä uudelleen.
+   Records-rakennus maksoi enemmän (122,9 ms) kuin koko muste jonka
+   välttämiseksi se on olemassa; siitä osa oli vahinko-O(n²) (`select`
+   `collect`in sisällä), loput 704 päätepistehakua ja 352 bezier-näytteistystä.
+   Nyt geometria on cachessa avaimenaan päätepisteiden sijainnit.
+2. **Vanhentunut blit voittaa jäätyneen ikkunan.** Morphissa kirjoitus osuu
+   aina renderin ja maalauksen väliin, joten kuva ei ollut *koskaan* tuore ja
+   jokainen maalaus piirsi 352 kaapelia suoraan maalaustapahtuman sisällä.
+   Nyt kelvollinen samankokoinen kuva blitataan ja render ajastetaan.
+3. **Virtaa tahdistaa sen oman työn hinta, ei kiinteä taajuus.** 15 Hz olettaa
+   piirron mahtuvan kehykseen; 352 kaapelilla yksi muste on ~41 ms eli 62 %
+   kielisäikeestä. Nyt piirtoon menee enintään yksi siivu kolmesta
+   (`renderDuty`), joten tiheä patch animoituu karkeammin sen sijaan että
+   soitin jäätyisi. Yksittäiset teot (plant, rip, harvest) piirtyvät heti.
+
+Kaksi mittauksen löytämää karikkoa kirjattiin samalla: **ennen layoutia otettua
+sijaintia ei saa cachettaa** (vanha polku korjasi itsensä joka kehyksellä,
+cache jättäisi reiän ikuisesti) ja **yösmoken liikkuneiden päätepisteiden
+assertio on se testi joka pitää tämän rehellisenä** — se kaatui ensimmäisestä
+cache-versiosta ja pakotti avaimeen todelliset sijainnit.
+
 Portit 2026-07-31: `CQ_COMPILE_OK`, **13 681 unit-passia / 0 failurea / 39
 luokkaa**, `CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
 `CQ_GUI_DRAWER_REENTRY_PASSED`, `CQ_GUI_NIGHT_PASSED`, `CQ_GUI_AUDIO_PASSED`,
