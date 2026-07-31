@@ -2303,6 +2303,13 @@ Regressio ajaa guardin **aliaksen kautta** (`CQ.prAudioClockTick`) ja vaatii
 että `Cocoquantus`in kuuntelija kuulee sen. Todennettu molempiin suuntiin:
 ilman korjausta se kaatuu kolmesta assertiosta, korjauksen kanssa se on vihreä.
 
+**Löydökset B ja C hyväksyttiin deterministisessä muodossaan 2026-07-31**
+(checklist SOAK-FIX osat 2 ja 3a): provokaatio yksin sytytti työkalurivin
+`server not responding` -merkin Drawer kiinni, guard ei väittänyt `ok`, ja
+`restart audio` palautti soittimen kokonaan — tulos (a). Auki on enää **osa
+3b**, sama todistus oikeassa lepotilaviassa, joka kulkee SOAK-1:n vaiheen 4
+mukana; vain oikea lepotila tappaa palvelimen ääniketjun.
+
 #### Löydösten B ja C koejärjestys
 
 **B ja C eivät kulje soakin sisällä.** Ne vaativat vastaamattoman palvelimen,

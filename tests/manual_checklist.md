@@ -2133,12 +2133,19 @@ Cocoquantus.audioClockRate;    // -> nil
       niputus) oli oikea muttei ratkaiseva; todellinen syy löytyi vasta kun
       tavoitettavuudesta tehtiin mitattava suure
       (`tests/morph_profile_gui.scd`, 8 % → 67 %).
-- [ ] **SOAK-FIX osa 2 (B, näkyvä) hyväksytty** — kaksi sanamuotoa, sama piste,
-      mahtuu minimiin, katoaa jäljettä
-- [ ] **SOAK-FIX osa 3a (B + C deterministisesti) hyväksytty** — guard ei väitä
-      `ok`, merkki näkyy Drawer kiinni, `restart audio` palauttaa soittimen
+- [x] **SOAK-FIX osa 2 (B, näkyvä) hyväksytty 2026-07-31** — molemmat
+      sanamuodot piirtyvät samalle pisteelle ja merkki katoaa jäljettä.
+      1280 px:n minimiin mahtuminen on smoken assertio, joka mittaa todellisen
+      tekstileveyden.
+- [x] **SOAK-FIX osa 3a (B + C deterministisesti) hyväksytty 2026-07-31.**
+      Provokaatio yksin sytytti työkalurivin `server not responding` -merkin
+      (Drawer kiinni), guard ei väittänyt `ok`, ja `restart audio` palautti
+      soittimen — tulos **(a)**. Hyväksyntä vaati ensin oman korjauksensa:
+      guard julkaisi ilmoituksensa aliasluokalle `CQ`, kun kuuntelijat tilaavat
+      `Cocoquantus`ilta, joten merkki ei syttynyt ennen sitä.
 - [ ] **SOAK-FIX osa 3b (B + C oikeassa lepotilaviassa) hyväksytty** — ajetaan
-      SOAK-1:n vaiheessa 4
+      SOAK-1:n vaiheessa 4. Vain oikea lepotila tappaa ääniketjun, joten 3a ei
+      korvaa tätä.
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>
