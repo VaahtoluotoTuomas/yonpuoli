@@ -1742,7 +1742,59 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    muutoksessa**, koska ne eivät saa erkaantua. Samalla siivotaan SPEC §3:n
    signaalikaavio, joka piirtää yhä `SPACE (FDN reverb, opt.)` -laatikon vaikka
    sama dokumentti sanoo tuotannossa ei olevan sisäänrakennettua kaikua.
-8. **Merge `main`iin ja 1.0-tagi.**
+8. **Soitettavuuskierros: mitä 1.0:n mukana lähtee, ja miltä ensikosketus
+   tuntuu.** Käyttäjän päätös 2026-07-31. Kaksi osaa samalla istumalla, koska
+   ne ovat sama kysymys eri etäisyydeltä.
+
+   **(a) Mitä paketissa on.** Presettejä on kuusi (`\empty`, `\classic`,
+   `\selfNoise`, `\quantumDrone`, `\organMode`, `\mayhem`), mutta `\empty` on
+   tyhjä ja `\mayhem`in params-osa on tyhjä — se täyttää 352 solua muttei sytytä
+   yhtään äänilähdettä — joten soitettavia aloituspaikkoja on neljä.
+   **Snapshotteja lähtee mukana tasan yksi**: `.gitignore` päästää läpi vain
+   `snapshots/example.cqsnap.scd` ja sulkee pois kaikki henkilökohtaiset
+   (`/snapshots/*.cqsnap.scd`, `/presets/*.cqsnap.scd`). Se rajaus on oikein
+   eikä sitä pidä löysätä — mutta yksi esimerkki on todennäköisesti liian vähän
+   siihen, että ensimmäinen käyttäjä löytäisi soittimen. Päätettävä montako ja
+   millaisia luodaan, ja mitä ne opettavat: preset on resepti koodissa,
+   snapshot on tila levyllä (GUI_SPEC §8), ja ne vastaavat eri kysymykseen.
+
+   **(b) Ensikosketuksen oletukset.** Kytketyn johdon lähtöpaino on
+   `CQBananaGrammar`in `handStrength` = 0.5; nuppien oletukset ovat `CQSpec`in
+   taulukossa; Workshopin aloitustila on omansa. Muutokset menevät SPEC §5:n
+   taulukkoon ja `CQSpec`iin **samassa muutoksessa**, koska ne eivät saa
+   erkaantua.
+
+   **Käyttäjän havainto, joka kuuluu tähän kierrokseen (2026-07-31):** *"kun
+   patchaan tai teen ison shaken, en välttämättä kuule eroa, enkä hahmota mistä
+   se johtuu."* SPEC kuvaa jo neljä mekanismia, joista **jokainen tuottaisi
+   tasan tuon kokemuksen**. Nämä ovat hypoteeseja, eivät diagnoosi:
+   1. **Tiheyskyllästyminen.** Jatkuvat kohteet summaavat, ja summa on
+      katkaistu (`(1 + sum)²`, gainit katossa 2/2.5, SPEC §5). Kun kohteeseen on
+      jo kytketty monta johtoa, seuraava ei mahdu mihinkään. Patchaus on
+      kuuluvinta harvassa matriisissa ja kuuroa täydessä.
+   2. **Schmitt-kynnykset.** Gate/trig-kohteet pitävät Schmitt-semantiikkansa
+      (SPEC §5), joten kynnyksen alle jäävä paino ei tee **mitään** — ei
+      hiljaista vaan olematonta. Yksittäinen johto voi olla äänetön sääntöjen
+      mukaan, eikä mikään pinnalla kerro sitä.
+   3. **Satunnainen tiheä ei eroa satunnaisesta tiheästä.** `shake` **korvaa**
+      patchin eikä lisää siihen (SPEC §5), joten iso shake vaihtaa yhden
+      satunnaisen tiheän kentän toiseen. Kontrasti asuu harvuudessa ja
+      valinnassa, ei uudelleenarvonnassa: mitä isompi shake, sitä vähemmän kaksi
+      peräkkäistä eroavat *luonteeltaan*, vaikka joka solu vaihtui.
+   4. **Master-ketju tasaa.** tanh + Limiter(0.89) kääntää lisätyn energian
+      sointiväriksi eikä äänekkyydeksi, joten ero on olemassa muttei siellä
+      mistä korva sitä ensin etsii.
+
+   **Tämä mitataan ennen kuin siitä keskustellaan makuasiana, ja se on
+   mitattavissa ilman korvia:** NRT-renderöinti jossa sama patch erotetaan
+   yhdellä johdolla ja ero mitataan (RMS ja spektripainopiste) **olemassa olevan
+   tiheyden funktiona**, sekä kahden peräkkäisen ison shaken ero samalla
+   mitalla. Jos hypoteesi 1 pitää, käyrä romahtaa tiheyden kasvaessa — silloin
+   kyse ei ole viasta vaan siitä että soittimen herkin alue on harvempi kuin
+   `\mayhem`, mikä on itsessään dokumentoitava ja mahdollisesti syy katsoa
+   uudelleen johdon oletuspainoa ja `patchDepth`in roolia. Mittaus on kierroksen
+   **ensimmäinen** teko, koska sen tulos ohjaa sekä (a):n että (b):n.
+9. **Merge `main`iin ja 1.0-tagi.**
 
 ### DAW-sillan keino: ReaRoute, ei VB-CABLE
 
