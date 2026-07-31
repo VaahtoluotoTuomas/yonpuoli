@@ -2278,6 +2278,31 @@ tapettu ikkuna, sähkökatko — viimeisin yhteenveto on levyllä ja tarkka on y
 komennon päässä. Todennettu palauttamalla yön kadonnut yhteenveto sen omasta
 CSV:stä (6,61 h / 1189 näytettä / 0 epäonnistumista).
 
+#### Löydös B:n jälkinäytös — aliaksen kadonnut ilmoitus (korjattu 2026-07-31)
+
+Käyttäjän katselmus 3a:ssa: guard tulostaa varoituksensa, malli sanoo
+`\serverDown`, `audioClockRate` on nil — ja **työkalurivin merkki ei syty**.
+Kaksi hypoteesia kaatui mittauksessa (pinta toimii, ilmoitusketju toimii
+tulkista ajettuna), kolmas löytyi kuuntelijaprobella: `Cocoquantus.changed`ille
+rekisteröity probe ei kuullut mitään, vaikka julkaisuhaara ajettiin.
+
+Syy: **`CQ : Cocoquantus {}` on aliasluokka.** `CQ.boot`in kautta kulkevissa
+luokkametodeissa vastaanottaja on `CQ`, joten `this.changed(...)` julkaisi
+`CQ`:lle samalla kun jokainen kuuntelija tilaa `Cocoquantus`ilta. Ilmoitus
+katosi kirjaimellisesti tyhjään.
+
+**Miksi tämä läpäisi AUD-W:n osan 1:** checklist ajoi guardin komennolla
+`Cocoquantus.prStartAudioClockWatch(...)`, siis *toisella nimellä*, ja silloin
+julkaisu osui oikeaan objektiin. **Testi oli samaa mieltä koodin kanssa vain
+koska se kirjoitti saman nimen.** Laki: *luokkatason ilmoituksen on nimettävä
+luokka, ei koskaan `this`.* Nyt on yksi ovi (`Cocoquantus.prPublish`), ja sama
+korjaus tehtiin `CmdPeriod`-rekisteröinneille, joissa aliaksen kautta bootattu
+ja perusnimellä vapautettu sessio olisi jättänyt rekisteröinnin roikkumaan.
+
+Regressio ajaa guardin **aliaksen kautta** (`CQ.prAudioClockTick`) ja vaatii
+että `Cocoquantus`in kuuntelija kuulee sen. Todennettu molempiin suuntiin:
+ilman korjausta se kaatuu kolmesta assertiosta, korjauksen kanssa se on vihreä.
+
 #### Löydösten B ja C koejärjestys
 
 **B ja C eivät kulje soakin sisällä.** Ne vaativat vastaamattoman palvelimen,

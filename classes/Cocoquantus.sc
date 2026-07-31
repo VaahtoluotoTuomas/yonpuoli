@@ -394,7 +394,7 @@ Cocoquantus {
 		sessionGeneration = sessionGeneration + 1; // invalidate every pending callback now
 		generation = sessionGeneration;
 		lifecycleState = \stopping;
-		CmdPeriod.remove(this);
+		CmdPeriod.remove(Cocoquantus);   // never `this`: see prPublish's law
 		this.prUnwatchServer;
 		this.prRemoveServerBootAction;
 		graph = nil;
@@ -737,7 +737,10 @@ Cocoquantus {
 			// server/graph/state/matrix stage has completed and fade-in is armed.
 			beforeGui.value(this);
 			if(sessionConfig[\headless] != true) { this.gui };
-			CmdPeriod.add(this);
+			// Registered under the class, not the receiver: a session booted
+			// through the CQ alias and freed through Cocoquantus (or the other
+			// way round) would otherwise leave this registration behind.
+			CmdPeriod.add(Cocoquantus);
 			"Cocoquantus: ready — output fading in over 2 s.".postln;
 			completed = true;
 		} { |err|
@@ -766,7 +769,7 @@ Cocoquantus {
 		sessionGeneration = sessionGeneration + 1;
 		lifecycleState = \failed;
 		lifecycleError = err.errorString;
-		CmdPeriod.remove(this);
+		CmdPeriod.remove(Cocoquantus);   // never `this`: see prPublish's law
 		this.prUnwatchServer;
 		guiPanel !? { guiPanel.free };
 		guiPanel = nil;
@@ -1114,7 +1117,7 @@ Cocoquantus {
 		audioClockState = \ok;
 		// The same law now covers both marks: whatever was published must be
 		// retracted, or the toolbar keeps claiming a fault the model dropped.
-		if(wasAlert != \none) { this.changed(\audioClock, \none) };
+		if(wasAlert != \none) { this.prPublish(\audioClock, \none) };
 		^this
 	}
 
@@ -1144,9 +1147,23 @@ Cocoquantus {
 				},
 				{ "Cocoquantus: audio recovered.".postln }
 			);
-			this.changed(\audioClock, this.audioClockAlert);
+			this.prPublish(\audioClock, this.audioClockAlert);
 		};
 		^next
+	}
+
+	// `CQ : Cocoquantus {}` is an alias subclass, so inside any class method
+	// reached through `CQ.boot` the receiver is CQ — and `this.changed(...)`
+	// then publishes on CQ while every listener subscribes to Cocoquantus. The
+	// notification simply vanished (user review 2026-07-31: the guard printed
+	// its warning, the model said \serverDown, and the toolbar never heard).
+	// AUD-W's part 1 had passed because the checklist drove it through
+	// `Cocoquantus.prStartAudioClockWatch`, i.e. by the other name.
+	//
+	// **A class-side notification must name the class, never `this`.** One door
+	// so it cannot drift back.
+	*prPublish { |what, value|
+		Cocoquantus.changed(what, value);
 	}
 
 	// SOAK-1 finding B: a stale reading is not a healthy one. A double that
@@ -1181,7 +1198,7 @@ Cocoquantus {
 		sessionGeneration = sessionGeneration + 1;
 		lifecycleState = \failed;
 		lifecycleError = "scsynth quit unexpectedly";
-		CmdPeriod.remove(this);
+		CmdPeriod.remove(Cocoquantus);   // never `this`: see prPublish's law
 		this.prUnwatchServer;
 		graph !? { graph.markKilled };
 		guiPanel !? { guiPanel.free };

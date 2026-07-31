@@ -273,6 +273,35 @@ CQAudioClockWatchTest : UnitTest {
 		Cocoquantus.prStopAudioClockWatch;
 	}
 
+	// User review 2026-07-31: the guard printed its warning, the model said
+	// \serverDown, and the toolbar mark never appeared. `CQ : Cocoquantus {}` is
+	// an alias subclass, so a session booted through `CQ.boot` runs every class
+	// method with CQ as the receiver — and `this.changed(...)` then published on
+	// CQ while every listener subscribes to Cocoquantus. AUD-W's part 1 had
+	// passed because the checklist drove the guard through
+	// `Cocoquantus.prStartAudioClockWatch`, i.e. by the other name: **the test
+	// agreed with the code only because it used the same spelling the code did.**
+	// This one deliberately uses the alias, which is what a player uses.
+	test_theAliasPublishesWhereListenersActuallyListen {
+		var server = CQTestServer();
+		var heard = List.new;
+		var listener = SimpleController(Cocoquantus);
+		listener.put(\audioClock, { |obj, what, alert| heard.add(alert) });
+		CQ.prStartAudioClockWatch(server, CQ.sessionGeneration, 48000, 0);
+		server.unresponsive = true;
+		2.do { |i| CQ.prAudioClockTick(server, i * 2.5) };
+		this.assertEquals(Cocoquantus.audioClockAlert, \serverDown,
+			"precondition: the model reached the fault through the alias");
+		this.assertEquals(heard.size, 1,
+			"a guard driven through CQ still announces where CQGui listens");
+		this.assertEquals(heard[0], \serverDown, "and by name");
+		server.unresponsive = false;
+		CQ.prAudioClockTick(server, 10);
+		this.assertEquals(heard.last, \none, "its retraction arrives there too");
+		listener.remove;
+		CQ.prStopAudioClockWatch;
+	}
+
 	test_stoppingTheGuardRetractsAServerDownToo {
 		var server = CQTestServer();
 		var events = List.new;

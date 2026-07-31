@@ -2085,8 +2085,15 @@ SOAK-1:n vaiheen 4 mukana.
 // ensin, muuten seuraava /status-vastaus nollaa lipun 0,7 sekunnissa.
 CQ.boot;
 CQ.patchPreset(\selfNoise);
+// Ota kuori talteen ENNEN provokaatiota: `CQ.gui` on isBooted-vartioitu ja
+// isBooted vaatii vastaavan palvelimen, joten provokaation aikana se palauttaa
+// nil. Se ei ole vika vaan portin ehto -- mutta silloin tilaa ei voi lukea
+// kuin talteen otetun viitteen kautta.
+~sh = CQ.gui.shell;
 CQ.server.stopAliveThread;
 CQ.server.statusWatcher.unresponsive = true;
+// ~5 s odotus, sitten:
+~sh.audioAlert;                // -> \serverDown
 //    Odota ~5 s. Nyt pitaa olla totta:
 //      - tyokalurivilla "server not responding · restart audio" (Drawer KIINNI)
 //      - Audio-sivu sanoo saman
