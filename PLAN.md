@@ -1712,9 +1712,37 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
      `CQSpellbook`in rajaton päiväkirja. Katto (20 000 riviä) on toteutettu,
      portit vihreät ja **katto mitattu pitäväksi** — ks. "Kriteeri 5" alla.
      Fyysinen hyväksyntä ja kriteerin sulkeminen soakin osana on yhä auki.
-   - Soakia ei siis ole vielä hyväksytty kokonaisuutena, ja se on viimeinen
-     este ennen kohtaa 4 (merge `main`iin ja 1.0-tagi).
-4. **Merge `main`iin ja 1.0-tagi.**
+   - Soakia ei siis ole vielä hyväksytty kokonaisuutena. **Ajo 3 tarvitsee yhden
+     protokollamuutoksen ennen käynnistystä:** aktiviteettisilmukka tekee nyt
+     yhden tiheän committed-teon joka askeleella (`CQ.shake(0.3, density: 1.0)`),
+     jotta päiväkirjan katto täyttyy ~57 minuutissa. Ilman sitä kuuden tunnin yö
+     mittaisi yhä täyttyvää päiväkirjaa ja kriteeri 5 näyttäisi saman rampin kuin
+     ennen korjausta.
+4. **Nimi ja soittimen identiteetti päätetään.** **Käyttäjän päätös 2026-07-31:
+   tämä ei ole enää "myöhemmin" vaan 1.0:n ehto.** Yksi päätös, ei kolme:
+   tuotenimi, sisäosien nimien (a)/(b)-valinta ja julkaisuradan
+   törmäystarkistus ratkaistaan yhdessä — ks. "1.0-tagin rajaus ja avoin
+   nimipäätös" sekä "Myöhemmin"-osion identiteettikohta. Vaikuttaa `README.md`:hen,
+   `SOURCES.md`:hen, GUI:n otsikoihin, tagin nimeen ja mahdollisesti
+   `CQ*`-nimiavaruuteen, joten se on kohtien 5–6 edellytys eikä niiden rinnalla.
+5. **Repon yksityisyysauditointi.** Ennen kuin repo voi olla julkinen, käydään
+   läpi ettei se sisällä henkilökohtaista tai koneriippuvaista tietoa:
+   absoluuttiset polut, laite- ja käyttäjänimet, sähköpostit, omat snapshotit,
+   `samples/`in sisältö, `tests/tmp/`in jäämät sekä `config.scd`:n ja
+   `tests/dev_paths.scd`:n gitignore-kattavuus. **Koko historia, ei vain
+   työpuu** — gitignore ei poista sitä mikä on jo committoitu.
+6. **`README.md` päivitetään.** Nykyinen teksti on Nocturnea ja Night-only-
+   leikkausta edeltävä: se kuvaa soitinta jossa on kaksi skiniä ja Space-kaiku.
+   Odottaa kohdan 4 nimipäätöstä, koska nimi on README:n ensimmäinen rivi.
+7. **16n:n kartta päivitetään reverbin jäljiltä.** `F14 / CC 45` kantoi
+   `spaceMix`ia; Space-FDN poistui tuotannosta 2026-07-28:n kuuntelupäätöksellä
+   (SPEC §11 kohta 6) ja slotti on ollut siitä asti `unassigned (reserved)`
+   (SPEC §6.1). Päätettävä mitä se kantaa — vai jääkö varatuksi tarkoituksella —
+   ja päivitettävä SPEC §6.1:n taulukko ja `CQSpec.map16n` **samassa
+   muutoksessa**, koska ne eivät saa erkaantua. Samalla siivotaan SPEC §3:n
+   signaalikaavio, joka piirtää yhä `SPACE (FDN reverb, opt.)` -laatikon vaikka
+   sama dokumentti sanoo tuotannossa ei olevan sisäänrakennettua kaikua.
+8. **Merge `main`iin ja 1.0-tagi.**
 
 ### DAW-sillan keino: ReaRoute, ei VB-CABLE
 
@@ -2473,8 +2501,11 @@ kuollutta ääniketjua**; sen todistaa vain oikea lepotila.
   ei kolmena erillisenä.
 
 ## Myöhemmin, ei tämän vaiheen scopea
-- **Identiteetti ja sisäosien nimet** (käyttäjän havainto 2026-07-28, N8:n
-  katselmoinnissa). Nightissä Cocoquantus-sukulinja näkyy *muotona* —
+- **Identiteetti ja sisäosien nimet — SIIRTYI 1.0:n ehdoksi 2026-07-31**
+  (käyttäjän päätös; ks. "Tie 1.0:aan" kohta 4). Alla oleva analyysi pätee
+  sellaisenaan, mutta se ei ole enää myöhempää työtä. Alkuperäinen havainto on
+  käyttäjän 2026-07-28 N8:n katselmoinnissa tekemä.
+  Nightissä Cocoquantus-sukulinja näkyy *muotona* —
   castlejen anatomiana ja arkkitehtuurina — mutta se on jo selvästi eri soitin
   eikä esikuvaa nimetä eksplisiittisesti. Drawerissa esikuva sen sijaan
   **nimetään suoraan**: `quantussy`, `coco 1`, `coco 2`, `spesal`, `balcium`.

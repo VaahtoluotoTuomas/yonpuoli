@@ -415,10 +415,22 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   as a static mark on the toolbar's drawer button — the route to the only remedy.
   Two review defects are recorded there as laws: **a visible state that can be
   entered but not left is a defect** (the stop path cleared danger silently), and
-  a row that already overflows must be split rather than shortened. **Step 3, the
-  long hardware/resource soak, is next, and it carries AUD-W's part 2** — but
-  `tests/soak_monitor.ps1` holds the system awake, so the sleep/wake provocation
-  needs its own window after the monitor stops.
+  a row that already overflows must be split rather than shortened. **AUD-W's
+  part 2 was accepted 2026-07-31** in the soak's own phase 4.
+- **Step 3, the long soak, is where the road to 1.0 stands.** Two runs are done;
+  run 2 closed eight of nine criteria. Criterion 5 (sclang's memory ramp) is
+  explained, fixed and measured — `CQSpellbook`'s uncapped journal, now bounded at
+  `lineLimit` = 20 000 lines — but **closing the criterion is the soak's act, not
+  the probe's**: run 3 on the fixed code is the measurement. It needs the protocol
+  change already written into `tests/manual_checklist.md`: the activity loop now
+  does one dense committed act per step so the cap is reached in ~57 minutes.
+  Without it a six-hour night measures a journal still filling and criterion 5
+  shows the same ramp as before the fix. **The user decided 2026-07-31 that four
+  more items are 1.0 conditions**, so the road is now eight steps: name/identity
+  (which gates README and the tag's own name), a privacy audit of the repo
+  including its history, the README rewrite, and the 16n map after reverb's
+  retirement left `F14 / CC 45` (`spaceMix`) unassigned. See PLAN.md → "Tie
+  1.0:aan".
 - `Cocoquantus.sc` is currently about 645 lines after the lifecycle work. The user
   explicitly accepts that size for now; split it when ownership becomes clearer or
   further growth would make the class harder to maintain, not as a risky handoff-only
@@ -461,9 +473,9 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   silently, with no error. Measured on ReaRoute 2026-07-30: registry and REAPER were
   both correct, a standalone sclang saw 20 in / 27 out, the IDE session saw exactly
   one device fewer per direction. Fix: IDE → Language → Reboot Interpreter. The
-  Audio page's `restart audio to rescan` note therefore over-promises for a
-  just-installed driver (`CQGuiAudioSetup.deviceListNote`, `GUI_SPEC.md` §Audio) —
-  known text debt, recorded in PLAN.md.
+  Audio page says so itself since the AUD-W gate — `scanned at boot · restart audio
+  to rescan · new driver: restart sclang` (`CQGuiAudioSetup.deviceListNote`,
+  `GUI_SPEC.md` §Audio, test included); the old text debt is paid.
 - NRT scripts: remember `Score` needs the SynthDefs written into the score
   (`d_recv`) — they run in a fresh scsynth.
 - `Collection:includes` compares identity (`===`), not equality: membership

@@ -1876,6 +1876,19 @@ PowerShell-ikkunaansa** (ei editorin sisään, jotta se elää editorin yli).
     CQ.snap(\soak_b);
     while({ ~soakStop.not }, {
         step = step + 1;
+        // SOAK-1 kriteeri 5, lisatty ajosta 3 alkaen 2026-07-31. Yksi TIHEA
+        // committed teko joka askeleella: density on todennakoisyys per solu,
+        // joten 1.0 kirjoittaa koko matriisin ja tuottaa ~352 paivakirjariviä.
+        // CQSpellbookin katto on 20 000 rivia, joten vanha ~8 minuutin tahti
+        // olisi tayttanyt sen vasta ~7,6 tunnin kohdalla: kuuden tunnin yo
+        // mittaisi yha tayttyvaa paivakirjaa ja kriteeri 5 nayttaisi saman
+        // rampin kuin ennen korjausta. RAJA TODISTETAAN YLITTAMALLA SE. Talla
+        // tahdilla katto tulee tayteen noin 57 minuutissa, eli tasan sen
+        // ensimmaisen tunnin aikana jonka kriteeri 5 muutenkin jattaa pois.
+        // Tiheys ja aani sailyvat: shake kirjoittaa jokaiseen soluun painon,
+        // toisin kuin presettien vuorottelu joka pudottaisi puolet ajasta
+        // matriisin harvaksi ja muuttaisi CPU-perustason.
+        CQ.shake(0.3, density: 1.0);
         switch(step % 8,
             1, { CQ.set(\coco1Speed, rrand(6000, 30000)) },
             2, { CQ.set(\coco2Speed, rrand(6000, 30000)) },
@@ -1983,7 +1996,11 @@ sammuva danger on yhtä hyväksyttävä tulos kuin täysi hiljaisuus; valhe ei o
 4. Server avg CPU alle SPEC §9:n 25 % koko ajon **eikä** nouseva trendi.
 5. scsynthin ja sclangin working set tasaantuu ensimmäisen tunnin jälkeen:
    viimeisen tunnin keskiarvo ei ylitä toisen tunnin keskiarvoa yli 5 %:lla
-   eikä käyrä ole monotoninen ramppi.
+   eikä käyrä ole monotoninen ramppi. **Ajosta 3 alkaen** aktiviteettisilmukka
+   tekee yhden tiheän committed-teon joka askeleella, jotta `CQSpellbook`in
+   20 000 rivin katto täyttyy noin **57 minuutissa**; ilman sitä mitattaisiin
+   yhä täyttyvää päiväkirjaa eikä rajaa, ja kriteeri näyttäisi saman rampin
+   kuin ennen korjausta (ks. PLAN.md → "Kriteeri 5").
 6. Handlet ja säikeet tasaisia ensimmäisen tunnin jälkeen — vuoto näkyy suorana
    nousevana viivana.
 7. Synth-määrä palaa lepotasolleen; synthit eivät kerry.
