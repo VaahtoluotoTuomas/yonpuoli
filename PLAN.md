@@ -2262,14 +2262,35 @@ luokkaa**, `CQ_SAFETY_PASSED`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
 DSP:hen ei koskettu. **Fyysinen hyväksyntä on auki** — checklist-lohko
 `SOAK-FIX`, jonka osa 3 vaatii uuden lepotilaprovokaation.
 
-#### Työkaluvelka — `soak_monitor.ps1` voi hukata oman yhteenvetonsa
+#### Työkaluvelka — `soak_monitor.ps1` voi hukata oman yhteenvetonsa (korjattu)
 
 Ctrl+C `Start-Sleep`in aikana ohittaa skriptin `finally`-lohkon, joten
 `CQ_SOAK_SUMMARY` jäi tulostumatta yön ajosta. CSV oli tallessa ja luettiin
 käsin, mutta **checklist käskee raportoimaan juuri sen yhteenvedon**. Sama
 laji kuin `run_all.scd`:n vale-marker: portti joka voi hukata todisteensa.
-Korjaus: yhteenveto on saatava olemassa olevasta CSV:stä jälkikäteen, eikä
-sen saa riippua siitä miten ajo päättyi.
+
+**Korjattu 2026-07-31, eikä ovelammalla trapilla vaan lakina: yhteenveto
+lasketaan todisteesta, ei muistista.** Se johdetaan aina CSV:stä, kirjoitetaan
+levylle `soak-<aikaleima>-summary.txt` 15 näytteen välein ja on toistettavissa
+jälkikäteen mistä tahansa ajosta:
+`soak_monitor.ps1 -SummarizeCsv <polku>`. Päättyipä ajo miten tahansa — Ctrl+C,
+tapettu ikkuna, sähkökatko — viimeisin yhteenveto on levyllä ja tarkka on yhden
+komennon päässä. Todennettu palauttamalla yön kadonnut yhteenveto sen omasta
+CSV:stä (6,61 h / 1189 näytettä / 0 epäonnistumista).
+
+#### Löydösten B ja C koejärjestys
+
+**B ja C eivät kulje soakin sisällä.** Ne vaativat vastaamattoman palvelimen,
+eikä sellaista voi provosoida monitorin käydessä, koska monitori pitää koneen
+hereillä juuri estääkseen sen. Ne ajetaan SOAK-1:n **vaiheessa 4**, monitorin
+pysäytyksen jälkeen — sama teko kuin `SOAK-FIX` osa 3b ja AUD-W osa 2.
+
+Niille on nyt myös **deterministinen esikoe** (`SOAK-FIX` osa 3a), joka ei
+vaadi lepotilaa: `stopAliveThread` + `statusWatcher.unresponsive = true` kertoo
+kielelle ettei palvelin vastaa, vaikka prosessi elää ja pitää porttia — tasan
+se muoto jossa vika mitattiin. Se todistaa elinkaari- ja pintapolun (guardin
+`\stale`, työkalurivin merkki, restartin oikean kohteen ja paluun), **muttei
+kuollutta ääniketjua**; sen todistaa vain oikea lepotila.
 
 ### 1.0-tagin rajaus ja avoin nimipäätös
 

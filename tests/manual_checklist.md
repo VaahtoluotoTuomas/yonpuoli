@@ -1791,6 +1791,14 @@ korvaa tätä — MOR-1 löytyi juuri soakista ja rikkoi turvainvarianttia #3.
 split-WASAPI-pohja. USB-äänilaite + lepotila on myös tasan se ilmiö jota AUD-W
 vartioi, joten vaihe 4 on tällä kokoonpanolla mielekkäin.
 
+**Mitä ajetaan missäkin.** Vaiheet 1–3 ovat itse soak (kriteerit 1–8).
+**Löydökset B ja C eivät kulje soakin sisällä**: ne vaativat vastaamattoman
+palvelimen, eikä sellaista voi provosoida monitorin käydessä, koska monitori
+pitää koneen hereillä. Ne ajetaan vaiheessa 4, monitorin pysäytyksen jälkeen,
+samana yönä mutta eri ikkunassa — vaihe 4 ja `SOAK-FIX` osa 3b ovat sama teko.
+`SOAK-FIX` osa 3a on niiden deterministinen esikoe, jonka voi ajaa milloin
+tahansa ennen soakia, ja osa 2 on pelkkä silmämääräinen merkkitarkistus.
+
 **Esiehdot — täytettävä ennen aloitusta:**
 
 - **Verkkovirta, ei akku.** 10 h ei mene akulla, ja akku noin kaksinkertaisti
@@ -2065,19 +2073,51 @@ CQ.gui.shell.audioAlert = \none;
 //    Merkin pitaa kadota jaljettomasti.
 ```
 
+**Osa 3 on kaksi eri koetta, ja ne todistavat eri asiat.** 3a on
+deterministinen ja ajettavissa milloin tahansa; 3b on fyysinen ja kulkee
+SOAK-1:n vaiheen 4 mukana.
+
 ```supercollider
-// SOAK-FIX osa 3 (löydökset B ja C oikeassa viassa) -- vaatii uuden
-// lepotilaprovokaation, koska juuri se tappoi palvelimen ääniketjun.
-// Soitin pystyyn, Start -> Power -> Sleep, ~10 min, herata.
+// SOAK-FIX osa 3a (B ja C deterministisesti, EI vaadi lepotilaa).
+// Kerrotaan kielelle etta palvelin ei vastaa, vaikka se oikeasti soi: se on
+// tasan sama polku kuin 2026-07-31 mitattu vika -- prosessi elossa, portti
+// varattuna, kieli pitaa sita vastaamattomana. Alive-thread on pysaytettava
+// ensin, muuten seuraava /status-vastaus nollaa lipun 0,7 sekunnissa.
+CQ.boot;
+CQ.patchPreset(\selfNoise);
+CQ.server.stopAliveThread;
+CQ.server.statusWatcher.unresponsive = true;
+//    Odota ~5 s. Nyt pitaa olla totta:
+//      - tyokalurivilla "server not responding · restart audio" (Drawer KIINNI)
+//      - Audio-sivu sanoo saman
+Cocoquantus.audioClockState;   // -> \stale, EI \ok
+Cocoquantus.audioClockAlert;   // -> \serverDown
+Cocoquantus.audioClockRate;    // -> nil, ei jaatynytta lukemaa
+CQ.panic; CQ.resume;           // pitaa vastata
+
+// Nyt C: Audio-sivu -> restart audio. Odotus: pysaytys osuu OIKEAAN
+// prosessiin (portin pitajaan), portti vapautuu ja soitin palaa itsestaan.
+//   (a) GUI palasi ja aani toimii            -> C korjattu
+//   (b) restart kertoi kuka porttia pitaa    -> rehellinen kieltaytyminen, kerro teksti
+//   (c) GUI katosi eika palannut             -> VIKA, kerro post-ikkuna
+// Jos jaat ilman kayttoliittymaa, toipuminen on: PowerShellissa
+//   Stop-Process -Name scsynth -Force
+// ja sitten IDE:ssa CQ.boot.
+//
+// Jos et halua restartata, palauta tila nain:
+// CQ.server.statusWatcher.unresponsive = false; CQ.server.startAliveThread;
+```
+
+```supercollider
+// SOAK-FIX osa 3b (B ja C oikeassa fyysisessa viassa) -- SOAK-1:n vaihe 4.
+// Vain lepotila tappaa palvelimen aaniketjun oikeasti, joten tama on ainoa
+// koe joka todistaa guardin lukeman kuolleesta kellosta.
+// Soitin pystyyn, monitori PYSAYTETTY, Start -> Power -> Sleep, ~10 min, herata.
 Cocoquantus.audioClockState;   // -> \stale jos palvelin ei vastaa (EI \ok)
 Cocoquantus.audioClockAlert;   // -> \serverDown
-Cocoquantus.audioClockRate;    // -> nil, EI eilista jaatynytta lukemaa
-//    Tyokalurivilla pitaa lukea "server not responding · restart audio"
-//    ILMAN etta Drawer on auki.
-//    Sitten Audio-sivu -> restart audio. Kerro kumpi tapahtui:
-//      (a) soitin palasi ja aani toimii            -> C korjattu
-//      (b) restart kertoi mika porttia pitaa       -> C:n rehellinen kieltaytyminen
-//      (c) GUI katosi eika palannut                -> VIKA, kerro post-ikkuna
+Cocoquantus.audioClockRate;    // -> nil
+//    Kerro myos: toipuiko soitin itsestaan (silloin merkki katoaa itsestaan),
+//    ja jos ei, palauttiko "restart audio" sen.
 ```
 
 - [x] **SOAK-FIX osa 1 (A) hyväksytty 2026-07-31** — morph ei enää jäädytä
@@ -2088,8 +2128,10 @@ Cocoquantus.audioClockRate;    // -> nil, EI eilista jaatynytta lukemaa
       (`tests/morph_profile_gui.scd`, 8 % → 67 %).
 - [ ] **SOAK-FIX osa 2 (B, näkyvä) hyväksytty** — kaksi sanamuotoa, sama piste,
       mahtuu minimiin, katoaa jäljettä
-- [ ] **SOAK-FIX osa 3 (B + C oikeassa viassa) hyväksytty** — guard ei väitä
+- [ ] **SOAK-FIX osa 3a (B + C deterministisesti) hyväksytty** — guard ei väitä
       `ok`, merkki näkyy Drawer kiinni, `restart audio` palauttaa soittimen
+- [ ] **SOAK-FIX osa 3b (B + C oikeassa lepotilaviassa) hyväksytty** — ajetaan
+      SOAK-1:n vaiheessa 4
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>

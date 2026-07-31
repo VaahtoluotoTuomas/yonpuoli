@@ -15,8 +15,12 @@
 #   powershell -NoProfile -ExecutionPolicy Bypass -File tests/soak_monitor.ps1
 #   powershell -NoProfile -ExecutionPolicy Bypass -File tests/soak_monitor.ps1 -Hours 10 -IntervalSeconds 20
 #
+# Print the summary of a finished (or interrupted) run without measuring:
+#   powershell -NoProfile -ExecutionPolicy Bypass -File tests/soak_monitor.ps1 -SummarizeCsv tests/tmp/soak/soak-YYYYMMDD-HHMMSS.csv
+#
 # Stop with Ctrl+C; the CSV is flushed every sample, so an interrupted run keeps
-# everything it measured. Output lands in tests/tmp/soak/ (gitignored).
+# everything it measured, and a summary is rewritten beside it every 15 samples.
+# Output lands in tests/tmp/soak/ (gitignored).
 
 [CmdletBinding()]
 param(
@@ -28,10 +32,96 @@ param(
     # the same 0.8..1.2 ratio bounds; keep them identical on purpose.
     [double] $ExpectedSampleRate = 48000,
     [double] $ClockRatioMin = 0.8,
-    [double] $ClockRatioMax = 1.2
+    [double] $ClockRatioMax = 1.2,
+    # Print the summary of an existing run and exit. Measures nothing, samples
+    # nothing, holds nothing awake -- it only reads the evidence.
+    [string] $SummarizeCsv = ''
 )
 
 $ErrorActionPreference = 'Stop'
+
+# ---------- summary ----------
+#
+# SOAK-1 recorded this as tooling debt on 2026-07-31: the summary lived in a
+# `finally` block, and Ctrl+C during Start-Sleep skips it, so the overnight run
+# lost the very block the checklist tells the user to report. The CSV survived,
+# because it is flushed every sample.
+#
+# The fix is not a cleverer trap. **The summary is computed from the evidence,
+# never from memory**: it is derived from the CSV, written to disk beside it
+# every few minutes, and reproducible afterwards from any past run with
+# -SummarizeCsv. However a run ends -- Ctrl+C, a killed window, a power loss --
+# the last written summary is on disk and an exact one is one command away.
+
+function Get-SoakStats([object[]] $rows) {
+    $stats = @{
+        Samples = 0; Failures = 0; ClockBad = 0; PidChanges = 0
+        MinSr = [double]::PositiveInfinity; MaxSr = 0.0
+        MaxScsynthWs = 0.0; MaxSclangWs = 0.0
+        First = ''; Last = ''; ElapsedH = 0.0
+    }
+    $firstPid = $null
+    foreach ($r in $rows) {
+        $stats.Samples++
+        if ($stats.First -eq '') { $stats.First = $r.timestamp }
+        $stats.Last = $r.timestamp
+        if ($r.elapsed_s -ne '') {
+            $stats.ElapsedH = [math]::Round([double]$r.elapsed_s / 3600, 2)
+        }
+        if ($r.reply_ok -eq '0') { $stats.Failures++ }
+        if ($r.clock_ok -eq '0') { $stats.ClockBad++ }
+        if ($r.scsynth_pid -ne '') {
+            if ($null -eq $firstPid) {
+                $firstPid = $r.scsynth_pid
+            } elseif ($r.scsynth_pid -ne $firstPid) {
+                $stats.PidChanges++
+                $firstPid = $r.scsynth_pid
+            }
+        }
+        if ($r.actual_sr -ne '') {
+            $sr = [double]$r.actual_sr
+            if ($sr -lt $stats.MinSr) { $stats.MinSr = $sr }
+            if ($sr -gt $stats.MaxSr) { $stats.MaxSr = $sr }
+        }
+        if ($r.scsynth_ws_mb -ne '' -and [double]$r.scsynth_ws_mb -gt $stats.MaxScsynthWs) {
+            $stats.MaxScsynthWs = [double]$r.scsynth_ws_mb
+        }
+        if ($r.sclang_ws_mb -ne '' -and [double]$r.sclang_ws_mb -gt $stats.MaxSclangWs) {
+            $stats.MaxSclangWs = [double]$r.sclang_ws_mb
+        }
+    }
+    if ($stats.MinSr -eq [double]::PositiveInfinity) { $stats.MinSr = 0 }
+    return $stats
+}
+
+function Format-SoakSummary($stats, [string] $csv, [string] $events) {
+    return @(
+        '',
+        'CQ_SOAK_SUMMARY',
+        "  csv            : $csv",
+        "  events         : $events",
+        "  ran            : $($stats.ElapsedH) h over $($stats.Samples) samples",
+        "  window         : $($stats.First) .. $($stats.Last)",
+        "  status failures: $($stats.Failures)",
+        "  unhealthy clock: $($stats.ClockBad) samples",
+        "  scsynth restart: $($stats.PidChanges)",
+        "  actual SR range: $([math]::Round($stats.MinSr,1)) .. $([math]::Round($stats.MaxSr,1)) Hz",
+        "  peak scsynth WS: $($stats.MaxScsynthWs) MB",
+        "  peak sclang  WS: $($stats.MaxSclangWs) MB"
+    )
+}
+
+if (-not [string]::IsNullOrWhiteSpace($SummarizeCsv)) {
+    if (-not (Test-Path -LiteralPath $SummarizeCsv)) {
+        throw "csv not found: $SummarizeCsv"
+    }
+    $rows = @(Import-Csv -LiteralPath $SummarizeCsv)
+    if ($rows.Count -eq 0) { throw "csv has no samples: $SummarizeCsv" }
+    $eventGuess = [System.IO.Path]::ChangeExtension($SummarizeCsv, $null).TrimEnd('.') + '-events.log'
+    Format-SoakSummary (Get-SoakStats $rows) $SummarizeCsv $eventGuess |
+        ForEach-Object { Write-Output $_ }
+    exit 0
+}
 
 # This laptop is a Modern Standby machine: it drops into low-power idle when the
 # screen goes off, no matter what `powercfg` reports for the sleep timeout. A
@@ -64,8 +154,9 @@ $outDir  = Join-Path $root 'tests\tmp\soak'
 if (-not (Test-Path $outDir)) { New-Item -ItemType Directory -Force -Path $outDir | Out-Null }
 
 $stamp     = Get-Date -Format 'yyyyMMdd-HHmmss'
-$csvPath   = Join-Path $outDir "soak-$stamp.csv"
-$eventPath = Join-Path $outDir "soak-$stamp-events.log"
+$csvPath     = Join-Path $outDir "soak-$stamp.csv"
+$eventPath   = Join-Path $outDir "soak-$stamp-events.log"
+$summaryPath = Join-Path $outDir "soak-$stamp-summary.txt"
 
 # ---------- OSC ----------
 
@@ -276,6 +367,17 @@ try {
         }
 
         Add-Content -Path $csvPath -Value $row -Encoding utf8
+        # Keep a summary on disk from the run's own evidence, so an interrupted
+        # window still leaves one behind (the 2026-07-31 debt).
+        if (($sample % 15) -eq 0) {
+            try {
+                $sofar = @(Import-Csv -LiteralPath $csvPath)
+                if ($sofar.Count -gt 0) {
+                    Set-Content -Path $summaryPath -Encoding utf8 -Value (
+                        Format-SoakSummary (Get-SoakStats $sofar) $csvPath $eventPath)
+                }
+            } catch { }
+        }
         Start-Sleep -Seconds $IntervalSeconds
     }
 } finally {
@@ -283,23 +385,16 @@ try {
     if ($keepAwakeOk) {
         [void] [CQKeepAwake]::SetThreadExecutionState([CQKeepAwake]::ES_CONTINUOUS)
     }
-    $ranFor = [math]::Round(((Get-Date) - $startedAt).TotalHours, 2)
-    if ($minSr -eq [double]::PositiveInfinity) { $minSr = 0 }
-    $minSr = [math]::Round($minSr, 1)
-    $maxSr = [math]::Round($maxSr, 1)
-    $summary = @(
-        '',
-        "CQ_SOAK_SUMMARY",
-        "  csv            : $csvPath",
-        "  events         : $eventPath",
-        "  ran            : $ranFor h over $sample samples",
-        "  status failures: $failures",
-        "  unhealthy clock: $clockBad samples",
-        "  scsynth restart: $pidChanges",
-        "  actual SR range: $minSr .. $maxSr Hz",
-        "  peak scsynth WS: $maxScsynthWs MB",
-        "  peak sclang  WS: $maxSclangWs MB"
-    )
+    # Derived from the CSV, not from the counters this loop happens to hold:
+    # one definition of the summary, and it is the one the evidence supports.
+    $summary = @('', 'CQ_SOAK_SUMMARY  (no samples were written)')
+    if (Test-Path -LiteralPath $csvPath) {
+        $rows = @(Import-Csv -LiteralPath $csvPath)
+        if ($rows.Count -gt 0) {
+            $summary = Format-SoakSummary (Get-SoakStats $rows) $csvPath $eventPath
+        }
+    }
     $summary | ForEach-Object { Write-Output $_ }
+    Set-Content -Path $summaryPath -Value $summary -Encoding utf8
     Add-Content -Path $eventPath -Value ($summary -join [Environment]::NewLine) -Encoding utf8
 }
