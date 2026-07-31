@@ -478,6 +478,24 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   code. Cost one debugging round in `tests/soak_monitor.ps1` on 2026-07-30.
   Comments survive it; strings do not. Verify with
   `grep -n -P '[^\x00-\x7F]' <file>`.
+- **`powershell -File s.ps1 -Names a,b,c` passes ONE string, not an array** —
+  `-File` does no PowerShell parsing of its arguments. Measured 2026-07-31 on
+  `tests/memory_probe.ps1`: the whole scenario list arrived as a single unknown
+  name, so the run did nothing at all and reported itself `ok`. Split comma lists
+  inside the script, and make an unknown name refuse to print its success marker.
+  **A flat line that measured nothing looks exactly like a flat line that measured
+  something** — same law as the `run_all.scd` marker that could lie.
+- **Windows trims a process's working set in one downward step**, and a
+  least-squares fit reads that step as a ramp: the memory probe reported
+  −939.6 MB/h for a process that had been flat within 1.8 MB for 400 s. Any
+  growth measurement over a Windows working set needs a robust slope (the probe
+  uses Theil–Sen) *and* must report the drops separately instead of averaging
+  them into the answer.
+- **A bound is verified by exceeding it, not by running the normal workload.**
+  The first verification of `CQSpellbook.lineLimit` re-ran the ordinary morph
+  cadence and measured the same ramp as before the fix — correctly, because
+  ~57 dense acts are needed to reach the cap and the window held 53. The probe's
+  `commitGuiFast` exists to pass the limit during its warm-up.
 - `CQGuiWidgets.register` is the **CQSpec param** registry: it primes the updater
   immediately with `state.get(name)`, so registering a GUI-only constant there
   paints the widget with `nil` on the very first build (it took down every GUI

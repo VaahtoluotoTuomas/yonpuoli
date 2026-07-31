@@ -1707,11 +1707,11 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    - **Ajo 2 (5,42 h, korjatulla koodilla):** **kahdeksan kriteeriä
      yhdeksästä vihreänä**, ja vaihe 4 sulki samalla AUD-W:n osan 2 sekä
      SOAK-FIX 3b:n oikeassa lepotilaviassa.
-   - **Avoinna on tasan yksi asia: kriteeri 5, sclangin muistiramppi**
-     (~20 MB/h, lineaarinen, sama molemmissa ajoissa). Seuraava teko ei ole
-     kolmas yö vaan lähteen eristys: `tests/memory_probe.ps1` (kuusi
-     skenaariota × 8 min, valvomaton, ei palvelinta eikä äänilaitetta).
-     **Harness on rakennettu ja committoitu muttei vielä ajettu.**
+   - **Kriteeri 5 (sclangin muistiramppi, ~20 MB/h molemmissa ajoissa) ajettiin
+     probeen eikä kolmanteen yöhön 2026-07-31 illalla, ja lähde löytyi:**
+     `CQSpellbook`in rajaton päiväkirja. Katto (20 000 riviä) on toteutettu,
+     portit vihreät ja **katto mitattu pitäväksi** — ks. "Kriteeri 5" alla.
+     Fyysinen hyväksyntä ja kriteerin sulkeminen soakin osana on yhä auki.
    - Soakia ei siis ole vielä hyväksytty kokonaisuutena, ja se on viimeinen
      este ennen kohtaa 4 (merge `main`iin ja 1.0-tagi).
 4. **Merge `main`iin ja 1.0-tagi.**
@@ -2151,14 +2151,113 @@ todellinen kesto pysyy toleranssin sisällä. Regressio ajetaan sekä tuoreella
 bootilla että pitkän ajon jälkeen, koska juuri se ero jäi MOR-1:ssä
 huomaamatta.
 
-#### Auki jäänyt kriteeri 5 — sclangin muistiramppi
+#### Kriteeri 5 — sclangin muistiramppi. Lähde eristetty ja korjattu 2026-07-31
 
-Työjoukko tunneittain: 305,7 → 311,8 → 327,3 → 351 → 371,8 → 395,3 →
-**411,6 MB**, eli noin **+20 MB/h eikä tasaantumista 6,5 tunnissa**. Ei yksi
+Työjoukko tunneittain ensimmäisessä ajossa: 305,7 → 311,8 → 327,3 → 351 → 371,8 →
+395,3 → **411,6 MB**, eli noin **+20 MB/h eikä tasaantumista 6,5 tunnissa**. Ei yksi
 vuotava tapahtuma vaan jatkuvaa kertymää (336 näytettä kasvaa, 72 laskee, 767
-ennallaan). MOR-1:ssä mitattiin vastaava kasvu joka **tasaantui** ~523 MB:hen,
-joten katto voi vielä tulla. Ratkaistaan löydöksen A yhteydessä, koska
-korrelaatio morphin hinnan kanssa on vahva.
+ennallaan); toinen ajo antoi saman kulmakertoimen.
+
+**Lähde eristettiin `tests/memory_probe.ps1`:llä, ei kolmannella yöllä.** Kuusi
+skenaariota × 8 min, oma sclang kullekin, työjoukko mitattuna prosessin ulkoa, ei
+palvelinta eikä äänilaitetta. "Mistä kasvu tulee" on eri kysymys kuin "tasaantuuko
+se", ja vain jälkimmäinen maksaa yön.
+
+| skenaario | mitattu ikkuna (6,5 min) | tulkinta |
+|---|---|---|
+| `idleGui` | 293,5 → 294,8 MB, sitten yksi −108 MB askel | tasainen |
+| `telemetryGui` (aura/meters/charge/phase 15–20 Hz) | +0,2 MB | tasainen |
+| `matrixGui` (15 Hz matriisikirjoitus + GUI) | +0,3 MB, sitten askel | tasainen |
+| `matrixNoGui` | +0,2 MB | tasainen |
+| `paramGui` (`setAll` 15 Hz + GUI) | ±0,0 MB, sitten askel | tasainen |
+| **`morphGui`** | **298 → 379 MB, ei yhtään pudotusta** | **~670 MB/h** |
+
+Toisen vaiheen kolme skenaariota jakoivat morphin osiin: `morphNoGui` tasainen,
+`readNoGui` tasainen, **`commitGui` kasvaa**. Kasvu on siis committed-matriisi-
+latauksessa GUI:n kanssa — ja `CQSpellbook.sc:82` on koko sovelluksen ainoa kohta
+joka erottaa `committed: true`:n `false`sta, mikä on täsmälleen se miksi
+`matrixGui`in 15 Hz:n virta oli tasainen samoilla kuuntelijoilla.
+**`CQSpellbook.entries` oli rajaton `List`**, johon jokainen tiheä teko (morph,
+recall, preset, shake) lisää rivin ja Eventin *jokaisesta muuttuneesta solusta*,
+ikuisesti, eikä tuotantokoodissa kukaan lue niitä uudestaan.
+
+Sama vika selittää molemmat yön oireet: kasvava elävä keko pidentää jokaisen
+GC-passin, mikä on löydös A:n havainto morphin hinnasta 14,5 → 17,6 s.
+
+**Kaksi mittausvirhettä matkalla, molemmat korjattu harnessiin ennen kuin
+tuloksiin uskottiin:**
+
+1. Skriptin pienimmän neliösumman sovitus raportoi **−939,6 MB/h** prosessista joka
+   pysyi 1,8 MB:n sisällä 400 sekuntia ja putosi sitten *kerran* 108 MB (Windowsin
+   working-set-trimmaus). Yksi askel vetää sovituksen rampiksi jota ei ollut, ja
+   rampin erottaminen ei-rampista on ainoa asia jota varten koko probe on
+   olemassa. Kulmakerroin on nyt **Theil–Sen** (parittaisten mediaani) ja
+   trimmaukset raportoidaan omina sarakkeinaan `Drops`/`DropMb`.
+2. `powershell -File` välittää `-Scenarios a,b,c` **yhtenä merkkijonona**, joten
+   koko lista meni yhtenä skenaarion nimenä: ajo ei tehnyt mitään ja raportoitiin
+   `ok`:na. **Tyhjän ajon tasainen viiva ei erotu mittaavan ajon tasaisesta
+   viivasta.** Nimi pilkotaan nyt skriptissä, tuntematon skenaario ei tulosta
+   `CQ_MEM_PROBE_DONE`:a lainkaan, ja lokin `ERROR:` diskvalifioi rivin.
+
+**Korjaus (käyttäjän päätös 2026-07-31): riviraja.** `CQSpellbook.lineLimit` =
+20 000 riviä; rajan yli mennessä vanhimmat merkinnät poistuvat **kokonaisina**, ei
+palasina, joten jokainen jäljellä oleva teko on yhä luettavissa lohkona, eikä uusin
+teko ole koskaan se joka pudotetaan. Raja lasketaan riveinä koska sivu on
+riviluettelo — raja on samassa yksikössä kuin se mitä luetaan. Vienti ei muutu:
+`presetDataString` lukee `committedMatrix`ia, ei päiväkirjaa. GUI_SPEC §8 päivitetty.
+
+**Verifiointi vaati oman mittauksensa, ja ensimmäinen yritys epäonnistui
+opettavasti.** `morphGui` uudestaan näytti saman rampin (581 MB/h) — oikein, koska
+**kattoa ei saavuteta siinä ikkunassa**: 20 000 riviä / ~352 riviä per tiheä teko =
+~57 tekoa, ja 9 sekunnin tahdilla 8 minuuttiin mahtuu 53. Mittasimme päiväkirjaa
+joka on yhä täyttymässä. `commitGuiFast` tekee saman committed-latauksen kerran
+sekunnissa, jolloin katto ylittyy jo lämmittelyn aikana:
+
+```
+   5s: 297.5   45s: 312.6   65s: 316.6   <- paivakirja tayttyy (~57 tekoa)
+  85s: 316.71 ... 246s: 316.72           <- 180 s, ~180 lisatekoa, liike 0,04 MB
+ 266s: 258.7 (trimmaus)  326s: 266.6 ... 466s: 266.70
+```
+
+Katon jälkeen noin **420 tiheää committed-tekoa ei kasvattanut työjoukkoa
+lainkaan** (Theil–Sen −9,6 MB/h); ennen korjausta ne olisivat olleet luokkaa
+420 MB. **Katto pitää.**
+
+**Katon jälkeen jäljelle jäävä kasvu saturoituu.** `morphGuiFast` (1,5 s morph
+2 s välein = 4,5× tekotahti, katto ylittyy ~113 s kohdalla) samasta datasta
+liukuvalla alkupisteellä:
+
+| ikkuna alkaa | työjoukko | Theil–Sen |
+|---|---|---|
+| 90 s | 320,9 → 337,5 MB | 54,3 MB/h |
+| 200 s | 334,7 → 337,5 MB | 32,2 MB/h |
+| 266 s | 335,9 → 337,5 MB | 27,1 MB/h |
+| 346 s | 336,9 → 337,5 MB | 18,5 MB/h |
+
+Kulmakerroin putoaa monotonisesti ikkunaa siirtämällä: **käyrä on saturoiva eikä
+lineaarinen** — sama muoto kuin MOR-1:ssä mitattu tasaantuminen ~523 MB:hen. Ja
+tämä on **75 %:n morph-duty**, kun soakin oma oli ~4 %. `morphNoGui` on koko
+8 minuutin ajossa tasainen (1,7 MB/h), eli jäännös vaatii sekä morphin kehykset
+että käyttöliittymän: se on allokaatiovuosta kasvavaa kekoa, ei pitoa. Huomaa myös
+että `morphGui`in 581 MB/h oli **katon alapuolella täyttyvä päiväkirja** (53 tekoa,
+katto 57), ei jäännös — ne kaksi lukua eivät ole vertailukelpoisia.
+
+**Mitä tämä tarkoittaa kriteeri 5:lle:** rajaton termi oli päiväkirja, ja se on nyt
+rajattu ja mitattu. Täysi 20 000 rivin päiväkirja maksaa noin **19 MB** työjoukkoa
+(`commitGuiFast` 297,5 → 316,6 MB täyttymisen aikana, sitten liikkumatta; luku on
+yläraja, koska tulkin oma käynnistysallokaatio on samassa). Kriteerin **sulkeminen
+on silti soakin teko eikä proben**: seuraava yö korjatulla koodilla on se mittaus
+joka kertoo tasaantuuko oikea sessio.
+
+**Sivutuotteena korjattiin toinen, erillinen vika** (käyttäjän päätös): Spellbookin
+sivu rakensi koko päiväkirjan uudestaan jokaisesta committed-teosta riippumatta
+siitä oliko Drawer edes auki tai sivu valittuna, ja `prShowSelection` rakensi
+Eventin *jokaisesta rivistä* lukeakseen niistä yhden. Nyt piilossa oleva sivu
+merkitsee velan (`CQGuiSpellbook.missedEntries`) ja maksaa sen yhdellä piirrolla
+kun se näytetään (`CQGui.drawerShown` → `CQGuiDrawer.pageShown`), ja mallilla on
+`recordAt(index)` joka kävelee merkinnät materialisoimatta muita rivejä.
+`CQGui.drawerPageVisible(tab)` on yksi määritelmä sille mikä sivu on näkyvissä.
+Molemmat väitteet ovat `tests/gui_drawer_smoke.scd`issa.
 
 #### Korjaukset 2026-07-31 (C → B → A), portit vihreät, fyysinen hyväksyntä auki
 
@@ -2326,11 +2425,12 @@ SOAK-FIX 3b:n**: lepotila tappoi palvelimen ääniketjun, työkalurivi kertoi
 sama tilanne edellisenä päivänä palautti jäätyneen 48 003,48:n ja väitti `ok`,
 eikä tila muuttunut itsestään; `restart audio` palautti soittimen kokonaan.
 
-**Kriteeri 5 on ainoa avoin.** sclangin työjoukko 275 → 352 MB,
+**Kriteeri 5 oli ainoa avoin.** sclangin työjoukko 275 → 352 MB,
 tunti-inkrementit +19,4 / +19,3 / +22,6 MB: lineaarinen, ei tasaantumista, ja
 **sama kulmakerroin kuin ensimmäisessä ajossa** — kaapelikerroksen allokaatiot
-eivät olleet syy. Lähde eristetään `tests/memory_probe.ps1`:llä, koska "mistä
-kasvu tulee" on eri kysymys kuin "tasaantuuko se" eikä vaadi yötä.
+eivät olleet syy. Lähde eristettiin `tests/memory_probe.ps1`:llä samana iltana,
+koska "mistä kasvu tulee" on eri kysymys kuin "tasaantuuko se" eikä vaadi yötä;
+syy oli `CQSpellbook`in rajaton päiväkirja, ks. "Kriteeri 5" yllä.
 
 Sivutuotteena mitattu: ajon ensimmäiset minuutit menivät vahingossa akulla, ja
 sama patch maksoi silloin **23 % CPU:ta 12 %:n sijaan**. Akkukellotus

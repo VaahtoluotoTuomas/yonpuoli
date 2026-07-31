@@ -2008,11 +2008,14 @@ kahdeksan kriteeriä yhdeksästä vihreänä, kriteeri 5 yhä auki.**
 - **8 vihreä:** 5,4 tunnin jälkeen kello `ok`, mitattu 48 003,48 Hz, CPU
   13,5 %, 8 synthiä; vasteet ja kuuntelu hyväksyttiin.
 - **9 vihreä:** ks. SOAK-FIX osa 3b yllä.
-- **5 auki:** sclangin työjoukko 275 → 352 MB, tunti-inkrementit **+19,4 /
-  +19,3 / +22,6 MB** — lineaarinen, ei tasaantumisen merkkiä, ja **sama
-  kulmakerroin kuin ensimmäisessä ajossa**. Kaapelikerroksen allokaatiot
-  eivät siis olleet syy. Lähde eristetään erikseen
-  (`tests/memory_probe.ps1`), koska "mistä se tulee" ei vaadi yötä.
+- **5 auki ajon jälkeen, lähde löytyi samana iltana:** sclangin työjoukko
+  275 → 352 MB, tunti-inkrementit **+19,4 / +19,3 / +22,6 MB** — lineaarinen,
+  ei tasaantumisen merkkiä, ja **sama kulmakerroin kuin ensimmäisessä
+  ajossa**. Kaapelikerroksen allokaatiot eivät siis olleet syy. Lähde
+  eristettiin `tests/memory_probe.ps1`:llä (ei kolmatta yötä): **`CQSpellbook`in
+  rajaton päiväkirja**, johon jokainen tiheä committed-teko lisää rivin ja
+  Eventin joka muuttuneesta solusta. Katto on nyt 20 000 riviä ja mitattu
+  pitäväksi; ks. PLAN.md → "Kriteeri 5".
 - **Huom lähtötaso:** tämä tulkki oli ollut elossa koko päivän, joten ajo
   alkoi ~400 MB:stä ja putosi ensimmäisen tunnin aikana 275 MB:hen (GC).
   Kaltevuus on silti sama kuin tuoreesta tulkista alkaneessa ajossa.
@@ -2029,7 +2032,8 @@ mekanismit ja hyväksyntäehdot: PLAN.md → "SOAK-1:n tulos 2026-07-31".
   11,89 % (max peak 17,9 %), synthejä 8 joka näytteessä, scsynthin handlet
   344 ja sclangin handlet/säikeet tasaiset — ei handle- eikä säievuotoa.
 - **Kriteeri 5 auki:** sclangin työjoukko 305,7 → 411,6 MB (~+20 MB/h) eikä
-  tasaantumista 6,5 tunnissa.
+  tasaantumista 6,5 tunnissa. (Syy löytyi 2026-07-31 illalla, ks. ajo 2:n
+  kohta 5 yllä.)
 - **Kriteeri 8 kaatui (löydös A):** eristetty 20 s morph vie yhden ytimen
   40–60 s ~8 minuutin välein, GUI jäätyy ja **PANIC ei vastaa** —
   turvainvariantti #3. Toistui joka kerta, ei ollut lämmittely. Sama
