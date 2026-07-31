@@ -2303,6 +2303,26 @@ Regressio ajaa guardin **aliaksen kautta** (`CQ.prAudioClockTick`) ja vaatii
 että `Cocoquantus`in kuuntelija kuulee sen. Todennettu molempiin suuntiin:
 ilman korjausta se kaatuu kolmesta assertiosta, korjauksen kanssa se on vihreä.
 
+**Toinen soak-ajo 2026-07-31 (5,42 h, 976 näytettä): kahdeksan kriteeriä
+yhdeksästä vihreänä.** 976/976 `/status`-vastausta, 0 epätervettä kellonäytettä,
+yksi PID, SR 47 986–48 021 Hz, server CPU ka 11,96 % tasaisena, synthejä 8,
+scsynthin handlet 334 ja sclangin 1714 liikkumattomina, säikeet 32. Vasteet
+5,4 tunnin jälkeen hyväksyttiin, ja **vaihe 4 sulki sekä AUD-W:n osan 2 että
+SOAK-FIX 3b:n**: lepotila tappoi palvelimen ääniketjun, työkalurivi kertoi
+`server not responding` Drawer kiinni, `audioClockRate` oli **nil** siinä missä
+sama tilanne edellisenä päivänä palautti jäätyneen 48 003,48:n ja väitti `ok`,
+eikä tila muuttunut itsestään; `restart audio` palautti soittimen kokonaan.
+
+**Kriteeri 5 on ainoa avoin.** sclangin työjoukko 275 → 352 MB,
+tunti-inkrementit +19,4 / +19,3 / +22,6 MB: lineaarinen, ei tasaantumista, ja
+**sama kulmakerroin kuin ensimmäisessä ajossa** — kaapelikerroksen allokaatiot
+eivät olleet syy. Lähde eristetään `tests/memory_probe.ps1`:llä, koska "mistä
+kasvu tulee" on eri kysymys kuin "tasaantuuko se" eikä vaadi yötä.
+
+Sivutuotteena mitattu: ajon ensimmäiset minuutit menivät vahingossa akulla, ja
+sama patch maksoi silloin **23 % CPU:ta 12 %:n sijaan**. Akkukellotus
+kaksinkertaistaa kuorman.
+
 **Löydökset B ja C hyväksyttiin deterministisessä muodossaan 2026-07-31**
 (checklist SOAK-FIX osat 2 ja 3a): provokaatio yksin sytytti työkalurivin
 `server not responding` -merkin Drawer kiinni, guard ei väittänyt `ok`, ja

@@ -1992,8 +1992,33 @@ sammuva danger on yhtä hyväksyttävä tulos kuin täysi hiljaisuus; valhe ei o
 9. Vaihe 4: guard vaikeni tai kertoi totuuden ja palautui itse. Ei (c) eikä (d).
 
 - [ ] **SOAK-1 hyväksytty** (pvm, kesto, CSV-tiedosto, kriteerit 1–9)
-- [ ] **AUD-W osa 2 hyväksytty** (kumpi tulos: a vai b, ja mitattu taajuus
-      ennen ja jälkeen)
+- [x] **AUD-W osa 2 hyväksytty 2026-07-31.** Lepotilaprovokaatio ei tuottanut
+      suppenevaa transienttia vaan tappoi palvelimen ääniketjun; guard kertoi
+      sen rehellisesti eikä väittänyt mitään jäätyneestä lukemasta. Mitattu
+      taajuus ennen standbyta 48 003,48 Hz, sen jälkeen `nil`.
+
+**Toinen ajo 2026-07-31, 5,42 h (`soak-20260731-113829.csv`, 976 näytettä):
+kahdeksan kriteeriä yhdeksästä vihreänä, kriteeri 5 yhä auki.**
+
+- **1–4, 6, 7 vihreät:** 976/976 `/status`-vastausta, 0 epätervettä
+  kellonäytettä, yksi PID, SR 47 986–48 021 Hz, server CPU ka **11,96 %**
+  (max peak 15,7 %) täysin tasaisena, synthejä 8 joka näytteessä, scsynthin
+  handlet 334 ja sclangin handlet **1714 liikkumattomina** koko ajon,
+  säikeet 32.
+- **8 vihreä:** 5,4 tunnin jälkeen kello `ok`, mitattu 48 003,48 Hz, CPU
+  13,5 %, 8 synthiä; vasteet ja kuuntelu hyväksyttiin.
+- **9 vihreä:** ks. SOAK-FIX osa 3b yllä.
+- **5 auki:** sclangin työjoukko 275 → 352 MB, tunti-inkrementit **+19,4 /
+  +19,3 / +22,6 MB** — lineaarinen, ei tasaantumisen merkkiä, ja **sama
+  kulmakerroin kuin ensimmäisessä ajossa**. Kaapelikerroksen allokaatiot
+  eivät siis olleet syy. Lähde eristetään erikseen
+  (`tests/memory_probe.ps1`), koska "mistä se tulee" ei vaadi yötä.
+- **Huom lähtötaso:** tämä tulkki oli ollut elossa koko päivän, joten ajo
+  alkoi ~400 MB:stä ja putosi ensimmäisen tunnin aikana 275 MB:hen (GC).
+  Kaltevuus on silti sama kuin tuoreesta tulkista alkaneessa ajossa.
+- **Mitattu sivutuote:** ensimmäiset minuutit ajettiin vahingossa akulla, ja
+  sama patch maksoi silloin **23 % CPU:ta 12 %:n sijaan**. Akkukellotus
+  kaksinkertaistaa kuorman — hyvä tietää jos soitinta ajetaan akulla.
 
 **Ensimmäinen ajo 2026-07-31, 6,53 h, ei hyväksytty.**
 `tests/tmp/soak/soak-20260731-015614.csv`, 1174 näytettä. Täydet mittausluvut,
@@ -2095,7 +2120,10 @@ CQ.server.statusWatcher.unresponsive = true;
 // ~5 s odotus, sitten:
 ~sh.audioAlert;                // -> \serverDown
 //    Odota ~5 s. Nyt pitaa olla totta:
-//      - tyokalurivilla "server not responding · restart audio" (Drawer KIINNI)
+//      - tyokalurivilla danger-piste ja "server not responding" (Drawer KIINNI).
+//        Merkki EI toista sanoja "restart audio": se istuu drawer-napin
+//        paalla, joka on itse reitti korjaukseen, ja Audio-sivun validation-
+//        rivi lisaa remedyn koska siella ei ole nappia vieressa.
 //      - Audio-sivu sanoo saman
 Cocoquantus.audioClockState;   // -> \stale, EI \ok
 Cocoquantus.audioClockAlert;   // -> \serverDown
@@ -2143,9 +2171,15 @@ Cocoquantus.audioClockRate;    // -> nil
       soittimen — tulos **(a)**. Hyväksyntä vaati ensin oman korjauksensa:
       guard julkaisi ilmoituksensa aliasluokalle `CQ`, kun kuuntelijat tilaavat
       `Cocoquantus`ilta, joten merkki ei syttynyt ennen sitä.
-- [ ] **SOAK-FIX osa 3b (B + C oikeassa lepotilaviassa) hyväksytty** — ajetaan
-      SOAK-1:n vaiheessa 4. Vain oikea lepotila tappaa ääniketjun, joten 3a ei
-      korvaa tätä.
+- [x] **SOAK-FIX osa 3b (B + C oikeassa lepotilaviassa) hyväksytty
+      2026-07-31.** Lepotila tappoi palvelimen ääniketjun uudelleen, ja tällä
+      kertaa soitin kertoi sen: työkalurivillä `server not responding`
+      Drawer kiinni, `audioClockState` → `\stale`, `audioClockAlert` →
+      `\serverDown` ja **`audioClockRate` → `nil`** siinä missä sama tilanne
+      eilen palautti jäätyneen `48003.47925608`:n ja väitti `ok`. Tila ei
+      muuttunut itsestään minuuteissa (sopimus kieltää automaattisen
+      recoveryn), ja `restart audio` palautti soittimen kokonaan — ääni ja
+      GUI toimivat, tulos **(a)**.
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>
