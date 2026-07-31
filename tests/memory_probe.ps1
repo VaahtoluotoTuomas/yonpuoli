@@ -15,6 +15,15 @@
 #   powershell -NoProfile -ExecutionPolicy Bypass -File tests/memory_probe.ps1
 #   powershell -NoProfile -ExecutionPolicy Bypass -File tests/memory_probe.ps1 -Seconds 300 -Scenarios idleGui,telemetryGui
 #
+# The six default scenarios answer "which workload allocates". The 2026-07-31 run
+# answered it: only morphGui grows. The second stage takes that one workload
+# apart and is NOT in the default list, because it is a different question:
+#   -Scenarios morphGui,morphNoGui,readNoGui,commitGui
+# It found CQSpellbook's uncapped journal. Verifying the cap needs a THIRD call,
+# because the cap is only reached after ~57 dense acts and no 9 s scenario gets
+# there inside one window -- commitGuiFast does, during its warm-up:
+#   -Scenarios commitGuiFast
+#
 # Prints one row per scenario and CQ_MEM_PROBE_REPORT as its last line.
 
 [CmdletBinding()]
@@ -30,6 +39,18 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+# `powershell -File probe.ps1 -Scenarios a,b,c` hands this parameter ONE string:
+# -File does not parse its arguments as PowerShell, so the comma list is not an
+# array. Measured 2026-07-31 -- the whole list arrived as a single scenario name
+# and the run reported a clean, flat, entirely empty row. Split here so both call
+# styles mean the same thing.
+$Scenarios = @($Scenarios |
+    ForEach-Object { $_ -split ',' } |
+    ForEach-Object { $_.Trim() } |
+    Where-Object { $_ -ne '' })
+if ($Scenarios.Count -lt 1) { throw 'no scenarios given' }
+
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $script   = Join-Path $repoRoot 'tests\memory_probe.scd'
 $conf     = Join-Path $PSScriptRoot 'sclang_conf_dev.yaml'
@@ -46,20 +67,47 @@ if ($Seconds -le ($WarmupSeconds + (4 * $IntervalSeconds))) {
     throw "Seconds ($Seconds) leaves no measured window after the $WarmupSeconds s warm-up"
 }
 
-# Least squares over (hours, megabytes) -> MB per hour. Reported with the
-# spread, because a slope without one is a claim without an error bar.
-function Get-Slope([object[]] $points) {
+# Theil-Sen over (hours, megabytes) -> MB per hour: the median of every pairwise
+# slope.
+#
+# Least squares stood here first and it lied. On the 2026-07-31 run it reported
+# -939.6 MB/h for idleGui, whose working set was flat within 1.8 MB for 400 s and
+# then fell 108 MB in a single sample when Windows trimmed it. One step-down
+# drags a least-squares fit into a ramp that never happened, and telling a ramp
+# from no ramp is the only thing this probe is for. The median pair is not moved
+# by a step most pairs do not span, and the steps are counted separately below so
+# they stay visible instead of being averaged into the answer.
+function Get-TheilSen([object[]] $points) {
     $n = $points.Count
     if ($n -lt 3) { return $null }
-    $sumX = 0.0; $sumY = 0.0; $sumXY = 0.0; $sumXX = 0.0
-    foreach ($p in $points) {
-        $sumX  += $p.H;  $sumY  += $p.Mb
-        $sumXY += $p.H * $p.Mb
-        $sumXX += $p.H * $p.H
+    $slopes = New-Object System.Collections.Generic.List[double]
+    for ($i = 0; $i -lt ($n - 1); $i++) {
+        for ($j = $i + 1; $j -lt $n; $j++) {
+            $dh = $points[$j].H - $points[$i].H
+            if ([math]::Abs($dh) -gt 1e-9) {
+                $slopes.Add(($points[$j].Mb - $points[$i].Mb) / $dh)
+            }
+        }
     }
-    $den = ($n * $sumXX) - ($sumX * $sumX)
-    if ([math]::Abs($den) -lt 1e-12) { return $null }
-    return (($n * $sumXY) - ($sumX * $sumY)) / $den
+    if ($slopes.Count -lt 1) { return $null }
+    $sorted = $slopes.ToArray()
+    [array]::Sort($sorted)
+    $m = $sorted.Count
+    if (($m % 2) -eq 1) { return $sorted[[int](($m - 1) / 2)] }
+    return ($sorted[[int]($m / 2) - 1] + $sorted[[int]($m / 2)]) / 2
+}
+
+# Sample-to-sample falls of at least $minMb. Windows trims a working set in one
+# step; an allocating language heap does not fall at all. Counting them keeps a
+# trim readable as a trim.
+function Get-Drops([object[]] $points, [double] $minMb) {
+    $count = 0
+    $total = 0.0
+    for ($i = 1; $i -lt $points.Count; $i++) {
+        $fall = $points[$i - 1].Mb - $points[$i].Mb
+        if ($fall -ge $minMb) { $count++; $total += $fall }
+    }
+    return [pscustomobject]@{ Count = $count; TotalMb = [math]::Round($total, 1) }
 }
 
 $stamp  = Get-Date -Format 'yyyyMMdd-HHmmss'
@@ -111,14 +159,22 @@ foreach ($scenario in $Scenarios) {
         try { $proc.Kill(); $proc.WaitForExit() } catch { }
     }
     $combined = $stdout.Result + $stderr.Result
-    $marker = [regex]::Matches($combined, '(?m)^CQ_MEM_PROBE_DONE\s*$').Count -gt 0
+    # Two ways a row can be worthless: the workload never finished, or it threw.
+    # An sclang error inside a scenario's Routine kills that Routine and leaves a
+    # perfectly flat, perfectly meaningless curve behind, so it cannot count as
+    # clean either.
+    $marker  = [regex]::Matches($combined, '(?m)^CQ_MEM_PROBE_DONE\s*$').Count -gt 0
+    $errored = [bool]([regex]::IsMatch($combined, 'ERROR:'))
+    $marker  = $marker -and (-not $errored)
     [System.IO.File]::WriteAllText((Join-Path $outDir "$stamp-$scenario.log"), $combined)
 
     $slope = $null
     $first = $null
     $last  = $null
+    $drops = $null
     if ($samples.Count -ge 3) {
-        $slope = Get-Slope $samples
+        $slope = Get-TheilSen $samples
+        $drops = Get-Drops $samples 5.0
         $first = $samples[0].Mb
         $last  = $samples[$samples.Count - 1].Mb
     }
@@ -130,6 +186,8 @@ foreach ($scenario in $Scenarios) {
         EndMb    = $last
         DeltaMb  = $null
         SlopeMbH = $null
+        Drops    = $(if ($null -ne $drops) { $drops.Count } else { $null })
+        DropMb   = $(if ($null -ne $drops) { $drops.TotalMb } else { $null })
         Clean    = $marker
     }
     if ($null -ne $slope) {
@@ -138,14 +196,15 @@ foreach ($scenario in $Scenarios) {
     }
     $report.Add($row)
 
-    Write-Output ("  {0,-14} {1,3} samples  {2,7} -> {3,7} MB   delta {4,6} MB   slope {5,7} MB/h  {6}" -f `
+    Write-Output ("  {0,-14} {1,3} samples  {2,7} -> {3,7} MB   delta {4,6} MB   slope {5,7} MB/h   drops {6} ({7} MB)  {8}" -f `
         $row.Scenario, $row.Samples, $row.StartMb, $row.EndMb, $row.DeltaMb, $row.SlopeMbH,
-        $(if ($marker) { 'ok' } else { 'NO MARKER' }))
+        $row.Drops, $row.DropMb,
+        $(if ($marker) { 'ok' } elseif ($errored) { 'ERRORS IN LOG' } else { 'NO MARKER' }))
 }
 
 Write-Output ''
 Write-Output 'CQ memory probe summary (measured window excludes the warm-up)'
-$report | Format-Table Scenario, Samples, StartMb, EndMb, DeltaMb, SlopeMbH, Clean -AutoSize | Out-String |
+$report | Format-Table Scenario, Samples, StartMb, EndMb, DeltaMb, SlopeMbH, Drops, DropMb, Clean -AutoSize | Out-String |
     ForEach-Object { Write-Output $_ }
 Write-Output "  raw samples: $outDir"
 Write-Output ''
