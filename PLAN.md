@@ -1697,10 +1697,23 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    USB-laite + lepotila on tasan se ilmiö jota AUD-W vartioi. Yhdeksän
    hyväksyntäkriteeriä on kirjattu lohkoon **ennen ajoa**, jotta tulos
    tuomitaan eikä silmäillä. Aikabudjetti: yksi yö kelloa, noin tunti
-   käyttäjän aikaa kolmessa ikkunassa. **Ajettu 2026-07-31 (6,53 h): palvelin
-   kesti moitteetta, mutta ajo löysi kolme vikaa — ks. "SOAK-1:n tulos" alla.
-   Soak ei ole hyväksytty, ja korjausjärjestys on käyttäjän päättämä
-   C → B → A.**
+   käyttäjän aikaa kolmessa ikkunassa.
+
+   **Tilanne 2026-07-31 illalla — kaksi ajoa tehty:**
+   - **Ajo 1 (6,53 h):** palvelin kesti moitteetta, mutta ajo löysi kolme
+     vikaa (A morph-jäätymä, B valehteleva kelloguard, C tuhoisa
+     `restart audio`). Kaikki kolme on korjattu ja **käyttäjän hyväksymiä**
+     järjestyksessä C → B → A; ks. "SOAK-1:n tulos" alla.
+   - **Ajo 2 (5,42 h, korjatulla koodilla):** **kahdeksan kriteeriä
+     yhdeksästä vihreänä**, ja vaihe 4 sulki samalla AUD-W:n osan 2 sekä
+     SOAK-FIX 3b:n oikeassa lepotilaviassa.
+   - **Avoinna on tasan yksi asia: kriteeri 5, sclangin muistiramppi**
+     (~20 MB/h, lineaarinen, sama molemmissa ajoissa). Seuraava teko ei ole
+     kolmas yö vaan lähteen eristys: `tests/memory_probe.ps1` (kuusi
+     skenaariota × 8 min, valvomaton, ei palvelinta eikä äänilaitetta).
+     **Harness on rakennettu ja committoitu muttei vielä ajettu.**
+   - Soakia ei siis ole vielä hyväksytty kokonaisuutena, ja se on viimeinen
+     este ennen kohtaa 4 (merge `main`iin ja 1.0-tagi).
 4. **Merge `main`iin ja 1.0-tagi.**
 
 ### DAW-sillan keino: ReaRoute, ei VB-CABLE
