@@ -1688,7 +1688,19 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    AIO:n 10 minuutin koe ei korvaa tätä. **Kantaa nyt myös AUD-W:n osan 2**
    (käyttäjän päätös 2026-07-31) — mutta soak-monitori pitää koneen hereillä,
    joten lepotilaprovokaatio tarvitsee oman ikkunansa monitorin pysäytyksen
-   jälkeen.
+   jälkeen. **Koeprotokolla on kirjoitettu 2026-07-31: checklist-lohko
+   `SOAK-1`** (`tests/manual_checklist.md`) neljässä vaiheessa — käynnistys +
+   tiheä käsipatchaus, yön ajo aktiviteettisilmukalla ja `soak_monitor.ps1`:llä,
+   aamun luenta, ja erillisenä ikkunanaan AUD-W:n osa 2. **Soakattava
+   kokoonpano on K-Mix ASIO single-device** (käyttäjän päätös 2026-07-31), ei
+   `config.scd`:n split-WASAPI-pohja: se on sama laite jolla soitetaan, ja
+   USB-laite + lepotila on tasan se ilmiö jota AUD-W vartioi. Yhdeksän
+   hyväksyntäkriteeriä on kirjattu lohkoon **ennen ajoa**, jotta tulos
+   tuomitaan eikä silmäillä. Aikabudjetti: yksi yö kelloa, noin tunti
+   käyttäjän aikaa kolmessa ikkunassa. **Ajettu 2026-07-31 (6,53 h): palvelin
+   kesti moitteetta, mutta ajo löysi kolme vikaa — ks. "SOAK-1:n tulos" alla.
+   Soak ei ole hyväksytty, ja korjausjärjestys on käyttäjän päättämä
+   C → B → A.**
 4. **Merge `main`iin ja 1.0-tagi.**
 
 ### DAW-sillan keino: ReaRoute, ei VB-CABLE
@@ -2010,6 +2022,139 @@ tehdä se **osana pitkää soakia**. Yksi ehto on tiedettävä etukäteen:
 siksi ettei valvomaton soak mittaisi Modern Standby -artefaktia — joten osa 2
 tarvitsee **oman ikkunansa monitorin pysäytyksen jälkeen** tai ajon ilman
 monitoria. Muuten kone ei nukahda eikä provokaatiota tapahdu.
+
+### SOAK-1:n tulos 2026-07-31 — palvelin kesti, kolme vikaa löytyi
+
+**Ajo:** 6,53 h (01:56–08:27), K-Mix ASIO single-device, `\selfNoise`-parametrit
++ `\mayhem`-matriisi (352 solua), aktiviteettisilmukka 60 s tikillä, monitori
+20 s välein. CSV `tests/tmp/soak/soak-20260731-015614.csv`, **1174 näytettä**.
+
+**Vihreä ja kiistaton — palvelinpuoli ei horju:**
+
+- 1174/1174 `/status`-vastausta, **0 epäonnistumista**; 0 epätervettä
+  kellonäytettä; actual SR 47 986–48 021 Hz.
+- Yksi ja sama scsynth- ja sclang-PID koko ajon.
+- Server CPU ka **11,89 %**, suurin avg 14,2 %, suurin peak 17,9 % (SPEC §9:n
+  katto 25 %) — tasainen kaikkina seitsemänä tuntina, ei nousevaa trendiä.
+- Synthejä **8** joka näytteessä; scsynthin handlet **täsmälleen 344** ja
+  työjoukko 55–78 MB ilman trendiä; sclangin handlet 1717 → 1719 ja säikeet 32.
+  **Ei handle- eikä säievuotoa.**
+
+Kriteerit 1–4, 6 ja 7 täyttyivät. Kriteeri 5 (muisti) jäi auki ja kriteerit
+8–9 kaatuivat. Löydökset korjataan käyttäjän 2026-07-31 päättämässä
+järjestyksessä **C → B → A**: C tekee kahdesta muusta toipumisen
+mahdottomaksi, B on pieni ja tarkka, A on suurin työ.
+
+#### Löydös C — `restart audio` vastaamattomalle palvelimelle hävittää soittimen
+
+**Mitattu 2026-07-31 08:45–08:55.** Lepotilan jälkeen palvelin oli
+vastaamaton, ja Audio-sivun oma korjausreitti painettiin. Tapahtui tämä:
+
+```
+Cocoquantus: freed.
+Server 'localhost' is currently unresponsive. Forcing process to stop via system command.
+SUCCESS: The process with PID 6012 has been terminated.
+Cocoquantus: cached 20 input / 24 output audio devices before server boot.
+```
+
+GUI purkautui eikä palannut. Mitattu tila sen jälkeen: **ajossa ollut scsynth
+PID 17716 oli yhä elossa** (CPU jäässä 3507 s, säikeet 9 → 7) ja `netstat`
+osoitti sen omistavan **UDP 57110:n**, joten uusi palvelin ei voinut varata
+porttia. Pakkopysäytys oli tappanut **PID 6012:n**, joka ei ollut tämä
+palvelin; mikä se oli, ei ole enää todennettavissa. Toipuminen vaati
+orvon tappamisen käsin.
+
+**Mekanismi (hypoteesi, todennettava korjauksessa):** Windowsilla `Server`in
+muistama pid ei ole varsinainen scsynth-prosessi, ja tämä polku ajetaan vain
+kun palvelin on vastaamaton — käytännössä se ei ole koskaan päässyt oikeaan
+testiin. Lisäksi transaktio vapauttaa GUI:n **ennen** kuin uusi boot on
+onnistunut, joten epäonnistuessaan se jättää soittajan ilman mitään pintaa.
+
+**Hyväksyntäehdot.** (1) Vastaamattoman palvelimen pysäytys pysäyttää
+**todella sen palvelimen** — todennus PID:llä ja portilla, ei tulosteella.
+(2) Mitään PID:iä ei force-killata ennen kuin on varmistettu että se on tämän
+session scsynth; tuntematon tai kierrätetty PID ei ole kelvollinen kohde.
+(3) Jos boot epäonnistuu, **käyttöliittymä palaa** rehelliseen virhetilaan
+josta uudelleenyritys on tavoitettavissa — soittaja ei koskaan jää ilman
+pintaa. (4) Portin varaus tarkistetaan ennen bootia, jotta orpo havaitaan
+syyksi eikä boot jää epämääräisesti jumiin. (5) Pid/portti-logiikka katetaan
+hermeettisellä testillä; fyysinen tapaus jää checklist-riviksi.
+
+#### Löydös B — kelloguard väittää `ok` jäätyneestä lukemasta
+
+**Mitattu 2026-07-31 08:40.** Palvelin ei vastannut yhteenkään neljästä
+riippumattomasta `/status`-koetuksesta, ja sen ääniketju oli kuollut (CPU
+jäässä, säikeet 9 → 7), mutta `Cocoquantus.audioClockState` sanoi **`ok`** ja
+`audioClockRate` **48 003,47 Hz** — edellisillan lukema.
+
+**Mekanismi, todennettu.** `Server.actualSampleRate` päivittyy vain
+`/status`-vastauksista. Kun vastaukset loppuvat, arvo jäätyy viimeiseen
+terveeseen lukemaansa, joten suhdetesti sitä vastaan **ei voi enää koskaan
+epäonnistua**. Guardin suunnittelu oletti, että lukemia tulee jatkuvasti.
+
+**Laki, joka tästä jää:** *välimuistista lukevan vartijan on vaadittava
+tuoreutta — hiljaisuus ei ole terveys.* Sama sukua kuin `/cq_aura`-laki "no
+telemetry is not the same as zero" ja MOR-1:n "gate joka voi valehdella on
+vika". Kirjataan `GUI_SPEC`iin korjauksen mukana.
+
+**Hyväksyntäehdot.** (1) Guard vaatii tuoreen lukeman: jos uutta
+`/status`-vastausta ei ole tullut määritellyn ikkunan sisällä, se **ei saa
+väittää `ok`**. (2) Mitattu tapaus (jäätynyt terve lukema + ei vastauksia) on
+regressiotesti. (3) Suppenevan transientin laki ei saa rikkoutua — mitattu
+Modern Standby -sarja ei edelleenkään laukaise vikaa. (4) **Käyttäjän
+päätettävä oma kysymyksensä:** kattaako työkalurivin aina näkyvä merkki myös
+`server not responding` -tilan. AUD-W:n oma perustelu merkille — "vika voi
+iskeä kun Drawer on kiinni" — pätee siihen sanasta sanaan, ja juuri se vika
+tapahtui, mutta se on GUI-semantiikkaa eikä sitä arvata.
+
+#### Löydös A — morph jäädyttää kielisäikeen, PANIC ei vastaa
+
+**Mitattu koko yön ajan.** Joka ~8. minuutti eristetty 20 s morph tuotti 2–3
+peräkkäistä näytettä, joissa sclang käytti **17–20 s CPU:ta per 20 s
+seinäkelloa** eli yhden ytimen täysin, 40–60 sekunnin ajan. Käyttäjän
+katselmus 08:35: GUI jäätyy, **PANIC ei vastaa Spacella eikä koodista** (vain
+viiveellä), ja ääneen tuli glitchejä joiden syytä ei ole todennettu. Tämä on
+**turvainvariantti #3**, sama jonka MOR-1 sulki 2026-07-30 — se aukeaa
+uudelleen 352 kaapelin tiheydellä.
+
+**Piirtohypoteesi on kumottu mittauksella:** sama jäätyminen tapahtuu myös
+Audio-sivu auki, jolloin Night on StackLayoutissa piilossa eikä piirrä
+lainkaan. Kustannus on kielipuolella, ei kaapelimusteessa.
+
+**Jäljelle jäävä hypoteesi:** MOR-1 tiivisti vain matriisipuolen. Morph tekee
+yhä joka kehyksellä `state.set`in **jokaiselle jatkuvalle parametrille** —
+luokkaa 60 parametria × 15 Hz ≈ 900 kirjoitusta ilmoituksineen sekunnissa.
+
+**Toinen havainto, joka sitoo tämän muistiin:** morphin CPU-hinta **kasvoi
+yön mittaan** samaa tahtia sclangin työjoukon kanssa — tunnin 0 keskiarvo
+14,5 s → tunnin 6 keskiarvo 17,6 s, kun työjoukko kasvoi 306 → 412 MB.
+A ja alla oleva muistiramppi voivat olla **sama ilmiö** (kasvavan keon
+hinta), eivät kaksi. Se on tarkistettava ennen kuin niitä korjataan erikseen.
+
+**Hyväksyntäehdot.** MOR-1:n neljä ehtoa uudelleen, mutta **352 kaapelin
+tiheydellä ja tuntien ajossa**, ei tuoreella bootilla: kielisäie pysyy
+responsiivisena, PANIC vastaa morphin aikana, `stopMorph` keskeyttää, ja
+todellinen kesto pysyy toleranssin sisällä. Regressio ajetaan sekä tuoreella
+bootilla että pitkän ajon jälkeen, koska juuri se ero jäi MOR-1:ssä
+huomaamatta.
+
+#### Auki jäänyt kriteeri 5 — sclangin muistiramppi
+
+Työjoukko tunneittain: 305,7 → 311,8 → 327,3 → 351 → 371,8 → 395,3 →
+**411,6 MB**, eli noin **+20 MB/h eikä tasaantumista 6,5 tunnissa**. Ei yksi
+vuotava tapahtuma vaan jatkuvaa kertymää (336 näytettä kasvaa, 72 laskee, 767
+ennallaan). MOR-1:ssä mitattiin vastaava kasvu joka **tasaantui** ~523 MB:hen,
+joten katto voi vielä tulla. Ratkaistaan löydöksen A yhteydessä, koska
+korrelaatio morphin hinnan kanssa on vahva.
+
+#### Työkaluvelka — `soak_monitor.ps1` voi hukata oman yhteenvetonsa
+
+Ctrl+C `Start-Sleep`in aikana ohittaa skriptin `finally`-lohkon, joten
+`CQ_SOAK_SUMMARY` jäi tulostumatta yön ajosta. CSV oli tallessa ja luettiin
+käsin, mutta **checklist käskee raportoimaan juuri sen yhteenvedon**. Sama
+laji kuin `run_all.scd`:n vale-marker: portti joka voi hukata todisteensa.
+Korjaus: yhteenveto on saatava olemassa olevasta CSV:stä jälkikäteen, eikä
+sen saa riippua siitä miten ajo päättyi.
 
 ### 1.0-tagin rajaus ja avoin nimipäätös
 

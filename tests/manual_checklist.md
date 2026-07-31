@@ -1772,6 +1772,246 @@ CQ.gui.shell.audioClockDanger = false;
       ilman monitoria) — muuten kone ei nukahda eikä provokaatiota tapahdu.
       Odotus: guard **ei** saa huutaa toipuvasta heräämisestä; mitattu sarja
       7419 → 69 184 → 47 986 Hz on suppeneva eikä vika.
+      **Ajettu 2026-07-31 SOAK-1:n vaiheessa 4 — EI hyväksytty.** Lepotila ei
+      tuottanut suppenevaa transienttia vaan tappoi palvelimen ääniketjun
+      kokonaan (prosessi elossa, CPU jäässä, 0/4 `/status`-vastausta), ja
+      guard väitti silti `ok` / 48 003,47 Hz jäätyneestä välimuistilukemasta.
+      Tulos on siis kohta **(d)**: ääni oli poissa eikä guard sanonut mitään.
+      Löydös B PLAN.md:ssä; korjataan järjestyksessä C → B → A.
+
+### SOAK-1 — pitkä laitteisto-/resource-soak (+ AUD-W osa 2)
+
+Tien 1.0:aan askel 3. Todistaa, että soitin kestää tuntikausia ilman että mikään
+ryömii: ei muistin, handlejen tai säikeiden kasvua, ei palvelimen kuolemaa, ei
+kellon karkaamista, ei GUI:n hidastumista. AIO:n 10 minuutin vakauskoe **ei**
+korvaa tätä — MOR-1 löytyi juuri soakista ja rikkoi turvainvarianttia #3.
+
+**Soakattava kokoonpano on K-Mix ASIO single-device** (käyttäjän päätös
+2026-07-31): sama laite jolla oikeasti soitetaan, ei `config.scd`:n
+split-WASAPI-pohja. USB-äänilaite + lepotila on myös tasan se ilmiö jota AUD-W
+vartioi, joten vaihe 4 on tällä kokoonpanolla mielekkäin.
+
+**Esiehdot — täytettävä ennen aloitusta:**
+
+- **Verkkovirta, ei akku.** 10 h ei mene akulla, ja akku noin kaksinkertaisti
+  MOR-1:n mitatun kertoimen.
+- **K-Mix kiinni ja päällä ennen boottia.** REAPER kiinni: ReaRoute on oma
+  muuttujansa eikä sitä soakata tässä.
+- **Ei toista `sclang`- tai `scsynth`-prosessia koneella koko ajon aikana.**
+  `soak_monitor.ps1` ottaa `Select-Object -First 1`, joten porttiajo kesken
+  soakin mittaisi väärää prosessia. Ei siis gate-ajoja sinä yönä eikä toista
+  IDE:tä.
+- **Ei äänitystä yöksi** (jokainen REC luo uuden tiedoston) eikä laitelistausta
+  ajon aikana (käynnissä oleva palvelin ei saa nähdä `_ListAudioDevices`ia).
+- **Monitori käynnistetään vasta kun laitevaihto on tehty ja palvelin on
+  asettunut.** Apply & restart vaihtaa scsynthin PID:n, ja monitori kirjaisi sen
+  uudelleenkäynnistyksenä.
+- Jätä **Night näkyviin ja Drawer kiinni** yöksi: Night on raskaampi piirtopinta,
+  ja työkalurivin aina näkyvä merkki hoitaa danger-tilan ilman auki olevaa
+  Audio-sivua. Näyttö saa sammua — keep-awake pitää *järjestelmän* hereillä.
+
+#### Vaihe 1 — käynnistys ja tiheä käsipatchaus (~30 min, sinä läsnä)
+
+```supercollider
+// SOAK-1 vaihe 1. Ctrl+Shift+L jos classit ovat muuttuneet, sitten:
+CQ.boot;
+
+// 1. Laitevaihto: Drawer -> Audio -> single device ->
+//    "ASIO : K-MixUSBAudio ASIO Driver" (tarkista tarkka nimi listasta)
+//    -> apply & restart. Odota etta lifecycle-rivi on rauhoittunut.
+CQ.server.options.device;      // -> valittu K-Mix, EI WASAPI-paria
+CQ.server.options.sampleRate;  // -> 48000
+Cocoquantus.audioClockState;   // -> ok
+Cocoquantus.audioClockRate;    // -> ~47986 .. 48021
+Cocoquantus.audioClockDanger;  // -> false
+
+// 2. Tiheaa kasipatchausta 20-30 min. Tee ainakin nama, kuunnellen:
+//      - Nightissa oma patchaus, punch/hold molemmilla kuorilla
+//      - kuun shake muutaman kerran (pieni sirppi ja tayskuu)
+//      - deck-lataus linnun kautta molempiin dekkeihin
+//      - Drawer <-> Night -vaihtoja, Workshopin sailmia
+//      - Memory-sivulta yksi morph kasin
+//      - PANIC kerran ja CQ.resume
+// 3. Kerro lopuksi: tuntuuko mikaan hitaalta, glitchaako, onko taso vakaa.
+CQ.panic;
+CQ.resume;
+```
+
+#### Vaihe 2 — yön ajo (8–10 h, valvomaton)
+
+Ensin aktiviteettisilmukka soittimeen, sitten monitori **omaan
+PowerShell-ikkunaansa** (ei editorin sisään, jotta se elää editorin yli).
+
+```supercollider
+// SOAK-1 vaihe 2 -- yon aktiviteettisilmukka. Pieni, hidas ja rajattu liike,
+// jotta soak mittaa myos kielipuolen elamaa eika pelkkaa lepotilaa. Ei
+// aanitysta, ei uusia snapshot-tiedostoja (kaksi nimea kirjoitetaan kerran),
+// ei laitelistausta, eika masterVolia tai micGainia kosketa mikaan.
+// Joka 8. askel ajaa 20 s morphin kahden TIHEAN snapshotin valilla -- se on
+// MOR-1:n oma regressio, nyt noin 70 kertaa yon yli -- ja lataa dekkiin
+// satunnaisen samplen. deck.random skannaa configin samples-kansion itse
+// (sama polku kuin linnun porhistys), joten polkuja ei tarvitse kirjoittaa;
+// tyhja kansio on hiljainen no-op.
+(
+~soakStop = false;
+~soakActivity = Routine({
+    var step = 0;
+    // KAKSI presettia tassa jarjestyksessa, ei yksi: \mayhem on tiheysstressi
+    // jonka params-osa on TYHJA -- se tayttaa 352 matriisisolua muttei sytyta
+    // yhtaan aanilahdetta, joten pelkastaan sina yo olisi aanettomasti tiheä.
+    // \selfNoise antaa aanen (dust, fb, cross-feed) ilman sisaantuloa, ja
+    // \mayhem korvaa sen jalkeen vain matriisin -> tiheä JA kuuluva yö.
+    CQ.patchPreset(\selfNoise);
+    CQ.patchPreset(\mayhem);
+    CQ.snap(\soak_a);
+    CQ.shake(0.3, density: 0.35);
+    CQ.snap(\soak_b);
+    while({ ~soakStop.not }, {
+        step = step + 1;
+        switch(step % 8,
+            1, { CQ.set(\coco1Speed, rrand(6000, 30000)) },
+            2, { CQ.set(\coco2Speed, rrand(6000, 30000)) },
+            3, { CQ.set(\coco1Fb, rrand(0.2, 0.95)) },
+            4, { CQ.hold(1, step.div(8) % 2) },
+            // dekkilataus on OMALLA tikillaan eika morphin kanssa samalla:
+            // yksi teko per tikki, jotta jaatyminen voidaan lukea yhdesta
+            // syysta. Kaksi tekoa samassa hetkessa teki 2026-07-31 yon
+            // ensimmaisesta havainnosta tulkinnanvaraisen.
+            5, { if(step.div(8).odd, { CQ.deckA.random }, { CQ.deckB.random }) },
+            // flip ja skip samalla tikilla: molemmat ovat kertalaukaisuja,
+            // joiden kielikustannus on mikrosekunteja -- ne eivat voi olla
+            // jaatymisen syy, joten ne eivat riko yhden teon saantoa
+            6, { CQ.flip(1, [0, 1].choose); CQ.skip(2) },
+            7, { CQ.shake(0.25, density: 0.2) },
+            0, { CQ.morph(\soak_a, \soak_b, 20) }
+        );
+        60.wait;
+    });
+    "SOAK: activity loop stopped.".postln;
+}).play;
+)
+```
+
+```powershell
+# SOAK-1 vaihe 2 -- monitori omaan ikkunaansa, vasta kun laite on asettunut.
+# Anna -Hours tarkasti halutun mittaiseksi: silloin CQ_SOAK_SUMMARY tulostuu
+# itsestaan eika jaa Ctrl+C:n varaan.
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/soak_monitor.ps1 -Hours 10 -IntervalSeconds 20
+```
+
+Kuunteluäänen saa yöksi hiljaiseksi **K-Mixin omasta monitorinupista** — älä
+laske `masterVol`ia, koska digitaalinen ketju ja limitteri kuuluvat testiin.
+Jos watchdog laukeaa yön aikana (`autoTrim`), se on **havainto eikä vika**:
+`CQ.trimDb` kertoo aamulla paljonko se leikkasi.
+
+Monitori näytteistää 20 s välein `/status`illa — ei uutta serverliikennettä, ei
+laitelistausta — ja pitää järjestelmän hereillä `SetThreadExecutionState`illa.
+CSV flushataan joka näytteellä, joten keskeytyskin säilyttää mitatun.
+Tulos: `tests/tmp/soak/soak-<aikaleima>.csv` + `-events.log` (gitignored).
+
+#### Vaihe 3 — aamun luenta (~15 min)
+
+**Älä boottaa uudelleen ennen tätä** — soittimen pitää olla sama prosessi joka
+soi yön yli, muuten mittaus menetetään.
+
+```supercollider
+// SOAK-1 vaihe 3. Ensin aktiviteetti pois, soitin jaa pystyyn:
+~soakStop = true; ~soakActivity.stop;
+
+Cocoquantus.audioClockState;   // -> ok
+Cocoquantus.audioClockRate;    // -> ~48000
+CQ.server.avgCPU;              // -> alle SPEC 9:n 25 %
+CQ.server.numSynths;           // -> sama levotaso kuin illalla, ei kasvanut
+
+// 1. Vasteet 10 h jalkeen -- kerro tuntuuko mikaan hitaammalta kuin illalla:
+CQ.panic;                      // pitaa vastata VALITTOMASTI (turvainvariantti #3)
+CQ.resume;
+CQ.morph(\soak_a, \soak_b, 20); // GUI ei saa jaatya, kaapelit liikkuvat tasaisesti
+// 2. Hover Nightissa, Drawer auki ja kiinni: yhta nopeaa kuin illalla?
+// 3. Kuuntele: onko aani puhdasta, onko taso sama, kuuluuko dropouteja?
+```
+
+Monitorin `CQ_SOAK_SUMMARY` ja CSV luetaan tässä kohtaa yhdessä: Claude käy
+sarakkeet läpi trendinä (working set, handlet, säikeet, avg/peak CPU, synths).
+Kertaluonteinen alkuvaraus on ok, tasainen nousu ei ole.
+
+#### Vaihe 4 — AUD-W osa 2, lepotilaprovokaatio (~30–40 min, enimmäkseen odotusta)
+
+Tämä **ei mahdu soakin sisään**: monitori pitää koneen hereillä nimenomaan
+estääkseen tämän ilmiön. Oma ikkunansa monitorin pysäytyksen jälkeen, soitin
+edelleen käynnissä.
+
+```supercollider
+// SOAK-1 vaihe 4. Esiehdot: monitori pysaytetty (Ctrl+C tai -Hours umpeen),
+// aktiviteettisilmukka pysaytetty, soitin EDELLEEN pystyssa ja soimassa.
+// Aseta naytön sammutus lyhyeksi (esim. 2 min) ja ALA KOSKE koneeseen ~15 min.
+// Modern Standby pysayttaa audiostriimin ja tuottaa mitatun transientin.
+Cocoquantus.audioClockRate;    // kirjaa arvo ENNEN nukahtamista
+
+// Heraamisen jalkeen: odota vahintaan 2 min (guard tarkistaa 2,5 s valein,
+// ikkuna on 60 s), KUUNTELE, ja kerro sitten kumpi tapahtui:
+//   (a) toipui HILJAA, ei sanonut mitaan             -> guard toimii oikein
+//   (b) sanoi "audio clock stuck", ja merkki katosi
+//       itsestaan kun aani palasi                    -> guard toimii oikein
+//   (c) hallytys jai paalle vaikka aani oli kunnossa -> VIKA
+//   (d) aani oli roskaa mutta mikaan ei sanonut      -> VIKA
+//   (e) palvelin kuoli koska K-Mix katosi            -> kirjataan, kerro mita
+//       Audio-sivu ja tyokalurivi sanoivat
+Cocoquantus.audioClockState;
+Cocoquantus.audioClockRate;
+CQ.panic;                      // tavoitettava myos danger-tilassa
+CQ.resume;
+```
+
+Odotus: guard **ei** saa huutaa toipuvasta heräämisestä — mitattu sarja
+7419 → 69 184 → 47 986 Hz on suppeneva eikä vika. Rehellinen, itsestään
+sammuva danger on yhtä hyväksyttävä tulos kuin täysi hiljaisuus; valhe ei ole.
+
+#### Hyväksyntäkriteerit (kirjattu ennen ajoa, ei jälkikäteen)
+
+1. `status failures: 0` — jokaiseen `/status`iin vastattiin.
+2. `scsynth restart: 0` — sama PID koko ajon.
+3. `unhealthy clock: 0` näytettä valvotussa ikkunassa (suhde 0,8–1,2).
+4. Server avg CPU alle SPEC §9:n 25 % koko ajon **eikä** nouseva trendi.
+5. scsynthin ja sclangin working set tasaantuu ensimmäisen tunnin jälkeen:
+   viimeisen tunnin keskiarvo ei ylitä toisen tunnin keskiarvoa yli 5 %:lla
+   eikä käyrä ole monotoninen ramppi.
+6. Handlet ja säikeet tasaisia ensimmäisen tunnin jälkeen — vuoto näkyy suorana
+   nousevana viivana.
+7. Synth-määrä palaa lepotasolleen; synthit eivät kerry.
+8. Vaiheen 3 vasteet: PANIC välitön, morph ei jäädytä, GUI yhtä nopea kuin
+   illalla, ei kuultua dropoutia eikä tason ajautumista.
+9. Vaihe 4: guard vaikeni tai kertoi totuuden ja palautui itse. Ei (c) eikä (d).
+
+- [ ] **SOAK-1 hyväksytty** (pvm, kesto, CSV-tiedosto, kriteerit 1–9)
+- [ ] **AUD-W osa 2 hyväksytty** (kumpi tulos: a vai b, ja mitattu taajuus
+      ennen ja jälkeen)
+
+**Ensimmäinen ajo 2026-07-31, 6,53 h, ei hyväksytty.**
+`tests/tmp/soak/soak-20260731-015614.csv`, 1174 näytettä. Täydet mittausluvut,
+mekanismit ja hyväksyntäehdot: PLAN.md → "SOAK-1:n tulos 2026-07-31".
+
+- **Kriteerit 1–4, 6 ja 7 vihreät.** 1174/1174 `/status`-vastausta, 0
+  epätervettä kellonäytettä, yksi PID, SR 47 986–48 021 Hz, server CPU ka
+  11,89 % (max peak 17,9 %), synthejä 8 joka näytteessä, scsynthin handlet
+  344 ja sclangin handlet/säikeet tasaiset — ei handle- eikä säievuotoa.
+- **Kriteeri 5 auki:** sclangin työjoukko 305,7 → 411,6 MB (~+20 MB/h) eikä
+  tasaantumista 6,5 tunnissa.
+- **Kriteeri 8 kaatui (löydös A):** eristetty 20 s morph vie yhden ytimen
+  40–60 s ~8 minuutin välein, GUI jäätyy ja **PANIC ei vastaa** —
+  turvainvariantti #3. Toistui joka kerta, ei ollut lämmittely. Sama
+  jäätyminen myös Audio-sivu auki (Night piilossa), joten syy ei ole
+  kaapelimuste. Morphin hinta kasvoi yön mittaan 14,5 → 17,6 s samaa tahtia
+  muistin kanssa.
+- **Kriteeri 9 kaatui (löydökset B ja C):** lepotila tappoi palvelimen
+  ääniketjun (prosessi elossa, CPU jäässä, 0/4 `/status`-vastausta), mutta
+  guard sanoi **`ok`** ja 48 003,47 Hz — jäätynyt lukema. Audio-sivun
+  lifecycle-rivi kertoi totuuden, työkalurivin merkki ei syttynyt. Sen jälkeen
+  `restart audio` **hävitti käyttöliittymän**: pakkopysäytys tappoi PID 6012:n
+  vaikka palvelin oli 17716, orpo jäi pitämään UDP 57110:tä eikä uusi boot
+  voinut onnistua. Toipuminen vaati orvon tappamisen käsin.
+- **Työkaluvelka:** Ctrl+C `Start-Sleep`in aikana ohitti skriptin
+  `finally`-lohkon, joten `CQ_SOAK_SUMMARY` jäi tulostumatta. CSV oli tallessa.
 
 <details>
 <summary><b>Superseded N3 v2 — kuu taivaalla ja ellipsilampi pohjassa</b></summary>
