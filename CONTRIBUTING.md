@@ -1,6 +1,6 @@
-# Contributing to Yölahti
+# Contributing to Yönpuoli
 
-Thank you for considering a contribution. Yölahti is currently a maintainer-led
+Thank you for considering a contribution. Yönpuoli is currently a maintainer-led
 experimental instrument in active Nocturne development. Small, focused bug fixes,
 tests, documentation improvements, platform reports, and reproducible musical or
 interaction findings are especially useful.
@@ -27,8 +27,8 @@ For isolated headless runs, create a local YAML file such as
 
 ```yaml
 includePaths:
-  - "C:/path/to/yolahti/classes"
-  - "C:/path/to/yolahti/tests/classes"
+  - "C:/path/to/yonpuoli/classes"
+  - "C:/path/to/yonpuoli/tests/classes"
 ```
 
 ## Required gates

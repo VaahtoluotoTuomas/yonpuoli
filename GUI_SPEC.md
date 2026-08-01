@@ -1,4 +1,4 @@
-# GUI_SPEC.md — the Archipelago (Yölahti GUI)
+# GUI_SPEC.md — the Archipelago (Yönpuoli GUI)
 
 > *A matrix is what a patch looks like to an accountant.*
 > *This document describes what it looks like to a hand.*
@@ -381,7 +381,7 @@ below; it does not silently grant priority to any other control.
 | **the mouth chevron** | press the read-direction chevron at the mouth. Hover answers in **weight** (hairline → normal), not colour: the chevron already rests in `cas`, which is brighter than the `line` its two siblings brighten *to*, so a colour step could only dim it. Weight is the reel notch's channel on the same body | `cocoN flip` toggle |
 | **the mouth's skip mark** | press the spark glyph hanging under the chevron (10 px box, stationary). Momentary: 120 ms ink flash on *any* skip (§16.7) | `skip(n)` — the loop restarts from the eye |
 | **tide crescents** | a small crescent below each spaf / inVca / fbVca moon; vertical drag pours more or less. Socket beside its control — §1's proximity law, reborn at night. Each scale names only a real consequence. **SP.AF** splits at its CQSpec-derived zero: inverso blue to the left, verso orange to the right, with fill growing from zero and a zero notch. **Input** is green through exact unity and amber in overdrive, divided by its CQSpec-owned unity mark. **Feedback** keeps its three audible bands: fading echo green, unity/bloom amber, mayhem red. Complete regions rest dimly behind the hand; the travelled region brightens and a pearl marks the current position. Fine notches keep boundaries legible without relying on colour vision. Feedback edges are its normalized taper breakpoints (0.5 / 0.9), never duplicated visual constants | `cocoN spaf / in / fb` |
-| **Dolby oysters** | beneath each in/fb tide crescent, tap the captionless paired arcs: open = off, nearly shut = gate, shut with a partner-facing arrival stroke = duck. Oyster hover and crescent hover are exclusive; a drag may begin only on the crescent's original square | `cocoN dolbyIn / dolbyFb`: `off → gate → duck → off` (CQSpec enum order) |
+| **dolby oysters** | beneath each in/fb tide crescent, tap the captionless paired arcs: open = off, nearly shut = gate, shut with a partner-facing arrival stroke = duck. Oyster hover and crescent hover are exclusive; a drag may begin only on the crescent's original square | `cocoN dolbyIn / dolbyFb`: `off → gate → duck → off` (CQSpec enum order) |
 | **the ring's eye** | the storm iris at the ring's center (§16.6); grab and drag — vertical = pitch, horizontal = chaos, and the iris itself answers on both axes. The weather of five castles from one fingertip | `qFreq` (y) + `qChaos` (x), relative |
 | **dial tap** | press a castle's inner clock — the dial face inside the body (§16.6): one step (same act as the day step button and keys 3..7). Hovering the castle first shows **which castle it reads** as an inner chord (§16.6's coupling chords), so the step's consequence is visible in the gesture that makes it | `spesal(k)` step |
 | **range ripple** | tap the drawn rate at a castle's 6 o'clock: one slow swell → one full cycle → five tight half-waves → one slow swell. The form is the whole regime display; no legacy `i/b/a` caption remains. Cable-first remains absolute, and ripple/clock/body hover cues are exclusive | `cNRange`: `infra → balcium → audio → infra` (CQSpec enum order) |
@@ -1331,7 +1331,7 @@ icon fonts (their rendering varies across platforms; paths don't).
 | spark | skip; fired lamps | 4-point star: two crossed strokes, long/short arms |
 | wave | castle fm | one sine cycle from two béziers |
 | rate ripple | castle range | a short common keel plus one long half-wave (`infra`), two half-waves / one full cycle (`balcium`), or five tight half-waves (`audio`), in a nominal 22×11 px box. A 3 px ground under-stroke follows the vector paths exactly where the river crosses; never a rectangular knockout |
-| oyster / eyelid | coco in/fb Dolby | paired short arcs: relaxed apart = `off`; hairline gap = `gate`; closed plus a short stroke entering from the partner channel = `duck`. Posture carries the state before hue; the mark never fakes gate telemetry |
+| oyster / eyelid | coco in/fb dolby | paired short arcs: relaxed apart = `off`; hairline gap = `gate`; closed plus a short stroke entering from the partner channel = `duck`. Posture carries the state before hue; the mark never fakes gate telemetry |
 | tick-ring | spesal dial | 8 radial ticks, current one lit |
 | pendulum | deck rate | small wedge + off-vertical line |
 
@@ -1548,7 +1548,7 @@ numbers. SP.AF's signed
 fill grows away from its zero notch; input marks unity and the overdrive side;
 feedback shows its three audible taper regions. Their notches make the
 landmarks form-readable rather than hue-only.
-The in/fb crescent owners grow only downward and carry a **Dolby oyster**
+The in/fb crescent owners grow only downward and carry a **dolby oyster**
 36 px below the crescent centre. The oyster is consulted first on
 press; its tap box and the crescent's original drag square are disjoint.
 `off / gate / duck` are readable as open / nearly shut / partner-pressed shut,

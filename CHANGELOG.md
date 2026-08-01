@@ -3,10 +3,10 @@
 This file records release-level changes. Detailed implementation journals remain
 under `docs/history/`; the active work order is `PLAN.md`.
 
-The project follows semantic versioning once the first Yölahti public beta is
+The project follows semantic versioning once the first Yönpuoli public beta is
 tagged. Earlier tags describe internal development baselines.
 
-## Unreleased — Yölahti / Nocturne
+## Unreleased — Yönpuoli / Nocturne
 
 ### Changed
 
@@ -52,8 +52,12 @@ tagged. Earlier tags describe internal development baselines.
   Audio restart rebuilt the GUI and restored the same working audio session.
 - Moved the technical Audio page to the Drawer's rightmost tab, after the
   Inspector, Workshop, Spellbook and Memory musical/workflow pages.
-- Adopted **Yölahti** as the independent product identity while retaining the
-  `CQ` SuperCollider API and class namespace.
+- Adopted **Yönpuoli** as the independent product identity, with the tagline
+  *Memory circulates until it becomes weather*, while retaining the `CQ` /
+  `Cocoquantus` SuperCollider API and class namespace for compatibility.
+- Kept the recognizable Cocoquantus control vocabulary as explicit lineage,
+  with user-facing `dolby` written lowercase and existing internal
+  `...Dolby...` identifiers left unchanged.
 - Reframed the project from a Cocoquantus emulation to an original feedback
   instrument with explicit lineage and non-affiliation.
 - Rebuilt the public README around users, architecture, safety, testing,
@@ -122,7 +126,7 @@ tagged. Earlier tags describe internal development baselines.
 - Contribution guide, GPL-3.0-or-later license, and Windows CI gates.
 - Playable, captionless castle range ripples on the Night landscape, with
   audible infra/balcium/audio stepping and cable-first interaction.
-- Captionless Dolby oysters beneath the Night input/feedback crescents, with
+- Captionless dolby oysters beneath the Night input/feedback crescents, with
   posture-led off/gate/duck stepping and unchanged cable-first interaction.
 - Captionless Night deck-bird gestures: tap to fetch from the configured
   samples folder, wheel to walk the loaded folder, and a short out-and-back
@@ -292,7 +296,7 @@ tagged. Earlier tags describe internal development baselines.
   now claims its drag, follows the global cursor while held, and keeps a clear
   reversal valid even after repeated or broad movement.
 - Preserved cable hover and cable-first presses where a planted cable crosses
-  a Night Dolby oyster.
+  a Night dolby oyster.
 - Repainted the real shell spiral and radial stem beneath each opaque yellow
   organ-output view, removing the invisible rectangular break in the playhead
   spiral.

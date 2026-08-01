@@ -745,7 +745,7 @@ CQInkNight {
 		};
 	}
 
-	// §6.1 Dolby oyster: posture, never colour, is the enum. Off breathes
+	// §6.1 dolby oyster: posture, never colour, is the enum. Off breathes
 	// open; gate nearly closes; duck closes and receives a short stroke from
 	// the partner channel that keys it. This is setting ink, not invented
 	// telemetry, so it never blinks.

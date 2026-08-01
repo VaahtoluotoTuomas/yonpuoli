@@ -1,6 +1,6 @@
 # Development process and technical ownership
 
-Yölahti is a human-directed, AI-assisted project. This document states what that
+Yönpuoli is a human-directed, AI-assisted project. This document states what that
 means in practice, what evidence is and is not trustworthy, and what must be true
 before generated changes are accepted.
 

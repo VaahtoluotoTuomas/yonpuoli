@@ -22,16 +22,16 @@ Cocoquantus {
 		var generation, sessionConfig, sessionServer, sessionGraph, sessionState;
 		var sessionMatrix;
 		if(lifecycleState == \running) {
-			"Cocoquantus: already booted — CQ.free first.".warn;
+			"Yönpuoli: already booted — CQ.free first.".warn;
 			^this
 		};
 		if(lifecycleState == \booting) {
-			"Cocoquantus: boot already in progress.".warn;
+			"Yönpuoli: boot already in progress.".warn;
 			^this
 		};
 		if(lifecycleState == \stopping) {
 			pendingBoot = [path, onReady, preparedConfig, onFailure, beforeGui];
-			"Cocoquantus: boot queued until teardown completes.".postln;
+			"Yönpuoli: boot queued until teardown completes.".postln;
 			^this
 		};
 		// A killed/failed session may retain a dead graph solely so teardown can
@@ -64,7 +64,7 @@ Cocoquantus {
 		} { |err|
 			lifecycleState = \failed;
 			lifecycleError = err.errorString;
-			("Cocoquantus: config failed — " ++ lifecycleError).warn;
+			("Yönpuoli: config failed — " ++ lifecycleError).warn;
 			onFailure.value(err);
 			^this
 		};
@@ -164,7 +164,7 @@ Cocoquantus {
 	}
 
 	*set { |name, value|
-		if(state.isNil) { "Cocoquantus: not booted.".warn; ^this };
+		if(state.isNil) { "Yönpuoli: not booted.".warn; ^this };
 		state.set(name, value);
 	}
 
@@ -189,7 +189,7 @@ Cocoquantus {
 	*skip { |n = 1|
 		var synth;
 		if(this.prCocoParam(n, "Hold").isNil) { ^this };
-		if(this.isBooted.not) { "Cocoquantus: not booted.".warn; ^this };
+		if(this.isBooted.not) { "Yönpuoli: not booted.".warn; ^this };
 		synth = graph.synths[("coco" ++ n).asSymbol];
 		synth !? {
 			synth.set(\t_skip, 1);
@@ -211,7 +211,7 @@ Cocoquantus {
 	*spesalSet { |k = 1, state = 0|
 		var synth = this.prCastleSynth(k);
 		if(state.isNumber.not or: { state.asFloat.isNaN or: { state.abs == inf } }) {
-			"Cocoquantus: bad spesal state % ignored.".format(state).warn;
+			"Yönpuoli: bad spesal state % ignored.".format(state).warn;
 			^this
 		};
 		synth !? {
@@ -222,12 +222,12 @@ Cocoquantus {
 	}
 
 	*deckA {
-		if(deckAPlayer.isNil) { "Cocoquantus: not booted — no deck A.".warn };
+		if(deckAPlayer.isNil) { "Yönpuoli: not booted — no deck A.".warn };
 		^deckAPlayer
 	}
 
 	*deckB {
-		if(deckBPlayer.isNil) { "Cocoquantus: not booted — no deck B.".warn };
+		if(deckBPlayer.isNil) { "Yönpuoli: not booted — no deck B.".warn };
 		^deckBPlayer
 	}
 
@@ -235,7 +235,7 @@ Cocoquantus {
 	// file (a mono file plays on both — CQDeck warns and falls back to ch 0)
 	*loadStereo { |filePath|
 		if(deckPair.isNil) {
-			"Cocoquantus: not booted — no decks.".warn;
+			"Yönpuoli: not booted — no decks.".warn;
 			^this
 		};
 		deckPair.load(filePath);
@@ -244,17 +244,17 @@ Cocoquantus {
 	// snapshots (SPEC §6.3): save stores micGain as 0 unless includeMic — see
 	// CQSnapshots header for the full mic/panic policy
 	*snap { |name, includeMic = false, note = ""|
-		if(snapshotMgr.isNil) { "Cocoquantus: not booted.".warn; ^nil };
+		if(snapshotMgr.isNil) { "Yönpuoli: not booted.".warn; ^nil };
 		^snapshotMgr.save(name, includeMic, note)
 	}
 
 	*recall { |name|
-		if(snapshotMgr.isNil) { "Cocoquantus: not booted.".warn; ^false };
+		if(snapshotMgr.isNil) { "Yönpuoli: not booted.".warn; ^false };
 		^snapshotMgr.recall(name)
 	}
 
 	*morph { |from, to, dur = 10|
-		if(snapshotMgr.isNil) { "Cocoquantus: not booted.".warn; ^this };
+		if(snapshotMgr.isNil) { "Yönpuoli: not booted.".warn; ^this };
 		snapshotMgr.morph(from, to, dur);
 	}
 
@@ -264,7 +264,7 @@ Cocoquantus {
 	*midi { ^midi16n }
 
 	*midiRescan {
-		if(midi16n.isNil) { "Cocoquantus: not booted.".warn; ^this };
+		if(midi16n.isNil) { "Yönpuoli: not booted.".warn; ^this };
 		midi16n.rescan;
 	}
 
@@ -276,17 +276,17 @@ Cocoquantus {
 	// routing matrix facade (SPEC §5.5): all four go through CQMatrix's own
 	// funnel (clamp -1..1, mirror to the wDest bus, notify dependants)
 	*patch { |src, dest, w = 1.0|
-		if(matrix.isNil) { "Cocoquantus: not booted.".warn; ^this };
+		if(matrix.isNil) { "Yönpuoli: not booted.".warn; ^this };
 		matrix.patch(src, dest, w);
 	}
 
 	*unpatch { |src, dest|
-		if(matrix.isNil) { "Cocoquantus: not booted.".warn; ^this };
+		if(matrix.isNil) { "Yönpuoli: not booted.".warn; ^this };
 		matrix.unpatch(src, dest);
 	}
 
 	*clearPatch {
-		if(matrix.isNil) { "Cocoquantus: not booted.".warn; ^this };
+		if(matrix.isNil) { "Yönpuoli: not booted.".warn; ^this };
 		matrix.clearPatch;
 	}
 
@@ -299,10 +299,10 @@ Cocoquantus {
 	// CQState's — both clamped, both notify dependants
 	*patchPreset { |name, origin = \code|
 		var data;
-		if(matrix.isNil) { "Cocoquantus: not booted.".warn; ^this };
+		if(matrix.isNil) { "Yönpuoli: not booted.".warn; ^this };
 		data = CQMatrix.presets[name];
 		if(data.isNil) {
-			"Cocoquantus: unknown preset '%' ignored.".format(name).warn;
+			"Yönpuoli: unknown preset '%' ignored.".format(name).warn;
 			^this
 		};
 		matrix.preset(name, origin: origin, committed: true, operation: \preset);
@@ -312,7 +312,7 @@ Cocoquantus {
 	// GUI (SPEC §6.2): opens at boot unless headless; reopens a closed window.
 	// A window the user closed leaves the instrument fully playable (SPEC §6)
 	*gui {
-		if(this.isBooted.not) { "Cocoquantus: not booted.".warn; ^nil };
+		if(this.isBooted.not) { "Yönpuoli: not booted.".warn; ^nil };
 		if(guiPanel.isNil or: { guiPanel.isClosed }) {
 			guiPanel = CQGui(state, matrix, config);
 		};
@@ -321,12 +321,12 @@ Cocoquantus {
 
 	// recorder (SPEC §5.7): timestamped post-safety master WAV, never overwrites
 	*rec {
-		if(recorder.isNil) { "Cocoquantus: not booted.".warn; ^this };
+		if(recorder.isNil) { "Yönpuoli: not booted.".warn; ^this };
 		recorder.start;
 	}
 
 	*recStop {
-		if(recorder.isNil) { "Cocoquantus: not booted.".warn; ^this };
+		if(recorder.isNil) { "Yönpuoli: not booted.".warn; ^this };
 		recorder.stop;
 	}
 
@@ -339,7 +339,7 @@ Cocoquantus {
 	// as its phase). Omitted, it stays the historical ~10% handful.
 	*shake { |amount = 0.3, seed, origin = \code, density|
 		var spesal;
-		if(matrix.isNil) { "Cocoquantus: not booted.".warn; ^this };
+		if(matrix.isNil) { "Yönpuoli: not booted.".warn; ^this };
 		spesal = matrix.shake(amount, seed, origin: origin,
 			committed: true, operation: \shake, density: density);
 		spesal.do { |v, i| this.spesalSet(i + 1, v) };
@@ -354,7 +354,7 @@ Cocoquantus {
 	*panic {
 		guiPanel !? { guiPanel.cancelAudition };
 		this.set(\monitorMute, 1);
-		"Cocoquantus: PANIC — output muted. CQ.resume to unmute.".postln;
+		"Yönpuoli: PANIC — output muted. CQ.resume to unmute.".postln;
 	}
 
 	*resume {
@@ -376,7 +376,7 @@ Cocoquantus {
 	// to the language, exercising the exact OSCdefs the server's SendReply would hit.
 	*testWatchdog {
 		NetAddr("127.0.0.1", NetAddr.langPort).sendMsg('/cq_hot', 0, -1);
-		("Cocoquantus: testWatchdog — sent a simulated /cq_hot. Expect a warning + "
+		("Yönpuoli: testWatchdog — sent a simulated /cq_hot. Expect a warning + "
 			++ "(if autoTrim) CQ.trimDb -6, and the GUI notice line.").postln;
 	}
 
@@ -435,7 +435,7 @@ Cocoquantus {
 			if(sessionGeneration == generation) {
 				lifecycleState = \stopped;
 				lifecycleError = nil;
-				"Cocoquantus: freed.".postln;
+				"Yönpuoli: freed.".postln;
 				onDone.value(this);
 				queued = pendingBoot;
 				pendingBoot = nil;
@@ -469,7 +469,7 @@ Cocoquantus {
 			guiPanel !? { guiPanel.free };   // the window is dead (server + its OSCdefs
 			guiPanel = nil;                  // gone) — close it now so a reboot/boot
 			                                 // opens a fresh one, not a frozen ghost
-			("Cocoquantus: Cmd-. killed the server graph (output is silent). "
+			("Yönpuoli: Cmd-. killed the server graph (output is silent). "
 				++ "Run CQ.reboot to rebuild.").postln;
 		};
 	}
@@ -544,7 +544,7 @@ Cocoquantus {
 			audioDeviceCatalogState = \scanned;
 			audioDeviceCatalogError = nil;
 			success = true;
-			("Cocoquantus: cached % input / % output audio devices "
+			("Yönpuoli: cached % input / % output audio devices "
 				++ "before server boot.").format(
 					audioDeviceCatalog[\inputs].size,
 					audioDeviceCatalog[\outputs].size).postln;
@@ -555,7 +555,7 @@ Cocoquantus {
 				\stale
 			};
 			audioDeviceCatalogError = error.errorString;
-			("Cocoquantus: device scan failed while server was stopped — "
+			("Yönpuoli: device scan failed while server was stopped — "
 				++ "continuing with configured/cached devices: "
 				++ audioDeviceCatalogError).warn;
 		};
@@ -660,7 +660,7 @@ Cocoquantus {
 				error: failure.errorString,
 				cleanRestart: true
 			);
-			("Cocoquantus: Audio restart failed — "
+			("Yönpuoli: Audio restart failed — "
 				++ audioReconfigureError).warn;
 		});
 		^true
@@ -677,7 +677,7 @@ Cocoquantus {
 		^if(File.exists(path.asString)) {
 			CQConfig.load(path)
 		} {
-			("Cocoquantus: % not found — using defaults "
+			("Yönpuoli: % not found — using defaults "
 				++ "(copy config.example.scd to config.scd)").format(path).warn;
 			CQConfig.validate(())
 		}
@@ -741,7 +741,7 @@ Cocoquantus {
 			// through the CQ alias and freed through Cocoquantus (or the other
 			// way round) would otherwise leave this registration behind.
 			CmdPeriod.add(Cocoquantus);
-			"Cocoquantus: ready — output fading in over 2 s.".postln;
+			"Yönpuoli: ready — output fading in over 2 s.".postln;
 			completed = true;
 		} { |err|
 			if((sessionGeneration == generation) and: {
@@ -750,7 +750,7 @@ Cocoquantus {
 				this.prBootFailed(generation, sessionGraph, err, onFailure);
 			} {
 				try { sessionGraph.free } { |cleanupError|
-					("Cocoquantus: stale-session cleanup failed — "
+					("Yönpuoli: stale-session cleanup failed — "
 						++ cleanupError.errorString).warn;
 				};
 			};
@@ -760,7 +760,7 @@ Cocoquantus {
 
 	*prRequireSession { |generation|
 		if((sessionGeneration != generation) or: { lifecycleState != \booting }) {
-			Error("Cocoquantus: stale session generation %".format(generation)).throw;
+			Error("Yönpuoli: stale session generation %".format(generation)).throw;
 		};
 	}
 
@@ -790,14 +790,14 @@ Cocoquantus {
 		OSCdef.all[\cq_spesal] !? { |def| def.free };
 		OSCdef.all[\cq_hot] !? { |def| def.free };
 		try { sessionGraph.free } { |cleanupError|
-			("Cocoquantus: boot rollback cleanup failed — "
+			("Yönpuoli: boot rollback cleanup failed — "
 				++ cleanupError.errorString).warn;
 		};
 		graph = nil;
 		state = nil;
 		matrix = nil;
 		config = nil;
-		("Cocoquantus: boot failed and rolled back — " ++ lifecycleError).warn;
+		("Yönpuoli: boot failed and rolled back — " ++ lifecycleError).warn;
 		onFailure.value(err);
 	}
 
@@ -812,7 +812,7 @@ Cocoquantus {
 		} { |err|
 			lifecycleState = \failed;
 			lifecycleError = err.errorString;
-			("Cocoquantus: reboot config failed — " ++ lifecycleError).warn;
+			("Yönpuoli: reboot config failed — " ++ lifecycleError).warn;
 			^this
 		};
 		this.prRebootPrepared(targetServer, path, preparedConfig);
@@ -848,7 +848,7 @@ Cocoquantus {
 		^try {
 			CQServerProcess.clearPort(port)
 		} { |err|
-			("Cocoquantus: could not ask who holds udp %".format(port)
+			("Yönpuoli: could not ask who holds udp %".format(port)
 				++ " — " ++ err.errorString
 				++ " (booting without that evidence)").warn;
 			(status: \free)
@@ -864,7 +864,7 @@ Cocoquantus {
 			this.prRemoveServerBootAction;
 			lifecycleState = \failed;
 			lifecycleError = failure.errorString;
-			("Cocoquantus: server reboot failed — " ++ lifecycleError).warn;
+			("Yönpuoli: server reboot failed — " ++ lifecycleError).warn;
 			onFailure.value(failure);
 		};
 		try {
@@ -1026,13 +1026,13 @@ Cocoquantus {
 		};
 		if(audioReconfigureState == \failed) {
 			if(result[\rollbackError].notNil) {
-				("Cocoquantus: Audio candidate failed: %; rollback failed: %. "
+				("Yönpuoli: Audio candidate failed: %; rollback failed: %. "
 					++ "Base/profile: % / %. Output remains silent. Recovery: CQ.reboot")
 					.format(result[\candidateError], result[\rollbackError],
 						this.configFilePath,
 						CQAudioConfig.profilePathFor(this.configFilePath)).warn;
 			} {
-				("Cocoquantus: Audio reconfigure failed — "
+				("Yönpuoli: Audio reconfigure failed — "
 					++ audioReconfigureError).warn;
 			};
 		};
@@ -1135,17 +1135,17 @@ Cocoquantus {
 		if(this.audioClockAlert != wasAlert) {
 			switch(this.audioClockAlert,
 				\clockStuck, {
-					("Cocoquantus: audio clock stuck — requested % Hz, server reports %."
+					("Yönpuoli: audio clock stuck — requested % Hz, server reports %."
 						++ " The sound cannot be trusted; restart audio from the Audio"
 						++ " page. No automatic recovery by design.").format(
 							audioClockWatch.requestedRate, rate ? "nothing").warn;
 				},
 				\serverDown, {
-					("Cocoquantus: the server has stopped answering — its last"
+					("Yönpuoli: the server has stopped answering — its last"
 						++ " reading is not evidence of anything. Restart audio from"
 						++ " the Audio page. No automatic recovery by design.").warn;
 				},
-				{ "Cocoquantus: audio recovered.".postln }
+				{ "Yönpuoli: audio recovered.".postln }
 			);
 			this.prPublish(\audioClock, this.audioClockAlert);
 		};
@@ -1218,13 +1218,13 @@ Cocoquantus {
 		OSCdef.all[\cq_hot] !? { |def| def.free };
 		state = nil;
 		matrix = nil;
-		("Cocoquantus: scsynth quit unexpectedly; session invalidated. "
+		("Yönpuoli: scsynth quit unexpectedly; session invalidated. "
 			++ "Run CQ.reboot to rebuild.").warn;
 	}
 
 	*prCocoParam { |n, suffix|
 		if(#[1, 2].includes(n).not) {
-			"Cocoquantus: coco index must be 1 or 2 (got %).".format(n).warn;
+			"Yönpuoli: coco index must be 1 or 2 (got %).".format(n).warn;
 			^nil
 		};
 		^("coco" ++ n ++ suffix).asSymbol
@@ -1232,10 +1232,10 @@ Cocoquantus {
 
 	*prCastleSynth { |k|
 		if(#[1, 2, 3, 4, 5].includes(k).not) {
-			"Cocoquantus: castle index must be 1..5 (got %).".format(k).warn;
+			"Yönpuoli: castle index must be 1..5 (got %).".format(k).warn;
 			^nil
 		};
-		if(this.isBooted.not) { "Cocoquantus: not booted.".warn; ^nil };
+		if(this.isBooted.not) { "Yönpuoli: not booted.".warn; ^nil };
 		^graph.synths[\quantussy]
 	}
 
@@ -1261,12 +1261,12 @@ Cocoquantus {
 			if(config.notNil and: { config[\autoTrim] == true }) {
 				trimDb = max(trimDb - 6, -18);
 				graph !? { graph.synths[\master] !? { |m| m.set(\trim, trimDb.dbamp) } };
-				("Cocoquantus: WATCHDOG — driving hard > 5 s, auto-trim now % dB "
+				("Yönpuoli: WATCHDOG — driving hard > 5 s, auto-trim now % dB "
 					++ "(CQ.resetTrim to restore).").format(trimDb).warn;
 			} {
 				// notice-only (default): the limiter already keeps it safe; auto-trim
 				// is opt-in (config autoTrim: true) — a comfort ease-off, not safety
-				("Cocoquantus: watchdog — driving the master hard (> 5 s). Limiter has "
+				("Yönpuoli: watchdog — driving the master hard (> 5 s). Limiter has "
 					++ "it safe; config autoTrim: true adds an automatic −6 dB ease-off.").postln;
 			};
 		}, '/cq_hot');
@@ -1290,7 +1290,7 @@ Cocoquantus {
 		if(val.isNil) { ^this };
 		if((val > 0) and: { micWasLive.not }) {
 			micWasLive = true;
-			("Cocoquantus: micGain > 0 — the mic is LIVE. Feedback risk "
+			("Yönpuoli: micGain > 0 — the mic is LIVE. Feedback risk "
 				++ "with builtin speakers; CQ.set(\\micGain, 0) to mute.").warn;
 		};
 		if(val <= 0) { micWasLive = false };
@@ -1332,7 +1332,7 @@ Cocoquantus {
 			\deck,   { this.prCqDeck(ev) },
 			\shake,  { this.shake(ev[\amount] ? 0.3, ev[\seed],
 				density: ev[\density]) },
-			{ "Cocoquantus: \\cq event — unknown action '%' ignored.".format(action).warn }
+			{ "Yönpuoli: \\cq event — unknown action '%' ignored.".format(action).warn }
 		);
 	}
 
@@ -1344,7 +1344,7 @@ Cocoquantus {
 				\prev,    { deck.prev },
 				\random,  { deck.random },
 				\restart, { deck.restart },
-				{ "Cocoquantus: \\cq deck op '%' ignored.".format(ev[\do]).warn }
+				{ "Yönpuoli: \\cq deck op '%' ignored.".format(ev[\do]).warn }
 			);
 		};
 	}

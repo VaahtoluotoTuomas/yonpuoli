@@ -192,12 +192,12 @@ CQGuiNightMapTest : UnitTest {
 			this.assert(CQGuiNightMap.hasDolbyCrescent(name).not,
 				"% keeps its plain crescent".format(name));
 			this.assert(CQGuiNightMap.dolbyNameForCrescent(name).isNil,
-				"% invents no Dolby parameter".format(name));
+				"% invents no dolby parameter".format(name));
 		};
 		this.assertEquals(CQGuiNightMap.dolbyNameForCrescent(\coco1In),
-			\coco1DolbyIn, "input oyster controls input Dolby");
+			\coco1DolbyIn, "input oyster controls input dolby");
 		this.assertEquals(CQGuiNightMap.dolbyNameForCrescent(\coco2Fb),
-			\coco2DolbyFb, "feedback oyster controls feedback Dolby");
+			\coco2DolbyFb, "feedback oyster controls feedback dolby");
 	}
 
 	// GUI_SPEC §6: solo-light on a Night body lights everything touching it.

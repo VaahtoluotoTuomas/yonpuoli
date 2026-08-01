@@ -814,7 +814,7 @@ CQGuiNightTouch {
 		^this
 	}
 
-	// ---- crescents: vertical value pour; in/fb carry a specific Dolby oyster ----
+	// ---- crescents: vertical value pour; in/fb carry a specific dolby oyster ----
 
 	crescentDown { |name, view, x, y, modifiers = 0, button = 0, clicks = 1|
 		var point = this.prPoint(view, x, y);

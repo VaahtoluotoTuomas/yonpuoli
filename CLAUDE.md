@@ -1,4 +1,4 @@
-# CLAUDE.md — Yölahti
+# CLAUDE.md — Yönpuoli
 
 Independent SuperCollider feedback instrument descended from a study of the
 Ciat-Lonbarde Cocoquantus 2. Read `PLAN.md` for the current handoff, then `SPEC.md`
@@ -73,9 +73,11 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 
 ## Current handoff
 
-- **Public product identity is Yölahti.** Cocoquantus is the explicitly credited
-  lineage, not the product name or a fidelity promise. Keep the existing `CQ*` /
-  `Cocoquantus` class and API namespace during Nocturne; do not start a mass rename.
+- **Public product identity is Yönpuoli.** Cocoquantus is the explicitly credited
+  lineage, not the product name or a fidelity promise. Keep its recognizable
+  vocabulary. Public prose and labels spell `dolby` with a lowercase initial.
+  Keep the existing `CQ*` / `Cocoquantus` namespace and internal `...Dolby...`
+  identifiers; do not start a mass rename.
   `README.md`, `SOURCES.md`, `docs/CASE_STUDY.md`, and
   `docs/DEVELOPMENT_PROCESS.md` define the public authorship and portfolio framing.
 - The detailed v1.0 implementation log is frozen at `docs/history/PLAN_v1.0.md`.
@@ -134,7 +136,7 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   N3).** It is now part of the accepted N3→N8 chain merged locally into
   `nocturne`. **Build-order step 4, the castle range
   ripples (§3), was accepted on `nocturne-range-ripples` on 2026-07-27
-  (checklist N4). Build-order step 5, the Dolby oysters (§4), was accepted on
+  (checklist N4). Build-order step 5, the dolby oysters (§4), was accepted on
   `nocturne-dolby-oysters` the same day (checklist N5). Build-order step 6,
   the fetching birds (§11), was accepted on `nocturne-birds-fetch` on
   2026-07-28 (checklist N6), build-order step 7, the preamp roots (§10), was
@@ -398,7 +400,7 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   display-only mic sprout and static REC transition/error states. Do not reopen or
   reinterpret them without the user's approval.
 - **The ReaRoute DAW bridge (road-to-1.0 step 1) works in both directions as of
-  2026-07-31** (checklist DAW-1): Yölahti opens `ASIO : ReaRoute ASIO (x64)` in
+  2026-07-31** (checklist DAW-1): Yönpuoli opens `ASIO : ReaRoute ASIO (x64)` in
   single-device mode while REAPER keeps K-Mix ASIO and does the monitoring. The
   working recipe, its two REAPER traps (the hardware-output row's own `M`; input
   monitoring, without which an armed track still shows input on its meter but

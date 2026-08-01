@@ -1,40 +1,33 @@
-# Yölahti
+# Yönpuoli
 
-[![SuperCollider checks](https://github.com/VaahtoluotoTuomas/sc-cocoquantus/actions/workflows/ci.yml/badge.svg)](https://github.com/VaahtoluotoTuomas/sc-cocoquantus/actions/workflows/ci.yml)
+[![SuperCollider checks](https://github.com/VaahtoluotoTuomas/yonpuoli/actions/workflows/ci.yml/badge.svg)](https://github.com/VaahtoluotoTuomas/yonpuoli/actions/workflows/ci.yml)
 
-**An experimental feedback instrument for SuperCollider, built around unstable
-8-bit memory, chaotic modulation, and a playable night-map interface.**
+**A nocturnal feedback instrument for SuperCollider.**
 
-Yölahti treats feedback, aliasing, noise, and cross-modulation as playing
+*Memory circulates until it becomes weather.*
+
+> **Lineage, not emulation.** Yönpuoli grew from a software study of Peter
+> Blasser's Ciat-Lonbarde Cocoquantus. It interprets the dual clocked 8-bit
+> memories, five-castle Quantussy network, and part of the original vocabulary,
+> but it is not a circuit model, faithful emulation, official port, or affiliated
+> Ciat-Lonbarde product.
+
+Yönpuoli treats feedback, aliasing, noise, and cross-modulation as playing
 materials. Two clocked delay/loopers circulate sound through an intentionally
 coarse converter, while a five-oscillator chaotic network and a signed patching
 matrix make the instrument behave less like an effect and more like a small
 electronic ecosystem.
 
-The instrument is currently developed and tested on Windows. The v1.0 sound
-engine and the complete Archipelago GUI are implemented, audited, and accepted.
-The active `nocturne` phase has made the Night surface the whole instrument:
-Night, the persistent Master strip and the Drawer now cover every parameter
-without maintaining a second performance interface. The Night-only instrument
-passed its live review on 2026-07-28; see [`PLAN.md`](PLAN.md) for current work
-rather than reading historical checklists as open tasks. The accepted Audio
-page now includes the AIO-3 transaction: it edits and validates an isolated
-draft, confirms the disruptive `Server.default` restart inline, commits the
-generated sibling profile only after a complete candidate boot, and restores
-the previous working Audio config once if that candidate fails. AIO-4 adds raw
-pre-gain live/mic presence and shared post-safety master presence without
-painting a hidden Audio page. Its isolated split-WASAPI recheck passed with
-responsive presence, sound and Night motion; the wider hardware-I/O review
-remains the next gate. The earlier WASAPI hang was isolated to live device
-enumeration, which is no longer performed while the server is running. The
-Audio restart gate also remains available with a clean draft: it
-reports an unresponsive engine explicitly and can rebuild the exact active
-configuration without writing a profile.
+The sound engine, Night-only performance surface, hardware-I/O path, and
+long-duration resource soak have passed their current acceptance gates. Work is
+now focused on final 1.0 packaging: repository privacy and history review,
+controller mapping, first-touch playability, release media, and the final merge
+and tag. [`PLAN.md`](PLAN.md) is the current status authority.
 
 ## What it offers
 
 - Two recirculating 8-bit Coco-inspired delay/loopers: clock-rate repitching,
-  feedback above unity, hold, flip, skip, Dolby-style articulation, digital
+  feedback above unity, hold, flip, skip, dolby-style articulation, digital
   dust, and square-stack organ voices.
 - A five-castle Quantussy-inspired modulation network that moves from slow
   stepped wandering to audio-rate chaos.
@@ -57,7 +50,7 @@ configuration without writing a profile.
 - Optional: an atovproject 16n faderbank. The instrument is fully usable without
   it.
 
-Yölahti uses only SuperCollider's standard UGens; no Quarks or third-party
+Yönpuoli uses only SuperCollider's standard UGens; no Quarks or third-party
 plugins are required.
 
 ## Installation
@@ -79,7 +72,7 @@ plugins are required.
 
    Audio-page edits are stored in the ignored sibling `config.audio.scd`; the
    hand-maintained `config.scd` is never rewritten. Apply first explains that
-   audio, unrelated synths on `Server.default`, and the unsaved Yölahti patch
+   audio, unrelated synths on `Server.default`, and the unsaved Yönpuoli patch
    will reset. An active recorder blocks the restart.
 
 3. In the SuperCollider IDE, open **Edit → Preferences → Interpreter → Include
@@ -181,7 +174,7 @@ accepted historical evidence is archived under [`docs/history/`](docs/history/).
 
 ## Lineage and acknowledgements
 
-Yölahti began as a study of Peter Blasser's Ciat-Lonbarde Cocoquantus,
+Yönpuoli began as a study of Peter Blasser's Ciat-Lonbarde Cocoquantus,
 particularly its pair of clocked 8-bit delays and five-oscillator Quantussy
 network. It is not a circuit model or a faithful software emulation. Its Night
 interface, signed routing matrix, safety system, file decks, snapshots, compass,
@@ -189,12 +182,17 @@ and weather gestures take the instrument in an independent direction.
 
 This independent project is not affiliated with or endorsed by Peter Blasser or
 Ciat-Lonbarde. The technical sources, interpretations, and deliberate deviations
-are listed in [`SOURCES.md`](SOURCES.md) and [`SPEC.md`](SPEC.md). Cocoquantus and
-Ciat-Lonbarde are referenced only to identify the instrument's lineage.
+are listed in [`SOURCES.md`](SOURCES.md) and [`SPEC.md`](SPEC.md). The lowercase
+term `dolby` follows the inherited Cocoquantus vocabulary for Yönpuoli's
+gate/duck articulation; it does not identify or implement Dolby Laboratories
+technology. Familiar terms such as Coco, Quantussy, castle, Spesal, SP.AF, flip,
+skip, and verso/inverso are retained deliberately as an honest map of that
+lineage, not as a fidelity claim. The existing `CQ*` / `Cocoquantus` technical
+namespace is kept as a stable legacy API.
 
 ## Development process and authorship
 
-Yölahti was conceived and directed by **Tuomas Vaahtoluoto**, including its sonic
+Yönpuoli was conceived and directed by **Tuomas Vaahtoluoto**, including its sonic
 and visual design, requirements, acceptance criteria, and hands-on testing.
 [Claude Code](https://claude.com/claude-code) and
 [OpenAI Codex](https://openai.com/codex/) have been used extensively as coding
@@ -228,7 +226,7 @@ portfolio-oriented account of the project is in
 
 - On the current Windows laptop, SuperCollider's `system default` route can
   start responsively yet advance a requested 48 kHz stream at only about
-  2.61 kHz. Yölahti now requires three healthy post-boot clock readings before
+  2.61 kHz. Yönpuoli now requires three healthy post-boot clock readings before
   building the graph, because the first watcher value can still belong to the
   previous server. The tested split-WASAPI input/output route remains the local
   baseline. Automatic recovery from a physically unplugged ASIO candidate is
@@ -242,6 +240,6 @@ portfolio-oriented account of the project is in
 
 ## License
 
-Yölahti is licensed under the
+Yönpuoli is licensed under the
 [GNU General Public License v3.0 or later](LICENSE). See
 [`CONTRIBUTING.md`](CONTRIBUTING.md) for contribution terms.

@@ -174,7 +174,7 @@ Asteikot ovat vertailutyökaluja, eivät absoluuttinen fidelity-todistus.
 
 ## LT-02 — Cocon clocked-RAM-identiteetti
 
-**Tavoite:** arvioida speed/pituus/pitch/fideliteetti, feedback-uudelleenkirjoitus, hold, Flip, Skip, dust, bits, wrap, interpolation, Dolby ja SP.AF.
+**Tavoite:** arvioida speed/pituus/pitch/fideliteetti, feedback-uudelleenkirjoitus, hold, Flip, Skip, dust, bits, wrap, interpolation, dolby ja SP.AF.
 
 **Lähtötila:** yksi Coco kuuluviin, toinen nollaan; Space, dry, crossfeed, Quantussy-slot ja matriisi pois. Käytä transientti- ja puheaineistoa.
 
@@ -188,7 +188,7 @@ Asteikot ovat vertailutyökaluja, eivät absoluuttinen fidelity-todistus.
 6. **Bits:** vertaa 12, 8 ja 3 bittiä samalla lyhyellä loopilla. Kirjaa, muuttuuko kierros kierrokselta vai vain pintakohinana.
 7. **Wrap:** vertaa clip- ja wrap-tilaa vain alhaisella fyysisellä monitoritasolla ja lyhyesti. Kirjaa polariteettikäännökset/kovuus.
 8. **Interpolation:** sokkoutettu ZOH/smooth-A/B samalla hold-loopilla.
-9. **Dolby:** käytä puheen ja iskujen kerroksia; vertaa off, gate ja duck erikseen input- ja feedback-haarassa.
+9. **dolby:** käytä puheen ja iskujen kerroksia; vertaa off, gate ja duck erikseen input- ja feedback-haarassa.
 10. **SP.AF:** patchaa yksi hidas triangle Cocon speediin, testaa positiivinen ja negatiivinen paino sekä `cocoNSpaf` 0 → pieni → suuri.
 
 **Hyväksymiskriteerit:**
@@ -504,7 +504,7 @@ rate ja block size serveriltä/one-shot `SampleRate.ir` + `ControlDur.ir`
 **Aikajana:**
 
 1. 0–10 min: kaksi deckiä, molemmat Cocos record/hold-vaihdoin, speed-eleitä.
-2. 10–20 min: feedback 0,9–1,15, dust, Flip/Skip ja Dolby. Maksimiarvot vain lyhyesti.
+2. 10–20 min: feedback 0,9–1,15, dust, Flip/Skip ja dolby. Maksimiarvot vain lyhyesti.
 3. 20–30 min: Quantussy 0–1 chaos, Spesal, useita matriisireittejä, patchDepth 0/1.
 4. 30–40 min: käy presetit järjestyksessä, snapshot recall/morph ja kolme deck load/next/prev -vaihtoa.
 5. 40–50 min: Space maltillisena, recorder start/stop vähintään viisi kertaa; yksi panic/resume.

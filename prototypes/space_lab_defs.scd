@@ -1,8 +1,8 @@
-// Yölahti Space Lab — four disposable listening SynthDefs.
+// Yönpuoli Space Lab — four disposable listening SynthDefs.
 //
 // This file returns an Array of SynthDefs. It allocates nothing, starts no node,
 // and never writes to hardware outputs. space_lab.scd owns the listening
-// lifecycle and routes one selected prototype through Yölahti's existing
+// lifecycle and routes one selected prototype through Yönpuoli's existing
 // aSpaceRet -> cqMaster safety/recording path.
 //
 // The four candidates deliberately answer different questions:

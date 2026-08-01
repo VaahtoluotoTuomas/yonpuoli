@@ -1,6 +1,6 @@
 # Sources, lineage, and interpretation
 
-Yölahti is an independent software instrument. It began as a study of Peter
+Yönpuoli is an independent software instrument. It began as a study of Peter
 Blasser's Ciat-Lonbarde Cocoquantus but is not presented as a faithful emulator,
 circuit model, official port, or substitute for the physical instrument.
 
@@ -8,12 +8,19 @@ This project is not affiliated with or endorsed by Peter Blasser or Ciat-Lonbard
 Names associated with the original instrument are used to identify technical and
 artistic lineage.
 
+The interface deliberately keeps Coco, Quantussy, castle, Spesal, SP.AF,
+flip/skip, verso/inverso, and lowercase `dolby` as recognizable lineage
+vocabulary. This is not a fidelity claim. Here `dolby` names Yönpuoli's own
+gate/duck articulation and does not identify or implement Dolby Laboratories
+technology. Existing `CQ*`, `Cocoquantus`, and internal `...Dolby...` identifiers
+remain unchanged for compatibility.
+
 ## Primary sources
 
 - Peter Blasser / Ciat-Lonbarde,
   [Cocoquantus description and benchmarks](https://www.ciat-lonbarde.net/ciat-lonbarde/cocoquantus/index.html).
   This is the primary source for the dual 8-bit delay architecture, panel
-  functions, Quantussy, ranges, Spesal state, Dolby behavior, and the instrument's
+  functions, Quantussy, ranges, Spesal state, dolby behavior, and the instrument's
   own conceptual vocabulary.
 - Peter Blasser / Ciat-Lonbarde,
   [Cocoquantus view document](https://www.ciat-lonbarde.net/ciat-lonbarde/cocoquantus/view.pdf).
@@ -39,7 +46,7 @@ documents, recordings, panel graphics, or schematics.
 ## Project interpretations
 
 The public material does not determine every software behavior. The following are
-explicit Yölahti interpretations or software-native designs rather than verified
+explicit Yönpuoli interpretations or software-native designs rather than verified
 claims about the hardware:
 
 - the exact eight-state Spesal mapping as four partners × two hold modes;

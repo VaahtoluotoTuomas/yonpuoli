@@ -1,4 +1,4 @@
-// Yölahti Space Lab — archived live harness.
+// Yönpuoli Space Lab — archived live harness.
 //
 // The production Space node and return bus were retired on 2026-07-28. This
 // file now posts an archive notice and exits; the standalone SynthDefs remain
@@ -24,10 +24,10 @@
 var here, defs, server, graph, oldLab;
 
 if(CQSpec.includes(\spaceMix).not) {
-	"Yölahti Space Lab is archived: production Space routing was retired on 2026-07-28. The SynthDef research remains available in space_lab_defs.scd.".warn;
+	"Yönpuoli Space Lab is archived: production Space routing was retired on 2026-07-28. The SynthDef research remains available in space_lab_defs.scd.".warn;
 } {
 if(CQ.isBooted.not) {
-	"Yölahti Space Lab: CQ.boot must be fully ready first.".warn;
+	"Yönpuoli Space Lab: CQ.boot must be fully ready first.".warn;
 } {
 	here = File.realpath(thisProcess.nowExecutingPath).dirname;
 	defs = thisProcess.interpreter.executeFile(here +/+ "space_lab_defs.scd");
@@ -51,7 +51,7 @@ if(CQ.isBooted.not) {
 				CQ.set(\coco2Send, previous[\send2]);
 				CQ.set(\spaceMix, previous[\mix]);
 			};
-			"Yölahti Space Lab: recovered the earlier failed Event controller."
+			"Yönpuoli Space Lab: recovered the earlier failed Event controller."
 				.postln;
 		} {
 			oldLab.freeLab
@@ -129,10 +129,10 @@ if(CQ.isBooted.not) {
 		playVariant: { |self, which = \utility|
 			var name;
 			if(self.stopped) {
-				"Yölahti Space Lab: this lab has been stopped; evaluate the file again.".warn;
+				"Yönpuoli Space Lab: this lab has been stopped; evaluate the file again.".warn;
 			} {
 				if(self.variants.includes(which).not) {
-				("Yölahti Space Lab: unknown variant %, choose %."
+				("Yönpuoli Space Lab: unknown variant %, choose %."
 					.format(which, self.variants)).warn;
 				} {
 					self.synth !? { self.synth.free };
@@ -264,7 +264,7 @@ if(CQ.isBooted.not) {
 				CQ.set(\coco1Send, self.previous[\send1]);
 				CQ.set(\coco2Send, self.previous[\send2]);
 				CQ.set(\spaceMix, self.previous[\mix]);
-				"Yölahti Space Lab stopped; previous Space state restored.".postln;
+				"Yönpuoli Space Lab stopped; previous Space state restored.".postln;
 			};
 			self
 		}
@@ -304,7 +304,7 @@ if(CQ.isBooted.not) {
 				0.1.wait;
 			}
 		}).play(AppClock);
-		"Yölahti Space Lab ready — returns unity-calibrated; wet 0.35 is clearly audible."
+		"Yönpuoli Space Lab ready — returns unity-calibrated; wet 0.35 is clearly audible."
 			.postln;
 		"Use ~cqSpaceLab.showStatus for current settings.".postln;
 	}).play(AppClock);

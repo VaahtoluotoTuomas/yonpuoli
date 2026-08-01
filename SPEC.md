@@ -1,6 +1,6 @@
-# SPEC.md — Yölahti
+# SPEC.md — Yönpuoli
 
-Yölahti is an independent SuperCollider feedback instrument whose starting point was
+Yönpuoli is an independent SuperCollider feedback instrument whose starting point was
 the **Ciat-Lonbarde Cocoquantus 2** (Peter Blasser): two 8-bit "Coco"
 delay/loopers around a five-oscillator chaotic "Quantussy" brain. It is no longer
 positioned as a faithful emulator; its software-native routing, safety architecture,
@@ -17,10 +17,10 @@ names, ranges, defaults and safety requirements here remain the single source of
 ## 1. Goals and non-goals
 
 ### Goals
-1. **Faithful in behavior and aesthetics, native to SuperCollider in interface.**
-   Reproduce the *musical behaviors* of the Cocoquantus (lo-fi clocked-RAM delays,
-   recirculating 8-bit degradation, chaotic stepped modulation, two-knob macro control
-   of complexity), not its circuits.
+1. **Cocoquantus-rooted behavior, independent SuperCollider instrument.**
+   Interpret the lineage's core *musical behaviors* (lo-fi clocked-RAM delays,
+   recirculating 8-bit degradation, chaotic stepped modulation, and compact macro
+   control of complexity) without claiming circuit or interface fidelity.
 2. **A processor-instrument.** Primary use case: feed in field recordings and modular
    synth material (audio interface, files, optionally laptop mic), mangle it, record the
    result to disk and/or send it back out to the modular.
@@ -54,7 +54,7 @@ Where the sources are ambiguous, the SC interpretation is marked **[interpretati
   beyond = escalating mangled, saturating echo cascades).
 - Both Input and Feedback levels have **verso/inverso VCA inputs**: patchable amplitude
   modulation, non-inverting (verso) or inverting (inverso) polarity.
-- Both channels have a 3-position **Dolby** switch: *off* / *noise-gate on own signal*
+- Both channels have a 3-position **dolby** switch: *off* / *noise-gate on own signal*
   (self-expander) / *keyed by the other channel* ("other-puncher" — input and feedback
   duck/gate each other for "monophonic articulations of time-layers").
 - **Loop button**: default state records continuously (delay); pressed = recording
@@ -92,15 +92,16 @@ Where the sources are ambiguous, the SC interpretation is marked **[interpretati
 - Two stereo line inputs normalled directly to the Cocos (L→Coco1, R→Coco2).
 
 ### 2.4 Cocoquantus 1 vs 2
-Same architecture and feature set (Flip/Skip/SP.AF, Dolby, verso/inverso existed in v1).
+Same architecture and feature set (Flip/Skip/SP.AF, dolby, verso/inverso existed in v1).
 V2 refinements: banana jacks replace bare screw/alligator patch points, refined panel
-and center display. **This port targets the Cocoquantus 2 feature set.**
+and center display. **Yönpuoli takes the Cocoquantus 2 vocabulary and feature family
+as its historical starting point, not as an emulation target.**
 
 ---
 
 ## 3. Sound identity requirements
 
-The implementation MUST reproduce these behaviors (these drive the acceptance tests):
+The implementation MUST deliver these behaviors (these drive the acceptance tests):
 
 1. **Clocked-RAM re-pitching.** Changing Speed re-pitches material already in the
    buffer (tape-like doppler), while also changing loop length and fidelity together.
@@ -569,7 +570,7 @@ never parsed from or evaluated as UI text.
 Device, sample rate, server block, hardware buffer and hardware channel changes
 are not hot-swapped. Apply requires a visible inline confirmation that
 `Server.default` restarts, unrelated synths on it stop, and the current unsaved
-Yölahti patch resets. An active recorder blocks restart. A candidate becomes
+Yönpuoli patch resets. An active recorder blocks restart. A candidate becomes
 active/last-working and its pending profile becomes current only after the
 responsive server reports three actual-sample-rate readings, separated by
 0.75 seconds, all within 80–120% of the requested rate, and the full SynthDef,
@@ -681,8 +682,8 @@ Manual listening checklist (user-verified, `tests/manual_checklist.md`):
 - M3 Chaos sweep 0→1 traverses stable→vibrato→stepped wander→hyperchaos.
 - M4 `\selfNoise` preset reproduces the no-input digital-dust workflow.
 - M5 Flip/skip audibly reverse/restart; dolby duck creates "time-layer" articulation.
-- M6 A field recording through `\classic` at defaults is immediately "Cocoquantus-like"
-  (warbling, aliased, alive) without touching anything.
+- M6 A field recording through `\classic` at defaults is immediately warbling,
+  aliased, and alive without touching anything.
 - M7 Full session (30 min, headphones) with deliberate abuse: nothing painful ever.
 - M8 16n: all 16 faders correct and smooth; unplug/replug mid-session survives.
 

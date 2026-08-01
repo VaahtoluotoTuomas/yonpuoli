@@ -1,4 +1,4 @@
-# ARCHITECTURE.md — Yölahti
+# ARCHITECTURE.md — Yönpuoli
 
 How the code is organized. `SPEC.md` is normative for behavior, names, ranges and
 safety; this file is normative for structure. Code snippets here are **sketches of the
@@ -26,7 +26,7 @@ intended approach** — they show the trick, not final compilable code.
 ## 2. Repository layout
 
 ```
-yolahti/
+yonpuoli/
 ├── SPEC.md  ARCHITECTURE.md  CLAUDE.md  README.md
 ├── boot.scd                    // user entry point: loads config, Cocoquantus.boot
 ├── live.scd                    // performance scratchpad: example blocks, patch recipes

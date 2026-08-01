@@ -112,7 +112,7 @@ render = { |path|
 	try {
 		CQInkControl.resetDrawErrors;
 		page = CQGuiAudioSetup(nil, model, { catalog.deepCopy }, controller);
-		window = Window("Yölahti · Audio I/O · AIO-3",
+		window = Window("Yönpuoli · Audio I/O · AIO-3",
 			Rect(70, 70, 1272, 526), true)
 			.background_(CQInk.palette(\night)[\recess]);
 		window.view.layout = VLayout(page.view).margins_(0).spacing_(0);

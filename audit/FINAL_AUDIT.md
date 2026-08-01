@@ -106,7 +106,7 @@ P0/P1-korjauksia tai muuttaa soundia visuaalisen commitin sivuvaikutuksena.
 - Parametri-, patch- ja toimintofunnelit ovat selkeät: `CQSpec`/`CQState`,
   `CQMatrix` ja `Cocoquantus`-facade. GUI, koodi, snapshot ja MIDI jakavat saman tilan.
 - Kaksi itsenäistä Coco-muistia, ristikytkentä, signed 16×22-matriisi, Quantussyn
-  castle/spesal-rakenne, Hold/Flip/Skip/Dolby ja digital dust muodostavat aidosti
+  castle/spesal-rakenne, Hold/Flip/Skip/dolby ja digital dust muodostavat aidosti
   omaleimaisen, emergentin instrumentin.
 - Normaali feedback on tarkoituksellisesti elävä mutta rajattu. Master- ja stem-
   ketjujen LeakDC→tanh→Limiter→bad-value-squelch, hiljainen boot-fade ja panic ovat

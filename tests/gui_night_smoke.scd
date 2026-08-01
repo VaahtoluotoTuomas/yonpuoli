@@ -964,7 +964,7 @@ punchChecks = { |map|
 																	local.x, local.y, 0, 0, 1);
 																check.value(state.get(\coco1DolbyIn)
 																	== dolbyBefore,
-																	"a cable crossing the oyster wins; Dolby does not step");
+																	"a cable crossing the oyster wins; dolby does not step");
 																dolbyView.mouseUpAction.value(dolbyView,
 																	local.x, local.y, 0, 0);
 																matrix.writeMatrix(matrixBeforeDolby,

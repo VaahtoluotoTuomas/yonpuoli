@@ -43,7 +43,7 @@ Toteutus ei pyri piirisimulaatioon, eikä sen pidäkään `SPEC.md:29–34`:n mu
 | ZOH sisään/ulos ja aliasointi | A | Dokumentoitu ääni-identiteetin vaatimus ja ZOH-luku | Koodista varmistettu; auditiivinen laatu testaamatta |
 | Feedbackin clip/wrap → quantize → RAM | A | Uudelleenkirjoittuva ja sisäisesti rajattu paluusilmukka | Koodista ja NRT-turvasta varmistettu |
 | Hold, Flip, Skip | A | Rakenteet toimivat RAM-osoituksessa/kirjoituksessa | Koodista; hold myös NRT:llä varmistettu |
-| Dolby-tilat, verso/inverso-VCA:t ja digital dust | A/B | Perustoiminnot seuraavat paikallista kuvausta; SC:n tarkat käyrät ovat tulkintaa | Koodista varmistettu; estetiikka testaamatta |
+| dolby-tilat, verso/inverso-VCA:t ja digital dust | A/B | Perustoiminnot seuraavat paikallista kuvausta; SC:n tarkat käyrät ovat tulkintaa | Koodista varmistettu; estetiikka testaamatta |
 | Organ-ulostulo | B | Olemassaolo kuuluu A-tavoitteeseen, mutta pulse-stack/address-bit-johdos on eksplisiittinen tulkinta | Koodista varmistettu |
 | Viisi keskinäisesti moduloivaa castlea | A/B | Viiden verkko ja S&H-periaate ovat A; tarkka 8-state partner/mode -kartta on dokumentoitu tulkinnaksi | Koodista varmistettu |
 | Nimetty 16×22 signed-matriisi | B | Säilyttää audio/CV-avoimuutta ilman ruudun patch-kaapeleita | Koodista varmistettu |
@@ -120,27 +120,27 @@ Koska rajoitus ja kvantisointi sijaitsevat silmukan sisällä, karheus kertyy mu
 
 Älä siirrä clip/wrap- tai quantize-vaihetta RAM-kirjoituksen jälkeen. Korjaa mahdollinen bittitasojen määrä vain kontrolloidun A/B-kuuntelun kautta, sillä pienikin kvantizerin muutos vaikuttaa feedback-häntään, hold-materiaaliin ja tunnistettavaan rouheeseen.
 
-## 4. Hold, Flip, Skip, Dolby ja digital dust — A/B
+## 4. Hold, Flip, Skip, dolby ja digital dust — A/B
 
 ### Paikalliseen projektidokumentaatioon perustuva väite
 
-Projektin tutkimusyhteenveto kuvaa loop-lockin, power-on-kohinan, Flipin, Skipin, SP.AF:n, Input/Feedback-VCA:t sekä Dolby gate/other-puncher -käyttäytymisen (`SPEC.md:48–64`). Tarkat SC-käyrät eivät ole dokumentoitua piirivastaavuutta; piirisimulaatio on nimenomaisesti ei-tavoite (`SPEC.md:29–31`).
+Projektin tutkimusyhteenveto kuvaa loop-lockin, power-on-kohinan, Flipin, Skipin, SP.AF:n, Input/Feedback-VCA:t sekä dolby gate/other-puncher -käyttäytymisen (`SPEC.md:48–64`). Tarkat SC-käyrät eivät ole dokumentoitua piirivastaavuutta; piirisimulaatio on nimenomaisesti ei-tavoite (`SPEC.md:29–31`).
 
 ### Koodihavainto
 
 - Hold vaihtaa RAMiin kirjoitettavan arvon `record`-signaalista ennen kirjoitusta luettuun `here`-arvoon (`classes/CQSynthDefs.sc:240–241`).
 - Flip vaihtaa osoiteaskelen merkin ja Skip triggaa osoitelaskurin alkuun (`classes/CQSynthDefs.sc:198–205`).
-- Dolby gate ja duck käyttävät envelope-seurantaa ja kiinteitä SC-aikavakioita (`classes/CQSynthDefs.sc:209–233`).
+- dolby gate ja duck käyttävät envelope-seurantaa ja kiinteitä SC-aikavakioita (`classes/CQSynthDefs.sc:209–233`).
 - Dust syntyy valkoisen kohinan ja hitaan satunnaismodulaation tulona ennen muuntimen rajoitusta (`classes/CQSynthDefs.sc:234–239`).
 - Power-on-puskurit alustetaan erikseen 8-bittiseen kohinaan ja hold on oletuksena päällä (`classes/CQGraph.sc:64–69`, `SPEC.md:213`).
 
 ### Esteettinen tulkinta
 
-Toiminnot ovat osa muistisoitinta, eivät irrallisia transport-nappeja. Erityisesti power-on dust antaa soittimelle lähteen myös ilman tiedostoa tai live-inputia. Dolby-algoritmit ovat kuitenkin välttämättä B-luokan käyttäytymistulkintoja: yksinkertainen expander/duck ei itsessään todista laitekohtaista dynamiikkaa.
+Toiminnot ovat osa muistisoitinta, eivät irrallisia transport-nappeja. Erityisesti power-on dust antaa soittimelle lähteen myös ilman tiedostoa tai live-inputia. dolby-algoritmit ovat kuitenkin välttämättä B-luokan käyttäytymistulkintoja: yksinkertainen expander/duck ei itsessään todista laitekohtaista dynamiikkaa.
 
 ### Suositus
 
-Pidä power-on hold/dust, Flip/Skipin osoitetason toteutus ja Dolby-tilojen keskinäinen avainnus. Kalibroi Dolby-kynnykset ja aikavakiot puheella, iskuäänellä ja feedback-kerroksilla; älä markkinoi tarkkoja käyriä piirivastaavina ilman lähdettä ja mittausta.
+Pidä power-on hold/dust, Flip/Skipin osoitetason toteutus ja dolby-tilojen keskinäinen avainnus. Kalibroi dolby-kynnykset ja aikavakiot puheella, iskuäänellä ja feedback-kerroksilla; älä markkinoi tarkkoja käyriä piirivastaavina ilman lähdettä ja mittausta.
 
 ## 5. Quantussy ja “everything is signal” — A/B
 
@@ -344,7 +344,7 @@ Tässä auditissa ei vahvistettu:
 
 - ulkoisia historiallisia tai piirikohtaisia väitteitä
 - fyysisen laitteen ja SC-toteutuksen sokkoutettua A/B-kuuntelua
-- Dolby-käyrien, organ-jakajien tai Quantussy-tilakartan laitekohtaista vastaavuutta
+- dolby-käyrien, organ-jakajien tai Quantussy-tilakartan laitekohtaista vastaavuutta
 - 44,1/96 kHz:n tai eri block size -arvojen kuultavaa käyttäytymistä
 - Spacen esteettistä sopivuutta kuuntelemalla
 - presetien järjestysriippumattomuutta kuuntelemalla

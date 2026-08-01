@@ -208,7 +208,7 @@ CQGuiNightTouchTest : UnitTest {
 		this.assert(CQGuiNightTouch.nextEnum(\qFreq, 4).isNil,
 			"a non-enum cannot be stepped");
 		this.assertEquals(CQGuiNightTouch.nextEnum(\coco1DolbyIn, \off), \gate,
-			"the input oyster follows CQSpec's Dolby order");
+			"the input oyster follows CQSpec's dolby order");
 		this.assertEquals(CQGuiNightTouch.nextEnum(\coco1DolbyIn, \gate), \duck,
 			"the oyster reaches duck without a literal mode list");
 		this.assertEquals(CQGuiNightTouch.nextEnum(\coco1DolbyIn, \duck), \off,

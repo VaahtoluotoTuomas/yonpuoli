@@ -1228,7 +1228,7 @@ The bird level remains neutral through its exact unity tick; the actually
 travelled gain above it and its pearl turn danger-red. This is one real
 boundary (nominal level → boost), not a generic magnitude ramp. Speed, the
 storm iris and the root gestures have no honest discrete region boundaries
-today and intentionally remain continuous. Dolby and range already state
+today and intentionally remain continuous. dolby and range already state
 their discrete modes by shape.
 
 **Hypothesis.** The instrument's juiciest zone is fb ≈ 0.95–1.15

@@ -567,7 +567,7 @@ erotusura joen katkolta?
       köli/aalto-perhe erottuu fm-kuusta, 13 px kehorako ja joen paikallinen
       vektoriura toimivat, hover-prioriteetti ja molemmat ikkunakoot hyväksytty)
 
-### N5 — Dolby-osterit (§4)
+### N5 — dolby-osterit (§4)
 
 Kummankin Cocon input- ja feedback-sirpin alla on oma tekstittämätön
 kolmiasentoinen osteri. Auki = `off`, lähes kiinni = `gate`, kiinni ja
@@ -575,7 +575,7 @@ kumppanikanavan suunnasta tuleva lyhyt painallusviiva = `duck`. Napautus askelta
 `off → gate → duck → off`; sirpin oma pystysuora VCA-veto ei muutu.
 
 ```supercollider
-// N5 — Dolby-osterit. Ctrl+Shift+L, sitten käynnistä Night.
+// N5 — dolby-osterit. Ctrl+Shift+L, sitten käynnistä Night.
 CQ.boot;
 CQ.clearPatch;
 CQ.loadA(Platform.resourceDir +/+ "sounds/a11wlk01.wav");
@@ -597,7 +597,7 @@ CQ.set(\coco1DolbyFb, \off);
 // 4. Vedä IN- ja FB-sirppejä pystysuoraan. VCA:n pitää yhä kaatua täsmälleen
 //    kuten ennen; osterista alkava veto ei saa liikuttaa VCA:ta.
 // 5. Tee tiheä patch CQ.shake-komennolla. Kaapeli osterin päällä voittaa hoverin
-//    ja painalluksen: siitä tartutaan johtoon, Dolby ei askella.
+//    ja painalluksen: siitä tartutaan johtoon, dolby ei askella.
 CQ.clearPatch;
 ```
 
@@ -891,7 +891,7 @@ CQ.set(\masterVol, -24);
 //    DRAWER, mutta ei DAY/NIGHT-vaihtoa. Master ja PANIC pysyvät alhaalla.
 // 2. Soita Nightia 10–15 minuuttia ilman Draweria: hae lintu napauttamalla,
 //    vaihda tiedostoa rullalla/rufflella, soita juurten driveä ja biasia,
-//    shellien hold/punch/flip/skip/Dolby-eleitä, castlejen rangeä ja steppejä
+//    shellien hold/punch/flip/skip/dolby-eleitä, castlejen rangeä ja steppejä
 //    sekä kuuta, säätä, vuorovettä, siemeniä ja kaapeleita.
 // 3. Avaa DRAWER. Käy inspector · workshop · spellbook · memory läpi ja
 //    palaa samalla DRAWER-napilla Nightiin. Master, notice ja PANIC eivät saa
@@ -939,11 +939,11 @@ CQ.hold(1, 0);
 // 5. Katso samalla kummankin feedback-sirpin asteikkoa: koko vihreä /
 //    meripihka / punainen rata näkyy himmeänä, kuljettu osuus kirkkaana ja
 //    helmi nykykohdassa. Vaihtojen pitää osua kuultuihin 0.85- ja 1.10-rajoihin,
-//    eikä jälkimmäisen Dolby-osterin pidä hukkua värin alle.
+//    eikä jälkimmäisen dolby-osterin pidä hukkua värin alle.
 // 6. Aja SP.AF keskikohdan molemmin puolin: nollaloven pitää pysyä paikallaan,
 //    sinisen inverso- ja oranssin verso-osuuden kasvaa keskeltä ulospäin.
 // 7. Aja input unityn yli: vihreän normaalialueen pitää vaihtua lovella
-//    meripihkaiseen overdriveen. Sen alla olevan Dolby-osterin pitää yhä erottua.
+//    meripihkaiseen overdriveen. Sen alla olevan dolby-osterin pitää yhä erottua.
 // 8. Katso kummankin linnun level-sirppiä: neutraalin unity-viivan pitää pysyä
 //    täsmälleen samassa paikassa arvosta riippumatta; värialueita ei ole.
 CQ.free;
@@ -1559,7 +1559,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
       24-bit, 13,15 s; `recStems: true` persistoi exact ja palautus `off` /
       `recStems: false` restarttasi takaisin toimivaan audioon
 - [x] Virtuaalinen loopback näkyy tavallisena driver-laitteena ilman lupausta
-      siitä, että Yölahti olisi luonut järjestelmäkytkennän (2026-07-30):
+      siitä, että Yönpuoli olisi luonut järjestelmäkytkennän (2026-07-30):
       koneen valmiiksi aktiivinen Realtek `Stereo Mix` löytyi input-listalta
       exact-nimenä vasta `show all drivers` -kytkimellä, koska sen host API on
       `Windows WDM-KS` — yksi `CQAudioDeviceCatalog.legacyWindowsPrefixes`in
@@ -1572,9 +1572,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
       ei kelpaa tähän: split vaatii saman host API:n molemmissa päissä, ja
       WDM-KS on exclusive-mode kernel streaming, jota DAW ei pysty pitämään
       auki toisesta päästä yhtä aikaa. Portti tehdään omana päivänään, kun
-      ajuri on asennettu: DAW → `CABLE-A Input`, Yölahden input =
-      `CABLE-A Output`, Yölahden main out = `CABLE-B Input`, DAW monitoroi/
-      nauhoittaa `CABLE-B Output`ista. Molemmat Yölahden päät ovat WASAPI, eli
+      ajuri on asennettu: DAW → `CABLE-A Input`, Yönpuolen input =
+      `CABLE-A Output`, Yönpuolen main out = `CABLE-B Input`, DAW monitoroi/
+      nauhoittaa `CABLE-B Output`ista. Molemmat Yönpuolen päät ovat WASAPI, eli
       split-ehto täyttyy. Vaatii 48 kHz:n asettamisen kaapeleihin Windowsin
       ääniasetuksista ja siirtää monitoroinnin DAW:lle. Todistettava:
       exact-nimet recommended-listalla, presence kumpaankin suuntaan,
@@ -1648,7 +1648,7 @@ CQ.morph(\mor1_a, \mor1_b, 5);
 
 ### DAW-1 — ReaRoute-silta REAPERiin
 
-Yölahti avaa `ASIO : ReaRoute ASIO (x64)` single-device-tilassa; REAPER pysyy
+Yönpuoli avaa `ASIO : ReaRoute ASIO (x64)` single-device-tilassa; REAPER pysyy
 omalla laitteistollaan (K-Mix ASIO), joten monitorointi on REAPERin puolella.
 Esiehdot ja karikot: PLAN.md → "DAW-sillan keino: ReaRoute, ei VB-CABLE".
 **REAPERin on oltava pystyssä ennen `CQ.boot`ia**, ja vasta asennettu ajuri
@@ -1683,8 +1683,8 @@ CQ.patchPreset(\empty);
 //    ReaRouteen. Turvaketju rajaa tason mutta se ei ole haettu aani.
 ```
 
-- [x] **DAW-1 todettu toimivaksi molempiin suuntiin 2026-07-31.** Yölahti →
-      REAPER kuului paluuraidan kautta K-Mixistä, ja REAPER → Yölahti näkyi
+- [x] **DAW-1 todettu toimivaksi molempiin suuntiin 2026-07-31.** Yönpuoli →
+      REAPER kuului paluuraidan kautta K-Mixistä, ja REAPER → Yönpuoli näkyi
       input presence -palkissa. Molemmat kompastuskivet osuivat kohdalle
       katselmuksessa: hardware output -rivin oma `M` oli päällä ja input
       monitoring oli pois.
@@ -1716,7 +1716,7 @@ Cocoquantus.audioClockDanger;   // -> false
 // 2. PROVOKAATIO. Anna naytön sammua / koneen mennä matalatehotilaan ja hera
 //    se. Modern Standby pysayttaa striimin ja tuottaa mitatun transientin.
 //    Kerro kumpi tapahtui:
-//      (a) Yolahti toipui HILJAA eika sanonut mitaan  -> guard toimii oikein
+//      (a) Yönpuoli toipui HILJAA eika sanonut mitaan -> guard toimii oikein
 //      (b) engine-rivi sanoi "audio clock stuck - reports N Hz" danger-varilla
 //          ja palautui itsestaan kun aani palasi     -> guard toimii oikein
 //      (c) hallytys jai paalle vaikka aani oli kunnossa -> VIKA, kerro N
@@ -1748,7 +1748,7 @@ CQ.gui.shell.audioClockDanger = true;
 //    Tyokalurivilla, drawer-napin vasemmalla puolella, pitaa nyt olla
 //    danger-varinen piste ja teksti "audio clock stuck". Katso etta:
 //      - se ei vilku eika liiku
-//      - se ei mene yolahti-otsikon eika drawer-napin paalle
+//      - se ei mene Yönpuoli-otsikon eika drawer-napin paalle
 //      - se nakyy myos Drawer auki ja Drawer kiinni
 //      - kavenna ikkuna minimiin (1280): teksti saa pudota, piste ei
 CQ.gui.shell.audioClockDanger = false;

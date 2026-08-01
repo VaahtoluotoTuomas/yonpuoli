@@ -1,4 +1,4 @@
-// CQGuiShell — Qt composition for Yölahti's Night-only instrument and the
+// CQGuiShell — Qt composition for Yönpuoli's Night-only instrument and the
 // Drawer workbench. Night and Drawer share the central stage; the toolbar and
 // Master remain persistent. The shell never touches musical state or server
 // objects.

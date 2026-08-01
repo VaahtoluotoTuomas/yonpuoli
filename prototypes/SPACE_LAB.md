@@ -1,4 +1,4 @@
-# Yölahti Space Lab
+# Yönpuoli Space Lab
 
 > Listening decision, 2026-07-28: this effect line is closed. `utility`,
 > `clockField` and `confluence` were rejected. `memoryHalo` remains only as
@@ -94,7 +94,7 @@ Keep `wet`, sends and master volume fixed while comparing identities.
 Suggested note headings:
 
 - new musical act made possible;
-- still sounds like Yölahti / sounds pasted on;
+- still sounds like Yönpuoli / sounds pasted on;
 - useful range of `shape`;
 - response to speed and Quantussy;
 - stereo image and mono centre;

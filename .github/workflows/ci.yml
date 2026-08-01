@@ -58,7 +58,7 @@ jobs:
           }
 
           $workspace = $env:GITHUB_WORKSPACE -replace '\\', '/'
-          $conf = Join-Path $env:RUNNER_TEMP 'yolahti_sclang_conf.yaml'
+          $conf = Join-Path $env:RUNNER_TEMP 'yonpuoli_sclang_conf.yaml'
           @"
           includePaths:
             - "$workspace/classes"

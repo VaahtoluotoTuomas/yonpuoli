@@ -158,7 +158,7 @@ CQNightMeasures {
 	*endpointInkScale { ^1.2 }              // visible jack/socket/lamp ink
 	*endpointGlyphExtent { ^12 }            // px — wave/wedge/trigger symbol
 	*crescentExtent { ^44 }                 // px, square
-	// Only the two in/fb crescents grow downward to carry their Dolby mark.
+	// Only the two in/fb crescents grow downward to carry their dolby mark.
 	// The crescent itself keeps the common 44 px square and exact anchor; the
 	// extra paper is below it, away from the moons.
 	*dolbyCrescentHeight { ^72 }            // px — grown in/fb owner view

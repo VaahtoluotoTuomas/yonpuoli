@@ -1,8 +1,8 @@
-# Yölahti — portfolio case study
+# Yönpuoli — portfolio case study
 
 ## The project
 
-Yölahti is a standalone experimental feedback instrument built in SuperCollider.
+Yönpuoli is a standalone experimental feedback instrument built in SuperCollider.
 It combines two deliberately low-fidelity delay/loopers, a five-oscillator chaotic
 modulation network, a signed routing matrix, file and live inputs, recording, and
 an original graphical playing surface.
@@ -117,17 +117,17 @@ only live regressions and the active Nocturne gates.
 
 ## Current result
 
-- v1.0 audio engine and code/MIDI control layer complete;
-- Archipelago Day, Night, Drawer, compass, tide, and weather surfaces accepted;
-- 28 UnitTest classes and 209 test methods, currently reporting 6,611 passing
-  assertions on the reference environment;
-- non-realtime safety and hold-integrity gates;
-- measured server and GUI performance within the project's budgets on the
-  reference laptop;
-- active Nocturne phase focused on making Night the only necessary playing surface.
-
-The main outstanding hardware-specific acceptance item is live verification of
-separate stems on an interface with at least four outputs.
+- audio engine and code/MIDI control layer complete;
+- Night, Master, and Drawer accepted as the single maintained performance
+  surface, with the earlier Day surface deliberately retired;
+- serverless unit, non-realtime safety and hold-integrity, GUI interaction, and
+  paint-performance gates;
+- main/stem outputs, live inputs, panic, recording, and a bidirectional REAPER
+  bridge verified on the reference hardware;
+- long-duration resource soak accepted using private-memory, SuperCollider heap,
+  bounded-resource, audio-clock, and responsiveness evidence;
+- Yönpuoli selected as the independent product identity, with Cocoquantus named
+  openly as lineage rather than as an emulation promise.
 
 ## What I learned
 
@@ -144,8 +144,9 @@ separate stems on an interface with at least four outputs.
 
 ## Next steps
 
-The active roadmap is [`../PLAN.md`](../PLAN.md). In parallel with Nocturne, I am
-taking three vertical slices into line-level ownership: the state funnel, the
-feedback/safety DSP path, and the Night gesture path. The first Nocturne feature,
-the momentary hold punch, is the first complete review exercise under the policy in
+The active roadmap is [`../PLAN.md`](../PLAN.md). The next release work is the
+repository-history privacy and source audit, followed by the final 16n mapping,
+first-touch playability pass, release media, remote CI, merge, and Yönpuoli 1.0
+tag. The separate technical-ownership study continues through the state funnel,
+feedback/safety DSP path, and Night gesture path under the policy in
 [`DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md).

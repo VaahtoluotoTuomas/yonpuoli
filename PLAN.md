@@ -1,6 +1,6 @@
-# Yölahti — ajantasainen kehityssuunnitelma (Nocturne-vaihe)
+# Yönpuoli — ajantasainen kehityssuunnitelma (Nocturne-vaihe)
 
-Päivitetty 2026-07-30. Tämä tiedosto kertoo, **mitä tehdään seuraavaksi** ja
+Päivitetty 2026-08-01. Tämä tiedosto kertoo, **mitä tehdään seuraavaksi** ja
 **missä järjestyksessä**. Vaiheen yksityiskohtainen *miten* — jokaisen osan
 suunnittelu, geometria, karikot, korvakokeet — on
 [`docs/NIGHT_STANDALONE_PLAN.md`](docs/NIGHT_STANDALONE_PLAN.md):ssä; tämä
@@ -15,10 +15,14 @@ vaihe: Nocturne — yö koko soittimena.** N1–N9 on hyväksytty: Night + Maste
 Drawer on nyt soittimen ainoa ylläpidettävä käyttöliittymä, ja koko hyväksytty
 Nocturne-GUI-ketju on sulautettu paikalliseen `nocturne`-integraatiohaaraan.
 
-**Julkinen identiteetti:** soittimen nimi on nyt **Yölahti**. Cocoquantus on
-lähtökohta ja avoimesti dokumentoitu sukulinja, ei tuotteen nimi eikä lupaus
-uskollisesta emulaatiosta. `CQ`/`Cocoquantus` säilyvät toistaiseksi teknisenä
-API- ja luokkanimiavaruutena; niitä ei massauudelleennimetä kesken Nocturnen.
+**Julkinen identiteetti:** soittimen nimi on **Yönpuoli**. Kuvausrivi on
+*A nocturnal feedback instrument in the Cocoquantus lineage* ja tagline
+*Memory circulates until it becomes weather.* Cocoquantus on lähtökohta ja
+avoimesti dokumentoitu sukulinja, ei tuotteen nimi eikä lupaus uskollisesta
+emulaatiosta. Coco-, Quantussy-, castle- ja muu tunnistettava sanasto säilyy
+rehellisenä sukulinjana. Käyttäjälle näkyvä `dolby` kirjoitetaan pienellä;
+`CQ`/`Cocoquantus` sekä olemassa olevat `...Dolby...`-tunnisteet säilyvät
+teknisenä legacy-API- ja luokkanimiavaruutena eikä niitä massauudelleennimetä.
 Portfolio- ja julkaisupinta on `README.md`:ssä, `SOURCES.md`:ssä ja `docs/`-kansion
 case study / development process -dokumenteissa. Etärepon uudelleennimeäminen,
 public-vaihto ja oikeat kuva-/äänidemot ovat erillinen julkaisutoimi.
@@ -55,13 +59,12 @@ hardware-katselmus on 2026-07-30 tehty split-, USB-single-device-, mic-,
 PANIC-, stem-3/4-, stereo/4ch-REC- ja 10 minuutin patch-kohdiltaan; loopbackin
 näkyvyys kirjattiin samana päivänä, ja avoimeksi jäi vain kaksisuuntainen
 VB-CABLE-DAW-portti.**
-**Fyysinen AIO-hardware-katselmus hyväksyttiin 2026-07-30, joten koko AIO-vaihe
-on valmis.** Järjestys tästä on **käyttäjän 2026-07-30 päättämä tie 1.0:aan:
-~~MOR-1~~ (hyväksytty) → ~~DAW-silta ReaRoutella~~ (toimii molempiin suuntiin
-2026-07-31) → ~~ajonaikainen audiokelloguard~~ (AUD-W osa 1 hyväksytty
-2026-07-31; osa 2 kulkee soakin mukana) →
-**pitkä laitteisto-/resource-soak ← tässä ollaan** → merge `main`iin ja
-1.0-tagi** (oma osio "Tie 1.0:aan" alla).
+**Fyysinen AIO-hardware-katselmus, DAW-silta, audiokelloguard ja SOAK-1 on
+hyväksytty.** Yönpuoli-nimi ja README-linjaus päätettiin 2026-08-01. Seuraava
+konkreettinen 1.0-työ on koko Git-historian yksityisyys- ja lähdeauditointi;
+sen jälkeen suljetaan 16n-kartta, ensimmäisen kosketuksen soitettavuus,
+julkaisumedia, etä-CI, merge `main`iin ja Yönpuolen 1.0-tagi (oma osio
+"Tie 1.0:aan" alla).
 Kolme huokoista soittotilaa **ei ole 1.0:n ehto** — se on oma haaransa 1.0:n
 jälkeen — ja Norns-portti (§14) tulee vasta niiden jälkeen. Yksi musiikillinen
 muuttuja käsitellään edelleen kerrallaan. **N10:n sydän/kela- ja chevron-vihjeet hyväksyttiin visuaalisesti
@@ -193,7 +196,7 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
   poistettiin käyttäjän päätöksellä; yhteinen köli erottaa väreen fm-kuun
   vapaasta aallosta, 3 px vektoriura erottaa sen takana kulkevasta joesta ja
   ankkuri seuraa linnan todellista alareunaa 13 px etäisyydellä.
-- [x] **5. Dolby-osterit** (§4). **Valmis ja hyväksytty
+- [x] **5. dolby-osterit** (§4). **Valmis ja hyväksytty
   `nocturne-dolby-oysters`-haaralla 2026-07-27 (checklist N5).**
   In/fb-kanavien dolby-kytkin on sirpin alla osterina, jonka asento on regime
   (off/gate/duck). Napautus askeltaa; osterin ja sirpin hit/hover ovat erilliset,
@@ -851,10 +854,12 @@ Night-only-tuomion ja alla olevien julkaisugatejen jälkeen.
 
 ### A. Julkaisupohja ja tekijyyden kuvaus
 
-- [x] **Julkinen identiteetti:** Yölahti on oma digitaalinen instrumentti;
+- [x] **Julkinen identiteetti:** Yönpuoli on oma digitaalinen instrumentti;
   Cocoquantus on avoimesti nimetty vaikutteeksi ja tekniseksi lähtökohdaksi,
   ei tuotteen nimeksi, viralliseksi portiksi eikä uskollisen emulaation
-  lupaukseksi. `CQ`/`Cocoquantus` jää tekniseksi nimiavaruudeksi.
+  lupaukseksi. Sukulinjan termit säilyvät, käyttäjälle näkyvä `dolby` on
+  pienellä ja `CQ`/`Cocoquantus` sekä sisäiset `...Dolby...`-tunnisteet jäävät
+  vakaaksi tekniseksi nimiavaruudeksi.
 - [x] **README:n kaksi yleisöä:** muusikko näkee ensin soittimen luonteen,
   kuuntelu-/käyttötavan ja rajat; työnantaja löytää arkkitehtuurin,
   turvallisuuden, testauksen ja kehitysprosessin ilman liioiteltua
@@ -904,7 +909,7 @@ vaikutuspinnat sekä vastaamaan jatkokysymyksiin ilman AI-avustusta.
   mitään lukematonta muutosta ei hyväksytä.
 
 Erillinen pieni, pääosin käsin kirjoitettu audio-ohjelmointiprojekti voi olla
-hyvä lisä koko portfolioon, mutta se ei ole Yölahden julkaisuportti eikä ehto
+hyvä lisä koko portfolioon, mutta se ei ole Yönpuolen julkaisuportti eikä ehto
 tämän projektin omistajuudelle.
 
 ### C. Public beta -julkaisuportti
@@ -912,18 +917,18 @@ tämän projektin omistajuudelle.
 - [ ] **Etä-CI vihreäksi:** todenna GitHub Actionsista kaikki neljä markeria
   tuoreella release-ehdokascommitilla; korjaa workflow, jos paikallinen ja
   etäympäristö eroavat.
-- [ ] **Nimi ja törmäystarkistus:** tee ennen lopullista nimeämistä tavallinen
+- [ ] **Yönpuoli-nimen julkaisutarkistus:** nimi ja identiteetti päätettiin
+  2026-08-01. Tee ennen public-vaihtoa vielä tavallinen
   haku GitHubista, hakukoneesta, musiikkiohjelmistoista ja olennaisista
-  tavaramerkkitietokannoista. Yölahti on nykyinen työ- ja tuotenimi, ei tässä
-  dokumentissa tehty juridinen selvitys.
+  tavaramerkkitietokannoista. Nimipäätös ei itsessään ole juridinen selvitys.
 - [ ] **Historian yksityisyys- ja lähdeauditointi:** tarkista koko Git-historia
   salaisuuksien, henkilötietojen, yksityisten polkujen, sähköpostiosoitteiden,
   lisensoimattomien assettien ja tarpeettomien binäärien varalta. Päätä ennen
   public-vaihtoa, säilytetäänkö nykyinen commit-sähköposti vai puhdistetaanko
   historia hallitusti.
-- [ ] **Etärepon uudelleennimeäminen:** nimeä repo esimerkiksi `yolahti`:ksi,
+- [ ] **Etärepon uudelleennimeäminen:** nimeä repo `yonpuoli`:ksi,
   päivitä paikallinen remote komennolla
-  `git remote set-url origin https://github.com/VaahtoluotoTuomas/yolahti.git`
+  `git remote set-url origin https://github.com/VaahtoluotoTuomas/yonpuoli.git`
   ja varmista `git remote -v`, fetch ja push. Älä luo myöhemmin uutta repoa
   vanhalla `sc-cocoquantus`-nimellä, jotta GitHubin uudelleenohjaukset eivät
   rikkoudu.
@@ -985,7 +990,7 @@ sommittelua (§7.2 korjattiin vasta hylätyn buildin jälkeen).
   tilavalitsimelle varattu ilma.
 - [x] **Nightin säätimien ja muun anatomian järjestelmällinen suurennus.**
   N2:n yleinen väljennys ei vielä tehnyt kaikista käsistä ja merkeistä
-  riittävän suuria: erityisesti tide-sirpit, niiden asteikkolovet ja Dolby-
+  riittävän suuria: erityisesti tide-sirpit, niiden asteikkolovet ja dolby-
   osterit ovat nyt paremmin luettavia mutta edelleen fyysisesti pieniä, ja sama
   koskee monia muitakin Nightin osia. Tämä on koko näkymän mittakaava- ja
   sommittelupassi, ei yksittäisten säätimien satunnainen kasvatus.
@@ -1093,7 +1098,7 @@ Master → main/stem-outputit → hardware tai virtuaalinen loopback`.
   Coco-stemit `stemOuts`-pariin. Audio-sivu ei saa luoda yhtään
   `Out.ar`-ohitusta pyhän master-/stem-turvaketjun ohi.
 - Käyttöjärjestelmien välistä audiokaapelia ei luvata: selain, DAW tai toinen
-  sovellus näkyy Yölahdelle vain, jos OS/driver tarjoaa sen tavallisena
+  sovellus näkyy Yönpuolelle vain, jos OS/driver tarjoaa sen tavallisena
   loopback-/virtuaalilaitteena. GUI voi valita sellaisen laitteen mutta ei luo
   sitä, asenna ajuria, rakenna macOS Aggregate Devicea tai yhdistä Windowsin
   eri host API -laitteita keskenään.
@@ -1387,7 +1392,7 @@ Drawer-sivua tai muuttaa uuden session statusriviä.
 - Älä pidä vanhan Drawer-/view-instanssin callbackia rebootin yli. Tämä on
   sama stale-generation-luokan bugi, jonka `CQSessionLifecycleTest` jo
   rekonstruoi.
-- Älä oleta, että server on vain Yölahden käytössä. Inline-vahvistus nimeää
+- Älä oleta, että server on vain Yönpuolen käytössä. Inline-vahvistus nimeää
   `Server.default`-restartin vaikutuksen muihin syntheihin.
 - Älä sekoita Audio-sivua nelikanavaisen hardware-gaten hyväksyntään:
   serverless testit todistavat rakenteen, mutta oikea main/stem-kuuntelu
@@ -1630,18 +1635,18 @@ Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
 - **Avoin, käyttäjän pyytämä oikea DAW-portti: VB-CABLE A+B, oma päivä.**
   WDM-KS-loopback ei kelpaa kaksisuuntaiseksi reitiksi: split vaatii saman host
   API:n molemmissa päissä, ja WDM-KS on exclusive-mode kernel streaming, jota
-  DAW ei pysty pitämään auki toisesta päästä yhtä aikaa. Yölahti ei myöskään
+  DAW ei pysty pitämään auki toisesta päästä yhtä aikaa. Yönpuoli ei myöskään
   saa luoda kytkentää itse (AIO.1), joten silta on oltava olemassa ennen
-  bootia. Suunniteltu reitti: DAW → `CABLE-A Input`, Yölahden input =
-  `CABLE-A Output`, Yölahden main out = `CABLE-B Input`, DAW monitoroi ja
-  nauhoittaa `CABLE-B Output`ista; molemmat Yölahden päät ovat WASAPI. Ennen
+  bootia. Suunniteltu reitti: DAW → `CABLE-A Input`, Yönpuolen input =
+  `CABLE-A Output`, Yönpuolen main out = `CABLE-B Input`, DAW monitoroi ja
+  nauhoittaa `CABLE-B Output`ista; molemmat Yönpuolen päät ovat WASAPI. Ennen
   koetta: käyttäjä asentaa ajurin (agentti ei asenna eikä muuta järjestelmän
   audioreititystä) ja asettaa kaapeleille 48 kHz Windowsin ääniasetuksista.
   Huomioi kokeessa kaksi asiaa: monitorointi siirtyy DAW:lle, koska main out
   menee kaapeliin, ja **restart palauttaa patchin oletuksiin**, joten
   `preASrc`/`preBSrc` ovat jälleen `liveL`/`liveR` heti restartin jälkeen —
   tarkista se ennen kuin syötät kaapeliin mitään, jos lähde voi kuulla
-  Yölahden oman ulostulon.
+  Yönpuolen oman ulostulon.
 - Älä valitse tällä koneella `system default` -reittiä äläkä tee uudelleen
   irrotetun/puuttuvan laitteen rollback-koetta. Molempien havaittu failure on
   dokumentoitu yllä ja stale-first-reading-regressio on katettu hermettisesti.
@@ -1740,22 +1745,23 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
      `max(5 %, 8 MB)`, ja working setille jää yläraja ensimmäisen tunnin huippu +
      `max(25 %, 64 MB)`. 95 minuutin tuotantovalidointi varmistaa uuden työkalun,
      ei toista jo hyväksytyn 12,5 tunnin ajon toiminnallista näyttöä.
-4. **Nimi ja soittimen identiteetti päätetään.** **Käyttäjän päätös 2026-07-31:
-   tämä ei ole enää "myöhemmin" vaan 1.0:n ehto.** Yksi päätös, ei kolme:
-   tuotenimi, sisäosien nimien (a)/(b)-valinta ja julkaisuradan
-   törmäystarkistus ratkaistaan yhdessä — ks. "1.0-tagin rajaus ja avoin
-   nimipäätös" sekä "Myöhemmin"-osion identiteettikohta. Vaikuttaa `README.md`:hen,
-   `SOURCES.md`:hen, GUI:n otsikoihin, tagin nimeen ja mahdollisesti
-   `CQ*`-nimiavaruuteen, joten se on kohtien 5–6 edellytys eikä niiden rinnalla.
+4. [x] **Nimi ja soittimen identiteetti — Yönpuoli.** Käyttäjä päätti
+   2026-08-01, että Yönpuoli on itsenäinen tuotenimi ja Cocoquantus kerrotaan
+   avoimesti sukulinjana, ei emulaatiolupauksena. Coco-, Quantussy-, castle-,
+   Spesal-, SP.AF-, flip-, skip-, verso/inverso- ja `dolby`-sanasto säilyy;
+   näkyvä `dolby` kirjoitetaan pienellä. `CQ`/`Cocoquantus` ja olemassa olevat
+   `...Dolby...`-tunnisteet jäävät vakaaksi sisäiseksi legacy-APIksi. README,
+   GUI:n nimi ja aktiiviset dokumentit päivitetään samassa muutoksessa.
 5. **Repon yksityisyysauditointi.** Ennen kuin repo voi olla julkinen, käydään
    läpi ettei se sisällä henkilökohtaista tai koneriippuvaista tietoa:
    absoluuttiset polut, laite- ja käyttäjänimet, sähköpostit, omat snapshotit,
    `samples/`in sisältö, `tests/tmp/`in jäämät sekä `config.scd`:n ja
    `tests/dev_paths.scd`:n gitignore-kattavuus. **Koko historia, ei vain
    työpuu** — gitignore ei poista sitä mikä on jo committoitu.
-6. **`README.md` päivitetään.** Nykyinen teksti on Nocturnea ja Night-only-
-   leikkausta edeltävä: se kuvaa soitinta jossa on kaksi skiniä ja Space-kaiku.
-   Odottaa kohdan 4 nimipäätöstä, koska nimi on README:n ensimmäinen rivi.
+6. [x] **`README.md` päivitetään.** Päivitetty 2026-08-01 Yönpuoli-nimeen,
+   Night-only-soittimeen, nykyiseen 1.0-tilanteeseen sekä tiiviiseen
+   Cocoquantus-sukulinja- ja sanastokuvaukseen. Historian yksityisyysauditointi
+   voi vielä vaatia yksittäisiä julkaisuviilauksia.
 7. **16n:n kartta päivitetään reverbin jäljiltä.** `F14 / CC 45` kantoi
    `spaceMix`ia; Space-FDN poistui tuotannosta 2026-07-28:n kuuntelupäätöksellä
    (SPEC §11 kohta 6) ja slotti on ollut siitä asti `unassigned (reserved)`
@@ -1822,19 +1828,19 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
 
 **VB-CABLE A+B ei pysty siihen mitä AIO.9:n hand-off siltä odotti.** Reaperilla
 on yksi äänilaite kerrallaan. Jos sen ulostulo on `CABLE-A Input`, se ei voi
-samaan aikaan soittaa kuulokkeisiin; ja jos se monitoroi Yölahdeltä palaavaa
-raitaa, monitorointi menee suoraan takaisin `CABLE-A`:han eli Yölahteen —
-takaisinkytkentä. Yölahti ei voi paikata tätä soittamalla kuulokkeisiin, koska
+samaan aikaan soittaa kuulokkeisiin; ja jos se monitoroi Yönpuolelta palaavaa
+raitaa, monitorointi menee suoraan takaisin `CABLE-A`:han eli Yönpuoleen —
+takaisinkytkentä. Yönpuoli ei voi paikata tätä soittamalla kuulokkeisiin, koska
 sen ulostulon pitää mennä `CABLE-B`:hen. **Kaksi stereokaapelia ja yksi laite
 per sovellus eivät riitä molempiin suuntiin ja korviin yhtä aikaa.** Tämä on
 suunnitteluvirhe hand-offissa, ei toteutuksessa; teksti jää tähän varoitukseksi.
 
 **ReaRoute** on REAPERin oma virtuaalinen ASIO-ajuri (16 kanavaa kumpaankin
 suuntaan), asennusohjelman valinnainen osa. Reaper pysyy **oikealla
-laitteistollaan**, joten monitorointi toimii tavallisesti; Yölahti avaa
+laitteistollaan**, joten monitorointi toimii tavallisesti; Yönpuoli avaa
 `ASIO : ReaRoute ASIO (x64)`:n **single-device-tilassa**, ja kanavia riittää myös stemeille
 3/4. Kolmannen osapuolen ajuria ei asenneta. Rajat, jotka on tiedettävä:
-ASIO-only, vanhaa koodia, ja **REAPERin on oltava käynnissä ennen Yölahden
+ASIO-only, vanhaa koodia, ja **REAPERin on oltava käynnissä ennen Yönpuolen
 boottia** — muuten laitetta ei ole olemassa. Se koskee myös laitelistaa: AIO
 lukee laitteet vain pysähtyneenä, joten ReaRoute ilmestyy Audio-sivun listaan
 vasta kun REAPER oli käynnissä sitä edeltävällä boot-/reboot-hetkellä.
@@ -1857,7 +1863,7 @@ ASIO-ajuria. Tästä seuraa yksi tunnettu tekstivelka: Audio-sivun engine-rivi
 lupaa `restart audio to rescan`, mikä ei pidä paikkaansa juuri asennetulle
 ajurille (`CQGuiAudioSetup.deviceListNote`, `GUI_SPEC.md` §Audio).
 
-Yölahden puolella tämä on tavallinen AIO-laitevaihto: se kulkee Audio-sivun
+Yönpuolen puolella tämä on tavallinen AIO-laitevaihto: se kulkee Audio-sivun
 vahvistetun apply & restart -transaktion läpi ja palautuu yhdellä rollbackilla,
 jos laitetta ei saada auki. Split-WASAPI jää last-working-baselineksi.
 
@@ -1871,15 +1877,15 @@ DAW-1). Toimiva resepti, tässä järjestyksessä:
    driver `K-MixUSBAudio ASIO Driver`. Tämä ei ole makuasia: **ReaRoute on
    olemassa vain kun REAPER itse ajaa ASIOlla** — WASAPI/DirectSound-tilassa
    sen kanavia ei ole lainkaan. Sample rate **48 000** (`Request sample rate`
-   rastittuna): ReaRoute kulkee REAPERin kellolla ja Yölahti ajaa 48 kHz:llä.
+   rastittuna): ReaRoute kulkee REAPERin kellolla ja Yönpuoli ajaa 48 kHz:llä.
    Lisäksi **"Close audio device when stopped and application is inactive" pois
-   päältä** — muuten laite katoaa aina kun REAPER menee taustalle ja Yölahden
+   päältä** — muuten laite katoaa aina kun REAPER menee taustalle ja Yönpuolen
    palvelin putoaa mukana, mikä näyttäisi satunnaiselta kaatumiselta.
 3. **Tuore sclang.** Language → Reboot Interpreter. Ilman tätä ajuri ei näy
    listassa millään; ks. mitattu laki yllä.
-4. **Yölahden laitevaihto.** REAPER ensin pystyyn, sitten `CQ.boot`; Audio-sivu
+4. **Yönpuolen laitevaihto.** REAPER ensin pystyyn, sitten `CQ.boot`; Audio-sivu
    → `single device` → `ASIO : ReaRoute ASIO (x64)` → apply & restart. Tämän
-   jälkeen Yölahti ei soi omiin korviin lainkaan — koko ulostulo menee
+   jälkeen Yönpuoli ei soi omiin korviin lainkaan — koko ulostulo menee
    REAPERiin, ja monitorointi on REAPERin puolella K-Mixillä.
 5. **REAPERin raidat.** Paluuraita: input `ReaRoute 1/2`, record arm **ja input
    monitoring** päällä, master send päällä. Lähetysraita: lähde + Route → Add
@@ -2602,45 +2608,25 @@ se muoto jossa vika mitattiin. Se todistaa elinkaari- ja pintapolun (guardin
 `\stale`, työkalurivin merkki, restartin oikean kohteen ja paluun), **muttei
 kuollutta ääniketjua**; sen todistaa vain oikea lepotila.
 
-### 1.0-tagin rajaus ja avoin nimipäätös
+### 1.0-tagin rajaus ja päätetty nimi
 
 - **Tekninen 1.0 on eri asia kuin julkaisurata.** 1.0-tagi `main`issa on
   tekninen virstanpylväs; rata C (public repo, media, beta-release) ja rata B
   (omistajuuden itseopiskelu) eivät ole sen ehtoja. Repo voi olla tagatessa
   yhä private.
-- **Versionumero ja nimi ovat avoinna eikä niitä lyödä lukkoon vielä.** `v1.0`
-  on käytössä (commit `43724f3`, vanha Cocoquantus-tutkielma), joten uusi tagi
-  tarvitsee oman tunnuksen. **Käyttäjä ilmoitti 2026-07-30, että nimi Yölahti
-  todennäköisesti vielä muuttuu ja identiteettipohdinta on edessä**, joten
-  tagia ei nimetä nykyisen tuotenimen mukaan ennen sitä päätöstä. Tämä on sama
-  päätös kuin alla olevan "Myöhemmin"-osion identiteetti- ja sisäosien
-  nimikohta sekä julkaisuradan nimi-/törmäystarkistus; ne ratkaistaan yhdessä,
-  ei kolmena erillisenä.
+- **Nimi päätettiin 2026-08-01.** Tuotenimi on Yönpuoli. Vanha `v1.0`-tagi
+  kuuluu commitin `43724f3` Cocoquantus-tutkielmalle, joten uudelle julkaisulle
+  käytetään omaa tunnusta, ehdokkaana `yonpuoli-1.0.0`. Lopullinen tagi tehdään
+  vasta jäljellä olevien 1.0-porttien ja `main`-mergen jälkeen.
 
 ## Myöhemmin, ei tämän vaiheen scopea
-- **Identiteetti ja sisäosien nimet — SIIRTYI 1.0:n ehdoksi 2026-07-31**
-  (käyttäjän päätös; ks. "Tie 1.0:aan" kohta 4). Alla oleva analyysi pätee
-  sellaisenaan, mutta se ei ole enää myöhempää työtä. Alkuperäinen havainto on
-  käyttäjän 2026-07-28 N8:n katselmoinnissa tekemä.
-  Nightissä Cocoquantus-sukulinja näkyy *muotona* —
-  castlejen anatomiana ja arkkitehtuurina — mutta se on jo selvästi eri soitin
-  eikä esikuvaa nimetä eksplisiittisesti. Drawerissa esikuva sen sijaan
-  **nimetään suoraan**: `quantussy`, `coco 1`, `coco 2`, `spesal`, `balcium`.
-  Workshop-sivu teki tämän ristiriidan näkyväksi, koska se on ensimmäinen
-  pinta jossa sisäosien nimet luetaan tekstinä eikä hahmoteta muotona.
-  Kaksi ratkaisusuuntaa, joista pitää valita yksi:
-  (a) **nimetään koko soitin avoimesti Cocoquantus-johdannaiseksi** — ei
-  emulaatioksi vaan uudeksi soittimeksi joka tekee kunniaa jo nimen tasolla,
-  jolloin sisäosien nimet ovat rehellistä sukulinjaa; tai
-  (b) **nimetään sisäosat uudelleen** (quantussy, coco jne. saavat Yölahden
-  omat nimet) ja Cocoquantus jää pelkäksi dokumentoiduksi vaikutteeksi.
-  Vaikuttaa `README.md`:hen, `SOURCES.md`:hen, GUI:n kaikkiin otsikoihin ja
-  mahdollisesti `CQ*`-nimiavaruuteen, joten se on oma päätöksensä eikä osa
-  N8:aa. Liittyy suoraan julkaisuradan "nimi ja törmäystarkistus" -kohtaan.
-  **Käyttäjän ilmoitus 2026-07-30: myös tuotenimi Yölahti todennäköisesti vielä
-  muuttuu, ja identiteettipohdinta on edessä.** Sen vuoksi 1.0-tagia ei nimetä
-  nykyisen tuotenimen mukaan ennen tätä päätöstä (ks. "Tie 1.0:aan"), eikä
-  nimeä lyödä lukkoon dokumenteissa sitä ennen.
+- [x] **Identiteetti ja sisäosien nimet — ratkaistu 2026-08-01.** Yönpuoli on
+  itsenäinen soitin, jonka Cocoquantus-sukulinja kerrotaan README:n alussa.
+  Workshopin `quantussy`, `coco 1/2`, `spesal`, `balcium` ja muu tuttu sanasto
+  säilyy tarkoituksella: se kertoo mistä arkkitehtuuri tulee eikä väitä soitinta
+  emulaatioksi. Julkisessa tekstissä ja käyttöliittymässä `dolby` kirjoitetaan
+  pienellä. `CQ*`, `Cocoquantus` ja sisäiset camelCase-`Dolby`-tunnisteet
+  säilytetään yhteensopivuuden vuoksi. Massauudelleennimeämistä ei tehdä.
 - **Kosketusnäyttö-optimointi Night-modeen** (multi-touch, ele-erottelu) —
   liittyy kevättulvaan (§8 kasvattaa kohteita jo ~40 px suuntaan); oma
   työvaihe kun mittakaava on lyöty lukkoon.
@@ -2687,7 +2673,7 @@ Mannequins Just Friendsin Technical Map on myöhemmän suunnittelun
 vertailukohta, ei kopioitava ominaisuuslista:
 <https://github.com/whimsicalraps/Mannequins-Technical-Maps/blob/main/just-friends/just-friends.md>.
 Hyödyllinen periaate on kuvata täsmällisesti, miten sama generaattori ja sama
-käsi muuttavat tehtäväänsä mode- ja timebase-yhdistelmissä. Yölahdelle tehdään
+käsi muuttavat tehtäväänsä mode- ja timebase-yhdistelmissä. Yönpuolelle tehdään
 lopuksi oma technical/mode map, joka kertoo vastaavasti jokaisen nykyisen
 säätimen, patch-kohteen ja eleen merkityksen kaikissa kolmessa tilassa.
 
@@ -2750,7 +2736,7 @@ efekti. Ensimmäiset elehypoteesit:
 - `Spaf` avaa/supistaa lukupääkonstellaatiota ja voi erottaa päiden nopeuksia;
 - `Flip` kääntää kentän suunnan säilyttäen keskinäiset suhteet;
 - `Skip` kokoaa päät samaan vaiheeseen tai kylvää ne deterministisesti uudelleen;
-- `Feedback` ja Dolby päättävät, miten uusi materiaali korvaa vanhaa;
+- `Feedback` ja dolby päättävät, miten uusi materiaali korvaa vanhaa;
 - Coco-ristisyöttö saa liikuttaa muistia, mutta ei pelkästään levittää
   stereokuvaa kuten hylätty `confluence`.
 
@@ -2794,7 +2780,7 @@ efekti. Ensimmäiset elehypoteesit:
 ### Exit-kriteeri
 
 Kolme ankkuria kuulostavat eri instrumentaalisilta näkökulmilta mutta samalta
-Yölahdelta; niiden välillä voi vaihtaa ja niitä voi sekoittaa kesken äänen;
+Yönpuolelta; niiden välillä voi vaihtaa ja niitä voi sekoittaa kesken äänen;
 sama patchi ja sama käden kieli säilyvät ymmärrettävinä; kirjoitus tapahtuu
 vain soittajan Hold-päätöksellä; yksikään tila ei tarvitse geneeristä reverbiä
 ollakseen kokonainen; ja kaikki vanhat turvallisuus-, hold-, snapshot-,

@@ -1,4 +1,4 @@
-// CQGuiShellState — serverless presentation state for Yölahti's one-window,
+// CQGuiShellState — serverless presentation state for Yönpuoli's one-window,
 // Night-only shell (GUI_SPEC §2, §11). It owns no musical values: Night is
 // the instrument, and this state only chooses between it and the workbench.
 

@@ -1,4 +1,4 @@
-// CQGuiPanels — the persistent Master strip of the Night-only Yölahti GUI.
+// CQGuiPanels — the persistent Master strip of the Night-only Yönpuoli GUI.
 // Continuous controls come from CQGuiWidgets (the CQState funnel); transport
 // actions call the Cocoquantus facade. Meters register view setters with
 // CQGui, whose OSC listeners drive them.

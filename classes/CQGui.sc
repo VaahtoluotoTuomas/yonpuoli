@@ -1,4 +1,4 @@
-// CQGui — Yölahti's Night-only window (SPEC §6.2, ARCH §5): the Night
+// CQGui — Yönpuoli's Night-only window (SPEC §6.2, ARCH §5): the Night
 // landscape, Drawer workbench, persistent Master strip and global keyboard
 // map. Pure view: CQState/CQMatrix notifications and namespaced OSC reports
 // drive it; every write returns through the funnels. All UI work happens
@@ -409,7 +409,7 @@ CQGui {
 		// guard's state is older than this window.
 		shell.audioAlert = Cocoquantus.audioClockAlert;
 		this.prApplySkin(\night);
-		window = Window("Yölahti",
+		window = Window("Yönpuoli",
 			Rect(50, 50, minimum[0], minimum[1]));
 		// SuperCollider's Qt backend suppresses child mouseOverAction callbacks
 		// unless the containing window explicitly enables mouse-over delivery.
