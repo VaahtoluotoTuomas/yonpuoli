@@ -417,20 +417,40 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   entered but not left is a defect** (the stop path cleared danger silently), and
   a row that already overflows must be split rather than shortened. **AUD-W's
   part 2 was accepted 2026-07-31** in the soak's own phase 4.
-- **Step 3, the long soak, is where the road to 1.0 stands.** Two runs are done;
-  run 2 closed eight of nine criteria. Criterion 5 (sclang's memory ramp) is
-  explained, fixed and measured — `CQSpellbook`'s uncapped journal, now bounded at
-  `lineLimit` = 20 000 lines — but **closing the criterion is the soak's act, not
-  the probe's**: run 3 on the fixed code is the measurement. It needs the protocol
-  change already written into `tests/manual_checklist.md`: the activity loop now
-  does one dense committed act per step so the cap is reached in ~57 minutes.
-  Without it a six-hour night measures a journal still filling and criterion 5
-  shows the same ramp as before the fix. **The user decided 2026-07-31 that four
-  more items are 1.0 conditions**, so the road is now eight steps: name/identity
-  (which gates README and the tag's own name), a privacy audit of the repo
-  including its history, the README rewrite, and the 16n map after reverb's
-  retirement left `F14 / CC 45` (`spaceMix`) unassigned. See PLAN.md → "Tie
-  1.0:aan".
+- **Step 3, the long soak, is where the road to 1.0 stands, and run 3 is done.**
+  Criterion 5's source was found by `tests/memory_probe.ps1` rather than a third
+  night: `CQSpellbook`'s journal had no cap, and every committed act appended a
+  line per changed cell forever. It is bounded now at `lineLimit` = 20 000 lines
+  and the bound was measured holding. **Run 3 (2026-07-31 → 2026-08-01, 12.52 h,
+  `tests/tmp/soak/soak-20260731-213509.csv`, 2250 samples) came back six measured
+  criteria green — 0 status failures, one PID, 0 unhealthy clock samples, CPU
+  13.11 % with no rising trend, handles and threads immobile for 12.5 h, 8 synths
+  in every sample — but criterion 5 still does not pass as written**: sclang's
+  hour-2 mean 274.6 MB → hour-12 mean 305.1 MB (+11.1 % against a 5 % allowance),
+  hours 1–12 monotone, Theil–Sen +3.45 MB/h barely decaying. The cap took ~83 %
+  of the old ~20 MB/h ramp and the run's own peak (335.1 MB) was in its first
+  hour, 40 MB above where it ended — but that is not settling, and the criterion
+  asks for settling. **Criterion 8 is unanswered: the user has not yet reported
+  the listening and feel** (PANIC, morph not freezing, GUI speed, dropouts, level
+  drift). Criterion 9 was skipped (AUD-W part 2 accepted 2026-07-31).
+  **The agreed next act is neither a fourth night nor a rewrite of the criterion:
+  name the remaining 3.45 MB/h first.** The activity loop holds exactly one act
+  the probe has never covered — `CQ.deckA.random` / `deckB.random` every 8
+  minutes, the only one that touches the filesystem and allocates a buffer. That
+  is an 8-minute measurement, and it needs a free machine with no other sclang
+  alive. Only if nothing names a source is there evidence to discuss whether
+  criterion 5 should measure a bound (the process never exceeds its first hour's
+  peak) instead of a slope. That order, not the reverse.
+- **The user decided 2026-07-31 that five more items are 1.0 conditions**, so the
+  road is now nine steps: name/identity (which gates README and the tag's own
+  name), a privacy audit of the repo including its history, the README rewrite,
+  the 16n map after reverb's retirement left `F14 / CC 45` (`spaceMix`)
+  unassigned, and a playability round — what ships (four playable presets, and
+  `.gitignore` admits exactly one snapshot, `snapshots/example.cqsnap.scd`) plus
+  the first-touch defaults. That round opens with an NRT measurement of the
+  user's own observation that a patched cable or a big shake sometimes makes no
+  audible difference; four SPEC mechanisms would each explain it and they are
+  written out in PLAN.md. See PLAN.md → "Tie 1.0:aan".
 - `Cocoquantus.sc` is currently about 645 lines after the lifecycle work. The user
   explicitly accepts that size for now; split it when ownership becomes clearer or
   further growth would make the class harder to maintain, not as a risky handoff-only

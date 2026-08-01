@@ -2014,6 +2014,47 @@ sammuva danger on yhtä hyväksyttävä tulos kuin täysi hiljaisuus; valhe ei o
       sen rehellisesti eikä väittänyt mitään jäätyneestä lukemasta. Mitattu
       taajuus ennen standbyta 48 003,48 Hz, sen jälkeen `nil`.
 
+**Kolmas ajo 2026-07-31 → 2026-08-01, 12,52 h korjatulla koodilla
+(`soak-20260731-213509.csv`, 2250 näytettä, ei aukkoja aikaleimoissa):
+kuusi mitattua kriteeriä vihreänä, kriteeri 5 ei täyty kirjoitetussa
+muodossaan, kriteeri 8 odottaa käyttäjän kuunteluvastausta.**
+
+Ensimmäinen ajo uudella aktiviteettisilmukalla, jossa `CQ.shake(0.3, density: 1.0)`
+joka askeleella täyttää päiväkirjan katon ~57 minuutissa.
+
+- **1, 2, 3, 6, 7 vihreät:** 2250/2250 `/status`-vastausta; yksi scsynth-PID
+  (22204) ja yksi sclang-PID (11308) koko ajon; 0 epätervettä kellonäytettä;
+  sclangin handlet 1254–1257 ja säikeet 31, scsynthin handlet 333 ja säikeet 7
+  **liikkumattomina 12,5 tuntia**; synthejä 8 joka ainoassa näytteessä, groups 7
+  ja synthdefs 114 vakioina.
+- **4 vihreä:** server CPU ka **13,11 %**, suurin näyte 22,74 %, `peak_cpu` max
+  23,01 % — SPEC §9:n 25 % alle, eikä nousevaa trendiä: tuntikeskiarvot
+  14,4 → 13,0 (laskee kolmen ensimmäisen tunnin aikana, sitten tasainen).
+  Kuorma oli tarkoituksella raskaampi kuin ajossa 2, koska täystiheä shake joka
+  minuutti pitää kaikki 352 solua kirjoitettuina.
+- **5 EI TÄYTY:** sclangin toisen tunnin keskiarvo 274,6 MB, viimeisen 305,1 MB
+  = **+11,1 %** (sallittu 5 %), ja tunnit 1–12 ovat monotonisesti nousevat.
+  Theil–Sen **+3,45 MB/h**, joka tuskin laantuu ikkunaa siirtämällä
+  (3,45 → 3,32 → 3,15 MB/h alkaen tunneilta 1 / 6 / 9). scsynth sen sijaan on
+  puhtaasti vihreä: **−0,16 MB/h**, tuntikeskiarvot pomppivat 40–68 MB ilman
+  trendiä.
+  Kaksi mittalukua samaan hengenvetoon, ei puolusteluna: ajoissa 1–2
+  kulmakerroin oli **~20 MB/h**, eli päiväkirjan katto vei siitä noin **83 %**;
+  ja koko ajon huippu oli **335,1 MB ensimmäisellä tunnilla**, kun viimeinen
+  näyte oli 295,3 MB — 12,5 tunnin jälkeen prosessi oli 40 MB oman varhaisen
+  huippunsa **alapuolella**. Se ei silti ole tasaantumista, ja kriteeri kysyy
+  tasaantumista.
+- **Kellohavainto:** tasan kaksi näytettä poikkesi yli ±500 Hz nimellisestä
+  (01:17:29 → 51 941,8 Hz, 01:17:49 → 49 092,1 Hz) ja palasi heti. Suhde kävi
+  1,082:ssa eli reilusti 1,2:n rajan sisällä, joten guard pysyi oikein hiljaa:
+  **suppeneva transientti on tasan se mitä AUD-W on suunniteltu olemaan
+  kutsumatta viaksi.** Events-lokia ei syntynyt; watchdog ei laukennut.
+- **Vaihe 3:n lukemat:** `audioClockState` → `ok`, `audioClockRate` →
+  47 986,3 Hz, `avgCPU` → 13,43 %, `numSynths` → 8.
+- **8 AUKI:** kuuntelu- ja tuntumavastaus puuttuu (PANIC, morphin jäätymättömyys,
+  GUI:n nopeus illan tasoon nähden, dropoutit, tason ajautuminen).
+- **9 ohitettu:** AUD-W osa 2 hyväksyttiin 2026-07-31 eikä sitä ajettu uudelleen.
+
 **Toinen ajo 2026-07-31, 5,42 h (`soak-20260731-113829.csv`, 976 näytettä):
 kahdeksan kriteeriä yhdeksästä vihreänä, kriteeri 5 yhä auki.**
 

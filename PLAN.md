@@ -1699,7 +1699,7 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    tuomitaan eikä silmäillä. Aikabudjetti: yksi yö kelloa, noin tunti
    käyttäjän aikaa kolmessa ikkunassa.
 
-   **Tilanne 2026-07-31 illalla — kaksi ajoa tehty:**
+   **Tilanne 2026-08-01 aamulla — kolme ajoa tehty:**
    - **Ajo 1 (6,53 h):** palvelin kesti moitteetta, mutta ajo löysi kolme
      vikaa (A morph-jäätymä, B valehteleva kelloguard, C tuhoisa
      `restart audio`). Kaikki kolme on korjattu ja **käyttäjän hyväksymiä**
@@ -1710,14 +1710,28 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    - **Kriteeri 5 (sclangin muistiramppi, ~20 MB/h molemmissa ajoissa) ajettiin
      probeen eikä kolmanteen yöhön 2026-07-31 illalla, ja lähde löytyi:**
      `CQSpellbook`in rajaton päiväkirja. Katto (20 000 riviä) on toteutettu,
-     portit vihreät ja **katto mitattu pitäväksi** — ks. "Kriteeri 5" alla.
-     Fyysinen hyväksyntä ja kriteerin sulkeminen soakin osana on yhä auki.
-   - Soakia ei siis ole vielä hyväksytty kokonaisuutena. **Ajo 3 tarvitsee yhden
-     protokollamuutoksen ennen käynnistystä:** aktiviteettisilmukka tekee nyt
-     yhden tiheän committed-teon joka askeleella (`CQ.shake(0.3, density: 1.0)`),
-     jotta päiväkirjan katto täyttyy ~57 minuutissa. Ilman sitä kuuden tunnin yö
-     mittaisi yhä täyttyvää päiväkirjaa ja kriteeri 5 näyttäisi saman rampin kuin
-     ennen korjausta.
+     portit vihreät ja katto mitattu pitäväksi — ks. "Kriteeri 5" alla.
+   - **Ajo 3 (2026-07-31 → 2026-08-01, 12,52 h, `soak-20260731-213509.csv`,
+     2250 näytettä) korjatulla koodilla ja uudella silmukalla, jossa
+     `CQ.shake(0.3, density: 1.0)` joka askeleella täyttää katon ~57 minuutissa:
+     kuusi mitattua kriteeriä vihreänä, kriteeri 8 odottaa käyttäjän
+     kuunteluvastausta, ja kriteeri 5 EI täyty kirjoitetussa muodossaan.**
+     sclang: toisen tunnin ka 274,6 MB → viimeisen 305,1 MB = **+11,1 %**
+     (sallittu 5 %), tunnit 1–12 monotonisesti nousevat, Theil–Sen **+3,45 MB/h**
+     joka tuskin laantuu (3,45 → 3,32 → 3,15 alkaen tunneilta 1/6/9). scsynth on
+     puhtaasti vihreä (−0,16 MB/h). Katto vei rampista noin **83 %** (~20 →
+     ~3,45 MB/h), ja koko ajon huippu 335,1 MB osui **ensimmäiselle tunnille**
+     — viimeinen näyte 295,3 MB oli 40 MB sen alapuolella. Se ei silti ole
+     tasaantumista. Täydet luvut: `tests/manual_checklist.md` → SOAK-1, kolmas ajo.
+   - **Seuraava teko ei ole neljäs yö eikä kriteerin uudelleenkirjoitus, vaan
+     jäljelle jääneen 3,45 MB/h:n nimeäminen.** Yön silmukassa on tasan yksi teko
+     jota probe ei ole koskaan kattanut: `CQ.deckA.random` / `deckB.random`
+     8 minuutin välein — ainoa joka käy tiedostojärjestelmässä ja varaa
+     puskurin. Se on 8 minuutin mittaus eikä yö, ja se tarvitsee vapaan koneen
+     (ei toista sclangia). **Vasta jos mikään ei nimeä lähdettä, on evidenssiä
+     keskustella siitä mittaako kriteeri 5 oikeaa asiaa** — rajaa (prosessi ei
+     ylitä ensimmäisen tuntinsa huippua) vai kulmakerrointa. Siinä järjestyksessä,
+     ei toisin päin.
 4. **Nimi ja soittimen identiteetti päätetään.** **Käyttäjän päätös 2026-07-31:
    tämä ei ole enää "myöhemmin" vaan 1.0:n ehto.** Yksi päätös, ei kolme:
    tuotenimi, sisäosien nimien (a)/(b)-valinta ja julkaisuradan
