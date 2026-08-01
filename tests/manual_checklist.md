@@ -2016,8 +2016,7 @@ sammuva danger on yhtä hyväksyttävä tulos kuin täysi hiljaisuus; valhe ei o
 
 **Kolmas ajo 2026-07-31 → 2026-08-01, 12,52 h korjatulla koodilla
 (`soak-20260731-213509.csv`, 2250 näytettä, ei aukkoja aikaleimoissa):
-kuusi mitattua kriteeriä vihreänä, kriteeri 5 ei täyty kirjoitetussa
-muodossaan, kriteeri 8 odottaa käyttäjän kuunteluvastausta.**
+**kahdeksan kriteeriä yhdeksästä vihreänä, kriteeri 5 ainoa avoin.**
 
 Ensimmäinen ajo uudella aktiviteettisilmukalla, jossa `CQ.shake(0.3, density: 1.0)`
 joka askeleella täyttää päiväkirjan katon ~57 minuutissa.
@@ -2051,8 +2050,9 @@ joka askeleella täyttää päiväkirjan katon ~57 minuutissa.
   kutsumatta viaksi.** Events-lokia ei syntynyt; watchdog ei laukennut.
 - **Vaihe 3:n lukemat:** `audioClockState` → `ok`, `audioClockRate` →
   47 986,3 Hz, `avgCPU` → 13,43 %, `numSynths` → 8.
-- **8 AUKI:** kuuntelu- ja tuntumavastaus puuttuu (PANIC, morphin jäätymättömyys,
-  GUI:n nopeus illan tasoon nähden, dropoutit, tason ajautuminen).
+- **8 vihreä:** käyttäjä kuittasi vaiheen 3 kunnossa olevaksi 2026-08-01, eli
+  kriteerin vasteet 12,5 tunnin jälkeen: PANIC välitön, morph ei jäädytä, GUI
+  yhtä nopea kuin illalla, ei kuultua dropoutia eikä tason ajautumista.
 - **9 ohitettu:** AUD-W osa 2 hyväksyttiin 2026-07-31 eikä sitä ajettu uudelleen.
 
 **Toinen ajo 2026-07-31, 5,42 h (`soak-20260731-113829.csv`, 976 näytettä):

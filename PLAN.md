@@ -1714,8 +1714,9 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    - **Ajo 3 (2026-07-31 → 2026-08-01, 12,52 h, `soak-20260731-213509.csv`,
      2250 näytettä) korjatulla koodilla ja uudella silmukalla, jossa
      `CQ.shake(0.3, density: 1.0)` joka askeleella täyttää katon ~57 minuutissa:
-     kuusi mitattua kriteeriä vihreänä, kriteeri 8 odottaa käyttäjän
-     kuunteluvastausta, ja kriteeri 5 EI täyty kirjoitetussa muodossaan.**
+     kahdeksan kriteeriä yhdeksästä vihreänä — mukaan lukien kriteeri 8, jonka
+     käyttäjä kuittasi 2026-08-01 — ja kriteeri 5 on ainoa avoin: se EI täyty
+     kirjoitetussa muodossaan.**
      sclang: toisen tunnin ka 274,6 MB → viimeisen 305,1 MB = **+11,1 %**
      (sallittu 5 %), tunnit 1–12 monotonisesti nousevat, Theil–Sen **+3,45 MB/h**
      joka tuskin laantuu (3,45 → 3,32 → 3,15 alkaen tunneilta 1/6/9). scsynth on

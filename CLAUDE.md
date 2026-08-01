@@ -422,17 +422,19 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   night: `CQSpellbook`'s journal had no cap, and every committed act appended a
   line per changed cell forever. It is bounded now at `lineLimit` = 20 000 lines
   and the bound was measured holding. **Run 3 (2026-07-31 → 2026-08-01, 12.52 h,
-  `tests/tmp/soak/soak-20260731-213509.csv`, 2250 samples) came back six measured
+  `tests/tmp/soak/soak-20260731-213509.csv`, 2250 samples) came back eight of nine
   criteria green — 0 status failures, one PID, 0 unhealthy clock samples, CPU
   13.11 % with no rising trend, handles and threads immobile for 12.5 h, 8 synths
-  in every sample — but criterion 5 still does not pass as written**: sclang's
+  in every sample, and the user's own phase-3 sign-off on criterion 8 (PANIC
+  immediate, no morph freeze, GUI at the evening's speed, no dropouts or level
+  drift) — but criterion 5 still does not pass as written**: sclang's
   hour-2 mean 274.6 MB → hour-12 mean 305.1 MB (+11.1 % against a 5 % allowance),
   hours 1–12 monotone, Theil–Sen +3.45 MB/h barely decaying. The cap took ~83 %
   of the old ~20 MB/h ramp and the run's own peak (335.1 MB) was in its first
   hour, 40 MB above where it ended — but that is not settling, and the criterion
-  asks for settling. **Criterion 8 is unanswered: the user has not yet reported
-  the listening and feel** (PANIC, morph not freezing, GUI speed, dropouts, level
-  drift). Criterion 9 was skipped (AUD-W part 2 accepted 2026-07-31).
+  asks for settling. Criterion 9 was skipped (AUD-W part 2 accepted 2026-07-31),
+  so **criterion 5 is the single thing standing between the soak and its
+  acceptance.**
   **The agreed next act is neither a fourth night nor a rewrite of the criterion:
   name the remaining 3.45 MB/h first.** The activity loop holds exactly one act
   the probe has never covered — `CQ.deckA.random` / `deckB.random` every 8
