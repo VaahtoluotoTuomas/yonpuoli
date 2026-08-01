@@ -294,15 +294,22 @@ CQSpec {
 		this.prNum(\masterVol, -60, 0, \lin, -12, 0.1);   // lin dB, lag 100 ms
 		this.prToggle(\monitorMute, 0, 0.03);             // 30 ms panic fade
 
-		// SPEC §6.1 — 16n default map, fader index 0..15 (cc = ccBase + index)
+		// SPEC §6.1 — 16n default map, fader index 0..15 (cc = ccBase + index).
+		// Two identical five-fader Coco strips in signal order (in, clock, clock
+		// modulation, feedback, output level), then a six-fader shared section.
+		// Level is last because it is the strip's output stage, like a mixer's
+		// channel fader; CQMidi16nTest pins both strips against that law rather
+		// than against sixteen hand-written rows.
 		slots16n = [
-			[\coco1In], [\coco1Speed], [\coco1Spaf], [\coco1Fb],
-			[\coco2In], [\coco2Speed], [\coco2Spaf], [\coco2Fb],
+			[\coco1In], [\coco1Speed], [\coco1Spaf], [\coco1Fb], [\coco1Level],
+			[\coco2In], [\coco2Speed], [\coco2Spaf], [\coco2Fb], [\coco2Level],
 			[\qFreq], [\qChaos],
 			[\preADrive, \preBDrive],
-			[\deckARate, \deckBRate],
-			[\deckALevel, \deckBLevel],
-			[], [\patchDepth], [\masterVol]
+			// the ring's audio gate: qMix has exactly one writer (castle sends)
+			// and exactly one reader (this slot gain), so without a hand here
+			// F11/F12 shape a voice that never reaches the output (SPEC §5.4)
+			[\coco1SlotQ, \coco2SlotQ],
+			[\patchDepth], [\masterVol]
 		];
 	}
 }

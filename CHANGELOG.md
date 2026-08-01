@@ -10,6 +10,22 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Changed
 
+- Rebuilt the 16n fader map (SPEC §6.1) as two identical Coco channel strips
+  plus a six-fader shared section, replacing the former eight-plus-eight split.
+  Each strip now runs in signal order — input, clock, clock modulation,
+  feedback, output level — so the same finger position means the same thing on
+  either voice, and `Level` ends the strip as a channel fader ends a mixer
+  strip. The two `Level` faders are not linked, because balancing the voices
+  against each other is their purpose. `F14 / CC 45`, free since the Space FDN
+  was retired, now carries the linked `coco1SlotQ` + `coco2SlotQ`: the
+  Quantussy audio bus has exactly one writer and one reader, so with that gain
+  at its default of zero the `qFreq` and `qChaos` faders shaped a voice that
+  never reached the output. The deck faders left the map — `deckALevel` and
+  `deckBLevel` already have their own Night crescents, `deckARate` and
+  `deckBRate` are matrix destinations, and both remain reachable from the
+  Workshop page, code and snapshots. The allocation rule behind the change is
+  now normative: a fader is worth most where no other hand reaches.
+
 - Audio candidate readiness now requires three actual-sample-rate readings,
   spaced 0.75 seconds apart, all within 80–120% of the request before allocating
   or fading in the graph. The first watcher value may still belong to the

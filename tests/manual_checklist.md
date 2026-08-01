@@ -313,15 +313,17 @@ CQ.hold(1, 0);                 // deck kiertää coco1:een
 // M8 testit:
 
 // 1. Faderikartta (SPEC §6.1) — liikuta yksi kerrallaan ja varmista korvalla
-//    ja/tai CQ.get-kutsulla, että oikea parametri liikkuu:
-//    F1 coco1In     F5 coco2In     F9  qFreq                F13 deckA+B Level
-//    F2 coco1Speed  F6 coco2Speed  F10 qChaos               F14 vapaa (ei muutosta)
-//    F3 coco1Spaf   F7 coco2Spaf   F11 preA+B Drive
-//    F4 coco1Fb     F8 coco2Fb     F12 deckA+B Rate         F15 patchDepth
-//                                                           F16 masterVol
+//    ja/tai CQ.get-kutsulla, että oikea parametri liikkuu. Kaksi identtistä
+//    Coco-kanavanauhaa signaalijärjestyksessä, sitten kuusi yhteistä:
+//    F1 coco1In     F6  coco2In      F11 qFreq
+//    F2 coco1Speed  F7  coco2Speed   F12 qChaos
+//    F3 coco1Spaf   F8  coco2Spaf    F13 preA+B Drive   (linkitetty)
+//    F4 coco1Fb     F9  coco2Fb      F14 coco1+2 SlotQ  (linkitetty)
+//    F5 coco1Level  F10 coco2Level   F15 patchDepth
+//                                    F16 masterVol
 CQ.get(\coco1Speed);           // esim. faderin F2 liikkeen jälkeen
-CQ.get(\deckARate);            // F12: linkitetyn parin molempien pitää muuttua
-CQ.get(\deckBRate);
+CQ.get(\preADrive);            // F13: linkitetyn parin molempien pitää muuttua
+CQ.get(\preBDrive);
 
 // 2. Pehmeys (SPEC M8/§9): aja F2 (coco1Speed) hitaasti ääripäästä toiseen
 //    -> repitchin pitää olla portaaton, ei zipper-rahinaa; F4 (fb) -ride
@@ -2374,3 +2376,66 @@ skip-merkin, koska siemenet ovat padin koko käyttöliittymä. Vaihtoehdot:
       taivaan sää, siementen kaapelivarjo, kokojen jälkitarkastus)
 
 </details>
+
+---
+
+### 16N-1 — uusi 16n-kartta: kanavanauhat ja renkaan portti (SPEC §6.1)
+
+Tie 1.0:aan kohta 7. Reverbin eläköityminen vapautti `F14 / CC 45`:n, ja
+kartta arvioitiin kokonaan uudelleen mittarilla **"faderi on arvokkain siellä
+minne mikään muu käsi ei yllä"**. Deck-faderit poistuivat (deck level on jo
+Nightin sirppi, deck rate on matriisin kohde) ja tilalle tulivat Cocojen
+omat output-tasot sekä renkaan audioportti.
+
+Uusi kartta: **F1–F5 = coco1** (In · Speed · Spaf · Fb · Level),
+**F6–F10 = coco2** (sama järjestys), **F11–F16** = qFreq · qChaos ·
+preA+B Drive · coco1+2 SlotQ · patchDepth · masterVol.
+
+Automaattinen portti on vihreä (`CQ_COMPILE_OK`, 13 729 passia / 0 failurea /
+39/39 luokkaa, `CQ_SAFETY_PASSED`; `CQ_HOLD_OK` kantaa, koska DSP ei muuttunut).
+**Hyväksyntä on käsissä ja korvassa** — nämä neljä kysymystä ovat ne joihin
+automaatio ei vastaa.
+
+```supercollider
+// 16N-1 — Alkuasetelma. Kytke 16n USB:hen ENNEN boottia.
+// (classes/ muuttui -> Ctrl+Shift+L ensin!)
+CQ.boot;
+// -> TARKISTA post-ikkunasta "CQMidi16n: 16n found — CC 32..47 (any chan) live"
+CQ.midiRescan;                      // vain jos laitetta ei löytynyt
+CQ.recall(\classic);                // tai mikä tahansa soiva lähtötila
+```
+
+```supercollider
+// 1. KANAVANAUHA — onko sama sormenpaikka sama asia molemmilla äänillä?
+//    Aja F1..F5 läpi, sitten F6..F10. Nauhojen pitää tuntua identtisiltä.
+//    Kysymys: löydätkö Levelin katsomatta, ja onko se oikeassa päässä?
+CQ.get(\coco1Level); CQ.get(\coco2Level);
+
+// 2. RISTIHÄIVYTYS — tämä on se ele jonka vuoksi Level otettiin käteen.
+//    Aja F5 alas ja F10 ylös yhtä aikaa (viiden faderin loikka).
+//    Kysymys: onko loikka liian pitkä? Jos on, vaihtoehto B siirtäisi
+//    levelit vierekkäin (F9/F10) ja qFreq/qChaos kahdella oikealle.
+
+// 3. RENKAAN PORTTI (F14) — tämän piti tehdä F11/F12:sta kuuluvia.
+//    Aja F14 pohjalta ylös HITAASTI ja kuuntele mitä ilmestyy.
+//    Bootissa rengas lähettää vain castle 5:n (ainoa \audio-alueella,
+//    ainoa jonka send > 0), joten odota YHTÄ ääntä, älä viittä.
+CQ.get(\coco1SlotQ);                // 0 = kiinni, 1.5 = auki
+//    Sitten F11 (qFreq) ja F12 (qChaos) auki olevan portin läpi:
+//    F11 muuttaa sen sävelkorkeutta, F12 FM-syvyyttä.
+//    Kysymys: onko tämä musiikillisesti sen faderin arvoinen, vai olisiko
+//    SlotX (Cocojen ristiinkytkentä) tai Organ parempi? Vertaa koodista:
+CQ.set(\coco1SlotQ, 0); CQ.set(\coco2SlotQ, 0);
+CQ.set(\coco1SlotX, 0.8); CQ.set(\coco2SlotX, 0.8);   // ristiinkytkentä
+CQ.set(\coco1SlotX, 0); CQ.set(\coco2SlotX, 0);
+CQ.set(\coco1Organ, 0.6); CQ.set(\coco2Organ, 0.6);   // urkukerros
+CQ.set(\coco1Organ, 0); CQ.set(\coco2Organ, 0);
+
+// 4. MITÄ MENETETTIIN — tarkista ettei deckien putoaminen haittaa.
+//    Deck level on Nightissä linnun siiven sirppi, deck rate Workshopissa
+//    ja matriisin kohteena. Soita yksi kappale kokonaan ilman deck-fadereita.
+//    Kysymys: kaipasitko niitä käteen, ja kumpaa?
+```
+
+- [ ] 16N-1 hyväksytty (pvm: ______ — kanavanauhan luettavuus, Levelin paikka
+      nauhan lopussa, ristihäivytyksen etäisyys, F14:n sisältö, deckien poisto)

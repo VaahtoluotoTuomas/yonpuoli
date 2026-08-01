@@ -22,11 +22,12 @@ CQMidi16nTest : UnitTest {
 
 	test_slotTableMatchesSpec {
 		this.assertEquals(CQSpec.map16n.size, 16, "16 fader slots (SPEC §6.1)");
-		this.assertEquals(CQSpec.map16n[0], [\coco1In], "F1 = coco1In");
-		this.assertEquals(CQSpec.map16n[8], [\qFreq], "F9 = qFreq");
-		this.assertEquals(CQSpec.map16n[10], [\preADrive, \preBDrive],
-			"F11 = linked preamp drives");
-		this.assertEquals(CQSpec.map16n[13], [], "F14 is intentionally unassigned");
+		this.assertEquals(CQSpec.map16n[10], [\qFreq], "F11 = qFreq");
+		this.assertEquals(CQSpec.map16n[12], [\preADrive, \preBDrive],
+			"F13 = linked preamp drives");
+		this.assertEquals(CQSpec.map16n[13], [\coco1SlotQ, \coco2SlotQ],
+			"F14 = the linked ring audio gate");
+		this.assertEquals(CQSpec.map16n[14], [\patchDepth], "F15 = patchDepth");
 		this.assertEquals(CQSpec.map16n[15], [\masterVol], "F16 = masterVol");
 		CQSpec.map16n.do { |slot|
 			slot.do { |p|
@@ -34,6 +35,27 @@ CQMidi16nTest : UnitTest {
 					"slot param '%' exists in CQSpec".format(p));
 			};
 		};
+	}
+
+	// SPEC §6.1's channel-strip law as structure, not convention: the same
+	// finger position must mean the same thing on either voice, and Level ends
+	// the strip because it is its output stage.
+	test_16nCocoStripsAreIdenticalAndLevelIsLast {
+		// backslashes are required: bare `In` in a literal array parses as the
+		// In UGen class, not a Symbol (same reason CQGuiNightMap writes \Src)
+		var order = #[\In, \Speed, \Spaf, \Fb, \Level];
+		2.do { |coco|
+			order.do { |suffix, i|
+				var fader = (coco * 5) + i;
+				var expected = ("coco" ++ (coco + 1) ++ suffix).asSymbol;
+				this.assertEquals(CQSpec.map16n[fader], [expected],
+					"F% = %".format(fader + 1, expected));
+			};
+		};
+		this.assertEquals(CQSpec.map16n[4].first, \coco1Level,
+			"Level ends strip 1, mirroring a mixer's channel fader");
+		this.assertEquals(CQSpec.map16n[9].first, \coco2Level,
+			"Level ends strip 2 at the same offset");
 	}
 
 	test_jumpMapsFullRange {
@@ -48,22 +70,32 @@ CQMidi16nTest : UnitTest {
 	}
 
 	test_linkedSlotsWriteBoth {
-		midi.handleCC(42, 127);
-		this.assertFloatEquals(state.get(\preADrive), 40.0, "F11 writes preADrive");
-		this.assertFloatEquals(state.get(\preBDrive), 40.0, "F11 writes preBDrive too");
+		midi.handleCC(44, 127);
+		this.assertFloatEquals(state.get(\preADrive), 40.0, "F13 writes preADrive");
+		this.assertFloatEquals(state.get(\preBDrive), 40.0, "F13 writes preBDrive too");
 	}
 
-	test_retiredSpaceSlotIsInert {
-		var before = state.asEvent;
-		this.assertNoException({ midi.handleCC(45, 127) },
-			"the retired F14 slot accepts physical movement safely");
-		midi.takeover = \pickup;
-		this.assertNoException({
-			midi.handleCC(45, 0);
-			midi.handleCC(45, 64);
-		}, "the empty slot is safe in pickup mode too");
-		this.assertEquals(state.asEvent, before,
-			"F14 cannot activate a hidden Space route or change another parameter");
+	// F14/CC 45 carried the retired spaceMix. It now opens the Quantussy audio
+	// gate on both Cocos -- one concept, so linking is right here, unlike the
+	// two Level faders whose whole purpose is balancing them against each other.
+	test_ringGateSlotWritesBothCocos {
+		this.assertFloatEquals(state.get(\coco1SlotQ), 0.0,
+			"the ring gate is shut at boot (SPEC §5.4)");
+		midi.handleCC(45, 127);
+		this.assertFloatEquals(state.get(\coco1SlotQ), 1.5, "F14 opens coco1SlotQ");
+		this.assertFloatEquals(state.get(\coco2SlotQ), 1.5, "F14 opens coco2SlotQ too");
+		midi.handleCC(45, 0);
+		this.assertFloatEquals(state.get(\coco1SlotQ), 0.0, "and shuts it again");
+		this.assert(CQSpec.includes(\spaceMix).not,
+			"the retired Space route cannot return through this slot");
+	}
+
+	test_everySlotIsAssigned {
+		CQSpec.map16n.do { |slot, i|
+			this.assert(slot.size > 0,
+				"F% carries a parameter: 16 faders, 74 params, none wasted"
+					.format(i + 1));
+		};
 	}
 
 	test_outOfRangeCCIgnored {

@@ -467,15 +467,31 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   30,486 -> 68,484, and Spellbook stayed 56 entries / 19,768 lines. This is a
   tooling confirmation, not a fourth acceptance night.
 - **The user decided 2026-07-31 that five more items are 1.0 conditions**, so the
-  road is now nine steps: name/identity (which gates README and the tag's own
-  name), a privacy audit of the repo including its history, the README rewrite,
-  the 16n map after reverb's retirement left `F14 / CC 45` (`spaceMix`)
-  unassigned, and a playability round — what ships (four playable presets, and
-  `.gitignore` admits exactly one snapshot, `snapshots/example.cqsnap.scd`) plus
-  the first-touch defaults. That round opens with an NRT measurement of the
-  user's own observation that a patched cable or a big shake sometimes makes no
-  audible difference; four SPEC mechanisms would each explain it and they are
-  written out in PLAN.md. See PLAN.md → "Tie 1.0:aan".
+  road is now nine steps. Name/identity (**Yönpuoli**), the privacy audit
+  (`audit/PRIVACY_AUDIT.md`) and the README rewrite are **done**. The **16n map
+  is rebuilt and its automated gate is green; only the hands-on acceptance
+  (checklist `16N-1`) is open.** What remains after it: a playability round —
+  what ships (four playable presets, and `.gitignore` admits exactly one
+  snapshot, `snapshots/example.cqsnap.scd`) plus the first-touch defaults. That
+  round opens with an NRT measurement of the user's own observation that a
+  patched cable or a big shake sometimes makes no audible difference; four SPEC
+  mechanisms would each explain it and they are written out in PLAN.md.
+  See PLAN.md → "Tie 1.0:aan".
+- **The 16n map is now two identical Coco channel strips plus a shared section**
+  (SPEC §6.1, normative): F1–F5 `coco1` In·Speed·Spaf·Fb·**Level**, F6–F10
+  `coco2` the same, F11–F16 `qFreq`·`qChaos`·`preADrive+preBDrive`·
+  **`coco1SlotQ+coco2SlotQ`**·`patchDepth`·`masterVol`. Level ends each strip
+  like a mixer's channel fader and the two Levels are deliberately **not**
+  linked — balancing the voices against each other is their whole purpose. The
+  deck faders left because `deckALevel`/`deckBLevel` already have Night crescents
+  and `deckARate`/`deckBRate` are matrix destinations. The rule that decided it
+  is normative: **a fader is worth most where no other hand reaches** — Night
+  plays 31 params, Master 4, the matrix 22 destinations, while the Cocos' mix
+  stage (`Level`, `Organ`, `Dust`, `Pan`, `Slot*`) was reachable from nothing but
+  a hand. F14 is measured, not taste: `qMix` has exactly one writer and one
+  reader (`cocoNSlotQ`, default 0), so without a hand there F11/F12 shape a voice
+  that never reaches the output. Do not "restore" the deck faders or link the
+  two Levels without the user's decision.
 - `Cocoquantus.sc` is currently about 645 lines after the lifecycle work. The user
   explicitly accepts that size for now; split it when ownership becomes clearer or
   further growth would make the class harder to maintain, not as a risky handoff-only

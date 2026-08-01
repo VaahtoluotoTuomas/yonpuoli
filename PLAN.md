@@ -1793,14 +1793,55 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    Night-only-soittimeen, nykyiseen 1.0-tilanteeseen sekä tiiviiseen
    Cocoquantus-sukulinja- ja sanastokuvaukseen. Historian yksityisyysauditointi
    voi vielä vaatia yksittäisiä julkaisuviilauksia.
-7. **16n:n kartta päivitetään reverbin jäljiltä.** `F14 / CC 45` kantoi
+7. **16n:n kartta päivitetty reverbin jäljiltä — automaattinen portti vihreä,
+   käyttäjän hyväksyntä auki (checklist `16N-1`).** `F14 / CC 45` kantoi
    `spaceMix`ia; Space-FDN poistui tuotannosta 2026-07-28:n kuuntelupäätöksellä
-   (SPEC §11 kohta 6) ja slotti on ollut siitä asti `unassigned (reserved)`
-   (SPEC §6.1). Päätettävä mitä se kantaa — vai jääkö varatuksi tarkoituksella —
-   ja päivitettävä SPEC §6.1:n taulukko ja `CQSpec.map16n` **samassa
-   muutoksessa**, koska ne eivät saa erkaantua. Samalla siivotaan SPEC §3:n
-   signaalikaavio, joka piirtää yhä `SPACE (FDN reverb, opt.)` -laatikon vaikka
-   sama dokumentti sanoo tuotannossa ei olevan sisäänrakennettua kaikua.
+   (SPEC §12 kohta 6). Käyttäjä päätti 2026-08-01 arvioida koko kartan eikä vain
+   täyttää vapaata slottia.
+
+   **Ratkaiseva mittari, nyt normatiivinen SPEC §6.1:ssä: faderi on arvokkain
+   siellä minne mikään muu käsi ei yllä.** Ristiintaulukointi paljasti, että
+   16n:n 18 parametrista 16 oli jo pelattavissa Nightissä (31 parametria) tai
+   Master-stripissä (4), kun taas Cocojen koko miksausvaihe — `Level`, `Organ`,
+   `Dust`, `Pan`, `Slot*`, 16 parametria eli yhtä monta kuin fadereita — ei ollut
+   16n:ssä **eikä** matriisin 22 kohteen joukossa. Duplikaatio on tarkoituksellista
+   siellä missä ele on kahden käden jatkuva ajo (§6 vaatii jokaisen kerroksen
+   riittävän yksin), mutta uusi varaus menee sinne mihin mikään muu pinta ei yllä.
+
+   **Uusi kartta (käyttäjän valinta: layout A + Level viimeisenä):** kaksi
+   identtistä Coco-kanavanauhaa signaalijärjestyksessä, F1–F5 `coco1`
+   (In · Speed · Spaf · Fb · **Level**) ja F6–F10 `coco2` samassa järjestyksessä,
+   sitten kuusi yhteistä: F11 `qFreq`, F12 `qChaos`, F13 `preADrive+preBDrive`,
+   **F14 `coco1SlotQ+coco2SlotQ`**, F15 `patchDepth`, F16 `masterVol`. Level on
+   nauhan lopussa kuten mikserin kanavafader, ja kaksi Leveliä ovat
+   tarkoituksella **linkittämättä** — niiden koko tehtävä on tasapainottaa äänet
+   toisiaan vastaan. Deck-faderit poistuivat: `deckALevel`/`deckBLevel` on jo
+   Nightin siipisirppi ja `deckARate`/`deckBRate` on matriisin kohde, joten
+   molemmat ovat käden ulottuvilla ilman faderia.
+
+   **F14:n perustelu on mitattu, ei makuasia:** `qMix`illa on tasan yksi
+   kirjoittaja (Σ castle-kolmiot × `cKSend`) ja tasan yksi lukija (`cocoNSlotQ`),
+   ja slotti on oletuksena 0. Ilman kättä siinä F11 ja F12 muotoilevat ääntä joka
+   ei koskaan saavuta ulostuloa — bootissa castle 5:tä, ainoaa `\audio`-alueen
+   castlea jonka send > 0 (SPEC §5.4:n *"one audible voice"*). **Rehellinen
+   varaus:** `cKRange` on Nightissä mutta `cKSend` vain Workshopissa, joten F14
+   on performanssiportti miksille jonka koostumus on setup-työtä.
+
+   Samassa muutoksessa `CQSpec.map16n`, SPEC §6.1:n taulukko ja M8:n
+   checklist-kartta (joka olisi jäänyt valehtelemaan) sekä SPEC §4:n
+   signaalikaavio, josta poistui `SPACE (FDN reverb, opt.)` -laatikko.
+   `CQMidi16nTest` pinnaa kanavanauhalain rakenteena — molemmat nauhat samasta
+   sääntösilmukasta ja Level viimeisenä — eikä kuutenatoista käsin kirjoitettuna
+   rivinä. Portti: `CQ_COMPILE_OK`, **13 729 unit-passia / 0 failurea / 39/39
+   luokkaa**, `CQ_SAFETY_PASSED`; `CQ_HOLD_OK` kantaa, koska muutos on
+   ohjauskartta eikä DSP.
+
+   **Auki:** checklist `16N-1` kysyy neljä asiaa joihin automaatio ei vastaa —
+   kanavanauhan luettavuus kädessä, Levelin paikka nauhan lopussa,
+   ristihäivytyksen viiden faderin loikka (jos liian pitkä, layout B siirtää
+   levelit vierekkäin F9/F10) ja se, ansaitseeko `SlotQ` faderinsa vai olisiko
+   `SlotX` tai `Organ` musiikillisesti parempi. Lohko sisältää `CQ.set`-vertailun
+   kaikkiin kolmeen.
 8. **Soitettavuuskierros: mitä 1.0:n mukana lähtee, ja miltä ensikosketus
    tuntuu.** Käyttäjän päätös 2026-07-31. Kaksi osaa samalla istumalla, koska
    ne ovat sama kysymys eri etäisyydeltä.

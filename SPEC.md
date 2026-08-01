@@ -157,10 +157,10 @@ The implementation MUST deliver these behaviors (these drive the acceptance test
    │ PREAMP B ├───▶│ COCO 2: (identical)                       │──┤
    └──────────┘    └───────────────────────────────────────────┘  │
                                                                   ▼
-                              ┌──────────────┐   ┌────────────────────────────┐
-                              │ SPACE (FDN   │◀──┤ MIX: levels, pans, sends   │
-                              │ reverb, opt.)│──▶│ MASTER SAFETY: LeakDC →    │
-                              └──────────────┘   │ tanh headroom → Limiter →  │
+                                                 ┌────────────────────────────┐
+                                                 │ MIX: levels, pans, sends   │
+                                                 │ MASTER SAFETY: LeakDC →    │
+                                                 │ tanh headroom → Limiter →  │
                                                  │ bad-value squelch → outs   │
                                                  │ (+ optional stem outs,     │
                                                  │  + disk recorder)          │
@@ -399,18 +399,44 @@ smoothing with 30 ms lag on all faders.
 
 | Fader | CC | Param | | Fader | CC | Param |
 |---|---|---|---|---|---|---|
-| F1 | 32 | `coco1In` | | F9 | 40 | `qFreq` |
-| F2 | 33 | `coco1Speed` | | F10 | 41 | `qChaos` |
-| F3 | 34 | `coco1Spaf` | | F11 | 42 | `preADrive` + `preBDrive` (linked) |
-| F4 | 35 | `coco1Fb` | | F12 | 43 | `deckARate` + `deckBRate` (linked) |
-| F5 | 36 | `coco2In` | | F13 | 44 | `deckALevel` + `deckBLevel` (linked) |
-| F6 | 37 | `coco2Speed` | | F14 | 45 | unassigned (reserved) |
-| F7 | 38 | `coco2Spaf` | | F15 | 46 | `patchDepth` |
-| F8 | 39 | `coco2Fb` | | F16 | 47 | `masterVol` |
+| F1 | 32 | `coco1In` | | F9 | 40 | `coco2Fb` |
+| F2 | 33 | `coco1Speed` | | F10 | 41 | `coco2Level` |
+| F3 | 34 | `coco1Spaf` | | F11 | 42 | `qFreq` |
+| F4 | 35 | `coco1Fb` | | F12 | 43 | `qChaos` |
+| F5 | 36 | `coco1Level` | | F13 | 44 | `preADrive` + `preBDrive` (linked) |
+| F6 | 37 | `coco2In` | | F14 | 45 | `coco1SlotQ` + `coco2SlotQ` (linked) |
+| F7 | 38 | `coco2Speed` | | F15 | 46 | `patchDepth` |
+| F8 | 39 | `coco2Spaf` | | F16 | 47 | `masterVol` |
 
-Left half = the two Cocos exactly as on the hardware panel; right half = Quantussy
-macros, sources, global. Takeover mode configurable: `\jump` (default) or `\pickup`
-(fader must cross current value after preset recall).
+**Two identical Coco channel strips (F1–F5, F6–F10), then a six-fader shared
+section.** Each strip runs in signal order — input, clock, clock modulation,
+feedback, output level — so the same finger position means the same thing on
+either voice, and `Level` ends the strip exactly as a channel fader ends a mixer
+strip. The two `Level` faders are deliberately **not** linked: balancing the two
+voices against each other is their entire purpose. The shared section is the
+Quantussy macro pair, source character, the ring's audio gate, matrix depth and
+output. Takeover mode configurable: `\jump` (default) or `\pickup` (fader must
+cross current value after preset recall).
+
+F14/CC 45 carried `spaceMix` until the Space FDN was retired (§12.6). It now
+carries `cocoNSlotQ`, which is the **only** path from the Quantussy audio bus to
+the output: `qMix` has exactly one writer (Σ castle triangles × `cKSend`) and one
+reader (this slot gain), and it defaults to 0. Without a hand here, F11 and F12
+shape a voice that never reaches the output — at boot that voice is castle 5,
+the one castle in `\audio` range with a non-zero send (§5.4). Which castles feed
+`qMix` stays a `cKSend` setup decision; this fader is the performance gate on
+whatever they send, as routing is to level on any mixer.
+
+**Allocation rule (normative for future changes):** a fader is worth most where
+no other hand reaches. The GUI's Night map already plays 31 parameters directly
+and the Master strip 4, and the matrix reaches 22 destinations by modulation; the
+Cocos' mix stage (`Level`, `Organ`, `Dust`, `Pan`, `Slot*`) is reachable only from
+a hand. Duplication between layers is intended where the gesture is a continuous
+two-handed ride (§6 requires each layer to suffice alone) — but new assignments
+prefer parameters no other surface can play. This is why the deck faders left the
+map: `deckALevel`/`deckBLevel` already have their own crescents in the Night map,
+and `deckARate`/`deckBRate` are matrix destinations. Both remain fully reachable
+from the Drawer's Workshop page, code and snapshots.
 
 ### 6.2 GUI panel
 

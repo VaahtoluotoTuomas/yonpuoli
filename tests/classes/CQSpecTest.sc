@@ -121,13 +121,12 @@ CQSpecTest : UnitTest {
 
 	test_16nMapMirrorsSpec {
 		var expected = [
-			[\coco1In], [\coco1Speed], [\coco1Spaf], [\coco1Fb],
-			[\coco2In], [\coco2Speed], [\coco2Spaf], [\coco2Fb],
+			[\coco1In], [\coco1Speed], [\coco1Spaf], [\coco1Fb], [\coco1Level],
+			[\coco2In], [\coco2Speed], [\coco2Spaf], [\coco2Fb], [\coco2Level],
 			[\qFreq], [\qChaos],
 			[\preADrive, \preBDrive],
-			[\deckARate, \deckBRate],
-			[\deckALevel, \deckBLevel],
-			[], [\patchDepth], [\masterVol]
+			[\coco1SlotQ, \coco2SlotQ],
+			[\patchDepth], [\masterVol]
 		];
 		this.assertEquals(CQSpec.map16n, expected, "16n default map mirrors SPEC §6.1");
 		CQSpec.map16n.flatten.do { |name|
