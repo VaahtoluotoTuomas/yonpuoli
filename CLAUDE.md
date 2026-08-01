@@ -435,14 +435,35 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   asks for settling. Criterion 9 was skipped (AUD-W part 2 accepted 2026-07-31),
   so **criterion 5 is the single thing standing between the soak and its
   acceptance.**
-  **The agreed next act is neither a fourth night nor a rewrite of the criterion:
-  name the remaining 3.45 MB/h first.** The activity loop holds exactly one act
-  the probe has never covered — `CQ.deckA.random` / `deckB.random` every 8
-  minutes, the only one that touches the filesystem and allocates a buffer. That
-  is an 8-minute measurement, and it needs a free machine with no other sclang
-  alive. Only if nothing names a source is there evidence to discuss whether
-  criterion 5 should measure a bound (the process never exceeds its first hour's
-  peak) instead of a slope. That order, not the reverse.
+  **The remaining +3.45 MB/h was named on 2026-08-01: it is working-set
+  residency recovery after Windows trims, not retained memory.** Run 3 reached
+  335.1 MB at 1.03 h, then lost 35.5 MB and 32.0 MB in two steps; the criterion's
+  274.6 MB hour-2 baseline therefore sits in the post-trim trough. A clean gated
+  `morphGuiFast` reproduction made the distinction direct: private bytes stayed
+  at 365.5 MB (Theil-Sen 0.0 MB/h) and the live SC heap moved only +48,064 bytes,
+  while working set repopulated 273.0 -> 280.0 MB (+134 MB/h if the short segment
+  is naively extrapolated). Its warm-up also lost 56.4 MB of working set in one
+  sample while private bytes rose 2.35 MB. The capped unique-random shake stayed
+  at 56 entries / 19,768 lines after 480 acts, and production-boot deck probes
+  executed 78 measured swaps with stable Buffer cache and heap. Thus deck loading,
+  random journal text, morph frames, GUI painting and telemetry are all bounded.
+  Criterion 5 still fails **as originally written**, and that failure remains in
+  the record. The user approved the documented replacement on 2026-08-01 and
+  **SOAK-1 is accepted**: after a 60-minute warm-up, five-minute private-byte means
+  must have Theil-Sen <=5 MB/h once at least two post-warm-up hours exist, and the
+  final 15-minute mean may exceed the first post-warm-up window by at most
+  max(5%, 8 MB). Shorter tooling runs report slope as informational instead of
+  extrapolating a high-water segment to an hourly leak. Working set is only a pressure
+  bound (first-hour peak + max(25%, 64 MB)); >=5 MB trims are reported separately.
+  `soak_monitor.ps1` now records both private bytes and working set, and the gated
+  `run_soak_validation.ps1` production harness validates this instrumentation for
+  95 minutes. That run passed from `soak-20260801-123248.csv`: private windows
+  388.32 -> 391.06 MB, WS peak 320.2 / bound 400.2 MB, 0 status or clock failures,
+  and clean gate teardown. Its short slope was +7.23 MB/h; the first summary
+  correctly exposed that 35 minutes was too short for a slope gate. Direct GC
+  evidence settled ownership: live cells fell 214,430 -> 199,939, free cells rose
+  30,486 -> 68,484, and Spellbook stayed 56 entries / 19,768 lines. This is a
+  tooling confirmation, not a fourth acceptance night.
 - **The user decided 2026-07-31 that five more items are 1.0 conditions**, so the
   road is now nine steps: name/identity (which gates README and the tag's own
   name), a privacy audit of the repo including its history, the README rewrite,

@@ -5,11 +5,10 @@
 #
 # The soak measured ~20 MB/h of growth without settling, twice, on both the old
 # and the fixed code. That run answers "does it plateau" and costs a night. This
-# one answers "which workload allocates" and costs minutes: it launches one
-# sclang per scenario, samples that process's working set from outside, and
-# fits a slope. No server and no audio device are involved -- the growth is on
-# the language side, and every scenario builds the same serverless GUI the
-# smokes do.
+# one answers "which workload allocates" and costs minutes: it asks the required
+# run_sclang_gate.ps1 wrapper to launch one sclang per scenario, samples that
+# exact child process from outside, and fits a slope. The original stages are
+# serverless; the opt-in deckRandom* stage boots the real muted audio path.
 #
 # Usage (run with no soak monitor and no other sclang alive):
 #   powershell -NoProfile -ExecutionPolicy Bypass -File tests/memory_probe.ps1
@@ -23,6 +22,8 @@
 # because the cap is only reached after ~57 dense acts and no 9 s scenario gets
 # there inside one window -- commitGuiFast does, during its warm-up:
 #   -Scenarios commitGuiFast
+# The third stage covers the soak's one previously missing act, deck.random:
+#   -Scenarios bootGui,deckRandomGui,deckRandomNoGui
 #
 # Prints one row per scenario and CQ_MEM_PROBE_REPORT as its last line.
 
@@ -54,10 +55,12 @@ if ($Scenarios.Count -lt 1) { throw 'no scenarios given' }
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $script   = Join-Path $repoRoot 'tests\memory_probe.scd'
 $conf     = Join-Path $PSScriptRoot 'sclang_conf_dev.yaml'
+$gate     = Join-Path $PSScriptRoot 'run_sclang_gate.ps1'
+$powershell = Join-Path $PSHOME 'powershell.exe'
 $request  = Join-Path $PSScriptRoot 'tmp\mem_probe.txt'
 $outDir   = Join-Path $PSScriptRoot 'tmp\memprobe'
 
-foreach ($p in @($Sclang, $script, $conf)) {
+foreach ($p in @($Sclang, $script, $conf, $gate, $powershell)) {
     if (-not (Test-Path -LiteralPath $p)) { throw "not found: $p" }
 }
 [System.IO.Directory]::CreateDirectory($outDir) | Out-Null
@@ -77,7 +80,7 @@ if ($Seconds -le ($WarmupSeconds + (4 * $IntervalSeconds))) {
 # from no ramp is the only thing this probe is for. The median pair is not moved
 # by a step most pairs do not span, and the steps are counted separately below so
 # they stay visible instead of being averaged into the answer.
-function Get-TheilSen([object[]] $points) {
+function Get-TheilSen([object[]] $points, [string] $property = 'Mb') {
     $n = $points.Count
     if ($n -lt 3) { return $null }
     $slopes = New-Object System.Collections.Generic.List[double]
@@ -85,7 +88,7 @@ function Get-TheilSen([object[]] $points) {
         for ($j = $i + 1; $j -lt $n; $j++) {
             $dh = $points[$j].H - $points[$i].H
             if ([math]::Abs($dh) -gt 1e-9) {
-                $slopes.Add(($points[$j].Mb - $points[$i].Mb) / $dh)
+                $slopes.Add(($points[$j].$property - $points[$i].$property) / $dh)
             }
         }
     }
@@ -95,6 +98,28 @@ function Get-TheilSen([object[]] $points) {
     $m = $sorted.Count
     if (($m % 2) -eq 1) { return $sorted[[int](($m - 1) / 2)] }
     return ($sorted[[int]($m / 2) - 1] + $sorted[[int]($m / 2)]) / 2
+}
+
+# A working-set trim in the middle can span more than half of all point pairs,
+# so even Theil-Sen can call one downward step a giant negative trend. Keep the
+# whole-window number for continuity, but also fit each trim-free segment and
+# report the tail segment separately. The latter answers what happened after
+# the most recent residency reset.
+function Get-TrimFreeSlopes([object[]] $points, [double] $minMb) {
+    $segments = New-Object System.Collections.Generic.List[object]
+    $start = 0
+    for ($i = 1; $i -lt $points.Count; $i++) {
+        if (($points[$i - 1].Mb - $points[$i].Mb) -ge $minMb) {
+            if (($i - $start) -ge 3) {
+                $segments.Add(@($points[$start..($i - 1)]))
+            }
+            $start = $i
+        }
+    }
+    if (($points.Count - $start) -ge 3) {
+        $segments.Add(@($points[$start..($points.Count - 1)]))
+    }
+    return @($segments | ForEach-Object { Get-TheilSen $_ })
 }
 
 # Sample-to-sample falls of at least $minMb. Windows trims a working set in one
@@ -118,45 +143,80 @@ Write-Output "sampling every $IntervalSeconds s, ignoring the first $WarmupSecon
 Write-Output ''
 
 foreach ($scenario in $Scenarios) {
-    Set-Content -Path $request -Value "$scenario $Seconds" -Encoding ascii
+    Set-Content -Path $request -Value "$scenario $Seconds $WarmupSeconds" -Encoding ascii
+
+    $pidFile = Join-Path $outDir "$stamp-$scenario-sclang.pid"
+    if (Test-Path -LiteralPath $pidFile) {
+        Remove-Item -LiteralPath $pidFile -Force
+    }
 
     $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
-    $startInfo.FileName  = $Sclang
-    $startInfo.Arguments = "-D -l `"$conf`" -i none `"$script`""
+    $startInfo.FileName  = $powershell
+    $startInfo.Arguments = (
+        "-NoProfile -ExecutionPolicy Bypass -File `"$gate`" " +
+        "`"tests/memory_probe.scd`" -TimeoutSeconds $($Seconds + 30) " +
+        "-Sclang `"$Sclang`" -Conf `"$conf`" -PidFile `"$pidFile`""
+    )
     $startInfo.WorkingDirectory = $repoRoot
     $startInfo.UseShellExecute = $false
     $startInfo.CreateNoWindow  = $true
     $startInfo.RedirectStandardOutput = $true
     $startInfo.RedirectStandardError  = $true
 
-    $proc = [System.Diagnostics.Process]::new()
-    $proc.StartInfo = $startInfo
-    [void]$proc.Start()
-    $stdout = $proc.StandardOutput.ReadToEndAsync()
-    $stderr = $proc.StandardError.ReadToEndAsync()
+    $gateProc = [System.Diagnostics.Process]::new()
+    $gateProc.StartInfo = $startInfo
+    [void]$gateProc.Start()
+    $stdout = $gateProc.StandardOutput.ReadToEndAsync()
+    $stderr = $gateProc.StandardError.ReadToEndAsync()
+
+    $pidDeadline = (Get-Date).AddSeconds(20)
+    while ((-not (Test-Path -LiteralPath $pidFile)) -and
+           (-not $gateProc.HasExited) -and ((Get-Date) -lt $pidDeadline)) {
+        Start-Sleep -Milliseconds 100
+    }
+    if (-not (Test-Path -LiteralPath $pidFile)) {
+        if (-not $gateProc.HasExited) { $gateProc.Kill(); $gateProc.WaitForExit() }
+        throw "gate did not publish the sclang PID for scenario '$scenario'"
+    }
+    $sclangPid = [int][System.IO.File]::ReadAllText($pidFile)
+    $proc = Get-Process -Id $sclangPid -ErrorAction Stop
 
     $csv = Join-Path $outDir "$stamp-$scenario.csv"
-    Set-Content -Path $csv -Value 'elapsed_s,ws_mb,handles,threads' -Encoding ascii
+    Set-Content -Path $csv -Value 'elapsed_s,ws_mb,private_mb,handles,threads' -Encoding ascii
 
     $began   = Get-Date
     $samples = New-Object System.Collections.Generic.List[object]
-    $deadline = $began.AddSeconds($Seconds + 30)
+    $deadline = $began.AddSeconds($Seconds + 45)
 
-    while ((-not $proc.HasExited) -and ((Get-Date) -lt $deadline)) {
+    while ((-not $gateProc.HasExited) -and ((Get-Date) -lt $deadline)) {
         Start-Sleep -Seconds $IntervalSeconds
-        if ($proc.HasExited) { break }
-        try { $proc.Refresh() } catch { break }
+        try {
+            $proc.Refresh()
+            if ($proc.HasExited) { break }
+        } catch { break }
         $elapsed = ((Get-Date) - $began).TotalSeconds
         $mb = [math]::Round($proc.WorkingSet64 / 1MB, 2)
+        $privateMb = [math]::Round($proc.PrivateMemorySize64 / 1MB, 2)
         Add-Content -Path $csv -Encoding ascii -Value (
-            "$([math]::Round($elapsed,0)),$mb,$($proc.Handles),$($proc.Threads.Count)")
+            "$([math]::Round($elapsed,0)),$mb,$privateMb,$($proc.Handles),$($proc.Threads.Count)")
         if ($elapsed -ge $WarmupSeconds) {
-            $samples.Add([pscustomobject]@{ H = $elapsed / 3600; Mb = $mb })
+            $samples.Add([pscustomobject]@{
+                H = $elapsed / 3600
+                Mb = $mb
+                PrivateMb = $privateMb
+            })
         }
     }
 
-    if (-not $proc.HasExited) {
+    # sclang can exit a few milliseconds before the gate has copied its output,
+    # validated the marker and written the diagnostic log. Do not kill that
+    # normal gate epilogue merely because the observed child is already gone.
+    if ($proc.HasExited -and (-not $gateProc.HasExited)) {
+        [void]$gateProc.WaitForExit(10000)
+    }
+    if (-not $gateProc.HasExited) {
         try { $proc.Kill(); $proc.WaitForExit() } catch { }
+        try { $gateProc.Kill(); $gateProc.WaitForExit() } catch { }
     }
     $combined = $stdout.Result + $stderr.Result
     # Two ways a row can be worthless: the workload never finished, or it threw.
@@ -172,9 +232,13 @@ foreach ($scenario in $Scenarios) {
     $first = $null
     $last  = $null
     $drops = $null
+    $trimFreeSlopes = @()
+    $privateSlope = $null
     if ($samples.Count -ge 3) {
         $slope = Get-TheilSen $samples
         $drops = Get-Drops $samples 5.0
+        $trimFreeSlopes = @(Get-TrimFreeSlopes $samples 5.0)
+        $privateSlope = Get-TheilSen $samples 'PrivateMb'
         $first = $samples[0].Mb
         $last  = $samples[$samples.Count - 1].Mb
     }
@@ -186,6 +250,9 @@ foreach ($scenario in $Scenarios) {
         EndMb    = $last
         DeltaMb  = $null
         SlopeMbH = $null
+        TailSlopeMbH = $null
+        PrivateDeltaMb = $null
+        PrivateSlopeMbH = $null
         Drops    = $(if ($null -ne $drops) { $drops.Count } else { $null })
         DropMb   = $(if ($null -ne $drops) { $drops.TotalMb } else { $null })
         Clean    = $marker
@@ -193,18 +260,26 @@ foreach ($scenario in $Scenarios) {
     if ($null -ne $slope) {
         $row.DeltaMb  = [math]::Round($last - $first, 1)
         $row.SlopeMbH = [math]::Round($slope, 1)
+        if ($trimFreeSlopes.Count -gt 0) {
+            $row.TailSlopeMbH = [math]::Round($trimFreeSlopes[-1], 1)
+        }
+        $row.PrivateDeltaMb = [math]::Round(
+            $samples[-1].PrivateMb - $samples[0].PrivateMb, 1)
+        $row.PrivateSlopeMbH = [math]::Round($privateSlope, 1)
     }
     $report.Add($row)
 
-    Write-Output ("  {0,-14} {1,3} samples  {2,7} -> {3,7} MB   delta {4,6} MB   slope {5,7} MB/h   drops {6} ({7} MB)  {8}" -f `
+    Write-Output ("  {0,-16} {1,3} samples  WS {2,7} -> {3,7} MB delta {4,6} slope {5,7} (tail {6,7}) MB/h   private delta {7,6} MB slope {8,7} MB/h   drops {9} ({10} MB)  {11}" -f `
         $row.Scenario, $row.Samples, $row.StartMb, $row.EndMb, $row.DeltaMb, $row.SlopeMbH,
+        $row.TailSlopeMbH, $row.PrivateDeltaMb, $row.PrivateSlopeMbH,
         $row.Drops, $row.DropMb,
         $(if ($marker) { 'ok' } elseif ($errored) { 'ERRORS IN LOG' } else { 'NO MARKER' }))
 }
 
 Write-Output ''
 Write-Output 'CQ memory probe summary (measured window excludes the warm-up)'
-$report | Format-Table Scenario, Samples, StartMb, EndMb, DeltaMb, SlopeMbH, Drops, DropMb, Clean -AutoSize | Out-String |
+$report | Format-Table Scenario, Samples, StartMb, EndMb, DeltaMb, SlopeMbH,
+    TailSlopeMbH, PrivateDeltaMb, PrivateSlopeMbH, Drops, DropMb, Clean -AutoSize | Out-String |
     ForEach-Object { Write-Output $_ }
 Write-Output "  raw samples: $outDir"
 Write-Output ''

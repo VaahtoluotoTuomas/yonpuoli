@@ -1724,15 +1724,22 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
      ~3,45 MB/h), ja koko ajon huippu 335,1 MB osui **ensimmäiselle tunnille**
      — viimeinen näyte 295,3 MB oli 40 MB sen alapuolella. Se ei silti ole
      tasaantumista. Täydet luvut: `tests/manual_checklist.md` → SOAK-1, kolmas ajo.
-   - **Seuraava teko ei ole neljäs yö eikä kriteerin uudelleenkirjoitus, vaan
-     jäljelle jääneen 3,45 MB/h:n nimeäminen.** Yön silmukassa on tasan yksi teko
-     jota probe ei ole koskaan kattanut: `CQ.deckA.random` / `deckB.random`
-     8 minuutin välein — ainoa joka käy tiedostojärjestelmässä ja varaa
-     puskurin. Se on 8 minuutin mittaus eikä yö, ja se tarvitsee vapaan koneen
-     (ei toista sclangia). **Vasta jos mikään ei nimeä lähdettä, on evidenssiä
-     keskustella siitä mittaako kriteeri 5 oikeaa asiaa** — rajaa (prosessi ei
-     ylitä ensimmäisen tuntinsa huippua) vai kulmakerrointa. Siinä järjestyksessä,
-     ei toisin päin.
+   - **Jäljelle jäänyt 3,45 MB/h nimettiin 2026-08-01: se on Windowsin
+     working-set-trimmauksen jälkeistä residenttisivujen palautumista, ei elävän
+     muistin vuoto.** Ajo 3 saavutti 335,1 MB jo 1,03 tunnissa ja putosi sitten
+     kahdessa portaassa −35,5 ja −32,0 MB; kriteerin 274,6 MB vertailutunti osui
+     näin trimmauksen jälkeiseen kuoppaan. Puhdas gated `morphGuiFast` piti private
+     bytesin 365,5 MB:ssa (Theil–Sen 0,0 MB/h) ja SC-heap kasvoi vain 48 064 tavua,
+     vaikka working set palautui 273,0 → 280,0 MB. Deck-, shake-, morph-, GUI- ja
+     telemetrypolut on nyt erikseen mitattu rajatuiksi. **Käyttäjä hyväksyi
+     2026-08-01 kriteerikorvauksen ja SOAK-1 on hyväksytty:** vanhan
+     working-set-kaavan epäonnistuminen säilyy näkyvänä, mutta tarkoitettu vaatimus
+     arvioidaan private bytesista, GC:n jälkeisestä SC live heapista ja rajatuista
+     resursseista. `soak_monitor.ps1` mittaa nyt private bytesit; raja on ≤5 MB/h,
+     viimeinen 15 min saa ylittää ensimmäisen post-warmup-15 min enintään
+     `max(5 %, 8 MB)`, ja working setille jää yläraja ensimmäisen tunnin huippu +
+     `max(25 %, 64 MB)`. 95 minuutin tuotantovalidointi varmistaa uuden työkalun,
+     ei toista jo hyväksytyn 12,5 tunnin ajon toiminnallista näyttöä.
 4. **Nimi ja soittimen identiteetti päätetään.** **Käyttäjän päätös 2026-07-31:
    tämä ei ole enää "myöhemmin" vaan 1.0:n ehto.** Yksi päätös, ei kolme:
    tuotenimi, sisäosien nimien (a)/(b)-valinta ja julkaisuradan
@@ -2343,6 +2350,49 @@ rajattu ja mitattu. Täysi 20 000 rivin päiväkirja maksaa noin **19 MB** työj
 yläraja, koska tulkin oma käynnistysallokaatio on samassa). Kriteerin **sulkeminen
 on silti soakin teko eikä proben**: seuraava yö korjatulla koodilla on se mittaus
 joka kertoo tasaantuuko oikea sessio.
+
+**Ajon 3 jäännös selvitettiin lopullisesti 2026-08-01.** `WorkingSet64` mittaa
+residenttejä sivuja, ei prosessin omistamaa tai SC:n elävää muistia. Ajo 3 saavutti
+335,1 MB jo 1,03 tunnissa ja putosi heti kahdessa portaassa −35,5 ja −32,0 MB;
+toisen tunnin 274,6 MB vertailuarvo on siis trimmauksen jälkeinen kuoppa. Myöhempi
+3,45 MB/h on sivujen uudelleenkosketusta, ja viimeinen 295,3 MB jäi yhä 39,8 MB
+varhaisen huipun alle. Noin 15 minuutin välein näkyvät −13,2 MB portaat palautuvat
+20–60 sekunnissa eivätkä muuta omistusta.
+
+Puhdas gated `morphGuiFast` teki mekanismin näkyväksi samassa prosessissa:
+warmupissa working set putosi yhdellä näytteellä 56,39 MB samalla kun private bytes
+**kasvoi** 2,35 MB. Tasanneikkunassa private bytes oli 365,57 → 365,63 MB
+(Theil–Sen 0,0 MB/h) ja SC:n live heap 14 020 752 → 14 068 816 tavua, mutta
+working set palautui 273,02 → 279,99 MB (+7,0 MB; lyhyestä segmentistä laskettuna
+harhaanjohtava +134 MB/h). `shakeGuiFast` teki 480 tuoretta satunnaista tiheää
+tekoa: päiväkirja jäi 56 merkintään / 19 768 riviin, private bytes muuttui vain
++0,6 MB ja heap +114 480 tavua. Tuotantobootin deck-probe teki mittausikkunassa
+78 vaihtoa: GUI-tapauksessa heap pieneni 39 472 tavua ja Buffer-cache oli 5 → 5;
+ilman GUI:ta heap muuttui +24 304 tavua ja cache 5 → 4 yhden in-flight-snapshotin
+mukaan. Deck ei siis ole lähde.
+
+**Johtopäätös ja päätös 2026-08-01:** vanha ~20 MB/h oli oikea `CQSpellbook`-vuoto
+ja sen katto pitää; ajon 3 jäljellä ollut working-set-kaltevuus on
+mittausartefakti. Käyttäjä hyväksyi SOAK-1:n dokumentoidulla kriteerikorvauksella:
+vanhan kaavan failure säilyy historiassa, mutta omistusta mitataan jatkossa private
+bytesista ja GC:n jälkeisestä SC live heapista. `soak_monitor.ps1` vaatii 60 min
+warmupin jälkeen private-kulmakertoimen ≤5 MB/h, kun arvioitavaa dataa on vähintään
+kaksi tuntia, ja viimeisen 15 min keskiarvolle
+enintään `max(5 %, 8 MB)` kasvun ensimmäiseen post-warmup-ikkunaan nähden. Working
+set on vain yläraja: ensimmäisen tunnin huippu + `max(25 %, 64 MB)`, ja vähintään
+5 MB:n trimmit raportoidaan erikseen. 95 minuutin gated tuotantovalidointi on uuden
+instrumentoinnin tarkistus, ei neljäs hyväksyntäyö.
+
+**95 minuutin validointi valmistui 2026-08-01 vihreänä** (`soak-20260801-123248.csv`,
+285 näytettä): 0 statusvirhettä, 0 kellovirhettä, sama PID, private-ikkunat 388,32
+→ 391,06 MB (+2,74 MB), WS-huippu 320,2 MB / raja 400,2 MB ja viisi raportoitua
+trimmiä. Lyhyen 35 min post-warmup-segmentin slope +7,23 MB/h merkittiin
+informaatioksi eikä tuntirajaksi: ensimmäinen summary kaatui siihen ja paljasti,
+että alle kahden tunnin segmentin ekstrapolointi olisi sama vanha metodivirhe eri
+mittarilla. Raja 5 MB/h säilyy pitkille ajoille. Suora GC-näyttö oli ratkaiseva:
+live-solut vähenivät 214 430 → 199 939, vapaat kasvoivat 30 486 → 68 484 ja
+Spellbook pysyi 56 merkinnässä / 19 768 rivissä. Teardown, scsynth exit 0 ja
+`CQ_SOAK_VALIDATION_DONE` olivat gate-vihreät.
 
 **Sivutuotteena korjattiin toinen, erillinen vika** (käyttäjän päätös): Spellbookin
 sivu rakensi koko päiväkirjan uudestaan jokaisesta committed-teosta riippumatta

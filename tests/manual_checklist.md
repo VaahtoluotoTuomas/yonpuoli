@@ -1994,13 +1994,23 @@ sammuva danger on yhtä hyväksyttävä tulos kuin täysi hiljaisuus; valhe ei o
 2. `scsynth restart: 0` — sama PID koko ajon.
 3. `unhealthy clock: 0` näytettä valvotussa ikkunassa (suhde 0,8–1,2).
 4. Server avg CPU alle SPEC §9:n 25 % koko ajon **eikä** nouseva trendi.
-5. scsynthin ja sclangin working set tasaantuu ensimmäisen tunnin jälkeen:
-   viimeisen tunnin keskiarvo ei ylitä toisen tunnin keskiarvoa yli 5 %:lla
-   eikä käyrä ole monotoninen ramppi. **Ajosta 3 alkaen** aktiviteettisilmukka
-   tekee yhden tiheän committed-teon joka askeleella, jotta `CQSpellbook`in
-   20 000 rivin katto täyttyy noin **57 minuutissa**; ilman sitä mitattaisiin
-   yhä täyttyvää päiväkirjaa eikä rajaa, ja kriteeri näyttäisi saman rampin
-   kuin ennen korjausta (ks. PLAN.md → "Kriteeri 5").
+5. **Korvaava muistihyväksyntä, päätetty 2026-08-01.** Vanha vaatimus sclangin
+   working-set-keskiarvoista on mitätöity: Windows voi trimmata residentit sivut
+   muuttamatta prosessin omistamaa muistia, joten post-trim-kuopasta palautuminen
+   näyttää vuodolta. `tests/soak_monitor.ps1` mittaa nyt private bytesit ja vaatii
+   ensimmäisen 60 min jälkeen kaikki seuraavat:
+   - viiden minuutin private-keskiarvojen Theil–Sen-kulmakerroin ≤ **5 MB/h**,
+     kun post-warmup-dataa on vähintään kaksi tuntia; lyhyemmässä työkalusmokessa
+     luku raportoidaan vain informaationa eikä sitä ekstrapoloida tuntirajaksi;
+   - viimeisen 15 min private-keskiarvo ei ylitä ensimmäisen post-warmup-15 min
+     keskiarvoa yli `max(5 %, 8 MB)`;
+   - working set on vain paineen yläraja: koko ajon huippu ≤ ensimmäisen tunnin
+     huippu + `max(25 %, 64 MB)`. Vähintään 5 MB:n trimmaukset raportoidaan,
+     mutta ne eivät itsessään kaada testiä;
+   - GC:n jälkeinen SC live heap, handlet ja säikeet ovat rajatut, eikä
+     `CQSpellbook` ylitä 20 000 riviä.
+   Aktiviteettisilmukan täystiheä committed-teko täyttää Spellbook-rajan noin
+   57 minuutissa, joten mittausikkuna alkaa vasta rajan ylityksen jälkeen.
 6. Handlet ja säikeet tasaisia ensimmäisen tunnin jälkeen — vuoto näkyy suorana
    nousevana viivana.
 7. Synth-määrä palaa lepotasolleen; synthit eivät kerry.
@@ -2008,7 +2018,12 @@ sammuva danger on yhtä hyväksyttävä tulos kuin täysi hiljaisuus; valhe ei o
    illalla, ei kuultua dropoutia eikä tason ajautumista.
 9. Vaihe 4: guard vaikeni tai kertoi totuuden ja palautui itse. Ei (c) eikä (d).
 
-- [ ] **SOAK-1 hyväksytty** (pvm, kesto, CSV-tiedosto, kriteerit 1–9)
+- [x] **SOAK-1 hyväksytty 2026-08-01 dokumentoidulla kriteerikorvauksella.**
+      Ajo 3: 12,52 h, `soak-20260731-213509.csv`; alkuperäinen working-set-kaava
+      epäonnistui eikä sitä merkitä läpäistyksi, mutta sen tarkoittama vaatimus
+      (ei rajatta eloon jäävää muistia) läpäisi korvaavan private-bytes-, SC live
+      heap-, Spellbook-raja- ja kuormaprobenäytön. Kriteerit 1–4 ja 6–8 läpäisivät
+      ajon; kriteeri 9 oli jo hyväksytty AUD-W osassa 2.
 - [x] **AUD-W osa 2 hyväksytty 2026-07-31.** Lepotilaprovokaatio ei tuottanut
       suppenevaa transienttia vaan tappoi palvelimen ääniketjun; guard kertoi
       sen rehellisesti eikä väittänyt mitään jäätyneestä lukemasta. Mitattu
@@ -2054,6 +2069,41 @@ joka askeleella täyttää päiväkirjan katon ~57 minuutissa.
   kriteerin vasteet 12,5 tunnin jälkeen: PANIC välitön, morph ei jäädytä, GUI
   yhtä nopea kuin illalla, ei kuultua dropoutia eikä tason ajautumista.
 - **9 ohitettu:** AUD-W osa 2 hyväksyttiin 2026-07-31 eikä sitä ajettu uudelleen.
+
+**Kriteeri 5:n jälkidiagnoosi 2026-08-01: tekninen syy varmistettu, mutta
+hyväksyntämerkintä pidetään avoinna.** Ajo saavutti 335,1 MB jo 1,03 tunnissa ja
+putosi sitten working setissä −35,5 ja −32,0 MB; 274,6 MB vertailutunti osui siis
+Windowsin trimmauksen jälkeiseen kuoppaan. Puhdas gated `morphGuiFast` varmisti
+mekanismin: tasanneikkunassa private bytes 365,57 → 365,63 MB (Theil–Sen 0,0 MB/h)
+ja SC-heap 14 020 752 → 14 068 816 tavua, vaikka working set palautui 273,02 →
+279,99 MB. Warmupissa working set putosi yhdessä näytteessä 56,39 MB samalla kun
+private bytes kasvoi 2,35 MB. Tämä ei voi olla omistetun muistin vapautuminen ja
+uusi vuoto, vaan jo omistettujen sivujen residenttiyden muutos.
+
+Myös puuttunut tuotantopolku suljettiin: deck-probe teki mittausikkunassa 78
+`deck.random`-vaihtoa vakaalla heapilla ja Buffer-cachella. `shakeGuiFast` teki
+480 tuoretta täystiheää committed-tekoa; Spellbook pysyi 56 merkinnässä / 19 768
+rivissä, private bytes muuttui +0,6 MB ja heap +114 480 tavua. Vanha ~20 MB/h
+`CQSpellbook`-vuoto on siis korjattu; ajon 3 jäljelle jäänyt +3,45 MB/h on
+`WorkingSet64`-mittarin false positive trimmauksen jälkeen. **Käyttäjä hyväksyi
+2026-08-01 yllä kirjatun korvaavan private-bytes-/SC-live-heap-kriteerin ja
+working-set-ylärajan. SOAK-1 hyväksytään tällä dokumentoidulla korvauksella;
+vanhan kaavan epäonnistuminen säilyy näkyvänä eikä sitä nimetä läpäisyksi.**
+
+**Uuden monitorin tuotantovalidointi 2026-08-01, 1,58 h / 285 näytettä,
+`soak-20260801-123248.csv`: vihreä.** 0 statusvirhettä, 0 epätervettä
+kellonäytettä, sama scsynth-PID, actual SR 47 986,3–48 003,5 Hz. sclangin private
+15 min -ikkunat 388,32 → 391,06 MB (+2,74 MB, sallittu noin 19,4 MB), working-set
+huippu 320,2 MB jäi 400,2 MB rajaan ja viisi vähintään 5 MB:n trimmiä
+(yhteensä 130,3 MB) raportoitiin erikseen. 35 minuutin post-warmup-Theil–Sen oli
++7,23 MB/h: ensimmäinen summary hylkäsi sen 5 MB/h rajalla, mikä osoitti että
+lyhyen korkean veden segmentin tuntiekstrapolointi toisti saman metodivirheen.
+Raja pidettiin ennallaan mutta siitä tehtiin sitova vasta ≥2 post-warmup-tunnilla.
+GC ratkaisi omistuksen: live-solut **vähenivät 214 430 → 199 939**, vapaat solut
+kasvoivat 30 486 → 68 484 ja Spellbook pysyi täsmälleen 56 merkinnässä / 19 768
+rivissä. Hallittu `CQ.free`, scsynth exit 0 ja `CQ_SOAK_VALIDATION_DONE` läpäisivät
+gate-wrapperin. Tämä vahvistaa uuden instrumentoinnin; neljättä hyväksyntäyötä ei
+tarvita.
 
 **Toinen ajo 2026-07-31, 5,42 h (`soak-20260731-113829.csv`, 976 näytettä):
 kahdeksan kriteeriä yhdeksästä vihreänä, kriteeri 5 yhä auki.**

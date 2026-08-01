@@ -17,14 +17,17 @@ var matrix = CQMatrix(nil);
 var compassDir = Cocoquantus.repoDir +/+ "tests" +/+ "tmp" +/+ "cqcompass_memprobe";
 var snapDir = Cocoquantus.repoDir +/+ "tests" +/+ "tmp" +/+ "memprobe_snaps";
 var requestPath = Cocoquantus.repoDir +/+ "tests" +/+ "tmp" +/+ "mem_probe.txt";
-var request, scenario, seconds, config, gui, snaps, lang, workers, finish;
-var plantDense, denseFrom, makeSnaps, triplesFrom, commitLoop, known = true;
+var request, scenario, seconds, warmupSeconds, config, gui, snaps, lang, workers, finish;
+var plantDense, denseFrom, makeSnaps, triplesFrom, commitLoop, shakeLoop;
+var known = true;
+var usesCq = false, deckLoadCount = 0, postGc, bootProbe;
 
 request = if(File.exists(requestPath)) {
 	File.use(requestPath, "r", { |f| f.readAllString }).stripWhiteSpace.split($ )
 } { ["idleGui", "60"] };
 scenario = request[0].asSymbol;
 seconds = (request[1] ? "60").asFloat.max(10);
+warmupSeconds = (request[2] ? "90").asFloat.max(0);
 
 File.mkdir(compassDir);
 File.mkdir(snapDir);
@@ -85,12 +88,95 @@ commitLoop = { |period|
 	}.play(SystemClock));
 };
 
+// The cap's first proof alternated two deterministic dense matrices. The third
+// soak instead wrote a fresh random dense matrix every minute, so every journal
+// line had new numeric text. This loop tests whether that uniqueness changes
+// retention after the same 20 000-line cap has been crossed.
+shakeLoop = { |period|
+	workers.add(Routine {
+		loop {
+			matrix.shake(0.3, origin: \code, committed: true,
+				operation: \shake, density: 1.0);
+			period.wait;
+		};
+	}.play(SystemClock));
+};
+
+// The first two probe stages were deliberately serverless. The soak's one
+// remaining uncovered act is not: deck.random scans a real folder, allocates a
+// server Buffer, swaps a Synth and (when the GUI exists) updates the filename
+// label + bird flash. These helpers keep that full production path intact while
+// making it fast enough to cover more than a night's worth of deck swaps in one
+// measurement window.
+postGc = { |label|
+	var cachedBuffers = 0;
+	if(usesCq) {
+		Buffer.cachedBuffersDo(Server.default, { cachedBuffers = cachedBuffers + 1 });
+	};
+	("CQ_MEM_GC % loads % cachedBuffers %".format(
+		label, deckLoadCount, cachedBuffers)).postln;
+	Object.gcInfo;
+};
+
+bootProbe = { |withGui = true, withDeckLoads = false|
+	var runConfig = Cocoquantus.prLoadConfig(
+		Cocoquantus.repoDir +/+ "config.scd").copy;
+	usesCq = true;
+	runConfig[\headless] = withGui.not;
+	// No hardware discovery or MIDI endpoint is part of this question. The
+	// current audio profile is read but never written.
+	runConfig[\sixteenN] = runConfig[\sixteenN].copy;
+	runConfig[\sixteenN][\enabled] = false;
+	CQ.boot(nil, {
+		CQ.panic;
+		CQ.patchPreset(\mayhem); // same 352-cable GUI burden as the soak
+		AppClock.sched(warmupSeconds, { postGc.value(\measuredWindowStart); nil });
+		AppClock.sched(seconds, { finish.value; nil });
+		if(withDeckLoads) {
+			workers.add(Routine {
+				var useA = true, deck;
+				loop {
+					deck = if(useA) { CQ.deckA } { CQ.deckB };
+					if(deck.loadState != \loading) {
+						deck.random;
+						deckLoadCount = deckLoadCount + 1;
+						useA = useA.not;
+					};
+					5.wait;
+				};
+			}.play(SystemClock));
+		};
+	}, runConfig, { |failure|
+		("ERROR: deck memory probe boot failed: " ++ failure.errorString).postln;
+		AppClock.sched(0.3, { 1.exit; nil });
+	}, { CQ.panic });
+};
+
 finish = {
+	var reportDone, book;
 	workers.do { |w| w.stop };
-	gui !? { gui.free };
-	("CQ memory probe: scenario % ran % s".format(scenario, seconds)).postln;
-	"CQ_MEM_PROBE_DONE".postln;
-	AppClock.sched(0.3, { 0.exit; nil });
+	reportDone = {
+		("CQ memory probe: scenario % ran % s (% deck loads)"
+			.format(scenario, seconds, deckLoadCount)).postln;
+		"CQ_MEM_PROBE_DONE".postln;
+		AppClock.sched(0.3, { 0.exit; nil });
+	};
+	if(usesCq) {
+		postGc.value(\measuredWindowEnd);
+		CQ.free({
+			Server.default.quit;
+			AppClock.sched(1.0, { reportDone.value; nil });
+		});
+	} {
+		postGc.value(\measuredWindowEnd);
+		book = gui !? { gui.drawer.spellbook };
+		book !? {
+			("CQ_MEM_SPELLBOOK entries % lines %".format(
+				book.entryCount, book.lineCount)).postln;
+		};
+		gui !? { gui.free };
+		reportDone.value;
+	};
 };
 
 // ---- scenarios ----
@@ -240,6 +326,7 @@ switch(scenario,
 		plantDense.value;
 		gui = CQGui(state, matrix, config);
 		makeSnaps.value;
+		AppClock.sched(warmupSeconds, { postGc.value(\measuredWindowStart); nil });
 		workers.add(Routine {
 			var flip = false;
 			loop {
@@ -289,6 +376,37 @@ switch(scenario,
 		commitLoop.value(1);
 	},
 
+	// Same cadence and cap pressure as commitGuiFast, but every weight is new.
+	// 480 acts equal eight hours of the third soak's once-per-minute dense shake.
+	\shakeGuiFast, {
+		gui = CQGui(state, matrix, config);
+		AppClock.sched(warmupSeconds, { postGc.value(\measuredWindowStart); nil });
+		shakeLoop.value(1);
+	},
+
+	\shakeNoGuiFast, {
+		AppClock.sched(warmupSeconds, { postGc.value(\measuredWindowStart); nil });
+		shakeLoop.value(1);
+	},
+
+	// ---- third stage (2026-08-01): the only soak act not covered above ----
+	// A full production boot at the persisted K-Mix profile, kept muted. bootGui
+	// is the control for server telemetry + a visible dense Night. The two deck
+	// cases execute the same filesystem scan / Buffer / Synth swap every five
+	// seconds, alternating decks; the GUI/no-GUI split tells whether retention is
+	// in the audio-load path or its \file presentation.
+	\bootGui, {
+		bootProbe.value(true, false);
+	},
+
+	\deckRandomGui, {
+		bootProbe.value(true, true);
+	},
+
+	\deckRandomNoGui, {
+		bootProbe.value(false, true);
+	},
+
 	// A misspelled name used to warn and then sit idle for the full duration,
 	// and the report still called that row `ok` — a flat line that measured
 	// nothing is indistinguishable from a flat line that measured something.
@@ -302,10 +420,12 @@ switch(scenario,
 	}
 );
 
-if(known) {
+if(known and: { usesCq.not }) {
 	AppClock.sched(seconds, { finish.value; nil });
 } {
-	// stdout is block-buffered when redirected: give the marker its tick out
-	AppClock.sched(0.3, { 0.exit; nil });
+	if(known.not) {
+		// stdout is block-buffered when redirected: give the marker its tick out
+		AppClock.sched(0.3, { 0.exit; nil });
+	};
 };
 )

@@ -33,6 +33,16 @@ param(
     [double] $ExpectedSampleRate = 48000,
     [double] $ClockRatioMin = 0.8,
     [double] $ClockRatioMax = 1.2,
+    # Replacement for the invalid working-set slope criterion. Private bytes
+    # measures process ownership; working set is residency and may be trimmed.
+    [int]    $MemoryWarmupSeconds = 3600,
+    [int]    $MemoryWindowSeconds = 900,
+    [double] $PrivateSlopeLimitMbH = 5.0,
+    [double] $PrivateSlopeMinPostWarmupHours = 2.0,
+    [double] $PrivateGrowthPercent = 5.0,
+    [double] $PrivateGrowthFloorMb = 8.0,
+    [double] $WorkingSetGrowthPercent = 25.0,
+    [double] $WorkingSetGrowthFloorMb = 64.0,
     # Print the summary of an existing run and exit. Measures nothing, samples
     # nothing, holds nothing awake -- it only reads the evidence.
     [string] $SummarizeCsv = ''
@@ -53,14 +63,69 @@ $ErrorActionPreference = 'Stop'
 # -SummarizeCsv. However a run ends -- Ctrl+C, a killed window, a power loss --
 # the last written summary is on disk and an exact one is one command away.
 
+function Get-Mean([object[]] $values) {
+    if ($values.Count -eq 0) { return $null }
+    return [double](($values | Measure-Object -Average).Average)
+}
+
+# Theil-Sen on five-minute means, not every 20-second sample. A full night then
+# needs only thousands of pairs, so the summary can still be rewritten every
+# five minutes without turning its own analysis into a workload.
+function Get-TheilSen([object[]] $points) {
+    if ($points.Count -lt 3) { return $null }
+    $slopes = New-Object System.Collections.Generic.List[double]
+    for ($i = 0; $i -lt ($points.Count - 1); $i++) {
+        for ($j = $i + 1; $j -lt $points.Count; $j++) {
+            $dh = $points[$j].H - $points[$i].H
+            if ([math]::Abs($dh) -gt 1e-9) {
+                $slopes.Add(($points[$j].Mb - $points[$i].Mb) / $dh)
+            }
+        }
+    }
+    if ($slopes.Count -eq 0) { return $null }
+    $sorted = @($slopes | Sort-Object)
+    $middle = [int]($sorted.Count / 2)
+    if (($sorted.Count % 2) -eq 1) { return $sorted[$middle] }
+    return ($sorted[$middle - 1] + $sorted[$middle]) / 2
+}
+
+function Get-FiveMinuteMeans([object[]] $points) {
+    $bins = @{}
+    foreach ($point in $points) {
+        $key = [int][math]::Floor($point.Elapsed / 300.0)
+        if (-not $bins.ContainsKey($key)) {
+            $bins[$key] = New-Object System.Collections.Generic.List[double]
+        }
+        $bins[$key].Add($point.Mb)
+    }
+    $result = New-Object System.Collections.Generic.List[object]
+    foreach ($key in @($bins.Keys | Sort-Object)) {
+        $result.Add([pscustomobject]@{
+            H = (($key * 300.0) + 150.0) / 3600.0
+            Mb = Get-Mean $bins[$key].ToArray()
+        })
+    }
+    return $result.ToArray()
+}
+
 function Get-SoakStats([object[]] $rows) {
     $stats = @{
         Samples = 0; Failures = 0; ClockBad = 0; PidChanges = 0
         MinSr = [double]::PositiveInfinity; MaxSr = 0.0
         MaxScsynthWs = 0.0; MaxSclangWs = 0.0
+        MaxScsynthPrivate = 0.0; MaxSclangPrivate = 0.0
+        FirstHourSclangWs = 0.0; SclangWsDrops = 0; SclangWsDropMb = 0.0
+        SclangPrivateStart = $null; SclangPrivateEnd = $null
+        SclangPrivateBaseline = $null; SclangPrivateFinal = $null
+        SclangPrivateDelta = $null; SclangPrivateSlope = $null
+        SclangPrivateSlopeCriterion = 'unavailable'
+        SclangPrivateAllowance = $null; SclangPrivateCriterion = 'unavailable'
+        SclangWsBound = $null; SclangWsBoundCriterion = 'insufficient'
         First = ''; Last = ''; ElapsedH = 0.0
     }
     $firstPid = $null
+    $previousSclangWs = $null
+    $privatePoints = New-Object System.Collections.Generic.List[object]
     foreach ($r in $rows) {
         $stats.Samples++
         if ($stats.First -eq '') { $stats.First = $r.timestamp }
@@ -89,8 +154,96 @@ function Get-SoakStats([object[]] $rows) {
         if ($r.sclang_ws_mb -ne '' -and [double]$r.sclang_ws_mb -gt $stats.MaxSclangWs) {
             $stats.MaxSclangWs = [double]$r.sclang_ws_mb
         }
+        if ($r.elapsed_s -ne '' -and $r.sclang_ws_mb -ne '') {
+            $elapsed = [double]$r.elapsed_s
+            $sclangWs = [double]$r.sclang_ws_mb
+            if (($elapsed -lt $MemoryWarmupSeconds) -and
+                ($sclangWs -gt $stats.FirstHourSclangWs)) {
+                $stats.FirstHourSclangWs = $sclangWs
+            }
+            if ($null -ne $previousSclangWs) {
+                $fall = $previousSclangWs - $sclangWs
+                if ($fall -ge 5.0) {
+                    $stats.SclangWsDrops++
+                    $stats.SclangWsDropMb += $fall
+                }
+            }
+            $previousSclangWs = $sclangWs
+        }
+        if ($r.PSObject.Properties.Name -contains 'scsynth_private_mb' -and
+            $r.scsynth_private_mb -ne '' -and
+            [double]$r.scsynth_private_mb -gt $stats.MaxScsynthPrivate) {
+            $stats.MaxScsynthPrivate = [double]$r.scsynth_private_mb
+        }
+        if ($r.PSObject.Properties.Name -contains 'sclang_private_mb' -and
+            $r.sclang_private_mb -ne '') {
+            $private = [double]$r.sclang_private_mb
+            if ($private -gt $stats.MaxSclangPrivate) {
+                $stats.MaxSclangPrivate = $private
+            }
+            if ($r.elapsed_s -ne '' -and [double]$r.elapsed_s -ge $MemoryWarmupSeconds) {
+                $privatePoints.Add([pscustomobject]@{
+                    Elapsed = [double]$r.elapsed_s
+                    Mb = $private
+                })
+            }
+        }
     }
     if ($stats.MinSr -eq [double]::PositiveInfinity) { $stats.MinSr = 0 }
+
+    if ($stats.FirstHourSclangWs -gt 0 -and $stats.ElapsedH -ge 1.0) {
+        $wsAllowance = [math]::Max(
+            $stats.FirstHourSclangWs * ($WorkingSetGrowthPercent / 100.0),
+            $WorkingSetGrowthFloorMb)
+        $stats.SclangWsBound = $stats.FirstHourSclangWs + $wsAllowance
+        $stats.SclangWsBoundCriterion = if ($stats.MaxSclangWs -le $stats.SclangWsBound) {
+            'pass'
+        } else { 'fail' }
+    }
+
+    if ($privatePoints.Count -gt 0) {
+        $stats.SclangPrivateCriterion = 'insufficient'
+        $stats.SclangPrivateStart = $privatePoints[0].Mb
+        $stats.SclangPrivateEnd = $privatePoints[$privatePoints.Count - 1].Mb
+        $stats.SclangPrivateDelta = $stats.SclangPrivateEnd - $stats.SclangPrivateStart
+        $means = @(Get-FiveMinuteMeans $privatePoints.ToArray())
+        $stats.SclangPrivateSlope = Get-TheilSen $means
+        $postWarmupHours = (
+            $privatePoints[$privatePoints.Count - 1].Elapsed - $MemoryWarmupSeconds
+        ) / 3600.0
+        if ($null -ne $stats.SclangPrivateSlope) {
+            $stats.SclangPrivateSlopeCriterion = if (
+                $postWarmupHours -lt $PrivateSlopeMinPostWarmupHours) {
+                'informational'
+            } elseif ($stats.SclangPrivateSlope -le $PrivateSlopeLimitMbH) {
+                'pass'
+            } else { 'fail' }
+        }
+        $baselineEnd = $MemoryWarmupSeconds + $MemoryWindowSeconds
+        $baseline = @($privatePoints | Where-Object {
+            $_.Elapsed -lt $baselineEnd
+        } | ForEach-Object { $_.Mb })
+        $lastElapsed = $privatePoints[$privatePoints.Count - 1].Elapsed
+        $finalStart = $lastElapsed - $MemoryWindowSeconds
+        $final = @($privatePoints | Where-Object {
+            $_.Elapsed -ge $finalStart
+        } | ForEach-Object { $_.Mb })
+        if (($lastElapsed - $MemoryWarmupSeconds) -ge (2 * $MemoryWindowSeconds) -and
+            $baseline.Count -gt 0 -and $final.Count -gt 0 -and
+            $null -ne $stats.SclangPrivateSlope) {
+            $stats.SclangPrivateBaseline = Get-Mean $baseline
+            $stats.SclangPrivateFinal = Get-Mean $final
+            $stats.SclangPrivateAllowance = [math]::Max(
+                $stats.SclangPrivateBaseline * ($PrivateGrowthPercent / 100.0),
+                $PrivateGrowthFloorMb)
+            $meanPass = ($stats.SclangPrivateFinal - $stats.SclangPrivateBaseline) -le
+                $stats.SclangPrivateAllowance
+            $slopePass = $stats.SclangPrivateSlopeCriterion -ne 'fail'
+            $stats.SclangPrivateCriterion = if ($meanPass -and $slopePass) {
+                'pass'
+            } else { 'fail' }
+        }
+    }
     return $stats
 }
 
@@ -107,7 +260,15 @@ function Format-SoakSummary($stats, [string] $csv, [string] $events) {
         "  scsynth restart: $($stats.PidChanges)",
         "  actual SR range: $([math]::Round($stats.MinSr,1)) .. $([math]::Round($stats.MaxSr,1)) Hz",
         "  peak scsynth WS: $($stats.MaxScsynthWs) MB",
-        "  peak sclang  WS: $($stats.MaxSclangWs) MB"
+        "  peak sclang  WS: $($stats.MaxSclangWs) MB",
+        "  peak scsynth private: $($stats.MaxScsynthPrivate) MB",
+        "  peak sclang  private: $($stats.MaxSclangPrivate) MB",
+        "  sclang WS trims >=5 MB: $($stats.SclangWsDrops) / $([math]::Round($stats.SclangWsDropMb,1)) MB",
+        "  sclang WS bound: $($stats.SclangWsBoundCriterion) (peak $($stats.MaxSclangWs), limit $([math]::Round([double]($stats.SclangWsBound),1)) MB)",
+        "  sclang private window: $([math]::Round([double]($stats.SclangPrivateBaseline),2)) -> $([math]::Round([double]($stats.SclangPrivateFinal),2)) MB",
+        "  sclang private slope: $([math]::Round([double]($stats.SclangPrivateSlope),2)) MB/h (limit $PrivateSlopeLimitMbH)",
+        "  sclang private slope gate: $($stats.SclangPrivateSlopeCriterion) (needs $PrivateSlopeMinPostWarmupHours post-warmup h)",
+        "  memory criterion: $($stats.SclangPrivateCriterion)"
     )
 }
 
@@ -237,13 +398,16 @@ function Get-ServerStatus([System.Net.Sockets.UdpClient] $client,
 function Get-ProcSample([string] $name) {
     $p = Get-Process -Name $name -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($null -eq $p) {
-        return [pscustomobject]@{ Pid = ''; WsMb = ''; Handles = ''; CpuS = ''; Threads = '' }
+        return [pscustomobject]@{
+            Pid = ''; WsMb = ''; PrivateMb = ''; Handles = ''; CpuS = ''; Threads = ''
+        }
     }
     $cpu = ''
     try { $cpu = [math]::Round($p.TotalProcessorTime.TotalSeconds, 1) } catch { }
     return [pscustomobject]@{
         Pid     = $p.Id
         WsMb    = [math]::Round($p.WorkingSet64 / 1MB, 1)
+        PrivateMb = [math]::Round($p.PrivateMemorySize64 / 1MB, 1)
         Handles = $p.Handles
         CpuS    = $cpu
         Threads = $p.Threads.Count
@@ -261,8 +425,8 @@ function Write-Event([string] $line) {
 $columns = @(
     'timestamp','elapsed_s','reply_ok','reply_bytes','ugens','synths','groups',
     'synthdefs','avg_cpu','peak_cpu','nominal_sr','actual_sr','sr_ratio','clock_ok',
-    'scsynth_pid','scsynth_ws_mb','scsynth_handles','scsynth_cpu_s','scsynth_threads',
-    'sclang_pid','sclang_ws_mb','sclang_handles','sclang_cpu_s','sclang_threads'
+    'scsynth_pid','scsynth_ws_mb','scsynth_private_mb','scsynth_handles','scsynth_cpu_s','scsynth_threads',
+    'sclang_pid','sclang_ws_mb','sclang_private_mb','sclang_handles','sclang_cpu_s','sclang_threads'
 ) -join ','
 Set-Content -Path $csvPath -Value $columns -Encoding utf8
 
@@ -323,8 +487,10 @@ try {
             $row = @(
                 $now.ToString('yyyy-MM-dd HH:mm:ss'), $elapsed, 0, '', '', '', '', '',
                 '', '', '', '', '', '',
-                $scsynth.Pid, $scsynth.WsMb, $scsynth.Handles, $scsynth.CpuS, $scsynth.Threads,
-                $sclang.Pid, $sclang.WsMb, $sclang.Handles, $sclang.CpuS, $sclang.Threads
+                $scsynth.Pid, $scsynth.WsMb, $scsynth.PrivateMb,
+                $scsynth.Handles, $scsynth.CpuS, $scsynth.Threads,
+                $sclang.Pid, $sclang.WsMb, $sclang.PrivateMb,
+                $sclang.Handles, $sclang.CpuS, $sclang.Threads
             ) -join ','
         } else {
             $ratio = 0.0
@@ -354,15 +520,18 @@ try {
                 [math]::Round($status.AvgCPU, 2), [math]::Round($status.PeakCPU, 2),
                 [math]::Round($status.NominalSR, 1), [math]::Round($status.ActualSR, 1),
                 $ratio, $okFlag,
-                $scsynth.Pid, $scsynth.WsMb, $scsynth.Handles, $scsynth.CpuS, $scsynth.Threads,
-                $sclang.Pid, $sclang.WsMb, $sclang.Handles, $sclang.CpuS, $sclang.Threads
+                $scsynth.Pid, $scsynth.WsMb, $scsynth.PrivateMb,
+                $scsynth.Handles, $scsynth.CpuS, $scsynth.Threads,
+                $sclang.Pid, $sclang.WsMb, $sclang.PrivateMb,
+                $sclang.Handles, $sclang.CpuS, $sclang.Threads
             ) -join ','
 
             if (($sample -eq 1) -or ($sample % 15 -eq 0)) {
                 Write-Output ("{0}  t+{1,6}s  sr {2,8}  cpu {3,5}/{4,5}  synths {5,3}  scsynth {6,6} MB / {7,5} h  sclang {8,7} MB / {9,5} h" -f `
                     $now.ToString('HH:mm:ss'), $elapsed, [math]::Round($status.ActualSR, 1),
                     [math]::Round($status.AvgCPU, 1), [math]::Round($status.PeakCPU, 1),
-                    $status.Synths, $scsynth.WsMb, $scsynth.Handles, $sclang.WsMb, $sclang.Handles)
+                    $status.Synths, $scsynth.WsMb, $scsynth.Handles,
+                    ("$($sclang.WsMb)/$($sclang.PrivateMb)"), $sclang.Handles)
             }
         }
 

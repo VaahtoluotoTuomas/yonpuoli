@@ -6,7 +6,12 @@ param(
 
     [string]$Sclang = "C:\Program Files\SuperCollider-3.13.0\sclang.exe",
 
-    [string]$Conf = ""
+    [string]$Conf = "",
+
+    # Optional exact child-PID handoff for external resource samplers. The gate
+    # still owns and validates this process; consumers must never launch sclang
+    # themselves merely to observe its working set.
+    [string]$PidFile = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -32,6 +37,7 @@ $requiredMarker = switch -Wildcard ($leaf) {
     "morph_profile.scd" { "CQ_MORPH_PROFILE_DONE"; break }
     "morph_profile_gui.scd" { "CQ_MORPH_GUI_PROFILE_DONE"; break }
     "memory_probe.scd" { "CQ_MEM_PROBE_DONE"; break }
+    "soak_validation.scd" { "CQ_SOAK_VALIDATION_DONE"; break }
     "prototype_space_compile.scd" { "CQ_SPACE_LAB_COMPILE_OK"; break }
     "prototype_space_nrt.scd" { "CQ_SPACE_LAB_NRT_PASSED"; break }
     "gui_shell_smoke.scd" { "CQ_GUI_SHELL_PASSED"; break }
@@ -84,6 +90,22 @@ $startInfo.RedirectStandardError = $true
 $process = [System.Diagnostics.Process]::new()
 $process.StartInfo = $startInfo
 [void]$process.Start()
+if (-not [string]::IsNullOrWhiteSpace($PidFile)) {
+    $resolvedPidFile = if ([System.IO.Path]::IsPathRooted($PidFile)) {
+        $PidFile
+    } else {
+        Join-Path $repoRoot $PidFile
+    }
+    $pidDir = Split-Path -Parent $resolvedPidFile
+    if (-not [string]::IsNullOrWhiteSpace($pidDir)) {
+        [System.IO.Directory]::CreateDirectory($pidDir) | Out-Null
+    }
+    [System.IO.File]::WriteAllText(
+        $resolvedPidFile,
+        $process.Id.ToString([System.Globalization.CultureInfo]::InvariantCulture),
+        [System.Text.Encoding]::ASCII
+    )
+}
 $stdout = $process.StandardOutput.ReadToEndAsync()
 $stderr = $process.StandardError.ReadToEndAsync()
 
