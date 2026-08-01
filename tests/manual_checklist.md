@@ -2381,6 +2381,12 @@ skip-merkin, koska siemenet ovat padin koko käyttöliittymä. Vaihtoehdot:
 
 ### 16N-1 — uusi 16n-kartta: kanavanauhat ja renkaan portti (SPEC §6.1)
 
+> **Tämä lohko ajetaan osana soitettavuus-porttia** (`PLAN.md` → Tie 1.0:aan
+> kohta 8), ei erillisenä pysähdyksenä. Syy: kartta on soittotuntuma-asia, ja
+> sitä pitää arvioida samalla istumalla kuin ensikosketuksen oletuksia ja
+> mukaan lähteviä presettejä — ei irrallaan niistä. Kartta yhdellä silmäyksellä:
+> [`docs/16N_MAP.md`](../docs/16N_MAP.md).
+
 Tie 1.0:aan kohta 7. Reverbin eläköityminen vapautti `F14 / CC 45`:n, ja
 kartta arvioitiin kokonaan uudelleen mittarilla **"faderi on arvokkain siellä
 minne mikään muu käsi ei yllä"**. Deck-faderit poistuivat (deck level on jo
@@ -2437,5 +2443,6 @@ CQ.set(\coco1Organ, 0); CQ.set(\coco2Organ, 0);
 //    Kysymys: kaipasitko niitä käteen, ja kumpaa?
 ```
 
-- [ ] 16N-1 hyväksytty (pvm: ______ — kanavanauhan luettavuus, Levelin paikka
-      nauhan lopussa, ristihäivytyksen etäisyys, F14:n sisältö, deckien poisto)
+- [ ] 16N-1 hyväksytty **soitettavuus-portin osana** (pvm: ______ —
+      kanavanauhan luettavuus, Levelin paikka nauhan lopussa, ristihäivytyksen
+      etäisyys, F14:n sisältö, deckien poisto)

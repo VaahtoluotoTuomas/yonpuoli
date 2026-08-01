@@ -391,6 +391,10 @@ what each does best. (GUI-less and 16n-less operation must both remain possible.
 
 ### 6.1 16n mapping (default; remappable in `config.scd`)
 
+> A one-glance player's view of this table — fader diagram, hand tapers, and
+> what the faders deliberately do *not* reach — is
+> [`docs/16N_MAP.md`](docs/16N_MAP.md). This section stays normative.
+
 16n default: **CC 32–47** (fader 1 = CC 32). The atovproject firmware sends each
 fader on its **own MIDI channel** (F1 = ch 1 … F16 = ch 16; measured 2026-07-17),
 so binding is by CC number alone: config `sixteenN.chan` is `nil` = accept any

@@ -48,7 +48,7 @@ and tag. [`PLAN.md`](PLAN.md) is the current status authority.
   current recommended release).
 - Headphones or an audio interface. Start at a low monitoring level.
 - Optional: an atovproject 16n faderbank. The instrument is fully usable without
-  it.
+  it. Its default layout is in [`docs/16N_MAP.md`](docs/16N_MAP.md).
 
 Yönpuoli uses only SuperCollider's standard UGens; no Quarks or third-party
 plugins are required.

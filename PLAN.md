@@ -1836,15 +1836,27 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    luokkaa**, `CQ_SAFETY_PASSED`; `CQ_HOLD_OK` kantaa, koska muutos on
    ohjauskartta eikä DSP.
 
-   **Auki:** checklist `16N-1` kysyy neljä asiaa joihin automaatio ei vastaa —
-   kanavanauhan luettavuus kädessä, Levelin paikka nauhan lopussa,
-   ristihäivytyksen viiden faderin loikka (jos liian pitkä, layout B siirtää
-   levelit vierekkäin F9/F10) ja se, ansaitseeko `SlotQ` faderinsa vai olisiko
-   `SlotX` tai `Organ` musiikillisesti parempi. Lohko sisältää `CQ.set`-vertailun
-   kaikkiin kolmeen.
+   Kartan tiivis käyttäjänäkymä on [`docs/16N_MAP.md`](docs/16N_MAP.md)
+   (yhden silmäyksen faderikaavio, taperit, mitä faderit *eivät* tavoita ja
+   missä ne asiat asuvat).
+
+   **Auki, ja käyttäjän päätöksellä 2026-08-01 se ajetaan kohdan 8
+   soitettavuus-portin osana** — ei erillisenä pysähdyksenä, koska kartta on
+   soittotuntuma-asia ja kuuluu samaan istumaan ensikosketuksen oletusten ja
+   mukaan lähtevien presettien kanssa. Checklist `16N-1` kysyy neljä asiaa
+   joihin automaatio ei vastaa: kanavanauhan luettavuus kädessä, Levelin paikka
+   nauhan lopussa, ristihäivytyksen viiden faderin loikka (jos liian pitkä,
+   layout B siirtää levelit vierekkäin F9/F10 ja `qFreq`/`qChaos` kahdella
+   oikealle) ja se, ansaitseeko `SlotQ` faderinsa vai olisiko `SlotX` tai
+   `Organ` musiikillisesti parempi. Lohko sisältää `CQ.set`-vertailun kaikkiin
+   kolmeen.
 8. **Soitettavuuskierros: mitä 1.0:n mukana lähtee, ja miltä ensikosketus
    tuntuu.** Käyttäjän päätös 2026-07-31. Kaksi osaa samalla istumalla, koska
-   ne ovat sama kysymys eri etäisyydeltä.
+   ne ovat sama kysymys eri etäisyydeltä — **ja käyttäjän päätöksellä
+   2026-08-01 kolmas: checklist `16N-1`, uuden 16n-kartan käsituntumaportti**
+   (kohta 7). Se kuuluu tähän eikä omaksi pysähdyksekseen, koska faderikartta,
+   nuppien oletukset ja mukaan lähtevät presetit ovat sama kysymys: miltä tämä
+   tuntuu ensimmäisessä ja sadannessa kädessä.
 
    **(a) Mitä paketissa on.** Presettejä on kuusi (`\empty`, `\classic`,
    `\selfNoise`, `\quantumDrone`, `\organMode`, `\mayhem`), mutta `\empty` on
