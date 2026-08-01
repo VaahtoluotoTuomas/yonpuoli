@@ -921,11 +921,13 @@ tämän projektin omistajuudelle.
   2026-08-01. Tee ennen public-vaihtoa vielä tavallinen
   haku GitHubista, hakukoneesta, musiikkiohjelmistoista ja olennaisista
   tavaramerkkitietokannoista. Nimipäätös ei itsessään ole juridinen selvitys.
-- [ ] **Historian yksityisyys- ja lähdeauditointi:** tarkista koko Git-historia
-  salaisuuksien, henkilötietojen, yksityisten polkujen, sähköpostiosoitteiden,
-  lisensoimattomien assettien ja tarpeettomien binäärien varalta. Päätä ennen
-  public-vaihtoa, säilytetäänkö nykyinen commit-sähköposti vai puhdistetaanko
-  historia hallitusti.
+- [x] **Historian yksityisyys- ja lähdeauditointi: tehty 2026-08-01**, raportti
+  [`audit/PRIVACY_AUDIT.md`](audit/PRIVACY_AUDIT.md). Koko Git-historia (193
+  committia, 2 tagia, 1 433 uniikkia blobia) käytiin läpi salaisuuksien,
+  henkilötietojen, yksityisten polkujen, sähköpostiosoitteiden, lisensoimattomien
+  assettien ja tarpeettomien binäärien varalta; kuusi löydöstä korjattiin ja
+  loput todettiin puhtaiksi. Commit-sähköpostista päätettiin: vain tuleva
+  identiteetti vaihdettiin, historia jää ennalleen (ks. "Tie 1.0:aan" kohta 5).
 - [ ] **Etärepon uudelleennimeäminen:** nimeä repo `yonpuoli`:ksi,
   päivitä paikallinen remote komennolla
   `git remote set-url origin https://github.com/VaahtoluotoTuomas/yonpuoli.git`
@@ -1752,12 +1754,41 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    näkyvä `dolby` kirjoitetaan pienellä. `CQ`/`Cocoquantus` ja olemassa olevat
    `...Dolby...`-tunnisteet jäävät vakaaksi sisäiseksi legacy-APIksi. README,
    GUI:n nimi ja aktiiviset dokumentit päivitetään samassa muutoksessa.
-5. **Repon yksityisyysauditointi.** Ennen kuin repo voi olla julkinen, käydään
+5. **Repon yksityisyysauditointi. Tehty 2026-08-01; raportti on
+   [`audit/PRIVACY_AUDIT.md`](audit/PRIVACY_AUDIT.md). Yksi päätös on auki.**
+   Ennen kuin repo voi olla julkinen, käydään
    läpi ettei se sisällä henkilökohtaista tai koneriippuvaista tietoa:
    absoluuttiset polut, laite- ja käyttäjänimet, sähköpostit, omat snapshotit,
    `samples/`in sisältö, `tests/tmp/`in jäämät sekä `config.scd`:n ja
    `tests/dev_paths.scd`:n gitignore-kattavuus. **Koko historia, ei vain
    työpuu** — gitignore ei poista sitä mikä on jo committoitu.
+
+   Auditoitu kohde oli koko objektitietokanta: 193 committia, 2 tagia, **1 433
+   historian uniikkia blobia yksitellen auki grepattuna** ja kaikki 167 koskaan
+   lisättyä polkua. Kuusi löydöstä korjattiin (L1–L6): käyttäjätunnuksen
+   paljastavat absoluuttiset polut `audit/TEST_EVIDENCE.md`:ssä, henkilön etunimi
+   ja oma Bluetooth-laite kahdessa testifixturessa, `.claude/settings.local.json`
+   joka oli suojassa vain käyttäjän **globaalilla** ignorella eikä repon omalla,
+   yhden koneen kovakoodattu ja jo vanhentunut SuperCollider-polku kolmessa
+   portissa (uusi `tests/resolve_sclang.ps1`), escape-esimerkin käyttäjätunnus ja
+   oman näytekirjaston tiedostonimi seuratussa koodissa. Varmennetusti puhdasta:
+   ei salaisuuksia, ei sähköposteja tiedostosisällössä, ei IP/MAC/konenimiä, ei
+   binäärejä, eikä yhtäkään koskaan committoitua `config.scd`:tä, snapshottia,
+   näytettä, äänitystä tai `tests/tmp/`-jäämää. Portit ajettiin ilman
+   `-Sclang`-argumenttia: `CQ_COMPILE_OK`, **13 699 unit-passia / 0 failurea /
+   39/39 luokkaa**, `CQ_SAFETY_PASSED` ja `CQ_GUI_AUDIO_PASSED`; `CQ_HOLD_OK`
+   kantaa, koska DSP:hen ei koskettu.
+
+   **Käyttäjän päätös 2026-08-01: vaihdetaan vain tuleva identiteetti,
+   historia jätetään ennalleen.** `git config --local user.email` osoittaa nyt
+   pysyvään osoitteeseen (repokohtaisesti, globaali asetus ei muuttunut), joten
+   1.0-tagi ja sen jälkeinen työ eivät kanna oppilaitossähköpostia. Vanhoihin
+   committeihin jää sekä `…@student.hamk.fi` (192 committia + molemmat tagit)
+   että L1:n käyttäjätunnuspolku yhdessä vanhassa blobissa; molemmat poistuisivat
+   vain historian uudelleenkirjoituksella, jonka hinta (193 muuttuvaa SHA:ta,
+   tagien uudelleenluonti, force-push jo julkaistuun repoon) arvioitiin hyötyä
+   suuremmaksi. **Kirjattu valinta, ei unohdus** — ja peruutettavissa myöhemmin,
+   koska historian puhdistus ei vanhene.
 6. [x] **`README.md` päivitetään.** Päivitetty 2026-08-01 Yönpuoli-nimeen,
    Night-only-soittimeen, nykyiseen 1.0-tilanteeseen sekä tiiviiseen
    Cocoquantus-sukulinja- ja sanastokuvaukseen. Historian yksityisyysauditointi

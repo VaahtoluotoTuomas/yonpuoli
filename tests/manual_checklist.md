@@ -15,12 +15,18 @@ täysin hiljainen, sitten 2 s fade-in).
 sellaisenaan IDE:hen — ohjeet ovat `//`-kommentteina. Rivit ajetaan yksi
 kerrallaan (Ctrl+Enter), kuunnellen välissä; älä evaluoi koko lohkoa kerralla.
 
+**Näytteet:** `samples/` on gitignoroitu eikä sen sisältö kulje repon mukana,
+joten alla olevien lohkojen tiedostonimet (esim.
+`123681__aidenfry__cricket-and-bird-field-recording.wav`) ovat kirjoittajan
+oman kirjaston esimerkkejä. Korvaa ne omillasi; lohkot eivät riipu juuri
+näistä tiedostoista, vaan kuvatusta materiaalityypistä.
+
 Hyödyllinen lähtötila kuunteluun:
 
 ```supercollider
 // Lähtötila useimpiin testeihin. Huom: absoluuttisissa Windows-poluissa
 // käytä kauttaviivoja ("C:/Users/...") — kenoviiva on sclangin
-// merkkijonoissa escape-merkki ("C:\tuoma\..." hajoaa, \t = sarkain).
+// merkkijonoissa escape-merkki ("C:\temp\..." hajoaa, \t = sarkain).
 CQ.boot;
 CQ.deckA.load("polku/aanite.wav");    // suhteellinen polku etsitään samples/-kansiosta
                                       // -> TARKISTA post-ikkunasta "CQDeck deckA: loaded ..."

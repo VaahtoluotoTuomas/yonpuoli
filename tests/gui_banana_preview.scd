@@ -25,8 +25,10 @@ matrix.patch(\envB, \deckB_rate, -0.48);
 			0.exit;
 			nil
 		} {
+			// A long Freesound-shaped name: this only exercises label
+			// rendering, so it names no file in anyone's own library.
 			~cqBananaReview.deckLabel(\deckA).string =
-				"123681__aidenfry__cricket-and-bird-field-recording.wav";
+				"123456__recordist__cricket-and-bird-field-recording.wav";
 			0.25
 		}
 	});

@@ -217,7 +217,7 @@ CQAudioConfigTest : UnitTest {
 	test_longDeviceNamesKeepTheirBeginning {
 		var long = "ASIO : Very Long Interface Name With Loopback And Many Channels";
 		var windows = "Windows WDM-KS : Headset Hands-Free%0"
-			++ Char.ret ++ Char.nl ++ Char.tab ++ ";(Tuomas - AirPods Pro)";
+			++ Char.ret ++ Char.nl ++ Char.tab ++ ";(Studio - AirPods Pro)";
 		var short = CQGuiAudioSetup.ellipsize(long, 150, 12);
 		this.assert(short.beginsWith("ASIO"),
 			"tail ellipsis preserves the host API/name beginning");
@@ -226,7 +226,7 @@ CQAudioConfigTest : UnitTest {
 		this.assert(CQInkMenu.ellipsize(long, 150, 12).find(Char.nl).isNil,
 			"the Ink menu gives Qt one shortened line, never wrapped text");
 		this.assertEquals(CQInkMenu.displayLine(windows),
-			"Windows WDM-KS : Headset Hands-Free%0 ;(Tuomas - AirPods Pro)",
+			"Windows WDM-KS : Headset Hands-Free%0 ;(Studio - AirPods Pro)",
 			"embedded Windows endpoint whitespace collapses only for display");
 		this.assertEquals(CQInkMenu.ellipsize(windows, 4096, 12),
 			CQInkMenu.displayLine(windows),

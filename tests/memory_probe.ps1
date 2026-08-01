@@ -36,10 +36,14 @@ param(
     # interpreter allocates its class library and first views, and that ramp is
     # not the one under investigation.
     [int]      $WarmupSeconds = 90,
-    [string]   $Sclang = 'C:\Program Files\SuperCollider-3.13.0\sclang.exe'
+    # Empty = resolve from SC_LANG, tests/dev_paths.scd, or the newest install.
+    [string]   $Sclang = ''
 )
 
 $ErrorActionPreference = 'Stop'
+if ([string]::IsNullOrWhiteSpace($Sclang)) {
+    $Sclang = & (Join-Path $PSScriptRoot 'resolve_sclang.ps1')
+}
 
 # `powershell -File probe.ps1 -Scenarios a,b,c` hands this parameter ONE string:
 # -File does not parse its arguments as PowerShell, so the comma list is not an

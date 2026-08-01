@@ -2,7 +2,15 @@
 
 Auditointipäivä: 2026-07-19
 Ympäristö: Windows, SuperCollider 3.13.0, PowerShell
-Repository: `C:\Users\tuoma\Documents\Koodaus\sc-cocoquantus`
+Repository: paikallinen klooni, `<repo>` alla
+
+> **Huom (yksityisyysauditointi 2026-08-01):** tämän raportin
+> käyttäjäkohtaiset polut on korvattu paikanpitäjillä `<repo>` (repositorion
+> juuri) ja `%LOCALAPPDATA%` (Windowsin oma muuttuja). Jäljelle jätetyt
+> `C:\Program Files\SuperCollider-3.13.0\…` -polut eivät sisällä
+> henkilökohtaista tietoa ja ne ovat itsessään näyttöä siitä, mitä
+> SuperColliderin versiota auditoitiin. Vain polkumerkkijonot muuttuivat;
+> yksikään ajettu komento, mitattu tulos tai johtopäätös ei ole muuttunut.
 
 Tämä raportti erottaa toisistaan todella ajetut testit, kertaluonteiset
 kohdennetut reproducer-harnessit ja testaamatta jääneet alueet. Onnistumiseksi
@@ -105,9 +113,9 @@ polkuun. Hyväksytty ajo tehtiin saman `sclang.exe`-ohjelman ja samojen
 Wrapper suoritti ennen testitiedoston lataamista vastaavat asetukset:
 
 ```supercollider
-PathName.tmp_("C:/Users/tuoma/Documents/Koodaus/sc-cocoquantus/tests/tmp");
-Archive.archiveDir_("C:/Users/tuoma/Documents/Koodaus/sc-cocoquantus/tests/tmp");
-"C:/Users/tuoma/Documents/Koodaus/sc-cocoquantus/tests/nrt_safety.scd".load;
+PathName.tmp_("<repo>/tests/tmp");
+Archive.archiveDir_("<repo>/tests/tmp");
+"<repo>/tests/nrt_safety.scd".load;
 ```
 
 Wrapperia ei kirjoitettu pysyväksi tiedostoksi. Se muutti vain sclang-prosessin
@@ -236,7 +244,7 @@ erojen kuultavuutta.
 
 Suorat compile- ja unit-ajot tulostivat omat onnistumismarkerinsa ja päättyivät
 exit-statuksella 0. Markerien jälkeen SuperCollider yritti kirjoittaa
-`C:\Users\tuoma\AppData\Local\SuperCollider\archive.sctxar`-tiedostoa, minkä
+`%LOCALAPPDATA%\SuperCollider\archive.sctxar`-tiedostoa, minkä
 workspace-sandbox esti. Tämä jälkikäteinen archive-virhe ei muuttanut testien
 marker- tai exit-tulosta.
 

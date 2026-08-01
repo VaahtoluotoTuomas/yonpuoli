@@ -4,7 +4,9 @@ param(
 
     [int]$TimeoutSeconds = 0,
 
-    [string]$Sclang = "C:\Program Files\SuperCollider-3.13.0\sclang.exe",
+    # Empty = resolve from SC_LANG, tests/dev_paths.scd, or the newest install.
+    # No machine's path is hardcoded here (see tests/resolve_sclang.ps1).
+    [string]$Sclang = "",
 
     [string]$Conf = "",
 
@@ -15,6 +17,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+if ([string]::IsNullOrWhiteSpace($Sclang)) {
+    $Sclang = & (Join-Path $PSScriptRoot 'resolve_sclang.ps1')
+}
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $scriptPath = Join-Path $repoRoot $Script
 $confPath = if ([string]::IsNullOrWhiteSpace($Conf)) {

@@ -17,7 +17,7 @@ Hyödyllinen lähtötila kuunteluun:
 ```supercollider
 // Lähtötila useimpiin testeihin. Huom: absoluuttisissa Windows-poluissa
 // käytä kauttaviivoja ("C:/Users/...") — kenoviiva on sclangin
-// merkkijonoissa escape-merkki ("C:\tuoma\..." hajoaa, \t = sarkain).
+// merkkijonoissa escape-merkki ("C:\temp\..." hajoaa, \t = sarkain).
 CQ.boot;
 CQ.deckA.load("polku/aanite.wav");    // suhteellinen polku etsitään samples/-kansiosta
                                       // -> TARKISTA post-ikkunasta "CQDeck deckA: loaded ..."

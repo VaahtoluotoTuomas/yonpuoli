@@ -33,20 +33,25 @@ includePaths:
 
 ## Required gates
 
+The gate wrapper locates `sclang.exe` itself, in this order: the `SC_LANG`
+environment variable, the `sclang:` entry in the ignored `tests/dev_paths.scd`,
+then the newest `SuperCollider-*` install under Program Files. Pass
+`-Sclang "<path>\sclang.exe"` to override it. No machine's path is committed.
+
 Run these in order after a class or SynthDef change:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/compile_check.scd -Sclang "C:\Program Files\SuperCollider-3.14.1\sclang.exe"
-powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/run_all.scd -Sclang "C:\Program Files\SuperCollider-3.14.1\sclang.exe"
-powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_safety.scd -Sclang "C:\Program Files\SuperCollider-3.14.1\sclang.exe"
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/compile_check.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/run_all.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_safety.scd
 ```
 
 DSP-behavior changes also require:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_hold_integrity.scd -Sclang "C:\Program Files\SuperCollider-3.14.1\sclang.exe"
-powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_dust_character.scd -Sclang "C:\Program Files\SuperCollider-3.14.1\sclang.exe"
-powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_selfnoise_character.scd -Sclang "C:\Program Files\SuperCollider-3.14.1\sclang.exe"
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_hold_integrity.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_dust_character.scd
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/nrt_selfnoise_character.scd
 ```
 
 Focused listening experiments or frozen character comparisons may add their

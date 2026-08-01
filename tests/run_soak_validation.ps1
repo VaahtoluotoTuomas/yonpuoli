@@ -11,10 +11,14 @@ param(
     [double] $LiveHeapGrowthPercent = 5.0,
     [int]    $LiveHeapGrowthFloorCells = 5000,
     [switch] $AllowInsufficientMemory,
-    [string] $Sclang = 'C:\Program Files\SuperCollider-3.13.0\sclang.exe'
+    # Empty = resolve from SC_LANG, tests/dev_paths.scd, or the newest install.
+    [string] $Sclang = ''
 )
 
 $ErrorActionPreference = 'Stop'
+if ([string]::IsNullOrWhiteSpace($Sclang)) {
+    $Sclang = & (Join-Path $PSScriptRoot 'resolve_sclang.ps1')
+}
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $gate = Join-Path $PSScriptRoot 'run_sclang_gate.ps1'
 $monitor = Join-Path $PSScriptRoot 'soak_monitor.ps1'

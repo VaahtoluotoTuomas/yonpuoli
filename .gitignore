@@ -1,5 +1,9 @@
 # machine-specific (CLAUDE.md: no absolute paths in the repo)
 config.scd
+# Personal agent settings: hold local tool permissions and machine paths.
+# The repo must protect itself — a global ~/.config/git/ignore only covers
+# this machine, never a fresh clone.
+.claude/settings.local.json
 *.audio.scd
 *.audio.scd.pending
 *.audio.scd.bak

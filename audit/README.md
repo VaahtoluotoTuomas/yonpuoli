@@ -20,6 +20,12 @@ Projektin tiivis ajantasainen työjärjestys on juuren [`PLAN.md`](../PLAN.md)-
 tiedostossa. GUI:n normatiivinen lähde on aina [`GUI_SPEC.md`](../GUI_SPEC.md), ei
 audit-raportti.
 
+## Julkaisuauditoinnit (eri asia kuin yllä oleva koodiauditointi)
+
+- [`PRIVACY_AUDIT.md`](PRIVACY_AUDIT.md) — repon yksityisyys- ja lähdeauditointi
+  2026-08-01 koko Git-historian yli (`PLAN.md` → "Tie 1.0:aan" kohta 5). Sisältää
+  avoimen päätöksen commit-sähköpostista ja historian uudelleenkirjoituksesta.
+
 ## Evidenssi ja alkuperäiset raportit
 
 - [`TEST_EVIDENCE.md`](TEST_EVIDENCE.md) — komentojen, testien ja ympäristön evidenssi.

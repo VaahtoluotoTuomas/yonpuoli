@@ -7,7 +7,7 @@
 var longInput = "WASAPI : Extremely Long Input Device Name With Loopback Channels 1–64";
 var longOutput = "WASAPI : Extremely Long Output Device Name With Loopback Channels 1–64";
 var wrappedInput = "Windows WDM-KS : Headset Hands-Free%0"
-	++ Char.ret ++ Char.nl ++ Char.tab ++ ";(Tuomas - AirPods Pro)";
+	++ Char.ret ++ Char.nl ++ Char.tab ++ ";(Studio - AirPods Pro)";
 var common = "ASIO : Öljyjärvi \"main\" \\ loopback";
 var config = CQConfig.validate((
 	headless: true,
@@ -235,7 +235,7 @@ render = { |path|
 					.includes(Char.nl).not,
 					"long device names are shortened before Qt can wrap them");
 				check.value(CQInkMenu.ellipsize(wrappedInput, 4096, 12)
-					== "Windows WDM-KS : Headset Hands-Free%0 ;(Tuomas - AirPods Pro)",
+					== "Windows WDM-KS : Headset Hands-Free%0 ;(Studio - AirPods Pro)",
 					"embedded Windows endpoint line breaks collapse only in display text");
 				page.deviceMenus.first.close;
 
