@@ -128,8 +128,12 @@ todistettu, ei oletettu:
 - **Historiasta poistetut kolme polkua ovat projektimateriaalia:**
   `AUDIT_EVAL.md`, `AUDIT_PROMPT.md`, `presets/example.cqsnap.scd`. Mikään niistä
   ei ollut henkilökohtainen.
-- **Commit-viestit ovat puhtaat.** Ainoa toistuva metadatarivi on tarkoituksellinen
-  `Co-Authored-By: Claude`.
+- **Commit-viestit ovat puhtaat.** Kaikki 193 vanhaa viestiä tarkastettiin.
+  Ainoa toistuva metadatarivi on tarkoituksellinen `Co-Authored-By: Claude`, ja
+  ainoa henkilöosuma on GitHubin automaattinen
+  `Merge pull request #1 from VaahtoluotoTuomas/archipelago`, jossa on jo
+  julkinen GitHub-käyttäjätunnus (sama kuin repon URL:ssä, README-badgessa ja
+  remotessa).
 - **Työpuu ei vuoda vahingossa:** seuraamattomia, ignoroimattomia tiedostoja on
   nolla, eli `git add -A` ei tänään lisäisi mitään henkilökohtaista.
 - **`tests/evidence/mor1-morph-freeze-20260730.csv`** (77 riviä) sisältää vain
@@ -138,6 +142,28 @@ todistettu, ei oletettu:
   polkuja; oikeudet on rajattu (`permissions: contents: read`).
 - **Historiassa näkyy hylätty aiempi tuotenimi** ("Yölahti", `yolahti.git`).
   Vaaraton, mutta kirjattu tässä, koska se on julkisesti luettavissa.
+
+## Laki, jonka tämä auditointi opetti itsestään
+
+**Auditoinnin oma tuotos kuuluu auditoinnin piiriin.** Tämän raportin
+ensimmäinen versio julkaisi uudelleen täsmälleen ne merkkijonot jotka se poisti
+koodista — ja kun se korjattiin raportista, sama virhe toistui **commit-viestissä**
+(`b293b61`, L2 lainasi fixturen sellaisenaan). Käyttäjä huomasi sen; automaattinen
+sweep ei olisi, koska sweep ajettiin ennen kuin commit oli olemassa.
+
+Kaksi seurausta, jotka pätevät jokaiseen tulevaan puhdistukseen tässä repossa:
+
+1. **Redaktoitua arvoa ei toisteta missään** — ei raportissa, ei commit-viestissä,
+   ei PR-kuvauksessa, ei checklistissä. Paikanpitäjä riittää aina; tarkka arvo on
+   `git show`illa saatavissa niin kauan kuin se on historiassa.
+2. **Sweep on ajettava uudelleen commitin jälkeen, ei vain ennen sitä.** Pelkkä
+   työpuun tarkastus ennen committia jättää viestin katveeseen — ja viesti on yhtä
+   pysyvä kuin blob.
+
+Korjattiin `git commit --amend` + `--force-with-lease` -parilla, kun commit oli
+minuutteja vanha: yksi kärki-SHA muuttui (`b293b61` → `91ced9b`), puu pysyi tavu
+tavulta samana, tagit ja `main` eivät liikkuneet. Tämä on **eri asia** kuin alla
+hylätty 193 commitin uudelleenkirjoitus, ja se ero on syytä pitää selvänä.
 
 ## Päätös: commit-sähköposti ja historian uudelleenkirjoitus
 
