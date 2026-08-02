@@ -96,7 +96,9 @@ them the hard way.
    the next press will not receive is a lying cue. N3 closed with one
    deliberately deferred exception: the Tab-equivalent tide gill must
    eventually precede cable hit-testing and keep a discoverable top-layer cue.
-   That exception is the gill's alone.
+   That was the only exception in this increment. The later PLAY-7 dense-patch
+   review (2026-08-02) explicitly granted the four exact SlotQ/SlotX bridge-end
+   gills the same hover/plain-left priority; no surrounding shell area changed.
 6. **Redraw discipline (§10).** New marks live on the owning opaque layer
    (castle view, shell view, crescent view), repaint only that layer, only
    when their state changes. No timers, no telemetry additions, no ambient
@@ -556,7 +558,9 @@ hit body. These measures do not reopen N3's grammar.
 - **Polish completed 2026-07-28:** the gill always wins a crossing cable in
   matching hover/press priority. Its exact hit clears cable hover and its mark
   is echoed on the top hit-transparent gesture layer. This is one narrow
-  exception to cable-first, not a new general control law.
+  exception to cable-first, not a new general control law. A later reviewed
+  amendment (2026-08-02) adds only the four exact SlotQ/SlotX bridge-end hit
+  circles; right-click/Alt and the rest of each shell remain cable-first.
 - Castle and castle-endpoint paper is transparent. The irregular flesh masks
   the river and coupling chords only inside its real shape, so no rectangular
   blank bites the body and no synthetic ring stub protrudes from it.

@@ -497,7 +497,54 @@ weatherAsync = { |map, done|
 			("FAIL: " ++ message).postln;
 		};
 	};
-	var beforeString, undoBefore, local, local2;
+	var beforeString, undoBefore, local, local2, denseCacheCheck;
+	denseCacheCheck = {
+		matrix.preset(\mayhem, \test, false, \denseHitCache);
+		map.overlay.invalidate;
+		map.overlay.view.refresh;
+		AppClock.sched(0.6, {
+			try {
+				var records = map.overlay.cableRecords;
+				var sampled = records.select { |record, i| (i % 29) == 0 };
+				var exact = true, selected, point, draws, renders;
+				check.value(records.size == 352,
+					"the dense hit/cache fixture really carries all 352 cables");
+				sampled.do { |record|
+					var fine = CQInk.cablePoints(record[\start], record[\finish],
+						(record[\points].size - 1) * 4);
+					fine.do { |p, j|
+						if((j % 9) == 0 and: {
+							map.overlay.patchAt(p, 2).isNil }) { exact = false };
+					};
+				};
+				check.value(exact,
+					"dense hit paths cover the same Bézier ink that is drawn");
+				point = records[records.size div: 2][\points]
+					[records[records.size div: 2][\points].size div: 2];
+				selected = map.overlay.patchAt(point);
+				check.value(selected.notNil,
+					"an exact visible cable point has no dense-patch hover hole");
+				draws = map.overlay.drawCount;
+				renders = map.overlay.renderCount;
+				gui.bananaGrammar.hoverCable = selected;
+				AppClock.sched(0.6, {
+					try {
+						check.value(map.overlay.renderCount > renders,
+							"dense hover renders the newly selected cable");
+						check.value(map.overlay.drawCount >= (draws + 2),
+							"the fresh dense hover image is presented after the stale blit");
+						gui.bananaGrammar.hoverCable = nil;
+						matrix.load([[\tri1, \coco1_spaf, 0.55]],
+							\test, false, \denseHitCacheRestore);
+						map.overlay.invalidate;
+						done.value;
+					} { |error| abort.value(error) };
+					nil
+				});
+			} { |error| abort.value(error) };
+			nil
+		});
+	};
 	matrix.load([[\tri1, \coco1_spaf, 0.55]]);
 	beforeString = matrix.fullMatrix.asCompileString;
 	undoBefore = gui.bananaGrammar.undoCount;
@@ -530,7 +577,7 @@ weatherAsync = { |map, done|
 								"a damage repaint still paints");
 							check.value(map.overlay.renderCount == renders,
 								"but unchanged ink is a blit, not a re-stroke");
-							done.value;
+							denseCacheCheck.value;
 						} { |error| abort.value(error) };
 						nil
 					});
@@ -548,7 +595,7 @@ weatherAsync = { |map, done|
 droneChecks = { |map|
 	var savedMatrix = matrix.asArray;
 	var saved = IdentityDictionary.new;
-	var exercise;
+	var exercise, bridgePriority;
 	var castle, view, local, finish, before;
 	#[coco1Level, coco1Organ, coco1SlotQ, coco1SlotX,
 		coco2Level, coco2Organ, coco2SlotQ, coco2SlotX, c1Send].do { |name|
@@ -595,6 +642,72 @@ droneChecks = { |map|
 	check.value(state.get(\coco1SlotX) > 0
 		and: { state.get(\coco2SlotX) > 0 },
 		"the two SlotX bridge valves remain independently directional");
+	// PLAY-7 feedback: the exact Q/X gills, unlike the surrounding shell,
+	// remain controls through a crossing banana. Find a real crossing for each
+	// of the four valves so the assertion cannot accidentally pass in clear sky.
+	bridgePriority = { |index, target|
+		var coco = map.geometry[\cocos][index];
+		var center = if(target == \slotQ) { coco[\slotQValve] }
+			{ coco[\slotXValve] };
+		var name = CQGuiNightMap.shellFlowParam(index, target);
+		var shell = map.shellViews[index], crossing, record, here, was;
+		CQMatrix.sourceNames.do { |src|
+			CQMatrix.destNames.do { |dest|
+				if(crossing.isNil) {
+					var start = map.overlay.pointFor(src);
+					var end = map.overlay.pointFor(dest);
+					var points = CQInk.cablePoints(start, end, 400);
+					var hit = points.detect { |p|
+						CQNightGeometry.flowValveHit(center, p)
+					};
+					hit !? { crossing = [src, dest, hit] };
+				};
+			};
+		};
+		check.value(crossing.notNil,
+			"% has a real crossing-cable fixture".format(name));
+		if(crossing.notNil) {
+			matrix.clearPatch(\test, false, \bridgePriorityClear);
+			matrix.patch(crossing[0], crossing[1], 0.7,
+				\test, false, \bridgePriority);
+			map.overlay.invalidate;
+			record = map.overlay.cableRecords.detect { |candidate|
+				candidate[\src] == crossing[0]
+					and: { candidate[\dest] == crossing[1] }
+			};
+			crossing[2] = record[\points].detect { |p|
+				CQNightGeometry.flowValveHit(center, p)
+			} ? crossing[2];
+			check.value(map.overlay.patchAt(crossing[2]).notNil,
+				"% regression point really lies on the crossing cable"
+					.format(name));
+			here = crossing[2] - coco[\shellBox].leftTop;
+			shell.mouseOverAction.value(shell, here.x, here.y);
+			check.value(map.flowHover.includes(name)
+				and: { gui.bananaGrammar.hoverCable.isNil },
+				"% gill wins hover through the crossing cable".format(name));
+			was = state.get(name);
+			state.set(name, 0);
+			map.paintFlow(name, 0);
+			shell.mouseDownAction.value(shell, here.x, here.y, 0, 0, 1);
+			check.value(map.touch.performanceGestureActive
+				and: { gui.bananaGrammar.isInHand.not },
+				"% gill wins the plain press through the crossing cable"
+					.format(name));
+			shell.mouseMoveAction.value(shell, here.x, here.y - 18, 0);
+			shell.mouseUpAction.value(shell, here.x, here.y - 18, 0, 0);
+			check.value(state.get(name) > 0,
+				"% crossing-cable gesture still changes its flow".format(name));
+			state.set(name, was);
+			map.paintFlow(name, CQSpec.unmap(name, was));
+		};
+	};
+	bridgePriority.value(0, \slotQ);
+	bridgePriority.value(1, \slotQ);
+	bridgePriority.value(0, \slotX);
+	bridgePriority.value(1, \slotX);
+	matrix.clearPatch(\test, false, \bridgePriorityDone);
+	map.overlay.invalidate;
 	// Cancellation releases the bright hand but keeps the already-heard value.
 	view = map.shellViews[1];
 	local = map.geometry[\cocos][1][\slotQValve]

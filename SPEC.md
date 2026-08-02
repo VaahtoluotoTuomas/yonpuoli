@@ -311,8 +311,9 @@ Outputs published to the mod source bus: `tri1..tri5` (±1 triangle), `cas1..cas
   (`Ctrl`: 0.01, floor 0.05); laptop `Z`/`X` mirrors down/up and `Shift+Z/X`
   uses 0.01. None writes an intermediate ±0.60 DSP value. The
   Inspector retains its separate precision audition. Code keeps its explicit
-  weight (`patch` defaults to 1.0), and shake keeps its own independent
-  ±`amount` distribution.
+  weight (`patch` defaults to 1.0). Shake draws every planted weight uniformly
+  from the full interval `[-amount, +amount]`: `amount` is a ceiling, not the
+  magnitude of every cable, so the expected `|weight|` is only `amount / 2`.
 - Gate/trig destinations use a Schmitt threshold: rising through +0.5 fires (gates:
   >+0.5 = on).
 - **VCA law (`_inVca`, `_fbVca`).** The knob is the valve's resting position and the
@@ -338,9 +339,10 @@ Outputs published to the mod source bus: `tri1..tri5` (±1 triangle), `cas1..cas
   a "how alive is it" macro and instant tamer.
 - API: `patch(src, dest, w)`, `unpatch(src, dest)`, `clearPatch`, `getPatch`,
   `patchPreset(\name)`, `shake(amount: 0.3, seed: nil, density: 0.1)` (throw a sparse
-  random patch — each cell with probability `density`, weights ±amount — plus random
-  spesal states; never touches levels/feedback — safety+musicality rule; same seed =
-  same throw). The throw **replaces** the patch rather than adding to it, so
+  random patch — each cell with probability `density`, each planted weight sampled
+  uniformly from `[-amount, +amount]` — plus random spesal states; never touches
+  levels/feedback — safety+musicality rule; same seed = same throw). The throw
+  **replaces** the patch rather than adding to it, so
   `density: 0` **clears the bay** — nothing sown, nothing left standing — while
   deliberately leaving the spesal states alone: a clear is a clear, not a scramble in
   disguise. `density` was added

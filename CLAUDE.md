@@ -73,37 +73,41 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 
 ## Current handoff
 
-- **Where the work stands (2026-08-02).** Branch `nocturne`, everything
-  committed. Every Nocturne GUI increment (N1–N10), the whole ear pass (§13)
-  and the playability round (PLAY-1…PLAY-6.1) are accepted; so are the DAW
-  bridge, the audio-clock guard, SOAK-1, the Yönpuoli identity, the privacy
-  audit and the README. **Three ticks and four release jobs remain before 1.0**,
-  in this order, and `PLAN.md`'s "Seuraava askel konkreettisesti" is the
+- **Where the work stands (2026-08-02).** Branch `nocturne`. Every Nocturne
+  GUI increment (N1–N10), the whole ear pass (§13) and PLAY-1…PLAY-6.1 are
+  accepted; so are the DAW bridge, the audio-clock guard, SOAK-1, the Yönpuoli
+  identity, the privacy audit and the README. The latest increment is
+  the reviewed dense-cable hover/Q-X priority fix and its documentation.
+  The user explicitly accepted every pre-PLAY-7 listening test on 2026-08-02.
+  **One shake design decision, one tick and four release jobs remain before
+  1.0**, in this order, and `PLAN.md`'s "Seuraava askel konkreettisesti" is the
   authority on them:
-  1. **Playability test 7 — the boot defaults.** The last listening decision
-     with DSP consequence, and the one that answers the user's own observation
-     that a patched cable or a big shake is sometimes inaudible. Two measured
-     candidates, **one variable at a time**, neither yet a production default:
-     **A** = `Spaf` boot default 0 → 0.12, **B** = shake weight 0.3 → 0.65.
-     Each alone broke boot A/B identity, so both work; the question is which is
-     more musical. Script: `docs/PLAYABILITY_GUIDE.md` → Soittotesti 7.
+  1. **The post-PLAY-7 shake decision.** The user's 2026-08-02 listening result
+     is **neither A nor B**: `Spaf=0.12` remained very subtle, and weight ceiling
+     0.65 produced only the small gate changes predicted by seeds 8101/9202.
+     Defaults did not change. Decide whether 1.0 gets the proposed, first
+     Inspector/NRT-auditioned six independent destinations — `coco1_organ`,
+     `coco2_organ`, `coco1_slotQ`, `coco2_slotQ`, `coco1_record`,
+     `coco2_record` — and a topology-aware audible skeleton, or retains the
+     hardware-parity 22-target matrix. Organ/SlotQ are continuous VCA
+     contributions; record is a momentary Schmitt punch that never mutates the
+     manual Hold parameter. Exact analysis: `docs/PLAYABILITY_GUIDE.md` →
+     Soittotesti 7.
   2. **16N-1** — the faderbank hands-on tick. Automatic gate green; it needs
      the 16n in hand and is the only thing blocking road-to-1.0 step 7.
-  3. **PLAY-2C's and PLAY-6's ticks.** Both are built and were played during
-     the PLAY-6.1 review, but the user has not ticked them. Never tick for them.
-  4. Then: what ships (four playable presets, exactly one snapshot admitted by
+  3. Then: what ships (four playable presets, exactly one snapshot admitted by
      `.gitignore`) → release media → remote CI green → merge to `main` and the
      1.0 tag.
   Deliberately deferred and non-blocking, in order after 1.0: 13.3b (isolated
-  Bits 5/8/12 ear test), the topology-aware "sweet spot" / ecological shake,
-  the three porous playing modes, and the Norns port (§14).
-- **Latest full gate (2026-08-02, `nocturne`, PLAY-6.1 accepted):**
+  Bits 5/8/12 ear test), the three porous playing modes, and the Norns port
+  (§14). Ecological shake is no longer in that bucket: PLAY-7 explicitly
+  reopened it as the decision above.
+- **Latest full gate (2026-08-02, dense hover/Q-X fix):**
   `CQ_COMPILE_OK`, **14,827 unit passes / 0 failures / 39/39 classes**,
-  `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
-  `CQ_GUI_DRAWER_REENTRY_PASSED`, `CQ_GUI_NIGHT_PASSED` and
-  `CQ_NIGHT_CAPTURE_DONE`. `CQ_SAFETY_PASSED` and `CQ_HOLD_OK` carry from the
-  playability commit — PLAY-6.1 changed no DSP. The older gate figures below
-  are historical records of their own increments, not the current baseline.
+  and `CQ_GUI_NIGHT_PASSED`. The shell/drawer/capture results remain the
+  accepted PLAY-6.1 baseline; `CQ_SAFETY_PASSED` and `CQ_HOLD_OK` carry because
+  this change touches no DSP. The older gate figures below are historical
+  records of their own increments, not the current baseline.
 - **Public product identity is Yönpuoli.** Cocoquantus is the explicitly credited
   lineage, not the product name or a fidelity promise. Keep its recognizable
   vocabulary. Public prose and labels spell `dolby` with a lowercase initial.
@@ -229,11 +233,14 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   5. Castle paper and its endpoint detail views are transparent; irregular
      ground-filled flesh masks the ring/chords at their real body edge. The
      old rectangle-repair ring stubs are forbidden.
-  6. **Gill polish completed 2026-07-28:** the Tab-equivalent lower-centre
-     gill is the one deliberate exception to cable-first priority. Its exact
-     hit shape owns hover and press, clears cable hover, and its cue is drawn
-     on the top hit-transparent gesture layer. Do not generalize this exception
-     to other controls.
+  6. **Gill polish completed 2026-07-28; reviewed amendment 2026-08-02:** the
+     Tab-equivalent lower-centre gill is a deliberate exception to cable-first
+     priority. Its exact hit shape owns hover and press, clears cable hover,
+     and its cue is drawn on the top hit-transparent gesture layer. The later
+     dense-patch review explicitly adds the four exact SlotQ/SlotX bridge-end
+     circles for hover and plain left press only; surrounding shell flesh,
+     right-click and Alt remain cable-first. Do not generalize beyond these
+     five named shapes.
   7. Roots are not a decoration pass. The actual DSP is source selection →
      drive/bias preamp → Coco audio, with `envA/B` only the post-preamp
      Amplitude side-growth. When the root increment arrives it must draw and
@@ -270,6 +277,13 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   sclang's stdout is block-buffered when redirected — a hung smoke shows
   nothing; the night smoke now carries a 90 s watchdog exit that flushes
   the evidence. `Rect.extent` returns a Point (no `.width`).
+  The 2026-08-02 dense-hover review found a presentation corollary: a paint may
+  blit one stale image for responsiveness, but the offscreen render that follows
+  must call `view.refresh` when it actually creates the replacement. Without
+  that, hover remains one cable behind until unrelated Qt damage and looks like
+  a centimetre-scale hit-test error even though `patchAt` follows the exact
+  Bézier. Night-smoke now samples fine drawn curves in a 352-cable field and
+  asserts both render and subsequent presentation.
   - §16.7's dashed drop-target border is done and accepted (2026-07-22, checklist
     G2.10), both skins from one `CQInk.drawDropTarget`. Qt hands sclang **no
     drag-leave callback**, and
@@ -312,7 +326,9 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
     as skip does, which lets the Night moon report shakes from the GUI, key,
     code or patterns. The current §9 body is Ø 56.
     A topology-aware “sweet spot” / ecological shake was explicitly deferred
-    on 2026-07-27; do not fold that musical redesign into GUI polish.
+    on 2026-07-27 and reopened by PLAY-7 on 2026-08-02 as the handoff decision
+    above. Keep it a separately auditioned musical prototype; do not fold that
+    redesign into unrelated GUI polish.
   - **Spesal coupling chords** (accepted 2026-07-22, manual block G2.11b): the
     night's inner clock showed a castle's *state* but not
     what the state means — which castle it reads. The chord now draws that on
@@ -502,15 +518,17 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   road is now nine steps. Name/identity (**Yönpuoli**), the privacy audit
   (`audit/PRIVACY_AUDIT.md`) and the README rewrite are **done**. The **16n map
   is rebuilt and its automated gate is green; only the hands-on acceptance
-  (checklist `16N-1`) is open.** The playability round that follows it is now
-  itself almost closed — PLAY-1…PLAY-6.1 are built and PLAY-1…PLAY-5 and
-  PLAY-6.1 accepted — so what is left of it is the first-touch defaults
-  (playability test 7) and what ships: four playable presets, with `.gitignore`
-  admitting exactly one snapshot, `snapshots/example.cqsnap.scd`. The round
-  opened with an NRT measurement of the user's own observation that a patched
-  cable or a big shake sometimes makes no audible difference; that measurement
-  found and closed a real cause (the patch-side organ source peaked below a
-  Coco's Schmitt), and the boot defaults are what remain of it.
+  (checklist `16N-1`) is open.** Every pre-PLAY-7 listening test is now
+  explicitly accepted (2026-08-02). PLAY-7 then rejected both global
+  boot/shake candidates;
+  the remaining musical choice is the separately auditioned ecological-shake
+  prototype described at the top of this handoff. What ships still requires
+  four playable presets, with `.gitignore` admitting exactly one snapshot,
+  `snapshots/example.cqsnap.scd`. The round opened with an NRT measurement of
+  the user's own observation that a patched cable or a big shake sometimes
+  makes no audible difference; it closed one real patch-side Schmitt issue but
+  the 2026-08-02 ear test proved that aggregate NRT difference was not enough
+  to make the uniform shake musically consequential.
   See PLAN.md → "Tie 1.0:aan".
 - **Playability tests 1–5 are accepted as of 2026-08-02.** The planted-cable
   first-touch weight is 0.60. Night planting is binary and silent until release:
@@ -539,7 +557,7 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   changes held-loop RMS 0.1528 → 0.0414), so never remove this as redundant.
   Keep the spiral speed notch as the static stored setting; the SP.AF wake and
   read-head motion show effective modulation.
-- **PLAY-6 landed, 2026-08-02:** Night is one continuous landscape, never a
+- **PLAY-6 is accepted, 2026-08-02:** Night is one continuous landscape, never a
   separate drone mode. Each shell owns a vertical-drag Level shoreline, an
   audible-Organ calyx, its own SlotQ tributary gill and its destination-side
   SlotX bridge valve. `coco1SlotX` means Coco 2 → Coco 1 and `coco2SlotX`

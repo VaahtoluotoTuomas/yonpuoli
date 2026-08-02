@@ -4,7 +4,7 @@
 
 CQGuiBananaController {
 	var grammar, endpoints, bodies, overlay, controls, controlViews;
-	var cableHoverControlViews;
+	var cableHoverControlViews, cablePriorityFuncs;
 	var gestureCtl, matrixCtl;
 	// Presentation owners may gate per-gesture endpoint refreshes while their
 	// stage is hidden; Qt repaints it in full when shown. nil = always.
@@ -49,12 +49,18 @@ CQGuiBananaController {
 	prInit {
 		controlViews = IdentitySet.new;
 		cableHoverControlViews = IdentitySet.new;
+		cablePriorityFuncs = IdentityDictionary.new;
 		controls.do { |control|
+			var priority;
 			controlViews.add(control.view);
 			if(control.respondsTo(\at)
 				and: { control[\cableHover] == true }) {
 				cableHoverControlViews.add(control.view)
 			};
+			priority = if(control.respondsTo(\at)) {
+				control[\cablePriority]
+			} { nil };
+			priority !? { cablePriorityFuncs[control.view] = priority };
 		};
 		this.prBindEndpoints;
 		this.prBindBodies;
@@ -150,6 +156,7 @@ CQGuiBananaController {
 		var previousOver = view.mouseOverAction, previousEnter = view.mouseEnterAction;
 		var controlWins = controlViews.includes(view)
 			and: { cableHoverControlViews.includes(view).not };
+		var priority = cablePriorityFuncs[view];
 		if(controlWins) {
 			view.mouseEnterAction = { |v|
 				previousEnter.value(v);
@@ -157,8 +164,10 @@ CQGuiBananaController {
 			}
 		};
 		view.mouseOverAction = { |v, x, y|
+			var priorityWins = priority.notNil
+				and: { priority.value(v, x, y) == true };
 			previousOver.value(v, x, y);
-			if(controlWins) {
+			if(controlWins or: { priorityWins }) {
 				grammar.hoverCable = nil
 			} {
 				this.prHover(v, x, y)

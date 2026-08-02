@@ -12,9 +12,11 @@ Archipelago-GUI G1–G3 [`docs/history/PLAN_archipelago.md`](docs/history/PLAN_a
 (G1 Day · G2 Night · G3 Weather machine) ovat valmiita ja käyttäjän hyväksymiä;
 archipelago on sulautettu `main`iin (PR #1, tagi `archipelago-1.0`). **Uusi
 vaihe: Nocturne — yö koko soittimena.** N1–N10, koko korvapassi (§13) ja
-soitettavuuskierroksen PLAY-1…PLAY-6.1 on hyväksytty: Night + Master + Drawer
-on soittimen ainoa ylläpidettävä käyttöliittymä ja Night on soittimen
-maisema, ei sen kartta. Työ elää paikallisessa `nocturne`-haarassa.
+soitettavuuskierroksen PLAY-1…PLAY-6.1 on hyväksytty ja PLAY-7:n kahden
+globaalin shake-kandidaatin kuuntelu on suljettu tulokseen **ei kumpikaan**:
+Night + Master + Drawer on soittimen ainoa ylläpidettävä käyttöliittymä ja
+Night on soittimen maisema, ei sen kartta. Työ elää paikallisessa
+`nocturne`-haarassa.
 
 **Julkinen identiteetti:** soittimen nimi on **Yönpuoli**. Kuvausrivi on
 *A nocturnal feedback instrument in the Cocoquantus lineage* ja tagline
@@ -29,35 +31,41 @@ case study / development process -dokumenteissa. Etärepon uudelleennimeäminen,
 public-vaihto ja oikeat kuva-/äänidemot ovat erillinen julkaisutoimi.
 
 **Seuraava askel konkreettisesti (2026-08-02).** Kaikki Nocturne-vaiheen
-GUI-inkrementit, koko korvapassi ja soitettavuuskierros ovat hyväksyttyjä.
-1.0:aan on jäljellä **kolme rastia ja neljä julkaisutyötä**, tässä
-järjestyksessä:
+GUI-inkrementit ja koko korvapassi ovat hyväksyttyjä. PLAY-7 sulki kaksi
+yhden muuttujan ehdokasta mutta avasi yhden rajatun suunnittelupäätöksen.
+Käyttäjä hyväksyi 2026-08-02 eksplisiittisesti kaikki PLAY-7:ää edeltävät
+soittotestit. 1.0:aan on jäljellä **yksi shake-päätös, yksi rasti ja neljä
+julkaisutyötä**,
+tässä järjestyksessä:
 
-1. **Soittotesti 7 — bootin oletukset.** Ainoa jäljellä oleva
-   DSP-vaikutteinen kuuntelupäätös, ja se joka vastaa käyttäjän omaan
-   havaintoon "patchattu johto tai iso shake ei joskus kuulu missään". Kaksi
-   mitattua kandidaattia, **yksi muuttuja kerrallaan**, kumpaakaan ei ole
-   tehty tuotanto-oletukseksi: **A** = `Spaf`-boot-oletus 0 → 0,12,
-   **B** = shaken paino 0,3 → 0,65. Kumpikin yksin rikkoi boot-A/B:n
-   identtisyyden, joten molemmat toimivat; kysymys on kumpi on musikaalisempi.
-   Skripti: `docs/PLAYABILITY_GUIDE.md` → Soittotesti 7.
+1. **Shaken seuraava rajattu prototyyppipäätös.** Soittotesti 7:n tulos
+   2026-08-02 on **ei A eikä B**: `Spaf=0,12` oli korvalla liian pieni ja
+   `amount=0,65` muutti vain vähän, täsmälleen siementen gate-topologian
+   ennustamalla tavalla. Tuotanto-oletukset eivät muuttuneet. Seuraava ehdotus
+   on ensin Inspector/NRT:ssä kuunneltava kuuden erillisen kohteen perhe:
+   `coco1_organ`, `coco2_organ`, `coco1_slotQ`, `coco2_slotQ`,
+   `coco1_record`, `coco2_record`, sekä tilatietoinen
+   ekologinen shake (3–5 johdon kuultava runko + kuun määräämä satunnainen
+   koristelu). Organ ja SlotQ ovat jatkuvia VCA-kohteita; record on
+   Schmitt-rajattu hetkellinen kirjoituspunch, joka ei muuta käsin asetettua
+   Hold-parametria. Päätä ennen laajennusta, kuuluuko tämä 1.0:aan vai säilyykö
+   1.0:n matriisi hardware-pariteetin 22 kohteessa.
+   Tarkka seed-analyysi: `docs/PLAYABILITY_GUIDE.md` → Soittotesti 7.
 2. **16N-1 — faderipankin käsintesti.** Automaattinen portti on vihreä; rasti
    vaatii 16n:n käteen (kanavanauhan luettavuus, Levelin paikka nauhan
    lopussa, ristihäivytyksen etäisyys, F14:n sisältö, deckien poisto). Tämä on
    ainoa asia joka blokkaa Tie 1.0:n kohtaa 7.
-3. **PLAY-2C:n ja PLAY-6:n rastit.** Molemmat on toteutettu ja soitettu
-   PLAY-6.1:n katselmuksessa, mutta käyttäjän eksplisiittinen rasti puuttuu.
-   Älä rastita niitä hänen puolestaan.
-4. Sitten järjestyksessä: **mitä julkaistaan** (neljä soitettavaa presettiä ja
+3. Sitten järjestyksessä: **mitä julkaistaan** (neljä soitettavaa presettiä ja
    `.gitignore`-poikkeuksena tasan yksi snapshot,
    `snapshots/example.cqsnap.scd`) → **julkaisumedia** → **etä-CI vihreäksi**
    → **merge `main`iin ja Yönpuolen 1.0-tagi**. Yksityiskohdat osiossa
    "Tie 1.0:aan".
 
 Ei-estävää, tietoisesti myöhemmäksi jätettyä: 13.3b (Bits 5/8/12 eristetty
-korvatesti), topologiatietoinen "sweet spot" / ekologinen shake, kolme
-huokoista soittotilaa ja Norns-portti (§14) — tässä järjestyksessä, kaikki
-1.0:n jälkeen.
+korvatesti), kolme huokoista soittotilaa ja Norns-portti (§14) — tässä
+järjestyksessä, kaikki 1.0:n jälkeen. Topologiatietoinen "sweet spot" /
+ekologinen shake ei enää kuulu tähän listaan: käyttäjä avasi sen PLAY-7:n
+tuloksella nimenomaisesti uudelleen yllä olevaksi 1.0-päätökseksi.
 
 **Aiemmat hyväksynnät tiivistettynä.** **N9 hyväksyttiin 2026-07-28.** Day on
 poistettu, koska Night on inspiroivampi varsinainen soitin ja kahden
@@ -94,9 +102,9 @@ VB-CABLE-DAW-portti.**
 **Fyysinen AIO-hardware-katselmus, DAW-silta, audiokelloguard ja SOAK-1 on
 hyväksytty.** Yönpuoli-nimi ja README-linjaus päätettiin 2026-08-01, ja koko
 Git-historian yksityisyys- ja lähdeauditointi valmistui samana päivänä
-(`audit/PRIVACY_AUDIT.md`). Soitettavuuskierros PLAY-1…PLAY-5 hyväksyttiin
-2026-08-02, PLAY-6:n anatomia toteutettiin samana päivänä ja **PLAY-6.1
-hyväksyttiin 2026-08-02**. Yksi musiikillinen muuttuja käsitellään edelleen
+(`audit/PRIVACY_AUDIT.md`). **Kaikki PLAY-7:ää edeltävät soittotestit hyväksyttiin
+2026-08-02**, mukaan lukien PLAY-2C, PLAY-6 ja PLAY-6.1. Yksi musiikillinen
+muuttuja käsitellään edelleen
 kerrallaan. **N10:n sydän/kela- ja chevron-vihjeet hyväksyttiin visuaalisesti
 2026-07-29**, joten erillistä GUI-velkaa ei enää ole.
 
@@ -2025,10 +2033,10 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    jokainen päätyy olemassa olevaan tuotanto-SynthDef-controliin; mic-off on
    ainoa tarkoituksellinen poikkeus. Opastettu soittoajo ja Nightiin
    mahdollisesti nostettavien `Level`/`SlotQ`/`Organ`-kandidaattien koe:
-   [`docs/PLAYABILITY_GUIDE.md`](docs/PLAYABILITY_GUIDE.md). **Soittotestit 1–5
-   on hyväksytty. Testin 6 suunnittelupäätös on toteutettu; seuraava käsin
-   katsottava/soitettava portti on uuden Night-anatomian PLAY-6 sekä PLAY-2C:n
-   modulaatiosatelliitti.**
+   [`docs/PLAYABILITY_GUIDE.md`](docs/PLAYABILITY_GUIDE.md). **Kaikki PLAY-7:ää
+   edeltävät soittotestit hyväksyttiin eksplisiittisesti 2026-08-02. PLAY-7:n
+   A/B-kuuntelu on tehty; hylkäystulos ja seuraava shake-päätös kirjataan tämän
+   kohdan lopussa.**
    - **PLAY-6-palaute 2026-08-02:** molemmat `cocoNLevel`-eleet kuuluvat
      ehdottomasti Nightiin miksauksen ja ristihäivytyksen vuoksi. Erillisen
      drone-moodin sijaan käyttäjä suosii yhtä jatkuvaa soitintilaa, jossa
@@ -2119,6 +2127,23 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
      castle 1:n omat laatikot 12,4 / 21,1 px, Q-lift 14 / 15 px,
      Q↔X-venttiiliväli 46,6 / 69,8 px (raja 34 px). Layout maksaa 21,5 ms
      minimilavalla ja 5,8 ms roomy-koossa.
+
+     **Tiheän patchin hover-katselmus 2026-08-02, korjattu.** Q- ja X-sillan
+     neljä täsmällistä päätykidusta voittavat nyt niiden läpi kulkevan banaanin
+     sekä hoverissa että tavallisella vasemmalla painalluksella. Poikkeus on
+     dynaaminen pistekohtainen predikaatti suuren shell-viewin sisällä; muu
+     kuori, oikea painike ja Alt säilyttävät cable-first-grammatiikan.
+
+     Käyttäjän kuvaama "johto valittuna sentin sivussa mutta ei omalla
+     kohdallaan" ei ollut Bézier-hit-geometrian virhe. Stale-image-polku piirsi
+     vanhan hover-kuvan, renderöi uuden vain offscreeniin eikä pyytänyt sen
+     jälkeen `view.refresh`iä. Valinta jäi yhden kaapelin jälkeen odottamaan
+     satunnaista Qt-damagea. Uusi render pyytää nyt aina oman esityspäivityksen.
+     Night-smoke istuttaa aidon risteävän kaapelin jokaiselle neljälle Q/X-
+     venttiilille, käy 352 kaapelin `mayhem`-kentässä hienonnettuja piirrettyjä
+     Bézier-pisteitä läpi (`patchAt(..., 2)` ei jätä aukkoja) ja todistaa sekä
+     uuden hover-renderin että sitä seuraavan tuoreen blitin. Portit:
+     `CQ_COMPILE_OK`, 14 827 / 0 / 39, `CQ_GUI_NIGHT_PASSED`.
 
      **Ensimmäisen toteutuksen mitattu lopputulos** (min-lava / roomy):
      `tri2` 14,8 / 14,15 px,
@@ -2255,10 +2280,47 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
      pitää edelleen erottaa annulus, kidus, nuoli ja silta. Pysähdy käyttäjän
      katselmukseen — väriä saa sen jälkeen säätää vain undertow'n chromalla/
      alphan määrällä, ei lisäämällä toista uutta sävyä.
-   Sen rinnalla verrataan, jälleen yksi muuttuja
-   kerrallaan, mitatut boot-shake-kandidaatit `Spaf=0,12` ja shake-paino 0,65;
-   kumpikin yksin rikkoi boot-A/B:n identtisyyden, mutta kumpaakaan ei ole vielä
-   hyväksytty tuotanto-oletukseksi.
+   **PLAY-7:n soittotulos 2026-08-02:** kumpikaan yhden muuttujan kandidaatti
+   ei riittänyt. `Spaf=0,12` ei tehnyt A:sta eikä edeltävästä patchista korvalla
+   olennaisesti erilaista; `amount=0,65` teki vain pienen muutoksen, jossa seed
+   9202 laukaisi Coco 1:n flipin mutta ei käytännössä skipiä eikä Coco 2:n
+   portteja. Tuotanto-oletukset eivät muuttuneet.
+
+   Tämä ei ollut arvaus routing-viasta. `shake` arpoo jokaisen istutetun painon
+   tasaisesti väliltä `[-amount,+amount]`, joten `amount` on katto ja odotettu
+   `|w|` vain puolet siitä. Seed 8101 kylvi 69 johtoa (0,3: mean/median
+   0,1625/0,1565; 0,65: 0,3520/0,3390) ja seed 9202 77
+   (0,1550/0,1720; 0,3358/0,3728). Jälkimmäisessä Coco 1 flipin
+   `tri2=+0,5127` ylittää rajan; skipin `tri1=+0,5056` on vain 0,0056 yli ja
+   noin 12,5 s infrajaksoinen. Coco 2:n flipissä suurin positiivinen on 0,2867
+   ja skipissä ainoa johto −0,1890. Havaittu käytös on siis täsmälleen kentän
+   ennuste. A:n SP.AF-itseisarvobudjetit tuottivat `Spaf=0,12`:lla vain
+   0,008…0,061 oktaavin teoreettisen ylärajan ennen kumoutumista.
+
+   **Reititysaudit:** nykyiset 20 hardware-peräistä loogista tuloa ovat kaikki
+   mukana ja Nightissä: 2 × (SP.AF, signed Input-VCA, signed Feedback-VCA,
+   Flip, Skip) + 5 × (FM, Spesal). Hardware-verso/inverso-pari on yksi signed
+   kohde; lisäksi matriisissa ovat kaksi software-only deck-ratea = 22.
+   Käyttäjän kokema aukko ei siis johdu puuttuvasta aidon Cocoquantuksen
+   socketista vaan siitä, etteivät Yönpuolen omat sisäiset äänipolut ole vielä
+   modulaatiokohteita.
+
+   **Seuraava ehdotus, ei vielä toteutus:** kuuntele ensin Inspector/NRT:ssä
+   kuusi erillistä kohdetta: `coco1_organ`, `coco2_organ`, `coco1_slotQ`,
+   `coco2_slotQ`, `coco1_record`, `coco2_record`. Organ ja SlotQ ovat jatkuvia
+   VCA-panostuksia, jotka voivat avata nollassa olevan käsiasetuksen. Record on
+   Schmitt-rajattu hetkellinen kirjoituspunch: se avaa held-muistin vain gaten
+   ajaksi, palauttaa releasessa käsin asetetun Hold-tilan eikä kirjoita
+   `cocoNHold`-parametriin. Organ tekee Quantussyn vaikutuksen kuuluvaksi myös
+   held/tyhjällä muistilla; SlotQ+record päästää sen muistiin ja rytmittää
+   kirjoittamista. Jos prototyyppi hyväksytään, kaikki kuusi saavat omat
+   Night-socketinsa. Sen jälkeen
+   kandidaatit ovat `castleK_send`, `cocoN_dust`, `cocoN_slotX`, vasta viimeisenä
+   askeltavat Bits/Wrap. Ekologinen shake rakentaa seedatusti ensin 3–5 johdon
+   tilatietoisen, varmasti kuultavan rungon (organ-drone / muistipunch /
+   dust-kasvu / crossfeed) ja käyttää nykyistä Bernoulli-kylvöä vain kuun
+   vaiheeseen sidottuna koristeena. Tämä on nyt 1.0-päätös, ei enää automaattisesti
+   myöhemmäksi lykätty työ.
 9. **Merge `main`iin ja 1.0-tagi.**
 
 ### DAW-sillan keino: ReaRoute, ei VB-CABLE

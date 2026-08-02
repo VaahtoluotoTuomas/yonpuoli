@@ -102,9 +102,11 @@ Tämä ei muuta vanhoja patcheja, snapshotteja, shakea eikä Schmitt-kynnystä.
 0,55 oli mittauksen pienin portin varmasti
 laukaissut koetin; 0,60 jättää siihen marginaalin mutta keventää jatkuvaa
 ensikosketusta käyttäjän 0,65-kuuntelun perusteella. Kaksi seuraavaa erikseen
-mitattua ehdokasta ovat `Spaf`-boot-oletus 0,12 ja shaken paino 0,65; kumpikin
-teki bootin kahdesta täyden kuun shakesta voimakkaasti erilaiset. Niitä ei pidä
-yhdistää samaan kuuntelukierrokseen.
+mitattua ehdokasta olivat `Spaf`-boot-oletus 0,12 ja shaken paino 0,65. NRT:n
+aggregaattimittarit erottivat kummallakin kaksi täyden kuun renderiä, mutta
+soittotesti 7 osoitti tämän liian heikoksi onnistumiskriteeriksi: kumpikaan ei
+tuottanut korvalla riittävän suurta tai luotettavaa muutosta. Tulos ja tarkka
+siemenanalyysi ovat alempana.
 
 ## Lähteet: mitä kahdeksan lähtöperhettä oikeasti antavat
 
@@ -361,10 +363,11 @@ Arvioi erityisesti, erottuvatko kaksi helmeä heti toisistaan: värillinen =
 ensi silmäyksellä selvä, älä päättele sitä liikkeestä vaan raportoi näkyvyys;
 väärin opittava indikaattori on huonompi kuin ei indikaattoria.
 
-**Hyväksytty 2026-08-02:** asetushelmi, live-satelliitti ja wake jäivät
-tuotantoon. Audio-rate-katselmuksessa löytynyt kahden näennäisen aseman sahaus
-poistettiin: kun wake kattaa vähintään 1/16 sirpin alueesta, satelliitti näyttää
-vakaasti mitatun alueen keskuksen eikä yksittäistä 15 Hz näytettä.
+**Hyväksytty 2026-08-02 ja eksplisiittisesti rastitettu PLAY-7:n edellä:**
+asetushelmi, live-satelliitti ja wake jäivät tuotantoon. Audio-rate-
+katselmuksessa löytynyt kahden näennäisen aseman sahaus poistettiin: kun wake
+kattaa vähintään 1/16 sirpin alueesta, satelliitti näyttää vakaasti mitatun
+alueen keskuksen eikä yksittäistä 15 Hz näytettä.
 
 Spiraalin poikkiviiva pysyy tarkoituksella **Speed-perusasetuksen** kohdalla.
 Se on kädellä tartuttava asteikkomerkki, ei toteutuneen moduloidun kellon
@@ -501,6 +504,10 @@ CQ.set(\c1Send, 0); CQ.get(\c1Send);
 
 ### Testin 6 toteutettu suunnittelupäätös
 
+**Hyväksytty 2026-08-02:** käyttäjä hyväksyi kaikki PLAY-7:ää edeltävät
+soittotestit. Level-ranta, Organ-malto, Q-kidus, kaksi SlotX-suuntaa sekä
+castlen tap/send-erottelu toimivat yhtenä jatkuvana Night-soittimena.
+
 `coco1Level` ja `coco2Level` ovat hyväksyttyjä Night-eleitä: niitä tarvitaan
 fraasin sisäiseen miksaukseen ja ristihäivytykseen. Ne eivät kuulu master-
 stripille, koska stripin tehtävä on yhteinen turvallisuus ja kokonaislähtö;
@@ -537,13 +544,17 @@ ovat jo Nightissä, joten muita drone-säätimiä ei tarvita ennen näitä. Erit
 Bits/Wrap/Dust ovat edelleen sointivärin valmistelua, eivät drone-portin ehtoja.
 
 Kaikki kuorten neljä uutta pintaa käyttävät samaa pystysuuntaista vetoa ja
-kirjoittavat `CQState`-suppilon läpi. Kaapeli ja Alt-ele voittavat osumajärjestyksessä.
+kirjoittavat `CQState`-suppilon läpi. Kaapeli ja Alt-ele voittavat yleisessä
+osumajärjestyksessä; 2026-08-02 tehdyn tiheän patchin katselmuksen jälkeen
+ainoastaan neljän Q/X-sillanpään täsmällinen kidusympyrä voittaa kaapelin
+hoverissa ja tavallisella vasemmalla painalluksella. Sen ympärillä kuori on yhä
+kaapeli-ensin, ja oikea painike/Alt säilyttävät banaanieleensä.
 Workshopista poistettiin näiden kaksoiskappaleet: nykyinen omistajuus on
 Night 44 · Master 4 · Workshop 26. Automaattinen geometria-, omistajuus- ja
 GUI-eleportti on vihreä; tämän testin jäljellä oleva osa on käsin tehtävä
 soitettavuus- ja luettavuusarvio.
 
-## Soittotesti 7 — shaken kaksi seuraavaa yhden muuttujan kandidaattia
+## Soittotesti 7 — kaksi yhden muuttujan kandidaattia (ei kumpikaan)
 
 ```supercollider
 // Tee ensin nykyinen ongelma tarkoituksella. Uusi boot on selkein lähtötila.
@@ -573,16 +584,100 @@ keskimäärin noin 3–4 johtoa. Täysikuu kylvää noin 70. Kuu muuttaa vain
 **tiheyttä**; shaken painon antaa edelleen `CQ.shake` (GUI:ssa nykyinen 0,3),
 ja `patchDepth` on jo istutetun kentän yhteinen elävyyssäädin.
 
-## Mitä palautteeksi tarvitaan
+### Testin 7 tulos — kumpikaan globaali säätö ei riitä
 
-Seuraavasta kierroksesta riittää, jos vastaat näihin:
+`amount` ei ole jokaisen shaken johdon kiinteä paino. Jokainen istutettu johto
+arvotaan tasaisesti väliltä `[-amount, +amount]`, joten odotettu itseisarvo on
+vain `amount / 2`: nykyisellä 0,3:lla noin 0,15 ja kandidaatti B:n 0,65:llä
+noin 0,325. Negatiivinen tai alle +0,5 jäävä yksittäinen johto ei yksin laukaise
+flip/skip/spesal-Schmittiä. Sama seed valitsee samat solut ja suhteelliset
+painot; 0,65 vain skaalaa 0,3-kentän noin 2,17-kertaiseksi.
 
-1. Testissä 4: onko `triK`:n jatkuvan liikkeen ja `casK`:n sisäisesti
-   kellotetun liikkeen ero sekä korvalla että uuden keskikielen avulla selvä?
-2. Shakessa: kandidaatti A (`Spaf 0,12`) vai B (`amount 0,65`) tuntuu
-   soittimelta eikä satunnaisefektiltä — vai ei kumpikaan?
-3. Testissä 6: löytyvätkö Level-ranta, Organ-malto, Q-kidus, kaksi SlotX-suuntaa
-   ja linnan tap/send-erottelu ilman tekstiä, ja ovatko vetoalueet soitettavat?
+| seed | johtoja | `amount=0,3`: mean / median `|w|` | `amount=0,65`: mean / median `|w|` | positiivisia `w>0,5` koko kentässä |
+|---|---:|---:|---:|---:|
+| 8101 | 69 | 0,1625 / 0,1565 | 0,3520 / 0,3390 | 9 |
+| 9202 | 77 | 0,1550 / 0,1720 | 0,3358 / 0,3728 | 11 |
+
+Kandidaatti A jäi pieneksi jo ennen lähteiden keskinäistä kumoutumista. Siementen
+SP.AF-johtojen kaikkien itseisarvojen summa antaa `Spaf=0,12`:lla vain noin
+0,008…0,061 oktaavin teoreettisen ylärajan Coco/seed-yhdistelmästä riippuen;
+toteutunut liike on tavallisesti tätä pienempi.
+
+Kandidaatti B:n havainto voidaan ennustaa siemenestä 9202. Coco 1:n flipissä on
+`tri2 = +0,5127`, joten se ylittää portin. Skipin ainoa itsenäisesti kynnyksen
+ylittävä lähde on hyvin hidas `tri1 = +0,5056`: marginaalia on vain 0,0056 ja
+infrajakso on noin 12,5 sekuntia, joten lyhyt koe voi olla laukaisematta sitä.
+Coco 2:n flipin suurin positiivinen paino on 0,2867 ja skipissä on vain
+`cas3 = -0,1890`; kummankaan ei kuulu siinä patchissa laueta. Tämä vastaa
+kuunteluhavaintoa eikä viittaa rikkoutuneeseen reititykseen.
+
+Johtopäätös: A ja B hylätään tuotanto-oletuksina. Pelkkä yhteisen painokaton
+nosto tekee osasta johtoja vahvempia, mutta ei korjaa sitä, että riippumaton
+Bernoulli-kylvö osuu usein suljettuihin polkuihin (`Hold=1`, `Spaf=0`,
+`SlotQ=0`) eikä takaa kummallekaan Cocolle yhtä musikaalisesti vaikuttavaa
+runkoa.
+
+### Modulaatiokohteiden audit ja seuraava shake
+
+Nykyinen 16×22-matriisi sisältää kaikki aidon Cocoquantuksen loogiset
+modulaatiotulot. Kummallakin Cocolla ovat SP.AF, Input-VCA, Feedback-VCA,
+Flip ja Skip (10 kohdetta); erilliset hardware-verso/inverso-jakit on ilmaistu
+yhdellä signed-kohteella, jossa negatiivinen paino on inverso. Jokaisella
+viidellä castlella ovat FM ja Spesal (10 kohdetta). Näiden 20:n lisäksi
+Yönpuolella on kaksi software-only deck-rate-kohdetta. Kaikki 16 lähdettä ja
+22 kohdetta ovat Nightissä endpointteina. Puute ei siis ole hardware-pariteetissa
+vaan siinä, että ohjelmiston uudet sisäiset äänipolut eivät vielä ole
+matriisikohteita. Tämä koskee banaani-/modulaatiotuloja; hardware-paneelin
+erilliset XLR-, piezo- ja synth-audiojakkityypit on Yönpuolella abstrahoitu
+äänikortin live/mic-kanaviksi ja preampin lähdevalinnaksi, ei kopioitu
+liitin liittimeltä.
+
+Kiinnostavimmat uudet kohteet kokeiltavaksi, tässä järjestyksessä:
+
+1. `cocoN_organ`: Quantussy voi avata/AM-moduloida Cocon sisäistä organ-ääntä;
+   tämä soi heti myös lukitulla tai muuten tyhjällä muistilla.
+2. `cocoN_slotQ` yhdessä turvallisesti hysteresisrajatun `cocoN_record`/
+   Hold-punch-kohteen kanssa: Quantussy pääsee sekä Cocon sisään että rytmittämään
+   mitä muistiin jää. SlotQ yksin ei kuulu lukitun `Hold=1`-muistin läpi.
+3. `castleK_send`: matriisi orkestroi itse, mitkä viisi kolmioa muodostavat
+   `qMix`in; tämä tekee Quantussysta myös oman audiosisältönsä muotoilijan.
+4. `cocoN_dust`: tyhjä Coco voi kasvattaa omaa materiaaliaan, kun record-portti
+   avautuu; held-muistissa se ei yksin muuta kuuluvaa silmukkaa.
+5. `cocoN_slotX`: suunnattu ristiinsyöttö kasvattaa kahden Cocon ekologian, kun
+   vähintään toisessa on jo materiaalia.
+6. `bits` ja `wrap` vasta myöhemmin askeltavina/hysteresisrajattuina kohteina;
+   ne ovat kokeellisesti vahvoja mutta voivat vaihtua audionopeudella liian
+   rajusti ja tarvitsevat oman turvallisuus- ja kuunteluportin.
+
+Ensimmäinen prototyyppi tarkoittaa **kuutta erillistä matriisikohdetta**, yhtä
+jokaista toimintoa ja Cocoa kohti:
+
+- `coco1_organ`, `coco2_organ`: jatkuva VCA/AM-panostus, joka voi avata
+  Organ-äänen myös käsiasetuksen ollessa nollassa;
+- `coco1_slotQ`, `coco2_slotQ`: jatkuva VCA-panostus `qMix`in sisääntuloon;
+- `coco1_record`, `coco2_record`: Schmitt-rajattu hetkellinen **record-punch**.
+  Positiivinen gate avaa kirjoituksen, jos käsin asetettu Hold on kiinni, ja
+  palauttaa releasessa täsmälleen käsin asetetun Hold-tilan. Se ei vaihda
+  `cocoNHold`-parametria eikä ole toinen pysyvä Hold-kytkin.
+
+Ne rakennetaan ja kuunnellaan ensin Inspector/NRT-tasolla ennen kuin
+16×22-sopimusta tai Nightin anatomiaa kasvatetaan. Jos perhe hyväksytään,
+jokainen kuudesta saa oman socketinsa myös Nightiin. Uuden **ekologisen shaken**
+laki olisi kaksiosainen:
+seedattu, tilatietoinen 3–5 johdon kuultava runko ensin, nykyinen satunnainen
+koristelu vasta sen ympärille. Runko valitsee kontrastisen käyttäytymisperheen
+(organ-drone, muistipunch, dust-kasvu, ristiinsyöttö), antaa gate-johdoille
+varman mutta rajatun +0,58…0,8 painon ja jatkuville kohteille oman musikaalisen
+minimi-/maksimialueensa. Kuun vaihe voi edelleen määrätä koristeiden tiheyden.
+Näin sirppikin tekee vähän mutta merkityksellistä, ja täysikuu tekee enemmän
+ilman että onnistuminen riippuu 352 erillisen kolikonheiton onnesta.
+
+## Seuraava päätös
+
+Kaikki PLAY-7:ää edeltävät soittotestit on hyväksytty. Avoin kysymys on enää,
+rakennetaanko yllä kuvattu kuuden socketin `organ + slotQ + record` -prototyyppi
+ja ekologinen shake ennen 1.0:aa vai säilyykö 1.0:n matriisi hardware-pariteetin
+22 kohteessa.
 
 16n:n rinnakkainen käsituntumatesti on tiedostossa
 [`tests/manual_checklist.md`](../tests/manual_checklist.md) kohdassa `16N-1` ja

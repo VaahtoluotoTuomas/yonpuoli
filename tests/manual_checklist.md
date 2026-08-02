@@ -2529,9 +2529,10 @@ seurata telemetriaa; ontto satelliitti näyttää todellisen post-DSP-arvon. Nop
 liike näkyy heilahdusalueena, hidas liikkeenä. Sirpin yli menevä efektiivinen
 arvo päättyy lyhyeen reunakorkkiin. `patchDepth = 0` poistaa kaikki satelliitit.
 
-- [ ] PLAY-2C hyväksytty (pvm: ______ — asetus/live-erottelu on ensi silmäyksellä
-      selvä; infra liikkuu, audio-rate tiivistyy vakaaksi kaareksi; ei välky,
-      valehtele eikä peitä asteikon maamerkkejä)
+- [x] PLAY-2C hyväksytty (2026-08-02 — käyttäjä hyväksyi kaikki PLAY-7:ää
+      edeltävät soittotestit: asetus/live-erottelu on selvä; infra liikkuu,
+      audio-rate tiivistyy vakaaksi kaareksi eikä välky, valehtele tai peitä
+      asteikon maamerkkejä)
 
 ### PLAY-6 — jatkuva drone-anatomia Nightissä
 
@@ -2559,9 +2560,10 @@ CQ.set(\c1Send, 0);
 5. Avaa Workshop. Level-, Organ-, SlotQ-, SlotX- ja `c1Send…c5Send`-rivejä ei saa
    olla siellä kaksoiskappaleina; muut setup-rivit ja täsmäarvot säilyvät.
 
-- [ ] PLAY-6 hyväksytty (pvm: ______ — kaikki viisi anatomiatyyppiä löytyvät,
-      suunnat ovat selvät, tap/send ei lipsu ja dronea voi rakentaa yhtenä
-      jatkuvana Night-tilana)
+- [x] PLAY-6 hyväksytty (2026-08-02 — käyttäjä hyväksyi kaikki PLAY-7:ää
+      edeltävät soittotestit: kaikki viisi anatomiatyyppiä löytyvät, suunnat
+      ovat selvät, tap/send ei lipsu ja dronea voi rakentaa yhtenä jatkuvana
+      Night-tilana)
 
 ### PLAY-6.1 — sisävirtojen reitti, Level-suunta ja alusmuste
 
@@ -2612,6 +2614,7 @@ CQ.set(\coco1Organ, 0); CQ.set(\coco2Organ, 0);
 Väriä saa hyväksynnän jälkeen säätää vain undertow’n kromalla tai alfan määrällä,
 ei lisäämällä toista uutta sävyä.
 
-Seuraava boot-oletuksen kuuntelupäätös tehdään PLAY-2C-palautteen rinnalla. Oppaan
-`Soittotesti 7` vertaa yhden muuttujan kandidaatteina `Spaf`-boot-oletusta
-0,12 ja shaken painoa 0,65; kumpaakaan ei ole vielä tehty tuotanto-oletukseksi.
+Kaikki PLAY-7:ää edeltävät soittotestit hyväksyttiin 2026-08-02. Oppaan
+`Soittotesti 7` hylkäsi molemmat yhden muuttujan kandidaatit (`Spaf=0,12` ja
+shaken paino 0,65); kumpaakaan ei tehty tuotanto-oletukseksi. Seuraava päätös
+on erillinen kuuden kohteen `organ + slotQ + record` -prototyyppi.

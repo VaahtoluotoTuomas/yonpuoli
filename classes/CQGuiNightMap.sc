@@ -969,7 +969,7 @@ CQGuiNightMap {
 	// ---- private ----
 
 	prBuild {
-		var night = CQInk.palette(\night), crescentControls;
+		var night = CQInk.palette(\night), bananaControls;
 		endpoints = IdentityDictionary.new;
 		crescentViews = IdentityDictionary.new;
 		crescentNorms = IdentityDictionary.new;
@@ -1109,12 +1109,24 @@ CQGuiNightMap {
 		};
 		touch = CQGuiNightTouch(this, state, overlay);
 		this.prBindTouch;
-		crescentControls = List.new;
+		bananaControls = List.new;
 		// These are controls for gesture binding, but their own touch grammar is
 		// cable-first. Let the shared controller publish
 		// the cable hover after the crescent/oyster cue has yielded.
 		crescentViews.values.do { |view|
-			crescentControls.add((view: view, cableHover: true))
+			bananaControls.add((view: view, cableHover: true))
+		};
+		// Q and X terminate in small, explicit gills.  Those two exact hit
+		// circles are controls even when an arbitrary planted cable crosses them;
+		// the rest of each large shell view keeps the ordinary cable-first law.
+		shellViews.do { |view, i|
+			bananaControls.add((
+				view: view,
+				cableHover: true,
+				cablePriority: { |v, x, y|
+					this.prShellBridgeTargetAt(i, v, x, y).notNil
+				}
+			))
 		};
 		// The night bodies own their own first gesture pass (§6.1), so they
 		// register members only — no view for the controller to re-bind, or it
@@ -1124,7 +1136,7 @@ CQGuiNightMap {
 			bodies[name] = (name: name, members: this.class.bodyEndpointNames(name))
 		};
 		controller = CQGuiBananaController(gui.bananaGrammar, endpoints,
-			bodies, overlay, crescentControls);
+			bodies, overlay, bananaControls);
 		controller.bindGround(container);
 		touch.controller = controller;
 		this.prBindTideGround;
@@ -1456,19 +1468,34 @@ CQGuiNightMap {
 	// the press toggled the loop. Deriving all four cues from one answer also
 	// makes them mutually exclusive by construction rather than by three
 	// hand-written `.not`s.
+	prShellBridgeTargetAt { |i, view, x, y|
+		var point, target;
+		if(geometry.isNil or: { view.isNil }) { ^nil };
+		point = this.prStagePoint(view, x, y);
+		target = CQNightGeometry.shellFlowTargetAt(geometry[\cocos][i], point);
+		^if(#[slotQ, slotX].includes(target)) { target } { nil }
+	}
+
 	prHoverShell { |i, view, x, y|
 		var target, flowTarget, flowName, previousFlow, flowChanged;
-		var heart, near, mark, rim, chevron, point;
+		var bridgeTarget, heart, near, mark, rim, chevron, point;
 		previousFlow = this.class.shellFlowNames(i)
 			.detect { |name| flowHover.includes(name) };
 		if(geometry.notNil and: { view.notNil }) {
 			point = this.prStagePoint(view, x, y);
-			// §4.5 cable-first: a cable inside its own hit path owns the pointer
-			if(overlay.patchAt(point).isNil) {
+			bridgeTarget = this.prShellBridgeTargetAt(i, view, x, y);
+			// Q/X gills are the narrow exception requested for the two internal
+			// bridges. Everywhere else a cable inside its hit path still wins.
+			if(bridgeTarget.notNil) {
+				flowTarget = bridgeTarget;
+				gui.bananaGrammar.hoverCable = nil;
+			} {
+				if(overlay.patchAt(point).isNil) {
 				flowTarget = CQNightGeometry.shellFlowTargetAt(
 					geometry[\cocos][i], point);
 				if(flowTarget.isNil) {
 					target = CQNightGeometry.shellTargetAt(geometry[\cocos][i], point)
+				};
 				};
 			};
 		};

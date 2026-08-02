@@ -393,8 +393,11 @@ All writes go through the normal funnels; parameter gestures have no undo
 explicitly named exception, on every press the cable layer is consulted first:
 a cable inside its narrow hit target is grabbed, never wound or tapped through
 (§4.5 — the overlay may never advertise an action the next gesture will not
-receive). The one approved future exception is the tide-focus gill recorded
-below; it does not silently grant priority to any other control.
+receive). The named exceptions are the tide-focus gill recorded below and,
+since the 2026-08-02 dense-patch review, the exact four SlotQ/SlotX bridge-end
+gills. Their hover and ordinary left press win a crossing cable only inside
+their own hit circles; surrounding shell flesh remains cable-first. Right-click
+and Alt retain the banana rip/polarity grammar.
 
 | touch | gesture | writes |
 |---|---|---|
@@ -407,8 +410,8 @@ below; it does not silently grant priority to any other control.
 | **dolby oysters** | beneath each in/fb tide crescent, tap the captionless paired arcs: open = off, nearly shut = gate, shut with a partner-facing arrival stroke = duck. Oyster hover and crescent hover are exclusive; a drag may begin only on the crescent's original square | `cocoN dolbyIn / dolbyFb`: `off → gate → duck → off` (CQSpec enum order) |
 | **Level shoreline** | vertical drag on the shell's outer open shore. Its fill and pearl state the stored channel level; the CQSpec-owned 1.0 unity notch separates normal water from a danger-red boost reach. The spiral only breathes in opacity with Level and remains visible at zero | `cocoNLevel`, independent 0…1.5 exponential channel mix |
 | **Organ calyx** | vertical drag on the yellow flesh around the `orgN` seed. The calyx fill states the audible organ layer, while the central yellow jack never changes size or patchability — `Organ = 0` mutes the layer but never pretends the modulation source disappeared | `cocoNOrgan`, 0…1 |
-| **Quantussy tributary gill** | vertical drag on the short gill where the ring's faint amber side-river arrives at a shell. Zero leaves topology barely visible; pressure and pearl state the gain. The two shell gills are independent even though the default 16n performance fader links them | `cocoNSlotQ`, 0…1.5 gain from `qMix` into that Coco |
-| **two-lane cross-feed bridge** | vertical drag on either shell's own bridge valve. Arrowheads make the two simultaneous directions explicit and each lane keeps its own gain: the valve at Coco 1 receives Coco 2; the valve at Coco 2 receives Coco 1. It is never linked to SlotQ or to the opposite lane | `coco1SlotX`: Coco 2 → Coco 1; `coco2SlotX`: Coco 1 → Coco 2, each 0…1.5 |
+| **Quantussy tributary gill** | vertical drag on the short gill where the ring's faint amber side-river arrives at a shell. Zero leaves topology barely visible; pressure and pearl state the gain. The two shell gills are independent even though the default 16n performance fader links them. Inside the exact gill circle, hover and ordinary left press win a crossing cable; the rest of the shell does not | `cocoNSlotQ`, 0…1.5 gain from `qMix` into that Coco |
+| **two-lane cross-feed bridge** | vertical drag on either shell's own bridge valve. Arrowheads make the two simultaneous directions explicit and each lane keeps its own gain: the valve at Coco 1 receives Coco 2; the valve at Coco 2 receives Coco 1. It is never linked to SlotQ or to the opposite lane. Its exact valve circle has the same narrow hover/left-press priority through a cable | `coco1SlotX`: Coco 2 → Coco 1; `coco2SlotX`: Coco 1 → Coco 2, each 0…1.5 |
 | **the ring's eye** | the storm iris at the ring's center (§16.6); grab and drag — vertical = pitch, horizontal = chaos, and the iris itself answers on both axes. The weather of five castles from one fingertip | `qFreq` (y) + `qChaos` (x), relative |
 | **castle tap / tributary pull** | press anywhere inside the castle's complete visible seeded blob, exact centre and rim flesh included (§16.6). Release within the shared 8 px tap boundary performs one spesal step (same act as keys 3…7). Travel beyond it becomes only a radial send gesture: pull inward to open and outward to close. The step is deliberately deferred until release, so beginning a drone ride can never perform a transient internal rewire. The central dial remains the mechanism/state display and hover reveals which castle it reads as an inner chord | tap: `spesal(k)`; radial drag: `cKSend`, 0…1 |
 | **range ripple** | tap the drawn rate at a castle's 6 o'clock: one slow swell → one full cycle → five tight half-waves → one slow swell. The form is the whole regime display; no legacy `i/b/a` caption remains. Cable-first remains absolute, and ripple/clock hover cues are exclusive | `cNRange`: `infra → balcium → audio → infra` (CQSpec enum order) |
@@ -499,12 +502,16 @@ aura and charge lamps make that visible instead of mysterious.
   spans dim to background alpha and stop hit-testing, while bodies, jacks,
   sockets and seated plugs keep priority. The four seeds breathe and the
   gill opens in blue, so the mode is visible without a label.
-- **Gill priority (implemented 2026-07-28):** the persistent entrance to the
+- **Named gill priority (implemented 2026-07-28, extended 2026-08-02):** the persistent entrance to the
   whole-stage playing mode is consulted **before** a cable span in both hover
   and press. Its exact hit shape clears cable hover, and the gill itself is
   echoed on the topmost hit-transparent gesture layer, so a crossing cable
-  cannot erase the cue. This remains a narrow exception for the Tab-equivalent
-  gill only; the general cable-first law is intact everywhere else.
+  cannot erase the cue. The four exact SlotQ/SlotX bridge-end gills now use the
+  same hover/plain-left priority because dense banana fields otherwise make
+  those small bridge valves unreachable; they do not need a top-layer echo
+  because their route ink already lives above the shell flesh. Right-click and
+  Alt remain cable operations, and the general cable-first law is intact
+  outside these five named hit shapes.
 - **Focused right-drag**: **elastic** — the same pour, but release snaps back to
   the pre-gesture matrix (short glide, ~3 frames; no undo entry, no
   spellbook entry — transient all the way). The whole matrix becomes a
@@ -548,11 +555,18 @@ aura and charge lamps make that visible instead of mysterious.
   in the code layer: `CQ.shake(amt, seed:)`).
 - Shake is the lightning; these are the rain and the drought.
 
-**Deferred musical-design pass — ecological shake.** The current shake still
-chooses matrix cells uniformly. A later, separately reviewed pass may generate
-“sweet spot” patches from weighted source/destination affinities, guaranteed
-audible paths and bounded feedback/gate populations. It changes the musical
-grammar, not this moon layout, and was explicitly deferred on 2026-07-27.
+**Separate musical-design pass — ecological shake.** The current shake still
+chooses matrix cells uniformly. A separately reviewed pass may generate “sweet
+spot” patches from weighted source/destination affinities, guaranteed audible
+paths and bounded feedback/gate populations. It changes the musical grammar,
+not this moon layout. This was deferred on 2026-07-27, then explicitly reopened
+by PLAY-7's 2026-08-02 result as a pre-1.0 decision; no production behavior has
+changed yet. The first proposed listening prototype is six independent
+destinations: per Coco one continuous Organ VCA contribution, one continuous
+SlotQ VCA contribution and one Schmitt-gated momentary record punch. Record
+temporarily opens a held buffer and returns to the unchanged manual Hold state;
+it is not a second Hold toggle. They stay Inspector/NRT-only until accepted;
+acceptance would give all six their own Night sockets.
 
 ### 7.3 Breed
 
@@ -1018,8 +1032,12 @@ config sub-event owns only `compassDir`, not these performance constants.
   60 competing AppClock ticks ran, i.e. PANIC was unreachable (safety
   invariant #3). A paint that finds a usable image of the right size now blits
   it and schedules the render; one frame of slightly old cable ink is
-  invisible mid-glide, and the trailing render still puts the final state on
-  paper. The direct draw survives only where nothing else is possible: no
+  invisible mid-glide. **The trailing render must request its own refresh after
+  it has produced a new image.** Without that presentation step, moving hover
+  from cable A to B displayed A's stale focus, rendered B only offscreen and
+  left B waiting for unrelated Qt damage — the apparent hit point could lag by
+  centimetres in a dense patch even though the Bézier hit geometry was exact.
+  The direct draw survives only where nothing else is possible: no
   image yet, a different extent, or a platform with no Image API.
 - **A stream is paced by the cost of its own work, not by a fixed rate**
   (same finding). §10's 15 Hz ambient ceiling assumes the drawing fits inside

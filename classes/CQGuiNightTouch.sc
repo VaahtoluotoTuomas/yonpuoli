@@ -354,11 +354,23 @@ CQGuiNightTouch {
 
 	shellDown { |index, view, x, y, modifiers = 0, button = 0, clicks = 1|
 		var point = this.prPoint(view, x, y), geo = map.geometry, coco, n, target;
-		var flowTarget, flowName;
+		var flowTarget, flowName, bridgeTarget;
 		var body = ("coco" ++ (index + 1)).asSymbol;
 		if(geo.isNil) { ^this };
 		coco = geo[\cocos][index];
 		n = index + 1;
+		flowTarget = CQNightGeometry.shellFlowTargetAt(coco, point);
+		bridgeTarget = #[slotQ, slotX].includes(flowTarget);
+		// Q/X gills are the deliberate bridge exception: their exact 17 px hit
+		// circles win a plain left press through a crossing cable. Alt and other
+		// buttons retain the learned banana polarity/rip grammar.
+		if(bridgeTarget and: { button == 0 } and: { modifiers.isAlt.not }) {
+			flowName = CQGuiNightMap.shellFlowParam(index, flowTarget);
+			shellFlowDrag = (index: index, target: flowTarget, name: flowName,
+				startY: point.y, start: this.prNorm(flowName));
+			map.setFlowActive(flowName, true);
+			^this
+		};
 		// §4.5 controls first, at every click count: a cable inside its hit
 		// target is grabbed (and a right press on it rips), and Alt is the
 		// ground grammar's polarity flip. This precedes the punch on purpose —
@@ -367,10 +379,8 @@ CQGuiNightTouch {
 		if(modifiers.isAlt or: { overlay.patchAt(point).notNil }) {
 			^this.forwardDown(view, x, y, modifiers, button, clicks, body)
 		};
-		// Performance flesh has the same cue/action answer. Its compact gills,
-		// shoreline and organ pod win before the older shell targets, but never
-		// before a cable or Alt polarity gesture.
-		flowTarget = CQNightGeometry.shellFlowTargetAt(coco, point);
+		// Performance flesh has the same cue/action answer. Its shoreline and
+		// organ pod still yield to a cable; the Q/X exception was claimed above.
 		if(flowTarget.notNil) {
 			flowName = CQGuiNightMap.shellFlowParam(index, flowTarget);
 			if(button != 0) {

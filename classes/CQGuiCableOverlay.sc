@@ -415,9 +415,10 @@ CQGuiCableOverlay {
 	// planted ink via the offscreen image. The render itself NEVER happens in
 	// here — a drawFunc runs inside Qt's paint event, where opening the image's
 	// painter would nest painters on QtCollider's one global Pen and deadlock
-	// the GUI thread (found the hard way, 2026-07-22). A stale image falls back
-	// to the direct drawing — pixel-identical, today's price — and a render is
-	// scheduled off the paint event so the NEXT damage repaint is a blit.
+	// the GUI thread (found the hard way, 2026-07-22). A usable stale image is
+	// blitted for responsiveness; only an absent/wrong-sized image falls back to
+	// direct pixel-identical drawing. The replacement render is scheduled off the
+	// paint event and, once ready, requests the fresh blit itself.
 	prBlitPlanted {
 		if(cacheOk.not) { ^this.prDrawPlanted };
 		if(this.prImageFresh) { ^image.drawAtPoint(Point(0, 0)) };
@@ -471,14 +472,24 @@ CQGuiCableOverlay {
 		^this
 	}
 
-	// after a fallback direct draw the screen is already right, so the deferred
-	// render refreshes nothing — it only readies the blit for the next damage
+	// A stale blit is allowed for the one paint that discovered it, but the
+	// replacement image must then be presented immediately.  Without the final
+	// refresh below, hover was one selection behind: moving from cable A to B
+	// painted A's cached focus, rendered B offscreen, and then left B waiting for
+	// unrelated Qt damage.  Dense patches made that delay especially obvious as
+	// a cable lighting centimetres away from the pointer.
 	prScheduleRender {
 		if(renderScheduled or: { cacheOk.not }) { ^this };
 		renderScheduled = true;
 		AppClock.sched(0, {
+			var rendered = false;
 			renderScheduled = false;
-			if(view.isClosed.not) { this.prEnsureImage };
+			if(view.isClosed.not) {
+				var before = renderCount;
+				this.prEnsureImage;
+				rendered = renderCount > before;
+				if(rendered) { view.refresh };
+			};
 			nil
 		});
 		^this
