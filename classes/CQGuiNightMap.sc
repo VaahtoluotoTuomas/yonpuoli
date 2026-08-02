@@ -2124,11 +2124,13 @@ CQGuiNightMap {
 		coco = geometry[\cocos][i];
 		levelName = this.class.shellFlowParam(i, \level);
 		organName = this.class.shellFlowParam(i, \organ);
+		// Level's amount is still here, because the spiral's own stroke alpha
+		// breathes with it. Its unity, hand and hover are not: since PLAY-6.1
+		// the shoreline itself is drawn on routeView, which reads those three
+		// straight from the same fields. Passing a second copy no view reads
+		// would only invite the two to disagree.
 		performance = (
 			level: flowNorms[levelName] ? 0,
-			levelUnity: CQSpec.referenceNorm(levelName, \unity) ? 1,
-			levelActive: flowActive.includes(levelName),
-			levelHover: flowHover.includes(levelName),
 			organ: flowNorms[organName] ? 0,
 			organActive: flowActive.includes(organName),
 			organHover: flowHover.includes(organName)
