@@ -717,7 +717,10 @@ CQNightGeometry {
 	// What each stream must clear is what is actually DRAWN. The transparent
 	// castle papers are explicitly not bodies here — the river itself already
 	// runs straight through them — so the q stream clears the jacks' own ink,
-	// while the x lanes clear the name plates, which do hold text.
+	// while the x lanes clear the name plates, which do hold text. "The jack's
+	// own ink" means the whole family mark, dot AND decoration: the first pass
+	// measured the dot alone, passed at 14.8 px from a jack centre, and drew
+	// the stream straight through that jack's leaf.
 	*prDroneRoutes { |cocos, ringSegments, castles, birds, endpoints, scale|
 		var leftGap = this.cubicPoint(ringSegments[4], 0.5);
 		var rightGap = this.cubicPoint(ringSegments[0], 0.5);
@@ -745,7 +748,7 @@ CQNightGeometry {
 			{ |lift|
 				2.collect { |i|
 					this.prPathDotClearance(qPath.value(i, lift), qNear[i],
-						CQNightMeasures.jackDotRim)
+						CQNightMeasures.endpointInkReach)
 				}.minItem
 			});
 		// The crown is measured from the topmost box castle 1 itself owns, not

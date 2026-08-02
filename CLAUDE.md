@@ -539,8 +539,35 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
      to the arch's lowest ink, the outbound lane.
   The birds' 6 px **drop pad** still cannot be cleared at the minimum stage
   (1.0 px) without either splitting castle 1 or turning the arch gothic; it is
-  drawn only during a file drag. Solving costs ~24 ms per layout at the minimum
-  stage (11 ms when no give-way is needed).
+  drawn only during a file drag. Solving costs ~21 ms per layout at the minimum
+  stage (6 ms when no give-way is needed).
+  **The first visual review (2026-08-02) found five things, all fixed:**
+  1. **Every `StackLayout` sibling above the container needs its own repaint
+     after a layout.** `routeView`, `tideGestureView` and the cable overlay are
+     siblings, so Qt resizes and repaints them independently of the container
+     whose `onResize` recomputes the geometry — `prLayout` refreshed only the
+     container and the gesture layer. One bug, two faces: the drone streams
+     were invisible until first hovered after boot, and every line (including
+     old patch cables) stood in its old place for seconds after a maximize.
+     All three are repainted in `prLayout` now, and `CQGuiCableOverlay.relayout`
+     drops the caches keyed on stage extent and endpoint positions. The night
+     smoke compares the route layer's last painted stage size against the
+     current one; with the fix removed it reports `painted nil`.
+  2. **A jack's ink is its whole family mark, not its dot.** Measuring only
+     `jackDotRim` passed the right q stream 14.8 px from castle 2's `tri`
+     centre while running through that jack's *leaf* (reach 15 px, measured
+     −0.2 px — touching), which made the output read as joined to the stream.
+     Clearance now uses `endpointInkReach`, and both q valves were raised
+     together 28° → 40°; that also let the q bow relax 28 → 14 px.
+  3. **Hover answers on the whole control, not on its empty reach.** Level's
+     shoreline brightened only the track, so a hand below the pearl lit the
+     water above it. Fixed on Level and on the Organ calyx (same defect).
+     Brightness is hover; weight stays press.
+  4. **A separator nobody can find separates nothing.** The undertow's
+     hand-off values (2 px, α 0.14) were invisible; it is `state` width at
+     α 0.30 / 0.58 now.
+  5. Known and left for the user's judgement: the undertow tints the Organ
+     calyx's dim resting arcs olive. Removing it there is one line.
 - **The 16n map is now two identical Coco channel strips plus a shared section**
   (SPEC §6.1, normative): F1–F5 `coco1` In·Speed·Spaf·Fb·**Level**, F6–F10
   `coco2` the same, F11–F16 `qFreq`·`qChaos`·`preADrive+preBDrive`·

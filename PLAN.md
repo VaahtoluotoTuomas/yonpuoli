@@ -2049,7 +2049,48 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
         muutenkaan ole tässä keho — joki itse kulkee sen läpi. Clearance
         annetaan sillan **alimmalle** musteelle (uloin kaista), ei keskiviivalle.
 
-     **Mitattu lopputulos** (min-lava / roomy): `tri2` 14,8 / 14,15 px,
+     **Ensimmäisen katselmuksen viisi löydöstä, kaikki korjattu 2026-08-02.**
+     1. **Uudet Q- ja X-viivat eivät piirtyneet lainkaan bootin jälkeen, vaan
+        vasta hoveroitaessa, ja fullscreeniin siirtyessä kaikki viivat —
+        myös vanhat patch-kaapelit — jäivät sekunneiksi vanhoille
+        paikoilleen.** Yksi vika kahdella kasvolla: `routeView`,
+        `tideGestureView` ja kaapeli-overlay ovat `StackLayout`-sisaruksia,
+        joten Qt kokoaa ja piirtää ne konttarista riippumatta, ja `prLayout`
+        päivitti vain konttarin ja elekerroksen. Nyt kaikki kolme päivitetään
+        layoutissa ja overlay pudottaa lavakokoon ja endpointtien paikkoihin
+        sidotut välimuistinsa (`CQGuiCableOverlay.relayout`). Yösmoke pinnaa
+        tämän: se vertaa kerroksen viimeisen piirron lavakokoa nykyiseen, ja
+        korjaus poistettuna se raportoi `painted nil`.
+     2. **Oikean Q-kaaren päälle osui castle 2:n `tri`-jakin lehti**, jolloin
+        output näytti liittyvän kaareen eikä omaan linnaansa. Syy: väljyys
+        mitattiin vain jakin pisteen (5,8 px) mukaan, vaikka `tri`-lehti
+        yltää 15 px:iin — mitattu osuma oli **−0,2 px**, ja vasemmalla sama
+        vika oli piilevänä 5,4 px:ssä. Väljyys mitataan nyt koko
+        perhemerkkiin (`endpointInkReach`), ja **molempien** Cocojen
+        Q-venttiili nostettiin symmetrisesti 28° → 40° sisäänpäin-akselin
+        yläpuolelle. Nosto myös vapautti kaaren: lift palasi 28 → 14 px:iin.
+     3. **Level-rannan hover korosti vain helmen yläpuolisen vapaan osan.**
+        Nyt koko ranta kirkastuu hoverissa kuten klikatessa; paino jää
+        painalluksen merkiksi. Sama vika oli Organ-calyxissa ja korjattiin
+        samalla — se on sama keho ja sama laki.
+     4. **Alusmuste oli käytännössä näkymätön** (2 px 1,5 px ytimen alla =
+        neljännespikseli reunaa, α 0,14 yön pohjalla ≈ 1,3:1). Nyt `state`-
+        leveys ja α 0,30 / 0,58, eli täysi pikseli pankkia ytimen kummallakin
+        puolella — eniten mitä §16.3:n hierarkia sallii.
+     5. Yksi tietoinen sivuvaikutus jää katselmukseen: Organ-calyxin himmeät
+        lepokaaret saavat alusmusteesta oliivinvihreän sävyn. Täytetty osa ja
+        helmi ovat edelleen puhtaan keltaisia. Jos tämä ei kelpaa, calyxin
+        alusmuste on yhden rivin poisto.
+
+     **Mitattu lopputulos katselmuskorjausten jälkeen** (min-lava / roomy):
+     `tri2` 24,2 px keskipisteestä eli **9,2 px lehden kärjestä**,
+     `cas5` yli 30 px, lintujen nimikilvet 8,0 ja 10,8 / 42,4 ja 45,4 px,
+     castle 1:n omat laatikot 12,4 / 21,1 px, Q-lift 14 / 15 px,
+     Q↔X-venttiiliväli 46,6 / 69,8 px (raja 34 px). Layout maksaa 21,5 ms
+     minimilavalla ja 5,8 ms roomy-koossa.
+
+     **Ensimmäisen toteutuksen mitattu lopputulos** (min-lava / roomy):
+     `tri2` 14,8 / 14,15 px,
      `cas5` 28,9 / 33,7 px, lintujen nimikilvet 8,0 ja 10,8 / 42,4 ja 45,4 px,
      castle 1:n omat laatikot 12,4 / 21,1 px, ei osumia lihaan, range-väreisiin
      eikä silmän kehään, kaikki näytteet lavalla. Lintujen **drop-pad** (6 px

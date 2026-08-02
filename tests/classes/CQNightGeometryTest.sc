@@ -1680,7 +1680,9 @@ CQNightGeometryTest : UnitTest {
 			var geo = CQNightGeometry.compute(size[0], size[1]);
 			var stage = Rect(0, 0, size[0], size[1]);
 			var clear = CQNightMeasures.flowBodyClear;
-			var ink = CQNightMeasures.jackDotRim;
+			// the whole family mark, dot AND decoration: a `tri` jack's leaf
+			// reaches 15 px, which is what the first pass drew a stream through
+			var ink = CQNightMeasures.endpointInkReach;
 			var names = CQMatrix.sourceNames ++ CQMatrix.destNames;
 			this.prStreams(geo).do { |stream|
 				var points = this.prDroneSamples(stream[1]);

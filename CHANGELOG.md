@@ -8,6 +8,21 @@ tagged. Earlier tags describe internal development baselines.
 
 ## Unreleased — Yönpuoli / Nocturne
 
+### Fixed
+
+- Every `StackLayout` sibling above the Night's container is repainted after a
+  layout. `routeView`, the gesture layer and the cable overlay are resized and
+  repainted by Qt independently of the container whose `onResize` recomputes the
+  geometry, so each could paint once before any geometry existed — or once with
+  the previous geometry at the new size — and then wait for a hover. That is one
+  bug with two faces: the drone streams were invisible until first hovered after
+  boot, and every line, patch cables included, stood in its old place for
+  seconds after a maximize.
+
+- A hovered Level shoreline or Organ calyx brightens along its whole length.
+  Only the track responded before, so a hand below the pearl lit the water above
+  it — the one part of the control it was not touching.
+
 ### Changed
 
 - Routed the Night's internal audio streams through the landscape instead of

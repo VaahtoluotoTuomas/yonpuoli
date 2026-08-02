@@ -242,10 +242,16 @@ CQInkNight {
 	// line. Static — no gradient, no blur, no pulse: it is patina, not
 	// activity. The Level shore does not get it; that is output mix leaving the
 	// instrument, not an internal stream inside it.
+	// The hand-off's starting values (2 px at a 0.14, 3 px at 0.34) were
+	// measured invisible in the user's review: a 2 px stroke under a 1.5 px
+	// core shows a quarter-pixel of fringe, and 0.14 of a low-chroma ink on the
+	// night ground is barely 1.3:1. The width is the frozen `state` stroke at
+	// both rests — 1 px of visible bank on each side of the core, which is the
+	// most §16.3's hierarchy allows — and the alpha carries the difference.
 	*prUndertowInk { |palette, live = false|
 		Pen.strokeColor = palette[\undertow].copy
-			.alpha_(if(live) { 0.34 } { 0.14 });
-		Pen.width = CQInk.strokes[if(live) { \state } { \strong }];
+			.alpha_(if(live) { 0.58 } { 0.30 });
+		Pen.width = CQInk.strokes[\state];
 	}
 
 	*drawFlowPath { |path, norm = 0, family = \line, active = false,
@@ -505,15 +511,21 @@ CQInkNight {
 		Pen.width = CQInk.strokes[\hairline];
 		Pen.addArc(coco[\center], radius, start, sweep);
 		Pen.stroke;
+		// Hover answers on the WHOLE shoreline, not only on the empty reach past
+		// the pearl. Brightening the track alone made a hand below the pearl
+		// light the water above it — the one part of the control it was not
+		// touching. Brightness is the hover; weight stays the press, so the two
+		// remain distinguishable.
 		if(normalEnd > 0.001) {
 			Pen.strokeColor = palette[\line].copy
-				.alpha_(if(active) { 1.0 } { 0.86 });
+				.alpha_(if(active or: { hover }) { 1.0 } { 0.86 });
 			Pen.width = CQInk.strokes[if(active) { \strong } { \normal }];
 			Pen.addArc(coco[\center], radius, start, sweep * normalEnd);
 			Pen.stroke;
 		};
 		if(value > split) {
-			Pen.strokeColor = palette[\danger].copy.alpha_(if(active) { 1.0 } { 0.9 });
+			Pen.strokeColor = palette[\danger].copy
+				.alpha_(if(active or: { hover }) { 1.0 } { 0.9 });
 			Pen.width = CQInk.strokes[if(active) { \strong } { \normal }];
 			Pen.addArc(coco[\center], radius, start + (sweep * split),
 				sweep * (value - split));
@@ -551,8 +563,11 @@ CQInkNight {
 		Pen.addArc(center, radius, start, sweep);
 		Pen.addArc(center, radius - 5, start + 0.20, sweep - 0.40);
 		Pen.stroke;
+		// same law as the Level shore: hover lights the whole calyx, including
+		// the part already filled, because that is the part the hand is on
 		if(value > 0.001) {
-			Pen.strokeColor = palette[\organ].copy.alpha_(if(active) { 1.0 } { 0.86 });
+			Pen.strokeColor = palette[\organ].copy
+				.alpha_(if(active or: { hover }) { 1.0 } { 0.86 });
 			Pen.width = CQInk.strokes[if(active) { \strong } { \normal }];
 			Pen.addArc(center, radius, start, sweep * value);
 			Pen.stroke;

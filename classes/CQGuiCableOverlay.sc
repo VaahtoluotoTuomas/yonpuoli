@@ -134,6 +134,23 @@ CQGuiCableOverlay {
 	// whose fan-out spreads the plugs. Callers only read records (see prCaught).
 	invalidate { recordCache = nil; imageDirty = true; ^this }
 
+	// The stage changed size, or the landscape moved under us. Unlike a patch
+	// change, nothing else will notice: this view is a StackLayout sibling, so
+	// Qt resizes and repaints it independently of the container whose onResize
+	// recomputes the geometry — which is how every cable came to stand in its
+	// old place for seconds after a maximize. Repaint immediately (that frame
+	// falls back to direct ink, which is correct if slower), then let the paced
+	// path rebuild the offscreen cache off the paint event. Under weather the
+	// stored signature has to go too: a resize is a change even when the
+	// planted set is not.
+	relayout {
+		this.invalidate;
+		stormSig = nil;
+		if(view.notNil and: { view.isClosed.not }) { view.refresh };
+		this.prRefresh;
+		^this
+	}
+
 	// Matrix notifications carry no rate limit: a snapshot morph writes every changed
 	// cell 30 times a second, i.e. twice the §10 ambient ceiling, and each of those
 	// asked for a full re-stroke of the cable layer. Plant, rip and harvest are single

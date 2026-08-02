@@ -77,7 +77,14 @@ CQNightMeasures {
 	*levelShoreOutset { ^10 }               // body — outside the hold/seal rim
 	*levelShoreSweep { ^0.86pi }            // body angle — exterior half, with breath
 	*flowValveOutset { ^8 }                 // body — just outside the shell rim
-	*slotQValveAngle { ^28 }                // degrees above the inward axis
+	// Raised 28 -> 40 in the PLAY-6.1 review. At 28 the right q stream ran
+	// through castle 2's tri leaf (measured -0.2 px, i.e. touching), so that
+	// output looked joined to the stream instead of to its own castle; the left
+	// side had the same fault latent at 5.4 px from cas 5's crown. Both valves
+	// moved together, because two shells are one organ drawn twice. The raise
+	// also lets the q bow relax back to its nominal lift: the chord no longer
+	// has to arc over a jack it used to run straight through.
+	*slotQValveAngle { ^40 }                // degrees above the inward axis
 	*slotXValveAngle { ^62 }                // degrees above the inward axis
 	*levelShoreHit { ^10 }                  // px — distance from drawn shoreline
 	*flowValveHit { ^17 }                   // px — q/x gill hand
@@ -126,6 +133,11 @@ CQNightMeasures {
 	*flowBodyClear { ^8 }                   // px — a stream's breath past ink
 	*flowGiveWayStep { ^2 }                 // px — how finely it gives ground
 	*flowGiveWayMax { ^160 }                // px — cap: a cramped stage still draws
+	// How far an endpoint's OWN ink actually reaches from its centre. The dot's
+	// rim is not the answer: a `tri` jack wears a leaf out to (12, -9) = 15 px,
+	// a `cas` jack a crown, `org` a stem. Measuring the dot alone is what let a
+	// stream pass 14.8 px from a jack centre and still touch its leaf.
+	*endpointInkReach { ^15 }               // px
 
 	// ---- the eye ----
 	// The two-knob macro of the whole instrument: qFreq and qChaos live nowhere

@@ -1280,8 +1280,13 @@ Laws:
 - **The internal audio topology is separated by depth, not by a sixth family**
   (PLAY-6.1). The drone streams — the Quantussy tributaries, the two cross-feed
   lanes, the castle sends and the Organ calyx — carry one low-chroma `undertow`
-  stroke that follows their exact path underneath the family core: 2 px at
-  α 0.14 at rest, 3 px at α 0.34 under hand. It is static ink — no gradient,
+  stroke that follows their exact path underneath the family core, at the frozen
+  `state` width and α 0.30 at rest / α 0.58 under hand — one full pixel of bank
+  on each side of the core, the widest §16.3's hierarchy allows. (The first
+  values tried, 2 px at α 0.14, were measured invisible in review: a 2 px stroke
+  under a 1.5 px core shows a quarter pixel, and α 0.14 of a low-chroma ink on
+  the night ground is barely 1.3:1. **A separator nobody can find separates
+  nothing.**) It is static ink — no gradient,
   no blur, no pulse — so in greyscale it reads as the water under a line rather
   than as a second line, and yellow still means the organ's own source, amber
   the triangle audio and neutral `cas` the cross-feed. The Level shoreline never
@@ -1652,6 +1657,32 @@ gives ground until `flowBodyClear` of paper stands between its ink and theirs.
 This is the same law the preamp label learned in N7. What a stream must clear is
 what is **drawn**: the transparent castle papers are deliberately not bodies here,
 since the river itself already runs straight through them.
+
+**A jack's ink is its whole family mark, not its dot.** The first pass measured
+only `jackDotRim` and so passed 14.8 px from castle 2's `tri` centre while
+running straight through that jack's *leaf*, which reaches 15 px — and a stream
+touching an output reads as joined to it. Clearance is measured to
+`endpointInkReach`, the reach of dot plus decoration. The review also raised both
+q valves 28° → 40° above the inward axis, together, because two shells are one
+organ drawn twice and an asymmetric pair would read as a mistake; the raise buys
+the corridor back and lets the q bow relax to its nominal lift.
+
+**Every sibling above the container needs its own repaint after a layout.** The
+route layer, the gesture layer and the cable overlay are `StackLayout` siblings,
+so Qt resizes and repaints them independently of the container whose `onResize`
+recomputes the geometry. A sibling can therefore paint once before any geometry
+exists, or once with the previous geometry at the new size, and then never again
+until a hover happens to touch it — which is exactly how the drone streams came
+to be invisible until first hovered after boot, and how every cable stood in its
+old place for seconds after a maximize. `prLayout` owns that repaint, and the
+overlay additionally drops the caches it keys on the stage extent and on where
+the endpoints were.
+
+**Hover answers on the whole control, not on its empty reach.** A filled arc —
+Level's shoreline, the Organ calyx — must brighten under the hand together with
+its track. Brightening only the track made a hand *below* the pearl light the
+water *above* it, the one part of the control it was not touching. Brightness is
+the hover; weight stays the press.
 
 **Roots (inputs; accepted 2026-07-28, checklist N7).** Each side is the whole
 intake body, not an envelope on a stick:

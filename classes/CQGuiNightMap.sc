@@ -18,8 +18,12 @@ CQGuiNightMap {
 	var <groundView, <rootViews, <ringView, <eyeView, <castleViews, <shellViews;
 	var <readHeadViews, <birdViews, <shellPaintCounts, <readHeadPaintCounts;
 	// Level's shore moved onto this layer in PLAY-6.1, so the smoke has to be
-	// able to prove that an outside CQState write still repaints it.
-	var <routePaintCount = 0;
+	// able to prove that an outside CQState write still repaints it — and the
+	// stage size of its LAST paint, so a stale layer can be told from a fresh
+	// one. Qt resizes this sibling independently of the container, so without
+	// the repaint prLayout now forces, the streams could sit at the previous
+	// geometry indefinitely.
+	var <routePaintCount = 0, <routePaintSize;
 	var <birdHover, <birdFlash, birdFlashGeneration, fileDialog, deckAction;
 	var <almanacView, <moonHover = false, <moonFlash = false;
 	// The tide is the full ground itself: four seeds, no pool body or outline.
@@ -1768,10 +1772,18 @@ CQGuiNightMap {
 		labels.do { |label, i| label.bounds = geometry[\birds][i][\labelRect] };
 		gui.refreshDeckLabels;   // the boxes just changed: re-fit the names
 		container.refresh;
-		// The top sibling may have painted once before geometry existed. Repaint
-		// it after every successful layout so the resting gill is visible on open,
-		// without waiting for the first hover or tide gesture.
+		// THREE siblings live above the container in the StackLayout, and Qt
+		// resizes and repaints them independently of it — so each of them can
+		// paint once before this geometry exists, or once with the previous
+		// geometry at the new size, and then never again until a hover happens
+		// to touch it. That is one bug with two faces: the drone streams were
+		// invisible until first hovered after boot, and every line stood in its
+		// old place for seconds after a maximize. Repaint all three here, and
+		// let the cable overlay drop the caches it keys on the stage extent and
+		// on where the endpoints were.
+		routeView.refresh;
 		tideGestureView.refresh;
+		overlay.relayout;
 	}
 
 	prPlaceCrescent { |name, center|
@@ -1948,7 +1960,8 @@ CQGuiNightMap {
 
 	prDrawRoutes {
 		routePaintCount = routePaintCount + 1;
-		if(geometry.isNil) { ^this };
+		if(geometry.isNil) { routePaintSize = nil; ^this };
+		routePaintSize = Point(geometry[\width], geometry[\height]);
 		// Level's shore is drawn here rather than on its shell, for one reason:
 		// it runs along the exterior, where the in/fb crescents' deliberately
 		// opaque ground views used to cut it into pieces. This layer is above

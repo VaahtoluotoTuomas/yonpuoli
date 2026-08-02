@@ -744,6 +744,20 @@ punchChecks = { |map|
 					"night owns a hit-transparent phosphor cable overlay");
 				check.value(map.routeView.acceptsMouse.not,
 					"route provenance owns one hit-transparent topological overlay");
+				// The route layer is a StackLayout sibling, so Qt paints it
+				// independently of the container whose onResize computes the
+				// geometry: it can paint once before any geometry exists and
+				// then never again until a hover happens to touch it. That is
+				// what left the drone streams invisible until first hovered
+				// after boot, and every line standing in its old place for
+				// seconds after a maximize. The layout owns the repaint now, so
+				// the size the layer last painted at must be the current one.
+				check.value(map.routePaintSize.notNil
+					and: { map.routePaintSize
+						== Point(map.geometry[\width], map.geometry[\height]) },
+					"the layout repaints the route layer at the geometry it just "
+					"laid out (painted %, laid out %)".format(map.routePaintSize,
+						Point(map.geometry[\width], map.geometry[\height])));
 				check.value(#[envA, envB].every { |name|
 					map.endpoints[name][\view].background.alpha == 0
 				}, "env output dots keep transparent paper over the exact curved branch");
