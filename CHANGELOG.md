@@ -10,6 +10,13 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Changed
 
+- Promoted the complete continuous drone vocabulary into the Night landscape:
+  per-Coco Level shores, audible Organ calyces, SlotQ tributary gills and two
+  independent directional SlotX bridge valves, plus a radial `cKSend` pull on
+  every castle. A castle release under 8 px remains its spesal step, so opening
+  a send never performs a transient rewire. These 13 parameters left Workshop;
+  the tested GUI ownership partition is now Night 44 · Master 4 · Workshop 26.
+
 - Rebuilt the 16n fader map (SPEC §6.1) as two identical Coco channel strips
   plus a six-fader shared section, replacing the former eight-plus-eight split.
   Each strip now runs in signal order — input, clock, clock modulation,
@@ -173,8 +180,9 @@ tagged. Earlier tags describe internal development baselines.
 - Completed the N10 shell-cue review: the heart's true 22 px hover disc and
   the mouth chevron's weight cue passed visual acceptance on 2026-07-29.
 - A fourth persistent Drawer page, **workshop**: the bay's quiet measurement
-  table, now carrying the 39 parameters Night and the Master strip do not own
-  after Space retirement, so the whole instrument is reachable without the
+  table, initially carrying the 39 parameters Night and the Master strip did
+  not own after Space retirement (26 remain after the later PLAY-6 Night
+  promotion), so the whole instrument is reachable without the
   Day panel. One centred responsive rail holds a shallow service band
   (`deck a · input trims · deck b`)
   over a `coco 1 · quantussy · coco 2` body, with no scroll view at the

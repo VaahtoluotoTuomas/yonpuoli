@@ -12,9 +12,10 @@ CQGui {
 	var <bananaGrammar, <nightMap;
 	var <inkControls;
 	var <spesalStates;
-	// `/cq_phase`: the read head's address and, beside it, the read direction as
-	// an audio-rate mean (§9) — ±1 settled, near 0 shuttling. Both nil until the
-	// server reports.
+	// `/cq_phase`: read-head address, audio-rate direction mean and skip rate,
+	// followed by the three continuous Coco destinations' reduced live truth
+	// (§9). The first three remain nil until the server reports; the tiny
+	// crescent views own the appended state themselves.
 	var <phaseNorms, <phaseDirs, <phaseSkipHz;
 	// AIO-4 caches raw hardware-input and post-safety master presence even while
 	// its Drawer page is hidden. Listeners are paced and notified only while the
@@ -27,10 +28,11 @@ CQGui {
 	// reported. No telemetry = no pulse, so serverless and headless surfaces
 	// keep exactly the reviewed static Night look.
 	var <auraValues, auraPainted;
-	// GUI_SPEC §9 `/cq_charge`: the nine gate/trig sums, in three blocks (the
-	// two cocos and the castle row report their own). Same law as the aura —
-	// a slot stays nil until its synth has spoken.
-	var <chargeValues, chargePainted, <chargeNames, chargeIndex;
+	// GUI_SPEC §9 `/cq_charge`: nine paired pre-Schmitt charges and exact
+	// post-Schmitt gate/trig fires, in three owner blocks. Same law as the aura:
+	// each half of a slot stays nil until its synth has spoken.
+	var <chargeValues, chargePainted, <fireValues, firePainted;
+	var <chargeNames, chargeIndex;
 	var deckLabels, deckNames, deckCtls;
 	var noticeView, recBtn, recTimeView, recTask, hotTask;
 	// §16.7: which drop target a file drag is hovering, the view that draws it,
@@ -78,6 +80,10 @@ CQGui {
 		^switch(replyId.asInteger, 1, { 0 }, 2, { 2 }, 3, { 4 }, { nil })
 	}
 
+	*chargeBlockSize { |replyId|
+		^switch(replyId.asInteger, 1, { 2 }, 2, { 2 }, 3, { 5 }, { nil })
+	}
+
 	isClosed {
 		^shellState.lifecycleState == \closed
 			or: { window.notNil and: { window.isClosed } }
@@ -91,8 +97,9 @@ CQGui {
 
 	cancelAudition {
 		if(drawer.notNil) { drawer.panic } { bananaGrammar !? { bananaGrammar.panic } };
-		// the night gestures come off the wheel on the same paths as the audition
-		// (§4.1's spirit): a held punch is restored (a stuck one leaves a loop
+		// Night's view-only cable hand and bodily gestures come off on the same
+		// lifecycle paths as the Drawer's precision audition (§4.1): a held punch
+		// is restored (a stuck one leaves a loop
 		// recording, §2) and an uncommitted weather voyage goes home. This is the
 		// path CQ.panic runs on the gui panel.
 		nightMap !? { nightMap.cancelGestures };
@@ -220,12 +227,12 @@ CQGui {
 			};
 			if(lamp) {
 				var charge = this.chargeFor(name) ? 0;
-				// §16.8: fill = charge / 0.5; at and above the Schmitt's on-threshold
-				// the lamp is lit (steady for a gate, a decaying bloom for a trig —
-				// the server's own peak-hold fall, no client-side timer)
+				var fired = this.fireFor(name) ? 0;
+				// Amber fill is post-weight, pre-Schmitt charge. The separate pale
+				// flare is held from the exact gate/trig the DSP actually obeyed.
 				CQInk.drawLamp(center + Point(
 					if(skin == \night) { CQNightMeasures.lampOffset } { 16 }, 0),
-					charge, charge >= 0.5, skin, inkScale)
+					charge, fired > 0.01, skin, inkScale, fired)
 			};
 		};
 		^this
@@ -334,6 +341,15 @@ CQGui {
 		^chargeValues[index]
 	}
 
+	// The exact post-Schmitt gate or trigger, peak-held on the server so a
+	// single-sample event reaches the 15 Hz eye. This is intentionally separate
+	// from `chargeFor`: threshold proximity and an event are different facts.
+	fireFor { |dest|
+		var index = chargeIndex[dest];
+		if(index.isNil) { ^nil };
+		^fireValues[index]
+	}
+
 	// SPEC §7: persistent warning color while the mic is live (M2 GUI part).
 	// Since N8 the one interactive mic control lives on the Workshop page, but
 	// this composition stays central: the notice belongs to the always-visible
@@ -350,7 +366,7 @@ CQGui {
 	prInit {
 		audioConfig = Cocoquantus.audioConfigForGui(config);
 		audition = CQAudition(matrix);
-		bananaGrammar = CQBananaGrammar(matrix, audition);
+		bananaGrammar = CQBananaGrammar(matrix);
 		shellState = CQGuiShellState(bananaGrammar);
 		updaters = IdentityDictionary.new;
 		meterFuncs = IdentityDictionary.new;
@@ -368,6 +384,8 @@ CQGui {
 		chargeNames.do { |name, i| chargeIndex[name] = i };
 		chargeValues = Array.newClear(chargeNames.size);   // same law as the aura
 		chargePainted = Array.newClear(chargeNames.size);
+		fireValues = Array.newClear(chargeNames.size);
+		firePainted = Array.newClear(chargeNames.size);
 		inkControls = List.new;
 		shakeWatchers = List.new;
 		compass = CQCompass(this.prCompassDir);
@@ -604,6 +622,10 @@ CQGui {
 			var key = ("coco" ++ msg[2].asInteger).asSymbol;
 			{ meterFuncs[key].value(msg[3], msg[5]) }.defer;
 		}, '/cq_cocometers');
+		OSCdef(\cq_gui_castle, { |msg|
+			var rates = if(msg.size >= 13) { msg.copyRange(8, 12) } { nil };
+			{ nightMap !? { |map| map.castleFrame(msg.copyRange(3, 7), rates) } }.defer;
+		}, '/cq_castle');
 		// GUI_SPEC §9 `/cq_aura`: the server's own 15 Hz rate IS the §10 ambient
 		// ceiling — no extra timer, no polling. The repaint touches only the 16
 		// small jack views and the cable layer, never the whole window.
@@ -616,8 +638,8 @@ CQGui {
 			}.defer;
 		}, '/cq_aura');
 		// GUI_SPEC §9 `/cq_charge`: three 15 Hz blocks (coco 1, coco 2, the five
-		// castles) fill one nine-slot cache. The send rate is the §10 ambient
-		// ceiling; the repaint gate below keeps a still panel free.
+		// castles) fill paired nine-slot charge/fire caches. The send rate is the
+		// §10 ambient ceiling; the repaint gate below keeps a still panel free.
 		OSCdef(\cq_gui_charge, { |msg|
 			{ this.prChargeFrame(msg[2], msg.copyRange(3, msg.size - 1)) }.defer;
 		}, '/cq_charge');
@@ -628,9 +650,20 @@ CQGui {
 			}.defer;
 		}, '/cq_spesal');
 		// GUI_SPEC §9 loop phase: the read head's own 15 Hz message. Night gives
-		// the comet its own cheap layer, so no complete shell follows this stream.
+		// the comet its own cheap layer. The appended continuous-destination
+		// triples feed only their three tiny crescents, so no complete shell follows
+		// this stream.
 		OSCdef(\cq_gui_phase, { |msg|
-			{ this.prPhaseFrame(msg[2], msg[3], msg[4], msg[5]) }.defer;
+			var values, spreads, activities;
+			if(msg.size >= 15) {
+				values = msg.copyRange(6, 8);
+				spreads = msg.copyRange(9, 11);
+				activities = msg.copyRange(12, 14);
+			};
+			{
+				this.prPhaseFrame(msg[2], msg[3], msg[4], msg[5],
+					values, spreads, activities)
+			}.defer;
 		}, '/cq_phase');
 		// watchdog notice (SPEC §5.6): same '/cq_hot' the facade acts on
 		OSCdef(\cq_gui_hot, { { this.prHotNotice }.defer }, '/cq_hot');
@@ -696,20 +729,33 @@ CQGui {
 	}
 
 	// One '/cq_charge' block. Each Night lamp repaints only when its own charge
-	// actually moved; an unchanged gate costs nothing.
+	// or exact fire reading moved; an unchanged held gate costs nothing.
 	prChargeFrame { |replyId, values|
-		var base;
+		var base, count, charges, fires;
 		if(cleaned) { ^this };
 		base = this.class.chargeBlock(replyId ? 0);
-		if(base.isNil) { ^this };
-		values.do { |value, i|
-			var slot = base + i, previous, charge;
+		count = this.class.chargeBlockSize(replyId ? 0);
+		if(base.isNil or: { count.isNil }) { ^this };
+		charges = values.keep(count);
+		fires = if(values.size >= (count * 2)) {
+			values.copyRange(count, (count * 2) - 1)
+		} {
+			Array.fill(count, 0)
+		};
+		count.do { |i|
+			var slot = base + i, previousCharge, previousFire, charge, fire;
 			if(slot < chargeValues.size) {
-				charge = (value ? 0).asFloat.clip(0, 1);   // every entry clamps
-				previous = chargePainted[slot];
+				charge = (charges.at(i) ? 0).asFloat.clip(0, 1);
+				fire = (fires.at(i) ? 0).asFloat.clip(0, 1);
+				previousCharge = chargePainted[slot];
+				previousFire = firePainted[slot];
 				chargeValues[slot] = charge;
-				if(previous.isNil or: { (charge - previous).abs >= 0.02 }) {
+				fireValues[slot] = fire;
+				if(previousCharge.isNil or: { previousFire.isNil }
+					or: { (charge - previousCharge).abs >= 0.02 }
+					or: { (fire - previousFire).abs >= 0.02 }) {
 					chargePainted[slot] = charge;
+					firePainted[slot] = fire;
 					this.prPaintLamp(chargeNames[slot]);
 				};
 			};
@@ -723,7 +769,7 @@ CQGui {
 
 	// One '/cq_phase' frame: cache the clamped truth. The Night map's own
 	// delta gate thins a near-still reel.
-	prPhaseFrame { |n, value, dir, skipHz|
+	prPhaseFrame { |n, value, dir, skipHz, modValues, modSpreads, modActivities|
 		var i;
 		if(cleaned) { ^this };
 		i = (n ? 1).asInteger.clip(1, 2) - 1;
@@ -731,7 +777,11 @@ CQGui {
 		// an older frame without the direction value leaves the last one alone
 		dir !? { phaseDirs[i] = dir.asFloat.clip(-1, 1) };
 		skipHz !? { phaseSkipHz[i] = (skipHz.asFloat.max(0)) };
-		nightMap !? { nightMap.paintPhase(i) };
+		nightMap !? {
+			nightMap.paintPhase(i);
+			nightMap.crescentModulationFrame(i, modValues, modSpreads,
+				modActivities);
+		};
 	}
 
 	prDeckPlayer { |which|
@@ -804,13 +854,25 @@ CQGui {
 
 	// SPEC §6.2 keyboard map
 	prKey { |char, modifiers = 0, unicode, keycode, key|
-		var ascii, undoKey;
+		var ascii, undoKey, handDownKey, handUpKey;
 		ascii = char !? { char.ascii };
 		undoKey = #[26, 90, 122].includes(ascii)
 			or: { #[26, 90, 122].includes(unicode) }
 			or: { key == 90 };
+		handDownKey = #[90, 122].includes(ascii)
+			or: { #[90, 122].includes(unicode) } or: { key == 90 };
+		handUpKey = #[88, 120].includes(ascii)
+			or: { #[88, 120].includes(unicode) } or: { key == 88 };
 		if(modifiers.isCtrl and: { undoKey }) {
 			bananaGrammar.undo;
+			^this
+		};
+		// Laptop path for the held-cable attenuator. A touchpad commonly cannot
+		// scroll while its click is held, so the leftmost Z/X pair mirrors wheel
+		// down/up. Shift is the 0.01 fine step; plain keys use 0.05. Ctrl+Z keeps
+		// its existing undo priority above this branch.
+		if(bananaGrammar.isInHand and: { handDownKey or: { handUpKey } }) {
+			bananaGrammar.wheelHand(if(handDownKey) { -1 } { 1 }, modifiers.isShift);
 			^this
 		};
 		if(char.notNil and: { char.ascii == 27 }) {

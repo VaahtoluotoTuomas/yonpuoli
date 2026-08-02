@@ -98,4 +98,52 @@ CQStateTest : UnitTest {
 		this.assertEquals(e[\coco1Fb], 1.0, "asEvent reflects current values");
 		this.assertEquals(e.size, 74, "asEvent carries every parameter");
 	}
+
+	// Playability audit (PLAN item 8): storage and GUI coverage are not enough.
+	// Every parameter in a mic-enabled instrument must route to a control that
+	// actually exists in its owning production SynthDef. This catches both an
+	// omitted route (a dead knob) and a misspelled synth argument (a knob that
+	// moves in state/GUI but is ignored by scsynth).
+	test_everyParameterTerminatesAtARealSynthDefControl {
+		var cfg = CQConfig.validate((micChan: 0));
+		var graph = CQTestGraph(CQTestServer(), cfg);
+		var routedState = CQState(graph);
+		var manifest = routedState.routeManifest;
+		var defs = IdentityDictionary.new;
+		defs[\input] = CQSynthDefs.input(cfg);
+		defs[\master] = CQSynthDefs.master(cfg);
+		defs[\quantussy] = CQSynthDefs.quantussy(cfg);
+		defs[\coco1] = CQSynthDefs.coco(cfg);
+		defs[\coco2] = defs[\coco1];
+		defs[\deckA] = CQSynthDefs.deck(cfg);
+		defs[\deckB] = defs[\deckA];
+
+		this.assertEquals(manifest.size, CQSpec.names.size,
+			"a mic-enabled graph routes all 74 CQSpec parameters");
+		CQSpec.names.do { |name|
+			var route = manifest[name];
+			var pairs;
+			this.assert(route.notNil, "parameter % has a DSP route".format(name));
+			if(route.notNil) {
+				pairs = if(route[0].isKindOf(Symbol)) { [route] } { route };
+				pairs.do { |pair|
+					var def = defs[pair[0]];
+					var controls = def !? {
+						def.allControlNames.collect { |control| control.name.asSymbol }
+					};
+					this.assert(def.notNil,
+						"% route names a production synth (%)".format(name, pair[0]));
+					this.assert(controls.notNil and: { controls.includes(pair[1]) },
+						"% reaches real %.% control".format(name, pair[0], pair[1]));
+				};
+			};
+		};
+	}
+
+	test_micGainIsHonestlyDormantWithoutConfiguredHardware {
+		var cfg = CQConfig.validate((micChan: nil));
+		var graph = CQTestGraph(CQTestServer(), cfg);
+		this.assert(CQState(graph).routeManifest[\micGain].isNil,
+			"micGain has no fake DSP route when Audio I/O says mic off");
+	}
 }

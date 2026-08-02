@@ -39,6 +39,11 @@ CQNightMeasures {
 	// The ripple follows each seeded blob's actual bottom, not its mean ellipse,
 	// so every castle gives the control the same visual breath.
 	*rangeBodyGap { ^17 }                   // px — blob edge to playable ripple
+	// A castle's audio send is a short inward tributary between its clock and
+	// its inner shoreline. The whole visible island owns the radial gesture;
+	// these two body measures only keep the resting ink out of the dial/rim.
+	*castleSendClockGap { ^5 }              // body — clock rim to tributary
+	*castleSendBeyondShore { ^7 }           // body — point into the central river
 
 	// the four castle endpoints on their clock face (body radii from the centre)
 	*castleJackOrbit { ^52 }                // tri at 1:30, cas at 10:30
@@ -47,8 +52,7 @@ CQNightMeasures {
 	// what keeps it off the inner clock at every scale (CQNightGeometryTest)
 	*castleSpesalOrbit { ^61 }
 
-	*bodyMargin { ^12 }                     // px — the blob's hit/hover margin
-	*clockHit { ^12 }                       // px — the dial annulus' tolerance
+	*bodyMargin { ^12 }                     // px — island-ground margin beyond the playable blob
 
 	// ---- the shells ----
 
@@ -67,6 +71,18 @@ CQNightMeasures {
 	*orgStemReach { ^14 }                   // body — spiral to the hanging fruit
 	*moonArc { ^136 }                       // body — the five moons' arc
 	*crescentArc { ^176 }                   // body — the tide crescents' arc
+	// The promoted performance mix grows on the shell instead of in Master.
+	// Level hugs only the exterior shore; q/x valves occupy the two clear inner
+	// quadrants. All body offsets scale, while the hand reaches below stay px.
+	*levelShoreOutset { ^10 }               // body — outside the hold/seal rim
+	*levelShoreSweep { ^0.86pi }            // body angle — exterior half, with breath
+	*flowValveOutset { ^8 }                 // body — just outside the shell rim
+	*slotQValveAngle { ^28 }                // degrees above the inward axis
+	*slotXValveAngle { ^62 }                // degrees above the inward axis
+	*levelShoreHit { ^10 }                  // px — distance from drawn shoreline
+	*flowValveHit { ^17 }                   // px — q/x gill hand
+	*organPodInner { ^18 }                  // px — jack keeps the fruit's seed
+	*organPodOuter { ^32 }                  // px — annular audible-organ hand
 
 	// The mouth's two stationary transport marks hang below the jack, and the
 	// flood pushed them further out than they have ever hung: the grown jack
@@ -219,6 +235,7 @@ CQNightMeasures {
 	*clockBeadR { ^4.2 }                    // the spesal state's lit bead
 	*clockBeadHaloR { ^6 }
 	*clockTickReach { ^4.5 }                // the eight tick marks' half-length
+	*castleSendPearlR { ^2.1 }              // the tributary's stored amount
 	*rangeRippleWidth { ^22 }               // px — drawn slow/mid/fast mark
 	*rangeRippleHeight { ^11 }              // px
 	*rangeHitX { ^15 }                      // px — cue and act around the ripple
@@ -241,4 +258,8 @@ CQNightMeasures {
 	*chevronShuttleRise { ^7.5 }            // ...opposed, while shuttling
 	*struckBase { ^7 }                      // the hammered head's arms
 	*struckRange { ^10 }
+	*organPodR { ^27 }                      // the yellow flesh around its jack
+	*flowGillHalf { ^9 }                    // q/x valve length along the stream
+	*flowGillGap { ^5 }                     // opening at a fully raised slot
+	*flowArrowR { ^4.5 }                    // directional bridge arrow
 }

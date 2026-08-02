@@ -85,6 +85,7 @@ var makeCocoScore = {
 		[\buf, buf, \preBus, pre, \deckBus, deck, \qMixBus, bQMix,
 			\crossBus, cross, \outBus, out, \modSrcBus, bModSrc,
 			\modTapIdx, tap, \modOrganIdx, org,
+			\cocoIndex, tap - 12,
 			\inLevel, 2, \fbLevel, 1.25, \dust, 0.5, \wrap, 1, \bits, 3,
 			\hold, 0, \organLvl, 1, \level, 1.5, \speed, 24000,
 			\slotPre, 1.5, \slotDeck, 1.5, \slotQ, 0, \slotX, 1.5]
@@ -130,6 +131,7 @@ var makeQuantussyScore = {
 		\buf, 0, \preBus, bPreA, \deckBus, bDeckA, \qMixBus, bQMix,
 		\crossBus, bCoco2, \outBus, bCoco1, \modSrcBus, bModSrc,
 		\modTapIdx, 12, \modOrganIdx, 14,
+		\cocoIndex, 0,
 		\inLevel, 2, \fbLevel, 1.25, \dust, 0.5, \wrap, 1, \bits, 3,
 		\hold, 0, \level, 1.5, \speed, 24000,
 		\slotPre, 0, \slotDeck, 0, \slotQ, 1.5, \slotX, 0]]);
@@ -157,6 +159,7 @@ var makeMayhemScore = {
 		[\buf, buf, \preBus, pre, \deckBus, deck, \qMixBus, bQMix,
 			\crossBus, cross, \outBus, out, \modSrcBus, bModSrc,
 			\modTapIdx, tap, \modOrganIdx, org,
+			\cocoIndex, tap - 12,
 			\inLevel, 2, \fbLevel, 1.25, \dust, 0.5, \wrap, 1, \bits, 3,
 			\hold, 0, \organLvl, 1, \level, 1.5, \speed, 24000, \spafKnob, 4.0,
 			\slotPre, 1.5, \slotDeck, 1.5, \slotQ, 1.5, \slotX, 1.5,
@@ -239,6 +242,7 @@ var makeStemScore = {
 		[\buf, buf, \preBus, pre, \deckBus, deck, \qMixBus, bQMix,
 			\crossBus, cross, \outBus, out, \modSrcBus, bModSrc,
 			\modTapIdx, tap, \modOrganIdx, org,
+			\cocoIndex, tap - 12,
 			\inLevel, 2, \fbLevel, 1.25, \dust, 0.5, \wrap, 1, \bits, 3,
 			\hold, 0, \organLvl, 1, \level, 1.5, \speed, 24000,
 			\slotPre, 1.5, \slotDeck, 1.5, \slotQ, 0, \slotX, 1.5]

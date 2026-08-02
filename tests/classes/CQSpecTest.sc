@@ -190,6 +190,32 @@ CQSpecTest : UnitTest {
 			"a caller cannot mutate CQSpec's breakpoint table");
 	}
 
+	test_spafHandTaperWidensFinePitchAroundZero {
+		var norms = [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1];
+		[\coco1Spaf, \coco2Spaf].do { |name|
+			this.assertFloatEquals(CQSpec.map(name, 0.0), -4.0,
+				"% keeps the direct/DSP minimum".format(name), 1e-12);
+			this.assertFloatEquals(CQSpec.map(name, 0.25), -1.0,
+				"% reaches minus one octave at half travel from zero".format(name), 1e-12);
+			this.assertFloatEquals(CQSpec.map(name, 0.375), -0.25,
+				"% enters the broad negative fine country".format(name), 1e-12);
+			this.assertFloatEquals(CQSpec.map(name, 0.5), 0.0,
+				"% keeps exact zero at noon".format(name), 1e-12);
+			this.assertFloatEquals(CQSpec.map(name, 0.625), 0.25,
+				"% leaves the broad positive fine country gently".format(name), 1e-12);
+			this.assertFloatEquals(CQSpec.map(name, 0.75), 1.0,
+				"% reaches plus one octave at half travel from zero".format(name), 1e-12);
+			this.assertFloatEquals(CQSpec.map(name, 1.0), 4.0,
+				"% keeps the direct/DSP maximum".format(name), 1e-12);
+			norms.do { |norm|
+				var back = CQSpec.unmap(name, CQSpec.map(name, norm));
+				this.assert((back - norm).abs <= 1e-9,
+					"% signed-square roundtrip at % has error %"
+						.format(name, norm, (back - norm).abs));
+			};
+		};
+	}
+
 	test_chaosCurveWidensTheDrunkenCountry {
 		var norms = [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1];
 		this.assertFloatEquals(CQSpec.map(\qChaos, 0.0), 0.0,
@@ -214,6 +240,13 @@ CQSpecTest : UnitTest {
 			"input unity sits at the midpoint of its own linear map");
 		this.assertFloatEquals(CQSpec.map(\deckALevel, deckUnity), 1.0,
 			"the bird mark roundtrips to exact unity through its curved map");
+		this.assertEquals([
+			CQSpec.referenceNorm(\coco1Spaf, \fineNeg),
+			CQSpec.referenceNorm(\coco1Spaf, \finePos),
+			CQSpec.referenceNorm(\coco1Spaf, \octaveNeg),
+			CQSpec.referenceNorm(\coco1Spaf, \octavePos)
+		], [0.375, 0.625, 0.25, 0.75],
+			"SP.AF publishes exact fine-water and octave landmarks");
 		this.assert(CQSpec.referenceNorm(\coco1Fb, \unity).isNil,
 			"feedback does not invent a second scale beside its audible regions");
 		this.assert(CQSpec.referenceNorm(\bogus, \unity).isNil,

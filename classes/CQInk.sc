@@ -247,19 +247,36 @@ CQInk {
 		Pen.fill;
 	}
 
-	*drawLamp { |center, charge = 0, on = false, skin = \day, sizeScale = 1|
-		var palette = this.palette(skin), fill = if(on) { 1 } { (charge / 0.5).clip(0, 1) };
+	*drawLamp { |center, charge = 0, on = false, skin = \day, sizeScale = 1, fired|
+		var palette = this.palette(skin), fire, fill;
+		fire = if(fired.isNil) { if(on) { 1 } { 0 } } {
+			fired.asFloat.clip(0, 1)
+		};
+		fill = if(fired.isNil and: { on }) { 1 } { (charge / 0.5).clip(0, 1) };
 		// An idle charge lamp is a recessed bead, not another hollow patch socket.
 		Pen.fillColor = palette[\recess];
 		Pen.addOval(Rect.aboutPoint(center, 4 * sizeScale, 4 * sizeScale));
 		Pen.fill;
-		// Past the Schmitt's on-threshold the bead blooms (GUI_SPEC §16.8): a
-		// gate reads as lit steady, a trig as the bloom decaying with the
-		// server's peak-hold. Costs two Pen calls only while something fires.
-		if(on) {
+		// Charge remains amber inside the bead. An exact post-Schmitt event gets
+		// a pale diamond flare as a second, form-first fact: a steady diamond is
+		// an active gate; a trigger leaves the server-held flare to decay.
+		if(fired.isNil and: { on }) {
 			Pen.fillColor = palette[\lamp].copy.alpha_(0.28);
 			Pen.addOval(Rect.aboutPoint(center, 7 * sizeScale, 7 * sizeScale));
 			Pen.fill;
+		};
+		if(fired.notNil and: { fire > 0.01 }) {
+			Pen.fillColor = palette[\spark].copy.alpha_(0.12 * fire);
+			Pen.addOval(Rect.aboutPoint(center, 8 * sizeScale, 8 * sizeScale));
+			Pen.fill;
+			Pen.strokeColor = palette[\spark].copy.alpha_(0.35 + (0.6 * fire));
+			Pen.width = this.strokes[\normal];
+			Pen.moveTo(center + Point(0, -7 * sizeScale));
+			Pen.lineTo(center + Point(7 * sizeScale, 0));
+			Pen.lineTo(center + Point(0, 7 * sizeScale));
+			Pen.lineTo(center + Point(-7 * sizeScale, 0));
+			Pen.lineTo(center + Point(0, -7 * sizeScale));
+			Pen.stroke;
 		};
 		Pen.fillColor = palette[\lamp].copy.alpha_(fill);
 		Pen.addOval(Rect.aboutPoint(center, 4 * sizeScale, 4 * sizeScale));
@@ -324,6 +341,51 @@ CQInk {
 		Pen.moveTo(start);
 		Pen.curveTo(end, controls[0], controls[1]);
 		Pen.stroke;
+	}
+
+	// A focused cable states its weight instead of asking the eye to estimate a
+	// 1.5 px width interval. The orbit's travelled fraction is |weight|, while
+	// its direction and hue repeat polarity. This data helper keeps the visual
+	// promise unit-testable without turning the instrument into a numeric panel.
+	*cableWeightReadout { |weight = 0|
+		var clipped = weight.asFloat.clip(-1, 1);
+		var direction = if(clipped < 0) { -1 } { if(clipped > 0) { 1 } { 0 } };
+		^(magnitude: clipped.abs, direction: direction,
+			family: if(direction < 0) { \inverso } { \verso })
+	}
+
+	// Hover-only midpoint moon. It is deliberately drawn after every planted
+	// cable, so dense routes cannot bury the readout belonging to the pointer.
+	*drawCableWeightMoon { |points, weight, skin = \day|
+		var palette = this.palette(skin), data, center;
+		var radius = 6.5, origin = -0.5pi, arcSweep, arcStart, pearlAngle, pearl;
+		if(points.isNil or: { points.size < 1 }) { ^this };
+		data = this.cableWeightReadout(weight);
+		center = points[points.size div: 2];
+
+		Pen.fillColor = palette[\recess].copy.alpha_(0.98);
+		Pen.addOval(Rect.aboutPoint(center, radius, radius));
+		Pen.fill;
+		Pen.strokeColor = palette[\whisper].copy.alpha_(0.82);
+		Pen.width = this.strokes[\hairline];
+		Pen.addOval(Rect.aboutPoint(center, radius, radius));
+		Pen.stroke;
+
+		arcSweep = 2pi * data[\magnitude];
+		if(arcSweep > 0) {
+			arcStart = if(data[\direction] < 0) { origin - arcSweep } { origin };
+			Pen.strokeColor = palette[data[\family]];
+			Pen.width = this.strokes[\strong];
+			Pen.addArc(center, radius - 1.2, arcStart, arcSweep);
+			Pen.stroke;
+			pearlAngle = if(data[\direction] < 0) { arcStart } {
+				origin + arcSweep
+			};
+			pearl = center + (Point(cos(pearlAngle), sin(pearlAngle)) * (radius - 1.2));
+			Pen.fillColor = palette[data[\family]];
+			Pen.addOval(Rect.aboutPoint(pearl, 1.5, 1.5));
+			Pen.fill;
+		};
 	}
 
 	*drawLasso { |points, skin = \day|

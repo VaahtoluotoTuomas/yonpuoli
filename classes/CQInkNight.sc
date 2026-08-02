@@ -18,16 +18,17 @@ CQInkNight {
 		Pen.stroke;
 	}
 
-	// castle body: seeded hollow blob with the aura as a quiet radial gradient
-	// inside (§16.6). The spesal dial is the castle's inner clock: a whisper
+	// Castle body: seeded hollow blob. The spesal dial is the castle's inner
+	// clock, and its central reed reports the castle's own raw triangle: a whisper
 	// face inside the body — where no opaque endpoint view can cover it —
-	// with the current state as a lit spark bead, and a static hover
-	// brightening (§4.5) so the face reads as pressable. Origin = the castle
+	// with the current state as a lit spark bead. The static hover brightens this
+	// face when the hand is anywhere on the complete visible castle (§4.5), so
+	// the central mechanism names the whole island's step. Origin = the castle
 	// layer's own box corner. The paper is transparent and the blob fills only
 	// its irregular flesh with ground, so no rectangular edge can cut the river.
-	*drawCastle { |castle, origin, aura, spesalState = 0, range,
-		dialHover = false, rangeHover = false,
-		bodyHover = false, skin = \night|
+	*drawCastle { |castle, origin, oscillator, spesalState = 0, range,
+		sendNorm = 0, sendActive = false,
+		dialHover = false, rangeHover = false, skin = \night|
 		var palette = CQInk.palette(skin), center = castle[\center];
 		var tickAngle, bead;
 		Pen.translate(origin.x.neg, origin.y.neg);
@@ -37,25 +38,6 @@ CQInkNight {
 		Pen.fillColor = palette[\ground];
 		this.addSegments(castle[\blobSegments]);
 		Pen.fill;
-		if((aura ? 0) > 0.01) {
-			Pen.addOval(Rect.aboutPoint(center,
-				castle[\bodyRx] + 6, castle[\bodyRy] + 6));
-			Pen.fillRadialGradient(center, center, 0, castle[\bodyRx] + 6,
-				palette[\cas].copy.alpha_((aura.clip(0, 1) * 0.3)),
-				palette[\cas].copy.alpha_(0));
-		};
-		// the body's own hover echo: the quiet outer ring §4.5 gives every
-		// pressable Ink control, here saying "this whole body answers a
-		// double-click" (the §6 solo). Static ink, never a pulse, and the
-		// resting drawing is untouched — two Pen calls only under the pointer.
-		if(bodyHover) {
-			Pen.strokeColor = palette[\whisper].copy.alpha_(0.55);
-			Pen.width = CQInk.strokes[\hairline];
-			Pen.addOval(Rect.aboutPoint(center,
-				castle[\bodyRx] + CQNightMeasures.bodyMargin,
-				castle[\bodyRy] + CQNightMeasures.bodyMargin));
-			Pen.stroke;
-		};
 		Pen.strokeColor = palette[\line];
 		Pen.width = CQInk.strokes[\normal];
 		this.strokeSegments(castle[\blobSegments]);
@@ -65,6 +47,7 @@ CQInkNight {
 		Pen.width = CQInk.strokes[\hairline];
 		Pen.addOval(Rect.aboutPoint(center, castle[\dialR], castle[\dialR]));
 		Pen.stroke;
+		this.drawCastleOscillator(center, oscillator, palette);
 		Pen.strokeColor = palette[\whisper];
 		8.do { |i|
 			var angle = (22.5 + (i * 45)).degrad;
@@ -88,6 +71,61 @@ CQInkNight {
 			CQNightMeasures.clockBeadHaloR));
 		Pen.stroke;
 		this.drawRangeRipple(castle[\rangeMark], range, rangeHover, skin);
+		this.drawCastleSend(castle, sendNorm, sendActive or: { dialHover }, skin);
+	}
+
+	// cNSend is not a fifth anonymous knob. It is the short tributary leaving
+	// this oscillator toward the ring's shared qMix. The stored amount is path
+	// length plus a pearl; hover/drag brightens it, but zero remains a readable
+	// dormant vein rather than disappearing.
+	*drawCastleSend { |castle, norm = 0, active = false, skin = \night|
+		var palette = CQInk.palette(skin), start = castle[\sendStart];
+		var end = castle[\sendEnd], value = (norm ? 0).clip(0, 1);
+		var pearl = start + ((end - start) * value);
+		Pen.strokeColor = palette[\tri].copy.alpha_(if(active) { 0.52 } { 0.20 });
+		Pen.width = CQInk.strokes[\hairline];
+		Pen.line(start, end);
+		Pen.stroke;
+		if(value > 0.001) {
+			Pen.strokeColor = palette[\tri].copy.alpha_(if(active) { 1.0 } { 0.78 });
+			Pen.width = CQInk.strokes[if(active) { \strong } { \normal }];
+			Pen.line(start, pearl);
+			Pen.stroke;
+		};
+		Pen.fillColor = palette[\tri].copy.alpha_(if(active) { 1.0 } { 0.88 });
+		Pen.addOval(Rect.aboutPoint(pearl, CQNightMeasures.castleSendPearlR,
+			CQNightMeasures.castleSendPearlR));
+		Pen.fill;
+	}
+
+	// The castle's central reed is the raw triangle clock, distinct from the
+	// crown jack's held `cas` value. At a display-resolvable rate its pearl moves
+	// along the reed. Above that rate the whole reed glows as one stable blur:
+	// no sampled two-position sawing, and no false slow rhythm.
+	*drawCastleOscillator { |center, oscillator, palette|
+		var half = 7, point, strength;
+		Pen.strokeColor = palette[\tri].copy.alpha_(0.22);
+		Pen.width = CQInk.strokes[\hairline];
+		Pen.line(center - Point(half, 0), center + Point(half, 0));
+		Pen.stroke;
+		if(oscillator.isNil) { ^this };
+		strength = (oscillator[\strength] ? 0).clip(0, 1);
+		if(oscillator[\mode] == \blur) {
+			Pen.strokeColor = palette[\tri].copy.alpha_(0.42 + (0.34 * strength));
+			Pen.width = CQInk.strokes[\strong];
+			Pen.line(center - Point(half, 0), center + Point(half, 0));
+			Pen.stroke;
+			Pen.strokeColor = palette[\tri].copy.alpha_(0.18 + (0.2 * strength));
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.line(center - Point(half - 1, 1.6), center + Point(half - 1, 1.6));
+			Pen.line(center - Point(half - 1, -1.6), center + Point(half - 1, -1.6));
+			Pen.stroke;
+		} {
+			point = center + Point((((oscillator[\position] ? 0.5) * 2) - 1) * half, 0);
+			Pen.fillColor = palette[\tri];
+			Pen.addOval(Rect.aboutPoint(point, 1.8, 1.8));
+			Pen.fill;
+		};
 	}
 
 	// A regime drawn as rate, not a transplanted switch: one long half-wave for
@@ -160,6 +198,92 @@ CQInkNight {
 				CQNightGeometry.fireflyPoint(geometry, phase + (i / 10)), r, r));
 		};
 		Pen.fill;
+	}
+
+	// The drone topology is always part of the landscape, but at zero it is
+	// only a hairline possibility. qMix has one outward tributary per Coco;
+	// cross-feed has two parallel, oppositely directed lanes. The path pressure
+	// is the stored slot amount, the destination gill is the hand, and an arrow
+	// near the arrival makes direction readable without labels or colour.
+	*drawDroneRoutes { |geometry, qNorms, xNorms, active, hover, skin = \night|
+		var palette = CQInk.palette(skin);
+		active = active ? IdentitySet.new;
+		hover = hover ? IdentitySet.new;
+		geometry[\drone][\slotQPaths].do { |path, i|
+			var name = ("coco" ++ (i + 1) ++ "SlotQ").asSymbol;
+			var norm = qNorms.at(i) ? 0;
+			var live = active.includes(name), over = hover.includes(name);
+			this.drawFlowPath(path, norm, \tri, live, over, palette);
+			this.drawFlowGill(path.last, path.last - path[2], norm, \tri,
+				live, over, palette);
+			Pen.fillColor = palette[\tri].copy.alpha_(0.32 + (0.45 * norm));
+			Pen.addOval(Rect.aboutPoint(path.first, 1.5, 1.5));
+			Pen.fill;
+		};
+		geometry[\drone][\slotXPaths].do { |path, i|
+			var name = ("coco" ++ (i + 1) ++ "SlotX").asSymbol;
+			var norm = xNorms.at(i) ? 0;
+			var live = active.includes(name), over = hover.includes(name);
+			this.drawFlowPath(path, norm, \cas, live, over, palette);
+			this.drawFlowGill(path.last, path.last - path[2], norm, \cas,
+				live, over, palette);
+		};
+	}
+
+	*drawFlowPath { |path, norm = 0, family = \line, active = false,
+		hover = false, palette|
+		var value = (norm ? 0).clip(0, 1), color = palette[family];
+		var point, prior, tangent, length, normal, back, reach;
+		Pen.strokeColor = color.copy.alpha_(if(active or: { hover }) {
+			0.34 + (0.58 * value)
+		} {
+			0.10 + (0.58 * value)
+		});
+		Pen.width = CQInk.strokes[if(active) { \strong } {
+			if(value > 0.5) { \normal } { \hairline }
+		}];
+		this.addSegments([path]);
+		Pen.stroke;
+		point = CQNightGeometry.cubicPoint(path, 0.82);
+		prior = CQNightGeometry.cubicPoint(path, 0.78);
+		length = max(0.001, CQNightGeometry.distance(prior, point));
+		tangent = (point - prior) / length;
+		normal = Point(tangent.y.neg, tangent.x);
+		reach = CQNightMeasures.flowArrowR;
+		back = point - (tangent * reach);
+		Pen.strokeColor = color.copy.alpha_(if(active or: { hover }) { 0.95 } {
+			0.24 + (0.64 * value)
+		});
+		Pen.width = CQInk.strokes[\hairline];
+		Pen.line(point, back + (normal * reach * 0.55));
+		Pen.line(point, back - (normal * reach * 0.55));
+		Pen.stroke;
+	}
+
+	*drawFlowGill { |center, arrival, norm = 0, family = \line,
+		active = false, hover = false, palette|
+		var value = (norm ? 0).clip(0, 1), length, tangent, normal, gap, half;
+		var a, b, c1, c2, color = palette[family];
+		length = max(0.001, sqrt(arrival.x.squared + arrival.y.squared));
+		tangent = arrival / length;
+		normal = Point(tangent.y.neg, tangent.x);
+		gap = 0.8 + (CQNightMeasures.flowGillGap * value);
+		half = CQNightMeasures.flowGillHalf;
+		Pen.strokeColor = color.copy.alpha_(if(active or: { hover }) { 1.0 } {
+			0.34 + (0.56 * value)
+		});
+		Pen.width = CQInk.strokes[if(active) { \strong } { \normal }];
+		[-1, 1].do { |side|
+			a = center - (tangent * half) + (normal * gap * side);
+			b = center + (tangent * half) + (normal * gap * side);
+			c1 = center - (tangent * (half * 0.28))
+				+ (normal * (gap + (3.2 * value)) * side);
+			c2 = center + (tangent * (half * 0.28))
+				+ (normal * (gap + (3.2 * value)) * side);
+			Pen.moveTo(a);
+			Pen.curveTo(b, c1, c2);
+		};
+		Pen.stroke;
 	}
 
 	// §16.6 the spesal coupling: which castle each castle reads, drawn on the
@@ -237,9 +361,11 @@ CQInkNight {
 		speedNorm = 0.5, hover = false, skipHover = false, skipFlash = false,
 		rimHover = false, heartHover = false, chevronHover = false,
 		skin = \night, preampRoot,
-		preampAura = 0, preampDrive = 0, preampSlot = 1|
+		preampAura = 0, preampDrive = 0, preampSlot = 1, performance|
 		var palette = CQInk.palette(skin), notch, notchNorm, normal, reach;
-		var heart;
+		var heart, levelNorm;
+		performance = performance ? ();
+		levelNorm = performance[\level] ? 0;
 		Pen.translate(origin.x.neg, origin.y.neg);
 		// This view is opaque-backed. Repaint the exact incoming audio vein
 		// beneath the winding so the anatomy reaches the real spiral
@@ -258,8 +384,9 @@ CQInkNight {
 				coco[\outerR], coco[\outerR]));
 			Pen.stroke;
 		};
-		Pen.strokeColor = palette[\line].copy
-			.alpha_(if(hover) { 1.0 } { 0.8 });
+		Pen.strokeColor = palette[\line].copy.alpha_(if(hover) { 1.0 } {
+			0.48 + (0.42 * levelNorm.clip(0, 1))
+		});
 		Pen.width = CQInk.strokes[\normal];
 		this.strokeSegments(coco[\segments]);
 		if(holdOn) {
@@ -268,6 +395,9 @@ CQInkNight {
 			Pen.addOval(Rect.aboutPoint(coco[\center], coco[\outerR], coco[\outerR]));
 			Pen.stroke;
 		};
+		this.drawLevelShore(coco, levelNorm, performance[\levelUnity],
+			performance[\levelActive] == true,
+			performance[\levelHover] == true, skin);
 		// §4.5's quiet outer ring, the mark every pressable control wears — but
 		// drawn at the heart's TRUE hit radius rather than snug around its dot,
 		// because here the cue has a second job: it is the only thing that says
@@ -303,6 +433,9 @@ CQInkNight {
 		Pen.width = CQInk.strokes[\hairline];
 		Pen.line(coco[\orgSpiralPoint], coco[\orgCenter]);
 		Pen.stroke;
+		this.drawOrganPod(coco[\orgCenter], performance[\organ] ? 0,
+			performance[\organActive] == true,
+			performance[\organHover] == true, skin);
 		// skip's stationary home above the mouth jack, the chevron's mirror
 		// (§6.1). Momentary, so it carries §16.7's 120 ms ink flash — fired by
 		// ANY skip (mark, `a/s`, code, pattern, matrix gate) hangs off the one
@@ -322,6 +455,73 @@ CQInkNight {
 		Pen.width = CQInk.strokes[if(hover) { \strong } { \normal }];
 		Pen.line(notch - (normal * reach), notch + (normal * reach));
 		Pen.stroke;
+	}
+
+	// The outer half of the shell is its channel fader. The spiral remains
+	// visible at silence, while this separate shore owns the exact Level value
+	// and its CQSpec-derived unity notch. Boost beyond unity turns danger-red in
+	// the same language as the birds' level crescents.
+	*drawLevelShore { |coco, norm = 0, unity = 1, active = false,
+		hover = false, skin = \night|
+		var palette = CQInk.palette(skin), value = (norm ? 0).clip(0, 1);
+		var split = (unity ? 1).clip(0, 1), start = coco[\levelStart];
+		var sweep = coco[\levelSweep], radius = coco[\levelR];
+		var normalEnd = min(value, split), angle, pearl, markAngle, direction;
+		Pen.strokeColor = palette[\whisper].copy
+			.alpha_(if(active or: { hover }) { 0.78 } { 0.34 });
+		Pen.width = CQInk.strokes[\hairline];
+		Pen.addArc(coco[\center], radius, start, sweep);
+		Pen.stroke;
+		if(normalEnd > 0.001) {
+			Pen.strokeColor = palette[\line].copy
+				.alpha_(if(active) { 1.0 } { 0.86 });
+			Pen.width = CQInk.strokes[if(active) { \strong } { \normal }];
+			Pen.addArc(coco[\center], radius, start, sweep * normalEnd);
+			Pen.stroke;
+		};
+		if(value > split) {
+			Pen.strokeColor = palette[\danger].copy.alpha_(if(active) { 1.0 } { 0.9 });
+			Pen.width = CQInk.strokes[if(active) { \strong } { \normal }];
+			Pen.addArc(coco[\center], radius, start + (sweep * split),
+				sweep * (value - split));
+			Pen.stroke;
+		};
+		markAngle = start + (sweep * split);
+		direction = Point(cos(markAngle), sin(markAngle));
+		Pen.strokeColor = palette[\line].copy.alpha_(0.74);
+		Pen.width = CQInk.strokes[\hairline];
+		Pen.line(coco[\center] + (direction * (radius - 4)),
+			coco[\center] + (direction * (radius + 4)));
+		Pen.stroke;
+		angle = start + (sweep * value);
+		pearl = coco[\center] + (Point(cos(angle), sin(angle)) * radius);
+		this.prDrawCrescentPearl(pearl,
+			if(value > split) { \danger } { \line }, active or: { hover }, palette);
+	}
+
+	// The yellow jack remains an always-live modulation seed. Audible Organ is
+	// the surrounding flesh: an annular calyx the shell receives only outside
+	// the jack's own cable paper, so patching and mixing can never steal one
+	// another's hit target.
+	*drawOrganPod { |center, norm = 0, active = false, hover = false,
+		skin = \night|
+		var palette = CQInk.palette(skin), value = (norm ? 0).clip(0, 1);
+		var radius = CQNightMeasures.organPodR, start = 0.72pi, sweep = 1.56pi;
+		var angle = start + (sweep * value), pearl;
+		Pen.strokeColor = palette[\organ].copy
+			.alpha_(if(active or: { hover }) { 0.72 } { 0.28 });
+		Pen.width = CQInk.strokes[\hairline];
+		Pen.addArc(center, radius, start, sweep);
+		Pen.addArc(center, radius - 5, start + 0.20, sweep - 0.40);
+		Pen.stroke;
+		if(value > 0.001) {
+			Pen.strokeColor = palette[\organ].copy.alpha_(if(active) { 1.0 } { 0.86 });
+			Pen.width = CQInk.strokes[if(active) { \strong } { \normal }];
+			Pen.addArc(center, radius, start, sweep * value);
+			Pen.stroke;
+		};
+		pearl = center + (Point(cos(angle), sin(angle)) * radius);
+		this.prDrawCrescentPearl(pearl, \organ, active or: { hover }, palette);
 	}
 
 	// The read head is the comet: a bone dot at the loop's true address
@@ -400,7 +600,7 @@ CQInkNight {
 	// §6.1 tide crescent: an open arc whose luminous fill is the value —
 	// the night's only continuous hand, never a knob, never a number
 	*drawCrescent { |center, norm = 0, family = \line, active = false,
-		skin = \night, scale|
+		skin = \night, scale, modulation|
 		var palette = CQInk.palette(skin);
 		var start = 0.75pi, sweep = 1.5pi, arcR = CQNightMeasures.crescentArcR;
 		Pen.strokeColor = palette[\whisper].copy
@@ -427,7 +627,7 @@ CQInkNight {
 				},
 				\spaf, {
 					this.prDrawSpafCrescent(center, norm, active, palette,
-						start, sweep, arcR, scale[\center])
+						start, sweep, arcR, scale)
 				},
 				\level, {
 					this.prDrawLevelCrescent(center, norm, active, palette,
@@ -441,6 +641,53 @@ CQInkNight {
 				}
 			);
 		};
+		this.prDrawCrescentWake(center, modulation, palette, start, sweep, arcR);
+	}
+
+	// The setting pearl stays on the coloured control arc. A separate hollow
+	// satellite on the outer orbit states the effective DSP value. Slow control
+	// motion moves the satellite; motion too fast for 15 Hz becomes a quiet arc
+	// wake spanning its excursion, so an audio-rate source cannot masquerade as
+	// a much slower sampled wobble. Endpoint caps say that the real excursion
+	// continues beyond the hand control's displayed range.
+	*prDrawCrescentWake { |center, modulation, palette, start, sweep, arcR|
+		var value, lower, upper, liveR = arcR + 2.5;
+		var angle, pearl, capDrawn = false;
+		if(modulation.isNil) { ^this };
+		value = (modulation[\center] ? 0).clip(0, 1);
+		lower = (modulation[\lower] ? value).clip(0, 1);
+		upper = (modulation[\upper] ? value).clip(0, 1);
+		if((upper - lower) > 0.001) {
+			Pen.strokeColor = palette[\line].copy.alpha_(0.38);
+			Pen.width = CQInk.strokes[\normal];
+			Pen.addArc(center, liveR, start + (sweep * lower),
+				sweep * (upper - lower));
+			Pen.stroke;
+		};
+		Pen.strokeColor = palette[\line].copy.alpha_(0.82);
+		Pen.width = CQInk.strokes[\hairline];
+		if(modulation[\clippedLow] == true) {
+			var a = start + (sweep * lower);
+			var d = Point(cos(a), sin(a));
+			Pen.line(center + (d * (liveR - 2)), center + (d * (liveR + 0.5)));
+			capDrawn = true;
+		};
+		if(modulation[\clippedHigh] == true) {
+			var a = start + (sweep * upper);
+			var d = Point(cos(a), sin(a));
+			Pen.line(center + (d * (liveR - 2)), center + (d * (liveR + 0.5)));
+			capDrawn = true;
+		};
+		if(capDrawn) { Pen.stroke };
+		angle = start + (sweep * value);
+		pearl = center + (Point(cos(angle), sin(angle)) * liveR);
+		Pen.fillColor = palette[\ground].copy.alpha_(0.96);
+		Pen.addOval(Rect.aboutPoint(pearl, 1.45, 1.45));
+		Pen.fill;
+		Pen.strokeColor = palette[\line].copy.alpha_(0.94);
+		Pen.width = CQInk.strokes[\hairline];
+		Pen.addOval(Rect.aboutPoint(pearl, 1.45, 1.45));
+		Pen.stroke;
 	}
 
 	// Feedback and input have audible countries; SP.AF has signed directions.
@@ -543,9 +790,11 @@ CQInkNight {
 	}
 
 	*prDrawSpafCrescent { |center, norm, active, palette,
-		start, sweep, arcR, centerNorm|
+		start, sweep, arcR, scale|
 		var value = (norm ? 0).clip(0, 1);
 		var families = this.spafCrescentFamilies;
+		var centerNorm = scale[\center], fine = scale[\fine];
+		var octaves = scale[\octaves];
 		var lo = min(value, centerNorm), hi = max(value, centerNorm);
 		var angle, pearl, pearlFamily;
 		families.do { |regionFamily, i|
@@ -565,6 +814,36 @@ CQInkNight {
 			Pen.width = CQInk.strokes[\strong];
 			Pen.addArc(center, arcR, start + (sweep * lo), sweep * (hi - lo));
 			Pen.stroke;
+		};
+		// The signed-square taper gets a quiet inner harbour, not a new hue:
+		// colour remains polarity, while this smaller nested arc makes the broad
+		// fine-control country around zero visible. The paired outer pinpricks are
+		// the exact +/-1-octave landmarks. Every position comes from CQSpec.
+		if(fine.notNil and: { fine.every(_.notNil) }) {
+			Pen.strokeColor = palette[\line].copy
+				.alpha_(if(active) { 0.58 } { 0.34 });
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.addArc(center, arcR - 4,
+				start + (sweep * fine[0]), sweep * (fine[1] - fine[0]));
+			Pen.stroke;
+			fine.do { |edge|
+				var edgeAngle = start + (sweep * edge);
+				var direction = Point(cos(edgeAngle), sin(edgeAngle));
+				Pen.line(center + (direction * (arcR - 5.5)),
+					center + (direction * (arcR - 1.5)));
+			};
+			Pen.stroke;
+		};
+		if(octaves.notNil and: { octaves.every(_.notNil) }) {
+			Pen.fillColor = palette[\line].copy
+				.alpha_(if(active) { 0.72 } { 0.46 });
+			octaves.do { |mark|
+				var markAngle = start + (sweep * mark);
+				var point = center
+					+ (Point(cos(markAngle), sin(markAngle)) * (arcR - 4));
+				Pen.addOval(Rect.aboutPoint(point, 0.9, 0.9));
+			};
+			Pen.fill;
 		};
 		this.prDrawReferenceMark(center, start, sweep, arcR, centerNorm, palette);
 		angle = start + (sweep * value);

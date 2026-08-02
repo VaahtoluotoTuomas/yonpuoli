@@ -1,6 +1,6 @@
 // The Drawer Workshop's own contracts (NIGHT_STANDALONE_PLAN §12.1.3/§12.1.5):
 // the ledger row's geometry, its exact-value reading, and the funnel bindings
-// every one of the 39 rows is built with. Serverless and Qt-free — the rendered
+// every one of the 26 rows is built with. Serverless and Qt-free — the rendered
 // page is asserted by the Drawer smoke.
 
 CQGuiWorkshopTest : UnitTest {
@@ -50,7 +50,7 @@ CQGuiWorkshopTest : UnitTest {
 		var groups = items.select { |item| item[\kind] == \group };
 		var y = 0;
 		this.assertEquals(items.first[\kind], \title, "an island opens with its title");
-		this.assertEquals(rowItems.size, 11, "coco 1 lays out its eleven rows");
+		this.assertEquals(rowItems.size, 7, "coco 1 lays out its seven setup rows");
 		this.assertEquals(groups.collect { |item| item[\label] },
 			["converter", "material", "output", "input mix"],
 			"rows are grouped by signal meaning, in the normative converter order");
@@ -63,10 +63,10 @@ CQGuiWorkshopTest : UnitTest {
 			"the score's end IS the island's height");
 		this.assertEquals(CQGuiWorkshop.islandHeight(coco),
 			CQGuiScale.tallestIslandHeight(\compact),
-			"an eleven-parameter Coco is the page's tallest island");
+			"a seven-parameter Coco is still the page's tallest island");
 		this.assert(CQGuiWorkshop.islandHeight(coco, \roomy)
 			> CQGuiWorkshop.islandHeight(coco, \compact),
-			"the roomy step gives the same eleven rows more room");
+			"the roomy step gives the same seven rows more room");
 	}
 
 	test_bothCocoLedgersComeFromOneHelper {
@@ -81,19 +81,15 @@ CQGuiWorkshopTest : UnitTest {
 			"only the index differs between the two Coco ledgers");
 	}
 
-	test_castleNumbersRunOneToFiveInBothQuantussyGroups {
+	test_castleDetunesStayInWorkshopWhileSendsMovedToNight {
 		var groups = CQGuiWorkshop.islandGroups(CQGuiWorkshop.quantussyIsland);
 		var detune = groups.detect { |g| g[\label] == "detune" };
 		var sends = groups.detect { |g| g[\label] == "audio sends" };
 		this.assertEquals(detune[\rows].collect { |row| row[\param] },
 			[\c1Off, \c2Off, \c3Off, \c4Off, \c5Off],
 			"detunes run castle 1 to 5");
-		this.assertEquals(sends[\rows].collect { |row| row[\param] },
-			[\c1Send, \c2Send, \c3Send, \c4Send, \c5Send],
-			"audio sends run castle 1 to 5, so the two lists compare without hunting");
-		this.assertEquals(detune[\rows].collect { |row| row[\label] },
-			sends[\rows].collect { |row| row[\label] },
-			"both groups label their castles identically");
+		this.assert(sends.isNil,
+			"audio sends have one owner: the castles' radial Night gestures");
 	}
 
 	// §12.1.3: semantic phosphor sparingly. Neutral slots, levels and pan
@@ -106,8 +102,8 @@ CQGuiWorkshopTest : UnitTest {
 		};
 		this.assertEquals(accented.collect { |row| row[\param] }.asArray.copy
 			.sort { |a, b| a.asString <= b.asString },
-			[\coco1Dust, \coco1Organ, \coco2Dust, \coco2Organ, \liveGain, \micGain],
-			"only dust, organ, the live input and the mic carry a family accent");
+			[\coco1Dust, \coco2Dust, \liveGain, \micGain],
+			"only dust, the live input and the mic carry a family accent here");
 		accented.do { |row|
 			this.assert(CQInk.palette(\day)[row[\family]].notNil,
 				"% names a real palette family".format(row[\param]));
@@ -317,17 +313,17 @@ CQGuiWorkshopTest : UnitTest {
 				this.prRow(row[\param], row[\label], row[\family])
 			}
 		};
-		this.assertEquals(built.size, 39,
-			"the manifest builds 39 controls");
+		this.assertEquals(built.size, 26,
+			"the manifest builds 26 controls");
 		this.assertEquals(built.collect { |row| row.kind }.as(IdentitySet).asArray,
 			[\ledger],
-			"all 39 are ledger rows — no native widgets and no Day knobs");
+			"all 26 are ledger rows — no native widgets and no Day knobs");
 		built.do { |row|
 			this.assert(row.isInteractive,
 				"'%' is an enabled interactive control".format(row.label));
 			this.assert(row.action.notNil, "'%' is funnel-bound".format(row.label));
 		};
-		this.assertEquals(owner.controls.size, 39,
+		this.assertEquals(owner.controls.size, 26,
 			"every row is registered with the GUI's Ink control list");
 		CQGuiWorkshop.paramNames.do { |name|
 			this.assertEquals((updaters[name] ? []).size, 1,

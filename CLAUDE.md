@@ -143,7 +143,7 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   accepted on `nocturne-preamp-roots` the same day (checklist N7), and
   **build-order step 8, the Drawer workshop (§12.1), was accepted on
   `nocturne-drawer-workshop` on 2026-07-28 (checklist N8).** Its tested
-  Space retirement leaves a Night 31 + Master 4 + Workshop 39 partition that
+  PLAY-6's drone promotion leaves a Night 44 + Master 4 + Workshop 26 partition that
   covers all 74 `CQSpec`
   parameters without Day. The user then chose Night as the sole interface and
   asked to merge the accepted chain: local `nocturne` now points at `dc95ced`.
@@ -299,7 +299,7 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
     chord, riding the river's own firefly phase (telemetry frames, never a clock
     of its own), because an arrowhead there read as a flowchart. The retired Day
     record used a static arrow. **The Night chord is shown only where
-    the hand asks** — nothing at rest, one chord under a hovered castle, five
+    the hand asks** — nothing at rest, one chord under a hovered inner clock, five
     under the hovered river — because the coupling is structure, not a quantity,
     and the ring's interior belongs to the iris, the fireflies, the cables and
     the lasso. The chord bows toward the eye (0.4, clamped at 0.35 × ringR) so
@@ -337,8 +337,9 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   + no clip info in `drawFunc`), which is why a morph costs ~5–6 % against a ~3 %
   resting figure; an offscreen buffer is the real fix and waits until after G2.
   The former static Day memory-path map is no longer deferred: N9 records its death.
-- Accepted G1 interaction decisions that stay binding: the banana grammar (audition/WYHIWYG,
-  plant/move/rip/harvest, polarity/wheel, solo-light, 32-op undo including GUI SHAKE,
+- Accepted G1 interaction decisions that stay binding, as amended by PLAY-5:
+  the banana grammar (view-only magnetic candidate + exact armed-weight plant,
+  atomic move/rip/harvest, polarity/wheel, solo-light, 32-op undo including GUI SHAKE,
   40 px capture radius, controls-first hit priority, static hover); no `cable opacity`
   control; the 184 px resizable bottom-Drawer was visually **rejected** — the accepted
   replacement is the toolbar `drawer` tab that swaps the central Night stage for a
@@ -477,6 +478,49 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   patched cable or a big shake sometimes makes no audible difference; four SPEC
   mechanisms would each explain it and they are written out in PLAN.md.
   See PLAN.md → "Tie 1.0:aan".
+- **Playability tests 1–5 are accepted as of 2026-08-02.** The planted-cable
+  first-touch weight is 0.60. Night planting is binary and silent until release:
+  every destination inside the 40 px magnetic catch receives the held moon's
+  exact weight, distance never attenuates, and wheel while in hand arms 0.05
+  steps (Ctrl 0.01) without a 0.60 DSP transient. `Z`/`X` is the laptop
+  decrement/increment mirror and Shift makes it fine. The Drawer's precision
+  Inspector alone retains `CQAudition`. SP.AF uses the accepted signed-square hand map and
+  right-click zero, and the Coco crescents separate stored settings from DSP
+  truth. For an audio-rate wake spanning at least 1/16 of the arc, the hollow
+  satellite is pinned to the measured midpoint instead of displaying an aliased
+  15 Hz sample. A castle's entire visible seeded blob, including the exact
+  centre and outer flesh, is one spesal-step/hover surface; its central clock
+  names the mechanism. Do not restore a separate flesh-wide hover ring/solo or
+  the former `cas` aura: they were found redundant and removed. The centre now has a raw-`tri`
+  reed (moving pearl at ≤3 Hz, stable full-reed blur above), while gate/trig
+  sockets distinguish amber pre-Schmitt charge from an exact pale post-Schmitt
+  fire diamond. `tri` versus `cas` and the organ source/output split passed.
+  A later live probe found the organ source's real defect: the weighted
+  band-limited stack peaked at only +0.5602 at Speed 24000, so a 0.60 cable
+  could not cross a Coco gate/trig's +0.5 Schmitt. The patch source is now
+  conditioned by ×1.6 and `clip2(1)` while the audible Organ layer is unchanged.
+  Each Coco's own `cocoN/orgN` matrix return is an explicit two-channel
+  LocalIn/LocalOut; cross-Coco channels remain separate InFeedback reads.
+  NRT pins both `org1 → coco1_spaf` and `org1 → coco1_skip 0.60` (the latter
+  changes held-loop RMS 0.1528 → 0.0414), so never remove this as redundant.
+  Keep the spiral speed notch as the static stored setting; the SP.AF wake and
+  read-head motion show effective modulation.
+- **PLAY-6 landed, 2026-08-02:** Night is one continuous landscape, never a
+  separate drone mode. Each shell owns a vertical-drag Level shoreline, an
+  audible-Organ calyx, its own SlotQ tributary gill and its destination-side
+  SlotX bridge valve. `coco1SlotX` means Coco 2 → Coco 1 and `coco2SlotX`
+  means Coco 1 → Coco 2; the lanes are independent and never linked to SlotQ.
+  Each visible castle owns one deferred tap/radial-pull decision: ≤8 px release
+  steps spesal, a deliberate inward/outward pull opens/closes `c1Send…c5Send`
+  without first rewiring the clock. These 13 controls moved out of Workshop;
+  the exact tested ownership is Night 44 · Master 4 · Workshop 26.
+- **PLAY-6.1 is planned, not implemented (2026-08-02):** follow the exact
+  lower-model hand-off in `PLAN.md`. It moves SlotQ's ring anchors into the
+  castle 5→1 / 1→2 gaps, bows both directional SlotX lanes over castle 1,
+  reverses only Coco 2's Level display sweep, moves Level ink above opaque
+  crescent paper, and adds one low-chroma `undertow` under-ink while retaining
+  Organ/tri/cas family cores. This is GUI geometry/layer/palette work only;
+  do not touch DSP, ranges, gestures, ownership or SlotX direction.
 - **The 16n map is now two identical Coco channel strips plus a shared section**
   (SPEC §6.1, normative): F1–F5 `coco1` In·Speed·Spaf·Fb·**Level**, F6–F10
   `coco2` the same, F11–F16 `qFreq`·`qChaos`·`preADrive+preBDrive`·
@@ -486,9 +530,9 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   deck faders left because `deckALevel`/`deckBLevel` already have Night crescents
   and `deckARate`/`deckBRate` are matrix destinations. The rule that decided it
   is normative: **a fader is worth most where no other hand reaches** — Night
-  plays 31 params, Master 4, the matrix 22 destinations, while the Cocos' mix
-  stage (`Level`, `Organ`, `Dust`, `Pan`, `Slot*`) was reachable from nothing but
-  a hand. F14 is measured, not taste: `qMix` has exactly one writer and one
+  now plays 44 params, Master 4 and the matrix 22 destinations. Level, Organ,
+  SlotQ and directional SlotX have Night bodies; Dust, Pan and the pre/deck
+  setup slots retain exact Workshop rows. F14 is measured, not taste: `qMix` has exactly one writer and one
   reader (`cocoNSlotQ`, default 0), so without a hand there F11/F12 shape a voice
   that never reaches the output. Do not "restore" the deck faders or link the
   two Levels without the user's decision.
@@ -520,8 +564,9 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 
 - `BufRd` must be instantiated before `BufWr` in `\cqCoco` — the pre-write read is
   load-bearing (lossless hold, correct delay tap). See ARCHITECTURE §4.4.
-- `LocalIn`/`InFeedback` one-block delays in the Quantussy ring and coco cross-feed
-  are by design; do not "fix".
+- `LocalIn`/`InFeedback` one-block delays in the Quantussy ring, each Coco's own
+  `cocoN/orgN` matrix-source return, and Coco cross-feed are by design; do not
+  "fix".
 - `bufFrames` must stay ≤ 2^19 (Phasor float32 integer precision).
 - `MIDIClient.init` once, guarded; the instrument must run fully without the 16n and
   without the GUI (headless config).

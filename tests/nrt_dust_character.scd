@@ -48,6 +48,7 @@ makeScore = { |speed|
 	score.add([0.0, [\s_new, \cqCoco, 1001, 1, 1000,
 		\buf, 0, \preBus, 8, \deckBus, 8, \qMixBus, 8, \crossBus, 8,
 		\outBus, 0, \modSrcBus, 16, \modTapIdx, 12, \modOrganIdx, 14,
+		\cocoIndex, 0,
 		\speed, speed, \inLevel, 0, \fbLevel, 0, \dust, 0.02,
 		\hold, 0, \organLvl, 0, \level, 1,
 		\slotPre, 0, \slotDeck, 0, \slotQ, 0, \slotX, 0]]);

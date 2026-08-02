@@ -30,12 +30,12 @@ CQGuiCoverageTest : UnitTest {
 	// ---- the partition ----
 
 	test_theThreeSurfacesDeclareTheirIntendedCounts {
-		this.assertEquals(this.prNight.size, 31,
-			"Night plays 31 interactive parameters");
+		this.assertEquals(this.prNight.size, 44,
+			"Night plays 44 interactive parameters after the drone promotion");
 		this.assertEquals(this.prMaster.size, 4,
 			"the persistent Master strip owns 4");
-		this.assertEquals(this.prWorkshop.size, 39,
-			"the Workshop ledger owns the 39 remaining parameters");
+		this.assertEquals(this.prWorkshop.size, 26,
+			"the Workshop ledger owns the 26 remaining setup parameters");
 	}
 
 	test_eachSurfaceNamesRealParametersOnce {
@@ -95,7 +95,8 @@ CQGuiCoverageTest : UnitTest {
 				"the night's own bodies play %".format(name));
 		};
 		[1, 2].do { |n|
-			#[\In, \Fb, \Speed, \Spaf, \DolbyIn, \DolbyFb, \Hold, \Flip].do { |suffix|
+			#[\In, \Fb, \Speed, \Spaf, \DolbyIn, \DolbyFb, \Hold, \Flip,
+				\Level, \Organ, \SlotQ, \SlotX].do { |suffix|
 				var name = ("coco" ++ n ++ suffix).asSymbol;
 				this.assert(night.includes(name),
 					"the shell plays %".format(name));
@@ -104,6 +105,8 @@ CQGuiCoverageTest : UnitTest {
 		(1..5).do { |k|
 			this.assert(night.includes(("c" ++ k ++ "Range").asSymbol),
 				"castle %'s range ripple is playable".format(k));
+			this.assert(night.includes(("c" ++ k ++ "Send").asSymbol),
+				"castle %'s radial qMix tributary is playable".format(k));
 		};
 	}
 
@@ -141,18 +144,15 @@ CQGuiCoverageTest : UnitTest {
 		var workshop = this.prWorkshop;
 		var expected = #[
 			liveGain, micGain, deckARate, deckBRate, deckALoop, deckBLoop,
-			coco1Bits, coco1Wrap, coco1Interp, coco1Dust, coco1Organ,
-			coco1Level, coco1Pan,
-			coco1SlotPre, coco1SlotDeck, coco1SlotQ, coco1SlotX,
+			coco1Bits, coco1Wrap, coco1Interp, coco1Dust, coco1Pan,
+			coco1SlotPre, coco1SlotDeck,
 			qShLag, c1Off, c2Off, c3Off, c4Off, c5Off,
-			c1Send, c2Send, c3Send, c4Send, c5Send,
-			coco2Bits, coco2Wrap, coco2Interp, coco2Dust, coco2Organ,
-			coco2Level, coco2Pan,
-			coco2SlotPre, coco2SlotDeck, coco2SlotQ, coco2SlotX
+			coco2Bits, coco2Wrap, coco2Interp, coco2Dust, coco2Pan,
+			coco2SlotPre, coco2SlotDeck
 		];
 		// `sort` is in place and a `#[...]` literal is immutable: copy first
 		this.assertEquals(this.prSorted(workshop), this.prSorted(expected),
-			"the Workshop manifest is the contract's exact 39 names");
+			"the Workshop manifest is the contract's exact 26 setup names");
 	}
 
 	// SPEC §6.2: the GUI never grows a second interactive micGain path. The

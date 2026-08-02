@@ -110,8 +110,9 @@ centred = { |inner, outer|
 						"Inspector's opened preset rows follow ordinary pointer hover");
 					drawer.presetMenu.close;
 					grid.grid.mouseDownAction.value(grid.grid, 96, 12, 0, 0, 1);
-					check.value(matrix.getPatch(\tri1, \coco1_spaf) == 0.3,
-						"large knot press auditions +0.3 through the shared funnel");
+					check.value(matrix.getPatch(\tri1, \coco1_spaf)
+						== CQBananaGrammar.defaultHandStrength,
+						"large knot press auditions the shared +0.60 first-touch strength");
 					check.value(grid.selectedSrc == \tri1
 						and: { grid.selectedDest == \coco1_spaf },
 						"selected knot persists as the route-ribbon context");
@@ -312,7 +313,7 @@ centred = { |inner, outer|
 									gui.shell.toggleDrawer;
 									AppClock.sched(0.3, {
 										try {
-											var beforeLevel, interpRail, dustRail;
+											var beforeDust, interpRail, dustRail;
 											check.value(gui.shellState.viewMode == \night
 												and: { gui.shellState.drawerTab == \workshop }
 												and: { gui.shell.workspaceStack.index == 1 }
@@ -352,21 +353,26 @@ centred = { |inner, outer|
 												and: { workshop.mainLedgers[0].bounds.width
 													== workshop.mainLedgers[2].bounds.width },
 												"the body is the coco / quantussy / coco triptych, the pair equal");
-											check.value(workshop.rows.size == 39
+											check.value(workshop.rows.size == 26
 												and: { workshop.rows.every { |row|
 													row.kind == \ledger and: { row.isInteractive }
 												} },
-												"all 39 parameters render as enabled ledger rows");
+												"all 26 Workshop parameters render as enabled ledger rows");
+											check.value(#[coco1Level, coco2Level,
+												coco1Organ, coco2Organ, coco1SlotQ, coco2SlotQ,
+												coco1SlotX, coco2SlotX, c1Send, c2Send, c3Send,
+												c4Send, c5Send].every { |name| rowOf.value(name).isNil },
+												"Night's promoted performance controls have no duplicate Workshop rows");
 											// no scroll view: the last row of the
 											// deepest group must lie inside the page
-											check.value(#[coco1SlotX, coco2SlotX, c5Send]
+											check.value(#[coco1SlotDeck, coco2SlotDeck, c5Off]
 												.every { |name|
 													rowOf.value(name).view.absoluteBounds.bottom
 														<= (workshop.view.absoluteBounds.bottom + 1)
 												},
-												"the last Coco slot rows and the fifth castle send are contained");
+												"the deepest retained Workshop rows are contained");
 											check.value(CQInkControl.drawErrors == 0,
-												"the islands and 39 ledger rows paint without callback errors");
+												"the islands and 26 ledger rows paint without callback errors");
 											// The user's N8 rounds: one shared page frame.
 											// Measured parent-relative, because a hidden
 											// StackLayout page reports stale ABSOLUTE
@@ -394,9 +400,9 @@ centred = { |inner, outer|
 											check.value(state.get(\coco1Dust)
 												== CQSpec.map(\coco1Dust, 1),
 												"a press at the rail's end writes the parameter's own maximum");
-											beforeLevel = state.get(\coco1Level);
-											pressRow.value(\coco1Level, 4);
-											check.value(state.get(\coco1Level) == beforeLevel,
+											beforeDust = state.get(\coco1Dust);
+											pressRow.value(\coco1Dust, 4);
+											check.value(state.get(\coco1Dust) == beforeDust,
 												"a press on the label column writes nothing");
 											interpRail = railOf.value(\coco1Interp);
 											pressRow.value(\coco1Interp, interpRail.right - 2);
@@ -451,7 +457,7 @@ centred = { |inner, outer|
 													// The screen may clamp the request,
 													// so everything below is asserted
 													// against the size actually achieved.
-													beforeRow = rowOf.value(\c5Send).view.bounds.height;
+											beforeRow = rowOf.value(\c5Off).view.bounds.height;
 													beforeRail = workshop.railWidth;
 													gui.window.setInnerExtent(1920, 1005);
 													AppClock.sched(0.4, {
@@ -463,7 +469,7 @@ centred = { |inner, outer|
 																and: { drawer.pageSize.width >= 1400 },
 																"a maximized window reaches the roomy step (page %)"
 																	.format(drawer.pageSize));
-															check.value(rowOf.value(\c5Send).view.bounds.height
+																	check.value(rowOf.value(\c5Off).view.bounds.height
 																> beforeRow
 																and: { workshop.railWidth > beforeRail },
 																"rows and rail both grow — the room buys legibility");
@@ -480,11 +486,11 @@ centred = { |inner, outer|
 																.collect { |ledger| ledger.bounds.width }
 																== CQGuiWorkshop.mainWidths(
 																	workshop.railWidth, drawer.step)
-																and: { rowOf.value(\c5Send).view.bounds.width
+																		and: { rowOf.value(\c5Off).view.bounds.width
 																	== CQGuiWorkshop.mainWidths(
 																		workshop.railWidth, drawer.step)[1] },
 																"every row is re-measured to its own island");
-															check.value(#[coco1SlotX, coco2SlotX, c5Send]
+																	check.value(#[coco1SlotDeck, coco2SlotDeck, c5Off]
 																.every { |name|
 																	rowOf.value(name).view.absoluteBounds.bottom
 																		<= (workshop.view.absoluteBounds.bottom + 1)

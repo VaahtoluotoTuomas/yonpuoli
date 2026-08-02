@@ -88,17 +88,23 @@ one law so implementers never have to decide case by case:
 - **Source jacks** are solid dots in their family color (SPEC §6.2 accents).
 - **Destination sockets** are ink rings; family-colored where SPEC assigns a
   family (spaf purple, fm blue, spesal green); gate/trig sockets carry a small
-  glyph and a **charge lamp** (§9).
+  glyph and a **charge/fire lamp** (§9).
 - **Direction is shape first, invitation second** (accepted 2026-07-29).
   A solid, symbol-free jack is a source; a hollow ring carrying the receiving
   control's symbol is a destination. An empty destination has no idle hover
   highlight because it cannot act without a banana. As soon as a source or a
   planted banana is in hand, every legal destination gains one quiet, static
-  family-coloured halo; the nearest audition candidate answers more strongly.
+  family-coloured halo; the nearest magnetic drop candidate answers more strongly.
   No blinking: Night reserves motion for changing signal/state.
 - **Cables** are verso **amber** / inverso **blue** (the existing grid
   convention), drawn as gravity-sagged arcs; width and how deep the banana
-  sits in its socket ∝ |w|; alpha pulses with the source's aura (§9).
+  sits in its socket ∝ |w|; alpha pulses with the source's aura (§9). On hover,
+  a midpoint **weight moon** makes the narrow width range explicit: its orbit
+  fills by `|w|`, while clockwise/counter-clockwise direction and hue repeat
+  polarity. The moon is the complete readout: no percentage capsule or tether.
+  It appears on hover for a planted cable and continuously on the one cable in
+  hand, where the wheel can choose its first weight before any DSP write. It is
+  gesture ink, never permanent numeric clutter.
 - Multiple bananas in one socket = a stack (hardware-true). A stack spreads on
   hover; every banana in it must be individually grabbable.
 
@@ -126,9 +132,12 @@ one law so implementers never have to decide case by case:
 | `deckA/B_rate` | continuous | ink ring | beside deck rate control | socket under the bird's wing |
 
 Gate/trig reminder for players and implementers alike: these pass the Schmitt
-threshold (+0.5 on, +0.3 off; SPEC §5.5). A lone banana at modest strength may
-never fire — that is why the charge lamps exist (§9): the panel shows the
-charge instead of leaving silence mysterious.
+threshold (+0.5 on, +0.3 off; SPEC §5.5). Every new cable is armed at 0.60,
+giving a normalized source headroom; any release inside the complete 40 px
+magnetic catch seats that exact value. Distance never attenuates it. A quieter
+source or a deliberately wheel-reduced held/planted weight may still never fire. That is why
+the charge/fire lamps exist (§9): amber fill shows threshold approach and the
+pale diamond shows the exact event, instead of leaving silence mysterious.
 
 ---
 
@@ -137,11 +146,13 @@ charge instead of leaving silence mysterious.
 | gesture | meaning | state path |
 |---|---|---|
 | press a source jack | banana in hand; polarity = button (left = verso, right = inverso) | — |
-| drag near a socket (≤ auditionRadius) | **audition**: live weight = handStrength × closeness², swelling as you approach | `matrix.patch` (funnel, clamped) |
-| release on/near a socket | **plant** at exactly the audible weight (WYHIWYG) | commit; undo op |
-| release in the void | nothing persists | audition reverted |
-| Shift held at release | plant AND keep the source in hand (click-click mode: each click plants, Esc drops) | commits per plant |
-| press a planted banana (socket end or cable) | back in hand, carrying its weight; release in void = **rip** (w → 0); release on another socket = **move** | commit; undo op |
+| drag near a socket (≤ `dropRadius`) | arm that magnetic destination, view-only; distance changes no weight and no sound | no matrix write |
+| wheel while a banana is in hand | choose its armed `|w|` before landing: ± 0.05 (Ctrl: ± 0.01), sign preserved, floor 0.05; the held-cable moon follows | view-only |
+| `Z` / `X` while a banana is in hand | laptop/touchpad mirror of wheel down/up: ±0.05; Shift = ±0.01 fine step; Ctrl+Z remains undo | view-only |
+| release on/near a socket | **plant** at exactly the armed moon weight | one commit; undo op |
+| release a new cable in the void | nothing happens | no matrix write |
+| Shift held at release | plant AND keep the source and armed weight in hand (click-click mode: each click plants, Esc drops) | commits per plant |
+| press a planted banana (socket end or cable) | back in hand, carrying its weight; its origin remains the audible matrix truth until release. Void = **rip** (w → 0); another socket = atomic **move** | one commit; undo op |
 | right-click socket/cable | instant rip (matches inspector) | commit; undo op |
 | right-drag starting on empty ground | **harvest**: freehand lasso — on release, every planted banana caught inside rips together (§4.4) | commit; one undo op |
 | wheel over socket/cable | |w| nudge ± 0.05 (Ctrl: ± 0.01), sign preserved, floor 0.05 | funnel |
@@ -149,31 +160,36 @@ charge instead of leaving silence mysterious.
 | double-click any jack/socket/body | **solo-light**: its bananas bright, everything else dim; repeat or Esc releases | view-only |
 | Ctrl+Z | undo the last committed matrix op | batched funnel write |
 
-### 4.1 Audition protocol (the sacred bookkeeping)
+### 4.1 Binary cable planting
 
-- At most **one live audition** at any moment. Bookkeeping is a single record
-  `{src, dest, prevW}`; revert = `patch(src, dest, prevW)`.
-- Moving to a new candidate socket reverts the previous audition first.
-- **Exhaustive revert paths — all normative:** cursor leaves the radius; new
-  candidate socket; plant (candidate commits, any other preview reverts); Esc;
-  release in void; view toggle; window close; GUI free; CmdPeriod; `CQ.panic`
-  (state must not leak even while muted). No timers, no leaks; the smoke test
-  asserts matrix equality after every exit path (§13).
-- Audition writes flow through the normal funnel at mouse-move rate (see §15
-  on zipper measurement).
+- At most one **view-only candidate** exists. Entering or changing the 40 px
+  magnetic radius updates only `{dest, armedWeight}` and endpoint ink; it never
+  calls `CQMatrix`, never changes DSP and never creates a route that can be
+  “heard without plugging”.
+- Release is the boundary: inside a candidate it performs exactly one plant or
+  atomic move; outside it performs nothing for a new cable or one rip for a
+  lifted planted cable. Catch distance is not a hidden attenuator.
+- Esc, view toggle, window close, GUI free, CmdPeriod and `CQ.panic` merely drop
+  the view-only hand. The smoke test asserts exact matrix equality after every
+  unfinished-new-cable exit (§13).
+- The Drawer Inspector deliberately retains its separate touch-and-listen
+  `CQAudition` protocol for precision cell editing (§8); Night cable planting
+  does not share that transient write path.
 
-### 4.2 WYHIWYG law
+### 4.2 Armed-weight law
 
-Planting commits exactly the weight being heard — no hidden defaults on the
-plant path. The inspector's double-click plant (fixed 0.3, = shake's default
-feel) is the only fixed-default entry.
+Planting commits exactly the weight drawn by the held-cable moon. The 0.60
+default is visible immediately, and the wheel can make the first committed
+value quieter without ever passing 0.60 through the DSP. The inspector's
+double-click plant uses the same fixed 0.60 first-touch strength; shake keeps
+its independent 0.3 weight law.
 
 ### 4.3 Undo
 
 GUI-local ring (default 32) of full-matrix copies. One op = plant / rip / move
 / polarity flip / harvest / shake / preset apply via GUI / breed / one
 grow-or-wither hold / compass left-release. Elastic compass gestures (§7.1)
-and auditions never enter the ring. Code-layer writes (`live.scd`) are not in
+and view-only held cables / Inspector auditions never enter the ring. Code-layer writes (`live.scd`) are not in
 this undo — the spellbook is their memory. Undo writes go through the batched
 funnel like any other client.
 
@@ -188,8 +204,8 @@ funnel like any other client.
 - **Membership**: sample every *planted* cable's drawn path, endpoints
   included, ~every 12 px; a banana is caught if any sample falls inside the
   region. Because endpoints count, circling an organ strips it bare — every
-  socket and jack inside brings all its bananas. The audition banana is never
-  harvestable: it belongs to the hand and reverts by §4.1.
+  socket and jack inside brings all its bananas. A held banana is never
+  harvestable: it belongs to the hand and is not yet a matrix route (§4.1).
 - **Preview**: while the lasso is open, every currently-caught banana lifts
   its plug 2 px and gains a danger-red under-glow (polarity color unchanged —
   the hue-alone law, §16.2). Leaving the region drops the mark.
@@ -207,7 +223,9 @@ funnel like any other client.
 - **Cables on paper.** On non-interactive paper, labels and organism body, the
   nearest cable inside its narrow path target owns the pointer. It reaches
   full alpha with a soft, static ink under-stroke while unrelated planted
-  cables recede to 46 % alpha. No pulse or telemetry aura is used for focus.
+  cables recede to 46 % alpha. Its midpoint weight moon (§3) is drawn above
+  every route crossing, so low / middle / high and sign are readable before the
+  next wheel or grab. No pulse or telemetry aura is used for focus.
 - **Endpoints are cable territory.** Jack/socket/plug hover wins in its own
   geometry. A socket stack still fans out (§3.2), providing the precision path
   when several bananas share an endpoint. A source jack answers at rest because
@@ -307,16 +325,20 @@ eye but must keep the topology truths):
   ring). Each castle: triangle bud (orange source), crenellated bud (gray
   source), inner moon `fm` (blue ring), outer moon `spesal` (green ring +
   charge lamp), an **8-notch spesal dial** with the current state lit (data:
-  the existing `/cq_spesal` cache), body glow = its aura (§9). A playable rate
+  the existing `/cq_spesal` cache), and a central raw-triangle reed (§9). A playable rate
   ripple at the castle's 6 o'clock carries range without text:
   one/two/five half-waves mean infra/balcium/audio, and a tap steps the regime
-  (§6.1, §16.6).
+  (§6.1, §16.6). A short amber tributary points inward from each castle; a
+  radial pull opens/closes that castle's contribution to `qMix` (`cKSend`).
 - **Coco 1 left, Coco 2 right: spiral shells** (the delay RAM as a coconut
   cross-section). A **read-head spark travels the spiral** (loop-phase
   telemetry, §9); hold = the spiral ring solidifies red; flip = the spark
   reverses. On the shell: org fruit (yellow source), the spiral's mouth (gray
   source), and moons spaf / inVca / fbVca / flip / skip (lamps on the
-  gate/trigs).
+  gate/trigs). Each shell also owns its output-Level shoreline, audible-Organ
+  calyx, a destination-side SlotQ gill on the Quantussy tributary and one valve
+  of the two-lane directional SlotX bridge. These are landscape anatomy, not a
+  mixer panel and not a separate drone mode.
 - **Inputs as roots** at the bottom: envA left, envB right; root tips glow
   with follower level (aura).
 - **Decks as birds** at the top: deckA / deckB. The bird itself fetches:
@@ -330,22 +352,23 @@ eye but must keep the topology truths):
   Windows/Qt-safe ruffle grammar passed live playing review.
 - Cables follow the same grammar (§4), arcing around bodies, pulsing with
   their source's aura. Solo-light on a body lights everything touching it.
-  The night's bodies (landed 2026-07-21): each **castle** (its two buds, its
-  fm and spesal moons), each **shell** (mouth, fruit and its five moons) and
-  the **ring** — the last three under the shared semantic body names
-  `coco1` / `coco2` / `quantussy`, so one shared grammar never holds two
-  solos for one organ, while the castles are the night's finer bodies. Roots
-  and birds get no body: each carries a single endpoint whose own jack/socket
-  solo already lights the very same cables.
+  The useful Night group bodies are each **shell** (mouth, fruit and five
+  moons) and the **ring**, under the semantic names `coco1` / `coco2` /
+  `quantussy`, so one grammar never holds two solos for one organ. A castle's
+  four exact endpoint solos already provide the useful precision paths; its
+  visible seeded flesh instead owns the tap/send decision. The former
+  flesh-wide group solo and outer hover ring were removed at PLAY-3
+  (2026-08-02) as redundant with those endpoints and the inner-clock coupling
+  reveal. Roots and birds likewise get no group body: each carries one endpoint.
 
-  **A body is taken by its own drawn outline** (decided 2026-07-21): the
-  castle's blob, the shell's outer rim, the ring's line — each a mark the eye
-  already reads as *the whole organism*, each narrow enough to leave the water
-  around it free for the harvest lasso, and each its own hover cue (§4.5:
-  the castle wears the quiet outer ring, the shell draws its rim, the river
-  brightens). Cue and action always share one geometry; a cue that covers more
-  or less ground than its action is a cue that lies. Controls-first still binds
-  at every click count — a fast second tap on the inner clock, the heart, the
+  **A group body is taken by its own drawn outline**: the shell's outer rim or
+  the ring's line, each narrow enough to leave water around it free for the
+  harvest lasso and each its own hover cue (§4.5). Only the small ellipse margin
+  outside a castle's visible seeded flesh remains ordinary banana/harvest
+  ground; the flesh itself is the clock/send surface, never a group solo. Cue and action share
+  one geometry; a cue that covers more or less ground than its action is a cue
+  that lies. Controls-first still binds
+  at every click count — a fast second tap on a castle surface, the heart, the
   chevron, the skip mark or the eye belongs to that touch point, and where the
   winding surface runs close to the shell's rim it is the wind that answers,
   with the wind's own cue.
@@ -380,11 +403,15 @@ below; it does not silently grant priority to any other control.
 | **the heart's punch** | **right press held** on the same heart mark: momentarily *invert* the seal for as long as it is held — a looper's punch-in (sealed → material drops into the ring; open → a fragment freezes), restored on release. The exact prior value is captured and restored on **every** exit path — mouse-up, Esc, Tab, panic, window close, GUI free, CmdPeriod — because a stuck punch leaves a loop recording over itself (a right press on a *cable* crossing the heart still rips, §4.5). No timer: the split from the left tap is the button, not the clock | `cocoN hold` (momentary invert, no undo) |
 | **the mouth chevron** | press the read-direction chevron at the mouth. Hover answers in **weight** (hairline → normal), not colour: the chevron already rests in `cas`, which is brighter than the `line` its two siblings brighten *to*, so a colour step could only dim it. Weight is the reel notch's channel on the same body | `cocoN flip` toggle |
 | **the mouth's skip mark** | press the spark glyph hanging under the chevron (10 px box, stationary). Momentary: 120 ms ink flash on *any* skip (§16.7) | `skip(n)` — the loop restarts from the eye |
-| **tide crescents** | a small crescent below each spaf / inVca / fbVca moon; vertical drag pours more or less. Socket beside its control — §1's proximity law, reborn at night. Each scale names only a real consequence. **SP.AF** splits at its CQSpec-derived zero: inverso blue to the left, verso orange to the right, with fill growing from zero and a zero notch. **Input** is green through exact unity and amber in overdrive, divided by its CQSpec-owned unity mark. **Feedback** keeps its three audible bands: fading echo green, unity/bloom amber, mayhem red. Complete regions rest dimly behind the hand; the travelled region brightens and a pearl marks the current position. Fine notches keep boundaries legible without relying on colour vision. Feedback edges are its normalized taper breakpoints (0.5 / 0.9), never duplicated visual constants | `cocoN spaf / in / fb` |
+| **tide crescents** | a small crescent below each spaf / inVca / fbVca moon; vertical drag pours more or less. Socket beside its control — §1's proximity law, reborn at night. Each scale names only a real consequence. **SP.AF** uses CQSpec's symmetric signed-square hand map: a 15 px pull from zero reaches ±0.25 oct, 30 px reaches ±1 oct, and full travel still reaches ±4. Its inverso blue / verso orange fill still means polarity only; a smaller nested **harbour arc** marks the exact ±0.25 fine country, paired neutral pinpricks mark ±1 oct, and the zero notch stays fixed. **Right-click on either SP.AF crescent returns it to exact zero**; there is no drag detent, because a sticky midpoint would interrupt continuous performance passes through zero. **Input** is green through exact unity and amber in overdrive, divided by its CQSpec-owned unity mark. **Feedback** keeps its three audible bands: fading echo green, unity/bloom amber, mayhem red. Complete regions rest dimly behind the hand; the travelled region brightens and a coloured pearl marks the stored hand setting. When a matrix banana is connected to one of these three destinations, a separate hollow neutral **satellite pearl** on the outer orbit states the effective DSP value (§9): slow modulation moves it, while faster-than-display motion becomes a stable arc wake spanning the excursion instead of an aliased slow wobble. Once that wake spans at least 1/16 of the normalized arc, the satellite parks at the wake's quantized midpoint rather than sawing between instantaneous 15 Hz samples. SP.AF's satellite is its realized post-clock-clamp octave contribution; Input/Feedback satellites are their post-law, post-clip VCAs. No telemetry or no effective matrix weight means no satellite. Fine notches keep boundaries legible without relying on colour vision. All landmarks, ranges and maps come from CQSpec, never duplicated visual constants | `cocoN spaf / in / fb` |
 | **dolby oysters** | beneath each in/fb tide crescent, tap the captionless paired arcs: open = off, nearly shut = gate, shut with a partner-facing arrival stroke = duck. Oyster hover and crescent hover are exclusive; a drag may begin only on the crescent's original square | `cocoN dolbyIn / dolbyFb`: `off → gate → duck → off` (CQSpec enum order) |
+| **Level shoreline** | vertical drag on the shell's outer open shore. Its fill and pearl state the stored channel level; the CQSpec-owned 1.0 unity notch separates normal water from a danger-red boost reach. The spiral only breathes in opacity with Level and remains visible at zero | `cocoNLevel`, independent 0…1.5 exponential channel mix |
+| **Organ calyx** | vertical drag on the yellow flesh around the `orgN` seed. The calyx fill states the audible organ layer, while the central yellow jack never changes size or patchability — `Organ = 0` mutes the layer but never pretends the modulation source disappeared | `cocoNOrgan`, 0…1 |
+| **Quantussy tributary gill** | vertical drag on the short gill where the ring's faint amber side-river arrives at a shell. Zero leaves topology barely visible; pressure and pearl state the gain. The two shell gills are independent even though the default 16n performance fader links them | `cocoNSlotQ`, 0…1.5 gain from `qMix` into that Coco |
+| **two-lane cross-feed bridge** | vertical drag on either shell's own bridge valve. Arrowheads make the two simultaneous directions explicit and each lane keeps its own gain: the valve at Coco 1 receives Coco 2; the valve at Coco 2 receives Coco 1. It is never linked to SlotQ or to the opposite lane | `coco1SlotX`: Coco 2 → Coco 1; `coco2SlotX`: Coco 1 → Coco 2, each 0…1.5 |
 | **the ring's eye** | the storm iris at the ring's center (§16.6); grab and drag — vertical = pitch, horizontal = chaos, and the iris itself answers on both axes. The weather of five castles from one fingertip | `qFreq` (y) + `qChaos` (x), relative |
-| **dial tap** | press a castle's inner clock — the dial face inside the body (§16.6): one step (same act as the day step button and keys 3..7). Hovering the castle first shows **which castle it reads** as an inner chord (§16.6's coupling chords), so the step's consequence is visible in the gesture that makes it | `spesal(k)` step |
-| **range ripple** | tap the drawn rate at a castle's 6 o'clock: one slow swell → one full cycle → five tight half-waves → one slow swell. The form is the whole regime display; no legacy `i/b/a` caption remains. Cable-first remains absolute, and ripple/clock/body hover cues are exclusive | `cNRange`: `infra → balcium → audio → infra` (CQSpec enum order) |
+| **castle tap / tributary pull** | press anywhere inside the castle's complete visible seeded blob, exact centre and rim flesh included (§16.6). Release within the shared 8 px tap boundary performs one spesal step (same act as keys 3…7). Travel beyond it becomes only a radial send gesture: pull inward to open and outward to close. The step is deliberately deferred until release, so beginning a drone ride can never perform a transient internal rewire. The central dial remains the mechanism/state display and hover reveals which castle it reads as an inner chord | tap: `spesal(k)`; radial drag: `cKSend`, 0…1 |
+| **range ripple** | tap the drawn rate at a castle's 6 o'clock: one slow swell → one full cycle → five tight half-waves → one slow swell. The form is the whole regime display; no legacy `i/b/a` caption remains. Cable-first remains absolute, and ripple/clock hover cues are exclusive | `cNRange`: `infra → balcium → audio → infra` (CQSpec enum order) |
 | **bird fetch + drop + wing crescent** | tap the bird with < 8 px travel to open the asynchronous system file dialog at the configured samples folder; cancelling is inert. Dropping an audio file remains an equal load path. The crescent under the wing is the deck's level and carries one exact CQSpec-derived unity tick: line ink through unity; only the travelled arc and pearl beyond that mark turn danger-red | deck load · `deckN level` |
 | **bird folder walk** | wheel down = next file, wheel up = previous. Qt momentum is gated to one sign-step per 150 ms so one flick cannot skip a handful of perches; before a load, the deck's own guard scans the samples folder | `deckN.next / prev` |
 | **bird ruffle** | horizontal drag travels ≥ 6 px and reverses once by ≥ 6 px — one natural out-and-back; release chooses a random file. Repeated or broad ruffling remains valid once that reversal is clear. A drag that is neither a tap nor a ruffle is inert | `deckN.random` |
@@ -401,9 +428,10 @@ panel's own FLIP/SKIP pair, in the one direction around the mouth that is
 empty. Not above the jack, which looks symmetrical and is wrong — the spiral
 *ends* at the mouth and arrives there from above, so that side is the groove
 itself. The comet keeps its whole job, which was always the honest one: saying
-where the loop is reading. The loop's finer diet — slots, bits and
-interpolation — lives in the Workshop: the slot defaults (pre 1,
-deck 1) make a dropped file audible at night with `in` up. Body solo-light
+where the loop is reading. The loop's setup diet — pre/deck slots, bits and
+interpolation — lives in the Workshop, while the performance-flow Q/X slots
+live in Night: the setup defaults (pre 1, deck 1) make a dropped file audible
+at night with `in` up. Body solo-light
 and the night toolbar arrive with the later G2 steps as planned.
 
 ---
@@ -577,10 +605,10 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
   here too: no aura, glowing borders, cable animation, texture, decorative
   gradients or organism wobble — only a changing parameter, hover/press,
   `micGain` danger or another real state may brighten a mark.
-  - It owns the **39 parameters** Night and Master do not, so that a player who
+  - It owns the **26 setup parameters** Night and Master do not, so that a player who
     starts in Night and uses only Night, the Drawer and the Master strip reaches
     every `CQSpec` parameter (SPEC §6.2). The interactive partition is
-    **Night 31 · Master 4 · Workshop 39**, disjoint, and its union is asserted
+    **Night 44 · Master 4 · Workshop 26**, disjoint, and its union is asserted
     against `CQSpec.names` itself rather than a copied count. Workshop ownership
     is an **explicit manifest**, never `CQSpec.names` minus the others: a newly
     added parameter must fail the audit instead of silently counting as covered.
@@ -638,11 +666,10 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     thicken when the water grows; this responsive size step applies to the
     Drawer alone.
   - Rows are grouped by **signal meaning**, never alphabetically: each Coco as
-    *converter* (`bits`, `wrap`, `interp`) · *material* (`dust`, `organ`) ·
-    *output* (`level`, `pan`) · *input mix* (`pre`, `deck`, `q`, `x`);
-    the Quantussy as *s&h* (`qShLag`) · *detune* (`c1Off`…`c5Off`) · *audio
-    sends* (`c1Send`…`c5Send`), castles running 1→5 in both so the lists compare
-    without hunting. **Pair symmetry is structural**: both Coco ledgers are built
+    *converter* (`bits`, `wrap`, `interp`) · *material* (`dust`) ·
+    *output* (`pan`) · *input mix* (`pre`, `deck`); the Quantussy as *s&h*
+    (`qShLag`) · *detune* (`c1Off`…`c5Off`). Level, Organ, Q/X flow and castle
+    sends have exactly one interactive GUI owner in Night. **Pair symmetry is structural**: both Coco ledgers are built
     by one helper with only the index changed, so their subgroup baselines match
     by construction.
   - **Three ranks, told by rule length rather than by shouting** (amended
@@ -656,8 +683,8 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     never boxed or rendered as pills. Spare vertical room collects below the
     ledgers as slate rather than stretching rows apart.
   - Semantic phosphor is used **sparingly**: slate is `recess`, rules and values
-    are bone/whisper, and only `dust`, `organ`, the live input and the mic carry
-    a family accent. Neutral slots, levels and pan get no family —
+    are bone/whisper, and only `dust`, the live input and the mic carry
+    a family accent. Neutral slots and pan get no family —
     do not rainbow a column, and inline no color at the draw site.
   - **`micGain` lives here and nowhere else.** SPEC §6.2 forbids a second
     interactive mic path, and the night-first completeness gate needs the mic
@@ -791,9 +818,9 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     presence geometry. Listener, pending generation and `/cq_io_inputs` OSCdef
     are released with the page/window.
 - **Inspector** = the existing 16×22 grid, demoted but upgraded with
-  **touch-and-listen**: press a cell = audition ± 0.3 (mouse button = sign)
+  **touch-and-listen**: press a cell = audition ± 0.60 (mouse button = sign)
   until release, same bookkeeping and revert law as §4.1; double-click =
-  plant 0.3; vertical drag = fine edit (current behavior); right-click =
+  plant 0.60; vertical drag = fine edit (current behavior); right-click =
   clear (current behavior). This is the precision path: everything the
   gestural surfaces do must remain exactly doable here. Hovering a valid cell
   gives that exact cell a light `spark` wash and outline, in addition to the
@@ -845,8 +872,10 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
 
 ## 9. Telemetry (the only server-side changes in this spec)
 
-Existing v1.0 streams: `/cq_cocometers` (in/out peaks, id 1/2), `/cq_castle`
-(5 tri values, 15 Hz), `/cq_gr`, `/cq_spesal`, `/cq_hot`.
+Existing v1.0 streams: `/cq_cocometers` (in/out peaks, id 1/2), `/cq_castle`,
+`/cq_gr`, `/cq_spesal`, `/cq_hot`. `/cq_castle` was extended at PLAY-3 from
+five raw-tri samples to five raw-tri samples followed by five gently averaged
+realized rates, still in one 15 Hz message (§16.6).
 
 Additions — unconditional control-rate SendReply at ~15 Hz, NRT-harmless,
 same pattern as the existing
@@ -854,13 +883,14 @@ meters:
 
 | phase | message | payload | drives |
 |---|---|---|---|
-| G1 | `/cq_aura` | 16 source magnitudes (lagged \|amp\|, canonical source order) | jack glow, cable pulse, root/castle/body glow |
-| G2 | `/cq_phase` | coco read-head position 0..1, **the read direction as an audio-rate mean** (`Lag.ar(dir, 0.15)`) and **the skip rate in Hz** (added 2026-07-22: impulses of height `SampleRate` through a one-pole settle at their own rate, because a `Lag`'s DC gain is 1 — so the value *is* triggers/second, over the combined reset `\t_skip + skipTrig` that Phasor actually obeys, smoothed 0.2 s and self-clearing. It exists because a rate this fast cannot be drawn as motion — see §16.6), replyID 1/2. Landed 2026-07-21 at 5 Hz; raised to the shared **15 Hz ambient ceiling** on 2026-07-29 after the comet was isolated on one transparent, hit-through layer per Coco. Ordinary phase motion now redraws only the dot and tail, never the ≈30-Pen-call shell. The direction is a *mean*, not a sample, because a flip banana can reverse the loop far faster than 15 Hz can sample it: ±1 = settled, near 0 = shuttling. Deriving direction client-side from consecutive positions aliased and was replaced | the spiral spark, the comet's tail and the mouth chevron; the rate is the struck mark's weight |
-| G2 | `/cq_charge` | the 9 gate/trig destination sums (post-weight, pre-Schmitt); landed 2026-07-21 as **three 15 Hz blocks** sent by the synths that already compute those sums — coco 1 (replyID 1) and coco 2 (replyID 2) report their own flip/skip pair, the quantussy (replyID 3) all five spesal sums. Each sum is **peak-held at audio rate** (instant rise, 0.15 s fall) before `A2K`, because a trigger crossing can last a single sample and a plain control-rate sample would miss it; the fall is also §16.8's fired bloom. No second copy of the sums exists in the graph, so a lamp can never disagree with its Schmitt | charge lamps — the answer to "why is my flip banana silent" — and, for `cocoN_skip`, the read head's struck mark (§16.6) |
+| G1 | `/cq_aura` | 16 source magnitudes (lagged \|amp\|, canonical source order) | jack glow, cable pulse and root glow |
+| PLAY-3 | `/cq_castle` | five instantaneous raw-tri values, then the five realized oscillator rates smoothed 0.15 s. At ≤3 Hz the sample can move a pearl; above it the GUI discards the aliased position and draws one stable full-reed blur | the five castle inner-clock reeds |
+| G2 | `/cq_phase` | replyID 1/2; first: coco read-head position 0..1, **the read direction as an audio-rate mean** (`Lag.ar(dir, 0.15)`) and **the skip rate in Hz** (combined reset `\t_skip + skipTrig`, smoothed 0.2 s). Then three three-value blocks in destination order `[SP.AF, Input, Feedback]`: low-passed effective centres, audio-rate peak excursions around those centres, and summed absolute destination weights after `patchDepth`. SP.AF reports the **realized** `log2(clockHz / speed)` after the 750 Hz…sample-rate clock clamp, not an inaudible requested exponent beyond the rail; Input/Feedback report the post-VCA-law, post-clip values. Both centre and excursion are reduced at audio rate before `A2K`: slow modulation may move, fast modulation becomes a stable range and never aliases into a false low-frequency gesture. Landed 2026-07-21 at 5 Hz; raised to the shared **15 Hz ambient ceiling** on 2026-07-29 after the comet was isolated on one transparent, hit-through layer per Coco; the modulation blocks were appended 2026-08-02 without adding a message stream. Ordinary phase motion redraws only the dot/tail; quantized modulation changes redraw only one 44 px crescent. The direction remains a mean, not a sample: ±1 = settled, near 0 = shuttling | the spiral spark, comet tail and mouth chevron; skip rate drives the struck mark's weight; the blocks drive the three live crescent satellites/wakes |
+| G2 / PLAY-3 | `/cq_charge` | three 15 Hz blocks sent by the synths that own the decisions: coco 1/2 each send `[flipCharge, skipCharge, flipGate, skipTrig]`; Quantussy sends five spesal charges followed by the five exact spesal triggers. Charge is post-weight/pre-Schmitt and peak-held 0.15 s; fire is the already-computed post-Schmitt gate/trigger, independently peak-held so one sample reaches the eye. The GUI never derives “fired” from brightness or copies the Schmitt. Amber bead fill remains charge; a pale diamond flare is actual fire | charge/fire lamps — both “how close?” and “did it happen?” — plus the skip struck-regime input (§16.6) |
 | AIO-4 | `/cq_io_inputs` | one ≤15 Hz three-channel raw-input presence block from `\cqInput`, canonical order `[rawLiveL, rawLiveR, rawMic]`, missing mic = 0; the taps precede `liveGain`, `micGain` and preamp source selection and write no bus/output | Audio page's three “does anything reach this configured port?” tracks; never evidence for a draft device |
 
-`/cq_charge` canonical channel order = the matrix destination order filtered
-to gates/trigs, nine channels: `coco1_flip, coco1_skip, coco2_flip,
+`/cq_charge` canonical order inside **each half** = the matrix destination order
+filtered to gates/trigs, nine destinations: `coco1_flip, coco1_skip, coco2_flip,
 coco2_skip, castle1_spesal, castle2_spesal, castle3_spesal, castle4_spesal,
 castle5_spesal`.
 
@@ -872,15 +902,17 @@ the implementers' choice. Added sends must fit the §11 performance budget.
 ## 10. GUI constants
 
 GUI-local (not CQSpec parameters — they are gesture properties, like
-`shakeAmount`). Defaults below; optionally overridable under a `gui: (...)`
-sub-event in `config.scd`, clamped on load.
+`shakeAmount`). Defaults below and clamp in their owning gesture classes; they
+do not enter snapshots or the 74-parameter registry. The current `gui: (...)`
+config sub-event owns only `compassDir`, not these performance constants.
 
 | constant | default | meaning |
 |---|---|---|
-| `handStrength` | 0.5 (0..1) | audition & plant ceiling |
-| `auditionRadius` | 40 px | socket capture distance |
-| audition curve | closeness² | swell late, near the socket |
-| `inspectorPlant` | 0.3 | double-click plant weight (= shake default) |
+| `handStrength` | 0.60 (0..1) | new cable's armed weight; above the +0.5 Schmitt boundary and measured 0.55 working probe, lighter than the first 0.65 candidate |
+| `dropRadius` | 40 px | binary magnetic socket capture distance; never a weight curve |
+| held-cable wheel | ±0.05 (`Ctrl`: ±0.01), floor 0.05 | view-only initial attenuator; the first DSP write uses the moon's selected value |
+| held-cable keys | `Z` down · `X` up · `Shift` fine 0.01 | left-hand laptop path when a touchpad cannot scroll during a held click |
+| `inspectorPlant` | 0.60 | double-click plant weight; same first-touch law as Night |
 | `shakeAmount` | 0.22 | the sowing moon's opening phase = the Day amount knob; an iconic sparse crescent (§16.6) |
 | `fullMoonDensity` | 0.2 | the full moon's `density` (SPEC §5.5); intermediate density = `0.2 × phase²` (quarter ≈ 1.25 %, half = 5 %) |
 | wheel step | 0.05 / Ctrl 0.01 | weight nudge |
@@ -921,6 +953,11 @@ sub-event in `config.scd`, clamped on load.
   frame redraws only the dot/tail or struck glyph. The opaque shell follows
   hold, speed, hover, preamp underlay and genuine chevron-regime changes, never
   ordinary phase motion; an unchanged phase frame repaints neither layer.
+- **Coco modulation wakes repaint alone** (landed 2026-08-02): each phase
+  frame may update only the three 44 px crescent views on its own shell. Their
+  normalized centre/range is quantized to `1/96` before comparison (roughly
+  half a pixel of arc travel); an unchanged wake costs no Qt repaint, and the
+  stored setting pearl is never rewritten by telemetry.
 - **Paced notification streams**: the ambient ceiling binds *every* repaint source,
   not just telemetry. A snapshot morph re-sets all 57 continuous parameters and
   rewrites every changed cell on every frame. Both the
@@ -939,11 +976,11 @@ sub-event in `config.scd`, clamped on load.
   therefore be thinned at its source as well as at its painter:** a writer that
   touches many cells at once emits one `CQMatrix.writeMatrix`, never a `patch`
   per cell. Any future bulk matrix writer inherits this.
-- **Charge lamps repaint one at a time, on change only** (landed 2026-07-21): a
-  `/cq_charge` block refreshes just those lamp views whose own charge moved by
-  ≥ 0.02. An unpatched gate sums to exactly zero forever and costs nothing at
-  all; a steadily held gate is steady ink. This is §16.6's stillness law applied
-  to the panel, and it is what keeps nine 15 Hz channels inside the budget.
+- **Charge/fire lamps repaint one at a time, on change only**: a `/cq_charge`
+  block refreshes just those lamp views whose own charge **or exact fire hold**
+  moved by ≥ 0.02. An unpatched gate sums to zero forever and costs nothing;
+  a steadily held gate is steady ink. This is §16.6's stillness law applied to
+  nine paired 15 Hz readings.
 - **Cable pulse density limit**: a planted cable costs about eleven language-to-Qt
   Pen calls, so the cable layer's ambient repaint is O(cables). Past
   `CQGuiCableOverlay.auraCableLimit` (48) planted cables the cables stop pulsing
@@ -1047,13 +1084,14 @@ Standard project law applies per phase: full test battery after every
 `classes/` change, Ctrl+Shift+L reminder before gates, commit per approved
 gate, manual_checklist blocks in the established copy-pasteable format.
 
-- **G1 — the day skin**: skin sockets + cable overlay + full banana grammar
-  (§4) + audition + spellbook + inspector demotion + `/cq_aura`.
+- **G1 — the day skin** (historical gate; Night planting amended at PLAY-5):
+  skin sockets + cable overlay + full binary banana grammar (§4) + the
+  Inspector's separate audition + spellbook + inspector demotion + `/cq_aura`.
   Tests: the usual four markers; smoke-script extension — serverless GUI
-  build, sweep, and **audition-leak assertions** (simulate every §4.1 exit
+  build, sweep, and **held-candidate leak assertions** (simulate every §4.1 exit
   path, assert matrix equality); unit test for the batched write (clamps,
   single notification). Listening gate: plant `tri3 → coco1_spaf` *by ear*
-  (the swell audible before commit); move a banana; rip by yank; wheel-trim;
+  (silence before release, one exact onset at commit); move a banana; rip by yank; wheel-trim;
   lasso-harvest a few and Ctrl+Z the whole catch back; spellbook lines match
   the actions.
 - **G2 — the night map**: archipelago bodies + spiral read-head (+ phase
@@ -1069,16 +1107,16 @@ gate, manual_checklist blocks in the established copy-pasteable format.
   opposite corners and crossfade ecosystems with one finger; right-drag
   wobble snaps back cleanly; breed offspring differs but rhymes.
 - **N8 — the Workshop** (§8): the fourth Drawer page and the ledger row.
-  Tests: a **dynamic coverage gate** proving the current Night 31 / Master 4 /
-  Workshop 39 interactive sets disjoint and their union equal to
+  Tests: a **dynamic coverage gate** proving the current Night 44 / Master 4 /
+  Workshop 26 interactive sets disjoint and their union equal to
   `CQSpec.names` — the three inventories are declared independently and none
   is a complement of the others; ownership tests for the then-four-tab order, page
   persistence and the single `micGain` path; binding tests for num, bipolar
   num, int, toggle and enum rows writing clamped through `CQState` and
   following an external write without echoing; and the Drawer Qt smoke opening
   Night → Drawer → Workshop at 1280×720 and again at 1920×1005 in the Night skin,
-  asserting the centred 1128 px rail, the module and ledger widths, the last
-  slot/send rows contained, Master visible and `CQInkControl.drawErrors == 0`.
+  asserting the centred 1128 px rail, the module and ledger widths, the deepest
+  retained setup rows contained, Master visible and `CQInkControl.drawErrors == 0`.
   The coverage test may not be satisfied by a test-only array, hidden or
   disabled controls, clipped rows or a computed complement: the rendered
   controls and the audited manifest must be the same data.
@@ -1341,24 +1379,30 @@ Positions on bodies are given as clock angles — more precise than pictures.
 
 **Castle (×5).** Body = closed blob: 6 anchors on a 74×66 px ellipse with
 seeded ±8 % radial jitter, cubic curve through them; 1.5 px stroke, hollow
-fill. Aura = radial gradient inside the body (phosphor → transparent),
-intensity from `/cq_aura`. At 10–11 o'clock, a crown of three 4 px square
+fill. At 10–11 o'clock, a crown of three 4 px square
 teeth — this *is* the cas source (gray dot at its base). At 1–2 o'clock, an
 8 px triangular leaf on a 6 px stem — the tri source (orange dot). fm moon =
 blue ring Ø ≈ 14 orbiting at 4 o'clock, r ≈ 45; spesal moon = green ring +
 lamp at 8 o'clock, r ≈ 61. Its lamped view is 46 px wide and its detail/hit
 box must clear the inner clock. Spesal dial =
-the castle's **inner clock** (amended 2026-07-21 after the G2.3 review): a
+the castle's **inner clock mechanism** (amended 2026-07-21 after the G2.3 review): a
 whisper face at r ≈ 18 *inside* the body — where no endpoint mark can
 ever cover it — with 8 ticks and the current state as a lit spark bead with a
-halo; a static hover brightens the face so it reads as pressable (§4.5).
-The **flesh around the clock is the body's own §6 solo target**, and hovering
-it lights the quiet outer ring §4.5 gives every pressable control (added
-2026-07-21: a double-click affordance the hand could not otherwise guess).
-The two cues are exclusive — clock or body, never both. Cue and action share
-one geometry: the drawn blob grown by `bodyMargin` (12 px, so the body answers
-the approaching hand), and the echo is stroked exactly on that boundary. A cue
-that covers more or less ground than its action is a cue that lies.
+halo. The *complete visible seeded blob* is one coherent spesal-step and hover
+surface (§4.5); wherever the hand enters the island, the central face brightens
+to name the mechanism being acted on. PLAY-3 first closed the old annular dead
+eye; PLAY-5 removed the remaining dead flesh between that disc and the rim.
+Inside it, a 14 px orange **raw-triangle reed** distinguishes the own oscillator
+from the gray `cas` crown: at a realized rate ≤3 Hz a pearl maps the signed
+triangle from one end to the other; above 3 Hz the full reed becomes a stable
+double-edged blur and the aliased instantaneous sample is ignored. This replaces
+the former radial `cas` aura, which merely duplicated the crown jack. The thin
+ellipse margin outside the actually drawn blob remains ordinary banana/harvest
+ground and has no cue or group solo. Four exact endpoint solos, the whole-island
+tap/radial-send decision and the rate ripple are the castle's complete
+interaction vocabulary. Each castle also grows one short amber inward
+tributary with a value pearl; its pressure follows `cKSend`, while the seeded
+blob remains the larger hit surface.
 At 6 o'clock, a **rate ripple** is the playable range switch. Its form is the
 regime: one long shallow half-wave = `infra`, two half-waves / one full cycle =
 `balcium`, five tight half-waves = `audio`. Tap cycles in CQSpec's enum order;
@@ -1371,14 +1415,14 @@ ripple crosses the river, a 3 px ground under-stroke follows only the keel and
 wave paths before the visible hairline is drawn; it is a local vector
 separation, never the rectangular paper erasure §9 removed. Each anchor sits
 17 px below its seeded blob's actual lowest point, so irregular castles breathe
-equally. The ripple, inner clock and body have exclusive cues and press priority
-in that order after the cable layer: a cable under the pointer still wins. The
+equally. The ripple and whole-castle clock surface have exclusive cues and press priority in
+that order after the cable layer: a cable under the pointer still wins. The
 22×11 px drawn mark, its 30×24 px touch rectangle and all endpoint/clock
 clearances are pinned at both reference sizes by `CQNightGeometryTest`.
 
 **Layer amendment, 2026-07-27.** Castle paper and its four endpoint-detail
 views are transparent. The blob first fills only its own irregular flesh with
-Night ground, then draws aura and outline; therefore the ring and coupling
+Night ground, then draws the reed and outline; therefore the ring and coupling
 chords can run beneath each castle centre and emerge at the true body edge.
 No rectangular blank area may erase castle ink, and no synthetic “river
 stub” may protrude from a castle to repair such an erasure.
@@ -1408,7 +1452,7 @@ layer's otherwise invisible corners. The eye brightens on hover and while held,
 and never displays a value.
 
 **The spesal coupling chords** (added 2026-07-22 — the night's answer to
-"which castle is this one attached to?"). The inner clock shows a castle's
+"which castle is this one attached to?"). The central clock shows a castle's
 *state*; the chord shows what that state **means**: which of the other four
 it reads. Drawn on the ring's own layer in spesal green, carrying the same fact
 and direction formerly shown by the retired Day constellation (§16.7) —
@@ -1431,7 +1475,7 @@ letters — the night carries almost no text (§16.4) — and no barbs, because
 those already mean inverso polarity on the cables (§16.8).
 
 **Shown only where the hand is asking**: nothing at rest, one chord under a
-hovered castle, all five under the hovered river. This is a deliberate
+hovered visible castle, all five under the hovered river. This is a deliberate
 refusal of the obvious version — five permanent chords through the ring's
 interior — because the coupling is **structure, not a quantity**. It changes
 only when spesal steps; it is read at the moment a hand is on a castle
@@ -1544,10 +1588,15 @@ yellow Ø 7 dot on a 6 px stem from the second turn. Moons spaf / inVca /
 fbVca / flip / skip sit on an arc under the spiral, glyphs per §16.5, lamps
 on flip/skip; below the three continuous moons hang their **tide crescents**
 (§6.1): open arcs Ø ≈ 36 in 44 px drag squares, luminous fill = value, no
-numbers. SP.AF's signed
-fill grows away from its zero notch; input marks unity and the overdrive side;
+numbers. SP.AF's signed-square hand map is drawn as a small neutral harbour
+around its zero notch plus paired ±1-octave pinpricks; its polarity-coloured
+fill grows away from zero. Input marks unity and the overdrive side;
 feedback shows its three audible taper regions. Their notches make the
-landmarks form-readable rather than hue-only.
+landmarks form-readable rather than hue-only. A coloured pearl is the stored
+setting; matrix activity adds one hollow neutral satellite 2.5 px farther out.
+The satellite travels for resolvable motion and leaves a quiet outer arc wake
+for unresolved/audio-rate excursion. A short endpoint cap means the effective
+value continues beyond the hand range.
 The in/fb crescent owners grow only downward and carry a **dolby oyster**
 36 px below the crescent centre. The oyster is consulted first on
 press; its tap box and the crescent's original drag square are disjoint.
@@ -1560,7 +1609,15 @@ cues is forbidden. The same cable must then receive the press.
 The yellow org fruit jack keeps its opaque 34×34 owner, but that owner repaints
 the shell's exact curved spiral segment and radial stem beneath the jack. A
 generic vertical stub is not the same path and may not replace it.
-The spiral's stroke alpha breathes 0.55 → 1.0 with the coco's out level.
+The spiral's stroke alpha breathes 0.55 → 1.0 with the Coco's out level but
+never disappears. Outside it, an open **Level shoreline** carries a stored-value
+pearl, a 1.0 unity notch and a danger-red boost reach. The yellow jack sits
+inside a separately filling annular **Organ calyx**, so audible amount and
+patch-source availability cannot be confused. Two faint topology families sit
+under the body views: amber Quantussy side-rivers end in independent SlotQ
+gills, while two bone SlotX bridge lanes carry opposed arrowheads and separate
+destination-side valves. Zero gain keeps only a quiet map; nonzero gain and
+hover/drag increase pressure instead of inventing a new label or panel.
 
 **Roots (inputs; accepted 2026-07-28, checklist N7).** Each side is the whole
 intake body, not an envelope on a stick:
@@ -1951,13 +2008,12 @@ at all.
 | | in hand | dot pulses; cable follows cursor |
 | | hot | radial glow ∝ aura magnitude |
 | socket | idle | ring per §3.2 |
-| | candidate | magnetic halo: ring ×1.2 + soft glow in the held cable's polarity color |
-| | auditioning | plug floats 3 px above the rim, cable at 60 % alpha |
+| | candidate | magnetic halo: ring ×1.2 + soft glow; full-alpha held cable and weight moon, plug poised 3 px above the rim; still no matrix/DSP route |
 | | occupied | plug seated, insertion depth ∝ \|w\| |
 | gate/trig lamp | no telemetry | the same dark recessed bead as a zero charge: a lamp has nothing to overstate, so silence and zero may look alike here. `chargeFor` still returns `nil`, so no other surface can mistake one for the other (§9) |
 | | charging | lamp fill alpha = charge / 0.5, lamp color |
-| | Schmitt on (gate) | lit steady + a Ø 14 bloom at 28 % (landed 2026-07-21: one mechanism, `charge ≥ 0.5`, drawn only while lit) |
-| | fired (trig) | the same bloom, decaying with the server's 0.15 s peak-hold — no client-side timer |
+| | Schmitt on (gate) | amber charge bead plus a steady pale diamond around it, driven by the exact matrix gate rather than a GUI threshold guess |
+| | fired (trig) | the same form-first diamond flare, decaying with the exact trigger's server-side 0.15 s peak-hold — no client-side timer |
 | cable | planted | width 1.5–3 px ∝ \|w\|, alpha pulses with source aura |
 | | hover target | full alpha + soft 6 px ink under-stroke at 22 %; unrelated planted cables recede to 46 % |
 | | grabbed | full alpha, follows cursor |
@@ -1986,12 +2042,12 @@ at all.
 | compass elastic return | ~3 frames glide |
 | Night/Drawer stage destination | hard cut via queued Qt write |
 | tide focus (Tab / gill) | immediate state change |
-| ambient (aura, fireflies, sparks, flutter) | telemetry rate, ≤ 15 Hz |
+| ambient (aura, fireflies, reeds, sparks, flutter) | telemetry rate, ≤ 15 Hz |
 
 Easing: linear or single-pole decay only — no bounces, no overshoot. The one
 comedy allowed is the damped cable wobble on plant. Ambient motion whitelist:
-aura breathing, ring fireflies, **spesal coupling lights**, read-head sparks,
-deck flutter — all of them information. The coupling lights joined the list on
+aura breathing, ring fireflies, **spesal coupling lights**, raw-triangle reeds,
+read-head sparks and deck flutter — all of them information. The coupling lights joined the list on
 2026-07-22 for the fireflies' own reason: the S&H sampling they depict never
 stops, and they ride the same phase, so every moving mark inside the ring
 advances on one set of telemetry frames. Nothing else moves uninvited.

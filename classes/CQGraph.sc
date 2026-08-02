@@ -91,8 +91,8 @@ CQGraph {
 			 ("wSpesal" ++ k).asSymbol, buses[("castle" ++ k ++ "_spesal").asSymbol].index]
 		}.flatten, groups[\quantussy]);
 		// canonical aModSrc channels: coco taps 12/13, organs 14/15 (ARCH §3.2)
-		[[\coco1, \preA, \deckA, \coco2, 12, 14],
-		 [\coco2, \preB, \deckB, \coco1, 13, 15]].do { |row|
+		[[\coco1, \preA, \deckA, \coco2, 12, 14, 0],
+		 [\coco2, \preB, \deckB, \coco1, 13, 15, 1]].do { |row|
 			var n = row[0];
 			synths[n] = Synth(\cqCoco, [
 				\buf, buffers[n].bufnum,
@@ -103,6 +103,7 @@ CQGraph {
 				\outBus, buses[n].index,
 				\modSrcBus, buses[\modSrc].index,
 				\modTapIdx, row[4], \modOrganIdx, row[5],
+				\cocoIndex, row[6],
 				\meterId, if(n == \coco1) { 1 } { 2 },   // '/cq_cocometers' replyID
 				\wSpafBus, buses[(n ++ "_spaf").asSymbol].index,
 				\wInVcaBus, buses[(n ++ "_inVca").asSymbol].index,

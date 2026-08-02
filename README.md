@@ -31,11 +31,12 @@ and tag. [`PLAN.md`](PLAN.md) is the current status authority.
   dust, and square-stack organ voices.
 - A five-castle Quantussy-inspired modulation network that moves from slow
   stepped wandering to audio-rate chaos.
-- A 16×22 signed routing matrix with cable-like audition, planting, moving,
+- A 16×22 signed routing matrix with binary magnetic planting, held-cable attenuation, moving,
   ripping, harvesting, undo, snapshots, and morphing.
-- The Ink & Phosphor GUI: one playable Night landscape, a persistent Master
-  strip, and a Drawer for precise patching, tuning, audio I/O status, history,
-  and memory.
+- The Ink & Phosphor GUI: one playable Night landscape whose shell shores,
+  organ calyces, Quantussy tributaries and directional cross-feed bridge open
+  drones without a separate mode; a persistent Master strip; and a Drawer for
+  precise patching, setup, audio I/O status, history, and memory.
 - File decks, live inputs, optional 16n faderbank control, recording, optional
   stems, snapshots, and morphing.
 - A fixed output-safety chain and offline render tests designed for unpredictable
@@ -216,6 +217,7 @@ portfolio-oriented account of the project is in
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Code structure, ownership, and test architecture |
 | [`PLAN.md`](PLAN.md) | Current Nocturne work order and status |
 | [`SOURCES.md`](SOURCES.md) | Technical lineage, sources, and interpretations |
+| [`docs/PLAYABILITY_GUIDE.md`](docs/PLAYABILITY_GUIDE.md) | Finnish hands-on tutorial: Coco memory, castle/Quantussy, organ, cables, shake, and Workshop dependencies |
 | [`docs/CASE_STUDY.md`](docs/CASE_STUDY.md) | Portfolio case study and engineering decisions |
 | [`docs/DEVELOPMENT_PROCESS.md`](docs/DEVELOPMENT_PROCESS.md) | AI-assisted workflow and ownership policy |
 | [`audit/README.md`](audit/README.md) | Audit authority and reading order |

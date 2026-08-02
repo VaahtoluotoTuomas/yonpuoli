@@ -176,7 +176,11 @@ buffers filled with dust and loop-locked, master faded in muted-to-nominal over 
 
 Conventions: all parameters listed here exist in `CQSpec` with exactly these names,
 ranges, curves, defaults. All setters clamp to range. `exp` = exponential mapping,
-`lin` = linear, `bipolar` = linear centered on 0. `fb taper` is the exactly
+`lin` = linear, `bipolar` = linear centered on 0. `spaf²` is the exact symmetric
+hand map `x = 2n−1; value = 4 × sign(x) × |x|²`: zero and the ±4-octave endpoints
+stay fixed, while ±0.25 oct occupies `n = 0.375…0.625` and ±1 oct lands at
+`n = 0.25 / 0.75`. It changes hand resolution, not stored values, snapshots or DSP.
+`fb taper` is the exactly
 invertible piecewise-linear control map
 `(0.00→0.00, 0.50→0.85, 0.90→1.10, 1.00→1.25)`; it changes hand resolution,
 not stored parameter values or DSP. Toggles are 0/1. Enums are Symbols.
@@ -231,7 +235,7 @@ Per Coco `n` ∈ {1,2} (names shown for n=1):
 | `coco1In` | 0–2 | 0.8 | lin | input level into converter; >1 overdrives. Matrix VCA dest `coco1_inVca` |
 | `coco1Fb` | 0–1.25 | 0.35 | fb taper | feedback/loop level; 1.0 = unity looper; >1 = saturating growth (bounded by clip). Matrix VCA dest `coco1_fbVca` |
 | `coco1Speed` | 1500–48000 Hz | 24000 | exp | RAM clock. Loop length = bufFrames/clock (default buffer 2^17 ⇒ 2.7 s @48 k, 87.4 s @1.5 k). Post-modulation hard clamp: 750 Hz – server SR, i.e. exactly one octave below the knob floor (modulation may push where the hand alone cannot — the "ground jack" trick; the clamp floor lives in `CQSpec.speedClampFloor`). Matrix dest `coco1_spaf` |
-| `coco1Spaf` | −4.0–4.0 oct | 0 | bipolar | the `^` knob: depth/direction of speed modulation from the matrix |
+| `coco1Spaf` | −4.0–4.0 oct | 0 | spaf² | the `^` knob: depth/direction of speed modulation from the matrix; broad fine-pitch country around zero, unchanged direct octave values |
 | `coco1DolbyIn` | enum | `\off` | — | `\off \gate \duck` — gate = downward expander on input; duck = input attenuated by feedback-channel envelope |
 | `coco1DolbyFb` | enum | `\off` | — | same, on feedback channel, keyed by input envelope |
 | `coco1Hold` | 0/1 | 1 at boot | — | 0 = recording (delay), 1 = loop-locked. Boot state mirrors hardware power-on |
@@ -242,7 +246,7 @@ Per Coco `n` ∈ {1,2} (names shown for n=1):
 | `coco1Interp` | enum | `\zoh` | — | `\zoh` (authentic stair-step DAC) / `\smooth` (cubic read, tamer top end) |
 | `coco1Dust` | 0–0.5 | 0.02 | exp | filtered low bed + sparse bipolar chip errors injected pre-converter; stored error density follows Speed |
 | `coco1Organ` | 0–1 | 0 | lin | level of the organ square-stack voice (pitch tracks Speed) into this Coco's output mix |
-| `coco1Level` | 0–1.5 | 0.8 | exp | output level to mix |
+| `coco1Level` | 0–1.5 | 0.8 | exp | output level to mix; 1.0 is the Night shoreline's unity landmark |
 | `coco1Pan` | −1–1 | −0.3 (coco2: +0.3) | bipolar | |
 | slot gains: `coco1SlotPre`, `coco1SlotDeck`, `coco1SlotQ`, `coco1SlotX` | 0–1.5 | 1.0 / 1.0 / 0.0 / 0.0 | lin | input mixer slots: preamp A, deck A, Quantussy audio mix (`qMix`), cross-feed from Coco2. (Coco2 slots: preamp B, deck B, qMix, Coco1) |
 
@@ -285,11 +289,30 @@ Outputs published to the mod source bus: `tri1..tri5` (±1 triangle), `cas1..cas
 ### 5.5 Routing matrix (the banana bay)
 
 - **Sources (16):** `tri1..tri5, cas1..cas5, envA, envB, coco1, coco2, org1, org2`.
+  `org1/2` publish the address-clock square stack through a fixed `×1.6`,
+  `clip2(1)` modulation conditioner. The unconditioned stack still feeds the
+  audible `cocoNOrgan` layer at its unchanged gain. This split is intentional:
+  at Speed 24000 the band-limited weighted stack measured only `+0.5602`, so a
+  default 0.60 cable could never reach the common `+0.5` Schmitt threshold.
+  The conditioned jack does, while remaining a bounded bipolar source.
 - **Destinations (22):** per Coco: `_spaf` (speed FM, scaled by `cocoNSpaf`), `_inVca`,
   `_fbVca`, `_flip` (gate), `_skip` (trig); per castle: `_fm` (octaves), `_spesal`
   (trig); plus `deckA_rate`, `deckB_rate` (±1 rate offset).
 - Weight range **−1.0–1.0** per (source, dest) pair. Negative weight = inverso
   (inverted CV) — this is how verso/inverso polarity is expressed.
+- A new Night or Inspector cable starts at **±0.60**. This is above the +0.5
+  Schmitt boundary by design: the previous ±0.5 default only touched the
+  boundary and a full-scale triangle provably never fired flip/skip/spesal;
+  ±0.55 was the smallest measured working probe and ±0.60 retains margin while
+  easing continuous modulation.
+  Night's ≤40 px magnetic catch is binary and view-only until release: distance
+  never attenuates, and the first/only matrix write plants the held cable's
+  visible armed weight. Wheel while held changes that initial magnitude by 0.05
+  (`Ctrl`: 0.01, floor 0.05); laptop `Z`/`X` mirrors down/up and `Shift+Z/X`
+  uses 0.01. None writes an intermediate ±0.60 DSP value. The
+  Inspector retains its separate precision audition. Code keeps its explicit
+  weight (`patch` defaults to 1.0), and shake keeps its own independent
+  ±`amount` distribution.
 - Gate/trig destinations use a Schmitt threshold: rising through +0.5 fires (gates:
   >+0.5 = on).
 - **VCA law (`_inVca`, `_fbVca`).** The knob is the valve's resting position and the
@@ -432,15 +455,17 @@ the one castle in `\audio` range with a non-zero send (§5.4). Which castles fee
 whatever they send, as routing is to level on any mixer.
 
 **Allocation rule (normative for future changes):** a fader is worth most where
-no other hand reaches. The GUI's Night map already plays 31 parameters directly
-and the Master strip 4, and the matrix reaches 22 destinations by modulation; the
-Cocos' mix stage (`Level`, `Organ`, `Dust`, `Pan`, `Slot*`) is reachable only from
-a hand. Duplication between layers is intended where the gesture is a continuous
+no other hand reaches. The GUI's Night map plays 44 parameters directly and the
+Master strip 4, while the matrix reaches 22 destinations by modulation.
+Duplication between layers is intended where the gesture is a continuous
 two-handed ride (§6 requires each layer to suffice alone) — but new assignments
-prefer parameters no other surface can play. This is why the deck faders left the
-map: `deckALevel`/`deckBLevel` already have their own crescents in the Night map,
-and `deckARate`/`deckBRate` are matrix destinations. Both remain fully reachable
-from the Drawer's Workshop page, code and snapshots.
+prefer parameters no other surface can play. Per-Coco `Level`, `Organ`, `SlotQ`
+and directional `SlotX`, plus `c1Send`…`c5Send`, now form Night's continuous
+drone topology; setup colour (`Dust`, `Pan`, `SlotPre`, `SlotDeck`) remains in
+Workshop. This is also why the deck faders left the map:
+`deckALevel`/`deckBLevel` already have their own crescents in Night, and
+`deckARate`/`deckBRate` are matrix destinations. All remain reachable from code
+and snapshots, and the setup parameters retain exact Workshop rows.
 
 ### 6.2 GUI panel
 
@@ -448,7 +473,7 @@ from the Drawer's Workshop page, code and snapshots.
 > grammar, visual language, motion and constants are normative in
 > [`GUI_SPEC.md`](GUI_SPEC.md)** — one window whose sole instrument surface is
 > the Night map, with a persistent Master strip and a Drawer
-> (inspector · workshop · spellbook · memory). The former Day panel is retained
+> (inspector · workshop · spellbook · memory · audio). The former Day panel is retained
 > only as design history; N9 removed its runtime stage after Night + Master +
 > Workshop proved exact coverage of every `CQSpec` parameter. This subsection
 > no longer describes a layout; it keeps only what the GUI owes *this* document.

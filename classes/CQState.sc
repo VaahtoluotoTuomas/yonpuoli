@@ -67,6 +67,18 @@ CQState {
 		^e
 	}
 
+	// Read-only audit surface: every visible control must terminate at a real
+	// SynthDef argument. Returning a deep copy keeps the state funnel's routing
+	// table private while letting the release contract prove that no CQSpec knob
+	// is merely stored/displayed. micGain is intentionally absent when the graph
+	// has no configured mic channel (SPEC §7); with a mic-enabled config all 74
+	// parameters must appear.
+	routeManifest {
+		var copy = IdentityDictionary.new;
+		routes.keysValuesDo { |name, route| copy[name] = route.deepCopy };
+		^copy
+	}
+
 	// push every routed param's current value to the server (used once at boot)
 	pushAll {
 		routes.keysDo { |name| this.prSend(name, values[name]) };

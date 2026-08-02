@@ -290,7 +290,7 @@ CQGuiCableOverlay {
 
 	nearestDestination { |point|
 		var best, bestDistance, current, currentDistance;
-		bestDistance = grammar.auditionRadius;
+		bestDistance = grammar.dropRadius;
 		CQMatrix.destNames.do { |dest|
 			var center, distance;
 			center = this.pointFor(dest);
@@ -305,7 +305,7 @@ CQGuiCableOverlay {
 		current = grammar.candidateDest;
 		if(current.notNil and: { best.notNil } and: { best[\dest] != current }) {
 			currentDistance = this.prDistance(point, this.pointFor(current));
-			if(currentDistance <= grammar.auditionRadius
+			if(currentDistance <= grammar.dropRadius
 				and: { (best[\distance] + 6) >= currentDistance }) {
 				best = (dest: current, distance: currentDistance)
 			};
@@ -368,7 +368,8 @@ CQGuiCableOverlay {
 	}
 
 	prDraw {
-		var start, finish, weight, alpha, t0 = Main.elapsedTime;
+		var start, finish, weight, points, distance, segments;
+		var t0 = Main.elapsedTime;
 		if(stormMode) { this.prDrawStorm } { this.prBlitPlanted };
 		// the hand cable and the lasso are always live: they are the gesture
 		// itself, one cable's worth of Pen calls at 60 Hz over the blit
@@ -379,12 +380,15 @@ CQGuiCableOverlay {
 			} {
 				grammar.cursor
 			};
-			weight = grammar.handWeight ? 0.5;
-			alpha = if(grammar.candidateDest.notNil) { 0.6 } { 1.0 };
-			CQInk.drawCable(start, finish, weight, skin, alpha);
+			weight = grammar.handWeight ? CQBananaGrammar.defaultHandStrength;
+			distance = this.prDistance(start, finish);
+			segments = max(8, (distance / 12).ceil.asInteger);
+			points = CQInk.cablePoints(start, finish, segments);
+			CQInk.drawCable(start, finish, weight, skin, 1.0, points);
 			CQInk.drawPlug(start, weight, skin);
 			CQInk.drawPlug(finish, weight, skin,
 				if(grammar.candidateDest.notNil) { 3 } { 0 });
+			CQInk.drawCableWeightMoon(points, weight, skin);
 		};
 		grammar.lassoPath !? { |path| CQInk.drawLasso(path, skin) };
 		drawCount = drawCount + 1;
@@ -465,7 +469,7 @@ CQGuiCableOverlay {
 
 	// everything that can change the planted pass's pixels without going
 	// through invalidate or auraTick: hover focus, solo dim, the hand (a
-	// grabbed or auditioning cable is skipped), harvest marks
+	// grabbed cable is skipped), harvest marks
 	prInkSignature {
 		^[this.cableRecords, grammar.hoverCable, grammar.soloTarget,
 			grammar.handSource, grammar.candidateDest, grammar.harvestKey,
@@ -473,13 +477,13 @@ CQGuiCableOverlay {
 	}
 
 	prDrawPlanted {
-		var alpha, lifted, focused, hasFocus, pulses;
+		var alpha, lifted, focused, hasFocus, pulses, focusedRecord;
 		hasFocus = grammar.hoverCable.notNil;
 		pulses = this.auraPulses;
 		this.cableRecords.do { |record|
-			if(grammar.isGrabbed(record[\src], record[\dest]).not
-				and: { grammar.isTransient(record[\src], record[\dest]).not }) {
+			if(grammar.isGrabbed(record[\src], record[\dest]).not) {
 				focused = grammar.isCableHovered(record[\src], record[\dest]);
+				if(focused) { focusedRecord = record };
 				alpha = if(backgrounded) { this.class.backgroundAlpha } {
 					if(focused) { 1.0 } {
 						if(grammar.isCableDim(record[\src], record[\dest])) { 0.22 } {
@@ -507,6 +511,10 @@ CQGuiCableOverlay {
 				CQInk.drawPlug(record[\start], record[\weight], skin);
 				CQInk.drawPlug(record[\finish], record[\weight], skin, lifted);
 			};
+		};
+		if(focusedRecord.notNil and: { backgrounded.not }) {
+			CQInk.drawCableWeightMoon(focusedRecord[\points],
+				focusedRecord[\weight], skin)
 		};
 	}
 

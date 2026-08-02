@@ -109,6 +109,22 @@ CQInkTest : UnitTest {
 			"gravity sag carries long cables into the open paper field");
 	}
 
+	test_cableWeightMoonStatesMagnitudeAndPolarityExactly {
+		var verso = inkClass.cableWeightReadout(0.60);
+		var inverso = inkClass.cableWeightReadout(-0.37);
+		var clipped = inkClass.cableWeightReadout(4);
+		this.assertFloatEquals(verso[\magnitude], 0.60,
+			"moon orbit preserves the positive magnitude", 1e-12);
+		this.assertEquals([verso[\direction], verso[\family]], [1, \verso],
+			"clockwise amber states verso without a numeric badge");
+		this.assertEquals([inverso[\direction], inverso[\family]], [-1, \inverso],
+			"counter-clockwise blue states inverso without a numeric badge");
+		this.assertEquals(clipped[\magnitude], 1.0,
+			"readout follows the matrix's bounded weight range");
+		this.assert(verso[\label].isNil and: { inverso[\label].isNil },
+			"the hover moon remains pictorial: no percentage capsule returns");
+	}
+
 	test_feedbackCrescentRegionsSpeakInThreeSemanticColours {
 		var edges = CQSpec.mapBreakpoints(\coco1Fb).collect { |point| point[0] };
 		this.assertEquals(CQInkNight.feedbackCrescentFamilies,

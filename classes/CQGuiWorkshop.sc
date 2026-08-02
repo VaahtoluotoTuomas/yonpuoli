@@ -7,7 +7,7 @@
 // shrunken Day panel.
 //
 // One manifest below drives BOTH the built layout and `paramNames`, so the
-// coverage audit can never test a second hand-copied list. The 39 names are
+// coverage audit can never test a second hand-copied list. The 26 names are
 // written out explicitly and are never computed as `CQSpec.names` minus the
 // other surfaces: a newly added parameter must fail the gate rather than
 // silently count as covered without a drawn control.
@@ -86,7 +86,7 @@ CQGuiWorkshop {
 		^CQGuiScale.columns(railWidth, 3, CQGuiScale.metrics(step)[\gutter])
 	}
 
-	// ---- the manifest (§12.1.1's exact 39) ----
+	// ---- the manifest (§12.1.1's exact 26 after the drone promotion) ----
 
 	// The service band keeps only live source services after Space retirement.
 	*serviceIslands {
@@ -116,31 +116,24 @@ CQGuiWorkshop {
 				(param: p.value("Wrap"), label: "wrap"),
 				(param: p.value("Interp"), label: "read")]),
 			(label: "material", rows: [
-				(param: p.value("Dust"), label: "dust", family: \cas),
-				(param: p.value("Organ"), label: "organ", family: \organ)]),
+				(param: p.value("Dust"), label: "dust", family: \cas)]),
 			(label: "output", rows: [
-				(param: p.value("Level"), label: "level"),
 				(param: p.value("Pan"), label: "pan")]),
-			// the input mixer's four slots (SPEC §5.3). These labels are short
-			// only because their group already names them.
+			// The two setup-only slots remain exact here. q and x moved into the
+			// Night topology with Level and Organ; no parameter has two GUI owners.
 			(label: "input mix", rows: [
 				(param: p.value("SlotPre"), label: "pre"),
-				(param: p.value("SlotDeck"), label: "deck"),
-				(param: p.value("SlotQ"), label: "q"),
-				(param: p.value("SlotX"), label: "x")])
+				(param: p.value("SlotDeck"), label: "deck")])
 		])
 	}
 
-	// Castle numbers run 1→5 in both groups so the two lists can be compared
-	// without hunting (§12.1.3).
+	// Castle detunes remain a stable 1→5 setup ledger. Their audio sends moved
+	// to the radial Night gesture, so Workshop has no duplicate send group.
 	*quantussyIsland {
 		^(title: "quantussy", family: \tri, groups: [
 			(label: "s&h", rows: [(param: \qShLag, label: "slew")]),
 			(label: "detune", rows: (1..5).collect { |k|
 				(param: ("c" ++ k ++ "Off").asSymbol, label: "castle " ++ k)
-			}),
-			(label: "audio sends", rows: (1..5).collect { |k|
-				(param: ("c" ++ k ++ "Send").asSymbol, label: "castle " ++ k)
 			})
 		])
 	}

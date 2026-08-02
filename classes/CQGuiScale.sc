@@ -222,10 +222,12 @@ CQGuiScale {
 		^m[\titleHeight] + (2 * m[\rowHeight])
 	}
 
-	// the tallest Workshop island — an eleven-row Coco with four subgroups
+	// the tallest Workshop island — a seven-row Coco with four subgroups
 	*tallestIslandHeight { |step|
 		var m = this.metrics(step);
-		^m[\titleHeight] + (4 * m[\groupHeight]) + (11 * m[\rowHeight])
+		// After Level/Organ/Q/X and castle sends moved to Night, a Coco ledger
+		// keeps four semantic headings over seven setup rows and remains tallest.
+		^m[\titleHeight] + (4 * m[\groupHeight]) + (7 * m[\rowHeight])
 	}
 
 	// what the Workshop page must have before it may use this step at all

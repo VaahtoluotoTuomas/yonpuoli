@@ -31,6 +31,14 @@ CQSynthDefs {
 	// saturation gesture in longer playing sessions. The curve is derived from
 	// the actual drive value (never its GUI norm) and is anchored at drive = 1.
 	*preampMakeupDbPerOct { ^1.0 }
+	*gateOffThreshold { ^0.3 }
+	*gateOnThreshold { ^0.5 }
+	// The weighted band-limited square stack reaches only about +0.56 at the
+	// default 24 kHz clock. Its patch jack must inhabit the same useful ±1
+	// source country as tri/cas: ×1.6 then clip gives a default 0.60 banana
+	// measured headroom above the +0.5 Schmitt threshold. The audible post-RAM
+	// organ voice deliberately keeps the unconditioned stack and its old gain.
+	*organModGain { ^1.6 }
 
 	*prPreampMakeup { |drive|
 		^((drive.log2 * this.preampMakeupDbPerOct.neg).dbamp)
@@ -134,7 +142,7 @@ CQSynthDefs {
 		};
 		^SynthDef(\cqQuantussy, {
 			var fb, fbTris, fbCass, qFreq, qChaos, qShLag, patchDepth, mods;
-			var castles, tris, cass, stateKr, spesalSums, sends;
+			var castles, tris, cass, stateKr, spesalSums, spesalTrigs, castleHz, sends;
 			fb = LocalIn.ar(10);            // [tri1..5, cas1..5] from previous block
 			fbTris = fb[0..4];
 			fbCass = fb[5..9];
@@ -152,7 +160,8 @@ CQSynthDefs {
 					("wSpesal" ++ n).asSymbol.ir(0), patchDepth);
 				var fmExt = Mix(mods * wFm);           // matrix castleN_fm sum (octaves)
 				var spesalSum = Mix(mods * wSpesal);   // pre-Schmitt = its §9 charge
-				var spesalGate = Schmidt.ar(spesalSum, 0.3, 0.5);
+				var spesalGate = Schmidt.ar(spesalSum,
+					CQSynthDefs.gateOffThreshold, CQSynthDefs.gateOnThreshold);
 				var spesalTrig = Trig1.ar(spesalGate, SampleDur.ir); // matrix castleN_spesal
 				var state = Stepper.ar(
 					T2A.ar(("t_step" ++ n).asSymbol.tr(0)) + spesalTrig,
@@ -178,12 +187,14 @@ CQSynthDefs {
 					Latch.ar(sampled, trig),           // sample & hold
 					Gate.ar(sampled, sqr)]);           // track & hold
 				// qShLag: declick at 4 ms default
-				[tri, Lag.ar(cas, qShLag), state, spesalSum]
+				[tri, Lag.ar(cas, qShLag), state, spesalSum, spesalTrig, hz]
 			};
 			tris = castles.collect { |c| c[0] };
 			cass = castles.collect { |c| c[1] };
 			stateKr = castles.collect { |c| A2K.kr(c[2]) };
 			spesalSums = castles.collect { |c| c[3] };
+			spesalTrigs = castles.collect { |c| c[4] };
+			castleHz = castles.collect { |c| c[5] };
 			sends = 5.collect { |k|
 				var name = ("c" ++ (k + 1) ++ "Send").asSymbol;
 				("send" ++ (k + 1)).asSymbol.kr(CQSpec.default(name), CQSpec.lag(name))
@@ -193,15 +204,19 @@ CQSynthDefs {
 			Out.ar(\qMixBus.ir(0), Mix(tris * sends));
 			SendReply.kr(Impulse.kr(0) + Mix(stateKr.collect { |s| Changed.kr(s) }),
 				'/cq_spesal', stateKr);                // initial states + every change
-			// GUI activity LEDs (SPEC §6.2): instantaneous tri values at 15 Hz —
-			// infra castles visibly oscillate, audio-rate ones read as flicker
-			SendReply.kr(Impulse.kr(15), '/cq_castle', tris.collect { |t| A2K.kr(t) });
-			// GUI_SPEC §9 `/cq_charge`, castle block: the five spesal sums the
-			// Schmitts above already read, peak-held like the coco pair (see
-			// \cqCoco) so a single-sample crossing still reaches the lamp.
+			// The inner reeds receive raw triangle position plus the realized,
+			// gently averaged rate. At <=3 Hz the GUI can move a pearl honestly;
+			// above that it ignores the aliased sample and draws a stable blur.
+			SendReply.kr(Impulse.kr(15), '/cq_castle',
+				A2K.kr(tris) ++ A2K.kr(Lag.ar(castleHz, 0.15)));
+			// GUI_SPEC §9 `/cq_charge`, castle block: first the five spesal sums
+			// the Schmitts above read, then their five exact triggers. Both halves
+			// are peak-held like the coco pair (see \cqCoco), so a one-sample event
+			// still reaches the lamp without a GUI-side threshold guess.
 			// replyID 3 — the coco instances own 1 and 2.
 			SendReply.kr(Impulse.kr(15), '/cq_charge',
-				A2K.kr(LagUD.ar(spesalSums, 0, 0.15)), 3);
+				A2K.kr(LagUD.ar(spesalSums, 0, 0.15))
+					++ A2K.kr(LagUD.ar(spesalTrigs, 0, 0.15)), 3);
 		})
 	}
 
@@ -220,15 +235,27 @@ CQSynthDefs {
 		^SynthDef(\cqCoco, {
 			var buf, frames, speed, spafKnob, clockHz, ratio, dir, phase;
 			var here, hereSmooth, dolby, inSig, inVca, fbVca, inEnv, fbEnv;
-			var inCh, fbCh, dustLevel, dustSig, record, write, outTap, organ, voice, lvl;
+			var inCh, fbCh, dustLevel, dustSig, record, write, outTap;
+			var organ, organMod, voice, lvl;
 			var patchDepth, mods, wSpaf, wInVca, wFbVca, wFlip, wSkip;
-			var spafSum, inVcaSum, fbVcaSum, flipSum, skipSum, flipGate, skipTrig;
+			var selfModSources, cocoIndex;
+			var spafSum, inVcaSum, fbVcaSum, flipSum, skipSum;
+			var flipMatrixGate, flipGate, skipTrig;
+			var spafApplied, spafEffective, modActual, modSlow, modSpread, modActivity;
+			var phaseTelemetry;
 			buf = \buf.ir(0);
 			frames = BufFrames.ir(buf);
 			speed = \speed.kr(CQSpec.default(\coco1Speed), CQSpec.lag(\coco1Speed));
 			spafKnob = \spafKnob.kr(CQSpec.default(\coco1Spaf), CQSpec.lag(\coco1Spaf));
 			patchDepth = \patchDepth.kr(CQSpec.default(\patchDepth), CQSpec.lag(\patchDepth));
-			mods = CQSynthDefs.prModsCocos(\modSrcBus.ir(0));
+			// A Coco is both consumer and writer of its own loop/organ sources.
+			// Local feedback makes that one-block self-route explicit. Relying only
+			// on a four-channel shared InFeedback span made the same org jack work in
+			// the earlier Quantussy node while its own Coco could read silence.
+			selfModSources = LocalIn.ar(2);             // prior [outTap, organ]
+			cocoIndex = \cocoIndex.ir(0);               // 0 = coco1, 1 = coco2
+			mods = CQSynthDefs.prModsCocos(
+				\modSrcBus.ir(0), selfModSources, cocoIndex);
 			wSpaf = CQSynthDefs.prMatrixWeight(\wSpafBus.ir(0), patchDepth);
 			wInVca = CQSynthDefs.prMatrixWeight(\wInVcaBus.ir(0), patchDepth);
 			wFbVca = CQSynthDefs.prMatrixWeight(\wFbVcaBus.ir(0), patchDepth);
@@ -241,14 +268,18 @@ CQSynthDefs {
 			// +0.5, off below +0.3 — a bare comparator would chatter on noisy sums
 			flipSum = Mix(mods * wFlip);
 			skipSum = Mix(mods * wSkip);
-			flipGate = max(\flip.kr(CQSpec.default(\coco1Flip)),
-				Schmidt.ar(flipSum, 0.3, 0.5));            // flip = matrix gate OR param
-			skipTrig = Trig1.ar(Schmidt.ar(skipSum, 0.3, 0.5), SampleDur.ir);
+			flipMatrixGate = Schmidt.ar(flipSum, CQSynthDefs.gateOffThreshold,
+				CQSynthDefs.gateOnThreshold);
+			flipGate = max(\flip.kr(CQSpec.default(\coco1Flip)), flipMatrixGate);
+			skipTrig = Trig1.ar(Schmidt.ar(skipSum,
+				CQSynthDefs.gateOffThreshold, CQSynthDefs.gateOnThreshold), SampleDur.ir);
 			// hard clamp floor..SR is post-modulation by design (SPEC §5.3): the
 			// floor sits an octave under the knob's own, so a banana into _spaf
 			// still reaches a country the hand alone cannot ("ground jack" trick)
-			clockHz = (speed * (2 ** (spafSum * spafKnob)))
+			spafApplied = spafSum * spafKnob;
+			clockHz = (speed * (2 ** spafApplied))
 				.clip(CQSpec.speedClampFloor, SampleRate.ir);
+			spafEffective = (clockHz / speed).log2;
 			ratio = clockHz / SampleRate.ir;
 			dir = 1 - (flipGate * 2);                  // flip = matrix gate OR param
 			phase = Phasor.ar(\t_skip.tr(0) + skipTrig, ratio * dir, 0, frames, 0); // address counter
@@ -304,13 +335,18 @@ CQSynthDefs {
 				[here, hereSmooth]);
 			organ = Mix(Pulse.ar(clockHz / [128, 256, 512], 0.5, [0.5, 0.3, 0.2]));
 			// ^ square stack off the address-counter bits [interpretation, SPEC §3.9]
+			organMod = (organ * CQSynthDefs.organModGain).clip2(1);
+			// Own Coco/conditioned-organ matrix sources return on the next block without
+			// depending on the shared bus timestamp. Out below still publishes them
+			// for the other Coco, Quantussy, decks and GUI telemetry.
+			LocalOut.ar([outTap, organMod]);
 			voice = outTap
 				+ (organ * \organLvl.kr(CQSpec.default(\coco1Organ), CQSpec.lag(\coco1Organ))
 					* 0.3);
 			lvl = \level.kr(CQSpec.default(\coco1Level), CQSpec.lag(\coco1Level));
 			Out.ar(\outBus.ir(0), voice * lvl);
 			Out.ar(\modSrcBus.ir(0) + \modTapIdx.ir(12), outTap);  // canonical ch 12/13
-			Out.ar(\modSrcBus.ir(0) + \modOrganIdx.ir(14), organ); // canonical ch 14/15
+			Out.ar(\modSrcBus.ir(0) + \modOrganIdx.ir(14), organMod); // canonical ch 14/15
 			// GUI in/out meters (SPEC §6.2); replyID tells the two instances apart
 			SendPeakRMS.kr([inSig, voice * lvl], 20, 3, '/cq_cocometers', \meterId.ir(0));
 			// GUI_SPEC §9 loop phase → the night read-head spark. Its own message
@@ -332,20 +368,39 @@ CQSynthDefs {
 			// clearing when they stop. It exists because a rate this fast
 			// cannot be drawn as motion (the eye fuses above ~10 Hz and this
 			// message is 15 Hz), so §16.6 draws it as weight instead.
-			SendReply.kr(Impulse.kr(this.phaseReplyHz), '/cq_phase',
-				[A2K.kr(phase / frames), A2K.kr(Lag.ar(dir, 0.15)),
-					A2K.kr(Lag.ar((\t_skip.tr(0) + skipTrig) * SampleRate.ir,
-						0.2))],
+			//
+			// The same frame also carries the three continuous matrix destinations
+			// as DSP truth: slow centre, unresolved excursion and connected weight.
+			// The first is allowed to move a small satellite pearl. Audio-rate motion
+			// is reduced *before* A2K to a stable peak wake, never sampled into a
+			// false 15 Hz wobble. Activity hides the wake when no planted banana can
+			// affect the destination. SP.AF reports the realized octave shift after
+			// the clock clamp (relative to the unmodulated speed), not an inaudible
+			// request beyond the rail;
+			// input/feedback report their post-law, post-clip effective VCAs.
+			modActual = [spafEffective, inVca, fbVca];
+			modSlow = Lag.ar(modActual, 0.035);
+			modSpread = LagUD.ar((modActual - modSlow).abs, 0, 0.18);
+			modActivity = [Mix(wSpaf.abs), Mix(wInVca.abs), Mix(wFbVca.abs)]
+				.clip(0, 1);
+			phaseTelemetry = [A2K.kr(phase / frames),
+				A2K.kr(Lag.ar(dir, 0.15)),
+				A2K.kr(Lag.ar((\t_skip.tr(0) + skipTrig) * SampleRate.ir, 0.2))]
+				++ A2K.kr(modSlow) ++ A2K.kr(modSpread) ++ modActivity;
+			SendReply.kr(Impulse.kr(this.phaseReplyHz), '/cq_phase', phaseTelemetry,
 				\meterId.ir(0));
 			// GUI_SPEC §9 `/cq_charge` — this coco's two gate/trig sums exactly as
 			// the Schmitt above sees them (post-weight, pre-threshold), so the lamp
 			// cannot disagree with the DSP. Peak-held at audio rate before A2K
 			// (instant rise, 0.15 s fall): a trigger crossing can last a single
 			// sample and a plain control-rate sample would miss it — a lamp that
-			// answers "why is my flip banana silent" may not lie by omission, and
-			// the fall doubles as §16.8's fired bloom. replyID = the coco's meterId.
+			// answers "why is my flip banana silent" may not lie by omission. The
+			// second half separately holds the exact post-Schmitt gate/trigger that
+			// drives §16.8's fire diamond. replyID = the coco's meterId.
 			SendReply.kr(Impulse.kr(15), '/cq_charge',
-				A2K.kr(LagUD.ar([flipSum, skipSum], 0, 0.15)), \meterId.ir(0));
+				A2K.kr(LagUD.ar([flipSum, skipSum], 0, 0.15))
+					++ A2K.kr(LagUD.ar([flipMatrixGate, skipTrig], 0, 0.15)),
+				\meterId.ir(0));
 		})
 	}
 
@@ -476,10 +531,21 @@ CQSynthDefs {
 	// In.ar only when its writer has already run this block; otherwise InFeedback
 	// (one block late — In.ar on an untouched bus would read silence, not old data).
 
-	// cocos run after both writers above them: only the coco taps (12-15, which
-	// include the reader's own output) are one block late
-	*prModsCocos { |modSrcBus|
-		^In.ar(modSrcBus, 12) ++ InFeedback.ar(modSrcBus + 12, 4)
+	// Cocos run after both writers above them. Coco-derived channels are read
+	// separately so a current write on one channel cannot decide the timestamp
+	// of its neighbours. The reader's own loop/conditioned-organ pair comes from an
+	// explicit LocalIn/LocalOut block delay; the other Coco remains on the shared
+	// feedback bus. This is the actual circular signal graph, not a copied source.
+	*prModsCocos { |modSrcBus, selfSources, cocoIndex = 0|
+		var delayed = 4.collect { |i| InFeedback.ar(modSrcBus + 12 + i) };
+		var own = selfSources ?? { [delayed[0], delayed[2]] };
+		var derived = [
+			Select.ar(cocoIndex, [own[0], delayed[0]]),
+			Select.ar(cocoIndex, [delayed[1], own[0]]),
+			Select.ar(cocoIndex, [own[1], delayed[2]]),
+			Select.ar(cocoIndex, [delayed[3], own[1]])
+		];
+		^In.ar(modSrcBus, 12) ++ derived
 	}
 
 	// the quantussy reads its OWN outputs (0-9) — it hasn't written them yet this

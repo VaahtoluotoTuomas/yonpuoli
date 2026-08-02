@@ -206,7 +206,12 @@ CQGuiBananaController {
 
 	prEndpointWheel { |name, endpoint, view, x, y, modifiers, delta|
 		var patch, point;
-		if(endpoint[\kind] != \socket or: { delta == 0 }) { ^this };
+		if(delta == 0) { ^this };
+		if(grammar.isInHand) {
+			grammar.wheelHand(delta.sign, modifiers.isCtrl);
+			^this
+		};
+		if(endpoint[\kind] != \socket) { ^this };
 		point = this.prPoint(view, x, y);
 		patch = overlay.patchAtSocket(name, point);
 		patch !? {
@@ -250,6 +255,10 @@ CQGuiBananaController {
 	prGroundWheel { |view, x, y, modifiers, delta|
 		var patch;
 		if(delta == 0) { ^this };
+		if(grammar.isInHand) {
+			grammar.wheelHand(delta.sign, modifiers.isCtrl);
+			^this
+		};
 		patch = overlay.patchAt(this.prPoint(view, x, y));
 		patch !? {
 			grammar.wheel(patch[\src], patch[\dest], delta.sign, modifiers.isCtrl)

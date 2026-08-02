@@ -42,6 +42,7 @@ makeScore = {
 		[\buf, buf, \preBus, bSilent, \deckBus, bSilent, \qMixBus, bQMix,
 			\crossBus, cross, \outBus, out, \modSrcBus, bModSrc,
 			\modTapIdx, tap, \modOrganIdx, org,
+			\cocoIndex, tap - 12,
 			\inLevel, p[("coco" ++ coco ++ "In").asSymbol],
 			\fbLevel, p[("coco" ++ coco ++ "Fb").asSymbol],
 			\dust, p[("coco" ++ coco ++ "Dust").asSymbol],

@@ -533,8 +533,9 @@ puoliaalto = infra, kaksi puoliaaltoa = balcium, viisi tiheää puoliaaltoa =
 audio. Vanhoja `i/b/a`-kirjaimia ei enää ole: käyttäjän N4-päätöksellä muoto
 riittää ja peritty Cocoquantus-nimistö poistui yöstä. Yhteinen vaakaköli erottaa
 väreen fm-kuun vapaasta yhden syklin aallosta. Napautus askeltaa; sisäkello
-askeltaa edelleen spesalia ja linnan liha on edelleen body-solo. Kolmen
-hover-vihjeen pitää olla toisensa poissulkevia.
+askeltaa edelleen spesalia. PLAY-3:ssa redundantti linnan lihan body-solo ja
+hover poistettiin, joten vain väreen ja sisäkellon vihjeiden pitää olla
+toisensa poissulkevia.
 
 ```supercollider
 // N4 — Vaatii GUI:n; Ctrl+Shift+L ennen tätä. \classic yksin ei takaa
@@ -555,9 +556,10 @@ CQ.set(\c1Range, \infra);            // 1. valitse toolbarista Night
 } };
 //    Aja ~hearCastle.(2), napauta castle 2; sitten 3, 4 ja 5.
 //    Toista halutessasi kaksi kierrosta / 6 askelta.
-//    Napauta myös sisäkelloa ja linnan lihaa: väre ei saa varastaa niiden eleitä.
-// 4. Vie osoitin vuorotellen väreen, sisäkellon ja lihan päälle. Vain yksi vihje
-//    saa kirkastua kerrallaan. Vie kaapeli väreen yli: kaapelin pitää voittaa
+//    Napauta myös sisäkelloa: väre ei saa varastaa sen elettä. Linnan lihalla
+//    ei saa enää näkyä hoveria eikä tuplaklikkauksen ryhmäsoloa.
+// 4. Vie osoitin vuorotellen väreen, sisäkellon ja lihan päälle. Vain väre tai
+//    sisäkello saa kirkastua. Vie kaapeli väreen yli: kaapelin pitää voittaa
 //    hoverissa ja painalluksessa, eikä range saa silloin vaihtua.
 // 5. Katso 1280×720-koossa ja maksimoituna: kaikilla linnanreuna -> väre -raon
 //    pitää näyttää samalta. Kölin pitää erottaa balcium fm-kuun aallosta.
@@ -759,13 +761,13 @@ CQ.patch(\envA, \coco1_spaf, 0.7);
 
 ### N8 — Drawer-workshop (§12.1)
 
-Drawerin neljäs pysyvä sivu `workshop` on **Nightin hiljainen mittapöytä**:
+Drawerin `workshop`-sivu on **Nightin hiljainen mittapöytä**:
 sama soitin vastakkaisella kieliopilla. Jaettu raili, kolmen moduulin huoltorivi
 (`deck a · input trims · deck b`) ja sen alla `coco 1 · quantussy ·
-coco 2`. Kaikki 39 puuttuvaa CQSpec-parametria ovat
+coco 2`. Kaikki 26 setup-CQSpec-parametria ovat
 ledger-rivejä: nimi vasemmalla, hiusviivaraili keskellä, **tarkka arvo**
-monolla oikealla. `micGain` **siirtyi** Daystä tänne — Dayhin jäi vain
-passiivinen osoitin, eikä koko GUI:ssa ole toista mic-kontrollia.
+monolla oikealla. `micGain` **siirtyi** tänne ennen Dayn eläköitymistä;
+Nightin sprout on vain lukema, eikä koko GUI:ssa ole toista mic-kontrollia.
 
 ```supercollider
 // N8 — Ctrl+Shift+L ensin. Tämän lohkon voi ajaa myös ilman serveriä:
@@ -776,30 +778,30 @@ CQ.set(\masterVol, -24);
 //    SIRISTYSTESTI (katso 2 m päästä, älä lue): näetkö yhden matalan
 //    huoltorivin ja sen alla kolme ledgeriä — etkä neljää pyöreää korttia,
 //    natiivia asetuspaneelia, pienoiskoko-Daytä tai Nightin koristekuvastoa?
-// 2. Lue läheltä: jokaisella 39 rivillä pitää näkyä tarkka arvo. Vertaa
+// 2. Lue läheltä: jokaisella 26 rivillä pitää näkyä tarkka arvo. Vertaa
 //    coco 1:n ja coco 2:n ledgereitä: alaotsikoiden (converter · material ·
 //    output · input mix) pitää olla täsmälleen samalla korkeudella.
-// 3. Vedä `coco 1 · output · level` railia. Äänen pitää muuttua heti ja
+// 3. Vedä `coco 1 · output · pan` railia. Stereokuvan pitää muuttua heti ja
 //    arvon seurata kättä. Klikkaa saman rivin NIMEÄ: mitään ei saa tapahtua.
 // 4. Rullaa `quantussy · detune · castle 3` -rivin päällä: hienosäätö.
 //    Bipolaarisella rivillä täytön pitää kasvaa keskimerkistä ulospäin.
 // 5. `coco 1 · converter · wrap` ja `read`: istuimet (off·on / zoh·smooth).
 //    Napautus istuimelle vaihtaa tilan; kuuntele ero.
-CQ.set(\coco1Level, 1.2);
+CQ.set(\coco1Pan, 0.7);
 // 6. Koodikirjoitus: rivin kahvan ja arvon pitää seurata ilman että
 //    kirjoitat itse mitään takaisin.
 CQ.set(\micGain, 0.5);
 // 7. MIC: rivin pitää muuttua punaiseksi ja master-strippiin ilmestyä
 //    "MIC LIVE". Vaihda välilehteä ja SULJE drawer: varoituksen pitää
-//    JÄÄDÄ näkyviin. Tarkista myös ettei Dayn sources-sarakkeessa ole enää
-//    mic-nuppia — vain teksti "mic · drawer / workshop".
+//    JÄÄDÄ näkyviin. Tarkista myös, että koko GUI:ssa on vain tämä yksi
+//    interaktiivinen mic-kontrolli.
 CQ.set(\micGain, 0);
 // 8. KOKOASKEL. Suurenna ikkuna maksimiin: koko drawerin pitää vaihtaa
 //    isompaan kokoaskeleeseen — teksti kasvaa (12 -> 15 px), rivit
 //    24 -> 28 px, raili levenee ja loomin solut kasvavat. Reunoille pitää
 //    silti jäädä marginaali; sivu ei saa mennä kiinni reunoihin.
 //    Pienennä takaisin 1280x720:een: askel palaa, mitään ei leikkaudu eikä
-//    sivu vierity. Viimeisen `input mix · x` -rivin ja `castle 5` -sendin
+//    sivu vierity. Viimeisen `input mix · deck` -rivin ja `detune · castle 5` -rivin
 //    pitää näkyä kokonaan molemmissa koissa.
 // 8b. JOS teksti EI kasva maksimoitaessa, aja tämä ja kerro tulos — se
 //    kertoo suoraan kummasta on kyse, liian pienestä sivusta vai bugista:
@@ -809,9 +811,9 @@ CQGuiScale.minimumWidth(\roomy);                          // vaadittu leveys
 CQGuiScale.minimumHeight(\roomy) + CQGuiScale.comfort;    // vaadittu korkeus
 //    Huom: Windowsin 150 % skaalauksella maksimoitu 1080p-näyttö ON
 //    looginen 1280x720, jolloin compact on oikea eikä vika.
-// 9. Vaihda DAY: saman geometrian pitää piirtyä musteena paperille.
-// 10. Käy KAIKKI neljä välilehteä läpi molemmissa koissa: inspector,
-//    workshop, spellbook, memory. Niiden pitää jakaa sama railin leveys
+// 9. Palaa Nightiin ja avaa Drawer uudelleen: Workshopin askel ja arvot säilyvät.
+// 10. Käy KAIKKI viisi välilehteä läpi molemmissa koissa: inspector,
+//    workshop, spellbook, memory, audio. Niiden pitää jakaa sama railin leveys
 //    (sama vasen ja oikea reuna), **sama ylämarginaali** välilehtirivin ja
 //    sisällön välissä, sama tekstikoko ja sama tyyli. Tarkista erityisesti:
 //    loomin rivinimet ja vinot sarakenimet, spellbookin monoteksti,
@@ -903,8 +905,8 @@ CQ.set(\masterVol, -24);
 //    sekä kuuta, säätä, vuorovettä, siemeniä ja kaapeleita.
 // 3. Avaa DRAWER. Käy inspector · workshop · spellbook · memory läpi ja
 //    palaa samalla DRAWER-napilla Nightiin. Master, notice ja PANIC eivät saa
-//    kadota; Nightissä kesken jääneen käden/auditionin pitää peruuntua.
-// 4. SPESAL-TÄHDISTÖN KUOLEMA: hoveroi castlea ja napauta sen sisäkelloa.
+//    kadota; Nightissä kesken jääneen view-only kaapelikäden pitää pudota.
+// 4. SPESAL-TÄHDISTÖN KUOLEMA: hoveroi linnan eri lihakohtia ja napauta niitä.
 //    Näkyykö partneri, moodi ja signaalin suunta riittävän selvästi juuri
 //    eleen alla? Kaipaatko oikeassa soitossa pysyvää koko verkon karttaa?
 // 5. MUISTIPOLKUKARTAN KUOLEMA: soita shelliä ja tarkista Workshopista
@@ -2446,3 +2448,118 @@ CQ.set(\coco1Organ, 0); CQ.set(\coco2Organ, 0);
 - [ ] 16N-1 hyväksytty **soitettavuus-portin osana** (pvm: ______ —
       kanavanauhan luettavuus, Levelin paikka nauhan lopussa, ristihäivytyksen
       etäisyys, F14:n sisältö, deckien poisto)
+
+---
+
+## PLAY-1 — ensimmäinen johto ja boot-shake (Tie 1.0:aan kohta 8)
+
+Koko opastettu soittoajo — Cocon kirjoitus/lukupolku, castlen kaksi lähtöä ja
+kaksi tuloa, sisäinen spesal-kytkentä vs. ulkoiset FM/spesal-johdot, urku,
+Workshop-riippuvuudet sekä shaken A/B — on omassa kopioitavassa oppaassaan:
+[`docs/PLAYABILITY_GUIDE.md`](../docs/PLAYABILITY_GUIDE.md).
+
+Ensimmäinen yhden muuttujan kuunteluportti on uuden johdon paino **0,60**
+(ennen 0,50; ensimmäinen kuuntelukandidaatti 0,65). NRT osoitti, että 0,50 vain
+kosketti +0,50 Schmitt-kynnystä eikä täyden amplitudin kolmio laukaissut sitä
+kertaakaan; 0,55 / 0,60 / 0,65 laukaisivat. Inspectorin double-click käyttää samaa 0,60-lakia, jotta kaksi kaapelin
+istutustapaa eivät lupaa eri asiaa. Nightin koko 40 px magneettinen pudotusalue
+istuttaa täsmälleen kädessä näkyvän painon; etäisyys ei vaimenna eikä reittiä
+auditionoida ennen releasea. Rulla (Ctrl = fine) valitsee alkupainon view-only.
+
+```supercollider
+// PLAY-1 — Ctrl+Shift+L ensin. Rivit yksi kerrallaan.
+CQ.boot;
+CQ.deckA.load(Platform.resourceDir +/+ "sounds/a11wlk01.wav");
+CQ.set(\coco2Level, 0); CQ.set(\coco1SlotPre, 0); CQ.set(\coco1SlotDeck, 1);
+CQ.hold(1, 0);                           // anna deckin kirjoittua muutama sekunti
+CQ.hold(1, 1);                           // lukitse selkeä fraasi
+// Vedä Nightissä tri1 -> coco1_flip vaikka magneettialueen ulkoreunalle.
+CQ.matrix.getPatch(\tri1, \coco1_flip); // odotus: 0.60
+// Odota infra-kolmion koko kierros (~12,5 s): charge-lamppu ylittää rajan ja suunta vaihtuu.
+// Rullaa painoa alas: lampun pitää näyttää alle jäävä charge vaikka flip lakkaa.
+// Revi johto. Avaa Hold ja kokeile tri5 -> coco1_inVca samalla 0.60-painolla:
+CQ.hold(1, 0);
+// Odotus: selvä, soitettava tremolo — ei huomaamaton, mutta ei jatkuvasti railissa.
+// Nopein gate-tarkistus: tri3 -> coco1_skip (bootissa noin 3 Hz).
+// tri1/2/4 ovat infraa ja voivat odottaa nousureunaa 9–13 s; tri5 on audio-rate.
+```
+
+- [x] PLAY-1 / soittotestit 1–2 hyväksytty (2026-08-01 — muistipolku toimii;
+      tuore tri-johto laukaisee flip/skipin koko näkyvässä socketissa ilman
+      painon korjausta; ensimmäinen 0,65 tuntui jatkuvassa kohteessa hieman
+      vahvalta, joten oletus tarkennettiin mitatun porttilattian yläpuolelle 0,60)
+
+### PLAY-2B — SP.AF:n hienovesi ja johdon painokuu
+
+```supercollider
+// Ctrl+Shift+L, sitten testin 1 held-looppi ja SP.AF täsmälleen nollaan.
+CQ.set(\coco1Spaf, 0);
+// Vedä SP.AF-sirppiä nollasta 15 px ylös, sitten lue; odotus:
+CQ.get(\coco1Spaf); // noin +0.25 oct
+CQ.set(\coco1Spaf, 0);
+// Vedä nollasta 30 px ylös, sitten lue; odotus:
+CQ.get(\coco1Spaf); // noin +1.0 oct
+// Vedä myös alas: tuloksen pitää olla symmetrinen.
+// Right-click SP.AF-sirppiin -> täsmälleen 0; raahauksessa ei ole nollalukkoa.
+// Hoveroi tuoretta johtoa: painokuun kehä on noin 3/5 täynnä myötäpäivään.
+// Wheel alas -> kehä lyhenee; touchpadilla Z alas / X ylös / Shift = hieno.
+// Alt-click -> väri ja kiertosuunta vaihtuvat.
+```
+
+- [x] PLAY-2B hyväksytty (2026-08-01 — uuden johdon 0,60, SP.AF:n
+      signed-square-käsikartta ja asteikko sekä painokuu hyväksyttiin;
+      tarpeeton prosenttikapseli poistettiin, kuu jäi)
+
+### PLAY-2C — Cocon live-satelliitti ja audio-rate-wake
+
+```supercollider
+CQ.set(\coco1Spaf, 0.25);
+CQ.patch(\tri1, \coco1_spaf, 0.60); // hidas: ontto ulkohelmi liikkuu
+CQ.get(\coco1Spaf);                 // pysyy 0.25: värillinen helmi on asetus
+CQ.unpatch(\tri1, \coco1_spaf);
+CQ.patch(\tri5, \coco1_spaf, 0.60); // audio-rate: vakaa ulompi wake, ei 15 Hz nykimistä
+CQ.unpatch(\tri5, \coco1_spaf);      // satelliitti/wake katoaa
+```
+
+Toista Input- ja Feedback-kohteilla sekä Coco 2:lla. Värillinen helmi ei saa
+seurata telemetriaa; ontto satelliitti näyttää todellisen post-DSP-arvon. Nopea
+liike näkyy heilahdusalueena, hidas liikkeenä. Sirpin yli menevä efektiivinen
+arvo päättyy lyhyeen reunakorkkiin. `patchDepth = 0` poistaa kaikki satelliitit.
+
+- [ ] PLAY-2C hyväksytty (pvm: ______ — asetus/live-erottelu on ensi silmäyksellä
+      selvä; infra liikkuu, audio-rate tiivistyy vakaaksi kaareksi; ei välky,
+      valehtele eikä peitä asteikon maamerkkejä)
+
+### PLAY-6 — jatkuva drone-anatomia Nightissä
+
+```supercollider
+// Ctrl+Shift+L, avaa uusi GUI ja tee molemmista Cocoista kuultavia.
+CQ.patchPreset(\selfNoise);
+CQ.set(\coco1Level, 0.8); CQ.set(\coco2Level, 0.8);
+CQ.set(\coco1Organ, 0); CQ.set(\coco2Organ, 0);
+CQ.set(\coco1SlotQ, 0); CQ.set(\coco2SlotQ, 0);
+CQ.set(\coco1SlotX, 0); CQ.set(\coco2SlotX, 0);
+CQ.set(\c1Send, 0);
+```
+
+1. Vedä kummankin kuoren ulompaa Level-rantaa pystysuunnassa. Unity-loven pitää
+   löytyä, boost-osan muuttua punaiseksi ja kahden Cocon ristihäivytyksen kuulua.
+2. Vedä keltaista Organ-maltoa jakin ympärillä. Kuultavan kerroksen pitää nousta,
+   mutta keltaisen `orgN`-jakin pysyä samankokoisena ja patchattavana myös nollassa.
+3. Avaa yksi Q-kidus. Himmeän sivujoen pitää voimistua ja bootin castle 5:n tulla
+   kuuluvaksi; avaa sitten muitakin linnoja vetämällä niiden pintaa kohti renkaan
+   keskustaa. Ulospäin veto sulkee. Tavallinen alle 8 px tap vaihtaa spesalin eikä
+   muuta sendiä; send-veto ei saa tehdä ensin ylimääräistä spesal-askelta.
+4. Avaa vain Cocon 1 SlotX-venttiili: sen nuolen ja äänen pitää tarkoittaa Coco 2
+   → Coco 1. Sulje se ja avaa vain Cocon 2 venttiili: Coco 1 → Coco 2. Venttiilien
+   on pysyttävä itsenäisinä eikä SlotQ saa liikkua mukana.
+5. Avaa Workshop. Level-, Organ-, SlotQ-, SlotX- ja `c1Send…c5Send`-rivejä ei saa
+   olla siellä kaksoiskappaleina; muut setup-rivit ja täsmäarvot säilyvät.
+
+- [ ] PLAY-6 hyväksytty (pvm: ______ — kaikki viisi anatomiatyyppiä löytyvät,
+      suunnat ovat selvät, tap/send ei lipsu ja dronea voi rakentaa yhtenä
+      jatkuvana Night-tilana)
+
+Seuraava boot-oletuksen kuuntelupäätös tehdään PLAY-2C-palautteen rinnalla. Oppaan
+`Soittotesti 7` vertaa yhden muuttujan kandidaatteina `Spaf`-boot-oletusta
+0,12 ja shaken painoa 0,65; kumpaakaan ei ole vielä tehty tuotanto-oletukseksi.

@@ -1,22 +1,31 @@
 // CQBananaGrammar — serverless mouse-banana behavior (GUI_SPEC §4).
-// It owns only GUI-local gesture/undo/solo state. Every musical write still
-// travels through CQAudition -> CQMatrix.patch or CQMatrix.writeMatrix.
+// It owns only GUI-local gesture/undo/solo state. A held cable is an armed,
+// view-only gesture: the matrix changes exactly once, when a plug is planted.
 
 CQBananaGrammar {
-	var <matrix, audition;
+	var <matrix;
 	var <hand, <candidateDest, <candidateWeight, <cursor;
 	var <hoverEndpoint, <hoverCable, <soloTarget, <lassoPath, caught;
-	var undoRing, handStrength, <auditionRadius, undoDepth;
+	var undoRing, handStrength, <dropRadius, undoDepth;
 
-	*new { |matrix, audition, handStrength = 0.5, auditionRadius = 40,
-		undoDepth = 32|
-		^super.newCopyArgs(matrix, audition).prInit(
-			handStrength, auditionRadius, undoDepth)
+	// PLAN playability measurement 2026-08-01: an exact 0.5 banana only
+	// touches the production Schmitt's +0.5 boundary and never fires it. 0.55
+	// already crossed in the gate fixture; 0.60 keeps margin above that measured
+	// floor while easing the first continuous modulation requested in PLAY-2.
+	*defaultHandStrength { ^0.60 }
+	// The socket's larger magnetic reach is forgiving, but never a strength
+	// control. Once inside it, release means plant at the cable's armed weight.
+	*defaultDropRadius { ^40 }
+
+	*new { |matrix, handStrength, dropRadius, undoDepth = 32|
+		handStrength = handStrength ?? { this.defaultHandStrength };
+		dropRadius = dropRadius ?? { this.defaultDropRadius };
+		^super.newCopyArgs(matrix).prInit(handStrength, dropRadius, undoDepth)
 	}
 
 	prInit { |strength, radius, depth|
 		handStrength = strength.clip(0, 1);
-		auditionRadius = radius.max(1);
+		dropRadius = radius.max(1);
 		undoDepth = depth.asInteger.max(1);
 		undoRing = List.new;
 		caught = [];
@@ -32,11 +41,7 @@ CQBananaGrammar {
 		^hand.notNil and: { hand[\kind] == \grab }
 			and: { hand[\src] == src } and: { hand[\originDest] == dest }
 	}
-	isTransient { |src, dest|
-		^hand.notNil and: { hand[\src] == src } and: { candidateDest == dest }
-			and: { audition.isActive }
-	}
-	isCandidate { |dest| ^candidateDest == dest and: { audition.isActive } }
+	isCandidate { |dest| ^candidateDest == dest }
 	isHarvesting { ^lassoPath.notNil }
 	// §4.4: a press that travels less than this is a no-op, never a lasso. The
 	// almanac corner's taps borrow the same number (§6.1), so the hand learns
@@ -45,13 +50,7 @@ CQBananaGrammar {
 	undoCount { ^undoRing.size }
 	handSource { ^hand !? { hand[\src] } }
 	handWeight {
-		^candidateWeight ?? {
-			hand !? {
-				if(hand[\kind] == \grab) { hand[\carried] } {
-					hand[\polarity] * handStrength
-				}
-			}
-		}
+		^candidateWeight ?? { hand !? { hand[\weight] } }
 	}
 
 	cursor_ { |point|
@@ -94,6 +93,7 @@ CQBananaGrammar {
 		hoverCable = nil;
 		hand = (
 			kind: \source, src: src, polarity: if(polarity < 0) { -1 } { 1 },
+			weight: if(polarity < 0) { handStrength.neg } { handStrength },
 			before: matrix.fullMatrix, sticky: false
 		);
 		this.changed(\gesture);
@@ -108,6 +108,7 @@ CQBananaGrammar {
 		hoverCable = nil;
 		hand = (
 			kind: \grab, src: src, originDest: dest, carried: weight,
+			weight: weight,
 			before: matrix.fullMatrix, sticky: false
 		);
 		this.changed(\gesture);
@@ -115,27 +116,18 @@ CQBananaGrammar {
 	}
 
 	updateCandidate { |dest, distance = 0|
-		var closeness, weight;
 		if(hand.isNil or: { CQMatrix.destIndex(dest).isNil }
-			or: { distance > auditionRadius }) {
+			or: { distance > dropRadius }) {
 			this.leaveRadius;
 			^this
 		};
-		closeness = (1 - (distance / auditionRadius)).clip(0, 1);
-		weight = if(hand[\kind] == \grab) {
-			hand[\carried]
-		} {
-			hand[\polarity] * handStrength * closeness.squared
-		};
-		audition.preview(hand[\src], dest, weight);
 		candidateDest = dest;
-		candidateWeight = matrix.getPatch(hand[\src], dest);
+		candidateWeight = hand[\weight];
 		this.changed(\gesture);
 		^this
 	}
 
 	leaveRadius {
-		audition.leaveRadius;
 		candidateDest = nil;
 		candidateWeight = nil;
 		this.changed(\gesture);
@@ -151,20 +143,21 @@ CQBananaGrammar {
 		desired = candidateWeight;
 		if(hand[\kind] == \source) {
 			polarity = hand[\polarity];
-			audition.plant;
+			matrix.patch(src, target, desired, origin: \gui, committed: true,
+				operation: \plant);
 			this.prRemember(before);
 			if(keepSource) {
 				hand = (kind: \source, src: src, polarity: polarity,
-					before: matrix.fullMatrix, sticky: true)
+					weight: desired, before: matrix.fullMatrix, sticky: true)
 			} {
 				hand = nil
 			};
 		} {
 			origin = hand[\originDest];
-			audition.revert;
-			if(target != origin) {
+			if(target != origin
+				or: { matrix.getPatch(src, origin) != desired }) {
 				dense = matrix.fullMatrix;
-				this.prSetDense(dense, src, origin, 0);
+				if(target != origin) { this.prSetDense(dense, src, origin, 0) };
 				this.prSetDense(dense, src, target, desired);
 				matrix.writeMatrix(dense, origin: \gui, committed: true,
 					operation: \move);
@@ -182,7 +175,6 @@ CQBananaGrammar {
 		var before, src, dest;
 		if(hand.isNil) { ^this };
 		before = hand[\before];
-		audition.releaseVoid;
 		candidateDest = nil;
 		candidateWeight = nil;
 		if(hand[\kind] == \grab) {
@@ -230,6 +222,23 @@ CQBananaGrammar {
 		magnitude = (weight.abs + (direction.sign * step)).clip(0.05, 1);
 		matrix.patch(src, dest, magnitude * weight.sign, origin: \gui,
 			committed: true, operation: \wheel);
+		this.changed(\gesture);
+		^this
+	}
+
+	// The unobtrusive attenuator for a new route: while the banana is in hand,
+	// the same wheel language as a planted cable changes only its armed value.
+	// No DSP or matrix write occurs until release over a magnetic destination.
+	wheelHand { |direction = 1, fine = false|
+		var weight, magnitude, step, next;
+		if(hand.isNil or: { direction == 0 }) { ^this };
+		weight = hand[\weight];
+		step = if(fine) { 0.01 } { 0.05 };
+		magnitude = (weight.abs + (direction.sign * step)).clip(0.05, 1);
+		next = magnitude * weight.sign;
+		hand[\weight] = next;
+		if(hand[\kind] == \grab) { hand[\carried] = next };
+		if(candidateDest.notNil) { candidateWeight = next };
 		this.changed(\gesture);
 		^this
 	}
@@ -389,7 +398,6 @@ CQBananaGrammar {
 	// ---- private ----
 
 	prDropHand {
-		audition.revert;
 		hand = nil;
 		candidateDest = nil;
 		candidateWeight = nil;

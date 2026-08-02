@@ -1,6 +1,6 @@
 // Night Qt smoke: construct the real Night-only shell and assert the
 // archipelago carries the full banana grammar — endpoints,
-// plant, undo, harvest, the §4.1 view-flip audition revert — plus the
+// binary plant, held-cable attenuation, undo and harvest — plus the
 // telemetry laws (fireflies ride only moving aura frames; no telemetry = the
 // static reviewed ink). Prints CQ_GUI_NIGHT_PASSED / CQ_GUI_NIGHT_FAILED.
 
@@ -12,7 +12,7 @@ var matrix = CQMatrix(nil);
 var compassDir = Cocoquantus.repoDir +/+ "tests" +/+ "tmp" +/+ "cqcompass_smoke";
 var config;
 var gui, ok = true, abort, compassChecks, weatherAsync, punchChecks, birdChecks;
-var preampChecks;
+var preampChecks, droneChecks;
 var check = { |condition, message|
 	if(condition) { ("ok:   " ++ message).postln } {
 		ok = false;
@@ -542,6 +542,99 @@ weatherAsync = { |map, done|
 	});
 };
 
+// ---- promoted drone/performance anatomy: four shell hands, two directional
+// x lanes and the castle tap-vs-radial-send split. Clear the matrix only inside
+// this fixture so a real planted cable cannot legitimately win one target.
+droneChecks = { |map|
+	var savedMatrix = matrix.asArray;
+	var saved = IdentityDictionary.new;
+	var exercise;
+	var castle, view, local, finish, before;
+	#[coco1Level, coco1Organ, coco1SlotQ, coco1SlotX,
+		coco2Level, coco2Organ, coco2SlotQ, coco2SlotX, c1Send].do { |name|
+		saved[name] = state.get(name)
+	};
+	matrix.clearPatch(\test, false, \droneSmokeClear);
+	map.overlay.invalidate;
+	exercise = { |index, target, rise|
+		var coco = map.geometry[\cocos][index];
+		var name = CQGuiNightMap.shellFlowParam(index, target);
+		var point = switch(target,
+			\level, { coco[\levelSamples][24] },
+			\organ, { coco[\orgCenter]
+				+ Point(CQNightMeasures.organPodOuter - 1, 0) },
+			\slotQ, { coco[\slotQValve] },
+			\slotX, { coco[\slotXValve] });
+		var shell = map.shellViews[index];
+		var here = point - coco[\shellBox].leftTop;
+		var was = state.get(name);
+		shell.mouseOverAction.value(shell, here.x, here.y);
+		check.value(map.flowHover.includes(name),
+			"% hover lights its own Night organ".format(name));
+		shell.mouseDownAction.value(shell, here.x, here.y, 0, 0, 1);
+		check.value(map.touch.performanceGestureActive
+			and: { map.flowActive.includes(name) },
+			"% captures one continuous performance hand".format(name));
+		shell.mouseMoveAction.value(shell, here.x, here.y - rise, 0);
+		shell.mouseUpAction.value(shell, here.x, here.y - rise, 0, 0);
+		check.value(state.get(name) > was
+			and: { map.flowNorm(name) == CQSpec.unmap(name, state.get(name)) }
+			and: { map.flowActive.includes(name).not },
+			"% writes through CQState and releases cleanly".format(name));
+	};
+	exercise.value(0, \level, 24);
+	exercise.value(0, \organ, 36);
+	exercise.value(0, \slotQ, 48);
+	exercise.value(0, \slotX, 48);
+	exercise.value(1, \slotX, 48);
+	check.value(state.get(\coco1SlotX) > 0
+		and: { state.get(\coco2SlotX) > 0 },
+		"the two SlotX bridge valves remain independently directional");
+	// Cancellation releases the bright hand but keeps the already-heard value.
+	view = map.shellViews[1];
+	local = map.geometry[\cocos][1][\slotQValve]
+		- map.geometry[\cocos][1][\shellBox].leftTop;
+	view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
+	map.cancelGestures;
+	check.value(map.touch.performanceGestureActive.not
+		and: { map.flowActive.isEmpty },
+		"Esc/Tab/panic/free releases every promoted shell hand");
+	// The whole castle still taps spesal, but a pull past the shared deadzone
+	// becomes cNSend and never fires the tap on mouse-down.
+	castle = map.geometry[\castles][0];
+	view = map.castleViews[0];
+	local = castle[\center] - castle[\box].leftTop;
+	before = state.get(\c1Send);
+	view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
+	check.value(map.touch.performanceGestureActive and: { map.sendActive[0] }
+		and: { state.get(\c1Send) == before },
+		"castle press arms the tap/send decision without a transient send");
+	finish = local + (castle[\sendDirection] * 58);
+	view.mouseMoveAction.value(view, finish.x, finish.y, 0);
+	view.mouseUpAction.value(view, finish.x, finish.y, 0, 0);
+	check.value(state.get(\c1Send) > before
+		and: { map.sendNorms[0] == CQSpec.unmap(\c1Send, state.get(\c1Send)) }
+		and: { map.sendActive[0].not }
+		and: { map.touch.performanceGestureActive.not },
+		"an inward castle pull opens its qMix tributary and releases");
+	state.set(\c1Send, before);
+	view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
+	view.mouseUpAction.value(view, local.x, local.y, 0, 0);
+	check.value(state.get(\c1Send) == before
+		and: { map.touch.performanceGestureActive.not },
+		"a stationary castle tap leaves Send untouched and resolves as spesal");
+	map.paintCastleSend(0, CQSpec.unmap(\c1Send, before));
+	// Put every externally visible fixture value and cable back exactly.
+	saved.keysValuesDo { |name, value|
+		state.set(name, value);
+		if(name.asString.beginsWith("coco")) {
+			map.paintFlow(name, CQSpec.unmap(name, value))
+		};
+	};
+	matrix.load(savedMatrix);
+	map.overlay.invalidate;
+};
+
 // ---- §2 the punch (momentary hold): a right press held on the shell's heart
 // inverts cocoNHold, restored on mouse-up and on every exit path. Synchronous
 // (state.set is the funnel; the shell repaints from the already-registered hold
@@ -697,8 +790,10 @@ punchChecks = { |map|
 						var geo = map.geometry, expected, view, anchor;
 						var geometryProbe, reusedProbe;
 						var sourceView, destView, destPoint, dragPoint, sourceAnchor;
+						var dropRadial, dropOffset;
 						var before, triView, target, movePoint, triAnchor;
 						check.value(geo.notNil, "night geometry is laid out");
+						droneChecks.value(map);
 						check.value(map.tideGesturePaintCount > 0,
 							"the top tide layer paints the resting gill before any hover");
 						expected = geo[\endpoints][\tri1];
@@ -748,20 +843,66 @@ punchChecks = { |map|
 						destPoint = destView.mapToGlobal(
 							map.endpoints[\deckB_rate][\anchor]);
 						dragPoint = destPoint - sourceView.mapToGlobal(0@0);
+						before = matrix.fullMatrix.asCompileString;
+						sourceView.mouseDownAction.value(sourceView,
+							sourceAnchor.x, sourceAnchor.y, 0, 0, 1);
+						sourceView.mouseMoveAction.value(sourceView,
+							dragPoint.x, dragPoint.y, 0);
+						4.do {
+							sourceView.mouseWheelAction.value(sourceView,
+								sourceAnchor.x, sourceAnchor.y, 0, 0, -1)
+						};
+						check.value(matrix.fullMatrix.asCompileString == before
+							and: { (gui.bananaGrammar.handWeight - 0.40).abs < 0.0001 },
+							"a held cable can arm a quiet weight without an audible preview");
+						// A touchpad often cannot emit a wheel event while its click is
+						// held. Window-level Z/X are the left-hand decrement/increment
+						// pair and must remain just as view-only as the wheel.
+						gui.window.view.keyDownAction.value(gui.window.view, $z, 0);
+						gui.window.view.keyDownAction.value(gui.window.view, $x, 0);
+						check.value(matrix.fullMatrix.asCompileString == before
+							and: { (gui.bananaGrammar.handWeight - 0.40).abs < 0.0001 },
+							"held-cable Z/X attenuation works without touchpad scrolling or DSP writes");
+						sourceView.mouseUpAction.value(sourceView,
+							dragPoint.x, dragPoint.y, 0, 0);
+						check.value((matrix.getPatch(\org2, \deckB_rate) - 0.40).abs
+							< 0.0001,
+							"release performs the first DSP write at the armed weight");
+						gui.window.view.keyDownAction.value(gui.window.view,
+							$z, 262144);
+						check.value(matrix.getPatch(\org2, \deckB_rate) == 0.0,
+							"window-level Ctrl+Z restores the night plant");
+						// PLAY-5 regression: the whole 40 px magnetic catch is binary.
+						// Distance chooses only whether the cable lands, never its weight.
+						matrix.unpatch(\tri1, \coco1_flip);
+						sourceView = map.endpoints[\tri1][\view];
+						sourceAnchor = map.endpoints[\tri1][\anchor];
+						destView = map.endpoints[\coco1_flip][\view];
+						dropRadial = geo[\endpoints][\coco1_flip]
+							- geo[\cocos][0][\center];
+						dropOffset = dropRadial
+							/ CQNightGeometry.distance(Point(0, 0), dropRadial)
+							* (gui.bananaGrammar.dropRadius - 1);
+						destPoint = destView.mapToGlobal(
+							map.endpoints[\coco1_flip][\anchor]) + dropOffset;
+						dragPoint = destPoint - sourceView.mapToGlobal(0@0);
 						sourceView.mouseDownAction.value(sourceView,
 							sourceAnchor.x, sourceAnchor.y, 0, 0, 1);
 						sourceView.mouseMoveAction.value(sourceView,
 							dragPoint.x, dragPoint.y, 0);
 						sourceView.mouseUpAction.value(sourceView,
 							dragPoint.x, dragPoint.y, 0, 0);
-						check.value(matrix.getPatch(\org2, \deckB_rate) == 0.5,
-							"night endpoint drag auditions and plants WYHIWYG");
+						check.value(matrix.getPatch(\tri1, \coco1_flip)
+							== CQBananaGrammar.defaultHandStrength
+							and: { matrix.getPatch(\tri1, \coco1_flip)
+								> CQSynthDefs.gateOnThreshold },
+							"a drop at the magnetic edge seats a full gate-capable cable");
 						gui.window.view.keyDownAction.value(gui.window.view,
 							$z, 262144);
-						check.value(matrix.getPatch(\org2, \deckB_rate) == 0.0,
-							"window-level Ctrl+Z restores the night plant");
-						// §4.1: opening the workbench hides Night and must revert
-						// the audition before the queued stage swap.
+						check.value(matrix.getPatch(\tri1, \coco1_flip) == 0,
+							"the caught gate cable remains one undo operation");
+						// §4.1: opening the workbench hides Night and must drop the
+						// view-only held cable before the queued stage swap.
 						before = matrix.fullMatrix.asCompileString;
 						triView = map.endpoints[\tri3][\view];
 						triAnchor = map.endpoints[\tri3][\anchor];
@@ -773,11 +914,11 @@ punchChecks = { |map|
 						triView.mouseMoveAction.value(triView,
 							movePoint.x, movePoint.y, 0);
 						check.value(gui.bananaGrammar.isInHand,
-							"a night banana auditions in hand");
+							"a night banana remains armed in hand");
 						gui.shell.toggleDrawer;
 						check.value(gui.bananaGrammar.isInHand.not
 							and: { matrix.fullMatrix.asCompileString == before },
-							"opening Drawer drops the night hand and reverts — no leak");
+							"opening Drawer drops the night hand — no matrix leak");
 						gui.shell.toggleDrawer;
 						AppClock.sched(0.15, {
 							try {
@@ -853,7 +994,7 @@ punchChecks = { |map|
 															var rangePoint, rangeBefore, rangeBox, rangeCable;
 															var matrixBeforeRange;
 															var dolbyY, dolbyBefore, dolbyBox, dolbyCable;
-															var matrixBeforeDolby, inBefore;
+															var matrixBeforeDolby, matrixBeforeSpafReset, inBefore;
 															var sparkPoint, holdBefore, flipBefore, blinkBefore;
 															var savedPatches;
 																// the crescent view's own centre, so a flooded
@@ -869,8 +1010,24 @@ punchChecks = { |map|
 															crescent.mouseUpAction.value(
 																crescent, mid, mid - 30, 0, 0);
 															check.value(
-																(state.get(\coco1Spaf) - 2.0).abs < 0.02,
-																"a tide-crescent pull pours spaf through the funnel");
+																(state.get(\coco1Spaf) - 1.0).abs < 0.02,
+																"a 30 px SP.AF pull reaches one octave on the signed-square hand taper");
+															// Bipolar SP.AF has an exact, non-sticky home. Clear
+															// routes only for this synthetic gesture so cable-first
+															// priority cannot turn the reset test into an unrelated rip.
+															matrixBeforeSpafReset = matrix.fullMatrix;
+															matrix.clearPatch(\test, false, \spafResetTest);
+															#[coco1Spaf, coco2Spaf].do { |name, i|
+																var view = map.crescentViews[name];
+																state.set(name, if(i == 0) { 0.83 } { -0.71 });
+																view.mouseDownAction.value(view, mid, mid, 0, 1, 1);
+																view.mouseUpAction.value(view, mid, mid, 0, 1);
+																check.value(state.get(name) == 0,
+																	"right-click returns % exactly to zero".format(name));
+															};
+															matrix.writeMatrix(matrixBeforeSpafReset,
+																\test, false, \spafResetRestore);
+															map.overlay.invalidate;
 															// N5: the in/fb crescent keeps that same drag,
 															// while its smaller oyster owns one tap below.
 															dolbyView = map.crescentViews[\coco1In];
@@ -1080,9 +1237,18 @@ punchChecks = { |map|
 															shell.mouseLeaveAction.value(shell);
 															check.value(map.chevronHover[0].not,
 																"leaving rests the chevron");
-															castleTwo = map.geometry[\castles][1];
-															castleView = map.castleViews[1];
-															dialPoint = CQNightGeometry.polar(
+													castleTwo = map.geometry[\castles][1];
+													castleView = map.castleViews[1];
+													check.value(map.castleMotions.every(_.isNil),
+														"before /cq_castle telemetry no inner reed invents motion");
+													map.castleFrame([-0.5, 0.9, 0, 0, 0],
+														[1, 120, 1, 1, 1]);
+													check.value(map.castleMotions[0][\mode] == \resolved
+														and: { map.castleMotions[0][\position] == 0.25 }
+														and: { map.castleMotions[1][\mode] == \blur }
+														and: { map.castleMotions[1][\position] == 0.5 },
+														"slow triangles move pearls while audio-rate clocks become stable reeds");
+													dialPoint = CQNightGeometry.polar(
 																castleTwo[\center], castleTwo[\dialR],
 																0.25pi) - castleTwo[\box].leftTop;
 															castleView.mouseOverAction.value(castleView,
@@ -1137,6 +1303,17 @@ punchChecks = { |map|
 																"a mad phase clamps at the mouth (every entry clamps)");
 															gui.prPhaseFrame(1, 0.62);
 															sparkPoint = map.sparkPoint(0);
+															gui.prPhaseFrame(1, 0.62, nil, nil,
+																[0, 1.1, 1.4], [0.25, 0.3, 0.8],
+																[0.60, 0.60, 0.60]);
+															check.value(
+																map.crescentModStates[\coco1Spaf][\center] == 0.5
+																and: { map.crescentModStates[\coco1Spaf][\lower]
+																	< map.crescentModStates[\coco1Spaf][\upper] }
+																and: { map.crescentModStates[\coco1Fb][\clippedHigh] },
+																"continuous DSP telemetry draws a slow satellite plus an audio-rate wake");
+															check.value(state.get(\coco1Spaf) == 0,
+																"the live satellite never falsifies or rewrites the stored SP.AF pearl");
 															speedBefore = state.get(\coco1Speed);
 															holdBefore = state.get(\coco1Hold);
 															flipBefore = state.get(\coco1Flip);
@@ -1271,16 +1448,21 @@ punchChecks = { |map|
 															check.value(gui.dropTarget.isNil,
 																"something that is not a file marks nothing");
 															// ---- §9 charge lamps ----
-															check.value(gui.chargeFor(\coco1_flip).isNil,
-																"before telemetry a lamp has no charge to draw");
-															gui.prChargeFrame(1, [0.62, 0.0]);
-															gui.prChargeFrame(3, [0, 0, 0.9, 0, 0]);
+													check.value(gui.chargeFor(\coco1_flip).isNil,
+														"before telemetry a lamp has no charge to draw");
+													check.value(gui.fireFor(\coco1_flip).isNil,
+														"before telemetry a lamp invents no Schmitt event");
+													gui.prChargeFrame(1, [0.62, 0.0, 1.0, 0.0]);
+													gui.prChargeFrame(3,
+														[0, 0, 0.9, 0, 0, 0, 0, 1, 0, 0]);
 															check.value(
 																(gui.chargeFor(\coco1_flip) - 0.62).abs < 1e-6
 																and: { gui.chargeFor(\coco1_skip) == 0 }
-																and: { (gui.chargeFor(\castle3_spesal) - 0.9)
-																	.abs < 1e-6 },
-																"night charge blocks land on their own lamps");
+														and: { (gui.chargeFor(\castle3_spesal) - 0.9)
+															.abs < 1e-6 }
+														and: { gui.fireFor(\coco1_flip) == 1 }
+														and: { gui.fireFor(\castle3_spesal) == 1 },
+														"night charge blocks land on their own lamps");
 															check.value(gui.chargeFor(\coco2_flip).isNil,
 																"a block that never reported stays unreported");
 															// ---- the comet's regime: a hammered loop never
@@ -1440,32 +1622,46 @@ punchChecks = { |map|
 																	\test, false, \rangePriorityRestore);
 																map.overlay.invalidate;
 															};
-															local = castleTwo[\center]
-																- castleTwo[\box].leftTop;
+													local = castleTwo[\center]
+														- castleTwo[\box].leftTop;
 															check.value(map.overlay.patchAt(
 																castleTwo[\center]).isNil,
 																"precondition: no cable crosses the castle's flesh");
 															castleView.mouseDownAction.value(castleView,
 																4, 4, 0, 0, 2);
-															check.value(gui.bananaGrammar.soloTarget.isNil,
-																"the layer box's corner is water: no solo where no cue promised one");
-															castleView.mouseDownAction.value(castleView,
-																local.x, local.y, 0, 0, 2);
-															check.value(
-																gui.bananaGrammar.soloTarget.notNil
-																and: { gui.bananaGrammar.soloTarget[\kind]
-																	== \body }
-																and: { gui.bananaGrammar.soloTarget[\name]
-																	== \castle2 },
-																"a double-click on a castle body solos that castle");
-															check.value(gui.bananaGrammar
-																.isCableDim(\envB, \castle3_fm),
-																"an unrelated cable dims under the body solo");
-															castleView.mouseDownAction.value(castleView,
-																local.x, local.y, 0, 0, 2);
-															check.value(gui.bananaGrammar.soloTarget.isNil,
-																"pressing the same body again releases the light");
-															// the dial owns its area at every click count (§4.5)
+													check.value(gui.bananaGrammar.soloTarget.isNil,
+														"the layer box's corner is water: no solo where no cue promised one");
+													castleView.mouseDownAction.value(castleView,
+														local.x, local.y, 0, 0, 2);
+													check.value(gui.bananaGrammar.soloTarget.isNil,
+														"the exact centre belongs to the inner clock, never body solo");
+													castleView.mouseOverAction.value(castleView,
+														local.x, local.y);
+													check.value(map.dialHover[1]
+														and: { map.rangeHover[1].not }
+														and: { map.bodyHover[1].not },
+														"the inner clock's exact centre has the same cue as its rim");
+											// The whole visible seeded island is now one coherent
+											// spesal-step surface, not a clock disc inside dead flesh.
+											dialPoint = castleTwo[\center]
+												+ ((castleTwo[\blobSamples][8] - castleTwo[\center]) * 0.94);
+											local = dialPoint - castleTwo[\box].leftTop;
+											check.value(CQNightGeometry.dialHit(castleTwo, dialPoint)
+												and: { CQNightGeometry.distance(castleTwo[\center], dialPoint)
+													> (castleTwo[\dialR] + 5) },
+												"precondition: the test point is playable outer castle flesh");
+											castleView.mouseOverAction.value(castleView,
+												local.x, local.y);
+											check.value(map.dialHover[1]
+												and: { map.rangeHover[1].not }
+												and: { map.bodyHover[1].not }
+												and: { map.chordCastles.includes(1) },
+												"outer flesh gives the same clock cue and coupling as the centre");
+											castleView.mouseDownAction.value(castleView,
+												local.x, local.y, 0, 0, 2);
+											check.value(gui.bananaGrammar.soloTarget.isNil,
+												"a double-click on outer flesh remains clock steps, never body solo");
+													// the dial owns its area at every click count (§4.5)
 															dialPoint = CQNightGeometry.polar(
 																castleTwo[\center], castleTwo[\dialR],
 																0.25pi) - castleTwo[\box].leftTop;
@@ -1473,41 +1669,31 @@ punchChecks = { |map|
 																dialPoint.x, dialPoint.y, 0, 0, 2);
 															check.value(gui.bananaGrammar.soloTarget.isNil,
 																"a fast second tap on the inner clock is a step, not a solo");
-															// the body's own §4.5 hover echo, distinct from
-															// the clock's: the hand must see the affordance
-															local = castleTwo[\center]
-																- castleTwo[\box].leftTop;
-															castleView.mouseOverAction.value(castleView,
-																local.x, local.y);
-															check.value(map.bodyHover[1]
-																and: { map.dialHover[1].not }
-																and: { map.rangeHover[1].not },
-																"hovering a castle's flesh lights the body's press cue");
-															castleView.mouseOverAction.value(castleView,
+													castleView.mouseOverAction.value(castleView,
 																dialPoint.x, dialPoint.y);
 															check.value(map.dialHover[1]
 																and: { map.rangeHover[1].not }
 																and: { map.bodyHover[1].not },
-																"the clock, ripple and body cues never light together");
+														"the clock and ripple cues never light together");
 															castleView.mouseLeaveAction.value(castleView);
 															check.value(map.bodyHover[1].not
 																and: { map.dialHover[1].not }
 																and: { map.rangeHover[1].not },
-																"leaving the castle rests all three cues");
+														"leaving the castle rests both control cues");
 															// ---- §16.6 the spesal coupling chords ----
 															// structure, so it is drawn only where the hand
-															// asks: nothing at rest, one chord under a
-															// castle, all five under the river
+													// asks: nothing at rest, one chord under a
+										// visible castle, all five under the river
 															check.value(map.chordCastles.isEmpty,
 																"a resting bay draws no coupling at all");
-															castleView.mouseOverAction.value(castleView,
-																local.x, local.y);
+													castleView.mouseOverAction.value(castleView,
+														dialPoint.x, dialPoint.y);
 															block { |chordDone|
 																var chords = map.spesalChords, path;
 																var state, partner, nearest = 0;
 																check.value(map.chordCastles == [1]
 																	and: { chords.size == 1 },
-																	"hovering a castle draws its own coupling, and only its own");
+																					"hovering the castle draws its one coupling");
 																path = chords[0][\path];
 																state = gui.spesalStates[1].asInteger;
 																partner = CQGuiCastleConstellation

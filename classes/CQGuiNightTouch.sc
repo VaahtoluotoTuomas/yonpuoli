@@ -1,6 +1,6 @@
 // CQGuiNightTouch — the §6.1 night touch grammar: winding the shells, the
-// hold hearts, the mouth's flip chevron and skip mark, the tide
-// crescents, the ring's eye and the spesal dial taps. Owns only transient
+// hold hearts, the mouth's flip chevron and skip mark, the tide crescents,
+// performance-flow flesh, the ring's eye and the castle tap/send gesture. Owns only transient
 // gesture state; every write goes through the CQState funnel (params) or the
 // Cocoquantus facade (spesal step, skip). On every press the cable layer is
 // consulted first (§4.5) and everything unclaimed falls through to the shared
@@ -10,6 +10,7 @@ CQGuiNightTouch {
 	var map, state, overlay;
 	var <>controller;   // set after construction — the controller binds later
 	var wind, punch, eyeDrag, crescentDrag, moonDrag, preampDrag;
+	var shellFlowDrag, castleDrag;
 	var compassDrag, weatherHold, birdDrag, birdWheelAt;
 
 	*new { |map, state, overlay| ^super.newCopyArgs(map, state, overlay) }
@@ -27,10 +28,19 @@ CQGuiNightTouch {
 	*windSensitivity { ^1 / 4pi }
 	// px of drag for the full range of a crescent / the eye's axes
 	*crescentSensitivity { ^1 / 120 }
+	*castleSendSensitivity { ^1 / 100 }
 	*eyeSensitivity { ^1 / 220 }
 	// The intake knot is a slower, two-axis knead. The first 8 px lock the
 	// dominant axis; 240 px then spans either normalized CQSpec range.
 	*preampSensitivity { ^1 / 240 }
+
+	// SP.AF is bipolar and its musically useful home is exact zero. A secondary
+	// click may return only these two crescents there; all other right-button
+	// gestures retain the shared banana/harvest grammar.
+	*spafZeroReset { |name, button = 0|
+		^button == 1 and: { name.notNil }
+			and: { name.asString.endsWith("Spaf") }
+	}
 
 	*preampDriveNorm { |start, startY, y|
 		^(start + ((startY - y) * this.preampSensitivity)).clip(0, 1)
@@ -38,6 +48,15 @@ CQGuiNightTouch {
 
 	*preampBiasNorm { |start, startX, x|
 		^(start + ((x - startX) * this.preampSensitivity)).clip(0, 1)
+	}
+
+	// A castle tap still steps its sample/track relation. Only travel beyond the
+	// shared tap boundary becomes the radial qMix send, with inward motion
+	// opening the valve and outward motion closing it.
+	*castleSendNorm { |start, delta, inward|
+		var projected = (delta.x * inward.x) + (delta.y * inward.y);
+		^(start + (this.deadzone(projected, this.tapTravel)
+			* this.castleSendSensitivity)).clip(0, 1)
 	}
 
 	*preampAxis { |delta|
@@ -335,6 +354,7 @@ CQGuiNightTouch {
 
 	shellDown { |index, view, x, y, modifiers = 0, button = 0, clicks = 1|
 		var point = this.prPoint(view, x, y), geo = map.geometry, coco, n, target;
+		var flowTarget, flowName;
 		var body = ("coco" ++ (index + 1)).asSymbol;
 		if(geo.isNil) { ^this };
 		coco = geo[\cocos][index];
@@ -346,6 +366,20 @@ CQGuiNightTouch {
 		// punch. Shell paper between the turns carries a double-click to the body.
 		if(modifiers.isAlt or: { overlay.patchAt(point).notNil }) {
 			^this.forwardDown(view, x, y, modifiers, button, clicks, body)
+		};
+		// Performance flesh has the same cue/action answer. Its compact gills,
+		// shoreline and organ pod win before the older shell targets, but never
+		// before a cable or Alt polarity gesture.
+		flowTarget = CQNightGeometry.shellFlowTargetAt(coco, point);
+		if(flowTarget.notNil) {
+			flowName = CQGuiNightMap.shellFlowParam(index, flowTarget);
+			if(button != 0) {
+				^this.forwardDown(view, x, y, modifiers, button, clicks, body)
+			};
+			shellFlowDrag = (index: index, target: flowTarget, name: flowName,
+				startY: point.y, start: this.prNorm(flowName));
+			map.setFlowActive(flowName, true);
+			^this
 		};
 		// One geometric answer, shared with the hover cue (§4.5) — the press may
 		// never act on a body the cue did not just promise.
@@ -394,8 +428,16 @@ CQGuiNightTouch {
 	}
 
 	shellMove { |index, view, x, y, modifiers = 0|
-		var point, coco, angle, delta, name;
+		var point, coco, angle, delta, name, norm;
 		if(compassDrag.notNil) { ^this.compassMove(view, x, y, modifiers) };
+		if(shellFlowDrag.notNil and: { shellFlowDrag[\index] == index }) {
+			point = this.prPoint(view, x, y);
+			norm = shellFlowDrag[\start]
+				+ ((shellFlowDrag[\startY] - point.y) * this.class.crescentSensitivity);
+			this.prSet(shellFlowDrag[\name], norm);
+			map.paintFlow(shellFlowDrag[\name], this.prNorm(shellFlowDrag[\name]));
+			^this
+		};
 		if(wind.isNil) { ^this.forwardMove(view, x, y, modifiers) };
 		point = this.prPoint(view, x, y);
 		coco = map.geometry[\cocos][wind[\index]];
@@ -419,6 +461,11 @@ CQGuiNightTouch {
 		// shell up regardless of index/button, so a stray up can never leave a
 		// loop recording (§2). It is the first thing checked, ahead of the wind.
 		if(punch.notNil) { ^this.cancelPunch };
+		if(shellFlowDrag.notNil) {
+			map.setFlowActive(shellFlowDrag[\name], false);
+			shellFlowDrag = nil;
+			^this
+		};
 		if(wind.notNil) {
 			wind = nil;
 			^this
@@ -502,24 +549,24 @@ CQGuiNightTouch {
 		^this.forwardUp(view, x, y, modifiers, button)
 	}
 
-	// ---- castle: a tap on the spesal dial = one step ----
+	// ---- castle: tap = spesal step · radial drag = qMix send ----
 
 	castleDown { |k, view, x, y, modifiers = 0, button = 0, clicks = 1|
 		var point = this.prPoint(view, x, y), geo = map.geometry;
-		var body = ("castle" ++ (k + 1)).asSymbol;
 		var rangeName = ("c" ++ (k + 1) ++ "Range").asSymbol;
+		var sendName = ("c" ++ (k + 1) ++ "Send").asSymbol;
 		if(geo.isNil) { ^this };
 		// The ordinary priority law: cable, then the body's small controls,
-		// then body solo / open-water ground.
+		// then ordinary island ground / open weather water.
 		if(overlay.patchAt(point).notNil) {
-			^this.forwardDown(view, x, y, modifiers, button, clicks, body)
+			^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
 		};
 		// Alt belongs to the ground grammar's cable polarity, never to a small
-		// control. Preserve the body's identity only where its drawn cue owns
-		// the point; transparent castle paper remains ordinary water.
+		// control. Castle flesh has no separate solo identity; transparent castle
+		// paper remains ordinary weather water.
 		if(modifiers.isAlt) {
 			if(CQNightGeometry.bodyHit(geo[\castles][k], point)) {
-				^this.forwardDown(view, x, y, modifiers, button, clicks, body)
+				^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
 			};
 			^this.compassDown(view, x, y, modifiers, button, clicks)
 		};
@@ -527,20 +574,81 @@ CQGuiNightTouch {
 			and: { CQNightGeometry.rangeHit(geo[\castles][k], point) }) {
 			^this.prCycleEnum(rangeName)
 		};
-		// the inner clock owns its area at every click count (§4.5), so two fast
-		// taps are two steps — never one step plus a body solo behind it
+		// The complete visible castle owns one ambiguous-until-release gesture:
+		// under 8 px it is the learned spesal step; a deliberate radial pull opens
+		// its audio send instead. No step fires on mouse-down, so a drone ride can
+		// never cause a transient internal rewiring first.
 		if(button == 0
 			and: { CQNightGeometry.dialHit(geo[\castles][k], point) }) {
-			Cocoquantus.spesal(k + 1);
+			castleDrag = (index: k, start: point, travel: 0,
+				name: sendName, norm: this.prNorm(sendName));
+			map.setCastleSendActive(k, true);
 			^this
 		};
-		// the body solo answers exactly where the hover echo promised it would
-		// (§4.5): the flesh plus its margin, not the whole layer box
+		// Only the body's small ellipse margin outside the visible seeded blob
+		// remains ordinary banana/harvest ground. It has no cue or body solo.
 		if(CQNightGeometry.bodyHit(geo[\castles][k], point)) {
-			^this.forwardDown(view, x, y, modifiers, button, clicks,
-				body)
+			^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
 		};
 		^this.compassDown(view, x, y, modifiers, button, clicks)
+	}
+
+	castleMove { |k, view, x, y, modifiers = 0|
+		if(compassDrag.notNil) { ^this.compassMove(view, x, y, modifiers) };
+		if(castleDrag.notNil and: { castleDrag[\index] == k }) {
+			this.prAdvanceCastleSend(this.prPoint(view, x, y));
+			^this
+		};
+		^this.landscapeMove(view, x, y, modifiers)
+	}
+
+	castleUp { |k, view, x, y, modifiers = 0, button = 0|
+		var gesture;
+		if(compassDrag.notNil) {
+			^this.compassUp(view, x, y, modifiers, button)
+		};
+		if(castleDrag.notNil and: { castleDrag[\index] == k }) {
+			this.prAdvanceCastleSend(this.prPoint(view, x, y));
+			gesture = castleDrag;
+			castleDrag = nil;
+			map.setCastleSendActive(k, false);
+			if(gesture[\travel] <= this.class.tapTravel) {
+				Cocoquantus.spesal(k + 1)
+			};
+			^this
+		};
+		^this.landscapeUp(view, x, y, modifiers, button)
+	}
+
+	prAdvanceCastleSend { |point|
+		var gesture = castleDrag, delta, castle, norm;
+		if(gesture.isNil) { ^this };
+		delta = point - gesture[\start];
+		gesture[\travel] = max(gesture[\travel],
+			CQNightGeometry.distance(gesture[\start], point));
+		if(gesture[\travel] > this.class.tapTravel) {
+			castle = map.geometry[\castles][gesture[\index]];
+			norm = this.class.castleSendNorm(gesture[\norm], delta,
+				castle[\sendDirection]);
+			this.prSet(gesture[\name], norm);
+			map.paintCastleSend(gesture[\index], this.prNorm(gesture[\name]));
+		};
+		^this
+	}
+
+	// A cancelled continuous gesture keeps the value already heard, exactly as
+	// a crescent does; cancellation only releases the transient bright hand.
+	/* public for the map's one Esc/Tab/panic/free choke point */
+	cancelPerformance {
+		shellFlowDrag !? { map.setFlowActive(shellFlowDrag[\name], false) };
+		castleDrag !? { map.setCastleSendActive(castleDrag[\index], false) };
+		shellFlowDrag = nil;
+		castleDrag = nil;
+		^this
+	}
+
+	performanceGestureActive {
+		^shellFlowDrag.notNil or: { castleDrag.notNil }
 	}
 
 	// ---- the almanac corner: the sowing moon ----
@@ -825,6 +933,12 @@ CQGuiNightTouch {
 		// consulted before the crescent's old drag square.
 		if(modifiers.isAlt or: { overlay.patchAt(point).notNil }) {
 			^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
+		};
+		if(this.class.spafZeroReset(name, button)
+			and: { CQNightGeometry.crescentControlHit(center, point) }) {
+			state.set(name, 0);
+			map.crescentActive(name, false);
+			^this
 		};
 		if(button == 0 and: { dolbyName.notNil }
 			and: { CQNightGeometry.dolbyOysterHit(center, point) }) {

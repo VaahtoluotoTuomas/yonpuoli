@@ -49,7 +49,7 @@ yonpuoli/
 │   ├── CQMidi16n.sc            // 16n binding, smoothing, takeover
 │   ├── CQGui.sc                // panel window (view-only client of CQState)
 │   ├── CQGuiDrawer.sc          // Inspector / Workshop / Spellbook / Memory / Audio
-│   ├── CQGuiWorkshop.sc        // Drawer ledger page: the 39 remaining parameters
+│   ├── CQGuiWorkshop.sc        // Drawer ledger page: 26 setup parameters
 │   ├── CQGuiAudioSetup.sc      // Drawer Audio I/O draft page
 │   ├── CQGuiScale.sc           // the Drawer's two reviewed size steps (pure arithmetic)
 │   ├── CQInkMenu.sc            // Ink-painted Drawer choice box + opened list
@@ -96,16 +96,19 @@ lags at audio rate so audio-range castles cannot alias into the control stream,
 and reports 16 magnitudes at 15 Hz. It writes to no bus and no output, so it is
 outside every safety path; a headless session simply has no listener.
 
-`/cq_charge` (GUI_SPEC §9) needed no such def: the nine gate/trig sums already
-exist inside `\cqQuantussy` and `\cqCoco`, so each synth reports its own — coco 1
-replyID 1, coco 2 replyID 2, the five castles replyID 3 — and the graph never
-holds a second, drifting copy of a sum the Schmitt is reading. Each sum is
-peak-held (`LagUD.ar(sum, 0, 0.15)`) before `A2K`, because a trigger crossing may
-last one sample and a control-rate sample would miss it.
+`/cq_charge` (GUI_SPEC §9) needed no such def: the nine gate/trig sums and their
+post-Schmitt decisions already exist inside `\cqQuantussy` and `\cqCoco`, so
+each synth reports its own paired halves — coco 1 replyID 1, coco 2 replyID 2,
+the five castles replyID 3 — and the graph never holds a second, drifting copy
+of either the threshold input or its result. Both halves are peak-held
+(`LagUD.ar(value, 0, 0.15)`) before `A2K`, because a trigger may last one sample
+and a control-rate sample would miss it.
 
 Rationale: modulation sources are computed before their consumers within the same
-block; the only intentional one-block delays are Coco↔Coco cross-signals (InFeedback)
-and the Quantussy's internal ring (LocalIn/LocalOut).
+block. Intentional one-block delays are Coco↔Coco cross-signals (`InFeedback`),
+the Quantussy's internal ring (`LocalIn/LocalOut`), and a Coco's explicit
+self-modulation return for its own raw RAM tap and conditioned organ source
+(`LocalIn/LocalOut`).
 
 ### 3.2 Buses
 
@@ -122,8 +125,12 @@ and the Quantussy's internal ring (LocalIn/LocalOut).
 
 **Canonical `aModSrc` index order (fixed, used by CQMatrix and all synths):**
 `0–4 tri1..5 · 5–9 cas1..5 · 10 envA · 11 envB · 12 coco1 · 13 coco2 · 14 org1 · 15 org2`.
-Channels 12–15 are written by the Coco synths themselves; any consumer in `gCocos` or
-earlier reads those four via `InFeedback.ar` (one block late — accepted and documented).
+Channels 12–15 are written by the Coco synths themselves. Earlier consumers and
+the other Coco read each relevant channel separately through `InFeedback.ar`.
+Inside each `cqCoco`, its own `cocoN`/`orgN` pair returns through a two-channel
+`LocalIn/LocalOut` instead of depending on a partially current four-channel bus;
+both paths are exactly one block late. The organ jack is the raw stack conditioned
+by `×1.6` and `clip2(1)`; the audible Organ mix remains unconditioned.
 
 ### 3.3 Matrix destination list (fixed order, 22)
 
@@ -304,7 +311,7 @@ Language side on `\cq_hot`: engage −6 dB trim (a lagged synth arg), GUI notice
 | Class | Role | Key methods / notes |
 |---|---|---|
 | `Cocoquantus` | facade singleton; owns boot lifecycle and all subsystems | Explicit `stopped/booting/running/stopping/failed` state plus monotonically increasing session generation; stale callbacks self-cancel. `*boot(configPath)`, waitable `*free(onDone)`, strong `*reboot`, confirmed `*reconfigureAudio(model)` and profile-neutral `*restartCurrentAudio`. `*serverResponsive` distinguishes a status-watcher process record from a server that still answers; the pre-graph audio-clock gate additionally requires three reported actual-sample-rate readings, 0.75 s apart, each within 80–120% of the request before a session can become ready. An unresponsive local server is quit through its owned PID before a fresh boot, avoiding a second process on the occupied port. `CQ : Cocoquantus {}` empty subclass = short alias (classvars shared) |
-| `CQSpec` | parameter registry | `*specs` (IdentityDictionary name → ControlSpec+default+lag+16n slot), `*clamp(name, val)`, `*default(name)`, mirrors SPEC §5 tables 1:1 |
+| `CQSpec` | parameter registry | `*specs` (IdentityDictionary name → ControlSpec+default+lag+16n slot), `*clamp(name, val)`, `*default(name)`, exact invertible hand maps and semantic reference landmarks; mirrors SPEC §5 tables 1:1. SP.AF's signed-square hand taper changes normalized control resolution only — stored octave values and DSP remain linear/direct |
 | `CQConfig` | config load/validate | reads `config.scd`, fills defaults, validates channels/paths, hard-fails informatively |
 | `CQAudioConfig` | pure Audio profile model | Owns the exact nine Audio keys, `defaults < base < overlay` merge, active/draft/dirty/valid separation, 0↔1 channel display boundary and sibling profile path. Generated explicit nils use private `\default` because an Event drops nil-valued keys; the marker is decoded before the candidate reaches `CQGraph`. No Qt, file, server, CQSpec or snapshot dependency |
 | `CQAudioDeviceCatalog` | pure normalized device snapshot/filter boundary | Calls an injected provider once, exact-deduplicates directional names, merges exact active/draft endpoints, derives the single-device intersection and produces reversible recommended/all cached views. The Windows recommendation recognizes only complete legacy host prefixes; it never fuzzily parses endpoint names, touches Qt, persists machine names or scans by itself after construction |
@@ -313,17 +320,18 @@ Language side on `\cq_hot`: engage −6 dB trim (a lagged synth arg), GUI notice
 | `CQGraph` | server plumbing | allocates buses/groups/buffers, builds ServerOptions from config, spawn order, `s.sync` between stages, teardown, CmdPeriod re-arm hook |
 | `CQState` | value store + funnel | `set(name, val)` → clamp → `synth.set` / bus write → `changed(\param, name, val)`. `get`, `asEvent` (for snapshots), `load(event)`. Enum params travel to the server as indices into the CQSpec value list; every other layer writes symbols through the funnel |
 | `CQMatrix` | routing weights | name↔index maps (source 16, dest 22 — canonical orders §3.2/3.3), metadata-bearing single-cell writes plus deep `fullMatrix`/clamped `writeMatrix` batch transactions, weight cache mirrored to `wDest` buses, existing triple `asArray/load`, presets and shake |
-| `CQAudition` | transient patch preview | Serverless one-candidate `{src,dest,prevW,audibleW}` state machine; candidate switches and every §4.1 cancellation path restore through `CQMatrix.patch(... committed:false)`, while plant commits exactly the audible weight |
-| `CQInspector` | Drawer precision gesture state | Shares `CQAudition`; press previews ±0.3, vertical frames are transient, and release publishes one committed fine-edit plus one shared GUI-undo entry; lifecycle cancellation restores the pre-gesture cell |
+| `CQAudition` | Inspector-only transient patch preview | Serverless one-candidate `{src,dest,prevW,audibleW}` state machine used by the Drawer's touch-and-listen precision editor; candidate switches and cancellation restore through `CQMatrix.patch(... committed:false)`. Night cable planting no longer calls it |
+| `CQBananaGrammar` | Night cable gesture + GUI-local undo | A held cable and its ≤40 px magnetic destination are view-only; drop distance never scales weight. The held weight moon starts at ±0.60 and wheel-arms ±0.05 / Ctrl ±0.01 before the first and only matrix write on release. Lifted routes remain at their audible origin until one atomic move/rip; lifecycle exits cannot leak a preview because none was written |
+| `CQInspector` | Drawer precision gesture state | Shares `CQAudition`; press previews the shared first-touch strength (currently ±0.60), vertical frames are transient, and release publishes one committed fine-edit plus one shared GUI-undo entry; lifecycle cancellation restores the pre-gesture cell |
 | `CQGuiScale` | the Drawer's two size steps | Pure arithmetic, no Qt and no state: the measured page inset, the `compact`/`roomy` thresholds, both type/metric records, ascent/descent-safe short text-band height, the shared rail width (derived from the Inspector loom's clamped cell), the column split that keeps the Coco pair equal, and caption measurement for buttons. Every Drawer page asks it rather than holding a literal; `CQGui` feeds it the drawer stage's own resize callback |
-| `CQGuiWorkshop` | Drawer ledger page (GUI_SPEC §8) | One explicit manifest of the 39 parameters Night and Master do not own drives **both** the built layout and `paramNames`, so the coverage audit and the rendered page are the same data — Workshop ownership is never computed as `CQSpec.names` minus the other surfaces. The shared responsive rail carries three source-service modules over a coco/quantussy/coco body, with one `islandLayout` score feeding both the Qt layout and the island's painted titles. Owns the GUI's single interactive `micGain` row and its persistent warning subscription; builds with the GUI, not on demand. Pure view: every row writes through `CQGuiWidgets` → `CQState` |
+| `CQGuiWorkshop` | Drawer ledger page (GUI_SPEC §8) | One explicit manifest of the 26 setup parameters Night and Master do not own drives **both** the built layout and `paramNames`, so the coverage audit and the rendered page are the same data — Workshop ownership is never computed as `CQSpec.names` minus the other surfaces. Level, Organ, SlotQ, SlotX and the five castle sends have one interactive GUI home in Night. The shared responsive rail carries three source-service modules over a coco/quantussy/coco body, with one `islandLayout` score feeding both the Qt layout and the island's painted titles. Owns the GUI's single interactive `micGain` row and its persistent warning subscription; builds with the GUI, not on demand. Pure view: every row writes through `CQGuiWidgets` → `CQState` |
 | `CQGuiAudioSetup` | fifth/rightmost Drawer page (SPEC §7.1 / GUI_SPEC §8) | Three-zone Ink composition on the shared rail: host/engine, stable input/output islands and restart gate. The running page consumes the facade's stopped-server snapshot and never calls `_ListAudioDevices`; its local button toggles recommended/all cached drivers, or stays disabled as `configured devices` when no safe snapshot exists. Edits only `CQAudioConfig`'s draft; first Apply enters the static inline confirmation, while confirmed restart passes only the non-Qt model to the facade. A page-owned `CQRecorder` controller updates the restart lock on every state transition and is removed on free. Renders ready/not-saved/rollback/failed truth. AIO-4 draws coarse raw-input tracks plus shared post-safety master L/R presence from a GUI-owned cache. Quantized deltas and the visible-tab gate prevent hidden or sub-pixel repaint work. The page unregisters its listeners on free and never retains a view callback across reboot |
 | `CQGuiMatrix` | experimental Inspector patch loom | Exact canonical 16×22 single-`UserView` field with 48×24 px hit cells, grouped destination islands, family-marked rows, weighted/polarity-shaped knots, persistent route selection, quiet hover row/column focus and an exact-cell spark cue; no inner scroll or new state funnel |
 | `CQInkMenu` | Drawer choice box | Replaces Qt's only-partly-styleable `PopUpMenu` for Inspector presets, Memory's Morph Bridge and Audio setup fields. The collapsed box and temporary borderless choice list are both painted from the active Ink palette; CR/LF/tab/control whitespace is collapsed only in display text, long labels are ellipsized before drawing, disabled choices keep the same subdued geometry, and large lists are capped at 16 wheel-scrollable rows. The popup enables mouse-over on its own top-level window, opens upward near the screen edge, and teardown owns the temporary window |
 | `CQInkList` | Drawer persistent single-selection list | Replaces native `ListView` where selectable row geometry must be exact. One application-owned `rowHeight` drives paint, ordinary no-button hover and click selection, preventing platform frame/content metrics from moving the highlight to an adjacent row; Memory's saved snapshots are its first client |
 | `CQSpellbook` | read-only committed patch journal | Hooks `CQMatrix` notifications below every client, diffs against the last committed full matrix, excludes `committed:false` frames, exposes row→batch metadata for persistent GUI selection, and exports copyable `CQ.patch(...)` lines or preset data; it does not execute or edit code |
 | `CQMidi16n` | controller layer | `MIDIdef.cc` per fader from config map, 0–127 → spec map, optional `\pickup` takeover, hot-plug via `MIDIClient` device watch; all writes via `CQState` |
-| `CQGui` | panel | pure view: renders from `CQState`/`CQMatrix` dependant notifications, sends via funnel; composes the sole Night instrument stage, persistent Master strip and `CQGuiDrawer`; meters/LEDs come from namespaced OSCdefs; `/cq_aura` magnitudes stay `nil` until the server reports, repaint only Night's relevant views and cable layer, and are skipped entirely when nothing moved; `/cq_charge`'s nine slots follow the same law and repaint one Night lamp at a time, only when that lamp's own charge moved. AIO-4 centrally caches `/cq_io_inputs` and the existing `/cq_meters` master pair, coalesces their combined arrival rate to 15 Hz, notifies owned listeners only while Audio is the visible Drawer page and clears the scheduled generation/listeners/OSCdefs on teardown. Everything UI runs inside `{ }.defer`; closes cleanly on `*free`. `CQGuiShellState` owns only the Night↔Drawer presentation swap — no skin or instrument-mode state. The Drawer's page list is published once by `CQGuiDrawer.tabs` and consumed by the shell's tab row, its stack index and the state's whitelist, so a page cannot exist in one place and be refused in another |
+| `CQGui` | panel | pure view: renders from `CQState`/`CQMatrix` dependant notifications, sends via funnel; composes the sole Night instrument stage, persistent Master strip and `CQGuiDrawer`; meters/LEDs come from namespaced OSCdefs; `/cq_aura` magnitudes stay `nil` until the server reports, repaint only Night's relevant views and cable layer, and are skipped entirely when nothing moved; `/cq_charge`'s nine paired charge/fire slots follow the same law and repaint one Night lamp at a time, only when that lamp's own reading moved. `/cq_castle` gives each inner clock a raw-triangle sample plus realized rate so slow motion resolves and audio-rate motion becomes a stable reed. AIO-4 centrally caches `/cq_io_inputs` and the existing `/cq_meters` master pair, coalesces their combined arrival rate to 15 Hz, notifies owned listeners only while Audio is the visible Drawer page and clears the scheduled generation/listeners/OSCdefs on teardown. Everything UI runs inside `{ }.defer`; closes cleanly on `*free`. `CQGuiShellState` owns only the Night↔Drawer presentation swap — no skin or instrument-mode state. The Drawer's page list is published once by `CQGuiDrawer.tabs` and consumed by the shell's tab row, its stack index and the state's whitelist, so a page cannot exist in one place and be refused in another |
 | `CQSnapshots` | memory | `save(name)` → `(version: 1, params: state.asEvent, matrix: matrix.asArray, spesal: [..], meta: (...))` `.asCompileString` → `snapshots/name.cqsnap.scd`; reads prefer that folder and fall back to legacy `presets/*.cqsnap.scd`; `recall` clamps everything on load; `morph(a, b, dur)` = Routine interpolating continuous params + weights, discrete switch at midpoint; mic gain never auto-recalled above 0 (SPEC §7). **Frames are driven by elapsed time, not by a tick count** (a slow frame is dropped, so the morph still lands on `dur`), run at `CQSnapshots.morphTickPeriod` = GUI_SPEC §10's 15 Hz ceiling, always yield at least `morphMinYield` so the Qt event loop drains and panic stays reachable, and write the union of both matrices as **one `CQMatrix.writeMatrix` per frame** — never one `patch` per cell (MOR-1, 2026-07-30) |
 | `CQRecorder` | disk | Explicit `idle/starting/recording/stopping/error` state machine; attempt-local path/buffer/synth ownership; master 2ch 24-bit wav timestamped or optional 4ch master+stems; never overwrite; `DiskOut` synth in `gMaster` tail |
 | `CQDeck` | file players | Cancellable last-request-wins buffer transaction, folder scan/next/prev/random and peak-normalize on load; stale/error paths always release their local buffer |
@@ -461,8 +469,9 @@ the real preset data — the safety proof covers the actual shipped graph.
   gates, amplitude followers), decks, FDN, master. Well under SPEC's 25% budget; no
   demand-rate UGens on hot paths; meters at 20 Hz.
 - `bufFrames` ≤ 2^19: Phasor phase stays integer-exact in float32 (< 2^24).
-- Block size 64 default. LocalIn (quantussy ring) and InFeedback (coco cross) are one
-  block late by design — at 48 k/64 that is 1.3 ms; document, don't fight.
+- Block size 64 default. LocalIn (Quantussy ring and each Coco's own matrix-source
+  return) and InFeedback (Coco cross) are one block late by design — at 48 k/64
+  that is 1.3 ms; document, don't fight.
 - GUI updates coalesced: meters via one OSCdef; param echoes via dependants, deferred.
 
 ---

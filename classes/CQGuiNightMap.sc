@@ -27,18 +27,23 @@ CQGuiNightMap {
 	var <tideFocusRequested = false;
 	var <weatherActive, <weatherFlash, <weatherIntensity = 0;
 	var blendPending, blendScheduled = false, lastBlendWrite = 0;
-	var <crescentViews, crescentNorms, activeCrescents, hoverCrescents, labels;
+	var <crescentViews, crescentNorms, <crescentModStates;
+	var activeCrescents, hoverCrescents, labels;
 	var <dolbyStates, <dolbyHover;
 	var <geometry, <eyeActive = false, <eyeHover = false;
 	var <eyeFreqNorm = 0.5, <eyeChaosNorm = 0.15;
 	var <speedNorms, <shellHover, <dialHover, <rangeHover, <bodyHover;
 	var <rimHover, <heartHover, <chevronHover, <ringHover = false;
+	// Promoted performance mix: Level shoreline, audible Organ flesh, qMix gill
+	// and the destination-side x gill. The dictionary key is the real CQSpec
+	// name, so drawing, touch and coverage cannot invent parallel identities.
+	var <flowNorms, <flowActive, <flowHover, <sendNorms, <sendActive;
 	var <preampHover, <preampSourceHover, <preampActive;
 	var <preampDriveNorms, <preampBiasNorms, <preampSlotNorms, <deckSlotNorms;
 	var <preampSources, preampPainted;
 	var <sparkDirs, <skipHover, <skipFlash, sparkPainted, flipPainted;
 	var struckCount, <struckOn, <struckNorms, <struckBlink;
-	var <fireflyPhase = 0.0, lastFireflyTime, castlePainted;
+	var <fireflyPhase = 0.0, lastFireflyTime, <castleMotions;
 	var <holdStates, <flipStates, <rangeStates, <sproutState;
 	var freed = false;
 
@@ -74,13 +79,14 @@ CQGuiNightMap {
 		^(kind: \socket, family: \line, glyph: \pendulum)
 	}
 
-	// §6 solo-light bodies — the Night anatomy's own groupings (§16.6).
-	// The castles are finer bodies than the two shells and the whole ring.
-	// Roots and birds carry
+	// §6 solo-light bodies — the Night anatomy's useful groupings (§16.6).
+	// A castle already has four precise endpoint solos, while its whole visible
+	// flesh is the spesal-step clock; a second body solo would still be redundant,
+	// so the body grammar begins at the two shells and the whole ring. Roots and birds carry
 	// exactly one endpoint each: their jack/socket solo already lights the very
 	// same cables, so a body there would be a second name for one act.
 	*bodyNames {
-		^#[castle1, castle2, castle3, castle4, castle5, coco1, coco2, quantussy]
+		^#[coco1, coco2, quantussy]
 	}
 
 	*bodyEndpointNames { |name|
@@ -90,11 +96,6 @@ CQGuiNightMap {
 				++ CQMatrix.destNames.copyRange(10, 19)
 		};
 		n = string.last.asString;
-		if(string.beginsWith("castle")) {
-			^[("tri" ++ n).asSymbol, ("cas" ++ n).asSymbol,
-				("castle" ++ n ++ "_fm").asSymbol,
-				("castle" ++ n ++ "_spesal").asSymbol]
-		};
 		if(string.beginsWith("coco")) {
 			^[("coco" ++ n).asSymbol, ("org" ++ n).asSymbol,
 				("coco" ++ n ++ "_spaf").asSymbol,
@@ -153,19 +154,40 @@ CQGuiNightMap {
 			};
 		};
 		// each shell: three tide crescents, the winding spiral, the heart, the
-		// mouth chevron and the two dolby oysters (§6.1, §4)
+		// mouth chevron, two dolby oysters and the promoted performance mix
 		2.do { |i|
 			this.crescentNames(i).do { |name| names.add(name) };
 			#[\Speed, \Hold, \Flip, \DolbyIn, \DolbyFb].do { |suffix|
 				names.add(("coco" ++ (i + 1) ++ suffix).asSymbol)
 			};
+			this.shellFlowNames(i).do { |name| names.add(name) };
 		};
 		// the ring's storm iris (§16.6)
 		names.add(\qFreq);
 		names.add(\qChaos);
-		// the castles' range ripples (§3)
-		5.do { |k| names.add(("c" ++ (k + 1) ++ "Range").asSymbol) };
+		// the castles' range ripples and radial qMix tributaries (§3)
+		5.do { |k|
+			names.add(("c" ++ (k + 1) ++ "Range").asSymbol);
+			names.add(("c" ++ (k + 1) ++ "Send").asSymbol);
+		};
 		^names.asArray
+	}
+
+	*shellFlowNames { |cocoIndex|
+		var n = cocoIndex.asInteger.clip(0, 1) + 1;
+		^[
+			("coco" ++ n ++ "Level").asSymbol,
+			("coco" ++ n ++ "Organ").asSymbol,
+			("coco" ++ n ++ "SlotQ").asSymbol,
+			("coco" ++ n ++ "SlotX").asSymbol
+		]
+	}
+
+	*shellFlowParam { |cocoIndex, target|
+		var names = this.shellFlowNames(cocoIndex);
+		^switch(target,
+			\level, { names[0] }, \organ, { names[1] },
+			\slotQ, { names[2] }, \slotX, { names[3] }, { nil })
 	}
 
 	// §6.1 crescent inventory: three continuous coco moons per shell plus one
@@ -192,7 +214,11 @@ CQGuiNightMap {
 			}
 		};
 		if(text.endsWith("Spaf")) {
-			^(kind: \spaf, center: CQSpec.centerNorm(name))
+			^(kind: \spaf, center: CQSpec.centerNorm(name),
+				fine: [CQSpec.referenceNorm(name, \fineNeg),
+					CQSpec.referenceNorm(name, \finePos)],
+				octaves: [CQSpec.referenceNorm(name, \octaveNeg),
+					CQSpec.referenceNorm(name, \octavePos)])
 		};
 		if(text.endsWith("In")) {
 			^(kind: \input, unity: CQSpec.referenceNorm(name, \unity))
@@ -201,6 +227,83 @@ CQGuiNightMap {
 			^(kind: \level, unity: CQSpec.referenceNorm(name, \unity))
 		};
 		^nil
+	}
+
+	// A second pearl is allowed to state DSP truth without moving the setting
+	// pearl away from the value the hand actually stored. The centre follows
+	// motion the 15 Hz eye can resolve; lower..upper is the server-reduced wake
+	// of faster motion. Quantizing to about half a pixel of arc travel prevents
+	// a stationary source from repainting a tiny view for numeric dust.
+	*crescentModStep { ^1 / 96 }
+	// Once the reduced excursion spans this much of a crescent, an instantaneous
+	// 15 Hz centre is no longer a readable position. The wake already states the
+	// range, so its midpoint is the honest stable home for the hollow pearl.
+	*crescentFastSpan { ^1 / 16 }
+
+	*crescentModState { |name, value, spread = 0, activity = 0|
+		var inventory = this.crescentNames(0) ++ this.crescentNames(1);
+		var entry, lowRaw, highRaw, step = this.crescentModStep, quant;
+		var center, lower, upper;
+		value = this.prTelemetryNumber(value);
+		spread = this.prTelemetryNumber(spread);
+		activity = this.prTelemetryNumber(activity);
+		if(inventory.includes(name).not or: { value.isNil }
+			or: { spread.isNil } or: { activity.isNil }
+			or: { activity.abs <= 0.001 }) { ^nil };
+		entry = CQSpec.at(name);
+		lowRaw = value - spread.abs;
+		highRaw = value + spread.abs;
+		quant = { |norm|
+			((norm / step).round * step).clip(0, 1)
+		};
+		center = quant.value(CQSpec.unmap(name, value));
+		lower = quant.value(CQSpec.unmap(name, lowRaw));
+		upper = quant.value(CQSpec.unmap(name, highRaw));
+		if((upper - lower) >= this.crescentFastSpan) {
+			center = quant.value((lower + upper) * 0.5)
+		};
+		^(center: center, lower: lower, upper: upper,
+			clippedLow: lowRaw < entry[\spec].minval,
+			clippedHigh: highRaw > entry[\spec].maxval)
+	}
+
+	*crescentModStateChanged { |before, after|
+		if(before.isNil) { ^after.notNil };
+		if(after.isNil) { ^true };
+		^#[center, lower, upper, clippedLow, clippedHigh].any { |key|
+			before[key] != after[key]
+		}
+	}
+
+	// `/cq_castle` gives each raw triangle plus its realized oscillator rate.
+	// Below this ceiling the 15 Hz eye has enough samples to show a travelling
+	// pearl. Above it, one stable full-reed blur is more truthful than aliasing.
+	*castleResolvedCeiling { ^3 }
+	*castleMotionStep { ^1 / 32 }
+
+	*castleMotionState { |value, hz|
+		var step = this.castleMotionStep, position;
+		value = this.prTelemetryNumber(value);
+		if(value.isNil) { ^nil };
+		hz = this.prTelemetryNumber(hz);
+		if(hz.notNil and: { hz.abs > this.castleResolvedCeiling }) {
+			^(mode: \blur, position: 0.5, strength: 1)
+		};
+		position = (((value.clip(-1, 1) + 1) * 0.5) / step).round * step;
+		^(mode: \resolved, position: position.clip(0, 1), strength: 1)
+	}
+
+	*castleMotionStateChanged { |before, after|
+		if(before.isNil) { ^after.notNil };
+		if(after.isNil) { ^true };
+		^#[mode, position, strength].any { |key| before[key] != after[key] }
+	}
+
+	*prTelemetryNumber { |value|
+		if(value.isNumber.not) { ^nil };
+		value = value.asFloat;
+		if(value.isNaN or: { value.abs == inf }) { ^nil };
+		^value
 	}
 
 	free {
@@ -229,7 +332,7 @@ CQGuiNightMap {
 	// drift apart.
 	chordCastles {
 		if(ringHover) { ^(0..4) };
-		^(0..4).select { |k| dialHover[k] or: { bodyHover[k] } }
+		^(0..4).select { |k| dialHover[k] }
 	}
 
 	spesalChords {
@@ -263,6 +366,42 @@ CQGuiNightMap {
 		eyeFreqNorm = freqNorm;
 		eyeChaosNorm = chaosNorm;
 		if(freed.not) { eyeView.refresh };
+	}
+
+	flowNorm { |name| ^flowNorms[name] ? 0 }
+
+	setFlowActive { |name, flag|
+		var i;
+		if(flag == true) { flowActive.add(name) } { flowActive.remove(name) };
+		i = if(this.class.shellFlowNames(0).includes(name)) { 0 } { 1 };
+		if(freed.not) {
+			shellViews[i].refresh;
+			routeView.refresh;
+		};
+		^this
+	}
+
+	paintFlow { |name, norm|
+		var i;
+		flowNorms[name] = (norm ? 0).clip(0, 1);
+		i = if(this.class.shellFlowNames(0).includes(name)) { 0 } { 1 };
+		if(freed.not) {
+			shellViews[i].refresh;
+			routeView.refresh;
+		};
+		^this
+	}
+
+	setCastleSendActive { |k, flag|
+		sendActive[k] = flag == true;
+		if(freed.not) { castleViews[k].refresh };
+		^this
+	}
+
+	paintCastleSend { |k, norm|
+		sendNorms[k] = (norm ? 0).clip(0, 1);
+		if(freed.not) { castleViews[k].refresh };
+		^this
 	}
 
 	// ---- the almanac corner (§6.1, §16.6) ----
@@ -591,6 +730,7 @@ CQGuiNightMap {
 			touch.cancelPunch;
 			touch.cancelPreamp;
 			touch.cancelBird;
+			touch.cancelPerformance;
 			touch.cancelWeather;
 		};
 		tideFocusRequested = false;
@@ -664,6 +804,44 @@ CQGuiNightMap {
 		};
 		if(shellRepaint) { shellViews[i].refresh };
 		if(headRepaint) { readHeadViews[i].refresh };
+	}
+
+	// Three destination readings piggyback on each Coco's phase frame. Missing
+	// telemetry freezes the last honest reading (as the read head does); a frame
+	// explicitly reporting zero connected weight removes the satellite.
+	crescentModulationFrame { |i, values, spreads, activities|
+		var names;
+		if(freed or: { values.isNil } or: { spreads.isNil }
+			or: { activities.isNil }) { ^this };
+		i = (i ? 0).asInteger;
+		if(i < 0 or: { i > 1 }) { ^this };
+		names = this.class.crescentNames(i);
+		names.do { |name, m|
+			var before = crescentModStates[name];
+			var after = this.class.crescentModState(name, values.at(m),
+				spreads.at(m), activities.at(m));
+			if(this.class.crescentModStateChanged(before, after)) {
+				if(after.isNil) { crescentModStates.removeAt(name) } {
+					crescentModStates[name] = after
+				};
+				crescentViews[name] !? { |view| view.refresh };
+			};
+		};
+		^this
+	}
+
+	castleFrame { |values, rates|
+		if(freed or: { values.isNil }) { ^this };
+		5.do { |k|
+			var before = castleMotions[k];
+			var rate = if(rates.isNil) { nil } { rates.at(k) };
+			var after = this.class.castleMotionState(values.at(k), rate);
+			if(this.class.castleMotionStateChanged(before, after)) {
+				castleMotions[k] = after;
+				castleViews[k].refresh;
+			};
+		};
+		^this
 	}
 
 	// skip's charge is peak-held 0.15 s on the server (§9), so if it is still
@@ -768,14 +946,6 @@ CQGuiNightMap {
 		CQMatrix.sourceNames.do { |src|
 			endpoints[src] !? { |endpoint| endpoint[\view].refresh };
 		};
-		5.do { |k|
-			var value = auraValues[5 + k] ? 0;   // cas1..cas5 canonical slots
-			if(castlePainted[k].isNil
-				or: { (value - castlePainted[k]).abs >= 0.04 }) {
-				castlePainted[k] = value;
-				castleViews[k].refresh;
-			};
-		};
 		2.do { |i|
 			var value = auraValues[10 + i] ? 0; // envA/envB, post-preamp truth
 			if(preampPainted[i].isNil
@@ -796,11 +966,17 @@ CQGuiNightMap {
 		endpoints = IdentityDictionary.new;
 		crescentViews = IdentityDictionary.new;
 		crescentNorms = IdentityDictionary.new;
+		crescentModStates = IdentityDictionary.new;
+		flowNorms = IdentityDictionary.new;
+		flowActive = IdentitySet.new;
+		flowHover = IdentitySet.new;
 		activeCrescents = IdentitySet.new;
 		hoverCrescents = IdentitySet.new;
 		dolbyStates = IdentityDictionary.new;
 		dolbyHover = IdentitySet.new;
-		castlePainted = Array.newClear(5);
+		castleMotions = Array.newClear(5);
+		sendNorms = Array.fill(5, 0);
+		sendActive = Array.fill(5, false);
 		holdStates = [false, false];
 		flipStates = [false, false];
 		speedNorms = [0.5, 0.5];
@@ -1009,7 +1185,8 @@ CQGuiNightMap {
 				CQInkNight.drawCrescent(Point(extent * 0.5, extent * 0.5),
 					crescentNorms[name] ? 0,
 					family, activeCrescents.includes(name)
-						or: { hoverCrescents.includes(name) }, \night, scale);
+						or: { hoverCrescents.includes(name) }, \night, scale,
+					crescentModStates[name]);
 				if(carriesDolby) {
 					CQInkNight.drawDolbyOyster(
 						Point(extent * 0.5, (extent * 0.5)
@@ -1087,10 +1264,10 @@ CQGuiNightMap {
 				touch.castleDown(k, v, x, y, mods ? 0, button ? 0, clicks ? 1)
 			};
 			view.mouseMoveAction = { |v, x, y, mods|
-				touch.landscapeMove(v, x, y, mods ? 0)
+				touch.castleMove(k, v, x, y, mods ? 0)
 			};
 			view.mouseUpAction = { |v, x, y, mods, button|
-				touch.landscapeUp(v, x, y, mods ? 0, button ? 0)
+				touch.castleUp(k, v, x, y, mods ? 0, button ? 0)
 			};
 			view.mouseWheelAction = { |v, x, y, mods, xd, yd|
 				touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
@@ -1273,20 +1450,31 @@ CQGuiNightMap {
 	// makes them mutually exclusive by construction rather than by three
 	// hand-written `.not`s.
 	prHoverShell { |i, view, x, y|
-		var target, heart, near, mark, rim, chevron, point;
+		var target, flowTarget, flowName, previousFlow, flowChanged;
+		var heart, near, mark, rim, chevron, point;
+		previousFlow = this.class.shellFlowNames(i)
+			.detect { |name| flowHover.includes(name) };
 		if(geometry.notNil and: { view.notNil }) {
 			point = this.prStagePoint(view, x, y);
 			// §4.5 cable-first: a cable inside its own hit path owns the pointer
 			if(overlay.patchAt(point).isNil) {
-				target = CQNightGeometry.shellTargetAt(geometry[\cocos][i], point);
+				flowTarget = CQNightGeometry.shellFlowTargetAt(
+					geometry[\cocos][i], point);
+				if(flowTarget.isNil) {
+					target = CQNightGeometry.shellTargetAt(geometry[\cocos][i], point)
+				};
 			};
 		};
+		flowName = this.class.shellFlowParam(i, flowTarget);
+		this.class.shellFlowNames(i).do { |name| flowHover.remove(name) };
+		flowName !? { flowHover.add(flowName) };
+		flowChanged = previousFlow != flowName;
 		heart = target == \heart;
 		near = target == \wind;
 		mark = target == \skip;
 		rim = target == \rim;
 		chevron = target == \chevron;
-		if((near != shellHover[i]) or: { mark != skipHover[i] }
+		if(flowChanged or: { near != shellHover[i] } or: { mark != skipHover[i] }
 			or: { rim != rimHover[i] } or: { heart != heartHover[i] }
 			or: { chevron != chevronHover[i] }) {
 			shellHover[i] = near;
@@ -1294,7 +1482,10 @@ CQGuiNightMap {
 			rimHover[i] = rim;
 			heartHover[i] = heart;
 			chevronHover[i] = chevron;
-			if(freed.not) { shellViews[i].refresh };
+			if(freed.not) {
+				shellViews[i].refresh;
+				if(flowChanged) { routeView.refresh };
+			};
 		};
 	}
 
@@ -1332,11 +1523,10 @@ CQGuiNightMap {
 		};
 	}
 
-	// Three exclusive cues on one body: inner clock, 6-o'clock rate ripple, or
-	// flesh/body. Their order mirrors castleDown exactly after cable priority,
-	// so the cue always promises the action the next press will receive.
+	// Two exclusive controls: the complete visible castle steps its inner clock,
+	// while the 6-o'clock rate ripple keeps its own smaller priority surface.
 	prHoverCastle { |k, view, x, y|
-		var dial = false, range = false, body = false, point, free = true;
+		var dial = false, range = false, point, free = true;
 		if(geometry.notNil and: { view.notNil }) {
 			point = this.prStagePoint(view, x, y);
 			free = overlay.patchAt(point).isNil;
@@ -1344,14 +1534,12 @@ CQGuiNightMap {
 				and: { free };
 			dial = free and: { range.not }
 				and: { CQNightGeometry.dialHit(geometry[\castles][k], point) };
-			body = free and: { range.not } and: { dial.not }
-				and: { CQNightGeometry.bodyHit(geometry[\castles][k], point) };
 		};
 		if((dial != dialHover[k]) or: { range != rangeHover[k] }
-			or: { body != bodyHover[k] }) {
+			or: { bodyHover[k] }) {
 			dialHover[k] = dial;
 			rangeHover[k] = range;
-			bodyHover[k] = body;
+			bodyHover[k] = false;
 			if(freed.not) {
 				castleViews[k].refresh;
 				// the coupling chord lives on the ring's layer (§16.6): a castle
@@ -1667,6 +1855,11 @@ CQGuiNightMap {
 				rangeStates[k] = value;
 				if(freed.not) { castleViews[k].refresh };
 			});
+			gui.widgets.register(("c" ++ (k + 1) ++ "Send").asSymbol, { |value|
+				sendNorms[k] = CQSpec.unmap(
+					("c" ++ (k + 1) ++ "Send").asSymbol, value);
+				if(freed.not) { castleViews[k].refresh };
+			});
 		};
 		2.do { |i|
 			var n = i + 1;
@@ -1683,6 +1876,15 @@ CQGuiNightMap {
 				speedNorms[i] = CQSpec.unmap(speedName, value);
 				if(freed.not) { shellViews[i].refresh };
 			});
+			this.class.shellFlowNames(i).do { |name|
+				gui.widgets.register(name, { |value|
+					flowNorms[name] = CQSpec.unmap(name, value);
+					if(freed.not) {
+						shellViews[i].refresh;
+						routeView.refresh;
+					};
+				});
+			};
 			[\In, \Fb].do { |channel|
 				var dolbyName = ("coco" ++ n ++ "Dolby" ++ channel).asSymbol;
 				dolbyStates[dolbyName] = \off;
@@ -1743,6 +1945,10 @@ CQGuiNightMap {
 
 	prDrawRoutes {
 		if(geometry.isNil) { ^this };
+		CQInkNight.drawDroneRoutes(geometry,
+			2.collect { |i| flowNorms[this.class.shellFlowParam(i, \slotQ)] ? 0 },
+			2.collect { |i| flowNorms[this.class.shellFlowParam(i, \slotX)] ? 0 },
+			flowActive, flowHover, \night);
 		geometry[\birds].do { |bird, i|
 			var deck = if(i == 0) { \deckA } { \deckB };
 			if(birdHover[i] and: { deckSlotNorms[i] > 0 }) {
@@ -1865,9 +2071,10 @@ CQGuiNightMap {
 		if(geometry.isNil) { ^this };
 		castle = geometry[\castles][k];
 		CQInkNight.drawCastle(castle, castle[\box].leftTop,
-			gui.auraFor(("cas" ++ (k + 1)).asSymbol),
+			castleMotions[k],
 			(gui.spesalStates[k] ? 0).asInteger, rangeStates[k],
-			dialHover[k], rangeHover[k], bodyHover[k], \night);
+			sendNorms[k], sendActive[k],
+			dialHover[k], rangeHover[k], \night);
 	}
 
 	// The read direction is what the loop is actually doing, and the FLIP param
@@ -1894,16 +2101,27 @@ CQGuiNightMap {
 	}
 
 	prDrawShell { |i|
-		var coco;
+		var coco, levelName, organName, performance;
 		if(geometry.isNil) { ^this };
 		shellPaintCounts[i] = shellPaintCounts[i] + 1;
 		coco = geometry[\cocos][i];
+		levelName = this.class.shellFlowParam(i, \level);
+		organName = this.class.shellFlowParam(i, \organ);
+		performance = (
+			level: flowNorms[levelName] ? 0,
+			levelUnity: CQSpec.referenceNorm(levelName, \unity) ? 1,
+			levelActive: flowActive.includes(levelName),
+			levelHover: flowHover.includes(levelName),
+			organ: flowNorms[organName] ? 0,
+			organActive: flowActive.includes(organName),
+			organHover: flowHover.includes(organName)
+		);
 		CQInkNight.drawShell(coco, coco[\shellBox].leftTop,
 			holdStates[i], this.flipMode(i), speedNorms[i], shellHover[i],
 			skipHover[i], skipFlash[i], rimHover[i], heartHover[i],
 			chevronHover[i], \night, geometry[\roots][i],
 			gui.auraFor(if(i == 0) { \envA } { \envB }) ? 0,
-			preampDriveNorms[i], preampSlotNorms[i]);
+			preampDriveNorms[i], preampSlotNorms[i], performance);
 	}
 
 	prDrawReadHead { |i|

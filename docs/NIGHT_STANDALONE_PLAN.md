@@ -38,14 +38,14 @@ change into maintenance across two interfaces.
 
 The prerequisites are met:
 
-- the Drawer **workshop** carries the 39 remaining CQSpec parameters with
-  honest ledger controls. After the 2026-07-28 Space retirement, Night 31 ·
-  Master 4 · Workshop 39 are disjoint and their tested union is exactly all
+- the Drawer **workshop** carries the 26 setup CQSpec parameters with honest
+  ledger controls. After the 2026-08-02 PLAY-6 drone promotion, Night 44 ·
+  Master 4 · Workshop 26 are disjoint and their tested union is exactly all
   74 `CQSpec.names`; `micGain`
   has one interactive home and keeps its warning;
 - Day's **spesal constellation is recorded dead**, not transplanted. Night's
   under-hand coupling chord carries the same partner, mode and signal direction
-  exactly where the player hovers and steps the castle. A permanent
+  exactly where the player hovers and steps the inner clock. A permanent
   whole-network diagram would spend ink continuously on information whose
   consequence is already clearer at the action point;
 - Day's **static Coco memory-path map is recorded dead**, not transplanted. It
@@ -852,23 +852,23 @@ The intended partition is exact and disjoint:
 
 | Surface | Count | CQSpec parameters |
 |---|---:|---|
-| Night | 31 | `deckALevel`, `deckBLevel`; `preASrc`, `preBSrc`, `preADrive`, `preBDrive`, `preABias`, `preBBias`; for each Coco: `In`, `Fb`, `Speed`, `Spaf`, `DolbyIn`, `DolbyFb`, `Hold`, `Flip`; `qFreq`, `qChaos`; `c1Range`…`c5Range` |
+| Night | 44 | `deckALevel`, `deckBLevel`; `preASrc`, `preBSrc`, `preADrive`, `preBDrive`, `preABias`, `preBBias`; for each Coco: `In`, `Fb`, `Speed`, `Spaf`, `DolbyIn`, `DolbyFb`, `Hold`, `Flip`, `Level`, `Organ`, `SlotQ`, `SlotX`; `qFreq`, `qChaos`; `c1Range`…`c5Range`; `c1Send`…`c5Send` |
 | Master | 4 | `masterVol`, `masterDry`, `patchDepth`, `monitorMute` (the PANIC/resume control) |
-| Workshop | 39 | the explicit inventory below |
+| Workshop | 26 | the explicit inventory below |
 | **Total** | **74** | must equal `CQSpec.names`, with no missing or duplicate owner |
 
 This partition describes the night-first GUI, not every observer. For
 example, Night may keep reading `micGain` to draw its sprout without becoming
 an interactive owner.
 
-The **39 Workshop parameters** are:
+The **26 Workshop parameters** are:
 
 | Ledger island | Count | Exact names |
 |---|---:|---|
 | Inputs and decks | 6 | `liveGain`, `micGain`, `deckARate`, `deckBRate`, `deckALoop`, `deckBLoop` |
-| Coco 1 remainder | 11 | `coco1Bits`, `coco1Wrap`, `coco1Interp`, `coco1Dust`, `coco1Organ`, `coco1Level`, `coco1Pan`, `coco1SlotPre`, `coco1SlotDeck`, `coco1SlotQ`, `coco1SlotX` |
-| Quantussy remainder | 11 | `qShLag`, `c1Off`…`c5Off`, `c1Send`…`c5Send` |
-| Coco 2 remainder | 11 | `coco2Bits`, `coco2Wrap`, `coco2Interp`, `coco2Dust`, `coco2Organ`, `coco2Level`, `coco2Pan`, `coco2SlotPre`, `coco2SlotDeck`, `coco2SlotQ`, `coco2SlotX` |
+| Coco 1 remainder | 7 | `coco1Bits`, `coco1Wrap`, `coco1Interp`, `coco1Dust`, `coco1Pan`, `coco1SlotPre`, `coco1SlotDeck` |
+| Quantussy remainder | 6 | `qShLag`, `c1Off`…`c5Off` |
+| Coco 2 remainder | 7 | `coco2Bits`, `coco2Wrap`, `coco2Interp`, `coco2Dust`, `coco2Pan`, `coco2SlotPre`, `coco2SlotDeck` |
 
 The other SPEC §6.2 obligations are already owned, but the N8 exit audit must
 name them too: Night owns hold/flip/skip, spesal step, dolby, ranges, patching
@@ -970,20 +970,16 @@ Use three equal service modules with two gutters across the shared responsive
 rail. Below the band, split the same rail into the three main columns with two
 gutters. Pair symmetry is structural:
 both Coco ledgers are built by the same helper with only the index changed.
-The service band is 72 px high. Budget each main ledger at 392 px maximum:
-a 20 px title, 16 px subgroup labels and 24 px parameter rows put an
-11-parameter Coco within the measured budget before its remaining bottom air. With 12 px
-top/bottom page margins, the complete rail is 504 px high and fits the
-minimum Drawer workspace without a scroll view.
+The service band is 72 px high. After PLAY-6, each Coco ledger has seven rows
+and Quantussy six; the page still derives height from its rows instead of a
+fixed content constant. With 12 px top/bottom page margins, the derived rail
+fits the minimum Drawer workspace without a scroll view.
 
 Group rows by signal meaning, never alphabetically:
 
-- each Coco: **converter** (`bits`, `wrap`, `interp`), **material** (`dust`,
-  `organ`), **output** (`level`, `pan`), **input mix** (`pre`,
-  `deck`, `q`, `x`);
-- Quantussy: **s&h** (`qShLag`), **detune** (`c1Off`…`c5Off`), **audio
-  sends** (`c1Send`…`c5Send`). Castle numbers run 1→5 in both groups, so the
-  two lists can be compared without hunting;
+- each Coco: **converter** (`bits`, `wrap`, `interp`), **material** (`dust`),
+  **output** (`pan`), **input mix** (`pre`, `deck`);
+- Quantussy: **s&h** (`qShLag`), **detune** (`c1Off`…`c5Off`);
 - the service band uses the exact pairs shown in the wireframe.
 
 Island titles and ordinary row labels are lowercase 10 px sans; subgroup
@@ -1056,7 +1052,7 @@ shape is:
 - add `classes/CQGuiWorkshop.sc` (under the project's ~400-line limit);
   its one explicit `parameterGroups`/manifest drives both layout construction
   and `paramNames`, so the audit never tests a second hand-copied list;
-- make that manifest list the 39 names above explicitly. **Do not** compute
+- make that manifest list the 26 names above explicitly. **Do not** compute
   Workshop ownership as `CQSpec.names - night - master`: that would silently
   make a newly added parameter “covered” without drawing a control;
 - expose semantic interactive inventories for Night and Master (for example
@@ -1082,7 +1078,8 @@ Use this green implementation sequence:
 1. Synchronize the proposed GUI contract in `GUI_SPEC.md`/`ARCHITECTURE.md`,
    add the three explicit owner inventories and their dynamic coverage unit
    test. No rendered layout is claimed yet.
-2. Add `CQGuiWorkshop` and build all 39 controls directly from its manifest.
+2. Add `CQGuiWorkshop` and build every control directly from its manifest
+   (39 at the original N8 gate; 26 after PLAY-6 moved 13 gestures to Night).
    Test it serverlessly before putting it in the live shell. Because it is
    not constructed by `CQGui` yet, its mic control is not a second live GUI
    path.
@@ -1105,14 +1102,14 @@ Add the following contracts before calling the page complete:
 
 1. **Dynamic coverage unit test** (`CQGuiVisualContractTest` or a narrowly
    named new unit class):
-   - Workshop manifest has 39 unique real `CQSpec` names;
-   - Night has 31, Master 4, and the three interactive-owner sets are
+   - Workshop manifest has 26 unique real `CQSpec` names;
+   - Night has 44, Master 4, and the three interactive-owner sets are
      disjoint;
    - their union equals `CQSpec.names` exactly and has the same size.
    Keep the current 74 as a diagnostic assertion if useful, but the equality
    to `CQSpec.names` is the future-proof gate.
 2. **Ownership tests**:
-   - all four Drawer tabs appear in the normative order;
+   - all five Drawer tabs appear in the normative order;
    - `\workshop` is accepted, persists across close/reopen and rejects no
      global key behavior;
    - `micGain` occurs in Workshop's interactive manifest and not Day's,
@@ -1123,15 +1120,15 @@ Add the following contracts before calling the page complete:
      expected clamped value through `CQState`;
    - an external `state.set` repaints representative controls without firing
      a write echo; enum order and numeric mapping come from `CQSpec`;
-   - all 39 final controls are ledger rows, not native widgets or Day knobs,
+   - all 26 final controls are ledger rows, not native widgets or retired Day knobs,
      and bipolar/int/toggle/enum variants expose their required secondary
      shape channel.
 4. **Drawer Qt smoke**:
    - open Night → Drawer → Workshop at 1280×720 and assert the real page is
      visible; the shared rail is centred; the three service modules and three
-     main ledgers have their specified widths; the last slot/send rows are
+     main ledgers have their specified widths; the deepest retained setup rows are
      contained; Master is visible; and `CQInkControl.drawErrors == 0`;
-   - repeat in both Day and Night skins and in a 1920×1005 content window
+   - repeat in Night and in a 1920×1005 content window
      (the 1920×855 workspace reference);
    - set `micGain` above zero and back to zero: the one Workshop control,
      danger treatment and persistent notice agree even after switching pages;
@@ -1170,17 +1167,17 @@ Add an N8 block to the live checklist with two passes:
 Stop for the user's visual and playing review before polish or N9. N8 exits
 only when:
 
-- the dynamic 31 + 4 + 39 partition proves all current CQSpec names reachable
+- the dynamic 44 + 4 + 26 partition proves all current CQSpec names reachable
   from Night + Drawer + Master and all other SPEC §6.2 obligations have a
   named owner;
-- all 39 Workshop controls are visible, enabled, exact-value-following and
+- all 26 Workshop controls are visible, enabled, exact-value-following and
   funnel-bound at the minimum size;
 - the accepted visual reads as Night's still measurement table — shared Ink
   species, deliberately different grammar — and passes §12.1.3's explicit
   cheapness/rejection list at both review sizes;
 - there is exactly one interactive `micGain` GUI path, with warning and
   persistent notice intact;
-- the four-page Drawer lifecycle, focus, queued swap, skin and cleanup laws
+- the five-page Drawer lifecycle, focus, queued swap, skin and cleanup laws
   hold;
 - the full automated gate is green and the N8 checklist is accepted by the
   user.
@@ -1332,7 +1329,7 @@ CQ.set(\coco1SlotDeck, 1); CQ.set(\coco1In, 0.8); CQ.hold(1, 1);
 // 1. Kelaa F2 pohjaan asti. Uusi pohja: tumma, rakeinen, ~87 s luuppi.
 //    Kysymys korvalle: onko 1500-3000 Hz -kaista SOITETTAVAA pimeyttä vai
 //    mutaa? Missä kohtaa siitä tulee mutaa?
-// 2. Nosta organ (Workshop: coco1Organ 0.5) ja kelaa pohjilla:
+// 2. Nosta organ (Nightin keltainen malto tai coco1Organ 0.5) ja kelaa pohjilla:
 //    urkupilli laskeutuu oktaavin entistä alemmas - onko se ääni?
 // 3. Istuta tri1 -> coco1_spaf painolla 0.8, spaf-syvyys ylös: modulaatio
 //    saa nyt painaa kellon 750 Hz:iin asti. Kuuntele ground jack -tempun

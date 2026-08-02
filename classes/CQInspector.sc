@@ -7,7 +7,11 @@ CQInspector {
 	var <src, <dest, <button, <startY, <priorWeight, beforeMatrix;
 	var <dragging = false, <currentWeight;
 
-	*new { |matrix, audition, grammar, inspectorPlant = 0.3|
+	// A newly planted precision-grid cable follows the same first-touch law as
+	// a Night cable. Fine drag/wheel editing still reaches the full 0.05..1
+	// range, but a double-click must not create a gate cable that cannot fire.
+	*new { |matrix, audition, grammar, inspectorPlant|
+		inspectorPlant = inspectorPlant ?? { CQBananaGrammar.defaultHandStrength };
 		^super.newCopyArgs(matrix, audition, grammar).prInit(inspectorPlant)
 	}
 

@@ -39,6 +39,7 @@ $requiredMarker = switch -Wildcard ($leaf) {
     "nrt_selfnoise_character.scd" { "CQ_SELFNOISE_OK"; break }
     "nrt_zipper_measure.scd" { "CQ_ZIPPER_MEASURED"; break }
     "nrt_preamp_loudness.scd" { "CQ_PREAMP_OK"; break }
+    "nrt_playability.scd" { "CQ_PLAYABILITY_MEASURED"; break }
     "morph_profile.scd" { "CQ_MORPH_PROFILE_DONE"; break }
     "morph_profile_gui.scd" { "CQ_MORPH_GUI_PROFILE_DONE"; break }
     "memory_probe.scd" { "CQ_MEM_PROBE_DONE"; break }

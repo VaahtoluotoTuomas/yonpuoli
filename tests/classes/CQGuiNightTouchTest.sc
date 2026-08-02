@@ -227,6 +227,19 @@ CQGuiNightTouchTest : UnitTest {
 			"the eye moves the macro pair more gently than a crescent");
 	}
 
+	test_rightClickZerosOnlyTheTwoSpafCrescents {
+		#[coco1Spaf, coco2Spaf].do { |name|
+			this.assert(CQGuiNightTouch.spafZeroReset(name, 1),
+				"right-click gives % an exact zero home".format(name));
+			this.assert(CQGuiNightTouch.spafZeroReset(name, 0).not,
+				"left drag remains continuous on %".format(name));
+		};
+		#[coco1In, coco1Fb, deckALevel, qFreq].do { |name|
+			this.assert(CQGuiNightTouch.spafZeroReset(name, 1).not,
+				"% keeps its existing right-button grammar".format(name));
+		};
+	}
+
 	test_preampKnotLocksDriveAndBiasIntoTwoGentleAxes {
 		this.assert(CQGuiNightTouch.preampSensitivity > 0,
 			"the preamp knot increases drive when the hand pulls upward");
@@ -251,5 +264,21 @@ CQGuiNightTouchTest : UnitTest {
 		this.assertFloatEquals(
 			CQGuiNightTouch.preampBiasNorm(0.1, 100, 0), 0,
 			"a leftward bias knead clamps at symmetry", 1e-9);
+	}
+
+	test_castleSendUsesAnInwardDeadzoneAndTheWholeRange {
+		var inward = Point(0, 1);
+		this.assertFloatEquals(CQGuiNightTouch.castleSendNorm(
+			0.5, Point(0, 7), inward), 0.5,
+			"sub-tap travel still belongs to the spesal step", 1e-9);
+		this.assertFloatEquals(CQGuiNightTouch.castleSendNorm(
+			0.5, Point(0, 58), inward), 1.0,
+			"an inward radial pull opens the qMix tributary", 1e-9);
+		this.assertFloatEquals(CQGuiNightTouch.castleSendNorm(
+			0.5, Point(0, -58), inward), 0.0,
+			"an outward radial pull closes it", 1e-9);
+		this.assertFloatEquals(CQGuiNightTouch.castleSendNorm(
+			0.5, Point(40, 0), inward), 0.5,
+			"tangential travel invents no send change", 1e-9);
 	}
 }

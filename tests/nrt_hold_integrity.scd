@@ -46,6 +46,7 @@ var impDef = SynthDef(\cqTestImpulse, {
 var cocoBase = { |extra|
 	[\buf, 0, \preBus, bSilent, \deckBus, bFeed, \qMixBus, bSilent,
 		\crossBus, bSilent, \modSrcBus, bModSrc, \modTapIdx, 12, \modOrganIdx, 14,
+		\cocoIndex, 0,
 		\inLevel, 1.0, \dust, 0, \organLvl, 0, \level, 1.0,
 		\slotPre, 0, \slotDeck, 1.0, \slotQ, 0, \slotX, 0] ++ extra
 };

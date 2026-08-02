@@ -186,7 +186,7 @@ compass-frame ei koskaan tee undo-entryä.
 
 - Siirrä nykyinen grid Drawerin Inspector-välilehteen; säilytä vertical fine edit ja
   right-click clear.
-- Lisää touch-and-listen: press audition ±0.3 releaselle asti, double-click plant 0.3,
+- Lisää touch-and-listen: press audition ±0.60 releaselle asti, double-click plant 0.60,
   yhteinen §4.1 revert-kirjanpito.
 - Spellbook kuuntelee matrix notification streamiä, ei GUI:n gesture handleria.
   Se näyttää kaikkien kerrosten committed matrix-opit, ei audition/frame-writeja.

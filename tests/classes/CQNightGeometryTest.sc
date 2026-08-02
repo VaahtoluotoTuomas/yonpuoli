@@ -120,10 +120,60 @@ CQNightGeometryTest : UnitTest {
 			"coco 2 mirrors coco 1's winding");
 	}
 
+	test_droneControlsAreTopologyAndHitTruth {
+		var geo = CQNightGeometry.compute(1280, 570);
+		geo[\cocos].do { |coco, i|
+			var levelPoint = coco[\levelSamples][24];
+			var organPoint = coco[\orgCenter]
+				+ Point(CQNightMeasures.organPodOuter - 1, 0);
+			this.assertEquals(CQNightGeometry.shellFlowTargetAt(coco, levelPoint),
+				\level, "coco %'s drawn shoreline is its Level hand".format(i + 1));
+			this.assertEquals(CQNightGeometry.shellFlowTargetAt(
+				coco, coco[\slotQValve]), \slotQ,
+				"coco %'s q gill owns SlotQ".format(i + 1));
+			this.assertEquals(CQNightGeometry.shellFlowTargetAt(
+				coco, coco[\slotXValve]), \slotX,
+				"coco %'s x gill owns its incoming cross-feed".format(i + 1));
+			this.assertEquals(CQNightGeometry.shellFlowTargetAt(coco, organPoint),
+				\organ, "coco %'s fruit flesh owns audible Organ".format(i + 1));
+			this.assert(CQNightGeometry.organPodHit(coco, coco[\orgCenter]).not,
+				"the yellow seed remains exclusively patchable");
+			this.assert(coco[\shellBox].containsPoint(coco[\slotQValve])
+				and: { coco[\shellBox].containsPoint(coco[\slotXValve]) }
+				and: { coco[\shellBox].containsPoint(levelPoint) },
+				"all promoted shell hands stay on their real Qt paper");
+			this.assert(CQNightGeometry.distance(coco[\slotQValve], coco[\slotXValve])
+				> (CQNightMeasures.flowValveHit * 2),
+				"q and x gills cannot swallow one another");
+		};
+		this.assertEquals(geo[\drone][\slotQPaths][0].last,
+			geo[\cocos][0][\slotQValve],
+			"left q tributary terminates on the left q gill");
+		this.assertEquals(geo[\drone][\slotXPaths][0].first,
+			geo[\cocos][1][\slotXValve],
+			"coco1SlotX starts at coco 2");
+		this.assertEquals(geo[\drone][\slotXPaths][0].last,
+			geo[\cocos][0][\slotXValve],
+			"coco1SlotX arrives at coco 1");
+		this.assertEquals(geo[\drone][\slotXPaths][1].first,
+			geo[\cocos][0][\slotXValve],
+			"coco2SlotX starts at coco 1");
+		this.assertEquals(geo[\drone][\slotXPaths][1].last,
+			geo[\cocos][1][\slotXValve],
+			"coco2SlotX arrives at coco 2");
+		geo[\castles].do { |castle, k|
+			var towardEye = geo[\ringCenter] - castle[\center];
+			var vein = castle[\sendEnd] - castle[\sendStart];
+			this.assert(((towardEye.x * vein.x) + (towardEye.y * vein.y)) > 0,
+				"castle %'s send tributary points inward to qMix".format(k + 1));
+		};
+	}
+
 	test_touchHomes {
 		var geo = CQNightGeometry.compute(1280, 570);
 		var coco = geo[\cocos][0];
 		var onSpiral = coco[\spiralSamples][30];
+		var castle = geo[\castles][2];
 		[0, 1].do { |i|
 			var shell = geo[\cocos][i];
 			this.assert(shell[\shellBox].containsPoint(shell[\center])
@@ -147,11 +197,21 @@ CQNightGeometryTest : UnitTest {
 				geo[\castles][2][\dialR], 0.3)),
 			"a tap on the dial radius hits the dial");
 		this.assert(CQNightGeometry.dialHit(geo[\castles][2],
-			geo[\castles][2][\center]).not,
-			"the castle's center is not the dial");
-		// the body is the §6 solo target and wears the §4.5 hover echo — one
-		// geometry for both, reaching `bodyMargin` px outside the drawn blob so
-		// it answers the approaching hand
+			geo[\castles][2][\center]),
+			"the drawn clock face has no dead eye at its exact centre");
+		this.assert(castle[\blobSamples].every { |edge|
+			CQNightGeometry.dialHit(castle, castle[\center]
+				+ ((edge - castle[\center]) * 0.94))
+		}, "all visible castle flesh, including the irregular rim, steps spesal");
+		this.assert([0, 16, 32, 48, 64, 80].every { |index|
+			var edge = castle[\blobSamples][index];
+			var radial = edge - castle[\center];
+			var outside = edge + (radial
+				/ CQNightGeometry.distance(Point(0, 0), radial) * 6);
+			CQNightGeometry.dialHit(castle, outside).not
+		}, "the castle action stops just beyond its own visible seeded outline");
+		// The body geometry still separates island ground from weather water,
+		// reaching `bodyMargin` px outside the irregular drawn blob.
 		this.assert(CQNightGeometry.bodyHit(geo[\castles][2],
 			geo[\castles][2][\center]),
 			"the castle's center is inside its own body");
@@ -170,13 +230,12 @@ CQNightGeometryTest : UnitTest {
 			geo[\castles][2][\box].leftTop + Point(2, 2)).not,
 			"the layer box's corner is water, not flesh");
 		geo[\castles].do { |castle, k|
-			// the hover echo is drawn on that same boundary — it must fit inside
-			// the castle's transparent view bounds or it would still be clipped
+			// The full island-ground target must fit inside the transparent layer.
 			this.assert(castle[\box].width
 				>= (2 * (castle[\bodyRx] + CQNightMeasures.bodyMargin))
 				and: { castle[\box].height
 					>= (2 * (castle[\bodyRy] + CQNightMeasures.bodyMargin)) },
-				"castle %'s hover echo fits inside its own layer".format(k + 1));
+				"castle %'s island ground fits inside its own layer".format(k + 1));
 		};
 		// each body is taken by its own drawn outline (§16.6) — the cue and the
 		// action share one geometry on all three
@@ -967,7 +1026,7 @@ CQNightGeometryTest : UnitTest {
 			"the Coco and bird crescents keep a true 44 px-class hand");
 		this.assert(CQNightMeasures.castleRx >= 37
 			and: { CQNightMeasures.castleRy >= 33 }
-			and: { CQNightMeasures.clockHit >= 12 }
+			and: { CQNightMeasures.clockRadius >= 18 }
 			and: { CQNightMeasures.rangeHitX >= 15 }
 			and: { CQNightMeasures.rangeHitY >= 12 },
 			"castle flesh, clock and ripple keep three readable target scales");
@@ -1454,13 +1513,12 @@ CQNightGeometryTest : UnitTest {
 					CQNightMeasures.clockBeadHaloR)) < flesh,
 					"castle %'s clock is drawn inside its own flesh (%x%)"
 						.format(k + 1, *size));
-				// and its annulus may not answer a press the eye reads as water:
-				// the dial's reach stays inside the body's own (§4.5 — a cue that
-				// covers more than its action is a cue that lies)
-				this.assert((castle[\dialR] + CQNightMeasures.clockHit)
-					<= (flesh + CQNightMeasures.bodyMargin),
-					"castle %'s clock steals no press from the water (%x%)"
-						.format(k + 1, *size));
+				// The complete visible seeded outline is now the clock's action;
+				// every sampled edge must still be island ground, never water.
+				this.assert(castle[\blobSamples].every { |point|
+					CQNightGeometry.bodyHit(castle, point)
+				}, "castle %'s full playable flesh steals no press from water (%x%)"
+					.format(k + 1, *size));
 			};
 			this.assert(CQNightMeasures.eyeHit
 				<= CQNightMeasures.eyeLayerR,
@@ -1514,8 +1572,9 @@ CQNightGeometryTest : UnitTest {
 				this.assert(
 					CQNightGeometry.distance(castle[\center], castle[\rangeMark])
 						- CQNightMeasures.rangeHitY
-						> (castle[\dialR] + CQNightMeasures.clockHit),
-					"castle % ripple clears the clock annulus (%x%)"
+						> (castle[\dialR] + max(CQNightMeasures.clockTickReach,
+							CQNightMeasures.clockBeadHaloR)),
+					"castle % ripple clears the drawn clock face (%x%)"
 						.format(n, *size));
 				this.assert(CQNightGeometry.bodyHit(castle,
 					castle[\rangeMark] - Point(0, CQNightMeasures.rangeHitY)),

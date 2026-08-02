@@ -30,7 +30,7 @@ public-vaihto ja oikeat kuva-/äänidemot ovat erillinen julkaisutoimi.
 **Seuraava askel konkreettisesti:** **N9 hyväksyttiin 2026-07-28.** Day on
 poistettu, koska Night on inspiroivampi varsinainen soitin ja kahden
 käyttöliittymän ylläpito hajottaisi kehityksen. Space-eläköityksen jälkeen
-Night 31 · Master 4 · Workshop 39 on erillinen, koneellisesti todistettu
+Night 44 · Master 4 · Workshop 26 on erillinen, koneellisesti todistettu
 `CQSpec.names`-peitto. Dayn
 spesal-tähdistö ja staattinen muistipolkukartta saivat kirjatun kuoleman:
 Nightin osoittimen alla ilmestyvä suuntatotuudellinen kytkentäsointu kertoo
@@ -241,10 +241,10 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
 - [x] **8. Drawer-workshop** (§12.1). **Valmis ja hyväksytty
   `nocturne-drawer-workshop`-haaralla 2026-07-28 (checklist N8).**
   Toteutettu §12.1.4:n vihreässä järjestyksessä:
-  1. Kolme omistajainventaariota julistettiin erikseen — Night 31
+  1. Kolme omistajainventaariota julistettiin erikseen — nykyinen Night 44
      (`CQGuiNightMap.reachableParamNames`, koottu samoista semanttisista
      apureista joilla kehot piirretään), nykyinen Master 4
-     (`CQGuiPanels.masterParamNames`) ja Workshop 39 (`CQGuiWorkshop`in oma
+     (`CQGuiPanels.masterParamNames`) ja Workshop 26 (`CQGuiWorkshop`in oma
      manifesti) — ja `CQGuiCoverageTest` todistaa ne erillisiksi ja niiden
      unionin **täsmälleen `CQSpec.names`**iksi. Workshopin lista on
      eksplisiittinen, ei komplementti: huomenna lisätty parametri kaataa
@@ -1064,7 +1064,7 @@ hardware-I/O-katselmus.
   sopimuksesta; `\cqSpace`, FX-ryhmä, send/return-bussit ja master-return
   poistettiin tuotantograafista. Master ja Workshop eivät piirrä kuolleita
   säätimiä, F14 on inertti ja vanhojen snapshotien kentät ohitetaan.
-  Night 31 · Master 4 · Workshop 39 kattaa kaikki 74 elävää parametria.
+  Night 44 · Master 4 · Workshop 26 kattaa kaikki 74 elävää parametria.
   MemoryHalo säilyy vain arkistoidussa prototyyppitutkimuksessa.
 
 ## Valmis työvaihe AIO — Audio I/O Setup Drawerissa
@@ -1800,9 +1800,9 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    täyttää vapaata slottia.
 
    **Ratkaiseva mittari, nyt normatiivinen SPEC §6.1:ssä: faderi on arvokkain
-   siellä minne mikään muu käsi ei yllä.** Ristiintaulukointi paljasti, että
-   16n:n 18 parametrista 16 oli jo pelattavissa Nightissä (31 parametria) tai
-   Master-stripissä (4), kun taas Cocojen koko miksausvaihe — `Level`, `Organ`,
+   siellä minne mikään muu käsi ei yllä.** PLAY-6:ta edeltävä ristiintaulukointi
+   paljasti, että 16n:n 18 parametrista 16 oli jo pelattavissa silloisessa
+   Nightissä (31 parametria) tai Master-stripissä (4), kun taas Cocojen koko miksausvaihe — `Level`, `Organ`,
    `Dust`, `Pan`, `Slot*`, 16 parametria eli yhtä monta kuin fadereita — ei ollut
    16n:ssä **eikä** matriisin 22 kohteen joukossa. Duplikaatio on tarkoituksellista
    siellä missä ele on kahden käden jatkuva ajo (§6 vaatii jokaisen kerroksen
@@ -1823,9 +1823,10 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    kirjoittaja (Σ castle-kolmiot × `cKSend`) ja tasan yksi lukija (`cocoNSlotQ`),
    ja slotti on oletuksena 0. Ilman kättä siinä F11 ja F12 muotoilevat ääntä joka
    ei koskaan saavuta ulostuloa — bootissa castle 5:tä, ainoaa `\audio`-alueen
-   castlea jonka send > 0 (SPEC §5.4:n *"one audible voice"*). **Rehellinen
-   varaus:** `cKRange` on Nightissä mutta `cKSend` vain Workshopissa, joten F14
-   on performanssiportti miksille jonka koostumus on setup-työtä.
+   castlea jonka send > 0 (SPEC §5.4:n *"one audible voice"*). PLAY-6 poisti
+   aiemman varauksen: `cKSend` on nyt kunkin linnan radiaalinen Night-ele, joten
+   sekä miksin koostumus että sen Coco-kohtainen SlotQ-portti ovat samassa
+   jatkuvassa soittopinnassa.
 
    Samassa muutoksessa `CQSpec.map16n`, SPEC §6.1:n taulukko ja M8:n
    checklist-kartta (joka olisi jäänyt valehtelemaan) sekä SPEC §4:n
@@ -1847,9 +1848,9 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    joihin automaatio ei vastaa: kanavanauhan luettavuus kädessä, Levelin paikka
    nauhan lopussa, ristihäivytyksen viiden faderin loikka (jos liian pitkä,
    layout B siirtää levelit vierekkäin F9/F10 ja `qFreq`/`qChaos` kahdella
-   oikealle) ja se, ansaitseeko `SlotQ` faderinsa vai olisiko `SlotX` tai
-   `Organ` musiikillisesti parempi. Lohko sisältää `CQ.set`-vertailun kaikkiin
-   kolmeen.
+   oikealle) ja se, ansaitseeko `SlotQ` edelleen 16n-faderinsa nyt kun SlotQ,
+   SlotX ja Organ ovat kaikki suoraan Nightissä. Lohko sisältää `CQ.set`-
+   vertailun kaikkiin kolmeen.
 8. **Soitettavuuskierros: mitä 1.0:n mukana lähtee, ja miltä ensikosketus
    tuntuu.** Käyttäjän päätös 2026-07-31. Kaksi osaa samalla istumalla, koska
    ne ovat sama kysymys eri etäisyydeltä — **ja käyttäjän päätöksellä
@@ -1870,8 +1871,10 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    millaisia luodaan, ja mitä ne opettavat: preset on resepti koodissa,
    snapshot on tila levyllä (GUI_SPEC §8), ja ne vastaavat eri kysymykseen.
 
-   **(b) Ensikosketuksen oletukset.** Kytketyn johdon lähtöpaino on
-   `CQBananaGrammar`in `handStrength` = 0.5; nuppien oletukset ovat `CQSpec`in
+   **(b) Ensikosketuksen oletukset.** Kierroksen alussa kytketyn johdon
+   lähtöpaino oli `CQBananaGrammar`in `handStrength` = 0.5; ensimmäinen mitattu
+   kandidaatti 0.65 on soittopalautteen jälkeen tarkennettu tuotantoarvoon
+   **0.60** (tulos alla). Nuppien oletukset ovat `CQSpec`in
    taulukossa; Workshopin aloitustila on omansa. Muutokset menevät SPEC §5:n
    taulukkoon ja `CQSpec`iin **samassa muutoksessa**, koska ne eivät saa
    erkaantua.
@@ -1906,6 +1909,237 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    `\mayhem`, mikä on itsessään dokumentoitava ja mahdollisesti syy katsoa
    uudelleen johdon oletuspainoa ja `patchDepth`in roolia. Mittaus on kierroksen
    **ensimmäinen** teko, koska sen tulos ohjaa sekä (a):n että (b):n.
+
+   **Ensimmäinen mittaus tehty 2026-08-01 (`tests/nrt_playability.scd`,
+   `CQ_PLAYABILITY_MEASURED`).** Diagnoosi tarkentui:
+
+   - Tiheyskyllästyminen ei selitä yhden johdon katoamista soivassa,
+     kirjoittavassa patchissa. `tri5 → coco1_inVca` painolla 0,5 tuotti
+     harvassa kentässä −6,22 dB:n erosignaalin suhteessa ääneen, eikä ero
+     romahtanut tiheyksillä 0,05…1,0; tiheä takaisinkytkentä pikemminkin vei
+     A/B-haarat eri kaoottisille radoille.
+   - Kaksi täyden kuun (~20 %, 69/77 johtoa) shakea valmistellussa patchissa
+     olivat lähes korreloimattomat (`corr 0,04`, spektripainopisteiden ero
+     178 Hz). Kahdella 352 johdon kentällä painopisteet olivat sen sijaan vain
+     3 Hz päässä: hypoteesi 3 pitää **luonteen**, ei aallon identtisyyden osalta.
+   - Täsmällisillä boot-oletuksilla samat kaksi täyden kuun shakea tuottivat
+     bitilleen saman ulostulon. Syyketju on konkreettinen: `Hold=1` ohittaa
+     input/fb-VCA:n kirjoitustuloksen, `Spaf=0` nollaa SP.AF-reitit,
+     `SlotQ=0` sulkee Quantussy-audion ja ±0,3 shake ei yksin ylitä +0,5
+     gate/trig-kynnystä. Käyttäjän havainto oli siis todellinen oletustilan
+     soitettavuusaukko, ei masterin peittämä kuvitelma.
+   - Schmitt-rajamittaus: painot 0,49 / 0,50 / 0,55 / 0,60 / 0,65 tuottivat
+     kolmessa sekunnissa 0 / 0 / 6 / 6 / 6 nousua. PLAY-1:n ensimmäinen
+     kandidaatti oli 0,65; käyttäjän jatkuvan modulaation kuuntelun jälkeen
+     Nightin ja Inspectorin uusi johto alkaa **0,60**:stä. Se säilyttää 0,05:n
+     marginaalin pienimpään mitattuun toimivaan 0,55-koettimeen.
+     Schmitt/DSP, vanhat patchit, snapshotit ja shake eivät muuttuneet.
+   - **PLAY-1 löysi 2026-08-01 toisen kynnyksen samasta eleestä:** 0,65 toteutui
+     vain socketin täsmällisessä keskipisteessä. Vanha `closeness²` laski painon
+     näkyvällä 8…14 px kehällä noin arvoon 0,40…0,29, joten luonnollisesti
+     pudotettu `tri → flip/skip` jäi yhä alle +0,5:n. Ensin näkyvä 14 px socket
+     tehtiin täyden painon vyöhykkeeksi; PLAY-5 poisti koko proximity-painolain
+     ja kuultavan Night-auditionin: kaikki ≤40 px pudotukset istuttavat täsmälleen
+     kädessä näkyvän painon, eikä matriisiin kirjoiteta ennen releasea. Kädessä
+     rulla (0,05 / Ctrl 0,01) attenuoi alkupainon ilman 0,60-transienttia;
+     touchpad-polku on vasemman käden Z/X ja Shiftillä 0,01.
+     Unit- ja Night-smoke pinnaavat myös magneettialueen ulkoreunan.
+   - **Soittotestit 1–2 hyväksyttiin 2026-08-01:** Cocon muisti-/lukupolku oli
+     ymmärrettävä, ja tuore `tri → flip/skip` laukesi heti ilman painon
+     jälkisäätöä. Jatkuva 0,65-ensikosketus arvioitiin hieman vahvaksi, mistä
+     seurasi yllä oleva 0,60-tarkennus.
+   - **PLAY-2B hyväksytty 2026-08-01:** `cocoNSpaf` käyttää nyt täsmällistä,
+     symmetristä signed-square-käsikarttaa. Nollasta 15 px sirppiliike antaa
+     ±0,25 oct, 30 px ±1 oct ja täysi liike yhä ±4 oct; tallennetut arvot ja DSP
+     eivät muuttuneet. Sirpin neutraali sisäsatama näyttää hienoalueen ilman
+     kolmatta värimerkitystä. Johdon hoverissa keskikohdan painokuu näyttää
+     `|w|`:n kehänä ja polariteetin kehän suuntana/värinä. Käyttäjä hyväksyi
+     kuun mutta hylkäsi tarpeettoman prosenttikapselin; kuu jäi yksin.
+   - **PLAY-2C hyväksytty 2026-08-02:** molempien Cocoiden SP.AF
+     palautuu oikealla klikkauksella täsmälleen nollaan. Raahaukseen ei lisätty
+     nollalukkoa, jotta jatkuva liike nollan läpi ei tartu kapeaan hienoalueeseen.
+     SP.AF/Input/Feedback-sirpit erottavat nyt värillisen asetushelmen ja onttoa
+     ulkosatelliittia käyttävän DSP-totuuden. `/cq_phase`:en liitetty 15 Hz
+     telemetria raportoi hitaasti seurattavan efektiivisen arvon, audio-rate-
+     jäännöksen peak-wakena ja kohteen todellisen matriisipainon. Näin infra
+     liikkuu, mutta silmää nopeampi modulaatio näkyy vakaana heilahduskaarena
+     eikä aliasoidu vääräksi hitaaksi nuppiliikkeeksi. Katselmuksessa havaittu
+     kahden näennäisen aseman sahaus suljettiin: kun wake kattaa vähintään 1/16
+     sirpin alueesta, ontto satelliitti asettuu mitatun alueen keskelle eikä
+     yksittäiseen 15 Hz näytteeseen. Vain muuttunut 44 px sirppi päivittyy,
+     normalisoitu liike kvantisoidaan 1/96 askeliin.
+   - **PLAY-3 hyväksytty 2026-08-02:** ensin sisäkellon täsmällinen keskipiste
+     liitettiin spesal-eleeseen; PLAY-5:n jatkokatselmuksessa koko näkyvä seeded
+     linnablob liitettiin samaan hover/askelpintaan, koska kellodiscin ja lihan
+     välinen kuollut alue oli yhtä lailla perusteeton. Erillistä ulkolihan
+     hover-kehää tai neljän endpointin ryhmäsoloa ei palautettu. `cas`-magnitudia toistanut
+     kehähengitys korvattiin sisäkellon raw-`tri`-kielellä: enintään 3 Hz liikkuu
+     luettavana helmenä, nopeampi kello vakaana koko kielen hohteena. Gate/trig-
+     lampun amber charge näyttää edelleen kynnyksen lähestymisen, ja erillinen
+     vaalea timantti tulee nyt DSP:n täsmällisestä post-Schmitt gate/trigistä.
+   - **PLAY-4 ja PLAY-5 hyväksytty 2026-08-02:** `tri` ja `cas` erottuvat
+     lähteinä, spesal muuttaa `cas`-kumppania/hold-moodia, ja urun lähde on
+     erillinen kuultavasta post-memory Organ-kerroksesta. Jälkimmäinen livekoe
+     löysi varsinaisen lähdetasovirheen: 24 kHz:n bandlimited square-stack huiputti
+     vain +0,5602, joten 0,60-johto ei voinut ylittää Cocon +0,5 Schmittiä.
+     Patchattava `org1/2` käyttää nyt ×1,6 + `clip2(1)` -kunnostusta, mutta
+     kuultava Organ-kerros säilyi ennallaan. Oman Cocon `cocoN/orgN`-paluu on
+     eksplisiittinen kaksikanavainen LocalIn/LocalOut ja muiden Coco-lähteiden
+     InFeedback luetaan kanava kerrallaan. Tuotanto-NRT:ssä `org1 → oma SP.AF`
+     on elossa (diff-RMS 0,22659) ja `org1 → oma SKIP 0,60` todella resetoi
+     Phasorin (RMS 0,15277 → 0,04139; diff-RMS 0,15827). Spiraalin
+     speed-poikkiviiva pysyy perusasetuksen staattisena
+     kätenä; SP.AF-satelliitti ja lukupään liike näyttävät toteutuneen seurauksen.
+
+   Kaikki 74 parametria auditoidaan nyt myös reitityksenä: mic-enabled-graafissa
+   jokainen päätyy olemassa olevaan tuotanto-SynthDef-controliin; mic-off on
+   ainoa tarkoituksellinen poikkeus. Opastettu soittoajo ja Nightiin
+   mahdollisesti nostettavien `Level`/`SlotQ`/`Organ`-kandidaattien koe:
+   [`docs/PLAYABILITY_GUIDE.md`](docs/PLAYABILITY_GUIDE.md). **Soittotestit 1–5
+   on hyväksytty. Testin 6 suunnittelupäätös on toteutettu; seuraava käsin
+   katsottava/soitettava portti on uuden Night-anatomian PLAY-6 sekä PLAY-2C:n
+   modulaatiosatelliitti.**
+   - **PLAY-6-palaute 2026-08-02:** molemmat `cocoNLevel`-eleet kuuluvat
+     ehdottomasti Nightiin miksauksen ja ristihäivytyksen vuoksi. Erillisen
+     drone-moodin sijaan käyttäjä suosii yhtä jatkuvaa soitintilaa, jossa
+     `SlotQ`, `SlotX` ja Organ avataan maisemasta. Reititysauditin
+     tärkeä seuraus: `SlotQ` yksin avaa vain nykyisen `qMix`-summan, jonka
+     bootissa ainoa ei-nolla send on `c5Send=0,5`; täysi drone-kieli tarvitsee
+     siksi myös `c1Send…c5Send`-eleen. Toteutus on nyt Nightissä: Level on
+     kuoren ulkoranta, Organ jakin keltainen malto, SlotQ renkaan sivujoen kidus,
+     viisi sendiä linnan radiaalivetoja ja SlotX kahden itsenäisen suunnan silta
+     (`coco1SlotX`: 2→1, `coco2SlotX`: 1→2). Alle 8 px linnan release on yhä
+     spesal-tap; tätä pidempi sisään-/ulospäin veto säätää sendiä ilman
+     väliaikaista spesal-askelta. Omistajuus on nyt 44 / 4 / 26.
+   - [ ] **PLAY-6.1 — Nightin sisävirtojen reitti-, Level- ja väripolish
+     (suunnitelma kirjattu 2026-08-02; EI toteutettu).** Tämä on vain jo
+     toteutetun PLAY-6-anatomian visuaalinen ja kerroksellinen korjaus. Älä
+     muuta DSP:tä, CQSpec-rangeja/oletuksia, CQStatea, snapshot-sopimusta,
+     eleiden herkkyyttä, 44 / 4 / 26 -omistajuutta tai signaalisuuntia.
+     `coco1SlotX` pysyy Coco 2 → Coco 1 ja `coco2SlotX` Coco 1 → Coco 2.
+
+     **1. SlotQ:n ring-ankkurit tyhjiin yläaukkoihin.** Nykyinen Cocon
+     `slotQValve` ja sen hit-alue ovat hyvät eikä niitä siirretä. Vaihda vain
+     `CQNightGeometry.compute`n `slotQPaths`-alkupisteet pois ympyrän suorista
+     vasen/oikea-pisteistä. Ringin viisi `ringSegments`-segmenttiä kulkevat
+     järjestyksessä castle 1→2, 2→3, 3→4, 4→5, 5→1. Vasemman Cocon Q-lähde on
+     siksi täsmälleen
+     `CQNightGeometry.cubicPoint(ringSegments[4], 0.5)` (castle 5→1 -aukon
+     keskikohta) ja oikean
+     `CQNightGeometry.cubicPoint(ringSegments[0], 0.5)` (castle 1→2 -aukon
+     keskikohta). Käytä seeded ringin oikeaa cubic-segmenttiä, älä uutta
+     `polar(ringCenter, ringR, ...)` -arvausta. Säilytä nykyinen yksi cubic,
+     sen 0.34/0.68-control-suhteet ja pieni ylöspäin kaartava lift, koska Cocon
+     puoleinen muoto hyväksyttiin. Polun järjestys säilyy ring → Coco, jotta
+     nuoli ja `drawFlowGill(path.last, ...)` kertovat edelleen qMixin saapuvan
+     Cocoon. Vain ringillä oleva alkupiste/helmi siirtyy.
+
+     **2. SlotX yhdeksi ringin ylittäväksi kaksikaistaiseksi sillaksi.** Käyttäjän
+     ehdottama reitti toimii, kun “castle 1:n päältä” tarkoittaa koko castle 1:n
+     interaktiivisen paperin yläpuolta, ei viivaa sen jakkien välistä. Pidä
+     kumpikin suunta yhtenä cubicina; älä tee kolmea kulmikasta segmenttiä.
+     Käytä edellisen kohdan castle 5→1- ja castle 1→2 -aukkojen **x-koordinaatteja**
+     vasempana ja oikeana control-olkapäänä. Lisää `CQNightMeasures`iin vain
+     nimetyt mitat (alkuarvot): `slotXBridgeClearance = 12`,
+     `slotXBridgeTopFloor = 12` ja `slotXBridgeLaneGap = 10`; kaikki ovat body-
+     mittoja ja skaalautuvat. Näkyvän sillan keskihuippu on
+     `max(topFloor * scale, castles[0][\box].top - (clearance * scale))`.
+     Cubicin control-y ei ole sama kuin näkyvä huippu: ratkaise se niin, että
+     t=0.5 osuu täsmälleen haluttuun huippuun:
+     `controlY = (laneCrownY - ((start.y + end.y) * 0.125)) / 0.75`.
+     `coco1SlotX` (oikea→vasen) käyttää ylempää kaistaa
+     `crownY - laneGap/2`; `coco2SlotX` (vasen→oikea) alempaa
+     `crownY + laneGap/2`. Oikea→vasen-polku on
+     `[rightValve, Point(rightGap.x, controlY), Point(leftGap.x, controlY),
+     leftValve]`; toinen on tämän suunnallinen peili. Control-piste saa olla
+     stage-alueen ulkopuolella — vain piirtyvän cubicin näytteiden täytyy pysyä
+     stage-alueella. Näin viiva lähtee nykyisistä hyvistä venttiileistä,
+     nousee vasemman linnun / castle 5 / castle 1 -olkapään kautta, käy castle 1:n
+     yläpuolella ja laskee oikean vastaavan olkapään kautta ilman ringin
+     sisäosan halkaisemista. Nuolten t=0.82-paikka, kaksi erillistä venttiiliä
+     ja nykyinen SlotX-semanttiikka eivät muutu.
+
+     **3. Coco 2 Levelin suunta ja molempien Level-rantojen z-kerros.** Korjaa
+     suunta geometriassa, älä koske drag-matematiikkaan: pystydrag ylös nostaa
+     jo nyt molempien parametria. Vasemmalla säilyy `levelStart = pi - sweep/2`
+     ja positiivinen sweep. Oikealla nollapisteen pitää olla alhaalla:
+     `levelStart = sweep/2` ja `levelSweep = sweep.neg`. Rakenna myös
+     `levelSamples` signed sweepistä, jotta piirto, helmi ja hit-totuus pysyvät
+     samana. `CQInkNight.drawLevelShore` käyttää jo `start + sweep * norm` -lakia
+     ja sen pitää toimia negatiivisella sweepillä; älä tee Coco 2:lle piirrossa
+     erikoishaaraa.
+
+     Rannan alaosan suorakulmaiset aukot tulevat SP.AF/Input/Feedback-
+     crescent-viewien tarkoituksella opaque `ground`-taustoista, eivät Level-
+     geometriasta. Älä tee crescent-vieweistä summittaisesti läpinäkyviä.
+     Siirrä vain Level-rannan **muste** shell-viewistä `routeView`-kerrokseen:
+     poista `drawLevelShore`-kutsu `CQInkNight.drawShell`istä ja piirrä molemmat
+     rannat `CQGuiNightMap.prDrawRoutes`issa ennen Q/X-virtoja samoilla
+     `flowNorms`/unity/active/hover-arvoilla. Jätä Level edelleen shellin
+     performance-eventtiin, koska spiraalin alpha hengittää sen mukana.
+     `routeView` on jo maiseman suorakulmaisten papereiden yläpuolella mutta
+     oikeiden patch-kaapeleiden alapuolella ja Level-päivitys/hover refreshaa
+     sitä jo. Näin näkymätön crescent-paperi ei katkaise rantaa eikä Level voi
+     nousta kaapeleiden päälle.
+
+     **4. Väri: yksi hillitty alusmuste, ei uutta kirkasta semanttista perhettä.**
+     Night on jo lähellä värikylläisyyden rajaa. Älä vaihda kaikkea Organ/Q/X-
+     anatomiaa yhdeksi uudeksi väriksi: keltainen Organ yhdistää calyxin oikeaan
+     `orgN`-lähteeseen, amber Q/send kertoo triangle-audiosta ja neutral `cas`
+     SlotX:stä. Lisää sen sijaan `CQInk.palette`en molempiin paletteihin yksi
+     matalakromaattinen `undertow`/sisävirta-avain (lähtökandidaatit Night
+     `#669097`, Day `#526F71`; ei inline-Color-arvoja). Piirrä sillä staattinen,
+     tarkkaa samaa polkua seuraava alusviiva ennen nykyistä semanttista ydintä:
+     `drawFlowPath`, `drawFlowGill`, `drawCastleSend` ja Organ-calyxin kaksi
+     kaarta. Lähtöarvot: levossa alpha noin 0.14 ja 2 px, hover/dragissa noin
+     0.34 ja 3 px. Nykyinen family-värinen hairline/normal-ydin, nuoli, kidus,
+     calyx-muoto ja helmi piirretään aina sen päälle. Level-ranta ei saa tätä
+     väriä: se on output/mix eikä sisäinen drone-virta. Älä lisää gradienttia,
+     bluria, pulssia tai uutta liikettä. Tarkoitus on erottaa sisäinen audio-
+     topologia patch-kaapeleista “patinoituneena pohjavirtana” menettämättä
+     signaaliperheen totuutta tai värisokeudessa luettavaa muotoa.
+
+     **Toteutusjärjestys pienemmälle mallille.** (a) Kirjoita ensin puhtaat
+     geometriatestit ja uudet nimetyt mitat; (b) siirrä Q-ankkurit; (c) tee X-
+     yläkaari; (d) käännä vain Coco 2:n signed Level-sweep; (e) siirrä Level-
+     muste routeViewiin; (f) lisää undertow viimeisenä, jotta reitti voidaan
+     hyväksyä ensin ilman värin peittävää vaikutusta. Koske ensisijaisesti
+     `CQNightMeasures.sc`, `CQNightGeometry.sc`, `CQInkNight.sc` ja
+     `CQGuiNightMap.sc`. `CQGuiNightTouch.sc`, DSP, CQSpec ja Workshop eivät
+     tarvitse tuotantomuutosta.
+
+     **Automaattiset portit.** Laajenna `CQNightGeometryTest` molemmille
+     referenssikoille 1280×570 ja 1920×855: Q-alkujen täsmälliset gap-segmentit;
+     Q/X-polkujen cubic-näytteet eivät osu yhteenkään seeded castle-fleshiin,
+     range-rippleen, castle-endpointin näkyvään/hit-laatikkoon tai linnun
+     drop-laatikkoon; X:n t=0.5 alittaa y-koordinaatiltaan castle 1:n box.topin
+     vaaditulla clearancella; kaksi kaistaa eroavat keskellä mutta yhtyvät vain
+     yhteisillä venttiileillä; kaikki piirtyvät näytteet ovat stagella; alku- ja
+     loppusuunnat säilyvät. Lisää molemmille Cocoille ehto
+     `levelSamples.first.y > levelSamples.last.y` (screen-y: nolla alhaalla,
+     maksimi ylhäällä) sekä vanhat hit-testit molempiin päihin. Laajenna Night-
+     GUI-smokea vetämään myös Coco 2 Leveliä ylöspäin ja todistamaan arvon
+     kasvavan/releasen vapautuvan; external `CQState`-kirjoituksen pitää
+     repaintata routeView. Lisää `CQInkTest`iin, että `undertow` tulee keskitetystä
+     paletista eikä korvaa family-väriä. Aja AGENTS.md:n wrapperilla
+     `compile_check.scd`, `run_all.scd` ja `gui_night_smoke.scd`; DSP/NRT:tä ei
+     ajeta, koska DSP ei muutu. `git diff --check` lopuksi.
+
+     **Visuaalinen hyväksyntäportti ennen “valmis”-merkintää.** Renderöi
+     `gui_night_capture.scd`:llä vähintään 1280×570 sekä roomy-koko, erikseen
+     zero- ja noin 0.7-arvoilla. Tarkista: Q laskeutuu täsmälleen 5–1/1–2-
+     aukkoihin; X muodostaa yhden rauhallisen kaksikaistaisen katon eikä koske
+     lintuihin, castle 1:een tai kuuhun; molemmat Levelit lukevat alhaalta
+     nollan ja ylhäältä maksimin ilman suorakulmaisia katkoksia; undertow erottaa
+     sisävirran patch-kaapeleista kahden metrin siristystestissä mutta jää
+     himmeämmäksi kuin endpointit ja aktiivinen banana. Grayscale-/muototestin
+     pitää edelleen erottaa annulus, kidus, nuoli ja silta. Pysähdy käyttäjän
+     katselmukseen — väriä saa sen jälkeen säätää vain undertow'n chromalla/
+     alphan määrällä, ei lisäämällä toista uutta sävyä.
+   Sen rinnalla verrataan, jälleen yksi muuttuja
+   kerrallaan, mitatut boot-shake-kandidaatit `Spaf=0,12` ja shake-paino 0,65;
+   kumpikin yksin rikkoi boot-A/B:n identtisyyden, mutta kumpaakaan ei ole vielä
+   hyväksytty tuotanto-oletukseksi.
 9. **Merge `main`iin ja 1.0-tagi.**
 
 ### DAW-sillan keino: ReaRoute, ei VB-CABLE

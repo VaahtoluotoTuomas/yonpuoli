@@ -186,7 +186,19 @@ CQSpec {
 	// Each point is [normalizedPosition, parameterValue]; the table itself lives
 	// only in this registry, never in a GUI or MIDI call site.
 	*prMapNum { |e, norm|
-		var points = e[\breakpoints], i;
+		var points = e[\breakpoints], handPower = e[\handPower], i;
+		var signed, midpoint, halfRange;
+		// A symmetric power taper widens the hand's country around the midpoint
+		// without changing the stored value, endpoints or DSP range. Unlike a
+		// GUI-local sensitivity tweak this remains one exact, invertible law for
+		// Night, Workshop and MIDI.
+		if(handPower.notNil) {
+			signed = (norm * 2) - 1;
+			midpoint = (e[\spec].minval + e[\spec].maxval) * 0.5;
+			halfRange = (e[\spec].maxval - e[\spec].minval) * 0.5;
+			^midpoint + (if(signed < 0) { -1 } { 1 }
+				* (signed.abs ** handPower) * halfRange)
+		};
 		if(points.isNil) { ^e[\spec].map(norm) };
 		i = (0 .. (points.size - 2)).detect { |j| norm <= points[j + 1][0] };
 		^norm.linlin(
@@ -195,7 +207,15 @@ CQSpec {
 	}
 
 	*prUnmapNum { |e, value|
-		var points = e[\breakpoints], i;
+		var points = e[\breakpoints], handPower = e[\handPower], i;
+		var signed, midpoint, halfRange;
+		if(handPower.notNil) {
+			midpoint = (e[\spec].minval + e[\spec].maxval) * 0.5;
+			halfRange = (e[\spec].maxval - e[\spec].minval) * 0.5;
+			signed = ((value - midpoint) / halfRange).clip(-1, 1);
+			^((if(signed < 0) { -1 } { 1 }
+				* (signed.abs ** (1 / handPower))) + 1) * 0.5
+		};
 		if(points.isNil) { ^e[\spec].unmap(value) };
 		i = (0 .. (points.size - 2)).detect { |j| value <= points[j + 1][1] };
 		^value.linlin(
@@ -203,10 +223,11 @@ CQSpec {
 			points[i][0], points[i + 1][0])
 	}
 
-	*prNum { |name, lo, hi, warp, default, lag = 0.03, breakpoints, references|
+	*prNum { |name, lo, hi, warp, default, lag = 0.03, breakpoints, references,
+		handPower|
 		all[name] = (kind: \num, spec: ControlSpec(lo, hi, warp, 0, default),
 			default: default, lag: lag, breakpoints: breakpoints,
-			references: references);
+			references: references, handPower: handPower);
 	}
 
 	*prInt { |name, lo, hi, default|
@@ -252,7 +273,13 @@ CQSpec {
 			// 13.2: the floor is 1500 Hz, not the shy 3000 — five octaves of clock
 			// under the hand, and the darkest end is playable rather than a wall
 			this.prNum(p.value("Speed"), 1500, 48000, \exp, 24000);
-			this.prNum(p.value("Spaf"), -4.0, 4.0, \lin, 0);
+			// Signed-square hand taper: quarter travel from zero is only 0.25
+			// octave; half travel is 1 octave; the unchanged endpoints are +/-4.
+			// Named landmarks also let Night draw the calm water geometrically,
+			// without assigning a third semantic colour to pitch depth.
+			this.prNum(p.value("Spaf"), -4.0, 4.0, \lin, 0, 0.03, nil,
+				(fineNeg: -0.25, finePos: 0.25,
+					octaveNeg: -1.0, octavePos: 1.0), 2);
 			this.prEnum(p.value("DolbyIn"), #[off, gate, duck], \off);
 			this.prEnum(p.value("DolbyFb"), #[off, gate, duck], \off);
 			this.prToggle(p.value("Hold"), 1);     // power-on mirrors hardware: loop-locked
@@ -262,7 +289,8 @@ CQSpec {
 			this.prEnum(p.value("Interp"), #[zoh, smooth], \zoh);
 			this.prNum(p.value("Dust"), 0, 0.5, 4, 0.02);
 			this.prNum(p.value("Organ"), 0, 1, \lin, 0);
-			this.prNum(p.value("Level"), 0, 1.5, 4, 0.8);
+			this.prNum(p.value("Level"), 0, 1.5, 4, 0.8, 0.03,
+				nil, (unity: 1.0));
 			this.prNum(p.value("Pan"), -1, 1, \lin, if(n == 1) { -0.3 } { 0.3 });
 			this.prNum(p.value("SlotPre"), 0, 1.5, \lin, 1.0);
 			this.prNum(p.value("SlotDeck"), 0, 1.5, \lin, 1.0);
