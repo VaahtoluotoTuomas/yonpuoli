@@ -2011,9 +2011,10 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
      (`coco1SlotX`: 2→1, `coco2SlotX`: 1→2). Alle 8 px linnan release on yhä
      spesal-tap; tätä pidempi sisään-/ulospäin veto säätää sendiä ilman
      väliaikaista spesal-askelta. Omistajuus on nyt 44 / 4 / 26.
-   - [ ] **PLAY-6.1 — Nightin sisävirtojen reitti-, Level- ja väripolish
-     (toteutettu 2026-08-02; portit vihreät, odottaa käyttäjän
-     visuaalista katselmusta, checklist `PLAY-6.1`).**
+   - [x] **PLAY-6.1 — Nightin sisävirtojen reitti-, Level- ja väripolish.
+     Valmis ja käyttäjän hyväksymä 2026-08-02 (checklist `PLAY-6.1`).**
+     Hyväksyntä koski katselmuskorjattua versiota; ensimmäisen kierroksen
+     viisi löydöstä on lueteltu alempana.
 
      **Toteutuksen tulos.** Kaikki neljä kohtaa ovat sisällä: Q-ankkurit ovat
      nyt täsmälleen `cubicPoint(ringSegments[4], 0.5)` ja

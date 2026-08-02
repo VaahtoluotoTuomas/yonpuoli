@@ -1774,7 +1774,10 @@ CQ.gui.shell.audioClockDanger = false;
       drivers` -napin alle (`d331ff4`).
 - [x] **AUD-W:n aina näkyvä merkki hyväksytty 2026-07-31** — paikka, koko ja
       luettavuus työkalurivillä drawer-napin vieressä, katoaa jäljettä.
-- [ ] **AUD-W osa 2 — oikea lepotilaprovokaatio.** Tehdään osana pitkää soakia
+- [x] **AUD-W osa 2 — oikea lepotilaprovokaatio. Hyväksytty 2026-07-31**
+      SOAK-FIX-kierroksen jälkeen; ks. rasti tämän tiedoston SOAK-1-lohkossa.
+      Alla oleva teksti on ensimmäisen, hylätyn ajon pöytäkirja ja jää siksi
+      ennalleen. Tehtiin osana pitkää soakia
       (käyttäjän päätös 2026-07-31). **Huomaa:** `tests/soak_monitor.ps1` pitää
       järjestelmän hereillä koko ajonsa ajan (`SetThreadExecutionState`), juuri
       siksi ettei valvomaton soak mittaisi Modern Standby -artefaktia. Osa 2
@@ -2599,9 +2602,12 @@ CQ.set(\coco1Organ, 0); CQ.set(\coco2Organ, 0);
    Harmaasävyssä annuluksen, kiduksen, nuolen ja sillan pitää yhä erottua.
    Level-rannassa ei saa olla alusmustetta.
 
-- [ ] PLAY-6.1 hyväksytty (pvm: ______ — Q laskeutuu aukkoihin, X on yksi
+- [x] **PLAY-6.1 hyväksytty 2026-08-02** — Q laskeutuu aukkoihin, X on yksi
       rauhallinen katto, molemmat Levelit lukevat alhaalta nollan, ranta on ehjä
-      ja alusmuste erottaa sisävirran menettämättä perheväriä)
+      ja alusmuste erottaa sisävirran menettämättä perheväriä. Hyväksyntä
+      koski katselmuskorjattua versiota: ensimmäinen kierros löysi viisi vikaa
+      (kerrosten piirtymättömyys bootissa ja fullscreenissä, tri2:n lehti,
+      Level-rannan puolikas hover, näkymätön alusmuste) ja ne korjattiin ensin.
 
 Väriä saa hyväksynnän jälkeen säätää vain undertow’n kromalla tai alfan määrällä,
 ei lisäämällä toista uutta sävyä.

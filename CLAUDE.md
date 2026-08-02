@@ -514,8 +514,8 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   steps spesal, a deliberate inward/outward pull opens/closes `c1Send…c5Send`
   without first rewiring the clock. These 13 controls moved out of Workshop;
   the exact tested ownership is Night 44 · Master 4 · Workshop 26.
-- **PLAY-6.1 is built and green, awaiting the user's visual review
-  (2026-08-02).** All four parts landed: SlotQ's anchors are the exact
+- **PLAY-6.1 is accepted (2026-08-02, checklist `PLAY-6.1`)** — the user
+  reviewed the corrected version live and signed it off. All four parts landed: SlotQ's anchors are the exact
   `cubicPoint(ringSegments[4]/[0], 0.5)` gap midpoints, SlotX is one two-lane
   arch over castle 1, only Coco 2's Level sweep is sign-reversed, Level ink
   moved to `routeView`, and `undertow` is in both palettes. No DSP, range,
