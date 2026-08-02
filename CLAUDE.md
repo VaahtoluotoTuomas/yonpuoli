@@ -73,6 +73,37 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 
 ## Current handoff
 
+- **Where the work stands (2026-08-02).** Branch `nocturne`, everything
+  committed. Every Nocturne GUI increment (N1–N10), the whole ear pass (§13)
+  and the playability round (PLAY-1…PLAY-6.1) are accepted; so are the DAW
+  bridge, the audio-clock guard, SOAK-1, the Yönpuoli identity, the privacy
+  audit and the README. **Three ticks and four release jobs remain before 1.0**,
+  in this order, and `PLAN.md`'s "Seuraava askel konkreettisesti" is the
+  authority on them:
+  1. **Playability test 7 — the boot defaults.** The last listening decision
+     with DSP consequence, and the one that answers the user's own observation
+     that a patched cable or a big shake is sometimes inaudible. Two measured
+     candidates, **one variable at a time**, neither yet a production default:
+     **A** = `Spaf` boot default 0 → 0.12, **B** = shake weight 0.3 → 0.65.
+     Each alone broke boot A/B identity, so both work; the question is which is
+     more musical. Script: `docs/PLAYABILITY_GUIDE.md` → Soittotesti 7.
+  2. **16N-1** — the faderbank hands-on tick. Automatic gate green; it needs
+     the 16n in hand and is the only thing blocking road-to-1.0 step 7.
+  3. **PLAY-2C's and PLAY-6's ticks.** Both are built and were played during
+     the PLAY-6.1 review, but the user has not ticked them. Never tick for them.
+  4. Then: what ships (four playable presets, exactly one snapshot admitted by
+     `.gitignore`) → release media → remote CI green → merge to `main` and the
+     1.0 tag.
+  Deliberately deferred and non-blocking, in order after 1.0: 13.3b (isolated
+  Bits 5/8/12 ear test), the topology-aware "sweet spot" / ecological shake,
+  the three porous playing modes, and the Norns port (§14).
+- **Latest full gate (2026-08-02, `nocturne`, PLAY-6.1 accepted):**
+  `CQ_COMPILE_OK`, **14,827 unit passes / 0 failures / 39/39 classes**,
+  `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,
+  `CQ_GUI_DRAWER_REENTRY_PASSED`, `CQ_GUI_NIGHT_PASSED` and
+  `CQ_NIGHT_CAPTURE_DONE`. `CQ_SAFETY_PASSED` and `CQ_HOLD_OK` carry from the
+  playability commit — PLAY-6.1 changed no DSP. The older gate figures below
+  are historical records of their own increments, not the current baseline.
 - **Public product identity is Yönpuoli.** Cocoquantus is the explicitly credited
   lineage, not the product name or a fidelity promise. Keep its recognizable
   vocabulary. Public prose and labels spell `dolby` with a lowercase initial.
@@ -471,12 +502,15 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   road is now nine steps. Name/identity (**Yönpuoli**), the privacy audit
   (`audit/PRIVACY_AUDIT.md`) and the README rewrite are **done**. The **16n map
   is rebuilt and its automated gate is green; only the hands-on acceptance
-  (checklist `16N-1`) is open.** What remains after it: a playability round —
-  what ships (four playable presets, and `.gitignore` admits exactly one
-  snapshot, `snapshots/example.cqsnap.scd`) plus the first-touch defaults. That
-  round opens with an NRT measurement of the user's own observation that a
-  patched cable or a big shake sometimes makes no audible difference; four SPEC
-  mechanisms would each explain it and they are written out in PLAN.md.
+  (checklist `16N-1`) is open.** The playability round that follows it is now
+  itself almost closed — PLAY-1…PLAY-6.1 are built and PLAY-1…PLAY-5 and
+  PLAY-6.1 accepted — so what is left of it is the first-touch defaults
+  (playability test 7) and what ships: four playable presets, with `.gitignore`
+  admitting exactly one snapshot, `snapshots/example.cqsnap.scd`. The round
+  opened with an NRT measurement of the user's own observation that a patched
+  cable or a big shake sometimes makes no audible difference; that measurement
+  found and closed a real cause (the patch-side organ source peaked below a
+  Coco's Schmitt), and the boot defaults are what remain of it.
   See PLAN.md → "Tie 1.0:aan".
 - **Playability tests 1–5 are accepted as of 2026-08-02.** The planted-cable
   first-touch weight is 0.60. Night planting is binary and silent until release:

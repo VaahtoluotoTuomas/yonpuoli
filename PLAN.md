@@ -1,6 +1,6 @@
 # Yönpuoli — ajantasainen kehityssuunnitelma (Nocturne-vaihe)
 
-Päivitetty 2026-08-01. Tämä tiedosto kertoo, **mitä tehdään seuraavaksi** ja
+Päivitetty 2026-08-02. Tämä tiedosto kertoo, **mitä tehdään seuraavaksi** ja
 **missä järjestyksessä**. Vaiheen yksityiskohtainen *miten* — jokaisen osan
 suunnittelu, geometria, karikot, korvakokeet — on
 [`docs/NIGHT_STANDALONE_PLAN.md`](docs/NIGHT_STANDALONE_PLAN.md):ssä; tämä
@@ -11,9 +11,10 @@ Archipelago-GUI G1–G3 [`docs/history/PLAN_archipelago.md`](docs/history/PLAN_a
 **Tilanne yhdellä rivillä:** v1.0 (DSP + koodikerros) ja koko Archipelago-GUI
 (G1 Day · G2 Night · G3 Weather machine) ovat valmiita ja käyttäjän hyväksymiä;
 archipelago on sulautettu `main`iin (PR #1, tagi `archipelago-1.0`). **Uusi
-vaihe: Nocturne — yö koko soittimena.** N1–N9 on hyväksytty: Night + Master +
-Drawer on nyt soittimen ainoa ylläpidettävä käyttöliittymä, ja koko hyväksytty
-Nocturne-GUI-ketju on sulautettu paikalliseen `nocturne`-integraatiohaaraan.
+vaihe: Nocturne — yö koko soittimena.** N1–N10, koko korvapassi (§13) ja
+soitettavuuskierroksen PLAY-1…PLAY-6.1 on hyväksytty: Night + Master + Drawer
+on soittimen ainoa ylläpidettävä käyttöliittymä ja Night on soittimen
+maisema, ei sen kartta. Työ elää paikallisessa `nocturne`-haarassa.
 
 **Julkinen identiteetti:** soittimen nimi on **Yönpuoli**. Kuvausrivi on
 *A nocturnal feedback instrument in the Cocoquantus lineage* ja tagline
@@ -27,7 +28,38 @@ Portfolio- ja julkaisupinta on `README.md`:ssä, `SOURCES.md`:ssä ja `docs/`-ka
 case study / development process -dokumenteissa. Etärepon uudelleennimeäminen,
 public-vaihto ja oikeat kuva-/äänidemot ovat erillinen julkaisutoimi.
 
-**Seuraava askel konkreettisesti:** **N9 hyväksyttiin 2026-07-28.** Day on
+**Seuraava askel konkreettisesti (2026-08-02).** Kaikki Nocturne-vaiheen
+GUI-inkrementit, koko korvapassi ja soitettavuuskierros ovat hyväksyttyjä.
+1.0:aan on jäljellä **kolme rastia ja neljä julkaisutyötä**, tässä
+järjestyksessä:
+
+1. **Soittotesti 7 — bootin oletukset.** Ainoa jäljellä oleva
+   DSP-vaikutteinen kuuntelupäätös, ja se joka vastaa käyttäjän omaan
+   havaintoon "patchattu johto tai iso shake ei joskus kuulu missään". Kaksi
+   mitattua kandidaattia, **yksi muuttuja kerrallaan**, kumpaakaan ei ole
+   tehty tuotanto-oletukseksi: **A** = `Spaf`-boot-oletus 0 → 0,12,
+   **B** = shaken paino 0,3 → 0,65. Kumpikin yksin rikkoi boot-A/B:n
+   identtisyyden, joten molemmat toimivat; kysymys on kumpi on musikaalisempi.
+   Skripti: `docs/PLAYABILITY_GUIDE.md` → Soittotesti 7.
+2. **16N-1 — faderipankin käsintesti.** Automaattinen portti on vihreä; rasti
+   vaatii 16n:n käteen (kanavanauhan luettavuus, Levelin paikka nauhan
+   lopussa, ristihäivytyksen etäisyys, F14:n sisältö, deckien poisto). Tämä on
+   ainoa asia joka blokkaa Tie 1.0:n kohtaa 7.
+3. **PLAY-2C:n ja PLAY-6:n rastit.** Molemmat on toteutettu ja soitettu
+   PLAY-6.1:n katselmuksessa, mutta käyttäjän eksplisiittinen rasti puuttuu.
+   Älä rastita niitä hänen puolestaan.
+4. Sitten järjestyksessä: **mitä julkaistaan** (neljä soitettavaa presettiä ja
+   `.gitignore`-poikkeuksena tasan yksi snapshot,
+   `snapshots/example.cqsnap.scd`) → **julkaisumedia** → **etä-CI vihreäksi**
+   → **merge `main`iin ja Yönpuolen 1.0-tagi**. Yksityiskohdat osiossa
+   "Tie 1.0:aan".
+
+Ei-estävää, tietoisesti myöhemmäksi jätettyä: 13.3b (Bits 5/8/12 eristetty
+korvatesti), topologiatietoinen "sweet spot" / ekologinen shake, kolme
+huokoista soittotilaa ja Norns-portti (§14) — tässä järjestyksessä, kaikki
+1.0:n jälkeen.
+
+**Aiemmat hyväksynnät tiivistettynä.** **N9 hyväksyttiin 2026-07-28.** Day on
 poistettu, koska Night on inspiroivampi varsinainen soitin ja kahden
 käyttöliittymän ylläpito hajottaisi kehityksen. Space-eläköityksen jälkeen
 Night 44 · Master 4 · Workshop 26 on erillinen, koneellisesti todistettu
@@ -60,14 +92,12 @@ PANIC-, stem-3/4-, stereo/4ch-REC- ja 10 minuutin patch-kohdiltaan; loopbackin
 näkyvyys kirjattiin samana päivänä, ja avoimeksi jäi vain kaksisuuntainen
 VB-CABLE-DAW-portti.**
 **Fyysinen AIO-hardware-katselmus, DAW-silta, audiokelloguard ja SOAK-1 on
-hyväksytty.** Yönpuoli-nimi ja README-linjaus päätettiin 2026-08-01. Seuraava
-konkreettinen 1.0-työ on koko Git-historian yksityisyys- ja lähdeauditointi;
-sen jälkeen suljetaan 16n-kartta, ensimmäisen kosketuksen soitettavuus,
-julkaisumedia, etä-CI, merge `main`iin ja Yönpuolen 1.0-tagi (oma osio
-"Tie 1.0:aan" alla).
-Kolme huokoista soittotilaa **ei ole 1.0:n ehto** — se on oma haaransa 1.0:n
-jälkeen — ja Norns-portti (§14) tulee vasta niiden jälkeen. Yksi musiikillinen
-muuttuja käsitellään edelleen kerrallaan. **N10:n sydän/kela- ja chevron-vihjeet hyväksyttiin visuaalisesti
+hyväksytty.** Yönpuoli-nimi ja README-linjaus päätettiin 2026-08-01, ja koko
+Git-historian yksityisyys- ja lähdeauditointi valmistui samana päivänä
+(`audit/PRIVACY_AUDIT.md`). Soitettavuuskierros PLAY-1…PLAY-5 hyväksyttiin
+2026-08-02, PLAY-6:n anatomia toteutettiin samana päivänä ja **PLAY-6.1
+hyväksyttiin 2026-08-02**. Yksi musiikillinen muuttuja käsitellään edelleen
+kerrallaan. **N10:n sydän/kela- ja chevron-vihjeet hyväksyttiin visuaalisesti
 2026-07-29**, joten erillistä GUI-velkaa ei enää ole.
 
 ## Auktoriteettijärjestys
