@@ -12,7 +12,7 @@ var matrix = CQMatrix(nil);
 var compassDir = Cocoquantus.repoDir +/+ "tests" +/+ "tmp" +/+ "cqcompass_smoke";
 var config;
 var gui, ok = true, abort, compassChecks, weatherAsync, punchChecks, birdChecks;
-var preampChecks, droneChecks;
+var preampChecks, droneChecks, routeRepaintProbe;
 var check = { |condition, message|
 	if(condition) { ("ok:   " ++ message).postln } {
 		ok = false;
@@ -583,6 +583,11 @@ droneChecks = { |map|
 			"% writes through CQState and releases cleanly".format(name));
 	};
 	exercise.value(0, \level, 24);
+	// PLAY-6.1: both shores now read zero below and full above, so the same
+	// upward drag has to raise coco 2 exactly as it raises coco 1. The display
+	// mirror lives in the sweep's sign, and this is what proves the drag
+	// mathematics was left alone rather than mirrored a second time.
+	exercise.value(1, \level, 24);
 	exercise.value(0, \organ, 36);
 	exercise.value(0, \slotQ, 48);
 	exercise.value(0, \slotX, 48);
@@ -633,6 +638,15 @@ droneChecks = { |map|
 	};
 	matrix.load(savedMatrix);
 	map.overlay.invalidate;
+	// PLAY-6.1: Level's ink lives on routeView now, above the crescents' opaque
+	// ground views. Capture the layer's paint count around one plain outside
+	// CQState write — the kind a pattern, the 16n or `CQ.set` makes. The assert
+	// itself lands in the next scheduled step, because Qt paints on the event
+	// loop and not inside this call.
+	routeRepaintProbe = (before: map.routePaintCount, name: \coco2Level,
+		restore: state.get(\coco2Level));
+	state.set(\coco2Level, CQSpec.map(\coco2Level,
+		(CQSpec.unmap(\coco2Level, state.get(\coco2Level)) + 0.3).fold(0, 1)));
 };
 
 // ---- §2 the punch (momentary hold): a right press held on the shell's heart
@@ -924,6 +938,15 @@ punchChecks = { |map|
 							try {
 								var records, mid, harvestPoints, localPoints;
 								var beforeHarvest, ground;
+								check.value(map.routePaintCount
+									> routeRepaintProbe[\before],
+									"an outside CQState Level write repaints "
+									"the route layer");
+								state.set(routeRepaintProbe[\name],
+									routeRepaintProbe[\restore]);
+								map.paintFlow(routeRepaintProbe[\name],
+									CQSpec.unmap(routeRepaintProbe[\name],
+										routeRepaintProbe[\restore]));
 								check.value(map.fireflyPhase == 0,
 									"the river rests before any telemetry");
 								NetAddr.localAddr.sendMsg(*auraMsg.value(0.5));

@@ -82,6 +82,9 @@ CQInkNight {
 		var palette = CQInk.palette(skin), start = castle[\sendStart];
 		var end = castle[\sendEnd], value = (norm ? 0).clip(0, 1);
 		var pearl = start + ((end - start) * value);
+		this.prUndertowInk(palette, active);
+		Pen.line(start, end);
+		Pen.stroke;
 		Pen.strokeColor = palette[\tri].copy.alpha_(if(active) { 0.52 } { 0.20 });
 		Pen.width = CQInk.strokes[\hairline];
 		Pen.line(start, end);
@@ -230,10 +233,28 @@ CQInkNight {
 		};
 	}
 
+	// PLAY-6.1's single under-ink. The night was already near its colour
+	// ceiling, so the internal audio topology is separated from the patch
+	// cables by DEPTH rather than by a sixth bright family: yellow still means
+	// the organ's own source, amber the triangle audio, neutral `cas` the
+	// cross-feed. This stroke is wider, dimmer and follows the exact same path,
+	// so in greyscale it reads as the water under a line and never as a second
+	// line. Static — no gradient, no blur, no pulse: it is patina, not
+	// activity. The Level shore does not get it; that is output mix leaving the
+	// instrument, not an internal stream inside it.
+	*prUndertowInk { |palette, live = false|
+		Pen.strokeColor = palette[\undertow].copy
+			.alpha_(if(live) { 0.34 } { 0.14 });
+		Pen.width = CQInk.strokes[if(live) { \state } { \strong }];
+	}
+
 	*drawFlowPath { |path, norm = 0, family = \line, active = false,
 		hover = false, palette|
 		var value = (norm ? 0).clip(0, 1), color = palette[family];
 		var point, prior, tangent, length, normal, back, reach;
+		this.prUndertowInk(palette, active or: { hover });
+		this.addSegments([path]);
+		Pen.stroke;
 		Pen.strokeColor = color.copy.alpha_(if(active or: { hover }) {
 			0.34 + (0.58 * value)
 		} {
@@ -263,27 +284,36 @@ CQInkNight {
 	*drawFlowGill { |center, arrival, norm = 0, family = \line,
 		active = false, hover = false, palette|
 		var value = (norm ? 0).clip(0, 1), length, tangent, normal, gap, half;
-		var a, b, c1, c2, color = palette[family];
+		var color = palette[family];
 		length = max(0.001, sqrt(arrival.x.squared + arrival.y.squared));
 		tangent = arrival / length;
 		normal = Point(tangent.y.neg, tangent.x);
 		gap = 0.8 + (CQNightMeasures.flowGillGap * value);
 		half = CQNightMeasures.flowGillHalf;
+		this.prUndertowInk(palette, active or: { hover });
+		this.addFlowGill(center, tangent, normal, gap, half, value);
+		Pen.stroke;
 		Pen.strokeColor = color.copy.alpha_(if(active or: { hover }) { 1.0 } {
 			0.34 + (0.56 * value)
 		});
 		Pen.width = CQInk.strokes[if(active) { \strong } { \normal }];
+		this.addFlowGill(center, tangent, normal, gap, half, value);
+		Pen.stroke;
+	}
+
+	// One shape, added twice: the undertow beneath and the family core above
+	// must be the same two curves, or the shadow becomes a second gill.
+	*addFlowGill { |center, tangent, normal, gap, half, value|
 		[-1, 1].do { |side|
-			a = center - (tangent * half) + (normal * gap * side);
-			b = center + (tangent * half) + (normal * gap * side);
-			c1 = center - (tangent * (half * 0.28))
+			var a = center - (tangent * half) + (normal * gap * side);
+			var b = center + (tangent * half) + (normal * gap * side);
+			var c1 = center - (tangent * (half * 0.28))
 				+ (normal * (gap + (3.2 * value)) * side);
-			c2 = center + (tangent * (half * 0.28))
+			var c2 = center + (tangent * (half * 0.28))
 				+ (normal * (gap + (3.2 * value)) * side);
 			Pen.moveTo(a);
 			Pen.curveTo(b, c1, c2);
 		};
-		Pen.stroke;
 	}
 
 	// §16.6 the spesal coupling: which castle each castle reads, drawn on the
@@ -395,9 +425,12 @@ CQInkNight {
 			Pen.addOval(Rect.aboutPoint(coco[\center], coco[\outerR], coco[\outerR]));
 			Pen.stroke;
 		};
-		this.drawLevelShore(coco, levelNorm, performance[\levelUnity],
-			performance[\levelActive] == true,
-			performance[\levelHover] == true, skin);
+		// Level's own ink is NOT drawn here. Its shore runs along the exterior,
+		// where the in/fb crescents' deliberately opaque ground views cut it into
+		// pieces, so it is drawn on `routeView` above every landscape rectangle
+		// (CQGuiNightMap.prDrawRoutes) and below the real patch cables. The value
+		// still arrives in this event, because the spiral's own alpha breathes
+		// with it two lines above.
 		// §4.5's quiet outer ring, the mark every pressable control wears — but
 		// drawn at the heart's TRUE hit radius rather than snug around its dot,
 		// because here the cue has a second job: it is the only thing that says
@@ -508,6 +541,10 @@ CQInkNight {
 		var palette = CQInk.palette(skin), value = (norm ? 0).clip(0, 1);
 		var radius = CQNightMeasures.organPodR, start = 0.72pi, sweep = 1.56pi;
 		var angle = start + (sweep * value), pearl;
+		this.prUndertowInk(palette, active or: { hover });
+		Pen.addArc(center, radius, start, sweep);
+		Pen.addArc(center, radius - 5, start + 0.20, sweep - 0.40);
+		Pen.stroke;
 		Pen.strokeColor = palette[\organ].copy
 			.alpha_(if(active or: { hover }) { 0.72 } { 0.28 });
 		Pen.width = CQInk.strokes[\hairline];

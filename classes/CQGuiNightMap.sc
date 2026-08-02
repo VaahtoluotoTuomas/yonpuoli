@@ -17,6 +17,9 @@ CQGuiNightMap {
 	var <controller, <touch, <endpoints, <bodies;
 	var <groundView, <rootViews, <ringView, <eyeView, <castleViews, <shellViews;
 	var <readHeadViews, <birdViews, <shellPaintCounts, <readHeadPaintCounts;
+	// Level's shore moved onto this layer in PLAY-6.1, so the smoke has to be
+	// able to prove that an outside CQState write still repaints it.
+	var <routePaintCount = 0;
 	var <birdHover, <birdFlash, birdFlashGeneration, fileDialog, deckAction;
 	var <almanacView, <moonHover = false, <moonFlash = false;
 	// The tide is the full ground itself: four seeds, no pool body or outline.
@@ -1944,7 +1947,21 @@ CQGuiNightMap {
 	}
 
 	prDrawRoutes {
+		routePaintCount = routePaintCount + 1;
 		if(geometry.isNil) { ^this };
+		// Level's shore is drawn here rather than on its shell, for one reason:
+		// it runs along the exterior, where the in/fb crescents' deliberately
+		// opaque ground views used to cut it into pieces. This layer is above
+		// every landscape rectangle and below the real patch cables, so the
+		// shoreline is whole and still cannot climb over a banana. It is drawn
+		// before the q/x streams so the internal topology reads on top of the
+		// output mix, not through it.
+		geometry[\cocos].do { |coco, i|
+			var name = this.class.shellFlowParam(i, \level);
+			CQInkNight.drawLevelShore(coco, flowNorms[name] ? 0,
+				CQSpec.referenceNorm(name, \unity) ? 1,
+				flowActive.includes(name), flowHover.includes(name), \night);
+		};
 		CQInkNight.drawDroneRoutes(geometry,
 			2.collect { |i| flowNorms[this.class.shellFlowParam(i, \slotQ)] ? 0 },
 			2.collect { |i| flowNorms[this.class.shellFlowParam(i, \slotX)] ? 0 },

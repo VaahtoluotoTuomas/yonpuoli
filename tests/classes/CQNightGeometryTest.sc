@@ -1584,6 +1584,234 @@ CQNightGeometryTest : UnitTest {
 		};
 	}
 
+	// ---- PLAY-6.1: the internal drone streams ----
+
+	// the same sampling the give-way solver uses, so the clearance it promises
+	// and the clearance this asserts are one number, not two opinions
+	prDroneSamples { |path|
+		var n = CQNightGeometry.droneSamples;
+		^(0..n).collect { |i| CQNightGeometry.cubicPoint(path, i / n) }
+	}
+
+	prStreams { |geo|
+		^[[\coco1SlotQ, geo[\drone][\slotQPaths][0]],
+			[\coco2SlotQ, geo[\drone][\slotQPaths][1]],
+			[\coco1SlotX, geo[\drone][\slotXPaths][0]],
+			[\coco2SlotX, geo[\drone][\slotXPaths][1]]]
+	}
+
+	// The topmost edge a castle owns, derived through CQGuiNightMap's own spec
+	// table rather than the geometry's — so this also proves the arch measured
+	// the right endpoint kinds. Its outer transparent paper is not included:
+	// nothing is drawn in those corners and the river already crosses it.
+	prCastleOwnTop { |geo, k|
+		var n = k + 1;
+		var top = geo[\castles][k][\blobSamples].collect { |p| p.y }.minItem;
+		[("tri" ++ n).asSymbol, ("cas" ++ n).asSymbol,
+			("castle" ++ n ++ "_fm").asSymbol,
+			("castle" ++ n ++ "_spesal").asSymbol].do { |name|
+			top = min(top, this.prEndpointBox(name, geo[\endpoints][name]).top);
+		};
+		^top
+	}
+
+	test_droneStreamsLeaveTheRiverAtItsTwoEmptyGaps {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var left, right;
+			// the anchor choice rests entirely on this ordering
+			this.assertEquals(geo[\ringSegments][4].first, geo[\castles][4][\center],
+				"ring segment 5 leaves castle 5 (%x%)".format(*size));
+			this.assertEquals(geo[\ringSegments][4].last, geo[\castles][0][\center],
+				"ring segment 5 arrives at castle 1 (%x%)".format(*size));
+			this.assertEquals(geo[\ringSegments][0].first, geo[\castles][0][\center],
+				"ring segment 1 leaves castle 1 (%x%)".format(*size));
+			this.assertEquals(geo[\ringSegments][0].last, geo[\castles][1][\center],
+				"ring segment 1 arrives at castle 2 (%x%)".format(*size));
+			left = CQNightGeometry.cubicPoint(geo[\ringSegments][4], 0.5);
+			right = CQNightGeometry.cubicPoint(geo[\ringSegments][0], 0.5);
+			this.assertEquals(geo[\drone][\slotQPaths][0].first, left,
+				"coco 1's q stream begins on the seeded 5->1 gap itself (%x%)"
+					.format(*size));
+			this.assertEquals(geo[\drone][\slotQPaths][1].first, right,
+				"coco 2's q stream begins on the seeded 1->2 gap itself (%x%)"
+					.format(*size));
+			this.assert(left.x < geo[\castles][0][\center].x
+				and: { right.x > geo[\castles][0][\center].x },
+				"the two gaps lie on either side of castle 1 (%x%)".format(*size));
+			this.assert(left.y < geo[\ringCenter].y
+				and: { right.y < geo[\ringCenter].y },
+				"both gaps are in the river's upper half (%x%)".format(*size));
+			// the arch's shoulders are those same two gaps, drawn in only as far
+			// as the birds' name plates forced them
+			this.assert(geo[\drone][\slotXPaths][0][1].x <= right.x
+				and: { geo[\drone][\slotXPaths][0][2].x >= left.x },
+				"the bridge's shoulders stand between the two gaps (%x%)"
+					.format(*size));
+			// direction is unchanged: q arrives at its own gill, x keeps its
+			// destination-side valve (coco1SlotX is 2 -> 1, coco2SlotX is 1 -> 2)
+			2.do { |i|
+				this.assertEquals(geo[\drone][\slotQPaths][i].last,
+					geo[\cocos][i][\slotQValve],
+					"coco %'s q stream still arrives at its own gill (%x%)"
+						.format(i + 1, *size));
+			};
+			this.assertEquals(geo[\drone][\slotXPaths][0].first,
+				geo[\cocos][1][\slotXValve],
+				"coco1SlotX still starts at coco 2 (%x%)".format(*size));
+			this.assertEquals(geo[\drone][\slotXPaths][0].last,
+				geo[\cocos][0][\slotXValve],
+				"coco1SlotX still arrives at coco 1 (%x%)".format(*size));
+			this.assertEquals(geo[\drone][\slotXPaths][1].first,
+				geo[\cocos][0][\slotXValve],
+				"coco2SlotX still starts at coco 1 (%x%)".format(*size));
+			this.assertEquals(geo[\drone][\slotXPaths][1].last,
+				geo[\cocos][1][\slotXValve],
+				"coco2SlotX still arrives at coco 2 (%x%)".format(*size));
+		};
+	}
+
+	// What a stream must clear is what is actually DRAWN. The transparent
+	// castle papers are deliberately not bodies here — the river itself runs
+	// straight through them — so this asserts the jacks' own ink, the birds'
+	// name plates, the seeded flesh, the range ripples and the storm iris.
+	test_droneStreamsClearEveryDrawnBody {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var stage = Rect(0, 0, size[0], size[1]);
+			var clear = CQNightMeasures.flowBodyClear;
+			var ink = CQNightMeasures.jackDotRim;
+			var names = CQMatrix.sourceNames ++ CQMatrix.destNames;
+			this.prStreams(geo).do { |stream|
+				var points = this.prDroneSamples(stream[1]);
+				this.assert(points.every { |p| stage.containsPoint(p) },
+					"% draws entirely on the stage (%x%)".format(stream[0], *size));
+				names.do { |name|
+					this.assert(points.collect { |p|
+						this.prDistance(p, geo[\endpoints][name])
+					}.minItem >= (ink + clear),
+						"% keeps % px of paper past %'s drawn ink (%x%)"
+							.format(stream[0], clear, name, *size));
+				};
+				geo[\birds].do { |bird, i|
+					this.assert(points.collect { |p|
+						this.prRectDistance(p, bird[\labelRect])
+					}.minItem >= clear,
+						"% keeps % px off bird %'s name plate (%x%)"
+							.format(stream[0], clear, i + 1, *size));
+				};
+				geo[\castles].do { |castle, k|
+					this.assert(points.every { |p|
+						CQNightGeometry.polygonHit(p, castle[\blobSamples]).not },
+						"% never crosses castle %'s seeded flesh (%x%)"
+							.format(stream[0], k + 1, *size));
+					this.assert(points.every { |p|
+						CQNightGeometry.rangeBox(castle).containsPoint(p).not },
+						"% never crosses castle %'s range ripple (%x%)"
+							.format(stream[0], k + 1, *size));
+				};
+				this.assert(points.every { |p|
+					this.prDistance(p, geo[\ringCenter]) > CQNightMeasures.eyeHit },
+					"% leaves the storm iris its own reach (%x%)"
+						.format(stream[0], *size));
+			};
+		};
+	}
+
+	// The crown is stated as a clearance and solved backwards through the cubic
+	// (B(0.5).y = 0.125*(y0 + y1) + 0.75*cy), so t = 0.5 must land exactly on it.
+	test_droneBridgeArchesOverCastleOne {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var scale = geo[\scale];
+			var crown = geo[\drone][\bridgeCrown];
+			var half = CQNightMeasures.slotXBridgeLaneGap * scale * 0.5;
+			var upper = CQNightGeometry.cubicPoint(geo[\drone][\slotXPaths][0], 0.5);
+			var lower = CQNightGeometry.cubicPoint(geo[\drone][\slotXPaths][1], 0.5);
+			var ownTop = this.prCastleOwnTop(geo, 0);
+			this.assertFloatEquals(upper.y, crown - half,
+				"the inbound lane's midpoint lands on its own crown (%x%)"
+					.format(*size), 0.001);
+			this.assertFloatEquals(lower.y, crown + half,
+				"the outbound lane's midpoint lands on its own crown (%x%)"
+					.format(*size), 0.001);
+			// the bridge's lowest ink is the outbound lane, so the clearance is
+			// its to spend — unless the stage is short enough that the top floor
+			// takes over, which is the one documented compromise
+			this.assert((lower.y
+				<= (ownTop - (CQNightMeasures.slotXBridgeClearance * scale) + 0.001))
+				or: { crown == (CQNightMeasures.slotXBridgeTopFloor * scale) },
+				"the lower lane clears everything castle 1 owns, or the arch is "
+				"held at its top floor (%x%)".format(*size));
+			this.assert(crown >= (CQNightMeasures.slotXBridgeTopFloor * scale),
+				"the arch never climbs past its top floor (%x%)".format(*size));
+			this.assert(crown < ownTop,
+				"the arch passes above castle 1, not through it (%x%)".format(*size));
+			this.assertFloatEquals(this.prDistance(upper, lower), half * 2,
+				"the two lanes stand exactly one lane gap apart at the crown (%x%)"
+					.format(*size), 0.001);
+			// One bridge, two directions: the lanes share exactly the two valves
+			// and stand apart everywhere the eye reads them as a pair. They must
+			// converge at the ends — that is what makes them one bridge — so the
+			// separation is asserted over the span where both are visibly lanes.
+			this.assertEquals(geo[\drone][\slotXPaths][0].first,
+				geo[\drone][\slotXPaths][1].last,
+				"both lanes meet at coco 2's valve (%x%)".format(*size));
+			this.assertEquals(geo[\drone][\slotXPaths][0].last,
+				geo[\drone][\slotXPaths][1].first,
+				"both lanes meet at coco 1's valve (%x%)".format(*size));
+			(25..75).do { |percent|
+				var t = percent / 100;
+				this.assert(this.prDistance(
+					CQNightGeometry.cubicPoint(geo[\drone][\slotXPaths][0], t),
+					CQNightGeometry.cubicPoint(geo[\drone][\slotXPaths][1], 1 - t))
+					>= (half * 1.5),
+					"the two lanes stay legibly apart across the arch (%x%)"
+						.format(*size));
+			};
+		};
+	}
+
+	// Both channel faders answer one upward drag with one upward reading. The
+	// mirror lives in the SWEEP'S SIGN, so ink, unity notch, pearl and hit truth
+	// all take it from one place and cannot disagree.
+	test_bothLevelShoresRiseTheSameWay {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			geo[\cocos].do { |coco, i|
+				var first = coco[\levelSamples].first;
+				var last = coco[\levelSamples].last;
+				this.assert(first.y > last.y,
+					"coco %'s Level reads zero at the bottom and full at the top (%x%)"
+						.format(i + 1, *size));
+				this.assertFloatEquals(coco[\levelSweep].abs,
+					CQNightMeasures.levelShoreSweep,
+					"coco % keeps the reviewed shore span (%x%)"
+						.format(i + 1, *size), 0.0001);
+				this.assertEquals(coco[\levelSweep] > 0, i == 0,
+					"only coco 2's sweep is signed negative (%x%)".format(*size));
+				this.assertEquals(CQNightGeometry.shellFlowTargetAt(coco, first),
+					\level, "coco %'s empty end is its Level hand (%x%)"
+						.format(i + 1, *size));
+				this.assertEquals(CQNightGeometry.shellFlowTargetAt(coco, last),
+					\level, "coco %'s full end is its Level hand (%x%)"
+						.format(i + 1, *size));
+				coco[\levelSamples].do { |p|
+					this.assertFloatEquals(
+						this.prDistance(coco[\center], p), coco[\levelR],
+						"coco %'s shoreline stays on its own radius".format(i + 1),
+						0.001);
+				};
+				// the shore hugs the exterior, away from the river
+				this.assert(((coco[\levelSamples].collect { |p| p.x }.sum
+					/ coco[\levelSamples].size) - coco[\center].x).sign
+					== (coco[\side]).sign,
+					"coco %'s shore lies on its outward side (%x%)"
+						.format(i + 1, *size));
+			};
+		};
+	}
+
 	test_sproutState {
 		this.assertEquals(CQNightGeometry.sproutState(false, 0), \hidden,
 			"no mic configured: no sprout at all");

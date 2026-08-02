@@ -2012,7 +2012,54 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
      spesal-tap; tätä pidempi sisään-/ulospäin veto säätää sendiä ilman
      väliaikaista spesal-askelta. Omistajuus on nyt 44 / 4 / 26.
    - [ ] **PLAY-6.1 — Nightin sisävirtojen reitti-, Level- ja väripolish
-     (suunnitelma kirjattu 2026-08-02; EI toteutettu).** Tämä on vain jo
+     (toteutettu 2026-08-02; portit vihreät, odottaa käyttäjän
+     visuaalista katselmusta, checklist `PLAY-6.1`).**
+
+     **Toteutuksen tulos.** Kaikki neljä kohtaa ovat sisällä: Q-ankkurit ovat
+     nyt täsmälleen `cubicPoint(ringSegments[4], 0.5)` ja
+     `cubicPoint(ringSegments[0], 0.5)`, SlotX on yksi kaksikaistainen kaari
+     castle 1:n yli, vain Coco 2:n Level-sweep on käännetty etumerkillä, Level-
+     muste asuu `routeView`illä ja `undertow` on lisätty molempiin paletteihin.
+     Portti: `CQ_COMPILE_OK`, **14 827 unit-passia / 0 failurea / 39/39
+     luokkaa**, `CQ_GUI_NIGHT_PASSED`, `CQ_GUI_SHELL_PASSED`,
+     `CQ_GUI_DRAWER_PASSED`, `CQ_GUI_DRAWER_REENTRY_PASSED` ja
+     `CQ_NIGHT_CAPTURE_DONE`. DSP ei muuttunut, joten `CQ_SAFETY_PASSED` ja
+     `CQ_HOLD_OK` kantavat.
+
+     **Kaksi poikkeamaa suunnitelman kirjaimesta, molemmat mitattuja.** Alla
+     oleva resepti ja sen oma hyväksyntäportti olivat keskenään ristiriidassa:
+     reseptillä piirretyt polut osuivat oikeisiin kehoihin. Mitattu ennen
+     muutosta, molemmilla referenssikoolla:
+     1. **Q-virta kulki suoraan castle 2:n `tri`-jakin läpi** (4,86 px
+        keskipisteestä 1280×570:ssä, 7,28 px 1920×855:ssä; piirretty jakki on
+        n. 5,8 px). Kiinteä `-10 px` lift ei riitä, koska jakki sattuu
+        makaamaan juuri sen jänteen päällä — sama laki kuin N7:n
+        provenienssilabelissa: **vakio ei voi luvata väljyyttä keholta jota se
+        ei ole mitannut.** Nyt lift on minimi, ja geometria nostaa kaarta
+        kunnes jokainen piirretty endpoint-muste on `flowBodyClear` = 8 px
+        päässä. Molemmat virrat väistävät yhdessä (28 px 1280×570:ssä).
+     2. **Molemmat X-kaistat sivusivat lintujen 200 px nimikilpiä**
+        (0,02 px minimilavalla). Kaistat lähtevät venttiileistä, jotka ovat
+        suoraan nimikilpien alla, joten kilven ohi on päästävä ennen nousua.
+        Olkapäät ovat nyt nimellisiä ja väistyvät sisäänpäin mitatusti
+        (52 px minimilavalla, 0 px roomy-koossa). Lisäksi kaaren korkeus
+        mitataan **castle 1:n omista laatikoista** eikä sen läpinäkyvästä
+        146 px paperista: paperin ohittava kaari joutuisi niin ylös, että se
+        tulisi alas lintujen kilpien läpi. Läpinäkyvä castle-paperi ei
+        muutenkaan ole tässä keho — joki itse kulkee sen läpi. Clearance
+        annetaan sillan **alimmalle** musteelle (uloin kaista), ei keskiviivalle.
+
+     **Mitattu lopputulos** (min-lava / roomy): `tri2` 14,8 / 14,15 px,
+     `cas5` 28,9 / 33,7 px, lintujen nimikilvet 8,0 ja 10,8 / 42,4 ja 45,4 px,
+     castle 1:n omat laatikot 12,4 / 21,1 px, ei osumia lihaan, range-väreisiin
+     eikä silmän kehään, kaikki näytteet lavalla. Lintujen **drop-pad** (6 px
+     slackia nimikilven ympärillä, piirretään vain tiedostovedon aikana) jää
+     minimilavalla 1,0 px päähän: sitä ei voi vapauttaa yhdellä cubicilla ilman
+     että kaari joko halkoo castle 1:n tai muuttuu goottilaiseksi kärjeksi.
+     Geometrian ratkaisu maksaa layoutissa n. 24 ms minimilavalla (11 ms kun
+     väistöä ei tarvita).
+
+     **Alkuperäinen suunnitelma alla ennallaan.** Tämä on vain jo
      toteutetun PLAY-6-anatomian visuaalinen ja kerroksellinen korjaus. Älä
      muuta DSP:tä, CQSpec-rangeja/oletuksia, CQStatea, snapshot-sopimusta,
      eleiden herkkyyttä, 44 / 4 / 26 -omistajuutta tai signaalisuuntia.

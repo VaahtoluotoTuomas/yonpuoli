@@ -633,6 +633,183 @@ CQNightGeometry {
 		^if(best <= (reach ? CQNightMeasures.rootSourceHit)) { found }
 	}
 
+	// ---- the drone streams (PLAY-6.1) ----
+	// Both streams begin on the seeded water itself: the exact midpoints of the
+	// castle 5 -> 1 and castle 1 -> 2 cubics, the ring's own two empty gaps. A
+	// `polar(ringCenter, ringR, ...)` guess would land beside the wobbled river
+	// instead of on it, and the whole point of these anchors is that the eye can
+	// see the stream leave the water.
+	//
+	// Those two x coordinates are then the arch's shoulders. Both cross-feed
+	// lanes rise out of the same gaps, pass over castle 1 and come down the far
+	// side, so the ring's interior stays with the iris, the fireflies, the
+	// cables and the lasso.
+	//
+	// A cubic's control height is NOT its crown. With both controls level, the
+	// curve reaches only three quarters of the way to them —
+	// B(0.5).y = 0.125*(y0 + y1) + 0.75*cy — so the control is solved backwards
+	// from the crown the clearance asks for. A control point is allowed off the
+	// stage; only the drawn samples are not.
+	// Fine enough that the give-way's answer and the clearance test's answer are
+	// the same number: at 48 the search stepped over a corner it was avoiding
+	// and stopped 4 px short of the clearance it had been asked for.
+	*droneSamples { ^192 }
+
+	// One give-way: start at the nominal, step outward until the measured
+	// clearance is met, stop at the cap so a cramped stage still draws a stream
+	// instead of hanging. The caller supplies what "clear" means; nothing here
+	// knows about jacks or name plates.
+	*prGiveWay { |nominal, scale, clearFunc|
+		var need = CQNightMeasures.flowBodyClear;
+		var step = CQNightMeasures.flowGiveWayStep;
+		var cap = nominal + (CQNightMeasures.flowGiveWayMax * scale);
+		var coarse = step * 5;
+		var give = nominal;
+		if(clearFunc.value(give) >= need) { ^give };
+		// A coarse sweep, then one fine pass back over the last stride. Same
+		// answer as walking from the nominal in single steps, at a fifth of the
+		// curve samples — this runs inside every resize.
+		while({ (give < cap) and: { clearFunc.value(give) < need } }, {
+			give = give + coarse;
+		});
+		give = max(nominal, give - coarse);
+		while({ (give < cap) and: { clearFunc.value(give) < need } }, {
+			give = give + step;
+		});
+		^give
+	}
+
+	// nearest approach of a cubic's drawn samples to a set of drawn dots
+	*prPathDotClearance { |path, centers, inkRadius|
+		var best = inf, n = this.droneSamples;
+		if(centers.isEmpty) { ^best };
+		(0..n).do { |i|
+			var p = this.cubicPoint(path, i / n);
+			centers.do { |c| best = min(best, this.distance(p, c) - inkRadius) };
+		};
+		^best
+	}
+
+	// ...and to a set of rectangles (the birds' fixed-width name plates)
+	*prPathRectClearance { |path, rects|
+		var best = inf, n = this.droneSamples;
+		if(rects.isEmpty) { ^best };
+		(0..n).do { |i|
+			var p = this.cubicPoint(path, i / n);
+			rects.do { |r|
+				var dx = max(max(r.left - p.x, p.x - r.right), 0);
+				var dy = max(max(r.top - p.y, p.y - r.bottom), 0);
+				best = min(best, sqrt((dx * dx) + (dy * dy)));
+			};
+		};
+		^best
+	}
+
+	// The q stream's nominal bow and the x arch's nominal shoulders are minima.
+	// Castle 2's tri jack lies within a pixel of the straight chord out of its
+	// own gap, and at the minimum stage the birds' 200 px name plates overhang
+	// both x valves — so a constant would draw a stream straight through a jack
+	// and across a filename. Each stream therefore measures what is actually in
+	// its way and gives ground: the q bow deepens, the x shoulders draw inward.
+	// Both give way together, because two shells are one organ drawn twice, and
+	// an arch with one shoulder pulled in is a mistake, not an asymmetry.
+	//
+	// What each stream must clear is what is actually DRAWN. The transparent
+	// castle papers are explicitly not bodies here — the river itself already
+	// runs straight through them — so the q stream clears the jacks' own ink,
+	// while the x lanes clear the name plates, which do hold text.
+	*prDroneRoutes { |cocos, ringSegments, castles, birds, endpoints, scale|
+		var leftGap = this.cubicPoint(ringSegments[4], 0.5);
+		var rightGap = this.cubicPoint(ringSegments[0], 0.5);
+		var leftValve = cocos[0][\slotXValve];
+		var rightValve = cocos[1][\slotXValve];
+		var plates = birds.collect { |bird| bird[\labelRect] };
+		var qPath = { |i, lift|
+			var source = if(i == 0) { leftGap } { rightGap };
+			var dest = cocos[i][\slotQValve];
+			var delta = dest - source;
+			[source, source + (delta * 0.34) + Point(0, lift.neg),
+				source + (delta * 0.68) + Point(0, lift.neg), dest]
+		};
+		// Only a body lying along a chord can constrain it. This filter keeps
+		// the search at one or two obstacles instead of all thirty-eight, so a
+		// window resize still costs a handful of distances.
+		var qNear = 2.collect { |i|
+			var source = if(i == 0) { leftGap } { rightGap };
+			var dest = cocos[i][\slotQValve];
+			endpoints.values.select { |p|
+				this.prPointSegmentDistance(p, source, dest) < (70 * scale)
+			}
+		};
+		var qLift = this.prGiveWay(CQNightMeasures.slotQLift * scale, scale,
+			{ |lift|
+				2.collect { |i|
+					this.prPathDotClearance(qPath.value(i, lift), qNear[i],
+						CQNightMeasures.jackDotRim)
+				}.minItem
+			});
+		// The crown is measured from the topmost box castle 1 itself owns, not
+		// from its transparent 146 px paper: a stream that cleared the paper
+		// would have to fly so high it came down through the birds' plates.
+		var castleTop = this.prCastleBodyTop(castles[0], endpoints, 1);
+		var half = CQNightMeasures.slotXBridgeLaneGap * scale * 0.5;
+		// The clearance belongs to the bridge's LOWEST ink, which is the
+		// outbound lane half a lane-gap below the centre crown — measuring it to
+		// the centre would quietly spend half the gap on castle 1. The top floor
+		// is the one case that overrides it: on a stage short enough to push
+		// castle 1 into the sky, staying drawn beats staying clear.
+		var crown = max(CQNightMeasures.slotXBridgeTopFloor * scale,
+			castleTop - (CQNightMeasures.slotXBridgeClearance * scale) - half);
+		var controlY = { |laneCrown|
+			(laneCrown - ((rightValve.y + leftValve.y) * 0.125)) / 0.75
+		};
+		// screen y: the inbound lane rides above the outbound one
+		var inbound = controlY.value(crown - half);
+		var outbound = controlY.value(crown + half);
+		var xLanes = { |inset|
+			var sx = rightGap.x - inset, lx = leftGap.x + inset;
+			[
+				[rightValve, Point(sx, inbound), Point(lx, inbound), leftValve],
+				[leftValve, Point(lx, outbound), Point(sx, outbound), rightValve]
+			]
+		};
+		var xInset = this.prGiveWay(0, scale, { |inset|
+			xLanes.value(inset).collect { |lane|
+				this.prPathRectClearance(lane, plates)
+			}.minItem
+		});
+		^(
+			slotQPaths: 2.collect { |i| qPath.value(i, qLift) },
+			slotXPaths: xLanes.value(xInset),
+			ringGaps: [leftGap, rightGap],
+			bridgeCrown: crown,
+			qLift: qLift,
+			xInset: xInset
+		)
+	}
+
+	// The topmost edge a castle actually owns: its drawn flesh and the boxes of
+	// its own four endpoint views. Its outer transparent paper is not part of
+	// this — nothing is drawn in those corners, and the ring already crosses it.
+	*prCastleBodyTop { |castle, endpoints, n|
+		var top = castle[\blobSamples].collect { |p| p.y }.minItem;
+		[\tri, \cas].do { |suffix|
+			var point = endpoints[(suffix ++ n).asSymbol];
+			point !? {
+				top = min(top,
+					this.endpointBox(point, \jack, false).top)
+			};
+		};
+		[\fm, \spesal].do { |suffix|
+			var point = endpoints[("castle" ++ n ++ "_" ++ suffix).asSymbol];
+			point !? {
+				top = min(top,
+					this.endpointBox(point, \socket, suffix == \spesal).top)
+			};
+		};
+		^top
+	}
+
 	// ---- the whole archipelago from one stage size ----
 	// Bodies scale with the window (§16.10); stroke widths and text stay in px
 	// at the draw sites. The minimum stage (1280x570 under the toolbar and the
@@ -718,9 +895,15 @@ CQNightGeometry {
 			var orgLength = max(0.001, this.distance(center, orgSpiralPoint));
 			var shellReach = outerR + (CQNightMeasures.shellBoxPad * scale);
 			var levelR = outerR + (CQNightMeasures.levelShoreOutset * scale);
-			var levelSweep = CQNightMeasures.levelShoreSweep;
-			var levelStart = ((if(i == 0) { pi } { 0 }) - (levelSweep * 0.5))
-				.wrap(0, 2pi);
+			// Both shores read zero at the bottom and maximum at the top, so the
+			// two channel faders answer one upward drag with one upward reading.
+			// That is a mirror, not a rotation: the right shell's sweep is signed
+			// negative and every consumer — samples, ink, unity notch, pearl —
+			// takes the sign from here rather than branching on the side.
+			var levelSpan = CQNightMeasures.levelShoreSweep;
+			var levelSweep = if(i == 0) { levelSpan } { levelSpan.neg };
+			var levelStart = if(i == 0) { pi - (levelSpan * 0.5) }
+				{ levelSpan * 0.5 };
 			var valveR = outerR + (CQNightMeasures.flowValveOutset * scale);
 			var qAngle = if(i == 0) {
 				CQNightMeasures.slotQValveAngle.degrad.neg
@@ -791,37 +974,6 @@ CQNightGeometry {
 			};
 		};
 
-		// Internal audio topology. qMix leaves the nearest side of the Quantussy
-		// river and reaches each shell's q gill. The two x lanes share one bridge
-		// but keep opposite source/destination order and separate destination
-		// valves: coco1SlotX is right -> left, coco2SlotX is left -> right.
-		drone = (
-			slotQPaths: cocos.collect { |coco, i|
-				var source = this.polar(ringCenter, ringR, if(i == 0) { pi } { 0 });
-				var dest = coco[\slotQValve];
-				var delta = dest - source;
-				[source, source + (delta * 0.34) + Point(0, -10 * scale),
-					source + (delta * 0.68) + Point(0, -10 * scale), dest]
-			},
-			slotXPaths: [
-				[
-					cocos[1][\slotXValve],
-					Point(cocos[1][\slotXValve].x - (138 * scale),
-						ringCenter.y - (ringR * 0.60) - (5 * scale)),
-					Point(cocos[0][\slotXValve].x + (138 * scale),
-						ringCenter.y - (ringR * 0.60) - (5 * scale)),
-					cocos[0][\slotXValve]
-				],
-				[
-					cocos[0][\slotXValve],
-					Point(cocos[0][\slotXValve].x + (138 * scale),
-						ringCenter.y - (ringR * 0.60) + (5 * scale)),
-					Point(cocos[1][\slotXValve].x - (138 * scale),
-						ringCenter.y - (ringR * 0.60) + (5 * scale)),
-					cocos[1][\slotXValve]
-				]
-			]
-		);
 		castles.do { |castle, k|
 			var n = k + 1, center = castle[\center];
 			var jackOrbit = CQNightMeasures.castleJackOrbit * scale;
@@ -1014,6 +1166,18 @@ CQNightGeometry {
 		};
 		endpoints[\deckA_rate] = birds[0][\rateSocket];
 		endpoints[\deckB_rate] = birds[1][\rateSocket];
+
+		// Internal audio topology. Both streams leave the river through the two
+		// empty gaps beside castle 1 — the seeded ring's own cubic midpoints, so
+		// a stream begins on the water rather than at a guessed compass point.
+		// qMix runs from its near gap down to that shell's q gill. The two x
+		// lanes climb the same two gaps into one arch over castle 1, sharing the
+		// crown but keeping opposite source/destination order and separate
+		// destination valves: coco1SlotX is right -> left, coco2SlotX is
+		// left -> right. It is solved last because it gives way to the bodies
+		// already placed — the castles' jacks and the birds' name plates.
+		drone = this.prDroneRoutes(cocos, ringSegments, castles, birds,
+			endpoints, scale);
 
 		// the moon in the sky, the tide pool in the water — two features of the
 		// landscape rather than one corner of tools (§9, decided 2026-07-26)

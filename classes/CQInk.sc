@@ -21,7 +21,12 @@ CQInk {
 			// amber sat at 1.2:1 against cream and simply vanished (user review
 			// 2026-07-21). This deep amber reads 3.15:1 — §16.2's large-mark
 			// floor — while the night lamp stays luminous.
-			lamp: Color.new255(181, 122, 22)
+			lamp: Color.new255(181, 122, 22),
+			// PLAY-6.1: the instrument's own internal audio streams run under a
+			// single low-chroma ink, so the drone topology separates from the
+			// patch cables by DEPTH instead of by a sixth bright family. Never
+			// a line's own colour — always the water beneath one.
+			undertow: Color.new255(82, 111, 113)
 		);
 		palettes[\night] = (
 			clear: Color.new(0, 0, 0, 0),
@@ -33,7 +38,8 @@ CQInk {
 			organ: Color.new255(255, 222, 89), pre: Color.new255(242, 239, 228),
 			verso: Color.new255(255, 174, 66), inverso: Color.new255(98, 169, 255),
 			danger: Color.new255(255, 107, 84), warning: Color.new255(255, 217, 138),
-			lamp: Color.new255(255, 233, 168)
+			lamp: Color.new255(255, 233, 168),
+			undertow: Color.new255(102, 144, 151)
 		);
 		palettes.values.do { |palette|
 			palette[\hold] = palette[\danger];

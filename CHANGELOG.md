@@ -10,6 +10,25 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Changed
 
+- Routed the Night's internal audio streams through the landscape instead of
+  across it. Both leave the river at its two empty gaps — the exact midpoints of
+  the seeded castle 5→1 and 1→2 cubics — and the two cross-feed lanes now share
+  one two-lane arch over castle 1 rather than cutting through the ring's
+  interior. Both Level shorelines read zero at the bottom and maximum at the top
+  (the mirror is the sweep's sign, so ink, unity notch, pearl and hit truth
+  cannot disagree), and Level's ink moved to the route layer, above the
+  landscape's opaque rectangles and below real patch cables, so the crescents'
+  own ground views can no longer cut the shoreline into pieces. One low-chroma
+  `undertow` under-ink now separates the internal topology from the patch cables
+  by depth, leaving every signal family its own colour.
+
+  Two nominals in that geometry are minima rather than promises, because both
+  streams run past bodies a constant cannot see: castle 2's `tri` jack lies
+  within a pixel of the straight chord out of its own gap, and at the minimum
+  stage the birds' fixed 200 px name plates overhang both cross-feed valves. The
+  q bow and the arch's shoulders therefore measure what is in the way and give
+  ground until 8 px of paper stands between their ink and its.
+
 - Promoted the complete continuous drone vocabulary into the Night landscape:
   per-Coco Level shores, audible Organ calyces, SlotQ tributary gills and two
   independent directional SlotX bridge valves, plus a radial `cKSend` pull on

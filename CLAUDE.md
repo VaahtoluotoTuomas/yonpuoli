@@ -514,13 +514,33 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   steps spesal, a deliberate inward/outward pull opens/closes `c1Send…c5Send`
   without first rewiring the clock. These 13 controls moved out of Workshop;
   the exact tested ownership is Night 44 · Master 4 · Workshop 26.
-- **PLAY-6.1 is planned, not implemented (2026-08-02):** follow the exact
-  lower-model hand-off in `PLAN.md`. It moves SlotQ's ring anchors into the
-  castle 5→1 / 1→2 gaps, bows both directional SlotX lanes over castle 1,
-  reverses only Coco 2's Level display sweep, moves Level ink above opaque
-  crescent paper, and adds one low-chroma `undertow` under-ink while retaining
-  Organ/tri/cas family cores. This is GUI geometry/layer/palette work only;
-  do not touch DSP, ranges, gestures, ownership or SlotX direction.
+- **PLAY-6.1 is built and green, awaiting the user's visual review
+  (2026-08-02).** All four parts landed: SlotQ's anchors are the exact
+  `cubicPoint(ringSegments[4]/[0], 0.5)` gap midpoints, SlotX is one two-lane
+  arch over castle 1, only Coco 2's Level sweep is sign-reversed, Level ink
+  moved to `routeView`, and `undertow` is in both palettes. No DSP, range,
+  gesture, ownership or SlotX-direction change. Gate: `CQ_COMPILE_OK`,
+  **14,827 unit passes / 0 failures / 39/39 classes**, all four GUI markers and
+  `CQ_NIGHT_CAPTURE_DONE`; `CQ_SAFETY_PASSED` / `CQ_HOLD_OK` carry.
+  **Two clauses of the hand-off were defects and were measured out**, both the
+  N7 law again — *a constant cannot clear a body it did not measure*:
+  1. The prescribed q anchor drew the right stream **straight through castle 2's
+     `tri` jack** (4.86 px from its centre at 1280×570, 7.28 at 1920×855,
+     against ~5.8 px of drawn jack). The `-10 px` lift is now a minimum and the
+     geometry deepens the bow until every drawn endpoint clears by
+     `flowBodyClear` = 8 px.
+  2. Both x lanes **grazed the birds' fixed 200 px name plates** (0.02 px at the
+     minimum stage) because the valves sit directly under them. The gap
+     x-coordinates are now nominal shoulders that draw inward as measured, and
+     the crown is taken from **castle 1's own endpoint boxes**, not its
+     transparent 146 px paper — clearing the paper would fly the arch so high it
+     came down through the plates. The transparent castle papers are explicitly
+     not bodies here; the river already runs through them. The clearance belongs
+     to the arch's lowest ink, the outbound lane.
+  The birds' 6 px **drop pad** still cannot be cleared at the minimum stage
+  (1.0 px) without either splitting castle 1 or turning the arch gothic; it is
+  drawn only during a file drag. Solving costs ~24 ms per layout at the minimum
+  stage (11 ms when no give-way is needed).
 - **The 16n map is now two identical Coco channel strips plus a shared section**
   (SPEC §6.1, normative): F1–F5 `coco1` In·Speed·Spaf·Fb·**Level**, F6–F10
   `coco2` the same, F11–F16 `qFreq`·`qChaos`·`preADrive+preBDrive`·

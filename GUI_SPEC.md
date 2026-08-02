@@ -1273,8 +1273,19 @@ Signals:
 | danger (hold, rec, panic, mic) | `#C43D2B` | `#FF6B54` |
 | warning text (watchdog, notices) | `#A87B2F` | `#FFD98A` |
 | lamp fill (charge lamps) | `#B57A16` | `#FFE9A8` |
+| undertow (internal streams' under-ink) | `#526F71` | `#669097` |
 
 Laws:
+
+- **The internal audio topology is separated by depth, not by a sixth family**
+  (PLAY-6.1). The drone streams — the Quantussy tributaries, the two cross-feed
+  lanes, the castle sends and the Organ calyx — carry one low-chroma `undertow`
+  stroke that follows their exact path underneath the family core: 2 px at
+  α 0.14 at rest, 3 px at α 0.34 under hand. It is static ink — no gradient,
+  no blur, no pulse — so in greyscale it reads as the water under a line rather
+  than as a second line, and yellow still means the organ's own source, amber
+  the triangle audio and neutral `cas` the cross-feed. The Level shoreline never
+  wears it: that is output mix leaving the instrument, not a stream inside it.
 
 - **On paper a lit lamp is more ink, not more light** (amended 2026-07-21 after
   the G2.5 review): the first day lamp fill was a pale amber that measured
@@ -1618,6 +1629,29 @@ under the body views: amber Quantussy side-rivers end in independent SlotQ
 gills, while two bone SlotX bridge lanes carry opposed arrowheads and separate
 destination-side valves. Zero gain keeps only a quiet map; nonzero gain and
 hover/drag increase pressure instead of inventing a new label or panel.
+
+**Where the internal streams run (PLAY-6.1).** Both leave the river through its
+two empty gaps — the exact midpoints of the seeded castle 5→1 and castle 1→2
+cubics, never a `polar(ringCenter, ringR, …)` guess beside the wobbled water —
+so the eye sees the stream leave the water. Those same two x coordinates are the
+shoulders of one arch: both cross-feed lanes rise out of the gaps, pass **over**
+castle 1 and come down the far side, leaving the ring's interior to the iris, the
+fireflies, the cables and the lasso. The lanes share the crown and keep their
+own valves; the arch's clearance belongs to its **lowest** ink, the outbound
+lane. Both Level shorelines read zero at the bottom and maximum at the top: that
+mirror lives in the sweep's **sign**, so ink, unity notch, pearl and hit truth
+take it from one place. Level's ink is drawn on the route layer, above the
+landscape's opaque rectangles and below real patch cables, because its shore runs
+where the in/fb crescents' own ground views would otherwise cut it into pieces.
+
+**A nominal is not a clearance.** Castle 2's `tri` jack lies within a pixel of
+the straight chord out of its own gap, and at the minimum stage the birds' fixed
+200 px name plates overhang both cross-feed valves — so the q bow and the arch's
+shoulders are *minima*, and the geometry measures what is actually in the way and
+gives ground until `flowBodyClear` of paper stands between its ink and theirs.
+This is the same law the preamp label learned in N7. What a stream must clear is
+what is **drawn**: the transparent castle papers are deliberately not bodies here,
+since the river itself already runs straight through them.
 
 **Roots (inputs; accepted 2026-07-28, checklist N7).** Each side is the whole
 intake body, not an envelope on a stick:

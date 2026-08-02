@@ -25,7 +25,39 @@ var n10ChevronRestOutput = Cocoquantus.repoDir +/+ "tests" +/+ "tmp"
 	+/+ "n10-chevron-rest.png";
 var n10ChevronHoverOutput = Cocoquantus.repoDir +/+ "tests" +/+ "tmp"
 	+/+ "n10-chevron-hover.png";
+// PLAY-6.1's own review pair, at both reference stages: the internal streams
+// closed (the landscape at rest) and open, with real patch cables above them,
+// so the undertow can be judged against the bananas it has to differ from.
+var play61 = { |name|
+	Cocoquantus.repoDir +/+ "tests" +/+ "tmp" +/+ ("play61-" ++ name ++ ".png")
+};
+var play61Names = #[coco1Level, coco2Level, coco1Organ, coco2Organ,
+	coco1SlotQ, coco2SlotQ, coco1SlotX, coco2SlotX,
+	c1Send, c2Send, c3Send, c4Send, c5Send];
+// Every value below is written through CQState and reaches the views on a
+// DEFERRED tick, so each render has to wait one. Rendering in the same call
+// photographs the PREVIOUS values — which is exactly how the first pass
+// produced two identical Level shores. A flat step chain keeps that wait
+// explicit instead of burying it in another layer of nesting.
+var play61Steps, runSteps;
 var gui;
+
+runSteps = { |steps, done|
+	if(steps.isEmpty) { done.value } {
+		AppClock.sched(steps.first[0], {
+			try {
+				steps.first[1].value;
+				runSteps.value(steps.drop(1), done);
+			} { |error|
+				error.reportError;
+				gui !? { gui.free };
+				"CQ_NIGHT_CAPTURE_FAILED".postln;
+				1.exit;
+			};
+			nil
+		});
+	};
+};
 
 matrix.preset(\classic, origin: \code, committed: true, operation: \preset);
 matrix.patch(\envA, \deckA_rate, -0.42);
@@ -52,11 +84,16 @@ matrix.patch(\cas4, \coco2_fbVca, 0.37);
 						view.drawFunc.value(view);
 					};
 				};
+				// The stage's own size, read from the geometry it laid out, so a
+				// roomy fixture renders roomy paper instead of cropping the very
+				// landscape it was asked to show.
 				render = { |path|
-					var image = Image(1280, 570);
+					var w = map.geometry[\width].round.asInteger;
+					var h = map.geometry[\height].round.asInteger;
+					var image = Image(w, h);
 					image.draw {
 						Pen.fillColor = CQInk.palette(\night)[\ground];
-						Pen.addRect(Rect(0, 0, 1280, 570));
+						Pen.addRect(Rect(0, 0, w, h));
 						Pen.fill;
 						paintView.value(map.groundView);
 						map.rootViews.do(paintView);
@@ -171,17 +208,61 @@ matrix.patch(\cas4, \coco2_fbVca, 0.37);
 									coco[\chevron].y - shellOrigin.y);
 								renderCrop.value(n10ChevronHoverOutput, crop);
 								shell.mouseLeaveAction.value(shell);
-								gui.free;
-								("CQ_NIGHT_CAPTURE: " ++ output ++ " | "
-									++ cableOutput ++ " | " ++ couplingOutput
-									++ " | " ++ targetOutput ++ " | "
-									++ controlOutput ++ " | " ++ play3Output
-									++ " | " ++ n10HeartOutput
-									++ " | " ++ n10HeartRestOutput ++ " | "
-									++ n10ChevronRestOutput ++ " | "
-									++ n10ChevronHoverOutput).postln;
-								"CQ_NIGHT_CAPTURE_DONE".postln;
-								0.exit;
+								// ---- PLAY-6.1's own review pair ----
+								// Closed first: at zero every internal stream is
+								// only a hairline possibility, and both Level
+								// shores must still read whole across the opaque
+								// crescent papers they now cross. Then open, with
+								// the classic patch back on top, so the undertow
+								// is judged against real bananas, not empty sky.
+								play61Steps = [
+									[0.15, {
+										render.value(play61.value("min-zero"));
+										matrix.preset(\classic, origin: \test,
+											committed: false,
+											operation: \play61Capture);
+										matrix.patch(\envA, \deckA_rate, -0.42);
+										matrix.patch(\cas4, \coco2_fbVca, 0.37);
+										map.overlay.invalidate;
+										play61Names.do { |name|
+											state.set(name, CQSpec.map(name, 0.7))
+										};
+									}],
+									[0.15, {
+										render.value(play61.value("min-open"));
+										gui.window.setInnerExtent(1920, 1005);
+									}],
+									[0.4, {
+										render.value(play61.value("roomy-open"));
+										play61Names.do { |name|
+											state.set(name, 0) };
+										matrix.preset(\empty, origin: \test,
+											committed: false,
+											operation: \play61Capture);
+										map.overlay.invalidate;
+									}],
+									[0.15, {
+										render.value(play61.value("roomy-zero"));
+									}]
+								];
+								play61Names.do { |name| state.set(name, 0) };
+								runSteps.value(play61Steps, {
+									gui.free;
+									("CQ_NIGHT_CAPTURE: " ++ output ++ " | "
+										++ cableOutput ++ " | " ++ couplingOutput
+										++ " | " ++ targetOutput ++ " | "
+										++ controlOutput ++ " | " ++ play3Output
+										++ " | " ++ n10HeartOutput
+										++ " | " ++ n10HeartRestOutput ++ " | "
+										++ n10ChevronRestOutput ++ " | "
+										++ n10ChevronHoverOutput ++ " | "
+										++ play61.value("min-zero") ++ " | "
+										++ play61.value("min-open") ++ " | "
+										++ play61.value("roomy-open") ++ " | "
+										++ play61.value("roomy-zero")).postln;
+									"CQ_NIGHT_CAPTURE_DONE".postln;
+									0.exit;
+								});
 							} { |error|
 								error.reportError;
 								gui !? { gui.free };

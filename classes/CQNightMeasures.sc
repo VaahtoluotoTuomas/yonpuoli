@@ -102,6 +102,31 @@ CQNightMeasures {
 	// under half the spiral's radial pitch or two turns would answer one press.
 	*windGrab { ^13 }                       // px
 
+	// ---- the internal audio topology (PLAY-6.1) ----
+	// The drone streams are landscape, not placed lines. qMix leaves the river
+	// at the two empty gaps beside castle 1, and the two cross-feed lanes share
+	// one arch OVER castle 1 instead of cutting through the ring's interior —
+	// that interior belongs to the iris, the fireflies, the cables and the
+	// lasso. The bow and the crown are body measures so both keep their
+	// proportion to the landscape they span; the top floor is what holds the
+	// arch on the stage when castle 1 has climbed close to the upper edge.
+	*slotQLift { ^10 }                      // body — nominal bow of the q stream
+	*slotXBridgeClearance { ^12 }           // body — crown above castle 1's bodies
+	*slotXBridgeTopFloor { ^12 }            // body — nearest the stage's top edge
+	*slotXBridgeLaneGap { ^10 }             // body — the two lanes' separation
+
+	// Neither nominal above is a promise, because both streams run past seeded
+	// and placed bodies: castle 2's tri jack sits within a pixel of the straight
+	// chord out of its own gap, and at the minimum stage the birds' fixed 200 px
+	// name plates overhang both x valves. A constant inset cannot clear a body
+	// it did not measure (the law the preamp labels taught in N7), so each
+	// stream gives ground — the q bow deepens, the x shoulders draw inward —
+	// until this much clear paper stands between its ink and theirs. Hand-sized
+	// px, so a grown stage spends the slack on the landscape instead.
+	*flowBodyClear { ^8 }                   // px — a stream's breath past ink
+	*flowGiveWayStep { ^2 }                 // px — how finely it gives ground
+	*flowGiveWayMax { ^160 }                // px — cap: a cramped stage still draws
+
 	// ---- the eye ----
 	// The two-knob macro of the whole instrument: qFreq and qChaos live nowhere
 	// else at night, so §8 gave the iris the mass its job deserves. Its position

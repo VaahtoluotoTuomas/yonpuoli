@@ -2560,6 +2560,52 @@ CQ.set(\c1Send, 0);
       suunnat ovat selvät, tap/send ei lipsu ja dronea voi rakentaa yhtenä
       jatkuvana Night-tilana)
 
+### PLAY-6.1 — sisävirtojen reitti, Level-suunta ja alusmuste
+
+Vain geometriaa, kerroksia ja väriä: DSP, ranget, eleet, omistajuus ja SlotX:n
+suunnat ovat ennallaan. Katso ensin renderöidyt kuvat, sitten sama elävässä
+ikkunassa.
+
+```supercollider
+// Ctrl+Shift+L, avaa uusi GUI. Tyhjä lahti ensin, jotta reitit näkyvät yksin.
+CQ.patchPreset(\empty);
+CQ.set(\coco1Level, 0); CQ.set(\coco2Level, 0);
+CQ.set(\coco1SlotQ, 0); CQ.set(\coco2SlotQ, 0);
+CQ.set(\coco1SlotX, 0); CQ.set(\coco2SlotX, 0);
+CQ.set(\coco1Organ, 0); CQ.set(\coco2Organ, 0);
+```
+
+1. **Q lähtee vedestä.** Kummankin Cocon amber-sivujoen pitää alkaa täsmälleen
+   renkaan tyhjästä aukosta — vasen castle 5:n ja 1:n välistä, oikea castle 1:n
+   ja 2:n välistä — eikä renkaan sivusta. Sen ei saa kulkea yhdenkään linnan
+   jakin päältä; erityisesti castle 2:n oikean yläjakin ohi pitää jäädä selvä
+   rako.
+2. **X on yksi rauhallinen kaksikaistainen katto.** Molemmat kaistat nousevat
+   samoista aukoista, kulkevat castle 1:n yläpuolelta ja laskeutuvat toiselle
+   puolelle. Ne eivät saa koskea lintuihin, lintujen nimikilpiin, castle 1:een
+   eivätkä kuuhun, eivätkä halkaista renkaan sisäosaa. Nuolet kertovat kaksi
+   vastakkaista suuntaa.
+3. **Molemmat Levelit lukevat samoin.** Vedä kumpaakin ulompaa rantaa ylös:
+   nollan pitää olla alhaalla ja maksimin ylhäällä **molemmilla** kuorilla, ja
+   unity-loven samalla korkeudella. Vedon matematiikkaa ei muutettu — jos jompi
+   kumpi tuntuu nyt väärinpäin, se on vika.
+4. **Ranta on ehjä.** Aja `CQ.set(\coco1Level, 1.2); CQ.set(\coco2Level, 1.2)`
+   ja katso rantoja sirppien kohdalla: suorakulmaisia katkoksia ei saa olla, eikä
+   ranta saa nousta oikean patch-kaapelin päälle.
+5. **Alusmuste erottaa sisävirran johdoista.** Aja `CQ.patchPreset(\classic)` ja
+   avaa virrat (`CQ.set(\coco1SlotQ, 1); CQ.set(\coco2SlotX, 1); CQ.set(\c1Send, 1)`).
+   Kahden metrin siristystestissä sisäisen topologian pitää erottua
+   banaaneista, mutta jäädä himmeämmäksi kuin liittimet ja aktiivinen banaani.
+   Harmaasävyssä annuluksen, kiduksen, nuolen ja sillan pitää yhä erottua.
+   Level-rannassa ei saa olla alusmustetta.
+
+- [ ] PLAY-6.1 hyväksytty (pvm: ______ — Q laskeutuu aukkoihin, X on yksi
+      rauhallinen katto, molemmat Levelit lukevat alhaalta nollan, ranta on ehjä
+      ja alusmuste erottaa sisävirran menettämättä perheväriä)
+
+Väriä saa hyväksynnän jälkeen säätää vain undertow’n kromalla tai alfan määrällä,
+ei lisäämällä toista uutta sävyä.
+
 Seuraava boot-oletuksen kuuntelupäätös tehdään PLAY-2C-palautteen rinnalla. Oppaan
 `Soittotesti 7` vertaa yhden muuttujan kandidaatteina `Spaf`-boot-oletusta
 0,12 ja shaken painoa 0,65; kumpaakaan ei ole vielä tehty tuotanto-oletukseksi.

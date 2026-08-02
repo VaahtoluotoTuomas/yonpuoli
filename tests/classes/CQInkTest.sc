@@ -41,12 +41,37 @@ CQInkTest : UnitTest {
 		var required;
 		if(this.prRequireInk.not) { ^this };
 		required = #[ground, recess, line, whisper, spark, tri, cas, fm, input,
-			spaf, organ, pre, verso, inverso, danger, warning, lamp];
+			spaf, organ, pre, verso, inverso, danger, warning, lamp, undertow];
 		#[day, night].do { |skin|
 			required.do { |name|
 				this.assert(inkClass.palette(skin)[name].notNil,
 					"% palette defines %".format(skin, name));
 			};
+		};
+	}
+
+	// PLAY-6.1: the internal streams' under-ink is one centrally defined key,
+	// and it must stay a shadow rather than becoming a sixth signal family — if
+	// it ever equalled a family colour, the drone topology would have been
+	// recoloured instead of deepened.
+	test_undertowIsACentralShadowNotASixthFamily {
+		var families = #[tri, cas, fm, input, spaf, organ, line, whisper, spark];
+		if(this.prRequireInk.not) { ^this };
+		this.assertEquals(this.prRgb(inkClass.palette(\night)[\undertow]),
+			[102, 144, 151], "Night undertow is #669097");
+		this.assertEquals(this.prRgb(inkClass.palette(\day)[\undertow]),
+			[82, 111, 113], "Day undertow is #526F71");
+		#[day, night].do { |skin|
+			var undertow = inkClass.palette(skin)[\undertow];
+			families.do { |name|
+				this.assert(this.prRgb(inkClass.palette(skin)[name])
+					!= this.prRgb(undertow),
+					"% undertow replaces no signal family (%)".format(skin, name));
+			};
+			// low chroma: it may not shout louder than the line it lies under
+			this.assert((undertow.asHSV[1] < 0.5)
+				and: { undertow.asHSV[1] > 0.05 },
+				"% undertow keeps its low, non-grey chroma".format(skin));
 		};
 	}
 
