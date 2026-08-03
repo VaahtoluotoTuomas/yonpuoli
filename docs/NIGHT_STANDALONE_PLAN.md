@@ -566,6 +566,14 @@ hit body. These measures do not reopen N3's grammar.
 - Castle and castle-endpoint paper is transparent. The irregular flesh masks
   the river and coupling chords only inside its real shape, so no rectangular
   blank bites the body and no synthetic ring stub protrudes from it.
+- **PLAY-8b layout amendment (2026-08-03):** all continuous Coco destinations
+  are hollow rings; colour plus adjacent scale/calyx/gill names the quantity,
+  while only Flip, Skip and Record carry event/categorical marks. The
+  software-native Organ/SlotQ/Record endpoint papers are transparent and mask
+  ground only under the true circular socket. Record lamps mirror outward.
+  Both complete Coco organisms move 30 body px outward at the reference stage,
+  opening a 114 px ring-to-shell shore while retaining >60 px at the outer
+  Record-paper edge. No body or control was reduced.
 - This increment deliberately stops before the roots. Their next version
   must show the real source→preamp→Coco audio vein with the envelope as a
   side-growth; §10's decoration-only mangrove proposal is no longer enough.

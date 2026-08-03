@@ -206,7 +206,8 @@ CQGui {
 		}
 	}
 
-	drawEndpoint { |name, kind, center, family, glyph, lamp = false, skin = \night|
+	drawEndpoint { |name, kind, center, family, glyph, lamp = false, skin = \night,
+		lampSide = 1|
 		var palette = CQInk.palette(skin);
 		var endpointState = this.endpointInkState(name, kind);
 		var inkScale = if(skin == \night) {
@@ -235,7 +236,8 @@ CQGui {
 				// Amber fill is post-weight, pre-Schmitt charge. The separate pale
 				// flare is held from the exact gate/trig the DSP actually obeyed.
 				CQInk.drawLamp(center + Point(
-					if(skin == \night) { CQNightMeasures.lampOffset } { 16 }, 0),
+					(if(skin == \night) { CQNightMeasures.lampOffset } { 16 })
+						* lampSide.sign, 0),
 					charge, fired > 0.01, skin, inkScale, fired)
 			};
 		};

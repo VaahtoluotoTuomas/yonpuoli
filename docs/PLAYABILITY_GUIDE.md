@@ -652,12 +652,28 @@ Nightissä vanhoja hardware-pariteetin kuita ei siirretty. Organ-socket on aivan
 organ-hedelmän ulkopuolella, SlotQ-socket suoraan Q-kiduksen vieressä keskirenkaan
 puolella ja danger-punainen Record-socket kuoren yläulkokehällä: vasemmalla noin
 kello 10:ssä, oikealla noin kello 2:ssa. Niitä yhdistävät vain lyhyet, suorat ja
-matalan alfan anatomiset juuret; mikään viiva ei enää kulje Cocon läpi. Organin
-ja SlotQ:n `>`-merkki poistettiin, koska sijoitus kertoo kohteen ilman toista
-symbolikieltä. Recordin ympyrä säilyi. Organin ja SlotQ:n toteutunut VCA näkyy
-omana pearl/wake-liikkeenään; Recordin charge/fire-lamppu ja punainen sinetti
-näyttävät efektiivisen tilan molempiin suuntiin. Käsiasetus ei liiku modulaation
-mukana.
+matalan alfan anatomiset juuret; mikään viiva ei enää kulje Cocon läpi.
+
+Socket-kieli käyttää kahta toisistaan riippumatonta kanavaa. Väri ja viereinen
+anatomia kertovat jatkuvan suureen, joten SP.AF, Input VCA, Feedback VCA, Organ
+ja SlotQ ovat kaikki onttoja renkaita ilman sisämerkkiä. Sisämerkki varataan
+kategoriselle/tapahtumaeleelle: Flipin vastakkaiset chevronit, Skipin kipinä ja
+Recordin ympyrä. Näin Input ja Feedback eivät enää jaa perusteetonta `>`-merkkiä;
+niiden omat asteikkosirpit erottavat ne toisistaan. Organin ja SlotQ:n toteutunut
+VCA näkyy omana pearl/wake-liikkeenään; Recordin charge/fire-lamppu ja punainen
+sinetti näyttävät efektiivisen tilan molempiin suuntiin. Käsiasetus ei liiku
+modulaation mukana.
+Nykyinen tyhjä SlotX-venttiili ei ole vielä matriisisocket: sillan kahden kaistan
+ulkoiset nuolenkärjet kertovat jo suureen ja suunnan, joten venttiilin sisämerkki
+olisi vain sama tieto toiseen kertaan.
+
+Organ/SlotQ/Record-socketien näkymäpaperi on läpinäkyvä ja taustaa peitetään vain
+varsinaisen pyöreän socketin alta. Vasemman Record-lamppu kasvaa ulospäin vasemmalle
+ja oikean ulospäin oikealle, joten kumpikaan haalea punainen juuri ei katkea
+näkymättömään suorakulmioon. Molemmat kokonaiset Coco-organismit liikkuivat
+30 body-pikseliä ulospäin: referenssilavalla renkaan ja kuoren väliin jäi 114 px
+hengitystilaa ja Recordin uloimpaankin näkymäreunaan yli 60 px marginaalia.
+Mitään ei pienennetty.
 
 ### Ekologinen shake ja painojen auditointi
 
@@ -744,21 +760,55 @@ eri densityillä ja suurempi density lisäsi intensiteettiä. Kuvaavat havainnot
 
 Organ-, SlotQ- ja Record-polut toimivat. Samalla löytyivät yllä korjatut Organin
 taso, dust-growthin tekstuuri, Recordin yksisuuntaisuus, socketien ensimmäisen
-layoutin sekavuus ja kuun vedon alkuun tarttuminen. Kohdat 3–6 tarvitsevat nyt
-kohdistetun uusintakuuntelun/-katselmuksen; bundled undo ja vapaa 8–10 shaken
-ensikäyttö (kohdat 7–8) ovat vielä tekemättä. PLAY-8 ei siis ole kokonaan
-hyväksytty, vaikka sen perhe- ja density-lait ovat jo läpäisseet korvan.
+layoutin sekavuus ja kuun vedon alkuun tarttuminen. Käyttäjän 2026-08-03
+kohdistettu toimintapalaute oli “tämä vaikuttaa toimivalta”; Organ/SlotQ/Record-
+lakien korjaus on siis oikealla radalla. Viimeinen katselmus löysi vielä vasemman
+Record-juuren ja Organ/Record-renkaiden suorakulmaiset peitot sekä liian ahtaan
+ring–Coco-välin; yllä kuvattu läpinäkyvä paperi, ulospäin peilattu lamppu,
+yhtenäinen symbolilaki ja ulospäin siirto ovat niiden jälkeinen korjaus.
+Käyttäjä hyväksyi tämän viimeisen kuvan sekä bundled undon ja vapaan 8–10
+shaken ensikäytön 2026-08-03. PLAY-8 on siis kokonaan hyväksytty: visuaalinen
+kieli, kuusi uutta polkua, ekologisen shaken perheet ja määrälaki sekä yhden
+teon palauttava undo toimivat yhtenä soittimena.
 
-Mahdolliset myöhemmät uudet kohteet ovat edelleen `castleK_send`, `cocoN_dust`,
-`cocoN_slotX` ja vasta oman turvallisuusporttinsa jälkeen askeltavat Bits/Wrap.
-Niitä ei lisätty tähän rajattuun laajennukseen.
+### Seuraavat matriisikohteet: ensin SlotX, sitten Dust omana prototyyppinään
+
+SlotX on seuraava looginen lisäys nyt, kun SlotQ:lla on oma matriisi-input.
+Suositus on kaksi itsenäistä kohdetta, `coco1_slotX` ja `coco2_slotX`: käsin
+asetettu SlotX olisi lepoventtiili ja matriisisumma avaisi sitä samalla rajatulla
+VCA-periaatteella alueella 0…1,5. Night-koti olisi ontto neutraali socket heti
+oman X-venttiilin vieressä ja juuri lähes olematon — uuden symbolilain mukaan ei
+uutta kirjainta tai nuolta. Tämä kasvattaisi matriisin 16×30:een. Koska SlotX on
+feedbackia sivuava Coco→Coco-reitti, se tarvitsee oman NRT-turva-/hold-portin ja
+kuuntelun ennen kuin crossfeed-shake saa käyttää sitä.
+
+Dust kuuluu perustellusti Nightiin, mutta ei vain uutena irrallisena socketina.
+Se on samanaikaisesti käsin soitettava sointiväri ja mahdollinen Quantussy-kohde,
+joten pinta ja matriisipolku kannattaa prototypoida yhdessä SlotX:n jälkeen.
+Ensimmäinen ehdotus yhdestä vasemman taivaan kaksilobisesta pankista hylättiin
+2026-08-03: oikean Cocon Dust olisi jäänyt liian kauas omasta organismistaan.
+Seuraava suunnitteluportti sijoittaa kaksi toisiinsa kuuluvaa mutta itsenäistä
+sumu-/pölykehoa omien Cocojensa sisä-alaviistoon, niin että lyhyt anatominen
+yhteys kertoo omistajan. Samassa portissa ratkaistaan morph-kentän lehtien
+väljyys sekä se, jääkö ele yhden Dust-määrän säätimeksi vai saako se toisen,
+selvästi samaan materiaaliin kuuluvan tekstuuriakselin. Mitään näistä ei ole
+vielä lukittu tuotantogeometriaksi tai DSP-sopimukseksi.
+
+Dust ei saa kopioida VCA-lakia sokkona. Parametrin yläraja on 0,5 ja jatkuva
+WhiteNoise-pohja nostaa nopeasti koko soittimen kohinalattiaa, joten sille pitää
+mitata oma rajattu modulaatiokäyrä ja kuunnella tyhjän RAMin sekä kierron kasvu.
+Kahden Dust-kohteen jälkeen matriisi olisi 16×32. SlotX- ja Dust-askeleet
+pidetään erillään, jotta niiden musiikillinen vaikutus voidaan todella tunnistaa.
+`castleK_send` sekä Bits/Wrap jäävät tämän
+jälkeen erillisiksi ehdokkaiksi.
 
 ## Seuraava päätös
 
 Kaikki PLAY-7:ää edeltävät soittotestit on hyväksytty ja A/B-kandidaatit on
 suljettu. PLAY-8:n ensimmäinen kierros hyväksyi neljän perheen erottuvuuden ja
-density-lain; seuraava avoin päätös on yllä olevan korjauspassin kohdistettu
-uusintakoe sekä undo- ja vapaan ensikäytön portit.
+density-lain, ja 2026-08-03 käyttäjä hyväksyi myös korjauspassin, bundled undon
+sekä vapaan ensikäytön. PLAY-8 on suljettu. SlotX/Dust ovat seuraavat kaksi
+erillistä prototyyppiä; niiden layout- ja DSP-sopimus suunnitellaan ennen koodia.
 
 16n:n rinnakkainen käsituntumatesti on tiedostossa
 [`tests/manual_checklist.md`](../tests/manual_checklist.md) kohdassa `16N-1` ja

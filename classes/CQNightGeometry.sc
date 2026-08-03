@@ -313,17 +313,21 @@ CQNightGeometry {
 			socket.y)
 	}
 
-	*endpointAnchor { |kind|
+	*endpointAnchor { |kind, lamp = false, lampSide = 1|
 		var socket = CQNightMeasures.socketExtent;
 		if(kind == \jack) {
 			^Point(CQNightMeasures.jackExtent * 0.5, CQNightMeasures.jackExtent * 0.5)
 		};
+		if(lamp == true and: { lampSide < 0 }) {
+			^Point(CQNightMeasures.lampedWidth - ((socket.x * 0.5) - 1),
+				socket.y * 0.5)
+		};
 		^Point((socket.x * 0.5) - 1, socket.y * 0.5)
 	}
 
-	*endpointBox { |center, kind, lamp = false|
+	*endpointBox { |center, kind, lamp = false, lampSide = 1|
 		var extent = this.endpointExtent(kind, lamp);
-		var anchor = this.endpointAnchor(kind);
+		var anchor = this.endpointAnchor(kind, lamp, lampSide);
 		^Rect(center.x - anchor.x, center.y - anchor.y, extent.x, extent.y)
 	}
 

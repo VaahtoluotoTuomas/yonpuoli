@@ -122,13 +122,13 @@ one law so implementers never have to decide case by case:
 
 | dest | kind | socket | former Day home (history) | Night home |
 |---|---|---|---|---|
-| `cocoN_spaf` | continuous | purple ring | beside the spaf knob | spiral moon |
-| `cocoN_inVca` | continuous | ink ring ▷ | beside the in knob | spiral moon |
-| `cocoN_fbVca` | continuous | ink ring ▷ | beside the fb knob | spiral moon |
+| `cocoN_spaf` | continuous | hollow purple ring | beside the spaf knob | spiral moon |
+| `cocoN_inVca` | continuous | hollow ink ring | beside the in knob | spiral moon |
+| `cocoN_fbVca` | continuous | hollow ink ring | beside the fb knob | spiral moon |
 | `cocoN_flip` | gate | ink ring ⇋ + lamp | beside FLIP | spiral moon + lamp |
 | `cocoN_skip` | trig | ink ring ✦ + lamp | beside SKIP | spiral moon + lamp |
-| `cocoN_organ` | continuous | yellow ring | — software-native | immediately outside the organ fruit; short root |
-| `cocoN_slotQ` | continuous | orange ring | — software-native | beside the Quantussy gill toward the central ring |
+| `cocoN_organ` | continuous | hollow yellow ring | — software-native | immediately outside the organ fruit; short root |
+| `cocoN_slotQ` | continuous | hollow orange ring | — software-native | beside the Quantussy gill toward the central ring |
 | `cocoN_record` | gate | danger-red ring ● + lamp | — software-native | upper outer rim: about 10 o'clock / 2 o'clock |
 | `castleK_fm` | continuous | blue ring | beside castle *k* range switch | inner moon of castle *k* |
 | `castleK_spesal` | trig | green ring + lamp | beside castle *k* step button | outer moon of castle *k* + lamp |
@@ -405,7 +405,7 @@ and Alt retain the banana rip/polarity grammar.
 | touch | gesture | writes |
 |---|---|---|
 | **wind the shell** | left-drag along the spiral's drawn line (≤ 8 px); turning toward the mouth winds faster, against it slower — the two shells mirror like their spirals. The reel notch rides the line as the live hand, and hover brightens the grab (§16.6) | `cocoN speed` (relative, ~2 turns = full range) |
-| **the shell's heart** | **left tap** the small mark at the spiral's innermost eye: seal / crack the loop; red while sealed (one law with the outer seal and HOLD). The heart owns its whole disc, including the innermost turn of the groove that runs through it, and says so: on hover it wears §4.5's quiet outer ring **at its true hit radius**, so the cue also draws where the reel stops. Winding is angular and available along the whole groove, so the eye of the spiral costs the reel nothing. The software-native Record socket sits on the upper outer rim. Its live matrix gate shows the **effective** two-way inversion without changing the stored state: a hand-sealed loop splits open and lights the heart; a hand-open loop closes into a full red seal | `cocoN hold` toggle · `cocoN_record` matrix gate |
+| **the shell's heart** | **left tap** the small mark at the spiral's innermost eye: seal / crack the loop; red while sealed (one law with the outer seal and HOLD). The heart owns its whole disc, including the innermost turn of the groove that runs through it, and says so: on hover it wears §4.5's quiet outer ring **at its true hit radius**, so the cue also draws where the reel stops. Winding is angular and available along the whole groove, so the eye of the spiral costs the reel nothing. The software-native Record socket sits on the upper outer rim; its activity lamp always grows **away from the shell and central ring** (left on Coco 1, right on Coco 2). Its live matrix gate shows the **effective** two-way inversion without changing the stored state: a hand-sealed loop splits open and lights the heart; a hand-open loop closes into a full red seal | `cocoN hold` toggle · `cocoN_record` matrix gate |
 | **the heart's punch** | **right press held** on the same heart mark: momentarily *invert* the seal for as long as it is held — a looper's punch-in (sealed → material drops into the ring; open → a fragment freezes), restored on release. The exact prior value is captured and restored on **every** exit path — mouse-up, Esc, Tab, panic, window close, GUI free, CmdPeriod — because a stuck punch leaves a loop recording over itself (a right press on a *cable* crossing the heart still rips, §4.5). No timer: the split from the left tap is the button, not the clock | `cocoN hold` (momentary invert, no undo) |
 | **the mouth chevron** | press the read-direction chevron at the mouth. Hover answers in **weight** (hairline → normal), not colour: the chevron already rests in `cas`, which is brighter than the `line` its two siblings brighten *to*, so a colour step could only dim it. Weight is the reel notch's channel on the same body | `cocoN flip` toggle |
 | **the mouth's skip mark** | press the spark glyph hanging under the chevron (10 px box, stationary). Momentary: 120 ms ink flash on *any* skip (§16.7) | `skip(n)` — the loop restarts from the eye |
@@ -1421,7 +1421,6 @@ icon fonts (their rendering varies across platforms; paths don't).
 
 | glyph | marks | recipe |
 |---|---|---|
-| open wedge | inVca / fbVca sockets | open triangle pointing into the socket |
 | opposed chevrons | flip | mirrored ‹ › pair |
 | spark | skip; fired lamps | 4-point star: two crossed strokes, long/short arms |
 | wave | castle fm | one sine cycle from two béziers |
@@ -1429,6 +1428,18 @@ icon fonts (their rendering varies across platforms; paths don't).
 | oyster / eyelid | coco in/fb dolby | paired short arcs: relaxed apart = `off`; hairline gap = `gate`; closed plus a short stroke entering from the partner channel = `duck`. Posture carries the state before hue; the mark never fakes gate telemetry |
 | tick-ring | spesal dial | 8 radial ticks, current one lit |
 | pendulum | deck rate | small wedge + off-vertical line |
+
+On the Coco shell cluster, socket colour/anatomical adjacency and the interior
+mark have separate jobs. **Every continuous Coco destination is a hollow ring**:
+SP.AF, Input VCA, Feedback VCA, Organ and SlotQ. Its family colour and the scale,
+calyx or gill beside it identify the quantity. An interior mark is reserved for
+a categorical/event act whose anatomy alone does not say what happens: Flip,
+Skip and Record. Castle FM and deck rate keep their wave/pendulum marks because
+those remote sockets have no adjacent scale that names their dimension. This
+orthogonal law replaces the old redundant wedge shared by Input and Feedback.
+The unglyphed SlotX valve follows the same economy but is not a matrix socket:
+its two bridge lanes and opposed external arrowheads already state both the
+quantity and direction, so another mark inside the valve would duplicate them.
 
 ### 16.6 Bodies (night-map anatomy, in primitives)
 
@@ -1663,9 +1674,16 @@ and deck crescents carry no oyster. Cable-first priority remains absolute.
 Because these crescents are native controls, the shared controller must publish
 the crossing cable's hover *after* the oyster/crescent cue yields; clearing both
 cues is forbidden. The same cable must then receive the press.
-The yellow org fruit jack keeps its opaque 34×34 owner, but that owner repaints
+The yellow org **source** fruit jack keeps its opaque 34×34 owner, but that
+owner repaints
 the shell's exact curved spiral segment and radial stem beneath the jack. A
 generic vertical stub is not the same path and may not replace it.
+The software-native Organ, SlotQ and Record **destination** views instead have
+transparent rectangular paper. `drawSocket` lays a ground mask only under the
+socket's exact circular flesh, so an invisible view corner can never bite a
+neighbouring root, Record ring or activity lamp. Record's right-heavy lamp box
+is mirrored outward on Coco 1 and remains outward on Coco 2; its pale-red root
+must remain continuous all the way to the socket on both shells.
 The spiral's stroke alpha breathes 0.55 → 1.0 with the Coco's out level but
 never disappears. Outside it, an open **Level shoreline** carries a stored-value
 pearl, a 1.0 unity notch and a danger-red boost reach. The yellow jack sits
@@ -1675,6 +1693,16 @@ under the body views: amber Quantussy side-rivers end in independent SlotQ
 gills, while two bone SlotX bridge lanes carry opposed arrowheads and separate
 destination-side valves. Zero gain keeps only a quiet map; nonzero gain and
 hover/drag increase pressure instead of inventing a new label or panel.
+
+**PLAY-8b spacing amendment (2026-08-03).** Each complete Coco organism — shell,
+roots, crescents, gills, internal streams and software-native sockets — moves
+30 body pixels outward at the 1280×570 reference stage; nothing is reduced.
+This opens a 114 px clear shore between the castle-ring rim and each shell while
+the outward edge of each mirrored Record view still keeps more than 60 px of
+stage margin. The lower preamp vein bows farther seaward and the SlotX arch may
+give way up to 180 px, preserving the same measured 8 px ink clearance after
+the move. The result must read as two intentional outer organisms framing the
+ring, not as objects accidentally stuck to the window edge.
 
 **Where the internal streams run (PLAY-6.1).** Both leave the river through its
 two empty gaps — the exact midpoints of the seeded castle 5→1 and castle 1→2

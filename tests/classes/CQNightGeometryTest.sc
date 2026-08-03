@@ -8,11 +8,13 @@ CQNightGeometryTest : UnitTest {
 		^sqrt((b.x - a.x).squared + (b.y - a.y).squared)
 	}
 
-	// the very box CQGuiNightMap.prMakeEndpoint builds — one table, no mirror,
-	// so a flooded view size can never pass a clearance test it would fail live
+	// the very box CQGuiNightMap.prMakeEndpoint builds — including the outward
+	// Record-lamp mirror — so a flooded view size can never pass a clearance
+	// test it would fail live
 	prEndpointBox { |name, center|
 		var spec = CQGuiNightMap.endpointSpec(name);
-		^CQNightGeometry.endpointBox(center, spec[\kind], spec[\lamp])
+		^CQNightGeometry.endpointBox(center, spec[\kind], spec[\lamp],
+			spec[\lampSide] ? 1)
 	}
 
 	// how far out a point lies in the pool's own elliptical frame: 1 is exactly
@@ -120,6 +122,40 @@ CQNightGeometryTest : UnitTest {
 				var name = ("coco" ++ n ++ "_" ++ suffix).asSymbol;
 				this.assertEquals(geo[\endpoints][name], coco[\moons][m],
 					"the original % moon keeps its established home".format(name));
+			};
+		};
+		this.assert(
+			this.prEndpointBox(\coco1_record, geo[\endpoints][\coco1_record]).left
+				< (geo[\endpoints][\coco1_record].x - 30),
+			"coco 1 Record paper and lamp grow outward to the left");
+		this.assert(
+			this.prEndpointBox(\coco2_record, geo[\endpoints][\coco2_record]).right
+				> (geo[\endpoints][\coco2_record].x + 30),
+			"coco 2 Record paper and lamp mirror outward to the right");
+	}
+
+	test_shellOrganismsHaveInnerBreathAndOuterMargin {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var stage = Rect(0, 0, size[0], size[1]);
+			geo[\cocos].do { |coco, i|
+				var innerBreath = CQNightGeometry.distance(coco[\center],
+					geo[\ringCenter]) - geo[\ringR] - coco[\outerR];
+				var recordName = if(i == 0) { \coco1_record } { \coco2_record };
+				var recordBox = this.prEndpointBox(recordName,
+					geo[\endpoints][recordName]);
+				var edgeMargin = if(i == 0) { recordBox.left } {
+					size[0] - recordBox.right
+				};
+				this.assert(innerBreath >= (100 * geo[\scale]),
+					"coco % keeps a broad readable shore from the castle ring (%x%)"
+						.format(i + 1, *size));
+				this.assert(edgeMargin >= 50,
+					"coco %'s outer Record ink keeps intentional stage margin (%x%)"
+						.format(i + 1, *size));
+				this.assert(stage.contains(coco[\shellBox]),
+					"coco %'s moved shell paper remains on stage (%x%)"
+						.format(i + 1, *size));
 			};
 		};
 	}

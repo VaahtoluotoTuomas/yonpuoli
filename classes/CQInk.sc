@@ -207,6 +207,12 @@ CQInk {
 		sizeScale = 1|
 		var palette = this.palette(skin), radius, halo;
 		radius = if(state == \candidate) { 7.2 } { 6 } * sizeScale;
+		// Endpoint views may be transparent when several anatomical sockets live
+		// close together. Mask only the socket's real circular flesh: a rectangular
+		// paper edge must never erase a neighbouring root or ring.
+		Pen.fillColor = palette[\ground];
+		Pen.addOval(Rect.aboutPoint(center, radius, radius));
+		Pen.fill;
 		// Static invitation while a cable is in hand. It never pulses: Night
 		// reserves motion for telemetry, but every legal landing place should
 		// become readable before the hand has to guess.

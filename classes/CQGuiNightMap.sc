@@ -24,6 +24,10 @@ CQGuiNightMap {
 	// the repaint prLayout now forces, the streams could sit at the previous
 	// geometry indefinitely.
 	var <routePaintCount = 0, <routePaintSize;
+	// A separate layout-request witness keeps the headless smoke independent of
+	// whether the host OS exposes an otherwise invisible test window. The real
+	// paint count/size below still proves that Qt eventually ran the drawFunc.
+	var <routeLayoutRefreshCount = 0, <routeLayoutRefreshSize;
 	var <birdHover, <birdFlash, birdFlashGeneration, fileDialog, deckAction;
 	var <almanacView, <moonHover = false, <moonFlash = false;
 	// The tide is the full ground itself: four seeds, no pool body or outline.
@@ -72,7 +76,10 @@ CQGuiNightMap {
 		};
 		if(CQMatrix.destIndex(name).isNil) { ^nil };
 		if(string.endsWith("_spaf")) { ^(kind: \socket, family: \spaf) };
-		if(string.endsWith("Vca")) { ^(kind: \socket, family: \line, glyph: \wedge) };
+		// Coco's continuous destinations are hollow rings. Their adjacent scale or
+		// anatomy says which quantity they belong to; interior glyphs are reserved
+		// for categorical/event acts on this already dense shell cluster.
+		if(string.endsWith("Vca")) { ^(kind: \socket, family: \line) };
 		if(string.endsWith("_flip")) {
 			^(kind: \socket, family: \line, glyph: \flip, lamp: true)
 		};
@@ -80,13 +87,17 @@ CQGuiNightMap {
 			^(kind: \socket, family: \line, glyph: \spark, lamp: true)
 		};
 		if(string.endsWith("_organ")) {
-			^(kind: \socket, family: \organ)
+			^(kind: \socket, family: \organ, paper: \clear)
 		};
 		if(string.endsWith("_slotQ")) {
-			^(kind: \socket, family: \tri)
+			^(kind: \socket, family: \tri, paper: \clear)
 		};
 		if(string.endsWith("_record")) {
-			^(kind: \socket, family: \danger, glyph: \rec, lamp: true)
+			^(kind: \socket, family: \danger, glyph: \rec, lamp: true,
+				paper: \clear,
+				// The lamp belongs outside its shell. A fixed right-hand lamp put
+				// coco 1's opaque owner directly over its inward-running red root.
+				lampSide: if(string.beginsWith("coco1")) { -1 } { 1 })
 		};
 		if(string.endsWith("_fm")) { ^(kind: \socket, family: \fm, glyph: \wave) };
 		if(string.endsWith("_spesal")) {
@@ -1197,7 +1208,8 @@ CQGuiNightMap {
 		// the box and its anchor come from CQNightGeometry, so the map, the
 		// clearance tests and the view itself size from one table (rake 12)
 		var extent = CQNightGeometry.endpointExtent(spec[\kind], spec[\lamp]);
-		var anchor = CQNightGeometry.endpointAnchor(spec[\kind]);
+		var anchor = CQNightGeometry.endpointAnchor(spec[\kind],
+			spec[\lamp] == true, spec[\lampSide] ? 1);
 		var width = extent.x, height = extent.y;
 		var castleDetail = name.asString.beginsWith("tri")
 			or: { name.asString.beginsWith("cas") }
@@ -1206,7 +1218,8 @@ CQGuiNightMap {
 		var shellMouth = #[coco1, coco2].includes(name);
 		var view = UserView(container, Rect(0, 0, width, height))
 			.background_(CQInk.palette(\night)[
-				if(castleDetail or: { rootTip } or: { shellMouth }) {
+				if(castleDetail or: { rootTip } or: { shellMouth }
+					or: { spec[\paper] == \clear }) {
 					\clear
 				} {
 					\ground
@@ -1215,7 +1228,8 @@ CQGuiNightMap {
 			this.prSafeDraw {
 				spec[\decoration] !? { this.prDrawDecoration(name, spec, anchor) };
 				gui.drawEndpoint(name, spec[\kind], anchor, spec[\family],
-					spec[\glyph], spec[\lamp] == true, \night);
+					spec[\glyph], spec[\lamp] == true, \night,
+					spec[\lampSide] ? 1);
 			}
 		};
 		endpoints[name] = (name: name, kind: spec[\kind], view: view,
@@ -1843,6 +1857,8 @@ CQGuiNightMap {
 		// old place for seconds after a maximize. Repaint all three here, and
 		// let the cable overlay drop the caches it keys on the stage extent and
 		// on where the endpoints were.
+		routeLayoutRefreshCount = routeLayoutRefreshCount + 1;
+		routeLayoutRefreshSize = Point(geometry[\width], geometry[\height]);
 		routeView.refresh;
 		tideGestureView.refresh;
 		overlay.relayout;

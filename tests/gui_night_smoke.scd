@@ -857,19 +857,17 @@ punchChecks = { |map|
 					"night owns a hit-transparent phosphor cable overlay");
 				check.value(map.routeView.acceptsMouse.not,
 					"route provenance owns one hit-transparent topological overlay");
-				// The route layer is a StackLayout sibling, so Qt paints it
-				// independently of the container whose onResize computes the
-				// geometry: it can paint once before any geometry exists and
-				// then never again until a hover happens to touch it. That is
-				// what left the drone streams invisible until first hovered
-				// after boot, and every line standing in its old place for
-				// seconds after a maximize. The layout owns the repaint now, so
-				// the size the layer last painted at must be the current one.
-				check.value(map.routePaintSize.notNil
-					and: { map.routePaintSize
+				// The route layer is a StackLayout sibling, so prLayout must
+				// explicitly damage it after computing geometry. A headless host
+				// may never expose the initial native window, so this assertion
+				// checks the layout's repaint request; the later CQState probe checks
+				// an actual Qt paint count and its current geometry separately.
+				check.value(map.routeLayoutRefreshCount > 0
+					and: { map.routeLayoutRefreshSize
 						== Point(map.geometry[\width], map.geometry[\height]) },
-					"the layout repaints the route layer at the geometry it just "
-					"laid out (painted %, laid out %)".format(map.routePaintSize,
+					"the layout requests a route repaint at the geometry it just "
+					"laid out (requested %, laid out %)".format(
+						map.routeLayoutRefreshSize,
 						Point(map.geometry[\width], map.geometry[\height])));
 				check.value(#[envA, envB].every { |name|
 					map.endpoints[name][\view].background.alpha == 0
@@ -1066,9 +1064,11 @@ punchChecks = { |map|
 								var records, mid, harvestPoints, localPoints;
 								var beforeHarvest, ground;
 								check.value(map.routePaintCount
-									> routeRepaintProbe[\before],
+									> routeRepaintProbe[\before]
+									and: { map.routePaintSize == Point(
+										map.geometry[\width], map.geometry[\height]) },
 									"an outside CQState Level write repaints "
-									"the route layer");
+									"the route layer at current geometry");
 								state.set(routeRepaintProbe[\name],
 									routeRepaintProbe[\restore]);
 								map.paintFlow(routeRepaintProbe[\name],

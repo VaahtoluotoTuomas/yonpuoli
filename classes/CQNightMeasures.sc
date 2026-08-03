@@ -56,10 +56,11 @@ CQNightMeasures {
 
 	// ---- the shells ----
 
-	// The gap is the flood's tightest number at the minimum stage: it is squeezed
-	// from the inside by the castle boxes the shell may not cover and from the
-	// outside by the almanac's water. CQNightGeometryTest holds both ends.
-	*shellGap { ^198 }                      // body — ring rim to shell centre
+	// PLAY-8b moves each complete shell organism 30 body px outward. At the
+	// reference stage this opens a 114 px clear shore between ring and shell,
+	// while the mirrored Record papers still retain >60 px of outer margin.
+	// CQNightGeometryTest holds both the inner breath and the stage edges.
+	*shellGap { ^228 }                      // body — ring rim to shell centre
 	*shellRise { ^20 }                      // body — the shells sit above the eye
 	*shellOuterR { ^114 }                   // body — the spiral's outer rim
 	// the shell layer's slack past the rim. It only has to hold what the shell
@@ -139,7 +140,7 @@ CQNightMeasures {
 	// px, so a grown stage spends the slack on the landscape instead.
 	*flowBodyClear { ^8 }                   // px — a stream's breath past ink
 	*flowGiveWayStep { ^2 }                 // px — how finely it gives ground
-	*flowGiveWayMax { ^160 }                // px — cap: a cramped stage still draws
+	*flowGiveWayMax { ^180 }                // px — cap: a cramped stage still draws
 	// How far an endpoint's OWN ink actually reaches from its centre. The dot's
 	// rim is not the answer: a `tri` jack wears a leaf out to (12, -9) = 15 px,
 	// a `cas` jack a crown, `org` a stem. Measuring the dot alone is what let a
@@ -180,7 +181,7 @@ CQNightMeasures {
 	*rootSourceShoulder { ^48 }             // body — first bend above the waterline
 	*rootSourceGather { ^26 }               // body — final bend before the knot
 	*rootSourceHit { ^13 }                  // px — nearest strand chooses provenance
-	*rootVeinOutset { ^52 }                 // body — route around the Coco crescents
+	*rootVeinOutset { ^80 }                 // body — route around the Coco crescents
 	*rootVeinLift { ^38 }                   // body — first audio-vein control point
 	*rootVeinDrop { ^64 }                   // body — final control point below the shell
 	*rootVeinJoinNorm { ^0.8 }              // body fraction — a real outer spiral point

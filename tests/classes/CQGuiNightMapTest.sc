@@ -78,8 +78,12 @@ CQGuiNightMapTest : UnitTest {
 			"fm moons carry the wave glyph");
 		this.assertEquals(CQGuiNightMap.endpointSpec(\deckA_rate)[\glyph], \pendulum,
 			"the wing socket carries the pendulum glyph");
-		this.assertEquals(CQGuiNightMap.endpointSpec(\coco1_inVca)[\glyph], \wedge,
-			"vca moons carry the open wedge");
+		#[coco1_spaf, coco1_inVca, coco1_fbVca, coco1_organ, coco1_slotQ,
+			coco2_spaf, coco2_inVca, coco2_fbVca, coco2_organ, coco2_slotQ]
+		.do { |name|
+			this.assert(CQGuiNightMap.endpointSpec(name)[\glyph].isNil,
+				"% is one hollow continuous Coco socket".format(name));
+		};
 		this.assertEquals(CQGuiNightMap.endpointSpec(\coco1_organ)[\family], \organ,
 			"the independent organ input inherits the calyx's yellow family");
 		this.assert(CQGuiNightMap.endpointSpec(\coco1_organ)[\glyph].isNil,
@@ -92,6 +96,15 @@ CQGuiNightMapTest : UnitTest {
 			"the Record toggle belongs to the red Hold/REC family, not green input");
 		this.assertEquals(CQGuiNightMap.endpointSpec(\coco1_record)[\glyph], \rec,
 			"the matrix writer input has an unambiguous record seal glyph");
+		this.assertEquals(CQGuiNightMap.endpointSpec(\coco1_record)[\lampSide], -1,
+			"coco 1's Record lamp sits outward, clear of its inward semantic root");
+		this.assertEquals(CQGuiNightMap.endpointSpec(\coco2_record)[\lampSide], 1,
+			"coco 2's Record lamp mirrors outward");
+		#[coco1_organ, coco1_slotQ, coco1_record,
+			coco2_organ, coco2_slotQ, coco2_record].do { |name|
+			this.assertEquals(CQGuiNightMap.endpointSpec(name)[\paper], \clear,
+				"% uses shape-local paper, never an invisible rectangle".format(name));
+		};
 	}
 
 	test_sourceDecorations {
