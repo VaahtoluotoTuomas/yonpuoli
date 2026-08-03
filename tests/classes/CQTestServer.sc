@@ -97,9 +97,9 @@ CQTestServer {
 
 	quit { |onComplete, onFailure, watchShutDown = true|
 		quitCount = quitCount + 1;
-		onComplete.value;
 		unresponsive = false;
 		processRunning = false;
+		onComplete.value;
 	}
 
 	boot { |register = true, onComplete, onFailure|

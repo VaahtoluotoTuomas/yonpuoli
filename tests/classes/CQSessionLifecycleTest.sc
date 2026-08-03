@@ -2,7 +2,7 @@
 // double: no scsynth, GUI, MIDI device or hardware output is involved.
 
 CQSessionLifecycleTest : UnitTest {
-	var server, previousServer, configPath, tmpDir;
+	var server, previousServer, configPath, profilePath, tmpDir;
 
 	setUp {
 		previousServer = Server.default;
@@ -13,6 +13,7 @@ CQSessionLifecycleTest : UnitTest {
 			+/+ "tmp" +/+ "cqsession_lifecycle_test";
 		if(File.exists(tmpDir).not) { File.mkdir(tmpDir) };
 		configPath = tmpDir +/+ "config.scd";
+		profilePath = CQAudioConfig.profilePathFor(configPath);
 		File.use(configPath, "w", { |file|
 			file.write("(headless: true, sixteenN: (enabled: false))");
 		});
@@ -25,7 +26,10 @@ CQSessionLifecycleTest : UnitTest {
 		};
 		Server.default = previousServer;
 		Cocoquantus.prResetAudioDeviceCatalog;
-		if(File.exists(configPath)) { File.delete(configPath) };
+		[configPath, profilePath, profilePath ++ ".pending",
+			profilePath ++ ".bak"].do { |path|
+			if(File.exists(path)) { File.delete(path) }
+		};
 	}
 
 	prWaitUntilFreed {
@@ -68,12 +72,13 @@ CQSessionLifecycleTest : UnitTest {
 			"failed boot rolls back its partially owned graph");
 	}
 
-	test_rebootInvokesActualServerReboot {
+	test_rebootStopsAndBootsTheActualServer {
 		Cocoquantus.boot(configPath);
 		Cocoquantus.reboot;
 		1.0.wait;
-		this.assertEquals(server.rebootCount, 1,
-			"CQ-AUD-003: CQ.reboot invokes Server.reboot, not only graph free/boot");
+		this.assert(server.quitCount == 1 and: { server.bootCount == 1 }
+			and: { server.rebootCount == 0 },
+			"CQ-AUD-003: startup-aware CQ.reboot stops, scans, then boots the server");
 	}
 
 	test_audioClockHealthRejectsResponsiveCatastrophicDrift {
@@ -104,6 +109,54 @@ CQSessionLifecycleTest : UnitTest {
 			Cocoquantus.prRequireAudioClock(server, 48000)
 		}, Error,
 			"catastrophic drift becomes a facade failure before graph allocation");
+	}
+
+	test_initialProfileClockFailureRetriesBaseExactlyOnce {
+		var failures = 0, failureText;
+		var baseDevice = [
+			"Windows WASAPI : Microphone Array",
+			"Windows WASAPI : Headphones"
+		];
+		File.use(configPath, "w", { |file|
+			file.write((
+				headless: true,
+				sixteenN: (enabled: false),
+				device: baseDevice
+			).asCompileString)
+		});
+		File.use(profilePath, "w", { |file|
+			file.write((device: "ASIO : K-MixUSBAudio ASIO Driver")
+				.asCompileString)
+		});
+		server.actualSampleRateReadings = [8000, 8000, 8000];
+		Cocoquantus.boot(configPath, nil, nil, { |failure|
+			failures = failures + 1;
+			failureText = failure.errorString
+		});
+
+		server.runNextBoot;
+		this.assertEquals(server.rebootCount, 1,
+			"an enumerable profile with a catastrophic clock restarts once");
+		this.assertEquals(failures, 0,
+			"the candidate failure is not terminal before the base attempt");
+		this.assertEquals(Cocoquantus.audioReconfigureState, \rollback,
+			"startup publishes the same explicit rollback truth as Audio apply");
+		this.assert(Cocoquantus.audioBootRecovery.candidateError
+			.find("audio clock unhealthy").notNil,
+			"the recovery retains the measured clock diagnosis");
+
+		server.runServerBoot;
+		0.02.wait;
+		this.assertEquals(Cocoquantus.config[\device], baseDevice,
+			"the second boot uses config.scd data, never the rejected profile");
+		server.runNextBoot;
+		this.assertEquals(server.rebootCount, 1,
+			"a failed base route cannot recurse into a reboot loop");
+		this.assertEquals(failures, 1,
+			"two failed routes produce one final caller failure");
+		this.assert(failureText.find("saved profile:").notNil
+			and: { failureText.find("base fallback:").notNil },
+			"the terminal diagnostic retains both route failures");
 	}
 
 	test_deviceCaptureRefusesA_RUNNING_Server {
@@ -190,6 +243,73 @@ CQSessionLifecycleTest : UnitTest {
 			"responsive reboot invokes discovery only in its server-off callback");
 	}
 
+	test_startupAwareRebootSkipsMissingProfileBeforeServerLaunch {
+		var failures = 0, scanRunning;
+		var baseDevice = [
+			"Windows WASAPI : Microphone Array",
+			"Windows WASAPI : Speakers"
+		];
+		var base = CQConfig.validate((
+			headless: true,
+			sixteenN: (enabled: false),
+			device: baseDevice
+		));
+		var candidate = CQAudioConfig.merge(base, (
+			device: "ASIO : K-MixUSBAudio ASIO Driver"
+		));
+		var recovery = CQAudioBootRecovery(
+			base, candidate, profilePath);
+		Cocoquantus.prRebootPrepared(server, configPath, candidate, nil, {
+			failures = failures + 1
+		}, {
+			scanRunning = server.applicationRunning or: {
+				server.serverRunning
+			};
+			(inputs: [baseDevice[0]], outputs: [baseDevice[1]])
+		}, nil, recovery);
+
+		this.assert(server.quitCount == 1 and: { server.bootCount == 1 }
+			and: { server.rebootCount == 0 },
+			"startup recovery scans between a real stop and the replacement boot");
+		this.assert(scanRunning.not,
+			"the K-Mix absence is observed only while endpoints are released");
+		this.assertEquals(server.options.inDevice, baseDevice[0],
+			"the replacement server receives the present base input");
+		this.assertEquals(server.options.outDevice, baseDevice[1],
+			"the replacement server never receives the absent K-Mix output");
+		this.assert(recovery.fallbackActive
+			and: { recovery.attemptCount == 1 }
+			and: { failures == 0 },
+			"catalog preselection records one base attempt and no candidate failure");
+	}
+
+	test_startupAwareRebootDoesNotLaunchWhenEveryRouteIsMissing {
+		var failures = 0, failureText;
+		var base = CQConfig.validate((
+			headless: true,
+			sixteenN: (enabled: false),
+			device: ["missing base input", "missing base output"]
+		));
+		var candidate = CQAudioConfig.merge(base, (
+			device: "ASIO : missing candidate"
+		));
+		var recovery = CQAudioBootRecovery(
+			base, candidate, profilePath);
+		Cocoquantus.prRebootPrepared(server, configPath, candidate, nil, {
+			|failure|
+			failures = failures + 1;
+			failureText = failure.errorString
+		}, { (inputs: [], outputs: []) }, nil, recovery);
+
+		this.assert(server.quitCount == 1 and: { server.bootCount == 0 },
+			"known-missing routes leave the stopped server stopped");
+		this.assert(recovery.preflightFailed and: { failures == 1 },
+			"the stopped scan produces one terminal preflight callback");
+		this.assert(failureText.find("saved profile:").notNil
+			and: { failureText.find("base fallback:").notNil },
+			"the no-launch diagnosis retains both missing routes");
+	}
+
 	test_preparedAudioRebootUsesCapturedConfigAndReturnsOneFailure {
 		var ready = 0, failures = 0, failureText;
 		var prepared = CQConfig.validate((
@@ -207,6 +327,7 @@ CQSessionLifecycleTest : UnitTest {
 		this.assertEquals(server.rebootCount, 1,
 			"prepared Audio candidate crosses the real facade reboot boundary once");
 		server.runServerBoot;
+		0.02.wait;
 		this.assertEquals(Cocoquantus.config[\sampleRate], 96000,
 			"post-reboot boot uses captured data rather than rereading the profile");
 		server.runNextBoot;
@@ -235,6 +356,7 @@ CQSessionLifecycleTest : UnitTest {
 				failureText = failure.errorString
 			});
 		server.runServerBoot;
+		0.02.wait;
 		server.runNextBoot;
 		this.assertEquals(ready, 0,
 			"a responsive catastrophic clock cannot publish candidate ready");

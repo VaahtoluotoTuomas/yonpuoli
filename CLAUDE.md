@@ -73,17 +73,20 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 
 ## Current handoff
 
-- **Where the work stands (2026-08-02).** Branch `nocturne`. Every Nocturne
+- **Where the work stands (2026-08-03).** Branch `nocturne`. Every Nocturne
   GUI increment (N1–N10), the whole ear pass (§13) and PLAY-1…PLAY-6.1 are
   accepted; so are the DAW bridge, the audio-clock guard, SOAK-1, the Yönpuoli
   identity, the privacy audit and the README. The dense-cable hover/Q-X
-  priority fix was committed separately as `732741f`. The current uncommitted
-  increment is the 16×28 Organ/SlotQ/Record expansion and ecological shake.
+  priority fix was committed separately as `732741f`. The 16×28
+  Organ/SlotQ/Record expansion and ecological shake is the separate prototype
+  milestone `dfee7af`. Its focused Night correction — exact socket paper,
+  coherent glyphs and wider ring-to-Coco spacing — plus bundled undo and free
+  shake were accepted on 2026-08-03. PLAY-8 is complete.
   The user explicitly accepted every pre-PLAY-7 listening test on 2026-08-02.
-  **One shake design decision, one tick and four release jobs remain before
-  1.0**, in this order, and `PLAN.md`'s "Seuraava askel konkreettisesti" is the
+  **One tick and four release jobs remain before 1.0**, in this order, and
+  `PLAN.md`'s "Seuraava askel konkreettisesti" is the
   authority on them:
-  1. **PLAY-8 ecological-shake ear acceptance.** The user's 2026-08-02 PLAY-7 result
+  1. [done] **PLAY-8 ecological-shake ear acceptance.** The user's 2026-08-02 PLAY-7 result
      is **neither A nor B**: `Spaf=0.12` remained very subtle, and weight ceiling
      0.65 produced only the small gate changes predicted by seeds 8101/9202.
      Neither global candidate became the fix. The working tree now has six
@@ -97,7 +100,9 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
      identities, stable same-seed identity across density and working Organ,
      SlotQ and Record paths. It also found Organ too quiet, dust-growth too
      static, the first socket layout cluttered and the moon drag sticky. Those
-     findings are corrected; the focused retest plus undo/free-shake items remain.
+     findings are corrected. The user's 2026-08-03 acceptance covers the
+     Organ/SlotQ/Record behavior, the final visual correction, bundled undo and
+     the free 8–10-shake first-use gate.
      Exact analysis and PLAY-8 seeds: `docs/PLAYABILITY_GUIDE.md` and
      `tests/manual_checklist.md`.
   2. **16N-1** — the faderbank hands-on tick. Automatic gate green; it needs
@@ -105,11 +110,30 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   3. Then: what ships (four playable presets, exactly one snapshot admitted by
      `.gitignore`) → release media → remote CI green → merge to `main` and the
      1.0 tag.
+  The visual correction has three durable laws. Continuous Coco destinations
+  (SP.AF, Input VCA, Feedback VCA, Organ, SlotQ) are hollow; interior glyphs
+  are reserved for Flip/Skip/Record acts. Software-native Organ/SlotQ/Record
+  views use transparent paper plus a shape-local circular socket mask, never a
+  rectangular eraser; Record lamps mirror outward. Complete Coco organisms sit
+  30 body px farther outward at the reference stage (114 px ring shore, >60 px
+  outer Record margin); no control is smaller. Tests pin all three.
   Deliberately deferred and non-blocking, in order after 1.0: 13.3b (isolated
   Bits 5/8/12 ear test), the three porous playing modes, and the Norns port
   (§14). Ecological shake is no longer in that bucket: its implementation is
-  the current 1.0 candidate and only the PLAY-8 ear gate remains.
-- **Latest full gate (2026-08-02, PLAY-8 correction pass):**
+  accepted in the current 1.0 candidate.
+  The next feature design is `cocoN_slotX` (16×30), then `cocoN_dust` (16×32).
+  The user rejected the earlier shared left-sky Dust bank: each Dust body must
+  stay attached to its own Coco in the inner-lower quadrant. Exact geometry,
+  morph-seed clearance and a possible second Dust texture axis remain a design
+  decision, not implemented behavior.
+- **Current delivery gate (2026-08-03):** `CQ_COMPILE_OK`, **18,629 unit
+  passes / 0 failures / 40/40 classes**, `CQ_GUI_NIGHT_PASSED` and
+  `CQ_GUI_AUDIO_PASSED`. The fresh rest/cables/control-edge captures were
+  visually inspected; roots are whole, socket marks coherent and the moved
+  organisms retain intentional margins. The physical unplugged-K-Mix reboot
+  selected split WASAPI before launch, reported about 47,969 Hz and advanced
+  100 Night phase frames in three seconds. DSP is unchanged in this delivery.
+- **Latest full DSP green gate (2026-08-02, committed PLAY-8 correction pass):**
   `CQ_COMPILE_OK`, **18,555 unit passes / 0 failures / 39/39 classes**;
   `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`, `CQ_GUI_NIGHT_PASSED`;
   `CQ_MATRIX_INPUTS_OK`, `CQ_SHAKE_ECOLOGY_OK`, `CQ_PLAYABILITY_MEASURED`,

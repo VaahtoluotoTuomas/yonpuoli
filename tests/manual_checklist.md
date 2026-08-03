@@ -1605,6 +1605,17 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
       regressiolla. Avoimeksi jää vain yllä kuvattu VB-CABLE-DAW-portti, ja
       tämä lyhyt vakauskoe **ei korvaa** jonossa seuraavaa pitkää koko
       soittimen laitteisto-/resource-soakia.
+- [x] **Puuttuvan startup-laitteen turvallinen palautus hyväksytty fyysisesti
+      2026-08-03.** Yllä oleva vanha “ei toisteta” -rajaus on tämän korjauksen
+      osalta kumottu. K-Mix-profiili aktivoitiin, serveri suljettiin, K-Mix
+      irrotettiin ja julkinen `CQ.reboot` ajettiin IDE:n jäädessä auki. Uusi
+      stopped-server scan hylkäsi puuttuvan ASIO-reitin ennen käynnistystä,
+      valitsi split-WASAPI-baselinen eikä pyytänyt MME-oletuslaitteita.
+      Toteutuva kello oli noin 47 969 Hz ja Night eteni 100 vaihepäivitystä
+      kolmessa sekunnissa. Base promotoitui vasta ready-tilan jälkeen,
+      K-Mix-profiili säilyi `.bak`-tiedostossa, `.pending`-tiedostoa ei jäänyt
+      ja serveri sulkeutui puhtaasti. Käyttäjän uusintakäynnistys vahvisti
+      toiminnan.
 
 ### MOR-1 — morph ei jäädytä käyttöliittymää
 
@@ -2651,8 +2662,11 @@ Record vain avasi, ensimmäinen socket-layout oli sekava ja kuun vaihe tarttui
 vedon alussa neljännesasentoon. Korjauspassi nosti vain organin kuultavaa haaraa
 +5,3 dB, viritti dustGrowthin liikkuvammaksi, teki Recordista kaksisuuntaisen,
 siirsi socketit elintensä viereen, poisti Organ/SlotQ:n `>`-merkit ja muutti
-kuun vedon jatkuvaksi sekä density-käyrän kuutiolliseksi. Kohdat 3–6 testataan
-nyt uudelleen; 7–8 ovat vielä kokonaan avoinna.
+kuun vedon jatkuvaksi sekä density-käyrän kuutiolliseksi. Käyttäjän
+2026-08-03 toimintapalaute (“tämä vaikuttaa toimivalta”) vahvisti kohtien 3–5
+suunnan. Kohta 6 sai vielä alla kuvatun peitto-/väljyyskorjauksen. Käyttäjä
+hyväksyi sen sekä bundled undon ja vapaan 8–10 shaken ensikäytön 2026-08-03;
+PLAY-8 on kokonaan suljettu.
 
 1. **Tyhjä RAM puhuu.** Jokaisen neljän pitää alkaa tehdä kuultavaa materiaalia
    muutamassa sekunnissa ilman luuppia. Niiden pitää olla tunnistettavasti eri
@@ -2679,13 +2693,22 @@ nyt uudelleen; 7–8 ovat vielä kokonaan avoinna.
    gaten pitää nyt **sulkea** kirjoittaja hetkeksi, piirtää täysi punainen sinetti
    ja jättää `CQ.get(\coco1Hold)` arvoon 0. Johdon poiston pitää palauttaa
    kummassakin kokeessa täsmälleen käsin asetettu tila.
-6. **Night-integraatio.** Kaikkien kuuden uuden socketin pitää löytyä Cocon
-   oman elimen vierestä: Organ aivan hedelmän ulkopuolelta, SlotQ suoraan
-   Q-kiduksen vierestä keskirenkaan puolelta ja punainen Record vasemman kuoren
-   noin klo 10 / oikean noin klo 2 yläulkokehältä. Juurten pitää olla hyvin
-   lyhyitä eikä minkään viivan kulkea Cocon läpi. Organissa ja SlotQ:ssa ei ole
-   `>`-merkkiä; Recordin ympyrä on tallella. Tiheässä patchissa endpointit,
-   Record-lamppu ja johto-hover pysyvät tarkkoina.
+6. **Night-integraatio ja yhtenäinen socket-kieli.** Kaikkien kuuden uuden
+   socketin pitää löytyä Cocon oman elimen vierestä: Organ aivan hedelmän
+   ulkopuolelta, SlotQ suoraan Q-kiduksen vierestä keskirenkaan puolelta ja
+   punainen Record vasemman kuoren noin klo 10 / oikean noin klo 2
+   yläulkokehältä. Juurten pitää olla hyvin lyhyitä eikä minkään viivan kulkea
+   Cocon läpi. Kaikki jatkuvat Coco-kohteet — SP.AF, Input VCA, Feedback VCA,
+   Organ ja SlotQ — ovat onttoja: väri ja viereinen elin/asteikko kertovat
+   suureen. Vain tapahtuma-/kategoriakohteissa on sisämerkki: Flipin vastakkaiset
+   chevronit, Skipin kipinä ja Recordin ympyrä. Vasemman Record-lampun pitää olla
+   socketista ulospäin vasemmalla, oikean ulospäin oikealla. Haalean punaisen
+   juuren pitää näkyä kokonaan molemmilla puolilla, eikä Organ-socketin tai sen
+   kaaren näkymätön suorakulmio saa syödä Record-rengasta. Cocon ja linnarenkaan
+   välissä pitää olla selvä avoin ranta, mutta uloimmankin Recordin pitää näyttää
+   harkitusti sommitellulta eikä reunaan vahingossa juuttuneelta. Mitään ei ole
+   pienennetty. Tiheässä patchissa endpointit, Record-lamppu ja johto-hover
+   pysyvät tarkkoina.
 7. **Yksi oikea undo.** Tallenna silmällä muutama lähtöarvo ja patch, tee shake
    kuusta, paina Ctrl+Z. Sekä koko edellinen johtokenttä että shaken muuttamat
    turvalliset musiikkiarvot pitää palautua; Master, mic ja pan eivät saa muuttua
@@ -2698,7 +2721,16 @@ nyt uudelleen; 7–8 ovat vielä kokonaan avoinna.
 
 - [x] **PLAY-8.1–2 hyväksytty** (2026-08-02 — neljä erilaista perhettä tyhjästä
       RAMista; sama seed säilyttää identiteetin ja density lisää intensiteettiä)
-- [ ] **PLAY-8 hyväksytty kokonaan** (pvm: ______ — korjauspassin Organ/Dust,
+- [x] **PLAY-8.3–5 toimintalaki hyväksytty** (2026-08-03 — kohdistettu palaute:
+      Organ-, SlotQ- ja kaksisuuntainen, käsiasetuksen säilyttävä Record-korjaus
+      vaikuttaa toimivalta)
+- [x] **PLAY-8.6 viimeinen visuaalikatselmus hyväksytty 2026-08-03**
+      (läpinäkyvät muotokohtaiset
+      socket-paperit, ulospäin peilatut Record-lamput, ehjät punaiset juuret,
+      ontto-jatkuva / merkitty-tapahtuma -symbolilaki ja väljempi Coco-ranta)
+- [x] **PLAY-8.7–8 undo + vapaa ensikäyttö hyväksytty 2026-08-03**
+      (bundled palautus ja 8–10 shakea)
+- [x] **PLAY-8 hyväksytty kokonaan 2026-08-03** (korjauspassin Organ/Dust,
       kuun määrälaki ja jatkuva ele, kuusi socketia/DSP-polku, kaksisuuntainen
       mutta käsin asetetun Holdin säilyttävä Record, Night-integraatio, bundled
       undo ja vapaa 8–10 shaken ensikäyttö)

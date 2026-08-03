@@ -38,6 +38,7 @@ yonpuoli/
 │   ├── CQConfig.sc             // config load + validation + defaults
 │   ├── CQAudioConfig.sc        // pure active/draft Audio profile model
 │   ├── CQAudioProfileStore.sc  // pending roundtrip + atomic sibling profile
+│   ├── CQAudioBootRecovery.sc  // startup preflight + one profile fallback
 │   ├── CQAudioReconfigure.sc   // one candidate + at most one rollback
 │   ├── CQGraph.sc              // buses, groups, synth spawning, boot/teardown
 │   ├── CQSynthDefs.sc          // all SynthDefs (pure server-side DSP)
@@ -329,6 +330,7 @@ Language side on `\cq_hot`: engage −6 dB trim (a lagged synth arg), GUI notice
 | `CQAudioConfig` | pure Audio profile model | Owns the exact nine Audio keys, `defaults < base < overlay` merge, active/draft/dirty/valid separation, 0↔1 channel display boundary and sibling profile path. Generated explicit nils use private `\default` because an Event drops nil-valued keys; the marker is decoded before the candidate reaches `CQGraph`. No Qt, file, server, CQSpec or snapshot dependency |
 | `CQAudioDeviceCatalog` | pure normalized device snapshot/filter boundary | Calls an injected provider once, exact-deduplicates directional names, merges exact active/draft endpoints, derives the single-device intersection and produces reversible recommended/all cached views. The Windows recommendation recognizes only complete legacy host prefixes; it never fuzzily parses endpoint names, touches Qt, persists machine names or scans by itself after construction |
 | `CQAudioProfileStore` | generated Audio overlay persistence | Writes only the sibling `.audio.scd.pending`, loads it back, hard-gates its keys and validates the merged candidate before exposure. Promotion is a same-directory atomic replacement, preserves one `.bak`, never writes `config.scd`, and keeps a validated pending file retryable after rename failure |
+| `CQAudioBootRecovery` | pure startup preflight/recovery coordinator | Treats the generated profile as a candidate and the base config as its sole fallback. Fresh device absence can preselect the base, or fail before scsynth when every configured route is absent; server-open or pre-graph clock failure can restart the base exactly once. Only full readiness promotes the base profile and preserves the rejected candidate as `.bak`; no server, Qt or lifecycle side effects live in this class |
 | `CQAudioReconfigure` | serverless AIO-3 transaction coordinator | Gates lifecycle and recorder state, captures previous/candidate data, drives one candidate restart and at most one rollback through an injected facade runner, ignores stale generations, promotes only after ready and keeps rename failure retryable without a reboot. No Qt or server dependency |
 | `CQGraph` | server plumbing | allocates buses/groups/buffers, builds ServerOptions from config, spawn order, `s.sync` between stages, teardown, CmdPeriod re-arm hook |
 | `CQState` | value store + funnel | `set(name, val)` → clamp → `synth.set` / bus write → `changed(\param, name, val)`. `get`, `asEvent` (for snapshots), `load(event)`. Enum params travel to the server as indices into the CQSpec value list; every other layer writes symbols through the funnel |
@@ -416,16 +418,18 @@ Teardown (`*free`): recorder stop → master fade 100 ms → free groups/buses/b
 close GUI/MIDI/OSC defs. It is idempotent, invalidates pending work before the fade, and
 accepts an `onDone` callback; a boot requested during stopping is queued behind it.
 
-`CQ.reboot` is intentionally stronger than `free` + `boot`: it calls `Server.reboot` so
-boot-only options take effect. The project uses `Server.default`, so this explicit command
-also terminates unrelated synths on that shared server; ordinary `CQ.free` never quits it.
+`CQ.reboot` is intentionally stronger than `free` + `boot`: it performs a
+controlled `Server.quit` → stopped-device scan/profile preflight → `Server.boot`, so
+boot-only options take effect without launching a known-missing configured device.
+The project uses `Server.default`, so this explicit command also terminates unrelated
+synths on that shared server; ordinary `CQ.free` never quits it.
 If SuperCollider's status watcher marks the local server unresponsive, the facade
 does not use stock `Server.reboot` (which would attempt a second boot on the occupied
 port): it invokes `Server.quit`'s exact-PID forced stop, then waits until both the
 process is gone and the status watcher has cleared `unresponsive` before booting.
-Both responsive `Server.reboot` and forced-quit recovery capture directional
-devices only after that stopped boundary and before launching the replacement
-process. Discovery failure never prevents the audio boot.
+Both the responsive controlled restart and forced-quit recovery capture
+directional devices only after that stopped boundary and before launching the
+replacement process. Discovery failure alone never prevents the audio boot.
 
 The Audio page's later `reconfigureAudio` operation reuses this ownership rather
 than duplicating it in Qt: validate and persist pending profile → generation-
@@ -435,8 +439,10 @@ exactly one generation-guarded last-working rollback; rollback failure stays
 `failed` and silent. Recorder
 `starting/recording/stopping` blocks the transaction. `CQGraph.applyOptions`
 remains the only writer of `ServerOptions`. With no draft changes the page labels
-discard as `no changes` and offers `restart audio`; that path restarts the exact
-active config without touching the generated sibling profile.
+discard as `no changes` and offers `restart audio`; that path first targets the
+exact active config, but shares the stopped-scan base fallback when its device
+has disappeared. The generated sibling changes only after that fallback reaches
+full readiness.
 
 ---
 

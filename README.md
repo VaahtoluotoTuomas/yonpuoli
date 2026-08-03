@@ -76,7 +76,14 @@ plugins are required.
    Audio-page edits are stored in the ignored sibling `config.audio.scd`; the
    hand-maintained `config.scd` is never rewritten. Apply first explains that
    audio, unrelated synths on `Server.default`, and the unsaved Yönpuoli patch
-   will reset. An active recorder blocks the restart.
+   will reset. An active recorder blocks the restart. On a later ordinary
+   startup, `CQ.reboot`, or the Audio page's clean restart, an absent saved
+   device or an unhealthy actual sample rate triggers at most one automatic
+   retry with `config.scd`. The recovered route must reach full ready before it
+   replaces `config.audio.scd`; the rejected profile is kept as
+   `config.audio.scd.bak`. If a fresh scan finds neither configured route, the
+   operation stops before launching the audio server instead of silently
+   accepting the driver's default device.
 
 3. In the SuperCollider IDE, open **Edit → Preferences → Interpreter → Include
    paths** and add `<repo>/classes`. Recompile the class library with
@@ -233,8 +240,10 @@ portfolio-oriented account of the project is in
   2.61 kHz. Yönpuoli now requires three healthy post-boot clock readings before
   building the graph, because the first watcher value can still belong to the
   previous server. The tested split-WASAPI input/output route remains the local
-  baseline. Automatic recovery from a physically unplugged ASIO candidate is
-  regression-covered but has not been re-run after this correction.
+  baseline. An unplugged saved ASIO route is rejected during startup and gets
+  the one base-config retry described above. Unplugging a device after a
+  session is already ready remains an explicit Audio-page restart: the runtime
+  watchdog does not restart audio automatically.
 - Main 1/2, independent Coco stems on physical outputs 3/4, raw inputs 1/2 and
   PANIC were verified with a four-output USB interface; NRT covers the shared
   stem safety ceiling.

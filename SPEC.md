@@ -643,12 +643,31 @@ profile lives beside it: `config.scd → config.audio.scd`, or
 `foo.scd → foo.audio.scd`. Merge precedence is
 `CQConfig.defaults < base config < audio profile`, followed by validation of the
 complete candidate. Generated profiles may contain only the nine keys above;
-an unknown key is corruption and hard-fails. SuperCollider `Event` cannot retain
-an explicit `nil` value, so the generated profile uses the private value
+an unknown key is corruption and rejects that generated candidate. An ordinary
+facade startup may recover from a rejected generated profile as described
+below; direct profile validation still hard-fails. SuperCollider `Event` cannot
+retain an explicit `nil` value, so the generated profile uses the private value
 `\default` under `device`, `hardwareBufferSize`, `micChan` or `stemOuts`; the
 Audio model decodes it to the corresponding real `nil` config truth before the
 candidate reaches `CQGraph`. Device Strings remain exact, escaped data and are
 never parsed from or evaluated as UI text.
+
+On an ordinary initial boot or a non-transactional strong restart (`CQ.reboot`
+or the Audio page's clean restart), a generated profile is a recoverable
+candidate, while the hand-maintained base config is its only fallback. A fresh
+stopped-server device scan may skip a candidate endpoint whose absence it
+positively proves, provided it does not also prove the base endpoint absent. A
+stale, failed or unavailable scan is never evidence of absence. If the
+candidate instead fails to open the server or fails the pre-graph actual-rate
+gate, the facade restarts once with the base config. Graph, SynthDef and later
+session failures never enter this audio fallback, and the base attempt cannot
+recurse. Only a fully ready base session may atomically replace the generated
+profile; the rejected file becomes its `.bak`. If the base also fails, startup
+remains failed and reports both reasons. If a fresh scan positively rejects
+every configured route (including a base-only setup), the operation fails
+before launching scsynth instead of relying on the driver's implicit default.
+A post-ready runtime device loss is diagnosed but never causes an automatic
+restart until the operator requests one of the explicit restart operations.
 
 Device, sample rate, server block, hardware buffer and hardware channel changes
 are not hot-swapped. Apply requires a visible inline confirmation that

@@ -1,6 +1,6 @@
 # Yönpuoli — ajantasainen kehityssuunnitelma (Nocturne-vaihe)
 
-Päivitetty 2026-08-02. Tämä tiedosto kertoo, **mitä tehdään seuraavaksi** ja
+Päivitetty 2026-08-03. Tämä tiedosto kertoo, **mitä tehdään seuraavaksi** ja
 **missä järjestyksessä**. Vaiheen yksityiskohtainen *miten* — jokaisen osan
 suunnittelu, geometria, karikot, korvakokeet — on
 [`docs/NIGHT_STANDALONE_PLAN.md`](docs/NIGHT_STANDALONE_PLAN.md):ssä; tämä
@@ -15,11 +15,13 @@ vaihe: Nocturne — yö koko soittimena.** N1–N10, koko korvapassi (§13) ja
 soitettavuuskierroksen PLAY-1…PLAY-6.1 on hyväksytty ja PLAY-7:n kahden
 globaalin shake-kandidaatin kuuntelu on suljettu tulokseen **ei kumpikaan**.
 Sen avaama kuuden Organ/SlotQ/Record-kohteen 16×28-laajennus ja ekologinen
-shake on nyt toteutettu sekä automaattisesti ja visuaalisesti portitettu.
+shake on toteutettu, portitettu ja tallennettu omaksi välietapikseen commitissa
+`dfee7af`.
 PLAY-8:n ensimmäinen kuuntelukierros hyväksyi perheiden erottuvuuden ja
 density-lain, mutta avasi Organ-tason, dust-tekstuurin, Record-lain, socket-
-layoutin ja kuun eleen korjauspassin. Passi on toteutettu; sen kohdistettu
-uusintakoe on seuraava käsin tehtävä päätös.
+layoutin ja kuun eleen korjauspassin. Käyttäjä hyväksyi 2026-08-03 sekä sen
+toimintalait että viimeisen visuaalipassin, bundled undon ja vapaan 8–10 shaken
+ensikäytön. PLAY-8 on kokonaan valmis.
 Night + Master + Drawer on soittimen ainoa ylläpidettävä käyttöliittymä ja
 Night on soittimen maisema, ei sen kartta. Työ elää paikallisessa
 `nocturne`-haarassa.
@@ -36,15 +38,15 @@ Portfolio- ja julkaisupinta on `README.md`:ssä, `SOURCES.md`:ssä ja `docs/`-ka
 case study / development process -dokumenteissa. Etärepon uudelleennimeäminen,
 public-vaihto ja oikeat kuva-/äänidemot ovat erillinen julkaisutoimi.
 
-**Seuraava askel konkreettisesti (2026-08-02).** Kaikki Nocturne-vaiheen
+**Seuraava askel konkreettisesti (2026-08-03).** Kaikki Nocturne-vaiheen
 GUI-inkrementit ja koko korvapassi ovat hyväksyttyjä. PLAY-7 sulki kaksi
 yhden muuttujan ehdokasta mutta avasi yhden rajatun suunnittelupäätöksen.
 Käyttäjä hyväksyi 2026-08-02 eksplisiittisesti kaikki PLAY-7:ää edeltävät
-soittotestit. 1.0:aan on jäljellä **yksi shake-päätös, yksi rasti ja neljä
-julkaisutyötä**,
+soittotestit ja sulki PLAY-8:n 2026-08-03. 1.0:aan on jäljellä **yksi rasti ja
+neljä julkaisutyötä**,
 tässä järjestyksessä:
 
-1. **PLAY-8 — ekologisen shaken korvahyväksyntä.** Soittotesti 7:n tulos
+1. [x] **PLAY-8 — ekologisen shaken korvahyväksyntä.** Soittotesti 7:n tulos
    2026-08-02 on **ei A eikä B**: `Spaf=0,12` oli korvalla liian pieni ja
    `amount=0,65` muutti vain vähän, täsmälleen siementen gate-topologian
    ennustamalla tavalla; kumpaakaan globaalia arvoa ei nostettu. Sen sijaan
@@ -59,8 +61,10 @@ tässä järjestyksessä:
    tyhjän RAMin identiteettiä sekä saman seedin säilyvän eri densityillä.
    Korjauspassi nosti vain kuultavaa organ-haaraa, lisäsi dust-growthin liikettä,
    teki Recordista kaksisuuntaisen, siivosi socketit elintensä viereen ja teki
-   kuun vedosta jatkuvan sekä fertility-käyrästä kuutiollisen. Kuuntele nyt
-   kohdistetusti kohdat 3–6, sitten bundled undo ja vapaa 8–10 shaken koe.
+   kuun vedosta jatkuvan sekä fertility-käyrästä kuutiollisen. Käyttäjän
+   2026-08-03 hyväksyntä kattaa kohtien 3–5 toimintalait, kohdan 6
+   peitto/symboli/väljyys-passin sekä kohtien 7–8 bundled undon ja vapaan 8–10
+   shaken ensikäytön. Vaihe on suljettu.
    Tarkka tulos ja seed-kartta: `docs/PLAYABILITY_GUIDE.md` ja PLAY-8
    tiedostossa `tests/manual_checklist.md`.
 2. **16N-1 — faderipankin käsintesti.** Automaattinen portti on vihreä; rasti
@@ -76,7 +80,17 @@ tässä järjestyksessä:
 Ei-estävää, tietoisesti myöhemmäksi jätettyä: 13.3b (Bits 5/8/12 eristetty
 korvatesti), kolme huokoista soittotilaa ja Norns-portti (§14) — tässä
 järjestyksessä, kaikki 1.0:n jälkeen. Ekologinen shake ei kuulu tähän listaan:
-sen toteutus on nykyisessä 1.0-ehdokkaassa ja vain PLAY-8-hyväksyntä on auki.
+sen toteutus ja PLAY-8-hyväksyntä ovat valmiit nykyisessä 1.0-ehdokkaassa.
+
+**Arvioitu seuraava input-jono, ei osa nykyistä PLAY-8-porttia:** ensin kaksi
+itsenäistä `cocoN_slotX`-kohdetta (16×30), koska niiden oma fyysinen X-venttiili
+ja lyhyt anatominen koti ovat jo olemassa; vasta sen oman feedback-adjacent
+NRT-/kuunteluportin jälkeen kaksi `cocoN_dust`-kohdetta (16×32). Vasemman
+taivaan yhteinen pölypankki hylättiin 2026-08-03 liian kaukana oikeasta Cocosta;
+suunnittelu jatkuu kahtena oman Cocon sisä-alaviistoon kiinnittyvänä kehona.
+Dust tarvitsee oman rajatun modulaatiokäyrän — Input/Feedback-VCA-lakia ei
+kopioida jatkuvaan kohinalähteeseen sokkona. Tarkka Night-symbolikieli ja perustelu ovat
+`docs/PLAYABILITY_GUIDE.md`:ssä.
 
 **Aiemmat hyväksynnät tiivistettynä.** **N9 hyväksyttiin 2026-07-28.** Day on
 poistettu, koska Night on inspiroivampi varsinainen soitin ja kahden
@@ -1663,10 +1677,14 @@ Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
   Exact fyysinen riskiportti ei toisteta; `[48000, 7076.4, 7019.8]` on
   regressiotestattu hermettisesti. Compile ja unit ovat vihreät:
   `CQ_COMPILE_OK`, **13 502 / 0 / 37/37**.
-- **Jatka tästä:** älä aja system default- tai puuttuvan laitteen koetta tällä
-  koneella uudelleen. Loopback-näkyvyyden portti (kohta 9) on sen jälkeen tehty
-  ja kirjattu alla olevaan hand-offiin; jäljellä on vain kaksisuuntainen
-  VB-CABLE-portti, joka vaatii ajuriasennuksen.
+- **2026-08-03 jälkisulku:** vanha “älä aja puuttuvan laitteen koetta” -rajaus
+  kumottiin turvallisen startup-palautuksen valmistuttua. Julkinen `CQ.reboot`
+  pysäyttää serverin, skannaa laitteet ja esivalitsee base-reitin ennen uutta
+  prosessia. Fyysisessä K-Mix-irrotuksessa se käynnisti split-WASAPIn suoraan,
+  toteutuva kello oli noin 47 969 Hz, Night eteni 100 vaihepäivitystä kolmessa
+  sekunnissa eikä MME-oletusreittiä tai `server already booting` -handoffia
+  syntynyt. Käyttäjän uusintakäynnistys hyväksyi toiminnan. Loopback-näkyvyyden
+  portti (kohta 9) on kirjattu alla olevaan historialliseen hand-offiin.
 
 **Hand-off 2026-07-30 (b) — jatka testaamista tästä**
 
@@ -1699,9 +1717,11 @@ Portit AIO-3:ssa: `CQ_COMPILE_OK`; **13 449 unit-passia / 0 failurea /
   `preASrc`/`preBSrc` ovat jälleen `liveL`/`liveR` heti restartin jälkeen —
   tarkista se ennen kuin syötät kaapeliin mitään, jos lähde voi kuulla
   Yönpuolen oman ulostulon.
-- Älä valitse tällä koneella `system default` -reittiä äläkä tee uudelleen
-  irrotetun/puuttuvan laitteen rollback-koetta. Molempien havaittu failure on
-  dokumentoitu yllä ja stale-first-reading-regressio on katettu hermettisesti.
+- Tämä oli 2026-07-30:n historiallinen rajaus: älä valitse tällä koneella
+  `system default` -reittiä äläkä tee irrotetun/puuttuvan laitteen rollback-
+  koetta. Puuttuvan tallennetun laitteen osuus suljettiin sittemmin turvallisesti
+  yllä kuvatulla 2026-08-03 fyysisellä startup-palautuksella; tuntemattoman
+  system-default-reitin valintaa ei edelleenkään tarvita.
 - Muut fyysiset AIO-kohdat on testattu: split, USB single-device, inputit 1/2,
   main 1/2, stemit 3/4, PANIC, stereo/4ch REC ja 10 minuutin tiheä patch.
   **Käyttäjä hyväksyi fyysisen AIO-katselmuksen tässä rajauksessa 2026-07-30**,
@@ -2344,6 +2364,10 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    kuultavan kertoimen 0,30 → 0,55 (+5,3 dB), viritti dustin epäsymmetrisemmäksi,
    vaihtoi kuun käyräksi `0,2 × phase³` ja teki vedosta ensimmäisestä pikselistä
    jatkuvan. Organ/SlotQ:n `>`-merkit poistettiin ja Record vaihtui punaiseksi.
+   2026-08-03 visuaalipassi vei lain loppuun: kaikki jatkuvat Coco-socketit ovat
+   onttoja, vain Flip/Skip/Record merkittyjä; software-native socketien paperi
+   on läpinäkyvä, Record-lamput peilautuvat ulospäin ja molemmat Coco-organismit
+   siirtyivät 30 body-pikseliä ulospäin mitään pienentämättä.
 
    Korjauspassin NRT tyhjästä Coco-RAMista: organDrone seed 3 / 3 johtoa /
    RMS ≈0,0414; memoryPulse 1 / 4 / ≈0,0866; dustGrowth 2 / 5 / ≈0,0591;
@@ -2351,15 +2375,20 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    pareittain noin 1,64…4,10 dB. Kahdeksan input-polun NRT:n aktiiviset RMS:t
    olivat Organ 0,044972/0,052433, SlotQ 0,133794/0,157749 ja suljettu→auki-
    Record 0,353605/0,353616; avoin→suljettu vaimeni täsmälleen nollaan.
-   Seuraava portti on PLAY-8:n kohdistettu uusintatesti, ei enää toteutuspäätös.
-   Myöhemmät kandidaatit ovat edelleen
-   `castleK_send`, `cocoN_dust`, `cocoN_slotX` ja lopuksi Bits/Wrap.
+   Käyttäjä hyväksyi 2026-08-03 viimeisen visuaalisen silmäyksen, bundled undon
+   ja vapaan ensikäytön; PLAY-8 on valmis. Seuraava erillinen prototyyppijono on
+   `cocoN_slotX` (16×30) → kaksi oman Cocon sisä-alaviistoon kiinnittyvää
+   `cocoN_dust`-kehoa (16×32). `castleK_send` ja Bits/Wrap jäävät myöhemmiksi.
 
-   Lopullinen automaattiportti: `CQ_COMPILE_OK`, **18 555 / 0 / 39**,
+   Commitoidun `dfee7af`-välietapin koko automaattiportti: `CQ_COMPILE_OK`,
+   **18 555 / 0 / 39**,
    `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`, `CQ_GUI_NIGHT_PASSED`,
    `CQ_MATRIX_INPUTS_OK`, `CQ_SHAKE_ECOLOGY_OK`, `CQ_PLAYABILITY_MEASURED`,
    `CQ_HOLD_OK` ja koko 90 s `CQ_SAFETY_PASSED`. Nightin rest/telemetry/cables-
-   capturet renderöitiin ja tarkistettiin myös silmällä.
+   capturet renderöitiin ja tarkistettiin myös silmällä. Nykyinen PLAY-8:n
+   visuaalipassin ja audiopalautuksen toimitusportti läpäisee `CQ_COMPILE_OK`,
+   **18 629 / 0 / 40**, `CQ_GUI_NIGHT_PASSED` ja `CQ_GUI_AUDIO_PASSED`; uudet
+   capturet tarkistettiin uudelleen.
 9. **Merge `main`iin ja 1.0-tagi.**
 
 ### DAW-sillan keino: ReaRoute, ei VB-CABLE
