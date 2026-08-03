@@ -34,8 +34,8 @@ CQGuiWorkshopTest : UnitTest {
 			this.assertEquals(main[0], main[2],
 				"% : the Coco ledgers are the same width".format(step));
 		};
-		this.assertEquals(CQGuiScale.railWidth(\compact, 1272), 1224,
-			"the windowed minimum fills its page, keeping a 24 px margin");
+		this.assertEquals(CQGuiScale.railWidth(\compact, 1272), 1200,
+			"the 28-column windowed loom keeps more than its 24 px margin");
 		this.assert(CQGuiScale.railWidth(\roomy, 1434)
 			> CQGuiScale.railWidth(\compact, 1272),
 			"a maximized window buys a wider rail, not only more slate");

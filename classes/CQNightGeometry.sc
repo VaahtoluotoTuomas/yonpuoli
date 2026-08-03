@@ -918,6 +918,28 @@ CQNightGeometry {
 			} {
 				pi + CQNightMeasures.slotXValveAngle.degrad
 			};
+			// The three software-native inputs belong to their own organs, not to a
+			// sixth/eighth moon row. Organ sits just beyond its fruit, SlotQ directly
+			// beside its gill, and Record on the free upper outer rim (10 o'clock on
+			// Coco 1, 2 o'clock on Coco 2). All old hardware-parity moons stay put.
+			var organInput = (orgSpiralPoint + ((orgDelta / orgLength)
+				* (CQNightMeasures.orgStemReach * scale)))
+				+ ((orgDelta / orgLength) * CQNightMeasures.organInputOutset);
+			var recordAngle = if(i == 0) { (-150).degrad } { (-30).degrad };
+			var modInputs = (
+				organ: organInput,
+				slotQ: this.polar(center, valveR, qAngle)
+					+ (inward * CQNightMeasures.slotQInputGap),
+				record: this.polar(center,
+					outerR + CQNightMeasures.recordInputOutset, recordAngle)
+			);
+			var modRoots = (
+				organ: organInput - ((orgDelta / orgLength)
+					* (CQNightMeasures.organInputOutset
+						- CQNightMeasures.organPodOuter)),
+				slotQ: this.polar(center, valveR, qAngle),
+				record: this.polar(center, outerR, recordAngle)
+			);
 			(center: center, outerR: outerR, winding: winding,
 				side: side, inward: inward,
 				mouthAngle: mouthAngle, segments: segments,
@@ -956,6 +978,8 @@ CQNightGeometry {
 				},
 				slotQValve: this.polar(center, valveR, qAngle),
 				slotXValve: this.polar(center, valveR, xAngle),
+				modInputs: modInputs,
+				modRoots: modRoots,
 				crescents: [126, 108, 90].collect { |degrees|
 					this.polar(center, CQNightMeasures.crescentArc * scale,
 						degrees.degrad)
@@ -974,6 +998,10 @@ CQNightGeometry {
 			endpoints[("org" ++ n).asSymbol] = coco[\orgCenter];
 			[\spaf, \inVca, \fbVca, \flip, \skip].do { |suffix, m|
 				endpoints[("coco" ++ n ++ "_" ++ suffix).asSymbol] = coco[\moons][m];
+			};
+			#[organ, slotQ, record].do { |suffix|
+				endpoints[("coco" ++ n ++ "_" ++ suffix).asSymbol] =
+					coco[\modInputs][suffix]
 			};
 		};
 

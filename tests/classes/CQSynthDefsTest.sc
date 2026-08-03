@@ -48,6 +48,47 @@ CQSynthDefsTest : UnitTest {
 			"the actual feedback VCA remains capped at x2.5");
 	}
 
+	test_softwareNativeCocoInputsUseTheirOwnMusicalCeilings {
+		var organAtPointThree = CQSynthDefs.prVcaLaw(0.3)
+			.clip(0, CQSynthDefs.organVcaCeiling);
+		var slotAtPointFour = CQSynthDefs.prVcaLaw(0.4)
+			.clip(0, CQSynthDefs.slotQVcaCeiling);
+		this.assertEquals(CQSynthDefs.organVcaCeiling, 1.0,
+			"matrix Organ cannot exceed the hand calyx's full-open value");
+		this.assertEquals(CQSynthDefs.slotQVcaCeiling, 1.5,
+			"matrix SlotQ shares the hand gill's documented gain country");
+		this.assert(organAtPointThree.inclusivelyBetween(0.68, 0.70),
+			"a tuned 0.30 Organ cable is clearly audible without rail pinning");
+		this.assert(slotAtPointFour.inclusivelyBetween(0.95, 0.97),
+			"a tuned 0.40 SlotQ cable opens most of the Quantussy tributary");
+		this.assertFloatEquals(CQSynthDefs.organAudibleGain, 0.55,
+			"PLAY-8 lifts the audible organ branch by 5.3 dB without moving its source", 1e-9);
+	}
+
+	test_recordMatrixGateMomentarilyInvertsManualHold {
+		this.assertEquals(CQSynthDefs.recordToggledHold(1, 0), 1,
+			"a sealed writer stays sealed with no Record gate");
+		this.assertEquals(CQSynthDefs.recordToggledHold(1, 1), 0,
+			"a Record gate opens a sealed writer");
+		this.assertEquals(CQSynthDefs.recordToggledHold(0, 0), 0,
+			"an open writer stays open with no Record gate");
+		this.assertEquals(CQSynthDefs.recordToggledHold(0, 1), 1,
+			"the same Record gate freezes an open writer");
+	}
+
+	test_cocoSynthOwnsAllThreeIndependentSoftwareInputBuses {
+		var def = CQSynthDefs.all(CQConfig.validate(())).detect { |item|
+			item.name == \cqCoco
+		};
+		var controls = def.allControlNames.collect { |control| control.name.asSymbol };
+		#[wOrganBus, wSlotQBus, wRecordBus].do { |name|
+			this.assert(controls.includes(name),
+				"cqCoco exposes the independent % matrix bus".format(name));
+		};
+		this.assert(CQSynthDefs.gateOnThreshold < 0.58,
+			"the ecological record floor has measured Schmitt headroom");
+	}
+
 	// A VCA that folds back up as its control drives further negative would
 	// re-open a valve the hand is closing. `g.abs * g` is signed precisely so
 	// the law stays monotonic on both sides of g = 0.

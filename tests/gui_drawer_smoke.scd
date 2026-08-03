@@ -69,7 +69,7 @@ centred = { |inner, outer|
 						and: { grid.header.drawFunc.notNil }
 						and: { grid.status.parent !== grid.grid },
 						"Inspector keeps grouped headers and exact route detail outside the loom");
-					check.value(grid.cellSize[0] >= 48
+					check.value(grid.cellSize[0] >= 40
 						and: { grid.cellSize[1] >= 24 }
 						and: { grid.grid.bounds.width
 							== CQGuiScale.railWidth(drawer.step, drawer.pageSize.width) }
@@ -77,7 +77,7 @@ centred = { |inner, outer|
 							== (CQMatrix.sourceNames.size * grid.cellSize[1]) }
 						and: { grid.header.bounds.height
 							== CQGuiScale.metrics(drawer.step)[\headerHeight] },
-						"workbench exposes the full 16x22 patch loom with large targets");
+						"workbench exposes the full 16x28 patch loom with large targets");
 					check.value(grid.status.absoluteBounds.left == grid.grid.absoluteBounds.left
 						and: { grid.status.parent.absoluteBounds.right
 							== grid.grid.absoluteBounds.right },

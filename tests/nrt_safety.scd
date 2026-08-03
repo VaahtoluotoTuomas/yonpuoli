@@ -168,7 +168,10 @@ var makeMayhemScore = {
 			\wInVcaBus, destBus.value(("coco" ++ coco ++ "_inVca").asSymbol),
 			\wFbVcaBus, destBus.value(("coco" ++ coco ++ "_fbVca").asSymbol),
 			\wFlipBus, destBus.value(("coco" ++ coco ++ "_flip").asSymbol),
-			\wSkipBus, destBus.value(("coco" ++ coco ++ "_skip").asSymbol)]
+			\wSkipBus, destBus.value(("coco" ++ coco ++ "_skip").asSymbol),
+			\wOrganBus, destBus.value(("coco" ++ coco ++ "_organ").asSymbol),
+			\wSlotQBus, destBus.value(("coco" ++ coco ++ "_slotQ").asSymbol),
+			\wRecordBus, destBus.value(("coco" ++ coco ++ "_record").asSymbol)]
 	};
 	CQMatrix.presets[\mayhem][\matrix].do { |t|
 		var si = srcNames.indexOf(t[0]), di = destNames.indexOf(t[1]);

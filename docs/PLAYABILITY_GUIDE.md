@@ -21,12 +21,16 @@ Nykyinen release-sopimus todistaa koneellisesti seuraavat asiat:
   tuotanto-SynthDefin oikeasti olemassa olevaan control-argumenttiin. Kun
   Audio-sivulla `mic` on pois, ainoa tarkoituksella DSP:stä irti oleva säädin
   on `micGain`; käyttöliittymä ei silloin teeskentele olematonta mikkiä.
-- Matriisissa on yksi kanoninen 16 lähteen järjestys ja 22 kohdetta. Jokainen
-  kohde lukee saman 16-kanavaisen painovektorin, joten lähde–kohde-solujen 352
-  yhdistelmää ei ole toteutettu 352 erillisellä, erkaantuvalla koodipolulla.
+- Matriisissa on yksi kanoninen 16 lähteen järjestys ja 28 kohdetta. Jokainen
+  kohde lukee saman 16-kanavaisen painovektorin, joten lähde–kohde-solujen 448
+  yhdistelmää ei ole toteutettu 448 erillisellä, erkaantuvalla koodipolulla.
 - Offline-renderi `tests/nrt_playability.scd` käyttää oikeita `\cqQuantussy`-
   ja `\cqCoco`-SynthDefejä, mittaa A/B-eron ja jättää kuuntelutiedostot
   `tests/tmp/`-hakemistoon.
+- `tests/nrt_matrix_inputs.scd` todistaa kaikki kuusi Organ/SlotQ/Record-
+  kohdetta oikeassa Coco-DSP:ssä. `tests/nrt_shake_ecology.scd` aloittaa täysin
+  tyhjästä RAMista ja todistaa kaikki neljä shake-perhettä äänekkäiksi,
+  äärellisiksi ja toisistaan olennaisesti poikkeaviksi.
 
 Tämä todistaa **reitityksen**, ei sitä että mikä tahansa johto kuuluu missä
 tahansa tilassa. Modulaarinen kohde voi olla oikein toimiva mutta sillä hetkellä
@@ -53,7 +57,7 @@ other Coco ──────────────── SlotX ────�
 
 Quantussy tri/cas + env + Coco + organ = 16 modulation sources
                                   │
-                                  └─> 22 matrix destinations
+                                  └─> 28 matrix destinations
 ```
 
 Kaksi rinnakkaista asiaa kannattaa pitää erillään:
@@ -63,7 +67,11 @@ Kaksi rinnakkaista asiaa kannattaa pitää erillään:
 2. **`triK` ja `casK` ovat modulaatiolähteitä.** Ne voivat ohjata mitä tahansa
    matriisikohdetta, vaikka `qMix` ja kaikki `cKSend`it olisivat kiinni.
 
-## Miksi bootin shake saattoi olla täysin äänetön
+## Miksi vanha boot-shake saattoi olla täysin äänetön
+
+Tämä osio kirjaa PLAY-7:ssä diagnosoidun **ekologista shakea edeltäneen**
+Bernoulli-mallin. Sen mittaukset selittävät, miksi pelkkä yleinen painon nosto
+ei kelvannut korjaukseksi; ne eivät kuvaa nykyisen shaken toimintalakia.
 
 Pakollinen ensimittaus antoi seuraavan tuloksen:
 
@@ -98,7 +106,8 @@ ollessa kädessä rulla valitsee alkupainon (0,05; Ctrl 0,01) ja painokuu näytt
 sen. Kannettavalla `Z` pienentää ja `X` kasvattaa samaa arvoa; Shift tekee
 0,01-askeleen. Näin ensimmäiseksi arvoksi voi valita vaikka 0,10 ilman
 0,60-transienttia tai tarvetta rullata touchpadilla painalluksen aikana.
-Tämä ei muuta vanhoja patcheja, snapshotteja, shakea eikä Schmitt-kynnystä.
+Tämä käsijohdon muutos ei itsessään muuttanut vanhoja patcheja, snapshotteja,
+silloista shakea eikä Schmitt-kynnystä.
 0,55 oli mittauksen pienin portin varmasti
 laukaissut koetin; 0,60 jättää siihen marginaalin mutta keventää jatkuvaa
 ensikosketusta käyttäjän 0,65-kuuntelun perusteella. Kaksi seuraavaa erikseen
@@ -617,67 +626,139 @@ Bernoulli-kylvö osuu usein suljettuihin polkuihin (`Hold=1`, `Spaf=0`,
 `SlotQ=0`) eikä takaa kummallekaan Cocolle yhtä musikaalisesti vaikuttavaa
 runkoa.
 
-### Modulaatiokohteiden audit ja seuraava shake
+### Modulaatiokohteiden audit ja toteutettu laajennus
 
-Nykyinen 16×22-matriisi sisältää kaikki aidon Cocoquantuksen loogiset
-modulaatiotulot. Kummallakin Cocolla ovat SP.AF, Input-VCA, Feedback-VCA,
-Flip ja Skip (10 kohdetta); erilliset hardware-verso/inverso-jakit on ilmaistu
-yhdellä signed-kohteella, jossa negatiivinen paino on inverso. Jokaisella
-viidellä castlella ovat FM ja Spesal (10 kohdetta). Näiden 20:n lisäksi
-Yönpuolella on kaksi software-only deck-rate-kohdetta. Kaikki 16 lähdettä ja
-22 kohdetta ovat Nightissä endpointteina. Puute ei siis ole hardware-pariteetissa
-vaan siinä, että ohjelmiston uudet sisäiset äänipolut eivät vielä ole
-matriisikohteita. Tämä koskee banaani-/modulaatiotuloja; hardware-paneelin
-erilliset XLR-, piezo- ja synth-audiojakkityypit on Yönpuolella abstrahoitu
-äänikortin live/mic-kanaviksi ja preampin lähdevalinnaksi, ei kopioitu
-liitin liittimeltä.
+Aidon Cocoquantuksen looginen banaaniydin on yhä kokonaan mukana: kummallakin
+Cocolla SP.AF, Input-VCA, Feedback-VCA, Flip ja Skip (10 kohdetta), sekä
+viidellä castlella FM ja Spesal (10 kohdetta). Verso/inverso on yksi signed-
+kohde, jossa negatiivinen paino kääntää polariteetin. Näiden 20 hardware-
+kohteen ja kahden software-only deck-rate-kohteen rinnalla on nyt kuusi
+Yönpuolen omaa Coco-kohdetta. Nykyinen inventaario on siis **16×28**, ja kaikki
+28 kohdetta ovat sekä Inspectorissa että Nightissä.
 
-Kiinnostavimmat uudet kohteet kokeiltavaksi, tässä järjestyksessä:
+Kuusi uutta kohdetta ovat aidosti itsenäisiä:
 
-1. `cocoN_organ`: Quantussy voi avata/AM-moduloida Cocon sisäistä organ-ääntä;
-   tämä soi heti myös lukitulla tai muuten tyhjällä muistilla.
-2. `cocoN_slotQ` yhdessä turvallisesti hysteresisrajatun `cocoN_record`/
-   Hold-punch-kohteen kanssa: Quantussy pääsee sekä Cocon sisään että rytmittämään
-   mitä muistiin jää. SlotQ yksin ei kuulu lukitun `Hold=1`-muistin läpi.
-3. `castleK_send`: matriisi orkestroi itse, mitkä viisi kolmioa muodostavat
-   `qMix`in; tämä tekee Quantussysta myös oman audiosisältönsä muotoilijan.
-4. `cocoN_dust`: tyhjä Coco voi kasvattaa omaa materiaaliaan, kun record-portti
-   avautuu; held-muistissa se ei yksin muuta kuuluvaa silmukkaa.
-5. `cocoN_slotX`: suunnattu ristiinsyöttö kasvattaa kahden Cocon ekologian, kun
-   vähintään toisessa on jo materiaalia.
-6. `bits` ja `wrap` vasta myöhemmin askeltavina/hysteresisrajattuina kohteina;
-   ne ovat kokeellisesti vahvoja mutta voivat vaihtua audionopeudella liian
-   rajusti ja tarvitsevat oman turvallisuus- ja kuunteluportin.
+- `coco1_organ`, `coco2_organ`: matriisisumma lisätään Organ-nupin lepoarvoon
+  samalla epälineaarisesti hengittävällä VCA-lailla kuin Input/Feedback ja
+  rajataan alueelle 0…1. Nollassa oleva käsiasetus voidaan siis avata.
+- `coco1_slotQ`, `coco2_slotQ`: vastaava VCA-panostus `qMix`-sisääntuloon,
+  rajattuna alueelle 0…1,5. Kummallakin Cocolla on oma kohteensa.
+- `coco1_record`, `coco2_record`: 0,5/0,3-Schmittillä rajattu hetkellinen
+  **Hold-inversio**. Positiivinen gate avaa suljetun kirjoittajan ja jäädyttää
+  jo avoimen kirjoittajan. Se ei koskaan muuta `cocoNHold`-parametria, vaan
+  päättyy aina takaisin täsmälleen käsin asetettuun Hold-tilaan.
 
-Ensimmäinen prototyyppi tarkoittaa **kuutta erillistä matriisikohdetta**, yhtä
-jokaista toimintoa ja Cocoa kohti:
+Nightissä vanhoja hardware-pariteetin kuita ei siirretty. Organ-socket on aivan
+organ-hedelmän ulkopuolella, SlotQ-socket suoraan Q-kiduksen vieressä keskirenkaan
+puolella ja danger-punainen Record-socket kuoren yläulkokehällä: vasemmalla noin
+kello 10:ssä, oikealla noin kello 2:ssa. Niitä yhdistävät vain lyhyet, suorat ja
+matalan alfan anatomiset juuret; mikään viiva ei enää kulje Cocon läpi. Organin
+ja SlotQ:n `>`-merkki poistettiin, koska sijoitus kertoo kohteen ilman toista
+symbolikieltä. Recordin ympyrä säilyi. Organin ja SlotQ:n toteutunut VCA näkyy
+omana pearl/wake-liikkeenään; Recordin charge/fire-lamppu ja punainen sinetti
+näyttävät efektiivisen tilan molempiin suuntiin. Käsiasetus ei liiku modulaation
+mukana.
 
-- `coco1_organ`, `coco2_organ`: jatkuva VCA/AM-panostus, joka voi avata
-  Organ-äänen myös käsiasetuksen ollessa nollassa;
-- `coco1_slotQ`, `coco2_slotQ`: jatkuva VCA-panostus `qMix`in sisääntuloon;
-- `coco1_record`, `coco2_record`: Schmitt-rajattu hetkellinen **record-punch**.
-  Positiivinen gate avaa kirjoituksen, jos käsin asetettu Hold on kiinni, ja
-  palauttaa releasessa täsmälleen käsin asetetun Hold-tilan. Se ei vaihda
-  `cocoNHold`-parametria eikä ole toinen pysyvä Hold-kytkin.
+### Ekologinen shake ja painojen auditointi
 
-Ne rakennetaan ja kuunnellaan ensin Inspector/NRT-tasolla ennen kuin
-16×22-sopimusta tai Nightin anatomiaa kasvatetaan. Jos perhe hyväksytään,
-jokainen kuudesta saa oman socketinsa myös Nightiin. Uuden **ekologisen shaken**
-laki olisi kaksiosainen:
-seedattu, tilatietoinen 3–5 johdon kuultava runko ensin, nykyinen satunnainen
-koristelu vasta sen ympärille. Runko valitsee kontrastisen käyttäytymisperheen
-(organ-drone, muistipunch, dust-kasvu, ristiinsyöttö), antaa gate-johdoille
-varman mutta rajatun +0,58…0,8 painon ja jatkuville kohteille oman musikaalisen
-minimi-/maksimialueensa. Kuun vaihe voi edelleen määrätä koristeiden tiheyden.
-Näin sirppikin tekee vähän mutta merkityksellistä, ja täysikuu tekee enemmän
-ilman että onnistuminen riippuu 352 erillisen kolikonheiton onnesta.
+PLAY-7:n jälkeen globaalia painokattoa ei nostettu. Se olisi tehnyt satunnaisista
+jatkuvista johdoista rajumpia mutta jättänyt tärkeimmän ongelman ennalleen:
+patch saattoi yhä osua vain suljettuihin polkuihin. Nykyinen shake rakentaa siksi
+kaksi kerrosta:
+
+1. Seedattu **3–5 johdon kuultava runko** valitsee yhden neljästä perheestä:
+   organ-drone, Quantussy-memory-pulse, dust-growth tai two-Coco-crossfeed.
+2. Kuun vaihe lisää sen ympärille satunnaista koristelua. `amount` on vain
+   jatkuvan koristelun yläraja; se ei pienennä taattua runkoa.
+
+Painot on eroteltu kohteen tehtävän mukaan. Organ-rungot ovat 0,20…0,38,
+SlotQ-rungot 0,28…0,42 ja Record-punchit 0,68…0,82. Gate/trig-koristelu on
+harvempaa kuin jatkuva koristelu ja sen itseisarvo on 0,58…0,82, joten sillä on
+oikea mahdollisuus ylittää +0,5-Schmitt; polariteetti arvotaan edelleen.
+Jatkuva koristelu ei enää kasaudu nollan tuntumaan. Runko kirjoitetaan viimeisenä,
+joten koristelu ei voi vahingossa heikentää sitä. Perhe, runko, valmistelu ja
+spesal-tila valitaan ennen tiheydestä riippuvia arvontoja. Sama seed säilyttää
+siis täsmälleen saman ytimen kaikilla densityillä; vain koristekenttä kasvaa.
+
+PLAY-8:n painoauditin jälkeen näitä ydinarvoja ei nostettu yleisesti. Recordin
+painot ylittävät jo varmasti gaten ja SlotQ on selvästi kuultava. Organ oli
+hiljainen myös käsin täysille avattuna, joten oikea korjaus oli kuultavan
+urkuhaaran kerroin 0,30 → 0,55 (+5,3 dB), ei johdon keinotekoinen boosti.
+Julkaistu organ-modulaatiolähde ja kaikkien matriisijohtojen kynnykset säilyivät.
+
+Shake muuttaa nyt harkitusti myös pientä joukkoa soitannollisia arvoja. Tämä oli
+tarpeellinen osa korjausta: pelkät johdot eivät voi kuulua, jos `SlotQ=0`,
+`Hold=1`, kaikki castle-senderit ovat kiinni tai Cocon Level on alhaalla.
+Jokainen perhe valmistaa kolme omaa castle-lähdettään (yksi balcium, kaksi
+audio), niiden sendit, `qFreq`/`qChaos`, vähintään 0,9 `patchDepth`in ja vähintään
+0,90 Coco-levelit. Organ, SlotQ, Hold, Input, Feedback, Dust, SlotX ja Speed
+palautetaan ensin hiljaiseen yhteiseen lähtömaahan ja vasta sitten perheen omiin
+arvoihin; edellisen shaken nuppiasetelma ei enää vuoda seuraavan identiteettiin.
+Masteriin, mikkiin, paniin, äänilaitteisiin, recorderiin tai turvaketjuun shake
+ei koske. GUI:n yksi undo palauttaa sekä koko matriisin että juuri tämän
+turvallisen parametrialijoukon.
+
+Automaattinen tyhjän RAMin koe antoi kuun oletussirpillä seuraavat tulokset:
+
+| perhe | ensimmäinen seed | johtoja | RMS |
+|---|---:|---:|---:|
+| organ-drone | 3 | 3 | ≈ 0,0414 |
+| memory-pulse | 1 | 4 | ≈ 0,0866 |
+| dust-growth | 2 | 5 | ≈ 0,0591 |
+| crossfeed | 4 | 5 | ≈ 0,1452 |
+
+RMS vaihtelee hieman pöly-UGenien satunnaisvaiheen mukana. Kaikki jäivät
+äärellisiksi, puhuivat täysin tyhjistä Cocoista ja erosivat toisistaan jokaisena
+parina; suhteellinen ero oli noin 1,64…4,10 dB. Erillinen kahdeksan polun NRT
+mittasi Organin aktiiviseksi RMS-arvoilla 0,044972/0,052433 ja SlotQ:n arvoilla
+0,133794/0,157749. Suljettu→auki-Record tuotti 0,353605/0,353616; avoin→suljettu-
+Record vaimensi saman referenssin täsmälleen nollaan. Molempien suuntien
+käsiasetukset säilyivät.
+
+Dust-growthin ensimmäinen kuuntelu oli liian tasaisen kohinainen. Korjaus
+erotti Cocojen Dust- ja Feedback-maat, levitti nopeudet hitaisiin 5…10 kHz:n ja
+nopeisiin 22…36 kHz:n alueisiin, lisäsi pienen SlotQ-virran ja kaksi signed-
+Feedback-VCA-johtoa sekä kasvatti `qFreq`/`qChaos`-liikettä. Tavoite ei ole vain
+kovempi suhina vaan hitaasti vaihtuva, epäsymmetrinen tekstuuri.
+
+Kuun vaihe käyttää nyt käyrää `density = 0,2 × phase³`: neljänneskuu on noin
+0,003125, puolikuu 0,025 ja täysikuu edelleen 0,2. Näin suurin osa eleen
+matkasta kuuluu käyttäjän kiinnostavaksi havaitsemille pienille patcheille,
+mutta loppu kasvaa nopeasti tiheäksi. Vaihe seuraa vaakavetoa ensimmäisestä
+pikselistä; jos ele jää napautukseksi, lähtövaihe palautetaan ennen shakea.
+
+Droneja ei poistettu. Ne ovat ekologisen shaken tarkoituksellinen mahdollinen
+äänilähde, mutta käsin rakennettu patch pysyy edelleen outona luupperina niin
+kauan kuin Organ-polkuja ei avata.
+
+### PLAY-8:n ensimmäinen kuuntelutulos ja korjausportti
+
+Käyttäjän 2026-08-02 ensimmäinen kierros hyväksyi kohdat 1–2: kaikki neljä
+tyhjän RAMin perhettä olivat selvästi erilaisia, sama seed säilytti ominaislaatunsa
+eri densityillä ja suurempi density lisäsi intensiteettiä. Kuvaavat havainnot:
+
+- organ-drone: hienovarainen, hitaasti aaltoileva drone suhinan takana;
+- memory-pulse: kertyvä rytminen atonaalinen melodia ja ajoittainen matala pörinä;
+- dust-growth: rytmisesti elävä mutta liian tasapohjainen kohina;
+- crossfeed: nousevia ja laskevia kaoottisia atonaalisia oskillaattoreita.
+
+Organ-, SlotQ- ja Record-polut toimivat. Samalla löytyivät yllä korjatut Organin
+taso, dust-growthin tekstuuri, Recordin yksisuuntaisuus, socketien ensimmäisen
+layoutin sekavuus ja kuun vedon alkuun tarttuminen. Kohdat 3–6 tarvitsevat nyt
+kohdistetun uusintakuuntelun/-katselmuksen; bundled undo ja vapaa 8–10 shaken
+ensikäyttö (kohdat 7–8) ovat vielä tekemättä. PLAY-8 ei siis ole kokonaan
+hyväksytty, vaikka sen perhe- ja density-lait ovat jo läpäisseet korvan.
+
+Mahdolliset myöhemmät uudet kohteet ovat edelleen `castleK_send`, `cocoN_dust`,
+`cocoN_slotX` ja vasta oman turvallisuusporttinsa jälkeen askeltavat Bits/Wrap.
+Niitä ei lisätty tähän rajattuun laajennukseen.
 
 ## Seuraava päätös
 
-Kaikki PLAY-7:ää edeltävät soittotestit on hyväksytty. Avoin kysymys on enää,
-rakennetaanko yllä kuvattu kuuden socketin `organ + slotQ + record` -prototyyppi
-ja ekologinen shake ennen 1.0:aa vai säilyykö 1.0:n matriisi hardware-pariteetin
-22 kohteessa.
+Kaikki PLAY-7:ää edeltävät soittotestit on hyväksytty ja A/B-kandidaatit on
+suljettu. PLAY-8:n ensimmäinen kierros hyväksyi neljän perheen erottuvuuden ja
+density-lain; seuraava avoin päätös on yllä olevan korjauspassin kohdistettu
+uusintakoe sekä undo- ja vapaan ensikäytön portit.
 
 16n:n rinnakkainen käsituntumatesti on tiedostossa
 [`tests/manual_checklist.md`](../tests/manual_checklist.md) kohdassa `16N-1` ja

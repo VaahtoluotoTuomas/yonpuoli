@@ -507,8 +507,8 @@ weatherAsync = { |map, done|
 				var records = map.overlay.cableRecords;
 				var sampled = records.select { |record, i| (i % 29) == 0 };
 				var exact = true, selected, point, draws, renders;
-				check.value(records.size == 352,
-					"the dense hit/cache fixture really carries all 352 cables");
+				check.value(records.size == 448,
+					"the dense hit/cache fixture really carries all 448 cables");
 				sampled.do { |record|
 					var fine = CQInk.cablePoints(record[\start], record[\finish],
 						(record[\points].size - 1) * 4);
@@ -848,10 +848,10 @@ punchChecks = { |map|
 			try {
 				var map = gui.nightMap;
 				check.value(map.notNil, "night map is built with the shell");
-				check.value(map.endpoints.size == 38
+				check.value(map.endpoints.size == 44
 					and: { CQMatrix.sourceNames.every { |n| map.endpoints[n].notNil } }
 					and: { CQMatrix.destNames.every { |n| map.endpoints[n].notNil } },
-					"night registers its own canonical 16 jacks and 22 sockets");
+					"night registers its own canonical 16 jacks and 28 sockets");
 				check.value(map.overlay.skin == \night
 					and: { map.overlay.view.acceptsMouse.not },
 					"night owns a hit-transparent phosphor cable overlay");
@@ -953,7 +953,7 @@ punchChecks = { |map|
 								+ endpoint[\anchor];
 							CQNightGeometry.distance(center, actual) < 1
 						},
-							"all 38 endpoint views keep their computed cable anchor");
+							"all 44 endpoint views keep their computed cable anchor");
 						map.overlay.invalidate;
 						check.value(map.overlay.cableRecords.every { |record|
 							CQNightGeometry.distance(record[\start],
@@ -1454,14 +1454,17 @@ punchChecks = { |map|
 															gui.prPhaseFrame(1, 0.62);
 															sparkPoint = map.sparkPoint(0);
 															gui.prPhaseFrame(1, 0.62, nil, nil,
-																[0, 1.1, 1.4], [0.25, 0.3, 0.8],
-																[0.60, 0.60, 0.60]);
+												[0, 1.1, 1.4, 0.62, 0.9],
+												[0.25, 0.3, 0.8, 0.08, 0.12],
+												[0.60, 0.60, 0.60, 0.60, 0.60]);
 															check.value(
 																map.crescentModStates[\coco1Spaf][\center] == 0.5
 																and: { map.crescentModStates[\coco1Spaf][\lower]
 																	< map.crescentModStates[\coco1Spaf][\upper] }
-																and: { map.crescentModStates[\coco1Fb][\clippedHigh] },
-																"continuous DSP telemetry draws a slow satellite plus an audio-rate wake");
+												and: { map.crescentModStates[\coco1Fb][\clippedHigh] }
+												and: { map.flowModStates[\coco1Organ].notNil }
+												and: { map.flowModStates[\coco1SlotQ].notNil },
+												"continuous DSP telemetry draws crescents plus Organ/SlotQ wakes");
 															check.value(state.get(\coco1Spaf) == 0,
 																"the live satellite never falsifies or rewrites the stored SP.AF pearl");
 															speedBefore = state.get(\coco1Speed);
@@ -1602,7 +1605,8 @@ punchChecks = { |map|
 														"before telemetry a lamp has no charge to draw");
 													check.value(gui.fireFor(\coco1_flip).isNil,
 														"before telemetry a lamp invents no Schmitt event");
-													gui.prChargeFrame(1, [0.62, 0.0, 1.0, 0.0]);
+											gui.prChargeFrame(1,
+												[0.62, 0.0, 0.71, 1.0, 0.0, 1.0]);
 													gui.prChargeFrame(3,
 														[0, 0, 0.9, 0, 0, 0, 0, 1, 0, 0]);
 															check.value(
@@ -1610,7 +1614,8 @@ punchChecks = { |map|
 																and: { gui.chargeFor(\coco1_skip) == 0 }
 														and: { (gui.chargeFor(\castle3_spesal) - 0.9)
 															.abs < 1e-6 }
-														and: { gui.fireFor(\coco1_flip) == 1 }
+												and: { gui.fireFor(\coco1_flip) == 1 }
+												and: { gui.fireFor(\coco1_record) == 1 }
 														and: { gui.fireFor(\castle3_spesal) == 1 },
 														"night charge blocks land on their own lamps");
 															check.value(gui.chargeFor(\coco2_flip).isNil,
@@ -1623,7 +1628,7 @@ punchChecks = { |map|
 															// The mark is STATE, not extent: the reach out of
 															// the eye collapses to nothing exactly when the
 															// regime is clearest (G2 gate, 2026-07-22).
-															gui.prChargeFrame(1, [0.62, 1.0]);
+												gui.prChargeFrame(1, [0.62, 1.0, 0]);
 															gui.prPhaseFrame(1, 0.04, 1, 12);
 															check.value(map.struckOn[0].not,
 																"one lit frame is a skip, not yet a regime");
@@ -1652,7 +1657,7 @@ punchChecks = { |map|
 															gui.prPhaseFrame(1, 0.03, 1, 1500);
 															check.value(map.struckBlink[0] == blinkBefore,
 																"the twinkle alternates, it does not drift");
-															gui.prChargeFrame(1, [0.62, 0]);
+												gui.prChargeFrame(1, [0.62, 0, 0]);
 															gui.prPhaseFrame(1, 0.5, 1, 0);
 															check.value(map.struckOn[0].not
 																and: { map.struckBlink[0].not },
@@ -2020,12 +2025,18 @@ punchChecks = { |map|
 															view.mouseLeaveAction.value(view);
 															check.value(map.moonHover.not,
 																"leaving the corner rests the cue");
-															// a tap throws at the phase the moon shows
-															amount = gui.shakeAmount;
-															notices = 0;
-															press.value(almanac[\moon]);
-															check.value(notices > 0
-																and: { gui.shakeAmount == amount },
+																	// A tiny move follows continuously, but release inside
+																	// tap travel restores the start before the throw.
+																	amount = gui.shakeAmount;
+																	notices = 0;
+																	from = almanac[\moon] - almanac[\box].leftTop;
+																	view.mouseDownAction.value(view, from.x, from.y, 0, 0, 1);
+																	view.mouseMoveAction.value(view, from.x + 3, from.y, 0);
+																	check.value(gui.shakeAmount > amount,
+																		"the moon phase follows a sub-threshold horizontal move");
+																	view.mouseUpAction.value(view, from.x + 3, from.y, 0, 0);
+																	check.value(notices > 0
+																		and: { gui.shakeAmount == amount },
 																"a tap on the moon throws a shake and never nudges the phase it threw");
 															// pouring is not an op (§4.3): no undo, no throw
 															before = matrix.fullMatrix.asCompileString;
@@ -2095,9 +2106,9 @@ punchChecks = { |map|
 															// the phase governs how MUCH is sown (SPEC §5.5)
 															check.value(CQGui.sowDensity(0) == 0
 																and: { CQGui.sowDensity(0.25)
-																	== 0.0125 }
-																and: { CQGui.sowDensity(0.5)
-																	== 0.05 }
+																												== 0.003125 }
+																										and: { CQGui.sowDensity(0.5)
+																												== 0.025 }
 																and: { CQGui.sowDensity(1)
 																	== CQGui.fullMoonDensity },
 																"the crescent sows sparsely, then the full moon gathers force");

@@ -76,23 +76,30 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 - **Where the work stands (2026-08-02).** Branch `nocturne`. Every Nocturne
   GUI increment (N1–N10), the whole ear pass (§13) and PLAY-1…PLAY-6.1 are
   accepted; so are the DAW bridge, the audio-clock guard, SOAK-1, the Yönpuoli
-  identity, the privacy audit and the README. The latest increment is
-  the reviewed dense-cable hover/Q-X priority fix and its documentation.
+  identity, the privacy audit and the README. The dense-cable hover/Q-X
+  priority fix was committed separately as `732741f`. The current uncommitted
+  increment is the 16×28 Organ/SlotQ/Record expansion and ecological shake.
   The user explicitly accepted every pre-PLAY-7 listening test on 2026-08-02.
   **One shake design decision, one tick and four release jobs remain before
   1.0**, in this order, and `PLAN.md`'s "Seuraava askel konkreettisesti" is the
   authority on them:
-  1. **The post-PLAY-7 shake decision.** The user's 2026-08-02 listening result
+  1. **PLAY-8 ecological-shake ear acceptance.** The user's 2026-08-02 PLAY-7 result
      is **neither A nor B**: `Spaf=0.12` remained very subtle, and weight ceiling
      0.65 produced only the small gate changes predicted by seeds 8101/9202.
-     Defaults did not change. Decide whether 1.0 gets the proposed, first
-     Inspector/NRT-auditioned six independent destinations — `coco1_organ`,
+     Neither global candidate became the fix. The working tree now has six
+     independent destinations — `coco1_organ`,
      `coco2_organ`, `coco1_slotQ`, `coco2_slotQ`, `coco1_record`,
-     `coco2_record` — and a topology-aware audible skeleton, or retains the
-     hardware-parity 22-target matrix. Organ/SlotQ are continuous VCA
-     contributions; record is a momentary Schmitt punch that never mutates the
-     manual Hold parameter. Exact analysis: `docs/PLAYABILITY_GUIDE.md` →
-     Soittotesti 7.
+     `coco2_record` — plus a four-family audible skeleton and bounded safe
+     musical-control preparation. Organ/SlotQ are continuous VCA contributions;
+     Record is a momentary two-way Hold inversion that never mutates manual
+     Hold. All six have Inspector columns and anatomical Night sockets/roots/
+     telemetry. PLAY-8's first live pass confirmed four distinct blank-RAM
+     identities, stable same-seed identity across density and working Organ,
+     SlotQ and Record paths. It also found Organ too quiet, dust-growth too
+     static, the first socket layout cluttered and the moon drag sticky. Those
+     findings are corrected; the focused retest plus undo/free-shake items remain.
+     Exact analysis and PLAY-8 seeds: `docs/PLAYABILITY_GUIDE.md` and
+     `tests/manual_checklist.md`.
   2. **16N-1** — the faderbank hands-on tick. Automatic gate green; it needs
      the 16n in hand and is the only thing blocking road-to-1.0 step 7.
   3. Then: what ships (four playable presets, exactly one snapshot admitted by
@@ -100,14 +107,16 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
      1.0 tag.
   Deliberately deferred and non-blocking, in order after 1.0: 13.3b (isolated
   Bits 5/8/12 ear test), the three porous playing modes, and the Norns port
-  (§14). Ecological shake is no longer in that bucket: PLAY-7 explicitly
-  reopened it as the decision above.
-- **Latest full gate (2026-08-02, dense hover/Q-X fix):**
-  `CQ_COMPILE_OK`, **14,827 unit passes / 0 failures / 39/39 classes**,
-  and `CQ_GUI_NIGHT_PASSED`. The shell/drawer/capture results remain the
-  accepted PLAY-6.1 baseline; `CQ_SAFETY_PASSED` and `CQ_HOLD_OK` carry because
-  this change touches no DSP. The older gate figures below are historical
-  records of their own increments, not the current baseline.
+  (§14). Ecological shake is no longer in that bucket: its implementation is
+  the current 1.0 candidate and only the PLAY-8 ear gate remains.
+- **Latest full gate (2026-08-02, PLAY-8 correction pass):**
+  `CQ_COMPILE_OK`, **18,555 unit passes / 0 failures / 39/39 classes**;
+  `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`, `CQ_GUI_NIGHT_PASSED`;
+  `CQ_MATRIX_INPUTS_OK`, `CQ_SHAKE_ECOLOGY_OK`, `CQ_PLAYABILITY_MEASURED`,
+  `CQ_HOLD_OK` and the full 90 s `CQ_SAFETY_PASSED`. The Night capture was
+  also rendered and visually inspected at rest, with telemetry and with cables.
+  The older gate figures below are historical records of their own increments,
+  not the current baseline.
 - **Public product identity is Yönpuoli.** Cocoquantus is the explicitly credited
   lineage, not the product name or a fidelity promise. Keep its recognizable
   vocabulary. Public prose and labels spell `dolby` with a lowercase initial.
@@ -225,8 +234,9 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
      Shift writes; a latched Tab/gill focus also lets a vacant tap write;
      filled tap recalls and right clears. Filled-seed→filled-seed breeds
      directly; a valid target catches the top-layer thread and blooms.
-  4. The moon is one Ø56 body beyond bird B and opens as a 0.22 crescent.
-     Tap = shake, horizontal = phase; sowing density is `0.2 × phase²`.
+  4. The moon is one Ø70 body beyond bird B and opens as a 0.22 crescent.
+     Tap = shake, horizontal = continuous phase; sowing density is
+     `0.2 × phase³`.
      Vertical down/up = rain/grow and sun/wither after a dominant-axis 8 px
      lock. The next 32 px visibly tension rain 0.6…1.6 Hz and sun 2.5…6 Hz;
      weather glyphs exist only during the hold.
@@ -282,7 +292,7 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   must call `view.refresh` when it actually creates the replacement. Without
   that, hover remains one cable behind until unrelated Qt damage and looks like
   a centimetre-scale hit-test error even though `patchAt` follows the exact
-  Bézier. Night-smoke now samples fine drawn curves in a 352-cable field and
+  Bézier. Night-smoke now samples fine drawn curves in a 448-cable field and
   asserts both render and subsequent presentation.
   - §16.7's dashed drop-target border is done and accepted (2026-07-22, checklist
     G2.10), both skins from one `CQInk.drawDropTarget`. Qt hands sclang **no
@@ -299,23 +309,26 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
     G2.11) after three correction rounds. Its old almanac-corner home is now
     historical; on the §9 v3 branch the same moon is a solitary weather body
     beyond bird B. These decisions remain normative:
-    1. **The moon's phase is how MUCH is sown, not how hard.** `shake` gained a
-       `density` argument (SPEC §5.5, default 0.1 = the historical throw, so the
-       code layer and patterns are untouched); `CQGui.sowDensity` now maps the
-       phase quadratically (`0.2 × phase²`), so a quarter moon averages ~4
-       cables, half ~18 and full ~70. The old weight-ceiling
+    1. **The moon's phase is how MUCH decoration is sown, not how hard.** `shake`
+       has a `density` argument (SPEC §5.5, code default 0.1) and
+       `CQGui.sowDensity` maps phase cubically (`0.2 × phase³`). Every
+       non-empty throw now also owns a 3–5-cable ecological skeleton; gate rows
+       receive only 22% of continuous-row decoration probability. In the 16×28
+       field a quarter/half/full moon therefore averages about 4–6 / 11–13 /
+       65–67 total cables. The old weight-ceiling
        mapping was redundant (`patchDepth` is already the how-alive macro) and
        inaudible — every throw rewrote the same ~35 cells, so a thin crescent
        read as "everything went quiet". **The new moon clears the bay** (round
        three): the phase is the field, so an empty field is empty. It was a
        no-op first, to keep the darkest phase from being the most destructive
        act, but in the hand that read as a broken control — and a clear is one
-       Ctrl+Z away. Spesal states are left alone either way.
+       Ctrl+Z away. Spesal states are left alone and no parameters are prepared.
     2. **The pour is horizontal** and the moon fills from its left limb, so the
        terminator travels with the hand (§4.5 again: cue and action share one
-       geometry). The tap threshold is `CQBananaGrammar.lassoTravel` — now one
-       constant in both places — and its px are **dead**, so a throw cannot
-       nudge the phase it throws.
+       geometry). Phase preview follows from the first pixel, including inside
+       `CQBananaGrammar.lassoTravel`; a release still classified as a tap first
+       restores the exact starting phase and then throws, so a tap cannot leave
+       an accidental nudge.
     3. **No presets at night.** The sower constellation lived for one round and
        was cut: a preset is a recipe, not a body, and it was the night's only
        control that could not be used without reading text (§16.4). The
@@ -324,11 +337,13 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
     `shakeAmount` fans out through `CQGui.onShakeAmount` (default now 0.22, a
     small crescent), and `Cocoquantus.shake` announces `\action, \shake` exactly
     as skip does, which lets the Night moon report shakes from the GUI, key,
-    code or patterns. The current §9 body is Ø 56.
-    A topology-aware “sweet spot” / ecological shake was explicitly deferred
-    on 2026-07-27 and reopened by PLAY-7 on 2026-08-02 as the handoff decision
-    above. Keep it a separately auditioned musical prototype; do not fold that
-    redesign into unrelated GUI polish.
+    code or patterns. The current §9 body is Ø 70. The ecological redesign was
+    deferred on 2026-07-27, reopened by PLAY-7 and implemented on 2026-08-02:
+    four seeded audible families, destination-aware weights and an explicit safe
+    musical-control preparation bundled with the matrix in GUI undo. PLAY-8 has
+    accepted its distinct-family and density-identity laws; the correction pass
+    now awaits its focused ear/hand retest. Do not dilute it into unrelated
+    generic knob randomization.
   - **Spesal coupling chords** (accepted 2026-07-22, manual block G2.11b): the
     night's inner clock showed a castle's *state* but not
     what the state means — which castle it reads. The chord now draws that on
@@ -444,7 +459,8 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   marker and the changed Night overlay's `CQ_PAINT_PROFILE_DONE` are green;
   DSP is unchanged and `CQ_HOLD_OK` carries from N8.
 - The four former `GUI_SPEC.md` seams were resolved by the user on 2026-07-19 and are
-  recorded in the spec and `PLAN.md`: nine charge channels, the G1 harvest lasso,
+  recorded in the spec and `PLAN.md`: the charge contract (then nine, now eleven
+  with the two Record gates), the G1 harvest lasso,
   display-only mic sprout and static REC transition/error states. Do not reopen or
   reinterpret them without the user's approval.
 - **The ReaRoute DAW bridge (road-to-1.0 step 1) works in both directions as of
@@ -629,7 +645,7 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   deck faders left because `deckALevel`/`deckBLevel` already have Night crescents
   and `deckARate`/`deckBRate` are matrix destinations. The rule that decided it
   is normative: **a fader is worth most where no other hand reaches** — Night
-  now plays 44 params, Master 4 and the matrix 22 destinations. Level, Organ,
+  now plays 44 params, Master 4 and the matrix 28 destinations. Level, Organ,
   SlotQ and directional SlotX have Night bodies; Dust, Pan and the pre/deck
   setup slots retain exact Workshop rows. F14 is measured, not taste: `qMix` has exactly one writer and one
   reader (`cocoNSlotQ`, default 0), so without a hand there F11/F12 shape a voice

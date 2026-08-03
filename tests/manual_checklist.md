@@ -1878,30 +1878,32 @@ PowerShell-ikkunaansa** (ei editorin sisään, jotta se elää editorin yli).
 ~soakActivity = Routine({
     var step = 0;
     // KAKSI presettia tassa jarjestyksessa, ei yksi: \mayhem on tiheysstressi
-    // jonka params-osa on TYHJA -- se tayttaa 352 matriisisolua muttei sytyta
+    // jonka params-osa on TYHJA -- se tayttaa 448 matriisisolua muttei sytyta
     // yhtaan aanilahdetta, joten pelkastaan sina yo olisi aanettomasti tiheä.
     // \selfNoise antaa aanen (dust, fb, cross-feed) ilman sisaantuloa, ja
     // \mayhem korvaa sen jalkeen vain matriisin -> tiheä JA kuuluva yö.
     CQ.patchPreset(\selfNoise);
     CQ.patchPreset(\mayhem);
     CQ.snap(\soak_a);
-    CQ.shake(0.3, density: 0.35);
+    // Suora matriisikutsu on tässä tahallinen: ekologisen facade-shaken
+    // turvallinen Night-valmistelu ei kuulu tähän eristettyyn muististressiin.
+    CQ.matrix.shake(0.3, density: 0.35);
     CQ.snap(\soak_b);
     while({ ~soakStop.not }, {
         step = step + 1;
         // SOAK-1 kriteeri 5, lisatty ajosta 3 alkaen 2026-07-31. Yksi TIHEA
         // committed teko joka askeleella: density on todennakoisyys per solu,
-        // joten 1.0 kirjoittaa koko matriisin ja tuottaa ~352 paivakirjariviä.
+        // joten 1.0 vaihtaa kaikki 272 jatkuvaa solua ja harvemman gate-kentän;
+        // per teko syntyy tavallisesti noin 350--400 paivakirjariviä.
         // CQSpellbookin katto on 20 000 rivia, joten vanha ~8 minuutin tahti
         // olisi tayttanyt sen vasta ~7,6 tunnin kohdalla: kuuden tunnin yo
         // mittaisi yha tayttyvaa paivakirjaa ja kriteeri 5 nayttaisi saman
         // rampin kuin ennen korjausta. RAJA TODISTETAAN YLITTAMALLA SE. Talla
         // tahdilla katto tulee tayteen noin 57 minuutissa, eli tasan sen
         // ensimmaisen tunnin aikana jonka kriteeri 5 muutenkin jattaa pois.
-        // Tiheys ja aani sailyvat: shake kirjoittaa jokaiseen soluun painon,
-        // toisin kuin presettien vuorottelu joka pudottaisi puolet ajasta
-        // matriisin harvaksi ja muuttaisi CPU-perustason.
-        CQ.shake(0.3, density: 1.0);
+        // Tiheys ja aani sailyvat: jatkuvat rivit täyttyvät, gate-rivit pysyvät
+        // ekologisesti harvempina. Facade ohitetaan, jotta nuppitila ei muutu.
+        CQ.matrix.shake(0.3, density: 1.0);
         switch(step % 8,
             1, { CQ.set(\coco1Speed, rrand(6000, 30000)) },
             2, { CQ.set(\coco2Speed, rrand(6000, 30000)) },
@@ -2182,7 +2184,7 @@ portti: `CQ_COMPILE_OK`, **13 681 unit-passia / 0 failurea / 39 luokkaa**,
 // SOAK-FIX osa 1 (löydös A) -- morph ei saa jäädyttää. Ctrl+Shift+L ensin.
 CQ.boot;
 CQ.patchPreset(\selfNoise);
-CQ.patchPreset(\mayhem);      // 352 kaapelia: sama tiheys kuin yon soakissa
+CQ.patchPreset(\mayhem);      // 448 kaapelia: nykyinen täystiheä stressikenttä
 CQ.snap(\fix_a);
 CQ.shake(0.3, density: 0.35);
 CQ.snap(\fix_b);
@@ -2616,5 +2618,87 @@ ei lisäämällä toista uutta sävyä.
 
 Kaikki PLAY-7:ää edeltävät soittotestit hyväksyttiin 2026-08-02. Oppaan
 `Soittotesti 7` hylkäsi molemmat yhden muuttujan kandidaatit (`Spaf=0,12` ja
-shaken paino 0,65); kumpaakaan ei tehty tuotanto-oletukseksi. Seuraava päätös
-on erillinen kuuden kohteen `organ + slotQ + record` -prototyyppi.
+shaken paino 0,65); kumpaakaan ei tehty tuotanto-oletukseksi. Niiden avaama
+kuuden kohteen `organ + slotQ + record` -laajennus ja ekologinen shake on nyt
+toteutettu. Ensimmäinen PLAY-8-kierros on kirjattu alla; korjauspassin
+kohdistettu uusintakoe on seuraava päätös:
+
+### PLAY-8 — kuusi uutta inputia ja ekologinen shake
+
+Aloita todella tyhjistä Cocoista: recompile, vapauta vanha sessio, boottaa uusi
+äläkä lataa deckiä tai avaa live-inputtia. Pidä kuulokevoimakkuus maltillisena.
+
+```supercollider
+CQ.free({ CQ.boot });
+// Odota "ready". Kokeile sitten neljä tunnettua perhettä yksi kerrallaan,
+// kuuntele kutakin vähintään 12 s ja kirjoita yhdellä lauseella sen luonne.
+CQ.shake(0.3, seed: 3, density: CQGui.sowDensity(CQGui.defaultShakeAmount)); // organDrone
+CQ.shake(0.3, seed: 1, density: CQGui.sowDensity(CQGui.defaultShakeAmount)); // memoryPulse
+CQ.shake(0.3, seed: 2, density: CQGui.sowDensity(CQGui.defaultShakeAmount)); // dustGrowth
+CQ.shake(0.3, seed: 4, density: CQGui.sowDensity(CQGui.defaultShakeAmount)); // crossfeed
+```
+
+**Välitulos 2026-08-02 (ennen korjauspassia).** Kohdat 1–2 läpäistiin:
+organDrone oli hienovarainen, hitaasti aaltoileva drone suhinan takana;
+memoryPulse toi kertyvää rytmistä atonaalista melodiaa ja matalaa kaoottista
+pörinää; dustGrowth eli rytmisesti mutta jäi liian tasaisen peruskohinan varaan;
+crossfeed toi nousevia ja laskevia kaoottisia atonaalisia oskillaattoreita.
+Kaikilla oli oma identiteetti. Sama seed säilytti ominaislaatunsa eri
+densityillä ja suurempi density lisäsi intensiteettiä.
+
+Organ-, SlotQ- ja Record-polut toimivat, mutta Organ oli liian hiljainen,
+Record vain avasi, ensimmäinen socket-layout oli sekava ja kuun vaihe tarttui
+vedon alussa neljännesasentoon. Korjauspassi nosti vain organin kuultavaa haaraa
++5,3 dB, viritti dustGrowthin liikkuvammaksi, teki Recordista kaksisuuntaisen,
+siirsi socketit elintensä viereen, poisti Organ/SlotQ:n `>`-merkit ja muutti
+kuun vedon jatkuvaksi sekä density-käyrän kuutiolliseksi. Kohdat 3–6 testataan
+nyt uudelleen; 7–8 ovat vielä kokonaan avoinna.
+
+1. **Tyhjä RAM puhuu.** Jokaisen neljän pitää alkaa tehdä kuultavaa materiaalia
+   muutamassa sekunnissa ilman luuppia. Niiden pitää olla tunnistettavasti eri
+   patcheja, ei vain saman kohinan eri voimakkuuksia. Mikään ei saa räjähtää,
+   jäädä DC:ksi tai vaatia käsin avattavaa piilotettua Workshop-säädintä.
+2. **Kuu tekee määrää.** Kokeile sama seed pienellä sirpillä ja täysikuulla.
+   Perheen ydin saa säilyä, mutta täysikuun pitää kasvattaa ympärille selvästi
+   rikkaampi kenttä; vaihe ei saa tuntua pelkältä master-strengthiltä. Tarkista
+   myös, että vaakaveto liikkuu ensimmäisestä pikselistä ilman tarttumista ja
+   että kuutiollinen käyrä antaa aiempaa enemmän käsimatkaa pienille patcheille.
+3. **Organ-input.** Aseta `coco1Organ=0`, istuta esimerkiksi
+   `tri3 -> coco1_organ` painolla +0,35 ja varmista, että urku hengittää silti.
+   Käsiasetuksen fillin pitää pysyä nollassa, erillisen live-waken liikkua.
+   Avaa lopuksi Organ käsin täysille: urun pitää nyt olla selvästi käyttökelpoinen
+   suhteessa tyhjän Cocon taustakohinaan, ei enää lähes huomaamaton.
+4. **SlotQ-input.** Avaa yksi audio-castle send, pidä `coco1SlotQ=0`, avaa
+   kirjoitus ja istuta `tri3 -> coco1_slotQ` painolla +0,35. Quantussyn pitää
+   päästä muistiin moduloituna; käsin asetettu Q-gill ei saa liikkua.
+5. **Record-input molempiin suuntiin.** Lukitse ensin `coco1Hold=1`, jätä
+   kuultava qMix/Input-polku auki ja istuta `tri3 -> coco1_record` painolla
+   +0,72. Punaisen sinetin pitää haljeta ja sydämen syttyä gaten aikana,
+   materiaalin päästä muistiin ja `CQ.get(\coco1Hold)`-arvon pysyä koko ajan
+   arvossa 1. Poista johto, aseta `coco1Hold=0` ja istuta sama johto uudelleen:
+   gaten pitää nyt **sulkea** kirjoittaja hetkeksi, piirtää täysi punainen sinetti
+   ja jättää `CQ.get(\coco1Hold)` arvoon 0. Johdon poiston pitää palauttaa
+   kummassakin kokeessa täsmälleen käsin asetettu tila.
+6. **Night-integraatio.** Kaikkien kuuden uuden socketin pitää löytyä Cocon
+   oman elimen vierestä: Organ aivan hedelmän ulkopuolelta, SlotQ suoraan
+   Q-kiduksen vierestä keskirenkaan puolelta ja punainen Record vasemman kuoren
+   noin klo 10 / oikean noin klo 2 yläulkokehältä. Juurten pitää olla hyvin
+   lyhyitä eikä minkään viivan kulkea Cocon läpi. Organissa ja SlotQ:ssa ei ole
+   `>`-merkkiä; Recordin ympyrä on tallella. Tiheässä patchissa endpointit,
+   Record-lamppu ja johto-hover pysyvät tarkkoina.
+7. **Yksi oikea undo.** Tallenna silmällä muutama lähtöarvo ja patch, tee shake
+   kuusta, paina Ctrl+Z. Sekä koko edellinen johtokenttä että shaken muuttamat
+   turvalliset musiikkiarvot pitää palautua; Master, mic ja pan eivät saa muuttua
+   shakessa eivätkä undossa.
+8. **Vapaa ensikäyttö.** Palaa tuntemattomiin seedeihin ja napauta kuuta 8–10
+   kertaa samoilla tyhjillä Cocoilla. Hyväksymiskysymys: syntyykö samoista
+   lähtöehdoista riittävän usein heti kiinnostavia, toisistaan erilaisia
+   kokeellisen musiikin aloituksia ilman että tulos tuntuu satunnaiselta
+   nuppikaaokselta?
+
+- [x] **PLAY-8.1–2 hyväksytty** (2026-08-02 — neljä erilaista perhettä tyhjästä
+      RAMista; sama seed säilyttää identiteetin ja density lisää intensiteettiä)
+- [ ] **PLAY-8 hyväksytty kokonaan** (pvm: ______ — korjauspassin Organ/Dust,
+      kuun määrälaki ja jatkuva ele, kuusi socketia/DSP-polku, kaksisuuntainen
+      mutta käsin asetetun Holdin säilyttävä Record, Night-integraatio, bundled
+      undo ja vapaa 8–10 shaken ensikäyttö)

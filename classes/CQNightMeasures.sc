@@ -88,6 +88,13 @@ CQNightMeasures {
 	*slotXValveAngle { ^62 }                // degrees above the inward axis
 	*levelShoreHit { ^10 }                  // px — distance from drawn shoreline
 	*flowValveHit { ^17 }                   // px — q/x gill hand
+	// PLAY-8 anatomical socket clearances. Endpoint papers stay fixed in px, so
+	// these do too: each socket clears its control's hit body without drifting
+	// away from the organ it belongs to as the stage grows.
+	*organInputOutset { ^48 }               // px — outward from the organ fruit jack
+	*slotQInputGap { ^34 }                  // px — beside the Q gill toward the ring
+	*recordInputOutset { ^38 }              // px — just beyond the upper outer rim
+	*modInputStop { ^7 }                    // px — semantic root stops at socket ink
 	*organPodInner { ^18 }                  // px — jack keeps the fruit's seed
 	*organPodOuter { ^32 }                  // px — annular audible-organ hand
 

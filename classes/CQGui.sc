@@ -13,9 +13,9 @@ CQGui {
 	var <inkControls;
 	var <spesalStates;
 	// `/cq_phase`: read-head address, audio-rate direction mean and skip rate,
-	// followed by the three continuous Coco destinations' reduced live truth
-	// (§9). The first three remain nil until the server reports; the tiny
-	// crescent views own the appended state themselves.
+	// followed by the five continuous Coco destinations' reduced live truth
+	// (§9): the three crescent moons plus Organ and SlotQ's shell wakes. The
+	// reel fields remain nil until the server reports.
 	var <phaseNorms, <phaseDirs, <phaseSkipHz;
 	// AIO-4 caches raw hardware-input and post-safety master presence even while
 	// its Drawer page is hidden. Listeners are paced and notified only while the
@@ -28,7 +28,7 @@ CQGui {
 	// reported. No telemetry = no pulse, so serverless and headless surfaces
 	// keep exactly the reviewed static Night look.
 	var <auraValues, auraPainted;
-	// GUI_SPEC §9 `/cq_charge`: nine paired pre-Schmitt charges and exact
+	// GUI_SPEC §9 `/cq_charge`: eleven paired pre-Schmitt charges and exact
 	// post-Schmitt gate/trig fires, in three owner blocks. Same law as the aura:
 	// each half of a slot stays nil until its synth has spoken.
 	var <chargeValues, chargePainted, <fireValues, firePainted;
@@ -46,7 +46,8 @@ CQGui {
 	// night's sowing moon; GUI-local because shake is an action argument, not a
 	// CQSpec param (SPEC §5.5 — the density clamp lives in CQMatrix.shake).
 	// The default is a small crescent. Its visible phase remains linear, but
-	// sowDensity waxes quadratically so early light can make a tiny patch.
+	// sowDensity waxes cubically so most of the hand's travel belongs to the
+	// sparse patches PLAY-8 found most playable.
 	var <shakeAmount = 0.22;
 	// ...and its own watcher list, deliberately NOT the param registry: that one
 	// is keyed by CQSpec names and primes itself from CQState, which has no
@@ -68,20 +69,21 @@ CQGui {
 		^CQMatrix.destNames.select { |name|
 			var tail = name.asString;
 			tail.endsWith("_flip") or: { tail.endsWith("_skip") }
+				or: { tail.endsWith("_record") }
 				or: { tail.endsWith("_spesal") }
 		}
 	}
 
 	*audioPresencePeriod { ^1 / 15 }
 
-	// which slots of the nine a given SendReply block carries (§9 order):
-	// the cocos report their own pair, the quantussy its five castles
+	// which slots of the eleven a given SendReply block carries (§9 order):
+	// the cocos report flip/skip/record, the quantussy its five castles
 	*chargeBlock { |replyId|
-		^switch(replyId.asInteger, 1, { 0 }, 2, { 2 }, 3, { 4 }, { nil })
+		^switch(replyId.asInteger, 1, { 0 }, 2, { 3 }, 3, { 6 }, { nil })
 	}
 
 	*chargeBlockSize { |replyId|
-		^switch(replyId.asInteger, 1, { 2 }, 2, { 2 }, 3, { 5 }, { nil })
+		^switch(replyId.asInteger, 1, { 3 }, 2, { 3 }, 3, { 5 }, { nil })
 	}
 
 	isClosed {
@@ -108,16 +110,18 @@ CQGui {
 	// is **how much is sown**, not how hard. Strength already has a macro of its
 	// own (`patchDepth`), so mapping the moon's lit area onto the weight ceiling
 	// was both redundant and inaudible; density is reachable from nowhere else.
-	// Quadratic fertility: quarter ≈ 1.25 %, half = 5 %, full = 20 %. The first
-	// half stays sparse enough to play; the second half gathers force.
+	// Cubic fertility: quarter ≈ 0.31 %, half = 2.5 %, full = 20 %. The first
+	// two thirds give fine control over a handful of cables; the last gathers
+	// quickly without changing the full-moon ceiling.
 	*fullMoonDensity { ^0.2 }
 	*defaultShakeAmount { ^0.22 }
 	*sowDensity { |norm|
-		^(norm ? 0).clip(0, 1).squared * this.fullMoonDensity
+		var t = (norm ? 0).clip(0, 1);
+		^(t * t * t) * this.fullMoonDensity
 	}
 
 	shake {
-		bananaGrammar.performUndoable({
+		bananaGrammar.performUndoableState(CQMatrix.shakeParamNames, {
 			// the weight stays the facade's documented default: the phase says
 			// how much, patchDepth says how alive
 			Cocoquantus.shake(origin: \gui,
@@ -366,7 +370,7 @@ CQGui {
 	prInit {
 		audioConfig = Cocoquantus.audioConfigForGui(config);
 		audition = CQAudition(matrix);
-		bananaGrammar = CQBananaGrammar(matrix);
+		bananaGrammar = CQBananaGrammar(matrix, state: state);
 		shellState = CQGuiShellState(bananaGrammar);
 		updaters = IdentityDictionary.new;
 		meterFuncs = IdentityDictionary.new;
@@ -638,7 +642,7 @@ CQGui {
 			}.defer;
 		}, '/cq_aura');
 		// GUI_SPEC §9 `/cq_charge`: three 15 Hz blocks (coco 1, coco 2, the five
-		// castles) fill paired nine-slot charge/fire caches. The send rate is the
+		// castles) fill paired eleven-slot charge/fire caches. The send rate is the
 		// §10 ambient ceiling; the repaint gate below keeps a still panel free.
 		OSCdef(\cq_gui_charge, { |msg|
 			{ this.prChargeFrame(msg[2], msg.copyRange(3, msg.size - 1)) }.defer;
@@ -651,14 +655,13 @@ CQGui {
 		}, '/cq_spesal');
 		// GUI_SPEC §9 loop phase: the read head's own 15 Hz message. Night gives
 		// the comet its own cheap layer. The appended continuous-destination
-		// triples feed only their three tiny crescents, so no complete shell follows
-		// this stream.
+		// triples feed three tiny crescents plus Organ and SlotQ's local wakes.
 		OSCdef(\cq_gui_phase, { |msg|
 			var values, spreads, activities;
-			if(msg.size >= 15) {
-				values = msg.copyRange(6, 8);
-				spreads = msg.copyRange(9, 11);
-				activities = msg.copyRange(12, 14);
+			if(msg.size >= 21) {
+				values = msg.copyRange(6, 10);
+				spreads = msg.copyRange(11, 15);
+				activities = msg.copyRange(16, 20);
 			};
 			{
 				this.prPhaseFrame(msg[2], msg[3], msg[4], msg[5],

@@ -169,8 +169,8 @@ matrix.patch(\cas4, \coco2_fbVca, 0.37);
 				// three audio-rate stable reeds, plus charge-only and exact-fire lamps.
 				map.castleFrame([-0.75, 0.4, -0.9, 0.2, 0.8],
 					[0.8, 2.5, 3.1, 40, 400]);
-				gui.prChargeFrame(1, [0.82, 0.34, 1, 0]);
-				gui.prChargeFrame(2, [0.25, 0.72, 0, 1]);
+				gui.prChargeFrame(1, [0.82, 0.34, 0.68, 1, 0, 1]);
+				gui.prChargeFrame(2, [0.25, 0.72, 0.18, 0, 1, 0]);
 				gui.prChargeFrame(3,
 					[0.15, 0.42, 0.66, 0.91, 0.28, 0, 0, 1, 0, 1]);
 				render.value(play3Output);

@@ -7,9 +7,9 @@ CQGuiVisualContractTest : UnitTest {
 			"the instrument opens on an iconic small crescent", 1e-9);
 		this.assertFloatEquals(CQGui.sowDensity(0), 0,
 			"the new moon still clears the bay", 1e-9);
-		this.assertFloatEquals(CQGui.sowDensity(0.25), 0.0125,
+		this.assertFloatEquals(CQGui.sowDensity(0.25), 0.003125,
 			"a quarter moon sows a genuinely small patch", 1e-9);
-		this.assertFloatEquals(CQGui.sowDensity(0.5), 0.05,
+		this.assertFloatEquals(CQGui.sowDensity(0.5), 0.025,
 			"the first half waxes slowly", 1e-9);
 		this.assertFloatEquals(CQGui.sowDensity(1), CQGui.fullMoonDensity,
 			"the full moon keeps the whole former ceiling", 1e-9);
@@ -99,8 +99,8 @@ CQGuiVisualContractTest : UnitTest {
 			var page = if(step == \roomy) { 1434 } { 1272 };
 			var cell = CQGuiMatrix.cellSize(step, page);
 			var loom = CQGuiMatrix.loomSize(step, page);
-			this.assert(cell[0] >= 48 and: { cell[1] >= 24 },
-				"% : knots stay at least as large as the reviewed 48x24"
+			this.assert(cell[0] >= 40 and: { cell[1] >= 24 },
+				"% : the expanded loom keeps broad, at-least-40x24 precision knots"
 					.format(step));
 			this.assertEquals(loom.height,
 				CQMatrix.sourceNames.size * cell[1],
@@ -142,20 +142,21 @@ CQGuiVisualContractTest : UnitTest {
 			"the graph ships a dedicated /cq_aura telemetry def");
 	}
 
-	// GUI_SPEC §9 `/cq_charge`: nine gate/trig charge/fire pairs in matrix order.
+	// GUI_SPEC §9 `/cq_charge`: eleven gate/trig charge/fire pairs in matrix order.
 	// The channel list is derived from CQMatrix, never re-typed, so the lamps
 	// cannot drift from the routing truth they report on.
-	test_chargeChannelsAreTheNineGateTrigDestinations {
+	test_chargeChannelsAreTheElevenGateTrigDestinations {
 		this.assertEquals(CQGui.chargeNames,
-			[\coco1_flip, \coco1_skip, \coco2_flip, \coco2_skip,
+			[\coco1_flip, \coco1_skip, \coco1_record,
+				\coco2_flip, \coco2_skip, \coco2_record,
 				\castle1_spesal, \castle2_spesal, \castle3_spesal,
 				\castle4_spesal, \castle5_spesal],
 			"charge channels = the matrix destination order filtered to gate/trigs");
-		this.assertEquals(CQGui.chargeBlock(1), 0, "coco 1 reports slots 0-1");
-		this.assertEquals(CQGui.chargeBlock(2), 2, "coco 2 reports slots 2-3");
-		this.assertEquals(CQGui.chargeBlock(3), 4, "the castle row reports slots 4-8");
+		this.assertEquals(CQGui.chargeBlock(1), 0, "coco 1 reports slots 0-2");
+		this.assertEquals(CQGui.chargeBlock(2), 3, "coco 2 reports slots 3-5");
+		this.assertEquals(CQGui.chargeBlock(3), 6, "the castle row reports slots 6-10");
 		this.assertEquals([CQGui.chargeBlockSize(1), CQGui.chargeBlockSize(2),
-			CQGui.chargeBlockSize(3)], [2, 2, 5],
+			CQGui.chargeBlockSize(3)], [3, 3, 5],
 			"each reply splits into its canonical charge and fire channel count");
 		this.assert(CQGui.chargeBlock(9).isNil,
 			"an unknown replyID claims no lamp slot");
@@ -171,26 +172,27 @@ CQGuiVisualContractTest : UnitTest {
 		var castleCharge = quantussy.detect { |reply| reply[\name] == '/cq_charge' };
 		this.assert(cocoCharge.notNil and: { castleCharge.notNil },
 			"both the coco def and the quantussy def report their charges");
-		this.assertEquals(cocoCharge[\values], 4,
-			"each coco reports two charge sums plus their exact gate/trig facts");
+		this.assertEquals(cocoCharge[\values], 6,
+			"each coco reports three charge sums plus their exact gate/trig facts");
 		this.assertEquals(castleCharge[\values], 10,
 			"the quantussy reports five spesal charges plus five exact triggers");
 		this.assertEquals((2 * (cocoCharge[\values] / 2))
 			+ (castleCharge[\values] / 2),
 			CQGui.chargeNames.size,
-			"the two cocos and castle row cover all nine charge/fire lamp pairs");
+			"the two cocos and castle row cover all eleven charge/fire lamp pairs");
 		this.assertEquals(castleCharge[\replyID], 3,
 			"the castle block claims replyID 3 — the cocos own 1 and 2");
 		// the sums the lamps report on must not have cost the DSP a second copy
 		this.assert(coco.collect { |reply| reply[\name] }.includes('/cq_phase'),
 			"extracting the sums left the read-head telemetry intact");
 		// address · direction mean · skip rate, followed by slow-value / fast-
-		// excursion / connected-weight blocks ordered spaf, input, feedback. The
+		// excursion / connected-weight blocks ordered spaf, input, feedback,
+		// organ, SlotQ. The
 		// continuous truth rides the existing message rather than opening another
 		// stream (§15 leaves message merging free, and §10 counts messages, not floats).
 		this.assertEquals(
-			coco.detect { |reply| reply[\name] == '/cq_phase' }[\values], 12,
-			"the phase message carries three reel values and three modulation triples");
+			coco.detect { |reply| reply[\name] == '/cq_phase' }[\values], 18,
+			"the phase message carries three reel values and five modulation triples");
 		this.assertEquals(CQSynthDefs.phaseReplyHz, 15,
 			"the read head shares the 15 Hz ambient ceiling with castle motion");
 		this.assert(quantussy.collect { |reply| reply[\name] }

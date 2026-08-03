@@ -103,7 +103,10 @@ CQGuiScale {
 			// well above the minimum window's own 52, so a page that is wide
 			// but too short for the roomy step still spends its width on the
 			// rail instead of turning all of it into slate.
-			loomLabel: 80, cellMin: 44, cellMax: 64, cellHeight: 24,
+			// The 28-destination instrument keeps a 40 px floor at the
+			// 1280x720 minimum. It remains one broad precision field without an
+			// inner horizontal scroll.
+			loomLabel: 80, cellMin: 40, cellMax: 50, cellHeight: 24,
 			// the rotated destination names are the loom's own column headings
 			// and were the smallest type on the page; the header band has the
 			// room for them because they hang from its bottom edge
@@ -127,7 +130,9 @@ CQGuiScale {
 			rowHeight: 28, titleHeight: 26, groupHeight: 22,
 			contentInset: 6, rowGap: 8,
 			ledgerLabel: 120, ledgerValue: 72, ledgerGap: 12,
-			loomLabel: 104, cellMin: 54, cellMax: 76, cellHeight: 28,
+			// 45 px still admits the reviewed 1434 px maximized page; 62 px
+			// keeps all 28 columns below a two-thousand-pixel rail.
+			loomLabel: 104, cellMin: 45, cellMax: 62, cellHeight: 28,
 			headerHeight: 74, loomLabelSize: 13, loomDestSize: 13,
 			listRow: 26, boxHeight: 28, barHeight: 30, toolTitleTop: 6
 		)

@@ -16,11 +16,19 @@ CQMatrixTest : UnitTest {
 
 	test_nameIndexMapping {
 		this.assertEquals(CQMatrix.sourceNames.size, 16, "16 sources (SPEC §5.5)");
-		this.assertEquals(CQMatrix.destNames.size, 22, "22 destinations (SPEC §5.5)");
+		this.assertEquals(CQMatrix.destNames.size, 28, "28 destinations (SPEC §5.5)");
 		this.assertEquals(CQMatrix.srcIndex(\tri1), 0, "tri1 is source 0");
 		this.assertEquals(CQMatrix.srcIndex(\org2), 15, "org2 is the last source");
 		this.assertEquals(CQMatrix.destIndex(\coco1_spaf), 0, "coco1_spaf is dest 0");
-		this.assertEquals(CQMatrix.destIndex(\deckB_rate), 21, "deckB_rate is the last dest");
+		this.assertEquals(CQMatrix.destIndex(\coco1_organ), 5,
+			"coco 1 organ begins the software-native input trio");
+		this.assertEquals(CQMatrix.destIndex(\coco1_record), 7,
+			"coco 1 record closes the first destination island");
+		this.assertEquals(CQMatrix.destIndex(\coco2_organ), 13,
+			"coco 2 mirrors the same independent organ input");
+		this.assertEquals(CQMatrix.destIndex(\coco2_record), 15,
+			"coco 2 mirrors the complete software-native trio");
+		this.assertEquals(CQMatrix.destIndex(\deckB_rate), 27, "deckB_rate is the last dest");
 		this.assert(CQMatrix.srcIndex(\bogus).isNil, "unknown source has no index");
 		this.assert(CQMatrix.destIndex(\bogus).isNil, "unknown dest has no index");
 	}
@@ -160,7 +168,7 @@ CQMatrixTest : UnitTest {
 
 	test_presetMayhemDense {
 		matrix.preset(\mayhem);
-		this.assertEquals(matrix.asArray.size, 16 * 22, "\\mayhem patches every cell");
+		this.assertEquals(matrix.asArray.size, 16 * 28, "\\mayhem patches every cell");
 		matrix.asArray.do { |t|
 			this.assert(t[2].abs <= 1.0, "\\mayhem weight % stays in range".format(t[2]));
 			this.assert(t[2] != 0.0, "\\mayhem weight is never zero");
@@ -174,6 +182,8 @@ CQMatrixTest : UnitTest {
 		this.assertEquals(m1.asArray, m2.asArray,
 			"same seed reproduces the same weight throw (SPEC §5.5)");
 		this.assertEquals(sp1, sp2, "same seed reproduces the same spesal states");
+		this.assertEquals(m1.lastShakePlan, m2.lastShakePlan,
+			"same seed reproduces the audible family and its musical preparation");
 		m2 = CQMatrix(nil);
 		m2.shake(0.4, seed: 4321);
 		this.assert(m1.asArray != m2.asArray, "a different seed throws differently");
@@ -183,17 +193,92 @@ CQMatrixTest : UnitTest {
 		var spesal = matrix.shake(0.4, seed: 99);
 		var cells = matrix.asArray;
 		this.assert(cells.size > 0, "shake patches something (seed 99)");
-		this.assert(cells.size < (16 * 22),
+		this.assert(cells.size < (16 * 28),
 			"shake stays sparse — it is a banana handful, not \\mayhem");
 		cells.do { |t|
-			this.assert(t[2].abs <= 0.4,
-				"shake weight % honors ±amount".format(t[2]));
+			this.assert(t[2].abs <= 0.82,
+				"shake weight % stays inside the tuned ecological ceiling".format(t[2]));
+			if(CQMatrix.isGateDest(t[1])) {
+				this.assert(t[2].abs >= 0.58,
+					"gate/trig % clears the +0.5 Schmitt instead of drawing dead ink"
+						.format(t[2]));
+			};
 		};
 		this.assertEquals(spesal.size, 5, "shake returns one state per castle");
 		spesal.do { |v|
 			this.assert(v.isInteger and: { v.inclusivelyBetween(0, 7) },
 				"spesal state % is an integer 0..7".format(v));
 		};
+	}
+
+	test_shakeDecorationWeightsStayInMusicalCountries {
+		var saved = thisThread.randData;
+		thisThread.randSeed = 404;
+		32.do {
+			var continuous = CQMatrix.decorationWeight(\coco1_spaf, 0.3);
+			var newVca = CQMatrix.decorationWeight(\coco1_organ, 0.3);
+			var gate = CQMatrix.decorationWeight(\coco1_record, 0.3);
+			this.assert(continuous.abs.inclusivelyBetween(0.135, 0.3),
+				"ordinary continuous decoration no longer clusters near zero");
+			this.assert(newVca.abs.inclusivelyBetween(0.16, 0.3),
+				"Organ/SlotQ decoration stays useful but below its 0.45 ceiling");
+			this.assert(gate.abs.inclusivelyBetween(0.58, 0.8),
+				"default gate decoration has Schmitt headroom without a full-scale slam");
+		};
+		thisThread.randData = saved;
+	}
+
+	test_shakePlantsOneAudibleEcologyAndOnlyPreparesSafeMusicalControls {
+		var families = IdentitySet.new;
+		64.do { |i|
+			var plan, destinations, activeSources;
+			matrix.shake(0.3, seed: 1000 + i,
+				context: (coco1Level: 0.95, coco2Level: 0.2));
+			plan = matrix.lastShakePlan;
+			families.add(plan[\family]);
+			this.assert(plan[\skeleton].size.inclusivelyBetween(3, 5),
+				"% plants one deliberate 3–5-cable skeleton".format(plan[\family]));
+			destinations = plan[\skeleton].collect { |triple| triple[1] };
+			this.assert(destinations.any { |dest| dest.asString.beginsWith("coco1") }
+				and: { destinations.any { |dest| dest.asString.beginsWith("coco2") } },
+				"% makes both Cocos participants".format(plan[\family]));
+			this.assert(plan[\params].keys.every { |name|
+				CQMatrix.shakeParamNames.includes(name)
+			}, "% prepares only the explicit safe musical-control whitelist"
+				.format(plan[\family]));
+			this.assert(plan[\params][\patchDepth] >= 0.9
+				and: { plan[\params][\coco1Level] >= 0.95 }
+				and: { plan[\params][\coco2Level] >= 0.90 },
+				"the throw preserves a louder existing level and supplies useful headroom");
+			activeSources = (1..5).select { |n|
+				plan[\params][("c" ++ n ++ "Range").asSymbol] != \infra
+			}.collect { |n| [("tri" ++ n).asSymbol, ("cas" ++ n).asSymbol] }
+				.flatten;
+			this.assertEquals(activeSources.size, 6,
+				"three prepared castles supply six immediate skeleton sources");
+			plan[\skeleton].do { |triple|
+				var weight = triple[2].abs, dest = triple[1].asString;
+				this.assert(CQMatrix.srcIndex(triple[0]).notNil
+					and: { CQMatrix.destIndex(triple[1]).notNil },
+					"every skeleton route is canonical");
+				this.assert(activeSources.includes(triple[0]),
+					"the skeleton draws only from its prepared balcium/audio castles");
+				if(dest.endsWith("_record")) {
+					this.assert(weight.inclusivelyBetween(0.68, 0.82),
+						"record punches live in their threshold-safe 0.68…0.82 country");
+				};
+				if(dest.endsWith("_organ")) {
+					this.assert(weight.inclusivelyBetween(0.20, 0.38),
+						"organ openings stay expressive without pinning the VCA rail");
+				};
+				if(dest.endsWith("_slotQ")) {
+					this.assert(weight.inclusivelyBetween(0.28, 0.42),
+						"SlotQ openings are large enough to expose the Quantussy mix");
+				};
+			};
+		};
+		this.assertEquals(families.size, 4,
+			"the deterministic seed sweep reaches all four contrasting ecologies");
 	}
 
 	test_shakeReplacesOldThrow {
@@ -217,18 +302,29 @@ CQMatrixTest : UnitTest {
 	}
 
 	// SPEC §5.5's `density` (added 2026-07-22 for the night's sowing moon,
-	// GUI_SPEC §16.6): how MUCH is sown, while `amount` stays how hard. Old
-	// callers must be untouched, and the empty phase clears the bay — the field
+	// GUI_SPEC §16.6): how MUCH decoration is sown, while `amount` is its ceiling
+	// and patchDepth stays how hard. The default density remains stable, and the
+	// empty phase clears the bay — the field
 	// is exactly what the moon shows — without touching the spesal states,
 	// because a clear is a clear and not a scramble in disguise.
 	test_shakeDensitySowsMoreOrLess {
 		var sparse = CQMatrix(nil), dense = CQMatrix(nil), fallback = CQMatrix(nil);
 		var explicit = CQMatrix(nil), quiet = CQMatrix(nil), spesal;
-		sparse.shake(0.4, seed: 11, density: 0.02);
-		dense.shake(0.4, seed: 11, density: 0.4);
+		var sparseSpesal, denseSpesal;
+		sparseSpesal = sparse.shake(0.4, seed: 11, density: 0.02);
+		denseSpesal = dense.shake(0.4, seed: 11, density: 0.4);
 		this.assert(dense.asArray.size > (sparse.asArray.size * 2),
 			"a fuller moon sows a denser patch (% vs % cells)"
 				.format(sparse.asArray.size, dense.asArray.size));
+		this.assertEquals(sparse.lastShakePlan[\family], dense.lastShakePlan[\family],
+			"moon density cannot change a seeded ecology's family");
+		this.assertEquals(sparse.lastShakePlan[\skeleton], dense.lastShakePlan[\skeleton],
+			"moon density cannot change a seeded ecology's audible skeleton");
+		this.assertEquals(sparse.lastShakePlan[\params].asCompileString,
+			dense.lastShakePlan[\params].asCompileString,
+			"moon density cannot change a seeded ecology's prepared controls");
+		this.assertEquals(sparseSpesal, denseSpesal,
+			"moon density adds decoration without changing the seeded spesal posture");
 		fallback.shake(0.4, seed: 11);
 		explicit.shake(0.4, seed: 11, density: CQMatrix.shakeDensity);
 		this.assertEquals(fallback.asArray, explicit.asArray,
@@ -241,13 +337,23 @@ CQMatrixTest : UnitTest {
 			"density 0 sows nothing, so it leaves nothing standing — it clears");
 		this.assertEquals(spesal, [],
 			"but it scrambles no spesal state: a clear is a clear");
+		this.assert(quiet.lastShakePlan.isNil,
+			"an empty moon prepares no musical controls");
+	}
+
+	test_documentedShakeSeedsKeepTheirFamilies {
+		[[3, \organDrone], [1, \memoryPulse], [2, \dustGrowth],
+			[4, \crossfeed]].do { |pair|
+			this.assertEquals(CQMatrix.shakeFamilyForSeed(pair[0]), pair[1],
+				"PLAY-8 seed % remains % at every density".format(pair[0], pair[1]));
+		};
 	}
 
 	test_shakeDensityClampFuzz {
 		var wild = CQMatrix(nil);
 		wild.shake(0.4, seed: 3, density: 9);
-		this.assert(wild.asArray.size >= 350,
-			"a density over 1 clamps to a full bay instead of misbehaving");
+		this.assert(wild.asArray.size >= 280 and: { wild.asArray.size < (16 * 28) },
+			"a density over 1 fills continuous colour but keeps gate rows ecological");
 		wild = CQMatrix(nil);
 		wild.patch(\tri1, \coco1_spaf, 0.5);
 		wild.shake(0.4, seed: 3, density: -2);

@@ -1,8 +1,10 @@
 // Playability measurement for PLAN.md -> "Tie 1.0:aan", item 8.
 //
 // This is deliberately a measurement, not a taste gate. It uses the real
-// \cqQuantussy and \cqCoco SynthDefs to answer three narrower questions before
-// defaults or shake semantics are changed:
+// \cqQuantussy and \cqCoco SynthDefs. It retains the pre-PLAY-7 first-touch and
+// rejected-candidate probes as diagnostics, but every shake below uses today's
+// ecological matrix law. `nrt_shake_ecology.scd` is the authoritative blank-RAM
+// proof that also applies each family's safe control preparation:
 //
 //   1. How audible was one former first-touch 0.5 banana as the existing matrix gets
 //      denser? A/B differs only by tri5 -> coco1_inVca at weight 0.5.
@@ -171,6 +173,9 @@ cocoArgs = { |branch, prepared, bootSpaf|
 		\wFbVcaBus, branch[\ctl] + (CQMatrix.destIndex(\coco1_fbVca) * 16),
 		\wFlipBus, branch[\ctl] + (CQMatrix.destIndex(\coco1_flip) * 16),
 		\wSkipBus, branch[\ctl] + (CQMatrix.destIndex(\coco1_skip) * 16),
+		\wOrganBus, branch[\ctl] + (CQMatrix.destIndex(\coco1_organ) * 16),
+		\wSlotQBus, branch[\ctl] + (CQMatrix.destIndex(\coco1_slotQ) * 16),
+		\wRecordBus, branch[\ctl] + (CQMatrix.destIndex(\coco1_record) * 16),
 		\patchDepth, 1, \speed, CQSpec.default(\coco1Speed),
 		\spafKnob, if(prepared) { 0.35 } { bootSpaf },
 		\inLevel, CQSpec.default(\coco1In),
@@ -474,9 +479,9 @@ File.mkdir(tmpDir);
 		[
 			[\fullMoon, 0.2, 8101, 9202, true, 0.3, 0],
 			[\allCells, 1.0, 8101, 9202, true, 0.3, 0],
-			[\bootFullMoon, 0.2, 8101, 9202, false, 0.3, 0],
-			[\bootSpaf012, 0.2, 8101, 9202, false, 0.3, 0.12],
-			[\bootStrongShake, 0.2, 8101, 9202, false, 0.65, 0]
+			[\bareEcology, 0.2, 8101, 9202, false, 0.3, 0],
+			[\historicalSpaf012WithEcology, 0.2, 8101, 9202, false, 0.3, 0.12],
+			[\historicalAmount065WithEcology, 0.2, 8101, 9202, false, 0.65, 0]
 		].do { |row|
 			var label = row[0], density = row[1];
 			var shakeA = makeShake.value(row[2], density, row[5]);

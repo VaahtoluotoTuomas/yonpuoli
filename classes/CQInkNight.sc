@@ -208,7 +208,8 @@ CQInkNight {
 	// cross-feed has two parallel, oppositely directed lanes. The path pressure
 	// is the stored slot amount, the destination gill is the hand, and an arrow
 	// near the arrival makes direction readable without labels or colour.
-	*drawDroneRoutes { |geometry, qNorms, xNorms, active, hover, skin = \night|
+	*drawDroneRoutes { |geometry, qNorms, xNorms, active, hover, skin = \night,
+		qModulations|
 		var palette = CQInk.palette(skin);
 		active = active ? IdentitySet.new;
 		hover = hover ? IdentitySet.new;
@@ -218,7 +219,7 @@ CQInkNight {
 			var live = active.includes(name), over = hover.includes(name);
 			this.drawFlowPath(path, norm, \tri, live, over, palette);
 			this.drawFlowGill(path.last, path.last - path[2], norm, \tri,
-				live, over, palette);
+				live, over, palette, qModulations !? { qModulations.at(i) });
 			Pen.fillColor = palette[\tri].copy.alpha_(0.32 + (0.45 * norm));
 			Pen.addOval(Rect.aboutPoint(path.first, 1.5, 1.5));
 			Pen.fill;
@@ -288,7 +289,7 @@ CQInkNight {
 	}
 
 	*drawFlowGill { |center, arrival, norm = 0, family = \line,
-		active = false, hover = false, palette|
+		active = false, hover = false, palette, modulation|
 		var value = (norm ? 0).clip(0, 1), length, tangent, normal, gap, half;
 		var color = palette[family];
 		length = max(0.001, sqrt(arrival.x.squared + arrival.y.squared));
@@ -305,6 +306,38 @@ CQInkNight {
 		Pen.width = CQInk.strokes[if(active) { \strong } { \normal }];
 		this.addFlowGill(center, tangent, normal, gap, half, value);
 		Pen.stroke;
+		this.prDrawFlowWake(center, normal, modulation, palette);
+	}
+
+	// The hand's gill gap remains the filled setting. A separate hollow pair and
+	// a short wake state the effective matrix-opened SlotQ value, exactly as the
+	// crescent satellites do for input/feedback/SP.AF.
+	*prDrawFlowWake { |center, normal, modulation, palette|
+		var value, lower, upper, gapFor, pearlR = 1.45;
+		if(modulation.isNil) { ^this };
+		value = (modulation[\center] ? 0).clip(0, 1);
+		lower = (modulation[\lower] ? value).clip(0, 1);
+		upper = (modulation[\upper] ? value).clip(0, 1);
+		gapFor = { |norm| 0.8 + (CQNightMeasures.flowGillGap * norm) };
+		if((upper - lower) > 0.001) {
+			Pen.strokeColor = palette[\line].copy.alpha_(0.38);
+			Pen.width = CQInk.strokes[\normal];
+			[-1, 1].do { |side|
+				Pen.line(center + (normal * gapFor.value(lower) * side),
+					center + (normal * gapFor.value(upper) * side))
+			};
+			Pen.stroke;
+		};
+		[-1, 1].do { |side|
+			var pearl = center + (normal * gapFor.value(value) * side);
+			Pen.fillColor = palette[\ground].copy.alpha_(0.96);
+			Pen.addOval(Rect.aboutPoint(pearl, pearlR, pearlR));
+			Pen.fill;
+			Pen.strokeColor = palette[\line].copy.alpha_(0.94);
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.addOval(Rect.aboutPoint(pearl, pearlR, pearlR));
+			Pen.stroke;
+		};
 	}
 
 	// One shape, added twice: the undertow beneath and the family core above
@@ -397,11 +430,13 @@ CQInkNight {
 		speedNorm = 0.5, hover = false, skipHover = false, skipFlash = false,
 		rimHover = false, heartHover = false, chevronHover = false,
 		skin = \night, preampRoot,
-		preampAura = 0, preampDrive = 0, preampSlot = 1, performance|
+		preampAura = 0, preampDrive = 0, preampSlot = 1, performance,
+		recordGate = false|
 		var palette = CQInk.palette(skin), notch, notchNorm, normal, reach;
-		var heart, levelNorm;
+		var heart, levelNorm, effectiveHold;
 		performance = performance ? ();
 		levelNorm = performance[\level] ? 0;
+		effectiveHold = holdOn != (recordGate == true);
 		Pen.translate(origin.x.neg, origin.y.neg);
 		// This view is opaque-backed. Repaint the exact incoming audio vein
 		// beneath the winding so the anatomy reaches the real spiral
@@ -410,6 +445,9 @@ CQInkNight {
 			this.drawPreampVein(preampRoot, nil, preampAura,
 				preampDrive, preampSlot, skin)
 		};
+		// The three software-input roots live below the winding and terminate
+		// beneath their real endpoint views, so they read as anatomy, not cables.
+		this.drawCocoModInputRoots(coco, skin);
 		// the shell's rim is its §6 body handle: hovering it draws the outline
 		// the double-click acts on, in whisper hairline so the danger-red hold
 		// seal on the very same circle can never be mistaken for it
@@ -425,10 +463,19 @@ CQInkNight {
 		});
 		Pen.width = CQInk.strokes[\normal];
 		this.strokeSegments(coco[\segments]);
-		if(holdOn) {
+		if(effectiveHold) {
 			Pen.strokeColor = palette[\danger].copy.alpha_(0.6);
 			Pen.width = CQInk.strokes[\strong];
 			Pen.addOval(Rect.aboutPoint(coco[\center], coco[\outerR], coco[\outerR]));
+			Pen.stroke;
+		};
+		if(holdOn and: { recordGate == true }) {
+			// A matrix punch cracks the persistent seal without changing its stored
+			// Hold state: two surviving arcs show both facts at once.
+			Pen.strokeColor = palette[\danger].copy.alpha_(0.45);
+			Pen.width = CQInk.strokes[\strong];
+			Pen.addArc(coco[\center], coco[\outerR], 0.10pi, 0.72pi);
+			Pen.addArc(coco[\center], coco[\outerR], 1.10pi, 0.72pi);
 			Pen.stroke;
 		};
 		// Level's own ink is NOT drawn here. Its shore runs along the exterior,
@@ -452,7 +499,17 @@ CQInkNight {
 		};
 		// the heart: hollow whisper eye while open, danger-red while sealed
 		heart = CQNightMeasures.heartDotR;
-		if(holdOn) {
+		if(holdOn and: { recordGate == true }) {
+			Pen.fillColor = palette[\spark].copy.alpha_(0.26);
+			Pen.addOval(Rect.aboutPoint(coco[\center], heart, heart));
+			Pen.fill;
+			Pen.strokeColor = palette[\spark];
+			Pen.width = CQInk.strokes[\normal];
+			Pen.addOval(Rect.aboutPoint(coco[\center],
+				CQNightMeasures.heartSealR, CQNightMeasures.heartSealR));
+			Pen.stroke;
+		} {
+		if(effectiveHold) {
 			Pen.fillColor = palette[\danger];
 			Pen.addOval(Rect.aboutPoint(coco[\center], heart, heart));
 			Pen.fill;
@@ -466,6 +523,7 @@ CQInkNight {
 			Pen.addOval(Rect.aboutPoint(coco[\center], heart, heart));
 			Pen.stroke;
 		};
+		};
 		this.drawMouthChevron(coco[\chevron], flipMode, skin, chevronHover);
 		// org stem from the second turn out to the hanging fruit jack
 		Pen.strokeColor = palette[\organ].copy.alpha_(0.8);
@@ -474,7 +532,8 @@ CQInkNight {
 		Pen.stroke;
 		this.drawOrganPod(coco[\orgCenter], performance[\organ] ? 0,
 			performance[\organActive] == true,
-			performance[\organHover] == true, skin);
+			performance[\organHover] == true, skin,
+			performance[\organModulation]);
 		// skip's stationary home above the mouth jack, the chevron's mirror
 		// (§6.1). Momentary, so it carries §16.7's 120 ms ink flash — fired by
 		// ANY skip (mark, `a/s`, code, pattern, matrix gate) hangs off the one
@@ -549,7 +608,7 @@ CQInkNight {
 	// the jack's own cable paper, so patching and mixing can never steal one
 	// another's hit target.
 	*drawOrganPod { |center, norm = 0, active = false, hover = false,
-		skin = \night|
+		skin = \night, modulation|
 		var palette = CQInk.palette(skin), value = (norm ? 0).clip(0, 1);
 		var radius = CQNightMeasures.organPodR, start = 0.72pi, sweep = 1.56pi;
 		var angle = start + (sweep * value), pearl;
@@ -574,6 +633,34 @@ CQInkNight {
 		};
 		pearl = center + (Point(cos(angle), sin(angle)) * radius);
 		this.prDrawCrescentPearl(pearl, \organ, active or: { hover }, palette);
+		this.prDrawCrescentWake(center, modulation, palette, start, sweep, radius);
+	}
+
+	// Short under-winding roots from each software socket to its own organ. They
+	// are anatomy, never patch cables: no arrowheads and no long curve through the
+	// shell. Proximity now carries most of the meaning, so a straight quiet stem
+	// is enough and leaves the winding readable.
+	*drawCocoModInputRoots { |coco, skin = \night|
+		var palette = CQInk.palette(skin), routes;
+		if(coco[\modInputs].isNil or: { coco[\modRoots].isNil }) { ^this };
+		routes = [
+			[coco[\modRoots][\organ], coco[\modInputs][\organ], \organ],
+			[coco[\modRoots][\slotQ], coco[\modInputs][\slotQ], \tri],
+			[coco[\modRoots][\record], coco[\modInputs][\record], \danger]
+		];
+		routes.do { |route|
+			var start = route[0], finish = route[1], delta = finish - start;
+			var length = max(0.001, sqrt(delta.x.squared + delta.y.squared));
+			var tangent = delta / length;
+			var end = finish - (tangent * CQNightMeasures.modInputStop);
+			this.prUndertowInk(palette, false);
+			Pen.line(start, end);
+			Pen.stroke;
+			Pen.strokeColor = palette[route[2]].copy.alpha_(0.30);
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.line(start, end);
+			Pen.stroke;
+		};
 	}
 
 	// The read head is the comet: a bone dot at the loop's true address

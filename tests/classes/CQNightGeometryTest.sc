@@ -1,6 +1,6 @@
 // CQNightGeometryTest — the §15 topology truths of the Night map, asserted
 // without a window: ring order and direction, cocos left/right, roots below,
-// birds above, the full 38-endpoint inventory and the §16.10 hit spacing.
+// birds above, the full 44-endpoint inventory and the §16.10 hit spacing.
 
 CQNightGeometryTest : UnitTest {
 
@@ -69,8 +69,8 @@ CQNightGeometryTest : UnitTest {
 		var points = geo[\endpoints];
 		var names = CQMatrix.sourceNames ++ CQMatrix.destNames;
 		var stage = Rect(0, 0, 1280, 570);
-		this.assertEquals(points.size, 38,
-			"the night map places exactly 16 jacks and 22 sockets");
+		this.assertEquals(points.size, 44,
+			"the night map places exactly 16 jacks and 28 sockets");
 		names.do { |name|
 			this.assert(points[name].notNil,
 				"canonical endpoint % has a night home".format(name));
@@ -81,6 +81,45 @@ CQNightGeometryTest : UnitTest {
 			names.drop(i + 1).do { |b|
 				this.assert(this.prDistance(points[a], points[b]) >= 24,
 					"% and % keep the 24 px hit spacing (16.10)".format(a, b));
+			};
+		};
+	}
+
+	test_softwareInputsSitBesideTheirOwnOrgansWithoutMovingHardwareSockets {
+		var geo = CQNightGeometry.compute(1280, 570);
+		geo[\cocos].do { |coco, i|
+			var n = i + 1;
+			#[organ, slotQ, record].do { |suffix|
+				var name = ("coco" ++ n ++ "_" ++ suffix).asSymbol;
+				this.assertEquals(geo[\endpoints][name], coco[\modInputs][suffix],
+					"% is the endpoint of its under-winding semantic root".format(name));
+				this.assert(coco[\shellBox].containsPoint(coco[\modInputs][suffix]),
+					"% remains on its own shell paper".format(name));
+			};
+			this.assertFloatEquals(this.prDistance(coco[\orgCenter],
+				coco[\modInputs][\organ]), CQNightMeasures.organInputOutset,
+				"coco % Organ input sits one clear socket-gap beyond its fruit"
+					.format(n), 1e-6);
+			this.assertFloatEquals(coco[\modInputs][\slotQ].y,
+				coco[\slotQValve].y,
+				"coco % SlotQ input sits level with its gill".format(n), 1e-6);
+			this.assertFloatEquals((coco[\modInputs][\slotQ].x
+				- coco[\slotQValve].x).abs, CQNightMeasures.slotQInputGap,
+				"coco % SlotQ root is only one short side stem".format(n), 1e-6);
+			this.assertFloatEquals(this.prDistance(coco[\center],
+				coco[\modInputs][\record]),
+				coco[\outerR] + CQNightMeasures.recordInputOutset,
+				"coco % Record input sits just beyond the rim".format(n), 1e-6);
+			this.assert(coco[\modInputs][\record].y < coco[\center].y
+				and: { if(i == 0) {
+					coco[\modInputs][\record].x < coco[\center].x
+				} {
+					coco[\modInputs][\record].x > coco[\center].x
+				} }, "Record homes mirror at ten and two o'clock");
+			#[spaf, inVca, fbVca, flip, skip].do { |suffix, m|
+				var name = ("coco" ++ n ++ "_" ++ suffix).asSymbol;
+				this.assertEquals(geo[\endpoints][name], coco[\moons][m],
+					"the original % moon keeps its established home".format(name));
 			};
 		};
 	}

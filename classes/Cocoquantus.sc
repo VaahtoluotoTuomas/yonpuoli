@@ -335,13 +335,20 @@ Cocoquantus {
 	// SPEC §5.5 shake: randomize matrix weights (±amount, sparse) + spesal
 	// states — never levels/feedback (safety+musicality rule; CQMatrix.shake
 	// only reaches weights by construction). seed makes the throw reproducible
-	// `density` = how much is sown (SPEC §5.5; the night's sowing moon wears it
-	// as its phase). Omitted, it stays the historical ~10% handful.
+	// `density` = how much random decoration is sown (SPEC §5.5; the night's
+	// sowing moon wears it as its phase). Every non-empty throw also plants one
+	// audible ecology and prepares only its explicitly safe musical controls.
 	*shake { |amount = 0.3, seed, origin = \code, density|
-		var spesal;
+		var spesal, context, plan;
 		if(matrix.isNil) { "Yönpuoli: not booted.".warn; ^this };
+		context = if(state.isNil) { () } { state.asEvent };
 		spesal = matrix.shake(amount, seed, origin: origin,
-			committed: true, operation: \shake, density: density);
+			committed: true, operation: \shake, density: density,
+			context: context);
+		plan = matrix.lastShakePlan;
+		if(plan.notNil and: { state.notNil }) {
+			state.setAll(plan[\params])
+		};
 		spesal.do { |v, i| this.spesalSet(i + 1, v) };
 		// like skip, a shake is momentary and leaves no state of its own to
 		// display — so it is announced once here, and every layer's light hangs

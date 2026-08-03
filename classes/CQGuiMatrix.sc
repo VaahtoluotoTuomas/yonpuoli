@@ -1,4 +1,4 @@
-// CQGuiMatrix — the 16×22 precision matrix as the §8 patch-loom experiment.
+// CQGuiMatrix — the 16×28 precision matrix as the §8 patch-loom experiment.
 // Quiet rails preserve exact coordinates; planted cells become weighted knots.
 // Header, loom and route ribbon are separate fixed regions in the workbench.
 
@@ -184,7 +184,7 @@ CQGuiMatrix {
 		#[5, 10, 12, 14].do { |row|
 			Pen.line(Point(0, row * cellH), Point(size.width, row * cellH));
 		};
-		#[5, 10, 15, 20].do { |column|
+		#[8, 16, 21, 26].do { |column|
 			Pen.line(Point(labW + (column * cellW), 0),
 				Point(labW + (column * cellW), size.height));
 		};
@@ -340,20 +340,24 @@ CQGuiMatrix {
 	}
 
 	prDestGroups {
-		^[(start: 0, count: 5, title: "coco 1"),
-			(start: 5, count: 5, title: "coco 2"),
-			(start: 10, count: 5, title: "castle · fm"),
-			(start: 15, count: 5, title: "castle · spesal"),
-			(start: 20, count: 2, title: "decks")]
+		^[(start: 0, count: 8, title: "coco 1"),
+			(start: 8, count: 8, title: "coco 2"),
+			(start: 16, count: 5, title: "castle · fm"),
+			(start: 21, count: 5, title: "castle · spesal"),
+			(start: 26, count: 2, title: "decks")]
 	}
 
 	prDestLabel { |dest|
 		^switch(dest,
 			\coco1_spaf, { "spaf" }, \coco1_inVca, { "in" },
 			\coco1_fbVca, { "fb" }, \coco1_flip, { "flip" },
-			\coco1_skip, { "skip" }, \coco2_spaf, { "spaf" },
+			\coco1_skip, { "skip" }, \coco1_organ, { "organ" },
+			\coco1_slotQ, { "q in" }, \coco1_record, { "rec" },
+			\coco2_spaf, { "spaf" },
 			\coco2_inVca, { "in" }, \coco2_fbVca, { "fb" },
 			\coco2_flip, { "flip" }, \coco2_skip, { "skip" },
+			\coco2_organ, { "organ" }, \coco2_slotQ, { "q in" },
+			\coco2_record, { "rec" },
 			\castle1_fm, { "1" }, \castle2_fm, { "2" },
 			\castle3_fm, { "3" }, \castle4_fm, { "4" }, \castle5_fm, { "5" },
 			\castle1_spesal, { "1" }, \castle2_spesal, { "2" },
@@ -366,6 +370,9 @@ CQGuiMatrix {
 		var name = dest.asString;
 		^case
 			{ name.find("spaf").notNil } { colors[\spaf] }
+			{ name.find("_organ").notNil } { colors[\organ] }
+			{ name.find("_slotQ").notNil } { colors[\tri] }
+			{ name.find("_record").notNil } { colors[\input] }
 			{ name.find("_fm").notNil } { colors[\fm] }
 			{ name.find("spesal").notNil } { colors[\input] }
 			{ colors[\whisper] }

@@ -530,10 +530,12 @@ The accepted interaction and topology stay unchanged while the moon grows
 gains a 28 px-diameter touch body, and the gill gains a 48 px-diameter exact
 hit body. These measures do not reopen N3's grammar.
 
-- The **solitary moon** is Ø 56 in the far upper-right, beyond bird B and
+- The **solitary moon** is Ø 70 in the far upper-right, beyond bird B and
   slightly above it. It opens as a 0.22 crescent and sows through
-  `0.2 × phase²` (quarter/half/full ≈ 4/18/70 cables). Tap throws and
-  horizontal drag pours phase. Down holds rain/grow and up holds sun/wither:
+  the PLAY-8 slow-first curve `0.2 × phase³` (quarter/half/full ≈ 4–6 / 11–13 /
+  65–67 total cables including the ecological core). Horizontal preview follows
+  the first pixel; a release that remains a tap restores the exact starting
+  phase before it throws. Down holds rain/grow and up holds sun/wither:
   one 8 px dominant-axis lock chooses the act, then 32 px of travel tensions
   rain 0.6…1.6 Hz and sun 2.5…6 Hz while adding drops/rays to the transient
   glyph.
@@ -701,7 +703,7 @@ The root increment therefore does this:
   either deck may feed either preamp.
 - Do not add decorative root count without information, and do not invent
   extra patchable audio jacks. Making `preA` / `preB` audio patchable would
-  expand the canonical 16×22 matrix and is a separate DSP/interface epic.
+  expand the current canonical 16×28 matrix and is a separate DSP/interface epic.
 - The mic sprout remains a truthful three-state provenance cue beside side A.
 
 The second-review implementation contract is now precise:
@@ -877,7 +879,7 @@ The **26 Workshop parameters** are:
 The other SPEC §6.2 obligations are already owned, but the N8 exit audit must
 name them too: Night owns hold/flip/skip, spesal step, dolby, ranges, patching
 and deck loading/navigation; Inspector owns patch presets and the full
-16×22 signed matrix; Memory owns snapshots and A→B morph; Night/Master show
+16×28 signed matrix; Memory owns snapshots and A→B morph; Night/Master show
 the required hold, spesal/activity, filename, meters, REC/elapsed and notice
 state. A CQSpec-only test is therefore necessary but not sufficient.
 
@@ -1737,11 +1739,11 @@ them the hardware never had either. What ships / is replaced / is cut:
 |---|---|---|
 | coco pair, in-loop clip→quantize, dust, organ, dolby | optional ambience → norns system reverb | stems and the retired Space FDN |
 | quantussy: 5 castles, spesal, chaos — count is identity | recorder → norns tape | watchdog auto-trim (notice may stay) |
-| 16×22 matrix semantics, patchDepth, shake/tide/weather math | decks → **softcut as source**, its output feeding the coco input slot (softcut stays clean; the coco does the dirt) | `\smooth` interp (keep `\zoh` — the authentic one *is* the cheap one) |
+| 16×28 matrix semantics, including six Organ/SlotQ/Record Coco inputs, patchDepth, ecological shake/tide/weather math | decks → **softcut as source**, its output feeding the coco input slot (softcut stays clean; the coco does the dirt) | `\smooth` interp (keep `\zoh` — the authentic one *is* the cheap one) |
 | master safety chain — **non-negotiable on headphones** | mic path → norns inputs as liveL/R | GUI telemetry rates (polls at 10 Hz grid / ~12 fps screen) |
 
 The load-bearing lever from the memo, now even more valuable: **the
-sparse matrix**. The dense 22×16 audio-rate summing mostly multiplies
+sparse matrix**. The dense 28×16 audio-rate summing mostly multiplies
 zeros; a played patch is 10–70 cables. Rebuild the mod-routing graph on
 *topology* change only (weight changes stay bus writes). Consequence to
 embrace, not hide: a cable insertion may click — **a banana contact

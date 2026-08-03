@@ -229,6 +229,50 @@ CQBananaGrammarTest : UnitTest {
 		this.assertEquals(grammar.undoCount, 2, "undo ring drops entries beyond its depth");
 	}
 
+	test_guiShakeUndoRestoresItsMatrixAndPreparedControlsTogether {
+		var state = CQState(nil), beforeMatrix, beforeParams, plan;
+		var stableName, changedNames, handValue;
+		grammar.free;
+		state.setAll((patchDepth: 0.2, coco1Level: 0.1, coco2Level: 0.2,
+			coco1Hold: 0, coco2Hold: 0));
+		grammar = CQBananaGrammar(matrix, state: state);
+		beforeMatrix = matrix.fullMatrix;
+		beforeParams = Event.new;
+		CQMatrix.shakeParamNames.do { |name| beforeParams[name] = state.get(name) };
+		grammar.performUndoableState(CQMatrix.shakeParamNames, {
+			matrix.shake(0.3, seed: 1, context: state.asEvent);
+			state.setAll(matrix.lastShakePlan[\params]);
+		});
+		plan = matrix.lastShakePlan.deepCopy;
+		changedNames = plan[\params].keys.select { |name|
+			beforeParams[name] != state.get(name)
+		};
+		this.assert(matrix.fullMatrix != beforeMatrix,
+			"an ecological GUI shake replaces the matrix");
+		this.assert(state.get(\patchDepth) >= 0.9
+			and: { state.get(\coco1Level) >= 0.90 }
+			and: { state.get(\coco2Level) >= 0.90 },
+			"its safe musical preparation reaches the same state funnel");
+		this.assertEquals(grammar.undoCount, 1,
+			"the complete ecological throw is one undo operation");
+		stableName = #[coco1Organ, coco2Organ, coco1SlotX, coco2SlotX].detect { |name|
+			beforeParams[name] == state.get(name)
+		};
+		handValue = 0.27;
+		this.assert(stableName.notNil,
+			"the plan may name a stable value without pretending it changed");
+		state.set(stableName, handValue);
+		grammar.undo;
+		this.assertEquals(matrix.fullMatrix, beforeMatrix,
+			"one undo restores the pre-shake matrix");
+		changedNames.do { |name|
+			this.assertEquals(state.get(name), beforeParams[name],
+				"one undo restores prepared musical control %".format(name));
+		};
+		this.assertEquals(state.get(stableName), CQSpec.clamp(stableName, handValue),
+			"undo leaves a later hand edit to an unchanged planned control intact");
+	}
+
 	test_visibleSocketCatchesTheFullGateCapablePlant {
 		var before = matrix.fullMatrix;
 		grammar.startSource(\tri1, 1);

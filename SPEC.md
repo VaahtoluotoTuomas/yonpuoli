@@ -147,7 +147,7 @@ The implementation MUST deliver these behaviors (these drive the acceptance test
    │ deck A/B │   │  qFreq, qChaos     │    │  signed weights     │
    └────┬─────┘   └────────────────────┘    └──────────┬──────────┘
         │                                              │ (speed FM, VCAs,
-        ▼                                              ▼  flip/skip/spesal,
+        ▼                                              ▼  flip/skip/record/spesal,
    ┌──────────┐    ┌───────────────────────────────────────────┐  castle FM, deck rate)
    │ PREAMP A ├───▶│ COCO 1: dolby → [clip → 8-bit quant → RAM │
    │ (fuzz,   │    │ loop @ variable clock] → out + organ      │──┐
@@ -295,14 +295,17 @@ Outputs published to the mod source bus: `tri1..tri5` (±1 triangle), `cas1..cas
   at Speed 24000 the band-limited weighted stack measured only `+0.5602`, so a
   default 0.60 cable could never reach the common `+0.5` Schmitt threshold.
   The conditioned jack does, while remaining a bounded bipolar source.
-- **Destinations (22):** per Coco: `_spaf` (speed FM, scaled by `cocoNSpaf`), `_inVca`,
-  `_fbVca`, `_flip` (gate), `_skip` (trig); per castle: `_fm` (octaves), `_spesal`
-  (trig); plus `deckA_rate`, `deckB_rate` (±1 rate offset).
+- **Destinations (28):** per Coco: `_spaf` (speed FM, scaled by `cocoNSpaf`), `_inVca`,
+  `_fbVca`, `_flip` (gate), `_skip` (trig), `_organ`, `_slotQ`, `_record`;
+  per castle: `_fm` (octaves), `_spesal` (trig); plus `deckA_rate`,
+  `deckB_rate` (±1 rate offset). The first five Coco inputs preserve the real
+  instrument's logical banana inventory. Organ, SlotQ and Record are six
+  software-native inputs: one independent destination per function and Coco.
 - Weight range **−1.0–1.0** per (source, dest) pair. Negative weight = inverso
   (inverted CV) — this is how verso/inverso polarity is expressed.
 - A new Night or Inspector cable starts at **±0.60**. This is above the +0.5
   Schmitt boundary by design: the previous ±0.5 default only touched the
-  boundary and a full-scale triangle provably never fired flip/skip/spesal;
+  boundary and a full-scale triangle provably never fired flip/skip/record/spesal;
   ±0.55 was the smallest measured working probe and ±0.60 retains margin while
   easing continuous modulation.
   Night's ≤40 px magnetic catch is binary and view-only until release: distance
@@ -311,44 +314,67 @@ Outputs published to the mod source bus: `tri1..tri5` (±1 triangle), `cas1..cas
   (`Ctrl`: 0.01, floor 0.05); laptop `Z`/`X` mirrors down/up and `Shift+Z/X`
   uses 0.01. None writes an intermediate ±0.60 DSP value. The
   Inspector retains its separate precision audition. Code keeps its explicit
-  weight (`patch` defaults to 1.0). Shake draws every planted weight uniformly
-  from the full interval `[-amount, +amount]`: `amount` is a ceiling, not the
-  magnitude of every cable, so the expected `|weight|` is only `amount / 2`.
+  weight (`patch` defaults to 1.0). Shake has the separate ecological law below;
+  its `amount` is the ceiling of continuous **decoration**, not a fixed weight
+  and not the strength of its guaranteed skeleton.
 - Gate/trig destinations use a Schmitt threshold: rising through +0.5 fires (gates:
   >+0.5 = on).
-- **VCA law (`_inVca`, `_fbVca`).** The knob is the valve's resting position and the
+- **VCA law (`_inVca`, `_fbVca`, `_organ`, `_slotQ`).** The knob is the valve's resting position and the
   matrix adds to it, but the modulation's contribution is **shaped, not linear**:
   `shaped = (1 + sum)² − 1`, with `sum` clamped to ±2 before the shaping. Fixed
   points: 0 contributes nothing, so the knob/default keeps its zero-sum value;
   −1 contributes −1 (closing a knob at or below unity, only subtracting one above
   unity); +1 contributes +3 where linear contributed +1. At a knob of unity the
   pre-clip value is `(1 + sum)²`, but the actual input/feedback gains remain
-  capped at 2/2.5. VCA-bananas in stored snapshots are therefore sonically
+  capped at 2/2.5/1/1.5 respectively. VCA-bananas in stored snapshots are therefore sonically
   revoiced even though their numeric knob and weight values are not migrated.
   This is an interpretation (an analog verso/inverso VCA breathes rather than
   slides — §13.5), documented like the organ derivation, and it is bounded by
-  the same output clip and by `clip2` inside the recirculation. Continuous VCA
+  the same output clips and by `clip2` inside the recirculation. Continuous VCA
   paths only; gate/trig destinations keep their Schmitt semantics.
+- **Record law (`_record`).** Its Schmitt gate momentarily inverts the writer:
+  `effectiveHold = |manualHold − recordGate|`. A positive gate therefore opens
+  a held writer **and** freezes an already-open writer. It never writes
+  `cocoNHold`, and returns exactly to the hand-set Hold state when the gate
+  falls. It is the matrix equivalent of the heart's momentary punch, not a
+  second persistent Hold toggle.
 - Each destination reads its 16-channel weight bus through the production
   `prMatrixWeight` helper: `Lag.kr(weights, 0.05) × patchDepth`. This inherited
-  M1 smoothing currently precedes continuous sums **and** flip/skip/spesal
+  M1 smoothing currently precedes continuous sums **and** flip/skip/record/spesal
   Schmitt sums; it is the implemented timing truth, not permission to add a
   second lag. The §13.6 gate may replace it with destination-aware smoothing
   only as an explicit DSP/SPEC change with gate/trig timing tests.
 - `patchDepth` (0–1, default 1.0, lag 50 ms): global scaler over all matrix weights —
   a "how alive is it" macro and instant tamer.
 - API: `patch(src, dest, w)`, `unpatch(src, dest)`, `clearPatch`, `getPatch`,
-  `patchPreset(\name)`, `shake(amount: 0.3, seed: nil, density: 0.1)` (throw a sparse
-  random patch — each cell with probability `density`, each planted weight sampled
-  uniformly from `[-amount, +amount]` — plus random spesal states; never touches
-  levels/feedback — safety+musicality rule; same seed = same throw). The throw
-  **replaces** the patch rather than adding to it, so
-  `density: 0` **clears the bay** — nothing sown, nothing left standing — while
-  deliberately leaving the spesal states alone: a clear is a clear, not a scramble in
-  disguise. `density` was added
-  2026-07-22 for the night's sowing moon (GUI_SPEC §16.6), which maps its lit phase
-  onto it — how *much* is sown, while `patchDepth` remains the how-*hard* macro.
-  Existing callers are unaffected: the default is the historical ~10%.
+  `patchPreset(\name)`, `shake(amount: 0.3, seed: nil, density: 0.1)`. A non-empty
+  ecological shake **replaces** the patch and builds it in two layers:
+  a seed-selected, immediately audible 3–5-cable skeleton, then the moon-density
+  random decoration around it. The four skeleton families are organ drone,
+  Quantussy-memory pulse, dust growth and two-Coco crossfeed. All four prepare
+  three active castles (one balcium, two audio), useful sends, `qFreq`/`qChaos`,
+  `patchDepth ≥ 0.9` and both Coco levels ≥ 0.90. Family-specific preparation may
+  also set only Organ, SlotQ, Hold, Input, Feedback, Dust, SlotX and Speed. It
+  never changes Master, mic, pan, audio configuration, recorder or safety state.
+  The GUI records the matrix and this exact safe parameter subset as one undo.
+
+  Continuous decoration keeps a useful non-zero magnitude and random polarity;
+  `amount` remains its ceiling. Gate/trig decoration is deliberately rarer and
+  threshold-aware at magnitude 0.58…0.82. Skeleton ranges are destination-tuned:
+  Organ 0.20…0.38, SlotQ 0.28…0.42 and Record 0.68…0.82. The skeleton is written
+  last, so decoration cannot weaken it. Family selection, preparation and
+  spesal posture are drawn before decoration: the same seed therefore preserves
+  the same family, skeleton, prepared controls and spesals at every `density`.
+  Only the surrounding decoration changes. Even a thin crescent has a meaningful
+  core, while a full moon adds breadth rather than merely scaling the same patch.
+
+  As before, `density: 0` **clears the bay** — nothing sown, nothing left
+  standing — while deliberately leaving the spesal states alone: a clear is a
+  clear, not a scramble in disguise, and it performs no parameter preparation.
+  `density` was added 2026-07-22 for the night's sowing moon (GUI_SPEC §16.6),
+  which maps its lit phase onto it — how *much* decoration is sown, while
+  `patchDepth` remains the how-*hard* macro. Existing callers keep the historical
+  10% decoration default.
 - Named presets shipped in v1 (derived from documented hardware patches):
   `\empty`, `\classic` (tri→spaf both Cocos, castle→castle FM ring),
   `\selfNoise` (dust looping as irregular held-feedback weather with true cross-feed
@@ -458,7 +484,7 @@ whatever they send, as routing is to level on any mixer.
 
 **Allocation rule (normative for future changes):** a fader is worth most where
 no other hand reaches. The GUI's Night map plays 44 parameters directly and the
-Master strip 4, while the matrix reaches 22 destinations by modulation.
+Master strip 4, while the matrix reaches 28 destinations by modulation.
 Duplication between layers is intended where the gesture is a continuous
 two-handed ride (§6 requires each layer to suffice alone) — but new assignments
 prefer parameters no other surface can play. Per-Coco `Level`, `Organ`, `SlotQ`
@@ -492,7 +518,7 @@ Requirements on any GUI, independent of skin:
   and the notice line.
 - **It must make reachable without code**: hold, flip, skip, Spesal step, dolby
   and range switches, every §5 `CQSpec` parameter, patch presets, snapshots +
-  A→B morph, the full 16×22 signed-weight matrix, and file loading including
+  A→B morph, the full 16×28 signed-weight matrix, and file loading including
   drag-and-drop.
 - **Mic**: the preamp's mic control carries a warning color when `micGain` > 0
   while a builtin output is active, and the GUI never grows a second `micGain`
@@ -769,7 +795,9 @@ performance pass (§9 budget), full acceptance re-run, v1.0 tag.
 
 Documented so fidelity questions have one answer:
 
-1. Banana bay → named 16×22 signed-weight matrix with presets/shake/snapshots.
+1. Banana bay → named 16×28 signed-weight matrix with presets/shake/snapshots;
+   six software-native Coco destinations extend the hardware-parity core with
+   Organ, SlotQ and momentary Record modulation for each memory.
 2. Global `patchDepth` macro and per-dest Schmitt thresholds (no hardware equivalent).
 3. Added parameters: `bits`, `wrap`, `interp`, `dust` level, `qShLag`, castle `Off`
    detunes, castle audio sends — all default to authentic behavior.

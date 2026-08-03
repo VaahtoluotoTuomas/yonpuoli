@@ -29,7 +29,7 @@ SystemClock.sched(120, {
 	1.exit;
 });
 
-// mayhem's own density: every one of the 352 cells patched.
+// mayhem's own density: every one of the 448 cells patched.
 densePair = {
 	CQMatrix.presets[\mayhem][\matrix].do { |t| matrix.patch(t[0], t[1], t[2]) };
 	state.set(\coco1Fb, 0.2);

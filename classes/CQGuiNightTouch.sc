@@ -137,6 +137,13 @@ CQGuiNightTouch {
 		^delta - (dead * delta.sign)
 	}
 
+	// The moon phase follows the pointer from its exact press value. Tap intent
+	// is resolved on release (and restored there), so the visible/value path no
+	// longer sticks to the opening crescent for the first eight pixels.
+	*moonPhaseNorm { |start, deltaX|
+		^(start + (deltaX * this.crescentSensitivity)).clip(0, 1)
+	}
+
 	// The moon chooses one act only after the shared 8 px threshold. Once the
 	// caller stores this answer it never asks again, so diagonal drift cannot
 	// switch rain into phase halfway through a gesture.
@@ -692,15 +699,25 @@ CQGuiNightTouch {
 			axis !? {
 				moonDrag[\axis] = axis;
 				if(#[grow, wither].includes(axis)) {
+					// A tiny horizontal preview may have preceded a decisive
+					// vertical turn. Weather owns no phase change.
+					map.pourShake(moonDrag[\amount]);
 					this.beginWeatherHold(axis, delta)
 				};
+			};
+			if(axis.isNil) {
+				if(delta.x.abs >= delta.y.abs) {
+					map.pourShake(this.class.moonPhaseNorm(
+						moonDrag[\amount], delta.x))
+				} {
+					map.pourShake(moonDrag[\amount])
+				}
 			};
 		};
 		if(weatherHold.notNil) { this.updateWeatherHold(delta) };
 		if(moonDrag[\axis] == \phase) {
-			map.pourShake(moonDrag[\amount]
-				+ (this.class.deadzone(delta.x,
-					this.class.tapTravel) * this.class.crescentSensitivity));
+			map.pourShake(this.class.moonPhaseNorm(
+				moonDrag[\amount], delta.x));
 		};
 		^this
 	}
@@ -715,7 +732,12 @@ CQGuiNightTouch {
 			^this
 		};
 		if(moonDrag.isNil) { ^this.forwardUp(view, x, y, modifiers, button) };
-		if(moonDrag[\travel] <= this.class.tapTravel) { map.throwShake };
+		if(moonDrag[\travel] <= this.class.tapTravel) {
+			// The continuous preview belongs to the hand, not to a tap. Restore
+			// the exact starting phase before throwing at the phase that was shown.
+			map.pourShake(moonDrag[\amount]);
+			map.throwShake
+		};
 		moonDrag = nil;
 		^this
 	}
@@ -917,9 +939,12 @@ CQGuiNightTouch {
 	// what already landed (the seeds fell audibly; Ctrl+Z takes them back as
 	// one op), and an armed graft is forgotten
 	cancelWeather {
-		var drag = compassDrag;
+		var drag = compassDrag, moon = moonDrag;
 		compassDrag = nil;
 		moonDrag = nil;
+		if(moon.notNil and: { moon[\axis].isNil }) {
+			map.pourShake(moon[\amount])
+		};
 		if(drag.notNil
 			and: { #[blend, elastic].includes(drag[\mode]) }
 			and: { drag[\travel] > this.class.tapTravel }) {

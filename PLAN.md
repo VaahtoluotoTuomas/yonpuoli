@@ -13,7 +13,13 @@ Archipelago-GUI G1–G3 [`docs/history/PLAN_archipelago.md`](docs/history/PLAN_a
 archipelago on sulautettu `main`iin (PR #1, tagi `archipelago-1.0`). **Uusi
 vaihe: Nocturne — yö koko soittimena.** N1–N10, koko korvapassi (§13) ja
 soitettavuuskierroksen PLAY-1…PLAY-6.1 on hyväksytty ja PLAY-7:n kahden
-globaalin shake-kandidaatin kuuntelu on suljettu tulokseen **ei kumpikaan**:
+globaalin shake-kandidaatin kuuntelu on suljettu tulokseen **ei kumpikaan**.
+Sen avaama kuuden Organ/SlotQ/Record-kohteen 16×28-laajennus ja ekologinen
+shake on nyt toteutettu sekä automaattisesti ja visuaalisesti portitettu.
+PLAY-8:n ensimmäinen kuuntelukierros hyväksyi perheiden erottuvuuden ja
+density-lain, mutta avasi Organ-tason, dust-tekstuurin, Record-lain, socket-
+layoutin ja kuun eleen korjauspassin. Passi on toteutettu; sen kohdistettu
+uusintakoe on seuraava käsin tehtävä päätös.
 Night + Master + Drawer on soittimen ainoa ylläpidettävä käyttöliittymä ja
 Night on soittimen maisema, ei sen kartta. Työ elää paikallisessa
 `nocturne`-haarassa.
@@ -38,19 +44,25 @@ soittotestit. 1.0:aan on jäljellä **yksi shake-päätös, yksi rasti ja neljä
 julkaisutyötä**,
 tässä järjestyksessä:
 
-1. **Shaken seuraava rajattu prototyyppipäätös.** Soittotesti 7:n tulos
+1. **PLAY-8 — ekologisen shaken korvahyväksyntä.** Soittotesti 7:n tulos
    2026-08-02 on **ei A eikä B**: `Spaf=0,12` oli korvalla liian pieni ja
    `amount=0,65` muutti vain vähän, täsmälleen siementen gate-topologian
-   ennustamalla tavalla. Tuotanto-oletukset eivät muuttuneet. Seuraava ehdotus
-   on ensin Inspector/NRT:ssä kuunneltava kuuden erillisen kohteen perhe:
+   ennustamalla tavalla; kumpaakaan globaalia arvoa ei nostettu. Sen sijaan
+   toteutettu kuuden erillisen kohteen perhe on
    `coco1_organ`, `coco2_organ`, `coco1_slotQ`, `coco2_slotQ`,
    `coco1_record`, `coco2_record`, sekä tilatietoinen
    ekologinen shake (3–5 johdon kuultava runko + kuun määräämä satunnainen
-   koristelu). Organ ja SlotQ ovat jatkuvia VCA-kohteita; record on
-   Schmitt-rajattu hetkellinen kirjoituspunch, joka ei muuta käsin asetettua
-   Hold-parametria. Päätä ennen laajennusta, kuuluuko tämä 1.0:aan vai säilyykö
-   1.0:n matriisi hardware-pariteetin 22 kohteessa.
-   Tarkka seed-analyysi: `docs/PLAYABILITY_GUIDE.md` → Soittotesti 7.
+   koristelu). Organ ja SlotQ ovat jatkuvia VCA-kohteita; Record on Schmitt-
+   rajattu hetkellinen Hold-inversio molempiin suuntiin eikä muuta käsin
+   asetettua Hold-parametria. Kaikilla kuudella on omat Inspector-sarakkeet ja
+   anatomiset Night-socketit. Ensimmäinen korvakierros vahvisti neljä erilaista
+   tyhjän RAMin identiteettiä sekä saman seedin säilyvän eri densityillä.
+   Korjauspassi nosti vain kuultavaa organ-haaraa, lisäsi dust-growthin liikettä,
+   teki Recordista kaksisuuntaisen, siivosi socketit elintensä viereen ja teki
+   kuun vedosta jatkuvan sekä fertility-käyrästä kuutiollisen. Kuuntele nyt
+   kohdistetusti kohdat 3–6, sitten bundled undo ja vapaa 8–10 shaken koe.
+   Tarkka tulos ja seed-kartta: `docs/PLAYABILITY_GUIDE.md` ja PLAY-8
+   tiedostossa `tests/manual_checklist.md`.
 2. **16N-1 — faderipankin käsintesti.** Automaattinen portti on vihreä; rasti
    vaatii 16n:n käteen (kanavanauhan luettavuus, Levelin paikka nauhan
    lopussa, ristihäivytyksen etäisyys, F14:n sisältö, deckien poisto). Tämä on
@@ -63,9 +75,8 @@ tässä järjestyksessä:
 
 Ei-estävää, tietoisesti myöhemmäksi jätettyä: 13.3b (Bits 5/8/12 eristetty
 korvatesti), kolme huokoista soittotilaa ja Norns-portti (§14) — tässä
-järjestyksessä, kaikki 1.0:n jälkeen. Topologiatietoinen "sweet spot" /
-ekologinen shake ei enää kuulu tähän listaan: käyttäjä avasi sen PLAY-7:n
-tuloksella nimenomaisesti uudelleen yllä olevaksi 1.0-päätökseksi.
+järjestyksessä, kaikki 1.0:n jälkeen. Ekologinen shake ei kuulu tähän listaan:
+sen toteutus on nykyisessä 1.0-ehdokkaassa ja vain PLAY-8-hyväksyntä on auki.
 
 **Aiemmat hyväksynnät tiivistettynä.** **N9 hyväksyttiin 2026-07-28.** Day on
 poistettu, koska Night on inspiroivampi varsinainen soitin ja kahden
@@ -270,7 +281,8 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
   kasvaa driven mukana 1,5/2/3 px; `SlotPre` ja env-aura vaikuttavat alfaan.
   Lintu-hover paljastaa gain-toden suoran deck→Coco-lennon ja nykyiset
   bird→preamp-lennot, juuren hover saman provenienssin vastakkaiseen suuntaan.
-  Vihreä `envA/B` kasvaa ulospäin sivusilmuna, eikä 16×22-inventaario muutu.
+  Vihreä `envA/B` kasvaa ulospäin sivusilmuna, eikä silloinen 16×22-
+  inventaario muuttunut tässä N7-vaiheessa.
   Livekatselmus toi yhden korjauksen: provenienssitekstin ground-pyyhkäisy
   leikkasi juuren B kahta vasemmanpuoleisinta säiettä 1280×570:ssä. Nyt
   labelin sijainti mitataan säikeiden omista käyristä pyyhkäisyn kaistalla ja
@@ -1899,7 +1911,7 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
 
    **(a) Mitä paketissa on.** Presettejä on kuusi (`\empty`, `\classic`,
    `\selfNoise`, `\quantumDrone`, `\organMode`, `\mayhem`), mutta `\empty` on
-   tyhjä ja `\mayhem`in params-osa on tyhjä — se täyttää 352 solua muttei sytytä
+   tyhjä ja `\mayhem`in params-osa on tyhjä — se täyttää nykyiset 448 solua muttei sytytä
    yhtään äänilähdettä — joten soitettavia aloituspaikkoja on neljä.
    **Snapshotteja lähtee mukana tasan yksi**: `.gitignore` päästää läpi vain
    `snapshots/example.cqsnap.scd` ja sulkee pois kaikki henkilökohtaiset
@@ -2140,7 +2152,7 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
      jälkeen `view.refresh`iä. Valinta jäi yhden kaapelin jälkeen odottamaan
      satunnaista Qt-damagea. Uusi render pyytää nyt aina oman esityspäivityksen.
      Night-smoke istuttaa aidon risteävän kaapelin jokaiselle neljälle Q/X-
-     venttiilille, käy 352 kaapelin `mayhem`-kentässä hienonnettuja piirrettyjä
+     venttiilille, käy 448 kaapelin `mayhem`-kentässä hienonnettuja piirrettyjä
      Bézier-pisteitä läpi (`patchAt(..., 2)` ei jätä aukkoja) ja todistaa sekä
      uuden hover-renderin että sitä seuraavan tuoreen blitin. Portit:
      `CQ_COMPILE_OK`, 14 827 / 0 / 39, `CQ_GUI_NIGHT_PASSED`.
@@ -2297,30 +2309,57 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    ennuste. A:n SP.AF-itseisarvobudjetit tuottivat `Spaf=0,12`:lla vain
    0,008…0,061 oktaavin teoreettisen ylärajan ennen kumoutumista.
 
-   **Reititysaudit:** nykyiset 20 hardware-peräistä loogista tuloa ovat kaikki
+   **Reititysaudit:** 20 hardware-peräistä loogista tuloa ovat kaikki
    mukana ja Nightissä: 2 × (SP.AF, signed Input-VCA, signed Feedback-VCA,
    Flip, Skip) + 5 × (FM, Spesal). Hardware-verso/inverso-pari on yksi signed
-   kohde; lisäksi matriisissa ovat kaksi software-only deck-ratea = 22.
+   kohde; lisäksi matriisissa olivat kaksi software-only deck-ratea = 22.
    Käyttäjän kokema aukko ei siis johdu puuttuvasta aidon Cocoquantuksen
-   socketista vaan siitä, etteivät Yönpuolen omat sisäiset äänipolut ole vielä
-   modulaatiokohteita.
+   socketista vaan siitä, etteivät Yönpuolen omat sisäiset äänipolut silloin
+   olleet modulaatiokohteita.
 
-   **Seuraava ehdotus, ei vielä toteutus:** kuuntele ensin Inspector/NRT:ssä
+   **Toteutettu 2026-08-02 — 16×28 ja ekologinen shake.** Matriisiin lisättiin
    kuusi erillistä kohdetta: `coco1_organ`, `coco2_organ`, `coco1_slotQ`,
-   `coco2_slotQ`, `coco1_record`, `coco2_record`. Organ ja SlotQ ovat jatkuvia
-   VCA-panostuksia, jotka voivat avata nollassa olevan käsiasetuksen. Record on
-   Schmitt-rajattu hetkellinen kirjoituspunch: se avaa held-muistin vain gaten
-   ajaksi, palauttaa releasessa käsin asetetun Hold-tilan eikä kirjoita
-   `cocoNHold`-parametriin. Organ tekee Quantussyn vaikutuksen kuuluvaksi myös
-   held/tyhjällä muistilla; SlotQ+record päästää sen muistiin ja rytmittää
-   kirjoittamista. Jos prototyyppi hyväksytään, kaikki kuusi saavat omat
-   Night-socketinsa. Sen jälkeen
-   kandidaatit ovat `castleK_send`, `cocoN_dust`, `cocoN_slotX`, vasta viimeisenä
-   askeltavat Bits/Wrap. Ekologinen shake rakentaa seedatusti ensin 3–5 johdon
-   tilatietoisen, varmasti kuultavan rungon (organ-drone / muistipunch /
-   dust-kasvu / crossfeed) ja käyttää nykyistä Bernoulli-kylvöä vain kuun
-   vaiheeseen sidottuna koristeena. Tämä on nyt 1.0-päätös, ei enää automaattisesti
-   myöhemmäksi lykätty työ.
+   `coco2_slotQ`, `coco1_record`, `coco2_record`. Organ ja SlotQ käyttävät samaa
+   shaped VCA -panostusta kuin Input/Feedback; Record on 0,5/0,3-Schmittin
+   hetkellinen kaksisuuntainen Hold-inversio, joka ei muuta manuaalista Holdia.
+   Kaikilla on oma Inspector-sarake, Night-socket ja telemetry-totuus. Organ on
+   hedelmän ulkopuolella, SlotQ Q-kiduksen vieressä ja punainen Record kuoren
+   yläulkokehällä (vasen noin klo 10 / oikea klo 2); vain lyhyet juuret jäävät.
+
+   Shake valitsee seedatusti organ-drone / memory-pulse / dust-growth /
+   crossfeed -perheen, istuttaa viimeisenä sen 3–5 johdon kuultavan rungon ja
+   käyttää kuun tiheyttä vain koristeeseen. Organ/SlotQ/Record-rungot ovat
+   0,20…0,38 / 0,28…0,42 / 0,68…0,82; gate-koristelu on harvennettu ja
+   kynnyksen tunteva 0,58…0,82. Koska johto ei voi avata upstreamissa suljettua
+   sendiä tai Leveliä, shake valmistelee CQState-funnelin kautta vain rajatun
+   musiikkilistan: patchDepth, qFreq/qChaos, Coco Level/Organ/SlotQ/Hold/In/Fb/
+   Dust/SlotX/Speed sekä castle Send/Range. Master/mic/pan/safety säilyvät.
+   GUI-undo palauttaa matriisin ja täsmälleen tämän alijoukon yhtenä tekona.
+   Perhe/runko/valmistelu/spesal valitaan ennen density-koristelua, joten sama
+   seed säilyttää ytimen läpi kuun vaiheiden. Coco Levelin lattia on 0,90.
+
+   Ensimmäinen PLAY-8-kuuntelu hyväksyi perheiden erottuvuuden ja density-
+   identiteetin mutta löysi Organin hiljaisuuden, dustin tasaisuuden, vanhan
+   layoutin sekavuuden ja kuun vedon tarttumisen. Korjauspassi nosti organin
+   kuultavan kertoimen 0,30 → 0,55 (+5,3 dB), viritti dustin epäsymmetrisemmäksi,
+   vaihtoi kuun käyräksi `0,2 × phase³` ja teki vedosta ensimmäisestä pikselistä
+   jatkuvan. Organ/SlotQ:n `>`-merkit poistettiin ja Record vaihtui punaiseksi.
+
+   Korjauspassin NRT tyhjästä Coco-RAMista: organDrone seed 3 / 3 johtoa /
+   RMS ≈0,0414; memoryPulse 1 / 4 / ≈0,0866; dustGrowth 2 / 5 / ≈0,0591;
+   crossfeed 4 / 5 / ≈0,1452. Kaikki olivat finite, kuuluivat ja erosivat
+   pareittain noin 1,64…4,10 dB. Kahdeksan input-polun NRT:n aktiiviset RMS:t
+   olivat Organ 0,044972/0,052433, SlotQ 0,133794/0,157749 ja suljettu→auki-
+   Record 0,353605/0,353616; avoin→suljettu vaimeni täsmälleen nollaan.
+   Seuraava portti on PLAY-8:n kohdistettu uusintatesti, ei enää toteutuspäätös.
+   Myöhemmät kandidaatit ovat edelleen
+   `castleK_send`, `cocoN_dust`, `cocoN_slotX` ja lopuksi Bits/Wrap.
+
+   Lopullinen automaattiportti: `CQ_COMPILE_OK`, **18 555 / 0 / 39**,
+   `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`, `CQ_GUI_NIGHT_PASSED`,
+   `CQ_MATRIX_INPUTS_OK`, `CQ_SHAKE_ECOLOGY_OK`, `CQ_PLAYABILITY_MEASURED`,
+   `CQ_HOLD_OK` ja koko 90 s `CQ_SAFETY_PASSED`. Nightin rest/telemetry/cables-
+   capturet renderöitiin ja tarkistettiin myös silmällä.
 9. **Merge `main`iin ja 1.0-tagi.**
 
 ### DAW-sillan keino: ReaRoute, ei VB-CABLE
@@ -3192,11 +3231,12 @@ säätimen, patch-kohteen ja eleen merkityksen kaikissa kolmessa tilassa.
   kirjoita–säilytä, `Flip` suunta ja `Skip` vaiheen uudelleenasetus.
   Tilat voivat laajentaa näiden seurausta, mutta sama säädin ei saa muuttua
   mielivaltaisesti toiseksi käsitteeksi.
-- Sama 16×22 patchi pysyy voimassa tilan yli. Nykyiset `spaf`, `inVca`,
-  `fbVca`, `flip` ja `skip` -summat annetaan myös uuden lukutavan käyttöön
-  aina kun yhteys on semanttisesti sama. Uusia matriisikohteita lisätään vasta
-  jos kuunteluprototyyppi osoittaa, ettei nykyinen kieli riitä; matriisin
-  laajennus muuttaa myös Inspectorin geometriaa, snapshotteja ja testisopimusta.
+- Sama 16×28 patchi pysyy voimassa tilan yli. Nykyiset `spaf`, `inVca`,
+  `fbVca`, `flip`, `skip`, `organ`, `slotQ` ja `record` -summat annetaan myös
+  uuden lukutavan käyttöön aina kun yhteys on semanttisesti sama. Uusia
+  matriisikohteita lisätään vasta jos kuunteluprototyyppi osoittaa, ettei
+  nykyinen kieli riitä; laajennus muuttaisi taas Inspectorin geometriaa,
+  snapshotteja ja testisopimusta.
 - Tilanvaihto on palvelimella silotettu crossfade, ei SynthDefin vaihto tai
   nodejen churn. Vanhat kerrokset ja hännät saavat jatkua siirtymän läpi,
   mutta ulostulo kulkee aina nykyisen master-turvaketjun kautta.

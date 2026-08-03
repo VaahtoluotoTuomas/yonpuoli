@@ -175,8 +175,8 @@ CQGuiCoverageTest : UnitTest {
 	// The Drawer's own five-page order is asserted where the pages are
 	// published, in CQGuiVisualContractTest.
 	test_theRemainingObligationsAreOwnedElsewhere {
-		this.assertEquals(CQGuiMatrix.cellSize(\compact, 1272), [52, 24],
-			"the Inspector still owns the full 16x22 signed matrix");
+		this.assertEquals(CQGuiMatrix.cellSize(\compact, 1272), [40, 24],
+			"the Inspector owns the full 16x28 signed matrix without inner scroll");
 		#[snapshotName, snapshotSave, snapshotRecall, morph].do { |item|
 			this.assert(CQGuiMemory.ownedItems.includes(item),
 				"Memory still owns %".format(item));

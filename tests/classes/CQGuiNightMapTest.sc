@@ -54,10 +54,11 @@ CQGuiNightMapTest : UnitTest {
 			CQGuiNightMap.endpointSpec(name)[\lamp] == true
 		};
 		this.assertEquals(lamped,
-			[\coco1_flip, \coco1_skip, \coco2_flip, \coco2_skip,
+			[\coco1_flip, \coco1_skip, \coco1_record,
+				\coco2_flip, \coco2_skip, \coco2_record,
 				\castle1_spesal, \castle2_spesal, \castle3_spesal,
 				\castle4_spesal, \castle5_spesal],
-			"charge lamps sit on the nine gate/trig sockets in /cq_charge order");
+			"charge lamps sit on all eleven gate/trig sockets in /cq_charge order");
 	}
 
 	test_familiesMatchDaySkin {
@@ -79,6 +80,18 @@ CQGuiNightMapTest : UnitTest {
 			"the wing socket carries the pendulum glyph");
 		this.assertEquals(CQGuiNightMap.endpointSpec(\coco1_inVca)[\glyph], \wedge,
 			"vca moons carry the open wedge");
+		this.assertEquals(CQGuiNightMap.endpointSpec(\coco1_organ)[\family], \organ,
+			"the independent organ input inherits the calyx's yellow family");
+		this.assert(CQGuiNightMap.endpointSpec(\coco1_organ)[\glyph].isNil,
+			"organ proximity makes a redundant direction wedge unnecessary");
+		this.assertEquals(CQGuiNightMap.endpointSpec(\coco2_slotQ)[\family], \tri,
+			"the independent SlotQ input inherits the Quantussy tributary family");
+		this.assert(CQGuiNightMap.endpointSpec(\coco2_slotQ)[\glyph].isNil,
+			"the Q gill and its adjacent socket need no direction wedge");
+		this.assertEquals(CQGuiNightMap.endpointSpec(\coco1_record)[\family], \danger,
+			"the Record toggle belongs to the red Hold/REC family, not green input");
+		this.assertEquals(CQGuiNightMap.endpointSpec(\coco1_record)[\glyph], \rec,
+			"the matrix writer input has an unambiguous record seal glyph");
 	}
 
 	test_sourceDecorations {
@@ -225,6 +238,10 @@ CQGuiNightMapTest : UnitTest {
 		// by about ×1.6 while keeping its slow centre at zero.
 		var organ = CQGuiNightMap.crescentModState(
 			\coco1Spaf, 0, 0.024, 0.20);
+		var organInput = CQGuiNightMap.crescentModState(
+			\coco1Organ, 0.62, 0.08, 0.30);
+		var slotQInput = CQGuiNightMap.crescentModState(
+			\coco2SlotQ, 0.9, 0.12, 0.30);
 		this.assert(quiet.isNil,
 			"no connected matrix weight draws no invented live pearl");
 		this.assertFloatEquals(spaf[\center], 0.5,
@@ -244,6 +261,8 @@ CQGuiNightMapTest : UnitTest {
 			"a clipped audio-rate wake cannot saw at its sampled instantaneous value");
 		this.assert((organ[\upper] - organ[\lower]) >= 0.05,
 			"the tutorial organ self-route survives quantization as a visible wake");
+		this.assert(organInput.notNil and: { slotQInput.notNil },
+			"the shell calyx and q gill accept the same honest DSP modulation frame");
 		this.assert(
 			CQGuiNightMap.crescentModStateChanged(spaf, spaf.copy).not,
 			"an unchanged quantized wake costs no repaint");
@@ -296,11 +315,13 @@ CQGuiNightMapTest : UnitTest {
 			"a castle's four precise endpoints need no redundant flesh solo");
 		this.assertEquals(CQGuiNightMap.bodyEndpointNames(\coco2),
 			#[coco2, org2, coco2_spaf, coco2_inVca, coco2_fbVca,
-				coco2_flip, coco2_skip],
-			"a shell owns its two sources and five sockets");
+				coco2_flip, coco2_skip, coco2_organ, coco2_slotQ, coco2_record],
+			"a shell owns its two sources and eight sockets");
 		this.assertEquals(CQGuiNightMap.bodyEndpointNames(\quantussy),
 			CQMatrix.sourceNames.copyRange(0, 9)
-				++ CQMatrix.destNames.copyRange(10, 19),
+				++ CQMatrix.destNames.select { |dest|
+					dest.asString.beginsWith("castle")
+				},
 			"the ring owns every castle source and destination");
 		this.assert(CQGuiNightMap.bodyEndpointNames(\bogus).isEmpty,
 			"an unknown body claims no endpoints");

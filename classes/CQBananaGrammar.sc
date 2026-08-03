@@ -3,7 +3,7 @@
 // view-only gesture: the matrix changes exactly once, when a plug is planted.
 
 CQBananaGrammar {
-	var <matrix;
+	var <matrix, <state;
 	var <hand, <candidateDest, <candidateWeight, <cursor;
 	var <hoverEndpoint, <hoverCable, <soloTarget, <lassoPath, caught;
 	var undoRing, handStrength, <dropRadius, undoDepth;
@@ -17,10 +17,10 @@ CQBananaGrammar {
 	// control. Once inside it, release means plant at the cable's armed weight.
 	*defaultDropRadius { ^40 }
 
-	*new { |matrix, handStrength, dropRadius, undoDepth = 32|
+	*new { |matrix, handStrength, dropRadius, undoDepth = 32, state|
 		handStrength = handStrength ?? { this.defaultHandStrength };
 		dropRadius = dropRadius ?? { this.defaultDropRadius };
-		^super.newCopyArgs(matrix).prInit(handStrength, dropRadius, undoDepth)
+		^super.newCopyArgs(matrix, state).prInit(handStrength, dropRadius, undoDepth)
 	}
 
 	prInit { |strength, radius, depth|
@@ -253,6 +253,26 @@ CQBananaGrammar {
 		^this
 	}
 
+	// Shake is the one matrix gesture that also prepares a small, explicit set
+	// of musical controls. Capture the whitelist before the act, then retain only
+	// values this particular family actually changed. One `u` therefore undoes
+	// the complete throw without rolling back a later hand edit to an untouched
+	// control. Ordinary banana edits stay matrix-only.
+	performUndoableState { |names, action|
+		var before, params = Event.new, changedParams = Event.new;
+		if(state.isNil) { ^this.performUndoable(action) };
+		this.prDropHand;
+		before = matrix.fullMatrix;
+		names.do { |name| params[name] = state.get(name) };
+		action.value;
+		params.keysValuesDo { |name, value|
+			if(state.get(name) != value) { changedParams[name] = value }
+		};
+		this.prRememberState(before, changedParams);
+		this.changed(\gesture);
+		^this
+	}
+
 	// Inspector fine edits publish transient frame writes, then one committed
 	// release.  The gesture captured its own pre-drag matrix before those frames,
 	// so it hands that copy back here to join the same GUI-local undo ring.
@@ -267,8 +287,14 @@ CQBananaGrammar {
 		this.prDropHand;
 		if(undoRing.isEmpty) { ^this };
 		previous = undoRing.removeAt(undoRing.size - 1);
-		matrix.writeMatrix(previous, origin: \gui, committed: true,
-			operation: \undo);
+		if(previous.isKindOf(Event) and: { previous[\matrix].notNil }) {
+			matrix.writeMatrix(previous[\matrix], origin: \gui, committed: true,
+				operation: \undo);
+			state !? { state.setAll(previous[\params]) };
+		} {
+			matrix.writeMatrix(previous, origin: \gui, committed: true,
+				operation: \undo);
+		};
 		this.changed(\gesture);
 		^this
 	}
@@ -409,6 +435,21 @@ CQBananaGrammar {
 	prRemember { |before|
 		if(this.prMatricesEqual(before, matrix.fullMatrix).not) {
 			undoRing.add(before.collect { |row| row.copy });
+			while { undoRing.size > undoDepth } { undoRing.removeAt(0) };
+		};
+		^this
+	}
+
+	prRememberState { |before, params|
+		var changed = this.prMatricesEqual(before, matrix.fullMatrix).not;
+		if(changed.not and: { state.notNil }) {
+			params.keysValuesDo { |name, value|
+				if(state.get(name) != value) { changed = true }
+			};
+		};
+		if(changed) {
+			undoRing.add((matrix: before.collect { |row| row.copy },
+				params: params.copy));
 			while { undoRing.size > undoDepth } { undoRing.removeAt(0) };
 		};
 		^this

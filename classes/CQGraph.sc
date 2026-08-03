@@ -109,7 +109,10 @@ CQGraph {
 				\wInVcaBus, buses[(n ++ "_inVca").asSymbol].index,
 				\wFbVcaBus, buses[(n ++ "_fbVca").asSymbol].index,
 				\wFlipBus, buses[(n ++ "_flip").asSymbol].index,
-				\wSkipBus, buses[(n ++ "_skip").asSymbol].index
+				\wSkipBus, buses[(n ++ "_skip").asSymbol].index,
+				\wOrganBus, buses[(n ++ "_organ").asSymbol].index,
+				\wSlotQBus, buses[(n ++ "_slotQ").asSymbol].index,
+				\wRecordBus, buses[(n ++ "_record").asSymbol].index
 			], groups[\cocos]);
 		};
 		// GUI_SPEC §9 telemetry: reads the completed 16-channel mod-source bus in

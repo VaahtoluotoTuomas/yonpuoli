@@ -31,8 +31,10 @@ and tag. [`PLAN.md`](PLAN.md) is the current status authority.
   dust, and square-stack organ voices.
 - A five-castle Quantussy-inspired modulation network that moves from slow
   stepped wandering to audio-rate chaos.
-- A 16×22 signed routing matrix with binary magnetic planting, held-cable attenuation, moving,
-  ripping, harvesting, undo, snapshots, and morphing.
+- A 16×28 signed routing matrix with binary magnetic planting, held-cable attenuation, moving,
+  ripping, harvesting, undo, snapshots, and morphing. Six software-native Coco
+  inputs let the Quantussy breathe the organ, feed its own audio into memory,
+  and momentarily invert recording/hold without changing the hand-set Hold state.
 - The Ink & Phosphor GUI: one playable Night landscape whose shell shores,
   organ calyces, Quantussy tributaries and directional cross-feed bridge open
   drones without a separate mode; a persistent Master strip; and a Drawer for
@@ -97,7 +99,7 @@ CQ.hold(1, 0);                     // record the deck into Coco 1
 CQ.set(\coco1Fb, 1.0);            // ~0.9 echo, 1.0 loop, >1 blooming crunch
 CQ.set(\coco1Speed, 12000);        // clock-rate repitch, roughly an octave down
 CQ.patchPreset(\classic);
-CQ.shake;                          // sow a random handful of routes
+CQ.shake;                          // grow one audible ecology plus random detail
 CQ.rec; CQ.recStop;                // recordings/cq_YYMMDD_HHMMSS.wav
 CQ.panic;                          // emergency mute; CQ.resume to return
 ```

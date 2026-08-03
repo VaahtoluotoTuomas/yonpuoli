@@ -31,7 +31,7 @@ CQCompass {
 	classvar tideCache;
 
 	var <dir;        // nil = memory only (serverless previews, unit tests)
-	var corners;     // 4 slots (TL, TR, BL, BR): nil = empty water, or dense [22][16]
+	var corners;     // 4 slots (TL, TR, BL, BR): nil = empty water, or dense [28][16]
 
 	*new { |dir| ^super.newCopyArgs(dir !? { dir.asString }).prInit }
 

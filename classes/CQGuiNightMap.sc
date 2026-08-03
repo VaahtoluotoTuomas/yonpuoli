@@ -1,5 +1,5 @@
 // CQGuiNightMap — the Night stage (GUI_SPEC §6, §16.6): a topology-true
-// archipelago carrying all 16 jacks, 22 sockets, the cable overlay and banana
+// archipelago carrying all 16 jacks, 28 sockets, the cable overlay and banana
 // grammar, plus the §6.1 night touch grammar (CQGuiNightTouch). Pure
 // view: geometry from CQNightGeometry, pixels from CQInk/CQInkNight, every
 // write through the shared grammar and funnels. Large stable bodies remain
@@ -44,7 +44,7 @@ CQGuiNightMap {
 	// Promoted performance mix: Level shoreline, audible Organ flesh, qMix gill
 	// and the destination-side x gill. The dictionary key is the real CQSpec
 	// name, so drawing, touch and coverage cannot invent parallel identities.
-	var <flowNorms, <flowActive, <flowHover, <sendNorms, <sendActive;
+	var <flowNorms, <flowActive, <flowHover, <flowModStates, <sendNorms, <sendActive;
 	var <preampHover, <preampSourceHover, <preampActive;
 	var <preampDriveNorms, <preampBiasNorms, <preampSlotNorms, <deckSlotNorms;
 	var <preampSources, preampPainted;
@@ -79,6 +79,15 @@ CQGuiNightMap {
 		if(string.endsWith("_skip")) {
 			^(kind: \socket, family: \line, glyph: \spark, lamp: true)
 		};
+		if(string.endsWith("_organ")) {
+			^(kind: \socket, family: \organ)
+		};
+		if(string.endsWith("_slotQ")) {
+			^(kind: \socket, family: \tri)
+		};
+		if(string.endsWith("_record")) {
+			^(kind: \socket, family: \danger, glyph: \rec, lamp: true)
+		};
 		if(string.endsWith("_fm")) { ^(kind: \socket, family: \fm, glyph: \wave) };
 		if(string.endsWith("_spesal")) {
 			^(kind: \socket, family: \input, glyph: \spark, lamp: true)
@@ -100,7 +109,9 @@ CQGuiNightMap {
 		var string = name.asString, n;
 		if(name == \quantussy) {
 			^CQMatrix.sourceNames.copyRange(0, 9)
-				++ CQMatrix.destNames.copyRange(10, 19)
+				++ CQMatrix.destNames.select { |dest|
+					dest.asString.beginsWith("castle")
+				}
 		};
 		n = string.last.asString;
 		if(string.beginsWith("coco")) {
@@ -109,7 +120,10 @@ CQGuiNightMap {
 				("coco" ++ n ++ "_inVca").asSymbol,
 				("coco" ++ n ++ "_fbVca").asSymbol,
 				("coco" ++ n ++ "_flip").asSymbol,
-				("coco" ++ n ++ "_skip").asSymbol]
+				("coco" ++ n ++ "_skip").asSymbol,
+				("coco" ++ n ++ "_organ").asSymbol,
+				("coco" ++ n ++ "_slotQ").asSymbol,
+				("coco" ++ n ++ "_record").asSymbol]
 		};
 		^[]
 	}
@@ -248,7 +262,9 @@ CQGuiNightMap {
 	*crescentFastSpan { ^1 / 16 }
 
 	*crescentModState { |name, value, spread = 0, activity = 0|
-		var inventory = this.crescentNames(0) ++ this.crescentNames(1);
+		var inventory = this.crescentNames(0) ++ this.crescentNames(1)
+			++ [this.shellFlowParam(0, \organ), this.shellFlowParam(0, \slotQ),
+				this.shellFlowParam(1, \organ), this.shellFlowParam(1, \slotQ)];
 		var entry, lowRaw, highRaw, step = this.crescentModStep, quant;
 		var center, lower, upper;
 		value = this.prTelemetryNumber(value);
@@ -813,11 +829,13 @@ CQGuiNightMap {
 		if(headRepaint) { readHeadViews[i].refresh };
 	}
 
-	// Three destination readings piggyback on each Coco's phase frame. Missing
+	// Five destination readings piggyback on each Coco's phase frame. Missing
 	// telemetry freezes the last honest reading (as the read head does); a frame
-	// explicitly reporting zero connected weight removes the satellite.
+	// explicitly reporting zero connected weight removes the satellite. The
+	// first three belong to the old crescents; Organ and SlotQ continue the same
+	// wake language on the shell calyx and q gill.
 	crescentModulationFrame { |i, values, spreads, activities|
-		var names;
+		var names, flowNames;
 		if(freed or: { values.isNil } or: { spreads.isNil }
 			or: { activities.isNil }) { ^this };
 		i = (i ? 0).asInteger;
@@ -832,6 +850,19 @@ CQGuiNightMap {
 					crescentModStates[name] = after
 				};
 				crescentViews[name] !? { |view| view.refresh };
+			};
+		};
+		flowNames = [this.class.shellFlowParam(i, \organ),
+			this.class.shellFlowParam(i, \slotQ)];
+		flowNames.do { |name, m|
+			var before = flowModStates[name];
+			var after = this.class.crescentModState(name, values.at(m + 3),
+				spreads.at(m + 3), activities.at(m + 3));
+			if(this.class.crescentModStateChanged(before, after)) {
+				if(after.isNil) { flowModStates.removeAt(name) } {
+					flowModStates[name] = after
+				};
+				if(m == 0) { shellViews[i].refresh } { routeView.refresh };
 			};
 		};
 		^this
@@ -906,6 +937,9 @@ CQGuiNightMap {
 	chargeChanged { |name|
 		if(freed) { ^this };
 		endpoints[name] !? { |endpoint| endpoint[\view].refresh };
+		if(name.asString.endsWith("_record")) {
+			shellViews[if(name.asString.beginsWith("coco1")) { 0 } { 1 }].refresh
+		};
 	}
 
 	crescentActive { |name, flag|
@@ -977,6 +1011,7 @@ CQGuiNightMap {
 		flowNorms = IdentityDictionary.new;
 		flowActive = IdentitySet.new;
 		flowHover = IdentitySet.new;
+		flowModStates = IdentityDictionary.new;
 		activeCrescents = IdentitySet.new;
 		hoverCrescents = IdentitySet.new;
 		dolbyStates = IdentityDictionary.new;
@@ -2005,7 +2040,10 @@ CQGuiNightMap {
 		CQInkNight.drawDroneRoutes(geometry,
 			2.collect { |i| flowNorms[this.class.shellFlowParam(i, \slotQ)] ? 0 },
 			2.collect { |i| flowNorms[this.class.shellFlowParam(i, \slotX)] ? 0 },
-			flowActive, flowHover, \night);
+			flowActive, flowHover, \night,
+			2.collect { |i|
+				flowModStates[this.class.shellFlowParam(i, \slotQ)]
+			});
 		geometry[\birds].do { |bird, i|
 			var deck = if(i == 0) { \deckA } { \deckB };
 			if(birdHover[i] and: { deckSlotNorms[i] > 0 }) {
@@ -2173,14 +2211,16 @@ CQGuiNightMap {
 			level: flowNorms[levelName] ? 0,
 			organ: flowNorms[organName] ? 0,
 			organActive: flowActive.includes(organName),
-			organHover: flowHover.includes(organName)
+			organHover: flowHover.includes(organName),
+			organModulation: flowModStates[organName]
 		);
 		CQInkNight.drawShell(coco, coco[\shellBox].leftTop,
 			holdStates[i], this.flipMode(i), speedNorms[i], shellHover[i],
 			skipHover[i], skipFlash[i], rimHover[i], heartHover[i],
 			chevronHover[i], \night, geometry[\roots][i],
 			gui.auraFor(if(i == 0) { \envA } { \envB }) ? 0,
-			preampDriveNorms[i], preampSlotNorms[i], performance);
+			preampDriveNorms[i], preampSlotNorms[i], performance,
+			(gui.fireFor(("coco" ++ (i + 1) ++ "_record").asSymbol) ? 0) > 0.01);
 	}
 
 	prDrawReadHead { |i|

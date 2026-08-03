@@ -33,12 +33,30 @@ CQSynthDefs {
 	*preampMakeupDbPerOct { ^1.0 }
 	*gateOffThreshold { ^0.3 }
 	*gateOnThreshold { ^0.5 }
+	// The address-bit organ used to enter the audible mix at x0.3. PLAY-8 found
+	// it almost hidden even with the hand fully open, while its modulation jack
+	// was already healthy. x0.55 is a +5.3 dB correction in the voice branch
+	// only: the published organ source and every matrix threshold stay unchanged.
+	*organAudibleGain { ^0.55 }
+	// The software-only VCA destinations add to the matching Night hand and
+	// stop at that hand's own documented range. Matrix modulation can therefore
+	// open a closed Organ/SlotQ path without inventing a hidden boost country.
+	*organVcaCeiling { ^1.0 }
+	*slotQVcaCeiling { ^1.5 }
 	// The weighted band-limited square stack reaches only about +0.56 at the
 	// default 24 kHz clock. Its patch jack must inhabit the same useful ±1
 	// source country as tri/cas: ×1.6 then clip gives a default 0.60 banana
 	// measured headroom above the +0.5 Schmitt threshold. The audible post-RAM
 	// organ voice deliberately keeps the unconditioned stack and its old gain.
 	*organModGain { ^1.6 }
+
+	// The Record banana is a momentary inversion of the hand-set Hold state:
+	// held -> write while the gate is high, writing -> lossless hold. Subtraction
+	// is XOR for the two 0/1 states and works identically for scalars and UGens.
+	// Nothing on this path writes the persistent CQState parameter.
+	*recordToggledHold { |manualHold, matrixGate|
+		^(manualHold - matrixGate).abs
+	}
 
 	*prPreampMakeup { |drive|
 		^((drive.log2 * this.preampMakeupDbPerOct.neg).dbamp)
@@ -236,11 +254,14 @@ CQSynthDefs {
 			var buf, frames, speed, spafKnob, clockHz, ratio, dir, phase;
 			var here, hereSmooth, dolby, inSig, inVca, fbVca, inEnv, fbEnv;
 			var inCh, fbCh, dustLevel, dustSig, record, write, outTap;
-			var organ, organMod, voice, lvl;
+			var organ, organMod, voice, lvl, organVca, slotQVca;
 			var patchDepth, mods, wSpaf, wInVca, wFbVca, wFlip, wSkip;
+			var wOrgan, wSlotQ, wRecord;
 			var selfModSources, cocoIndex;
 			var spafSum, inVcaSum, fbVcaSum, flipSum, skipSum;
-			var flipMatrixGate, flipGate, skipTrig;
+			var organSum, slotQSum, recordSum;
+			var flipMatrixGate, flipGate, skipTrig, recordMatrixGate;
+			var manualHold, effectiveHold;
 			var spafApplied, spafEffective, modActual, modSlow, modSpread, modActivity;
 			var phaseTelemetry;
 			buf = \buf.ir(0);
@@ -261,9 +282,15 @@ CQSynthDefs {
 			wFbVca = CQSynthDefs.prMatrixWeight(\wFbVcaBus.ir(0), patchDepth);
 			wFlip = CQSynthDefs.prMatrixWeight(\wFlipBus.ir(0), patchDepth);
 			wSkip = CQSynthDefs.prMatrixWeight(\wSkipBus.ir(0), patchDepth);
+			wOrgan = CQSynthDefs.prMatrixWeight(\wOrganBus.ir(0), patchDepth);
+			wSlotQ = CQSynthDefs.prMatrixWeight(\wSlotQBus.ir(0), patchDepth);
+			wRecord = CQSynthDefs.prMatrixWeight(\wRecordBus.ir(0), patchDepth);
 			spafSum = Mix(mods * wSpaf);
 			inVcaSum = Mix(mods * wInVca);
 			fbVcaSum = Mix(mods * wFbVca);
+			organSum = Mix(mods * wOrgan);
+			slotQSum = Mix(mods * wSlotQ);
+			recordSum = Mix(mods * wRecord);
 			// Schmitt threshold on gate/trig dests (SPEC §5.5): on rising through
 			// +0.5, off below +0.3 — a bare comparator would chatter on noisy sums
 			flipSum = Mix(mods * wFlip);
@@ -273,6 +300,14 @@ CQSynthDefs {
 			flipGate = max(\flip.kr(CQSpec.default(\coco1Flip)), flipMatrixGate);
 			skipTrig = Trig1.ar(Schmidt.ar(skipSum,
 				CQSynthDefs.gateOffThreshold, CQSynthDefs.gateOnThreshold), SampleDur.ir);
+			recordMatrixGate = Schmidt.ar(recordSum,
+				CQSynthDefs.gateOffThreshold, CQSynthDefs.gateOnThreshold);
+			organVca = (\organLvl.kr(CQSpec.default(\coco1Organ),
+				CQSpec.lag(\coco1Organ)) + CQSynthDefs.prVcaLaw(organSum))
+				.clip(0, CQSynthDefs.organVcaCeiling);
+			slotQVca = (\slotQ.kr(CQSpec.default(\coco1SlotQ),
+				CQSpec.lag(\coco1SlotQ)) + CQSynthDefs.prVcaLaw(slotQSum))
+				.clip(0, CQSynthDefs.slotQVcaCeiling);
 			// hard clamp floor..SR is post-modulation by design (SPEC §5.3): the
 			// floor sits an octave under the knob's own, so a banana into _spaf
 			// still reaches a country the hand alone cannot ("ground jack" trick)
@@ -297,8 +332,7 @@ CQSynthDefs {
 					* \slotPre.kr(CQSpec.default(\coco1SlotPre), CQSpec.lag(\coco1SlotPre)))
 				+ (In.ar(\deckBus.ir(0))
 					* \slotDeck.kr(CQSpec.default(\coco1SlotDeck), CQSpec.lag(\coco1SlotDeck)))
-				+ (In.ar(\qMixBus.ir(0))
-					* \slotQ.kr(CQSpec.default(\coco1SlotQ), CQSpec.lag(\coco1SlotQ)))
+				+ (In.ar(\qMixBus.ir(0)) * slotQVca)
 				+ (InFeedback.ar(\crossBus.ir(0))   // other coco, one block late by design
 					* \slotX.kr(CQSpec.default(\coco1SlotX), CQSpec.lag(\coco1SlotX)));
 			// The knob is the valve's rest and the matrix opens and shuts it.
@@ -329,7 +363,13 @@ CQSynthDefs {
 			record = Select.ar(\wrap.kr(CQSpec.default(\coco1Wrap)),
 				[record.clip2(1), record.wrap2(1)]);       // ADC rails — safety #2
 			record = record.round(2 ** (1 - \bits.kr(CQSpec.default(\coco1Bits))));
-			write = Select.ar(\hold.kr(CQSpec.default(\coco1Hold)), [record, here]);
+			// Hold is the manual seal. A positive matrix Record gate momentarily
+			// inverts it in either direction, then returns exactly to the hand-set
+			// state; it never mutates the persistent Hold parameter.
+			manualHold = \hold.kr(CQSpec.default(\coco1Hold));
+			effectiveHold = CQSynthDefs.recordToggledHold(
+				manualHold, recordMatrixGate);
+			write = Select.ar(effectiveHold, [record, here]);
 			BufWr.ar(write, buf, phase, loop: 1);          // hold = identity rewrite
 			outTap = Select.ar(\interp.kr(enumIdx.value(\coco1Interp)),
 				[here, hereSmooth]);
@@ -340,9 +380,7 @@ CQSynthDefs {
 			// depending on the shared bus timestamp. Out below still publishes them
 			// for the other Coco, Quantussy, decks and GUI telemetry.
 			LocalOut.ar([outTap, organMod]);
-			voice = outTap
-				+ (organ * \organLvl.kr(CQSpec.default(\coco1Organ), CQSpec.lag(\coco1Organ))
-					* 0.3);
+			voice = outTap + (organ * organVca * CQSynthDefs.organAudibleGain);
 			lvl = \level.kr(CQSpec.default(\coco1Level), CQSpec.lag(\coco1Level));
 			Out.ar(\outBus.ir(0), voice * lvl);
 			Out.ar(\modSrcBus.ir(0) + \modTapIdx.ir(12), outTap);  // canonical ch 12/13
@@ -369,7 +407,7 @@ CQSynthDefs {
 			// cannot be drawn as motion (the eye fuses above ~10 Hz and this
 			// message is 15 Hz), so §16.6 draws it as weight instead.
 			//
-			// The same frame also carries the three continuous matrix destinations
+			// The same frame also carries the five continuous matrix destinations
 			// as DSP truth: slow centre, unresolved excursion and connected weight.
 			// The first is allowed to move a small satellite pearl. Audio-rate motion
 			// is reduced *before* A2K to a stable peak wake, never sampled into a
@@ -377,11 +415,12 @@ CQSynthDefs {
 			// affect the destination. SP.AF reports the realized octave shift after
 			// the clock clamp (relative to the unmodulated speed), not an inaudible
 			// request beyond the rail;
-			// input/feedback report their post-law, post-clip effective VCAs.
-			modActual = [spafEffective, inVca, fbVca];
+			// input/feedback/organ/SlotQ report their post-law, post-clip effective VCAs.
+			modActual = [spafEffective, inVca, fbVca, organVca, slotQVca];
 			modSlow = Lag.ar(modActual, 0.035);
 			modSpread = LagUD.ar((modActual - modSlow).abs, 0, 0.18);
-			modActivity = [Mix(wSpaf.abs), Mix(wInVca.abs), Mix(wFbVca.abs)]
+			modActivity = [Mix(wSpaf.abs), Mix(wInVca.abs), Mix(wFbVca.abs),
+				Mix(wOrgan.abs), Mix(wSlotQ.abs)]
 				.clip(0, 1);
 			phaseTelemetry = [A2K.kr(phase / frames),
 				A2K.kr(Lag.ar(dir, 0.15)),
@@ -389,7 +428,7 @@ CQSynthDefs {
 				++ A2K.kr(modSlow) ++ A2K.kr(modSpread) ++ modActivity;
 			SendReply.kr(Impulse.kr(this.phaseReplyHz), '/cq_phase', phaseTelemetry,
 				\meterId.ir(0));
-			// GUI_SPEC §9 `/cq_charge` — this coco's two gate/trig sums exactly as
+			// GUI_SPEC §9 `/cq_charge` — this coco's three gate/trig sums exactly as
 			// the Schmitt above sees them (post-weight, pre-threshold), so the lamp
 			// cannot disagree with the DSP. Peak-held at audio rate before A2K
 			// (instant rise, 0.15 s fall): a trigger crossing can last a single
@@ -398,8 +437,9 @@ CQSynthDefs {
 			// second half separately holds the exact post-Schmitt gate/trigger that
 			// drives §16.8's fire diamond. replyID = the coco's meterId.
 			SendReply.kr(Impulse.kr(15), '/cq_charge',
-				A2K.kr(LagUD.ar([flipSum, skipSum], 0, 0.15))
-					++ A2K.kr(LagUD.ar([flipMatrixGate, skipTrig], 0, 0.15)),
+				A2K.kr(LagUD.ar([flipSum, skipSum, recordSum], 0, 0.15))
+					++ A2K.kr(LagUD.ar(
+						[flipMatrixGate, skipTrig, recordMatrixGate], 0, 0.15)),
 				\meterId.ir(0));
 		})
 	}

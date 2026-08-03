@@ -67,13 +67,9 @@ CQGuiNightTouchTest : UnitTest {
 		};
 	}
 
-	// The sowing moon's one threshold (§6.1): under it a press is a tap — a
-	// shake thrown at the moon's current phase — and past it the moon pours
-	// that phase instead, horizontally, the way its own terminator travels. It
-	// is the harvest lasso's own number, so the hand learns "pressed" versus
-	// "dragged" once for the whole night, and the tap's own px are dead, so a
-	// throw never nudges the phase it throws and a pour cannot jump when it
-	// engages.
+	// The sowing moon resolves tap versus drag at the shared threshold, but its
+	// phase preview is continuous from mouse-down. A released tap restores its
+	// exact start before throwing; a phase drag therefore has no sticky quarter.
 	test_almanacTapAndPour {
 		this.assertEquals(CQGuiNightTouch.tapTravel, CQBananaGrammar.lassoTravel,
 			"the tap threshold IS the lasso's, never a second number");
@@ -85,9 +81,10 @@ CQGuiNightTouchTest : UnitTest {
 			"past the threshold the pour starts from zero", 1e-9);
 		this.assertFloatEquals(CQGuiNightTouch.deadzone(-20, 8), -12,
 			"a downward pour is the same distance the other way", 1e-9);
-		this.assert(CQGuiNightTouch.tapTravel
-			< (1 / CQGuiNightTouch.crescentSensitivity),
-			"the dead tap costs a sliver of the moon's range, never a jump");
+		this.assertFloatEquals(CQGuiNightTouch.moonPhaseNorm(0.25, 3), 0.275,
+			"even a three-pixel phase move follows continuously", 1e-9);
+		this.assertFloatEquals(CQGuiNightTouch.moonPhaseNorm(0.25, -60), 0,
+			"continuous moon motion still clamps at the new moon", 1e-9);
 	}
 
 	// A bird has three acts but no new glyphs: a still press fetches, one

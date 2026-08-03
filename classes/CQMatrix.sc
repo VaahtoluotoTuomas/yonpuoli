@@ -9,7 +9,7 @@ CQMatrix {
 	classvar <sourceNames, <destNames;
 	classvar <>postWarnings = true;
 
-	var <graph;
+	var <graph, <lastShakePlan;
 	var weights;   // [destIndex][sourceIndex] -> Float, -1..1, 0 = unpatched
 
 	*initClass {
@@ -21,7 +21,9 @@ CQMatrix {
 		// ARCHITECTURE §3.3 — canonical matrix destination order
 		destNames = #[
 			\coco1_spaf, \coco1_inVca, \coco1_fbVca, \coco1_flip, \coco1_skip,
+			\coco1_organ, \coco1_slotQ, \coco1_record,
 			\coco2_spaf, \coco2_inVca, \coco2_fbVca, \coco2_flip, \coco2_skip,
+			\coco2_organ, \coco2_slotQ, \coco2_record,
 			\castle1_fm, \castle2_fm, \castle3_fm, \castle4_fm, \castle5_fm,
 			\castle1_spesal, \castle2_spesal, \castle3_spesal, \castle4_spesal,
 			\castle5_spesal, \deckA_rate, \deckB_rate
@@ -32,6 +34,7 @@ CQMatrix {
 
 	prInit {
 		weights = destNames.collect { sourceNames.collect { 0.0 } };
+		lastShakePlan = nil;
 	}
 
 	*srcIndex { |name| ^sourceNames.indexOf(name) }
@@ -145,23 +148,29 @@ CQMatrix {
 		this.load(data[\matrix], origin, committed, operation);
 	}
 
-	// SPEC §5.5 shake: throw a fresh handful of bananas on the bay — a sparse
-	// random patch (each cell patched with prob. `density`, weight ±amount)
-	// plus 5 random spesal states, returned for the caller to apply
-	// (Cocoquantus.shake; this class knows no server counters). Never touches
-	// levels/feedback by construction: only weights live here. A seed makes the
-	// throw reproducible (SPEC: shake(0.4, seed: 1234)); the language-side rand
-	// stream is restored afterwards so a seeded shake has no side effects.
+	// SPEC §5.5 shake: first plant one audible 3–5-cable ecology, then sow the
+	// moon-density random field around it.  `amount` remains the decoration
+	// ceiling for continuous destinations. Gate/trig cables have their own
+	// threshold-aware 0.58..0.82 country, and the guaranteed ecology has small,
+	// destination-specific continuous ranges; otherwise a default 0.3 throw can
+	// never open a +0.5 Schmitt and often draws many cables that do nothing.
+	//
+	// The returned value remains the five spesal states for API compatibility.
+	// `lastShakePlan` exposes the selected family, its exact skeleton and the
+	// small CQState preparation Event that Cocoquantus applies through the normal
+	// state funnel. This model still writes no parameter itself. A seed makes the
+	// complete throw reproducible (and the setup too from the same context) and
+	// leaves the caller's rand stream untouched.
 	//
 	// `density` is how MUCH is sown, and it is what the night's sowing moon
 	// wears as its phase (GUI_SPEC §16.6): strength already has a macro of its
 	// own in patchDepth, while density is reachable from nowhere else.
 	shake { |amount = 0.3, seed, origin = \code, committed = true,
-		operation = \shake, density|
+		operation = \shake, density, context|
 		var amt = this.class.clampWeight(amount).abs;
 		var sow = this.class.clampDensity(density);
 		var saved = thisThread.randData;
-		var spesal;
+		var spesal, plan, family;
 		// an empty moon **clears the bay**: nothing is sown, so nothing is left
 		// standing — the phase is the field, and an empty field is empty. The
 		// spesal states are deliberately left alone: a clear is a clear, not a
@@ -173,12 +182,28 @@ CQMatrix {
 		};
 		seed !? { thisThread.randSeed = seed.asInteger };
 		this.prInit;
-		weights.do { |row, di|
-			row.size.do { |si|
-				if(sow.coin) { weights[di][si] = amt.rand2 };
+		if(amt > 0) {
+			// Select the ecology and its spesal posture before density consumes any
+			// random draws. The same seed therefore keeps the same musical core from
+			// crescent to full moon; density only grows decoration around it.
+			family = if(seed.notNil) {
+				this.class.shakeFamilyForSeed(seed)
+			} { nil };
+			plan = this.prShakePlan(context ? (), family);
+			spesal = 5.collect { 8.rand };
+			this.prSowDecoration(amt, sow);
+			// Guaranteed ecology last: a random draw can never weaken or replace
+			// the deliberate route that makes this throw worth hearing.
+			plan[\skeleton].do { |triple|
+				this.prPlace(triple[0], triple[1], triple[2])
 			};
+		} {
+			// Preserve the old malformed/zero-amount safety behaviour: a field of
+			// zero-weight "patches" is simply empty, while spesal still scrambles.
+			plan = (family: \silent, params: (), skeleton: []);
+			spesal = 5.collect { 8.rand };
 		};
-		spesal = 5.collect { 8.rand };
+		lastShakePlan = plan;
 		seed !? { thisThread.randData = saved };
 		this.prPushAll;
 		this.changed(\clear, origin, committed, operation);
@@ -186,9 +211,222 @@ CQMatrix {
 		^spesal
 	}
 
-	// ~10% of 16x22 cells = ~35 bananas — a full but still readable table, and
-	// the default when no density is asked for (SPEC §5.5: existing callers keep
-	// the historical throw exactly)
+	// The only state controls an ecological throw may prepare. Keeping this list
+	// explicit lets the GUI capture one matching undo bundle without rolling back
+	// unrelated mixer, mic, master or safety state.
+	*shakeParamNames {
+		var names = List[\patchDepth, \qFreq, \qChaos];
+		[1, 2].do { |n|
+			#[\Level, \Organ, \SlotQ, \Hold, \In, \Fb, \Dust, \SlotX, \Speed].do { |suffix|
+				names.add(("coco" ++ n ++ suffix).asSymbol)
+			};
+		};
+		(1..5).do { |k|
+			names.add(("c" ++ k ++ "Send").asSymbol);
+			names.add(("c" ++ k ++ "Range").asSymbol);
+		};
+		^names.asArray
+	}
+
+	prSowDecoration { |amt, sow|
+		weights.do { |row, di|
+			var dest = destNames[di];
+			// Gate populations grow more slowly than continuous colour. At full
+			// moon this is about nine chance gates, not thirty-five simultaneous
+			// Schmitts; the family skeleton supplies the deliberate pulse.
+			var chance = if(this.class.isGateDest(dest)) { sow * 0.22 } { sow };
+			row.size.do { |si|
+				if(chance.coin) {
+					weights[di][si] = this.class.decorationWeight(dest, amt)
+				};
+			};
+		};
+	}
+
+	*isGateDest { |dest|
+		var text = dest.asString;
+		^text.endsWith("_flip") or: { text.endsWith("_skip") }
+			or: { text.endsWith("_record") }
+			or: { text.endsWith("_spesal") }
+	}
+
+	*isNewVcaDest { |dest|
+		var text = dest.asString;
+		^text.endsWith("_organ") or: { text.endsWith("_slotQ") }
+	}
+
+	// The four documented PLAY-8 fixture seeds retain their identities, while
+	// an unseeded throw still chooses freely in prShakePlan. Explicit seeds cycle
+	// the four families predictably; this is also independent of moon density.
+	*shakeFamilyForSeed { |seed|
+		var n = if(seed.isNumber) { seed.asInteger.abs } { 0 };
+		^#[crossfeed, memoryPulse, dustGrowth, organDrone].wrapAt(n % 4)
+	}
+
+	// Random continuous cables no longer cluster around zero: the lower bound is
+	// a fraction of the requested ceiling, so every drawn cable has a useful say.
+	// Gates instead live above their DSP threshold; sign still chooses phase.
+	*decorationWeight { |dest, amount = 0.3|
+		var amt = this.clampWeight(amount).abs, lo, hi, magnitude;
+		if(amt <= 0) { ^0.0 };
+		if(this.isGateDest(dest)) {
+			lo = 0.58;
+			hi = (0.5 + amt).clip(0.62, 0.82);
+		} {
+			hi = if(this.isNewVcaDest(dest)) { amt.min(0.45) } { amt };
+			lo = if(this.isNewVcaDest(dest)) {
+				min(hi, 0.16)
+			} {
+				min(hi, max(0.05, hi * 0.45))
+			};
+		};
+		magnitude = rrand(lo, hi);
+		^magnitude * #[-1, 1].choose
+	}
+
+	prPlace { |src, dest, weight|
+		var si = this.class.srcIndex(src), di = this.class.destIndex(dest);
+		if(si.notNil and: { di.notNil }) {
+			weights[di][si] = this.class.clampWeight(weight)
+		};
+	}
+
+	// Four contrasting ecologies. Every one can speak with empty/held Cocos:
+	// organ is its own source; q-memory prepares qMix and punches RAM; dust grows
+	// converter material; crossfeed makes the two memories rewrite one another.
+	// All families touch both Cocos and plant exactly 3–5 deliberate cables.
+	prShakePlan { |context, requestedFamily|
+		var family = requestedFamily
+			? #[organDrone, memoryPulse, dustGrowth, crossfeed].choose;
+		var params = Event.new, skeleton = List.new;
+		var speed1, active, sources;
+		context = context ? ();
+		params[\patchDepth] = this.prAtLeast(context, \patchDepth, 0.9);
+		[1, 2].do { |n|
+			var level = ("coco" ++ n ++ "Level").asSymbol;
+			params[level] = this.prAtLeast(context, level, 0.90);
+		};
+		// Every ecology chooses the three castles that animate its own skeleton:
+		// one balcium source and two audio-rate sources. This keeps a first shake
+		// immediate even from empty RAM; an arbitrary infra source could otherwise
+		// postpone the first record punch for much of its cycle.
+		active = this.prPrepareQ(params);
+		sources = (active.collect { |i| ("tri" ++ (i + 1)).asSymbol }
+			++ active.collect { |i| ("cas" ++ (i + 1)).asSymbol }).scramble;
+		// A family is a complete ecology rather than a layer of stale setup left
+		// by the previous moon throw. RAM content survives, but every safe control
+		// that distinguishes the four families gets a quiet shared ground first.
+		[1, 2].do { |n|
+			params[("coco" ++ n ++ "Organ").asSymbol] = 0.0;
+			params[("coco" ++ n ++ "SlotQ").asSymbol] = 0.0;
+			params[("coco" ++ n ++ "Hold").asSymbol] = 1;
+			params[("coco" ++ n ++ "In").asSymbol] = 0.8;
+			params[("coco" ++ n ++ "Fb").asSymbol] = 0.35;
+			params[("coco" ++ n ++ "Dust").asSymbol] = 0.02;
+			params[("coco" ++ n ++ "SlotX").asSymbol] = 0.0;
+			params[("coco" ++ n ++ "Speed").asSymbol] = 24000;
+		};
+		switch(family,
+			\organDrone, {
+				params[\coco1Organ] = 0.06;
+				params[\coco2Organ] = 0.06;
+				params[\coco1Dust] = 0.0;
+				params[\coco2Dust] = 0.0;
+				speed1 = #[12000, 16000, 22000, 30000].choose;
+				params[\coco1Speed] = speed1;
+				params[\coco2Speed] = (speed1 * #[0.5, 0.6666667, 0.75, 1.5].choose)
+					.clip(CQSpec.at(\coco2Speed)[\spec].minval,
+						CQSpec.at(\coco2Speed)[\spec].maxval);
+				skeleton.add([sources[0], \coco1_organ, rrand(0.26, 0.38)]);
+				skeleton.add([sources[1], \coco2_organ, rrand(0.26, 0.38)]);
+				skeleton.add([sources[2], #[coco1_organ, coco2_organ].choose,
+					rrand(0.20, 0.30) * #[-1, 1].choose]);
+			},
+			\memoryPulse, {
+				[1, 2].do { |n|
+					params[("coco" ++ n ++ "SlotQ").asSymbol] = 0.04;
+					params[("coco" ++ n ++ "Hold").asSymbol] = 1;
+					params[("coco" ++ n ++ "In").asSymbol] = 0.9;
+					params[("coco" ++ n ++ "Fb").asSymbol] = 0.88;
+				};
+				params[\coco1Dust] = 0.01;
+				params[\coco2Dust] = 0.01;
+				params[\coco1Speed] = #[14000, 18000, 22000].choose;
+				params[\coco2Speed] = #[20000, 26000, 32000].choose;
+				skeleton.add([sources[0], \coco1_slotQ, rrand(0.30, 0.42)]);
+				skeleton.add([sources[1], \coco2_slotQ, rrand(0.30, 0.42)]);
+				skeleton.add([sources[2], \coco1_record, rrand(0.68, 0.82)]);
+				skeleton.add([sources[3], \coco2_record, rrand(0.68, 0.82)]);
+			},
+			\dustGrowth, {
+				params[\qFreq] = rrand(3.0, 10.0);
+				params[\qChaos] = rrand(0.38, 0.68);
+				params[\coco1Dust] = rrand(0.07, 0.14);
+				params[\coco2Dust] = rrand(0.15, 0.25);
+				params[\coco1Fb] = rrand(0.74, 0.88);
+				params[\coco2Fb] = rrand(0.80, 0.92);
+				params[\coco1SlotQ] = 0.04;
+				params[\coco2SlotQ] = 0.04;
+				params[\coco1Speed] = #[5000, 7000, 10000].choose;
+				params[\coco2Speed] = #[22000, 28000, 36000].choose;
+				skeleton.add([sources[0], \coco1_record, rrand(0.68, 0.82)]);
+				skeleton.add([sources[1], \coco2_record, rrand(0.68, 0.82)]);
+				skeleton.add([sources[2], #[coco1_slotQ, coco2_slotQ].choose,
+					rrand(0.28, 0.38)]);
+				skeleton.add([sources[3], \coco1_fbVca,
+					rrand(0.18, 0.28) * #[-1, 1].choose]);
+				skeleton.add([sources[4], \coco2_fbVca,
+					rrand(0.18, 0.28) * #[-1, 1].choose]);
+			},
+			{ // crossfeed
+				[1, 2].do { |n|
+					params[("coco" ++ n ++ "Hold").asSymbol] = 1;
+					params[("coco" ++ n ++ "In").asSymbol] = 0.86;
+					params[("coco" ++ n ++ "Fb").asSymbol] = 0.86;
+					params[("coco" ++ n ++ "SlotX").asSymbol] = rrand(0.20, 0.36);
+					params[("coco" ++ n ++ "SlotQ").asSymbol] = 0.04;
+				};
+				params[\coco1Dust] = 0.01;
+				params[\coco2Dust] = 0.01;
+				params[\coco1Speed] = #[9000, 12000, 16000].choose;
+				params[\coco2Speed] = #[18000, 24000, 30000].choose;
+				params[\coco2Organ] = 0.03;
+				skeleton.add([sources[0], \coco1_record, rrand(0.68, 0.82)]);
+				skeleton.add([sources[1], \coco2_record, rrand(0.68, 0.82)]);
+				skeleton.add([sources[2], \coco1_slotQ, rrand(0.28, 0.40)]);
+				skeleton.add([sources[3], \coco2_slotQ, rrand(0.28, 0.40)]);
+				skeleton.add([sources[4], \coco2_organ, rrand(0.22, 0.34)]);
+			}
+		);
+		^(family: family, params: params, skeleton: skeleton.asArray)
+	}
+
+	prAtLeast { |context, name, floor|
+		var current = context[name] ? CQSpec.default(name);
+		if(current.isNumber.not) { current = CQSpec.default(name) };
+		^max(current.asFloat, floor)
+	}
+
+	prPrepareQ { |params|
+		var active = (0..4).scramble.keep(3);
+		params[\qFreq] = rrand(2.0, 6.5);
+		params[\qChaos] = rrand(0.18, 0.48);
+		5.do { |i|
+			var n = i + 1;
+			params[("c" ++ n ++ "Send").asSymbol] = if(active.includes(i)) {
+				rrand(0.22, 0.42)
+			} { 0.0 };
+			params[("c" ++ n ++ "Range").asSymbol] = if(active.includes(i)) {
+				if(i == active.first) { \balcium } { \audio }
+			} { \infra };
+		};
+		^active
+	}
+
+	// Ten percent of the random field, plus the 3–5-cable audible skeleton: a
+	// full but still readable default throw. Gate rows use their deliberately
+	// lower sowing probability, so this is no longer a fixed percentage of all
+	// 448 cells.
 	*shakeDensity { ^0.1 }
 
 	// same manners as clampWeight: a malformed density warns and falls back to
