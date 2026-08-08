@@ -1,4 +1,4 @@
-# Testinäyttö
+# Testinäyttö (alkuperäinen auditointi)
 
 Auditointipäivä: 2026-07-19
 Ympäristö: Windows, SuperCollider 3.13.0, PowerShell

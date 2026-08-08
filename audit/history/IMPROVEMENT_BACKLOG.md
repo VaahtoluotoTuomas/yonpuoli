@@ -1,4 +1,4 @@
-# Alkuperäinen audit-backlog — korvattu jatkosuunnittelussa
+# Alkuperäinen audit-backlog — korvattu jatkosuunnittelussa (arkisto)
 
 Tämä backlog ei ole toteutusloki. Auditointi ei muuttanut lähdekoodia. Järjestys perustuu FINDINGS.md:n vakavuuteen, riippuvuuksiin ja regressioriskiin.
 

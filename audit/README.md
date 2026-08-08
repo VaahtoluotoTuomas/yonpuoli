@@ -1,45 +1,28 @@
-# Audit-hakemiston lukujärjestys
+# Audit reading order
 
-Auditointi tehtiin kahdessa vaiheessa: ensin laaja lähdekoodi- ja
-dokumentaatioauditointi, sitten riippumaton evaluointi ja reproducer-testit. Tästä
-syystä alkuperäisissä raporteissa voi olla vakavuusluokkia, jotka myöhempi evidenssi
-korvaa.
+Yönpuoli's technical audit was performed in two passes: an initial source and
+documentation review, followed by independent evaluation and focused
+reproducers. Later evidence refined several early severity classifications.
 
-## Ajantasainen päätös- ja toteutustaso
+## Active decision layer
 
-1. [`FINAL_AUDIT.md`](FINAL_AUDIT.md) — riippumattoman evaluoinnin lopputulos ja
-   korjatut vakavuusluokat.
-2. [`VERIFIED_FINDINGS.md`](VERIFIED_FINDINGS.md) — varmennetut löydökset,
-   reproducerit ja rajaukset. Tämä voittaa ristiriidassa alkuperäisen löydösraportin.
-3. [`REMEDIATION_ROADMAP.md`](REMEDIATION_ROADMAP.md) — korjausten ja release-porttien
-   toteutusjärjestys.
-4. [`GUI_DEVELOPMENT_PLAN.md`](GUI_DEVELOPMENT_PLAN.md) — `GUI_SPEC.md`:stä johdettu
-   Archipelago-GUI:n file-, dependency-, test-, riski- ja commit-suunnitelma.
+1. [`FINAL_AUDIT.md`](FINAL_AUDIT.md) records the independent evaluation of the
+   July 2026 baseline and the corrected severity decisions.
+2. [`VERIFIED_FINDINGS.md`](VERIFIED_FINDINGS.md) records the verified findings,
+   reproducers and limits for that baseline.
+3. [`PRIVACY_AUDIT.md`](PRIVACY_AUDIT.md) records the separate public-release
+   privacy and full-history review, including the explicit decision not to
+   rewrite history.
 
-Projektin tiivis ajantasainen työjärjestys on juuren [`PLAN.md`](../PLAN.md)-
-tiedostossa. GUI:n normatiivinen lähde on aina [`GUI_SPEC.md`](../GUI_SPEC.md), ei
-audit-raportti.
+These documents are retained evidence, not a claim that the old audited commit is
+the current release candidate. Current status and remaining release gates are in
+the root [`PLAN.md`](../PLAN.md). [`GUI_SPEC.md`](../GUI_SPEC.md) remains the
+normative source for GUI behavior and visual language.
 
-## Julkaisuauditoinnit (eri asia kuin yllä oleva koodiauditointi)
+## Historical material
 
-- [`PRIVACY_AUDIT.md`](PRIVACY_AUDIT.md) — repon yksityisyys- ja lähdeauditointi
-  2026-08-01 koko Git-historian yli (`PLAN.md` → "Tie 1.0:aan" kohta 5). Sisältää
-  avoimen päätöksen commit-sähköpostista ja historian uudelleenkirjoituksesta.
-
-## Evidenssi ja alkuperäiset raportit
-
-- [`TEST_EVIDENCE.md`](TEST_EVIDENCE.md) — komentojen, testien ja ympäristön evidenssi.
-- [`FINDINGS.md`](FINDINGS.md) — ensimmäisen auditin yksityiskohtaiset löydökset;
-  vakavuuksissa historiallinen.
-- [`EXECUTIVE_SUMMARY.md`](EXECUTIVE_SUMMARY.md) — ensimmäisen auditin yhteenveto;
-  P0/P1-luvut ovat historialliset.
-- [`FEATURE_TRACEABILITY.md`](FEATURE_TRACEABILITY.md) — ominaisuuksien jäljitettävyys.
-- [`COCOQUANTUS_FIDELITY.md`](COCOQUANTUS_FIDELITY.md) — uskollisuus- ja
-  tulkinta-analyysi.
-- [`IMPROVEMENT_BACKLOG.md`](IMPROVEMENT_BACKLOG.md) — laajempi parannusbacklog.
-- [`LISTENING_TEST_PROTOCOL.md`](LISTENING_TEST_PROTOCOL.md) — kuuntelun
-  hyväksyntäprotokolla.
-
-Alkuperäiset toimeksiannot säilytetään toistettavuutta varten hakemistossa
-[`prompts/`](prompts/). Raporttien historialliset `git status` -tulosteet ovat
-evidenssiä auditointihetkestä eikä niitä päivitetä vastaamaan nykyistä tiedostopuuta.
+Original prompts, first-pass reports, test evidence and superseded remediation
+plans are preserved under [`history/`](history/README.md). They remain public to
+make the audit reproducible and to show how the project responded to criticism.
+Historical command output and paths describe the repository at audit time and are
+not rewritten to resemble today's tree.

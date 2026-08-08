@@ -1,4 +1,4 @@
-# Cocoquantus- ja Ciat-Lonbarde-uskollisuusarvio
+# Cocoquantus- ja Ciat-Lonbarde-uskollisuusarvio (alkuperäinen auditointi)
 
 ## Tila, rajaus ja evidenssin laatu
 

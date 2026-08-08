@@ -1,14 +1,37 @@
 # machine-specific (CLAUDE.md: no absolute paths in the repo)
 config.scd
-# Personal agent settings: hold local tool permissions and machine paths.
-# The repo must protect itself — a global ~/.config/git/ignore only covers
-# this machine, never a fresh clone.
-.claude/settings.local.json
+# Personal tool state: permissions, caches and machine-specific instructions.
+# Public collaboration rules stay in AGENTS.md and CLAUDE.md.
+.claude/
+.agents/
+.codex/
+CLAUDE.local.md
+PLAN.local.md
+
+# Local environment files. A documented example may still be versioned.
+.env
+.env.*
+!.env.example
+
+# Editor and OS metadata.
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*~
 *.audio.scd
 *.audio.scd.pending
 *.audio.scd.bak
 tests/dev_paths.scd
 tests/sclang_conf_dev.yaml
+
+# Generated diagnostics and compiled SynthDefs.
+*.log
+*.dmp
+*.scsyndef
+/synthdefs/
 
 # audio material and output
 samples/

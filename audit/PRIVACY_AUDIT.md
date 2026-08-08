@@ -32,7 +32,8 @@ Lisäksi tarkastettiin commit-viestit, CI-workflow, `.gitattributes`,
 
 ### L1 — Windows-käyttäjätunnus ja henkilökohtainen kansiopuu (korjattu)
 
-`audit/TEST_EVIDENCE.md` sisälsi viisi kertaa käyttäjätunnuksen paljastavan
+`audit/history/TEST_EVIDENCE.md` (auditointihetkellä
+`audit/TEST_EVIDENCE.md`) sisälsi viisi kertaa käyttäjätunnuksen paljastavan
 absoluuttisen polun muodossa `C:\Users\<käyttäjä>\Documents\…\<repo>` (rivit 5,
 108–110) ja `C:\Users\<käyttäjä>\AppData\Local\SuperCollider\archive.sctxar`
 (rivi 239). Tämä oli auditoinnin ainoa varsinainen henkilötietovuoto.
@@ -206,7 +207,8 @@ päässä ja vaikuttaa vain tuleviin committeihin:
 
 **Tietoisesti hyväksytty jäännösriski:** vanhoihin committeihin jäävät sekä
 oppilaitososoite (192 committia + molemmat tagit) että L1:n käyttäjätunnuksen
-sisältävä polku `audit/TEST_EVIDENCE.md`:n vanhassa blobissa. Molemmat
+sisältävä polku `audit/TEST_EVIDENCE.md`:n vanhassa blobissa (nykyinen arkistopolku
+on `audit/history/TEST_EVIDENCE.md`). Molemmat
 poistuisivat vain historian uudelleenkirjoituksella, jonka hinta (193 muuttuvaa
 SHA:ta, tagien uudelleenluonti, force-push jo julkaistuun repoon) arvioitiin
 hyötyä suuremmaksi. **Tämä on kirjattu valinta, ei auditoinnista unohtunut

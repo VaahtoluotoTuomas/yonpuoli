@@ -1,4 +1,4 @@
-# Johdon yhteenveto
+# Johdon yhteenveto (alkuperäinen auditointi)
 
 > **Pääarvioinnin status 2026-07-19:** tämä on alkuperäisen auditin yhteenveto.
 > Lopulliset prioriteetit ja reproduktiot ovat `FINAL_AUDIT.md`:ssä ja

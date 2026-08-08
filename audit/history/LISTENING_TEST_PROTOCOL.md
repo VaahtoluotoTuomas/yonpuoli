@@ -1,4 +1,4 @@
-# Ihmisen suoritettava kuuntelu- ja käyttötestiprotokolla
+# Ihmisen suoritettava kuuntelu- ja käyttötestiprotokolla (arkisto)
 
 ## Suoritustila
 

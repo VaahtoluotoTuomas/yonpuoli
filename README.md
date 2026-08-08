@@ -6,6 +6,8 @@
 
 *Memory circulates until it becomes weather.*
 
+![Yönpuoli Night performance surface](docs/media/yonpuoli-night.png)
+
 > **Lineage, not emulation.** Yönpuoli grew from a software study of Peter
 > Blasser's Ciat-Lonbarde Cocoquantus. It interprets the dual clocked 8-bit
 > memories, five-castle Quantussy network, and part of the original vocabulary,
@@ -261,11 +263,12 @@ portfolio-oriented account of the project is in
 | [`SPEC.md`](SPEC.md) | Normative behavior, parameters, DSP, and safety |
 | [`GUI_SPEC.md`](GUI_SPEC.md) | Normative interactions and visual language |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Code structure, ownership, and test architecture |
-| [`PLAN.md`](PLAN.md) | Current Nocturne work order and status |
+| [`PLAN.md`](PLAN.md) | Concise release roadmap and current status |
 | [`SOURCES.md`](SOURCES.md) | Technical lineage, sources, and interpretations |
 | [`docs/PLAYABILITY_GUIDE.md`](docs/PLAYABILITY_GUIDE.md) | Finnish hands-on tutorial: Coco memory, castle/Quantussy, organ, cables, shake, and Workshop dependencies |
 | [`docs/CASE_STUDY.md`](docs/CASE_STUDY.md) | Portfolio case study and engineering decisions |
 | [`docs/DEVELOPMENT_PROCESS.md`](docs/DEVELOPMENT_PROCESS.md) | AI-assisted workflow and ownership policy |
+| [`docs/RELEASE_MEDIA.md`](docs/RELEASE_MEDIA.md) | Honest capture brief and release-media acceptance |
 | [`audit/README.md`](audit/README.md) | Audit authority and reading order |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Contribution and verification workflow |
 | [`CHANGELOG.md`](CHANGELOG.md) | Release-level history |

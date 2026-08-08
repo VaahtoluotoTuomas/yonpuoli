@@ -50,6 +50,13 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Changed
 
+- Curated the public repository surface for the Yönpuoli release: long-lived
+  working journals and superseded audit artifacts remain available under
+  clearly labelled history directories, while concise current rules, roadmap,
+  hands-on checklist and release-media guidance lead new readers. Local agent,
+  editor, environment and generated-runtime state is explicitly ignored; the
+  public AI-assisted development and audit trail remains visible.
+
 - Expanded the canonical signed matrix from 16×28 to 16×32 with independent
   per-Coco SlotX and Dust destinations. SlotX uses the accepted bounded VCA law;
   Dust uses a smaller signed-square ±0.18 contribution clipped to its 0…0.5

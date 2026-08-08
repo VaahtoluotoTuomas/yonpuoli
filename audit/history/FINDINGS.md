@@ -1,4 +1,4 @@
-# Auditointilöydökset
+# Auditointilöydökset (alkuperäinen auditointi)
 
 > **Pääarvioinnin status 2026-07-19:** alla on alkuperäinen löydösjoukko ja sen
 > alkuperäinen vakavuus. Käytä toteutuksessa `VERIFIED_FINDINGS.md`:n rajauksia ja

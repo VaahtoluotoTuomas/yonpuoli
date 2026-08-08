@@ -34,9 +34,11 @@ Every meaningful change follows this loop:
    listening, visual, hardware, or performance claim.
 7. Commit one accepted behavior change at a time.
 
-The implementation agent reads [`../CLAUDE.md`](../CLAUDE.md) and the current
-[`../PLAN.md`](../PLAN.md). `SPEC.md`, `GUI_SPEC.md`, and `ARCHITECTURE.md` remain
-normative in their documented areas.
+The implementation agent reads the stable repository rules in
+[`../CLAUDE.md`](../CLAUDE.md) and the concise current status in
+[`../PLAN.md`](../PLAN.md). Completed handoffs and acceptance journals live under
+[`history/`](history/README.md). `SPEC.md`, `GUI_SPEC.md`, and `ARCHITECTURE.md`
+remain normative in their documented areas.
 
 ## Evidence hierarchy
 

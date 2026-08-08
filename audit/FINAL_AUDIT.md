@@ -1,7 +1,12 @@
 # Lopullinen auditointiarvio
 
+> **Historiallinen rajaus:** tämä arvio koskee 2026-07-19 auditoitua teknistä
+> `v1.0`-baselinea. Sen varmennetut korjaukset toteutettiin myöhemmissä vaiheissa;
+> nykyinen release-status on juuren [`PLAN.md`](../PLAN.md)-tiedostossa. Raporttia
+> ei pidä lukea nykyisen Yönpuoli-ehdokkaan uutena julkaisupäätöksenä.
+
 Auditointipäivä: 2026-07-19
-Ohje: [`prompts/AUDIT_EVAL.md`](prompts/AUDIT_EVAL.md)
+Ohje: [`history/prompts/AUDIT_EVAL.md`](history/prompts/AUDIT_EVAL.md)
 Laajuus: kaikki `audit/`-raportit, koko alkuperäinen lähdekoodi, testit ja keskeinen
 dokumentaatio. Lähdekoodia ei muutettu.
 
@@ -185,6 +190,6 @@ tuote-/estetiikkavalintoja vioiksi. Pääarvioinnin live- ja bad-value-testit po
 nämä väärät laajennukset.
 
 Autoritatiivinen jatkojärjestys on
-[`REMEDIATION_ROADMAP.md`](REMEDIATION_ROADMAP.md). GUI:n erillinen,
+[`history/REMEDIATION_ROADMAP.md`](history/REMEDIATION_ROADMAP.md). GUI:n erillinen,
 instrumentin estetiikkaa suojaava toteutusjärjestys on
-[`GUI_DEVELOPMENT_PLAN.md`](GUI_DEVELOPMENT_PLAN.md).
+[`history/GUI_DEVELOPMENT_PLAN.md`](history/GUI_DEVELOPMENT_PLAN.md).

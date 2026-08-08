@@ -1,11 +1,11 @@
-# Korjaus- ja kehitysroadmap
+# Korjaus- ja kehitysroadmap (arkisto)
 
 Päivitetty: 2026-07-19
 Lähde: [`prompts/AUDIT_EVAL.md`](prompts/AUDIT_EVAL.md) ja
-[`VERIFIED_FINDINGS.md`](VERIFIED_FINDINGS.md)
+[`VERIFIED_FINDINGS.md`](../VERIFIED_FINDINGS.md)
 
 GUI-työssä autoritatiivinen käyttäytymis- ja visuaalinen määrittely on
-[`../GUI_SPEC.md`](../GUI_SPEC.md). `SPEC.md` voittaa parametri-, DSP- ja
+[`GUI_SPEC.md`](../../GUI_SPEC.md). `SPEC.md` voittaa parametri-, DSP- ja
 turvallisuusristiriidat, `ARCHITECTURE.md` säilyttää pure-view/funnel/ownership-
 rajat. Roadmap ei saa poiketa `GUI_SPEC.md`:stä ilman käyttäjän etukäteishyväksyntää.
 `GUI_DEVELOPMENT_PLAN.md`:n neljä aiempaa spesifikaatiosaumaa ratkaistiin käyttäjän

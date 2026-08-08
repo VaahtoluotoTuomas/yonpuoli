@@ -144,9 +144,10 @@ only live regressions and the active Nocturne gates.
 
 ## Next steps
 
-The active roadmap is [`../PLAN.md`](../PLAN.md). The next release work is the
-repository-history privacy and source audit, followed by the final 16n mapping,
-first-touch playability pass, release media, remote CI, merge, and Yönpuoli 1.0
-tag. The separate technical-ownership study continues through the state funnel,
-feedback/safety DSP path, and Night gesture path under the policy in
+The technical, privacy, 16n, playability and release-content gates are complete.
+The active roadmap is [`../PLAN.md`](../PLAN.md): capture and approve truthful
+release media, verify remote CI on that exact candidate, then merge and tag
+Yönpuoli 1.0. After release, the technical-ownership study continues through the
+state funnel, feedback/safety DSP path and Night gesture path. Large GUI owners
+can then be decomposed one covered responsibility at a time under the policy in
 [`DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md).

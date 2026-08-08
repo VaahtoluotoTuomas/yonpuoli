@@ -1,7 +1,7 @@
-# Archipelago-GUI:n toteutussuunnitelma
+# Archipelago-GUI:n toteutussuunnitelma (arkisto)
 
 Päivitetty: 2026-07-19
-Autoritatiivinen visiospesifikaatio: [`../GUI_SPEC.md`](../GUI_SPEC.md)
+Autoritatiivinen visiospesifikaatio: [`GUI_SPEC.md`](../../GUI_SPEC.md)
 
 Tämä tiedosto muuttaa `GUI_SPEC.md`:n toteutusjärjestykseksi. Se ei tulkitse
 spesifikaatiota vapaasti eikä korvaa sitä. Jos tekninen toteutus edellyttäisi

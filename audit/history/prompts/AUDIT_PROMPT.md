@@ -1,3 +1,5 @@
+# Alkuperäisen kokonaisauditoinnin prompti
+
 Suorita koko tämän repositoryn perusteellinen, evidenssipohjainen ohjelmisto-, DSP-, ominaisuus-, käyttöliittymä- ja konseptiauditointi.
 
 Käytä rinnakkaisia subagentteja, koska tehtävä jakautuu itsenäisiin lukupainotteisiin työalueisiin. Pidä pääagentti auditoinnin koordinoijana ja lopullisten tulosten syntetisoijana.

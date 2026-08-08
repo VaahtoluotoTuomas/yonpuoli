@@ -1,4 +1,4 @@
-# Ominaisuuksien jäljitettävyysauditointi
+# Ominaisuuksien jäljitettävyysauditointi (alkuperäinen auditointi)
 
 Auditointipäivä: 2026-07-19
 

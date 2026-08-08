@@ -88,8 +88,8 @@ ratkaistiin käyttäjän päätöksellä 2026-07-19; avoimia GUI-käyttäytymisp
 3. [`ARCHITECTURE.md`](../../ARCHITECTURE.md) määrää toteutusrajat, omistuksen ja pure-view /
    yhden kirjoitussuppilon periaatteet.
 4. [`audit/VERIFIED_FINDINGS.md`](../../audit/VERIFIED_FINDINGS.md) on varmennettujen
-   audit-havaintojen totuus; [`audit/REMEDIATION_ROADMAP.md`](../../audit/REMEDIATION_ROADMAP.md)
-   ja [`audit/GUI_DEVELOPMENT_PLAN.md`](../../audit/GUI_DEVELOPMENT_PLAN.md) pilkkovat työn.
+   audit-havaintojen totuus; [`audit/REMEDIATION_ROADMAP.md`](../../audit/history/REMEDIATION_ROADMAP.md)
+   ja [`audit/GUI_DEVELOPMENT_PLAN.md`](../../audit/history/GUI_DEVELOPMENT_PLAN.md) pilkkovat työn.
 5. Tämä tiedosto määrää toteutusjärjestyksen ja ajantasaisen statuksen.
 
 Ristiriidassa turvallisuus voittaa. Epäselvää GUI-käyttäytymistä ei arvata eikä

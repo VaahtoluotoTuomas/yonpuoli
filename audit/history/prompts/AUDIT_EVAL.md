@@ -1,3 +1,5 @@
+# Riippumattoman arvioinnin alkuperäinen prompti
+
 Toimi nyt tämän auditoinnin riippumattomana pääarvioijana.
 
 Älä käytä uusia subagentteja, ellei jokin yksittäinen rajattu tekninen tarkistus sitä ehdottomasti vaadi. Tämän vaiheen tavoitteena on yhtenäinen harkinta, löydösten varmennus ja väärien positiivisten havaintojen poistaminen.
