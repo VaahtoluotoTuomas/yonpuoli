@@ -1488,12 +1488,14 @@ WASAPI-jumin ilman sitä ja runtime-laitelistauksen poisto palautti äänen,
 Night-liikkeen ja `/status`-vastaukset. Presence ei todista draft-laitetta eikä
 fyysistä kaapelointia ennen restartia ja kuuntelua.
 
-Running Audio -sivu käyttää vain ennen bootia tai rebootin stopped-callbackissa
-otettua muistikuvaa. `show all drivers` vaihtaa paikallisesti recommended/all-
-näkymää eikä lue OS:ää uudelleen; aktiivinen/draft exact endpoint säilyy aina.
-Ilman turvallista snapshotia kontrolli näyttää disabled `configured devices`.
-Käynnissä oleva Windows WASAPI -palvelin ei saa enää millään UI-polulla
-`_ListAudioDevices`-kutsua.
+Running Audio -sivu käyttää vain stopped-server-rajalla otettua muistikuvaa.
+Windowsilla `find connected devices` tekee vahvistetun vahvan restartin ja ajaa
+suunnatun laitehaun rajatussa uudessa helper-sclangissa; pitkäikäisen IDE-
+prosessin PortAudio-listaa ei käytetä. `show all drivers` vaihtaa paikallisesti
+recommended/all-näkymää eikä lue OS:ää uudelleen; aktiivinen/draft exact endpoint
+säilyy aina. Ilman turvallista snapshotia kontrolli näyttää disabled
+`configured devices`. Käynnissä oleva Windows WASAPI -palvelin ei saa enää
+millään UI-polulla `_ListAudioDevices`-kutsua.
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 tests/compile_check.scd
@@ -1521,6 +1523,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
       allokointia ja palauttavat yhden facade-failure-callbackin
 - [x] AIO-5: provider luetaan vain varmasti pysähtyneenä; boot/reboot-cache
       sisältää exact directional listat
+- [x] Windows-proben hermettinen runner todistaa 20 s watchdog-komennon,
+      yksityisen tulospolun ja exact directional nimien säilymisen käynnistämättä
+      oikeaa sclangia tai PortAudiota
+- [x] Tilapäinen base-fallback jättää validin preferred-profiilin, `.bak`:n ja
+      `.pending`:n koskematta; vain pakotettu malformed-polku korjaa profiilin
 - [x] Recommended piilottaa vain legacy-prefixit, show-all palauttaa ne ilman
       provider-read-countin kasvua ja active/draft exact valinta säilyy
 - [x] Scan failure ei estä bootia; fallback/stale-cache näkyy rehellisesti
@@ -1605,17 +1612,56 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_sclang_gate.ps1 te
       regressiolla. Avoimeksi jää vain yllä kuvattu VB-CABLE-DAW-portti, ja
       tämä lyhyt vakauskoe **ei korvaa** jonossa seuraavaa pitkää koko
       soittimen laitteisto-/resource-soakia.
-- [x] **Puuttuvan startup-laitteen turvallinen palautus hyväksytty fyysisesti
-      2026-08-03.** Yllä oleva vanha “ei toisteta” -rajaus on tämän korjauksen
-      osalta kumottu. K-Mix-profiili aktivoitiin, serveri suljettiin, K-Mix
-      irrotettiin ja julkinen `CQ.reboot` ajettiin IDE:n jäädessä auki. Uusi
-      stopped-server scan hylkäsi puuttuvan ASIO-reitin ennen käynnistystä,
-      valitsi split-WASAPI-baselinen eikä pyytänyt MME-oletuslaitteita.
-      Toteutuva kello oli noin 47 969 Hz ja Night eteni 100 vaihepäivitystä
-      kolmessa sekunnissa. Base promotoitui vasta ready-tilan jälkeen,
-      K-Mix-profiili säilyi `.bak`-tiedostossa, `.pending`-tiedostoa ei jäänyt
-      ja serveri sulkeutui puhtaasti. Käyttäjän uusintakäynnistys vahvisti
-      toiminnan.
+- [x] **Puuttuvan startup-laitteen turvallinen fallback hyväksytty fyysisesti
+      2026-08-03.** K-Mix-profiili aktivoitiin, serveri suljettiin, K-Mix
+      irrotettiin ja julkinen `CQ.reboot` ajettiin IDE:n jäädessä auki. Stopped-
+      server scan hylkäsi puuttuvan ASIO-reitin ennen käynnistystä, valitsi
+      split-WASAPI-baselinen eikä pyytänyt MME-oletuslaitteita. Toteutuva kello
+      oli noin 47 969 Hz ja Night eteni 100 vaihepäivitystä kolmessa sekunnissa.
+      Testin silloinen versio promotoi basen ready-tilan jälkeen ja säilytti
+      K-Mix-profiilin `.bak`:ssa; HOTPLUG-1 muuttaa tarkoituksella vain tämän
+      persistenssilain niin, että validi preferenssi pysyy jatkossa pääprofiilina.
+      Varsinainen fallback- ja kellotulos säilyy hyväksyttynä.
+
+### HOTPLUG-1 — kuulokkeet/interface ilman interpreter-säätöä
+
+Automaatio todistaa prosessi-, timeout-, profile- ja GUI-portit ilman oikean
+äänilaitteen koskemista. Tämä yksi käsitesti sulkee fyysisen Windows-hotplugin:
+
+```supercollider
+// 0. Ctrl+Shift+L, sitten CQ.boot. REC pois ja Audio-draft puhtaaksi.
+// 1. Kytke kuulokkeet tai interface Windowsiin CQ:n ollessa käynnissä.
+// 2. Drawer -> audio -> "find connected devices". Ensimmäinen painallus saa
+//    vain näyttää vaikutukset. Painikkeen tekstin pitää vaihtua muotoon
+//    "confirmation below ↓"; restart gaten pitää korostua pysyvästi okralla ja
+//    "scan & restart" -painikkeen olla täytetty. Vahvista siitä.
+//    -> uuden exact output-/single-device-nimen pitää löytyä ilman Language ->
+//       Reboot Interpreter -toimintoa. Nightin ja äänen pitää palautua.
+// 3. Valitse laite, Apply & restart, varmista oikea fyysinen L/R ja terve kello.
+//    Laitevalinnan jälkeen host-otsikossa pitää lukea "restart required ↓",
+//    restart gaten olla okralla ja "apply & restart audio" täytetty. Korostuksen
+//    pitää poistua onnistuneen restartin jälkeen (samoin cancel/discardilla).
+Cocoquantus.audioClockState;      // -> \ok
+Cocoquantus.audioFallbackActive;  // -> false
+Cocoquantus.preferredAudioConfig[\device]; // -> valittu exact reitti
+// 4. Irrota preferred-laite ja tee sama vahvistettu haku/restart.
+//    -> base kuuluu, Audio sanoo "temporary audio active", profiilia ei korvata,
+//       painikkeet ovat "find preferred device" / "retry preferred audio".
+Cocoquantus.audioFallbackActive;  // -> true
+Cocoquantus.preferredAudioConfig[\device]; // -> yhä irrotettu preferred-reitti
+// 5. Kytke laite takaisin, "find preferred device" -> vahvista.
+//    -> preferred exact reitti palaa yhdellä vahvalla restartilla; fallback false.
+// 6. Rajatapaus: CQ.free; CQ.boot ei lopeta Server.defaultia eikä siksi skannaa.
+//    Sen jälkeen sama "find connected devices" on tarkoituksellinen helppo polku.
+```
+
+- [ ] Kytketty laite löytyy ilman main-sclangin rebootia
+- [ ] Vahvistus kertoo audio-/patch-/Server.default-vaikutukset ennen pysäytystä
+- [ ] Validin preferred-laitteen poissaolo käyttää basea mutta ei muuta profiilia
+- [ ] Takaisin kytketty preferred-laite palautuu `find preferred device` -polulla
+- [ ] Ei wedgiä: Night liikkuu, `/status` vastaa ja audiokello palaa `\ok`:ksi
+- [ ] Pending-toiminto näkyy tekstinä, restart gatena ja täytettynä CTA:na; clean
+      palautuu neutraaliksi ilman pulssia tai modalia
 
 ### MOR-1 — morph ei jäädytä käyttöliittymää
 

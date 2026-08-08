@@ -768,9 +768,13 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     device mode and exact device String(s). Default/single mode uses one long
     device row; split mode uses input/output rows. Long names preserve their
     beginning and use a tail ellipsis before Qt receives the String, so both
-    text and highlight remain one row. Directional discovery runs only before
-    the first server boot or inside `Server.reboot`'s already-stopped callback;
-    the resulting in-memory snapshot is handed to the rebuilt runtime page.
+    text and highlight remain one row. Directional discovery runs only after
+    the local server is confirmed stopped: before a fresh boot or inside a
+    confirmed strong restart. On Windows that boundary launches a bounded
+    fresh helper `sclang` with isolated class paths and no user startup files,
+    so both endpoint hot-plug and a newly installed driver renew PortAudio
+    without trusting the main interpreter's old list. The exact in-memory
+    snapshot is handed to the rebuilt runtime page.
     Opening Audio, opening a menu, resizing, switching tabs and toggling driver
     visibility perform zero `_ListAudioDevices` calls. The former live path was
     withdrawn after it reproducibly wedged the physical Windows WASAPI server.
@@ -780,27 +784,26 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     It filters only those complete host prefixes, never fuzzy device text, and
     never rewrites the draft. If no safe snapshot exists, the page falls back
     to exact configured endpoints and the disabled `configured devices` label.
+    A separate `find connected devices` button requests that strong restart;
+    its first click is only an inline confirmation naming the audio stop,
+    unsaved-patch reset and unrelated `Server.default` synths. Dirty Audio
+    draft, active REC and in-flight restart disable it. The recommended/all
+    driver toggle remains purely local and may sit beside discovery, but both
+    right edges and their explicit gap must stay on the same rail as the device
+    menus at both reviewed size steps.
     **A `device list` row states what the list is and how to renew it**
     (`CQGuiAudioSetup.deviceListNote`), beside the in/out counts: `refresh
-    devices to rescan` while a rescan is safe, `scanned at boot · restart audio
-    to rescan · new driver: restart sclang` while the server runs, `configured
-    devices only` without a
-    snapshot. It may not live on the device control's label, which can show only
-    one of three things and loses that slot to `show all drivers` on any machine
-    that has a legacy driver — so on such a machine the age of the list was
-    never visible at all, and a device reconnected mid-session read as missing
-    (user review 2026-07-30). **A stopped-server snapshot must always say it is
-    one.** The `restart sclang` clause is normative too (2026-07-31): the driver
-    list is enumerated inside the interpreter process, so restarting audio
-    renews a *reconnected* device but can never reveal a *newly installed*
-    driver — a correctly installed ReaRoute stayed invisible through several
-    audio restarts. **The note must not promise a renewal the process cannot
-    perform.** The counts and the note occupy their own row rather than the
-    engine row's tail (user review 2026-07-31): the combined line ran under the
-    `show all drivers` button, and the engine row must stay readable exactly
-    when AUD-W lengthens it with `audio clock stuck · reports N Hz`. Counts and
-    note stay together — that, not the row they sit on, is what makes the age
-    of the list visible.
+    devices to rescan` while an injected/local refresh is safe, `fresh scan at
+    boot · find connected devices to rescan` for a stopped-server snapshot, and
+    `configured devices only` without one. It may not live on the device
+    control's label, which can show only one of three things and loses that slot
+    to `show all drivers` on any machine that has a legacy driver. The counts
+    and note occupy their own row rather than the engine row's tail: the latter
+    must remain readable exactly when AUD-W lengthens it with `audio clock stuck
+    · reports N Hz`. The 2026-07-31 ReaRoute failure remains the reason the
+    helper must be a **fresh interpreter**, not a relabelled server reboot: the
+    already-open IDE's PortAudio list stayed one driver short in both
+    directions while a new interpreter saw it immediately.
   - **The engine row carries the runtime audio-clock truth (AUD-W).** A
     responsive server whose clock is stuck reads `audio clock stuck · reports
     N Hz` in the `danger` family beside the requested rate, and the status line
@@ -831,12 +834,24 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     presence. Mic/stem off dims rows but never removes them. `micGain` remains
     Workshop's only interactive mic-gain path; Audio merely repeats `MIC LIVE`
     read-only when applicable.
-  - Active values use neutral bone/line ink. A dirty draft gets only an ochre
+  - Active values use neutral bone/line ink. A changed field gets an ochre
     delta notch/underline; invalid gets a danger rule and one exact reason.
-    The footer keeps provenance/validation left, `discard changes` centre and
-    `apply & restart audio` right. First Apply only opens an inline,
-    non-modal confirmation naming the audio stop, unsaved-patch reset and
-    `Server.default` restart; `cancel` and `restart` are static Ink controls.
+    The full restart gate is the persistent pending-action surface. A clean
+    gate and its available `restart audio` recovery stay neutral. A valid dirty
+    draft, discovery confirmation, temporary fallback or save retry gives the
+    gate one static ochre wash, a three-pixel leading rule and a strong title
+    rule; its available primary action is filled ochre and carries the exact
+    verb (`apply & restart audio`, `scan & restart`, `retry preferred audio` or
+    `retry save`). Invalid, blocked and failed/recovery states use the same
+    geometry in danger ink, but a disabled primary action remains an unfilled
+    neutral control. Success, cancel and discard retract the emphasis.
+    This never pulses and colour is not its only signal: the host title adds a
+    short downward text cue such as `restart required ↓`, while an armed
+    `find connected devices` / `find preferred device` control itself becomes
+    `confirmation below ↓`. The footer keeps provenance/validation left,
+    `discard changes` centre and the primary action right. First Apply only
+    opens an inline, non-modal confirmation naming the audio stop,
+    unsaved-patch reset and `Server.default` restart.
   - AIO-1 is deliberately read-only through its visual acceptance gate:
     refresh works, while discard/apply are structurally disabled. Later gates
     activate the same composition without rebuilding the page on tab changes,
@@ -846,8 +861,8 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     all nine startup fields draft-editable, marks changed rows with the small
     ochre delta rule, preserves exact invalid values/reasons and enables
     `discard changes`. AIO-3 activates the two-step Apply confirmation,
-    recorder gate and static `audio ready` / `running · not saved` /
-    rollback / failed result language. Only the rebuilt GUI consumes the
+    recorder gate and static `audio ready` / `running · not saved` / temporary
+    fallback / rollback / failed result language. Only the rebuilt GUI consumes the
     symbolic `\audio` reopen request. The page observes every recorder
     `\state` transition: starting/recording/stopping lock Apply immediately,
     and idle restores the current draft gate without another edit. A disabled
@@ -863,6 +878,10 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     remains registered but stops answering is shown as
     `server not responding · restart audio`; confirmed recovery forces that
     owned local process down before boot and does not write an Audio profile.
+    When a valid preferred profile is absent and the base route reaches ready,
+    validation reads `preferred device unavailable · temporary audio active`;
+    the generated profile remains untouched, discovery becomes `find preferred
+    device` and the clean primary action becomes `retry preferred audio`.
   - AIO-4 taps raw live L/R/mic before their gains, reuses the existing
     post-safety master pair and renders coarse quantized presence only. The GUI
     caches both streams while hidden, combines their 15/20 Hz arrivals into one
@@ -1221,13 +1240,18 @@ gate, manual_checklist blocks in the established copy-pasteable format.
 - **AIO-5 — safe device discovery:** directional
   `ServerOptions.inDevices/outDevices` enumeration runs once only while the
   local server is confirmed stopped: before a fresh boot or inside the stopped
-  callback of a confirmed reboot. The normalized snapshot is memory-only and
-  survives GUI rebuilds; scan failure is nonfatal and retains exact configured
-  endpoints (plus a stale successful cache when available). Runtime never
-  refreshes the OS. Its one local button switches between recommended and all
-  cached drivers without incrementing the provider read count. Windows
-  recommendation hides only exact `MME : `, `Windows DirectSound : ` and
-  `Windows WDM-KS : ` prefixes; active/draft endpoints are always retained.
+  callback of a confirmed reboot. Windows discovery is additionally delegated
+  to a bounded fresh helper interpreter, whose startup is isolated and whose
+  result returns through a private temporary compile-string file; this renews
+  the PortAudio process after hot-plug or driver install. The normalized
+  snapshot is memory-only and survives GUI rebuilds; scan failure is nonfatal
+  and retains exact configured endpoints (plus a stale successful cache when
+  available). Runtime never refreshes the OS. The local driver-view button
+  switches between recommended and all cached drivers without incrementing the
+  provider read count; the separate confirmed discovery button crosses the
+  stopped-server boundary. Windows recommendation hides only exact `MME : `,
+  `Windows DirectSound : ` and `Windows WDM-KS : ` prefixes; active/draft
+  endpoints are always retained.
 
 ---
 

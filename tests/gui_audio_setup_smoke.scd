@@ -29,8 +29,10 @@ var catalog = (
 	outputs: [longOutput, common, common]
 );
 var page, cachedPage, cachedModel, window, ok = true;
-var applies = 0, cleanRestarts = 0, retries = 0, cachedReads = 0;
+var applies = 0, cleanRestarts = 0, discoveries = 0;
+var retries = 0, cachedReads = 0;
 var restartStatus = \idle, restartError, recorderState = \idle;
+var fallbackActive = false;
 var recorderNotifier = Object.new;
 var responsive = true;
 var capturedProfile;
@@ -41,6 +43,8 @@ var controller = (
 	status: { restartStatus },
 	error: { restartError },
 	responsive: { responsive },
+	fallbackActive: { fallbackActive },
+	preferred: { nil },
 	apply: { |audioModel|
 		applies = applies + 1;
 		capturedProfile = audioModel.draftProfile.copy;
@@ -49,6 +53,11 @@ var controller = (
 	},
 	restart: {
 		cleanRestarts = cleanRestarts + 1;
+		restartStatus = \restarting;
+		true
+	},
+	discover: {
+		discoveries = discoveries + 1;
 		restartStatus = \restarting;
 		true
 	},
@@ -100,7 +109,8 @@ render = { |path|
 		([page.hostView, page.inputView, page.outputView, page.restartView]
 			++ visibleMenus.collect(_.view)
 			++ [
-			page.refreshButton.view, page.discardButton.view,
+			page.refreshButton.view, page.discoverButton.view,
+			page.discardButton.view,
 			page.applyButton.view]
 		).do(paint);
 	};
@@ -137,9 +147,16 @@ render = { |path|
 					"AIO-3 starts as a clean active/draft pair");
 				check.value(page.discardButton.label == "no changes"
 					and: { page.discardButton.enabled.not }
+					and: { page.discoverButton.label == "find connected devices" }
+					and: { page.discoverButton.enabled }
 					and: { page.applyButton.label == "restart audio" }
 					and: { page.applyButton.enabled },
-					"a clean page names the no-op discard and offers audio recovery");
+					"a clean page offers explicit discovery and audio recovery");
+				check.value(page.restartEmphasis.isNil
+					and: { page.hostActionHint.isNil }
+					and: { page.applyButton.family == \line }
+					and: { page.applyButton.value == 0 },
+					"the clean restart action stays visually neutral");
 				check.value(hostRows[2][\value] == "split devices"
 					and: { hostRows[3][\value] == longInput }
 					and: { hostRows[4][\value] == longOutput },
@@ -182,10 +199,44 @@ render = { |path|
 					and: { page.hostRows[0][\family] == \danger }
 					and: { page.restartRows[0][\value]
 						== "server not responding · restart audio" }
-					and: { page.applyButton.enabled },
+					and: { page.applyButton.enabled }
+					and: { page.restartEmphasis == \danger }
+					and: { page.hostActionHint == "audio recovery below ↓" }
+					and: { page.applyButton.family == \danger }
+					and: { page.applyButton.value == 1 },
 					"an unresponsive server is visible and remains recoverable");
 				responsive = true;
 				page.serverHealthChanged;
+				check.value(page.requestDeviceDiscovery
+					and: { page.confirming }
+					and: { page.discoveryRequested }
+					and: { page.discoverButton.label == "confirmation below ↓" }
+					and: { page.applyButton.label == "scan & restart" }
+					and: { page.hostActionHint == "confirmation below ↓" }
+					and: { page.restartEmphasis == \warning }
+					and: { page.applyButton.family == \warning }
+					and: { page.applyButton.value == 1 }
+					and: { page.restartRows[0][\value]
+						== "audio stops · fresh device scan · preferred route retried" }
+					and: { page.restartRows[1][\value]
+						== "current patch and unrelated Server.default synths also stop" },
+					"device discovery first names its stopped-audio boundary");
+				page.cancelConfirmation;
+				check.value(discoveries == 0
+					and: { page.confirming.not }
+					and: { page.discoveryRequested.not }
+					and: { page.hostActionHint.isNil }
+					and: { page.restartEmphasis.isNil }
+					and: { page.applyButton.family == \line }
+					and: { page.applyButton.value == 0 },
+					"cancelling discovery leaves audio untouched");
+				check.value(page.requestDeviceDiscovery
+					and: { page.confirmRestart }
+					and: { discoveries == 1 }
+					and: { cleanRestarts == 0 },
+					"confirmed discovery uses its dedicated facade action");
+				restartStatus = \idle;
+				page.refreshTransaction;
 				check.value(page.requestApply
 					and: { page.confirmRestart }
 					and: { cleanRestarts == 1 }
@@ -243,10 +294,15 @@ render = { |path|
 				selectMenu.value(page.hostMenus[1], 2);
 				check.value(model.dirty and: { model.valid }
 					and: { model.draftAt(\sampleRate) == 96000 }
-					and: { model.activeAt(\sampleRate) == 48000 },
+					and: { model.activeAt(\sampleRate) == 48000 }
+					and: { page.discoverButton.enabled.not },
 					"an ordinary field edit changes only the valid draft");
 				check.value(page.restartRows[0][\value]
-					== "valid draft · restart required",
+					== "changes waiting · restart required"
+					and: { page.hostActionHint == "restart required ↓" }
+					and: { page.restartEmphasis == \warning }
+					and: { page.applyButton.family == \warning }
+					and: { page.applyButton.value == 1 },
 					"restart gate states the dirty valid boundary");
 
 				// Make main outputs collide: invalid stays visible and never clamps.
@@ -255,7 +311,12 @@ render = { |path|
 					and: { model.draftAt(\outChans) == [0, 0] }
 					and: { model.validationError.find("unique").notNil },
 					"invalid duplicate outputs remain an exact draft with one reason");
-				check.value(page.restartRows[0][\family] == \danger,
+				check.value(page.restartRows[0][\family] == \danger
+					and: { page.restartEmphasis == \danger }
+					and: { page.hostActionHint == "fix highlighted setting" }
+					and: { page.applyButton.enabled.not }
+					and: { page.applyButton.family == \line }
+					and: { page.applyButton.value == 0 },
 					"invalid draft uses the danger state");
 
 				// Discard is the only write-like AIO-2 button and touches draft only.
@@ -269,14 +330,40 @@ render = { |path|
 				restartStatus = \ready;
 				page.refreshTransaction;
 				check.value(page.restartRows[0][\value] == "audio ready"
-					and: { page.restartRows[0][\family] == \input },
+					and: { page.restartRows[0][\family] == \input }
+					and: { page.restartEmphasis.isNil }
+					and: { page.hostActionHint.isNil }
+					and: { page.applyButton.family == \line }
+					and: { page.applyButton.value == 0 },
 					"successful restart uses the static input-green ready state");
+				fallbackActive = true;
+				restartStatus = \fallbackReady;
+				restartError = "preferred headphones are not currently reported";
+				page.refreshTransaction;
+				check.value(page.restartRows[0][\value]
+					== "preferred device unavailable · temporary audio active"
+					and: { page.discoverButton.label == "find preferred device" }
+					and: { page.applyButton.label == "retry preferred audio" }
+					and: { page.discoverButton.enabled }
+					and: { page.hostActionHint == "preferred route waiting ↓" }
+					and: { page.restartEmphasis == \warning }
+					and: { page.applyButton.family == \warning }
+					and: { page.applyButton.value == 1 },
+					"temporary fallback stays explicit and keeps preference recovery reachable");
+				fallbackActive = false;
+				restartStatus = \idle;
+				restartError = nil;
+				page.refreshTransaction;
 				restartStatus = \notSaved;
 				restartError = "injected rename failure";
 				page.refreshTransaction;
 				check.value(page.restartRows[0][\value] == "running · not saved"
 					and: { page.applyButton.label == "retry save" }
-					and: { page.applyButton.enabled },
+					and: { page.applyButton.enabled }
+					and: { page.hostActionHint == "save retry below ↓" }
+					and: { page.restartEmphasis == \warning }
+					and: { page.applyButton.family == \warning }
+					and: { page.applyButton.value == 1 },
 					"working audio with rename failure offers save retry without restart");
 				page.applyButton.view.mouseDownAction.value(
 					page.applyButton.view, 4, 4);
@@ -308,6 +395,10 @@ render = { |path|
 				check.value(page.restartRows[0][\value]
 					== "candidate failed · previous audio restored"
 					and: { page.restartRows[0][\family] == \danger }
+					and: { page.restartEmphasis == \danger }
+					and: { page.hostActionHint == "audio recovery below ↓" }
+					and: { page.applyButton.family == \danger }
+					and: { page.applyButton.value == 1 }
 					and: { model.dirty },
 					"rollback-ready state keeps the rejected draft visible in danger ink");
 				restartStatus = \idle;
@@ -322,15 +413,24 @@ render = { |path|
 				check.value(page.restartRows[0][\value]
 						== "stop REC before restarting audio"
 					and: { page.applyButton.enabled.not }
+					and: { page.discoverButton.enabled.not }
+					and: { page.restartEmphasis == \danger }
+					and: { page.hostActionHint == "restart blocked ↓" }
+					and: { page.applyButton.family == \line }
+					and: { page.applyButton.value == 0 }
 					and: { page.applyButton.hover.not }
 					and: { page.requestApply.not }
+					and: { page.requestDeviceDiscovery.not }
 					and: { applies == 0 },
 					"active REC locks restart and disabled hover without touching the candidate");
 				recorderState = \idle;
 				recorderNotifier.changed(\state, recorderState);
 				check.value(page.restartRows[0][\value]
-					== "valid draft · restart required"
-					and: { page.applyButton.enabled },
+					== "changes waiting · restart required"
+					and: { page.applyButton.enabled }
+					and: { page.restartEmphasis == \warning }
+					and: { page.applyButton.family == \warning }
+					and: { page.applyButton.value == 1 },
 					"REC stop notification immediately restores the valid draft gate");
 
 				// First Apply is confirmation only and names every destructive edge.
@@ -340,6 +440,10 @@ render = { |path|
 					page.applyButton.view, 4, 4);
 				check.value(page.confirming
 					and: { applies == 0 }
+					and: { page.hostActionHint == "confirmation below ↓" }
+					and: { page.restartEmphasis == \warning }
+					and: { page.applyButton.family == \warning }
+					and: { page.applyButton.value == 1 }
 					and: { page.restartRows[0][\value]
 						== "audio stops · current unsaved patch resets · Server.default restarts" }
 					and: { page.restartRows[1][\value]

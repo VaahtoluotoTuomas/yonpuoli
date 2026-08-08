@@ -31,6 +31,14 @@ musiikillinen päätös avasi kaikki neljä saraketta ekologiseen shakeen.
 Inspectorin ryhmäotsikot käyttävät nyt samaa 10/10/5/5/2-sopimusta kuin
 matriisi, joten Coco-viivat päättyvät Recordiin; näkyvät nimet ovat lyhyesti
 `slotX` ja `dust`.
+Windows-audiohotplugin HOTPLUG-1-korjaus on toteutettu 2026-08-08: pysäytetyn
+serverin laitehaku käyttää rajattua tuoretta helper-sclangia, Audio-sivulla on
+vahvistettu `find connected devices` / `find preferred device` -polku eikä
+tilapäisesti puuttuva validi preferenssi enää korvaudu basella. Unit- ja GUI-
+portit ovat vihreitä; yksi oikeilla kuulokkeilla tehtävä käsitesti sulkee vaiheen.
+Audio-sivun odottava jatkotoiminto näkyy nyt samasta pysyvästä tilasta hostin
+tekstivihjeenä, korostettuna restart gatena ja täytettynä ensisijaisena
+painikkeena; clean/success/cancel/discard palauttavat kaikki kolme neutraaliksi.
 Night + Master + Drawer on soittimen ainoa ylläpidettävä käyttöliittymä ja
 Night on soittimen maisema, ei sen kartta. Työ elää paikallisessa
 `nocturne`-haarassa.
@@ -98,7 +106,13 @@ olevan julkaisujärjestyksen:
    käynnistyvää sceneä `undertow`, `dust_bloom`, `glass_tide` ja
    `organ_lanterns`. Neljä sceneä muodostaa kaksi mielekästä morph-paria
    täyttämättä Memoryä; henkilökohtaiset snapshotit pysyvät gitignoredina.
-6. Seuraavaksi järjestyksessä: **julkaisumedia** → **etä-CI vihreäksi** →
+6. [ ] **HOTPLUG-1 — oikean laitteen portti.** Kytkettyjen kuulokkeiden tai
+   interfacen pitää löytyä Audio-sivun vahvistetulla haulla ilman IDE:n
+   interpreter-reboottia; tilapäinen base-fallback ei saa muuttaa preferred-
+   profiilia ja takaisin kytketyn laitteen pitää palautua yhdellä vastaavalla
+   vahvalla restartilla. Tarkka viiden kohdan portti on
+   `tests/manual_checklist.md`:ssä.
+7. Sen jälkeen järjestyksessä: **julkaisumedia** → **etä-CI vihreäksi** →
    **merge `main`iin ja Yönpuolen 1.0-tagi**. Yksityiskohdat osiossa
    "Tie 1.0:aan".
 
@@ -2740,9 +2754,10 @@ lepotila/herätys tai soakissa itsestään ilmenevä tapaus.
   `audio clock stuck · reports N Hz` danger-perheessä pyydetyn taajuuden
   *rinnalla*, ja status-rivi `audio clock stuck · restart audio`. Automaattista
   recoveryä ei ole eikä tule.
-- Samassa portissa korjattiin luvattu tekstivelka: laitelistan huomautus on nyt
-  `scanned at boot · restart audio to rescan · new driver: restart sclang`
-  (`GUI_SPEC.md` §Audio, testi mukana).
+- Samassa portissa korjattiin silloinen tekstivelka lauseella `scanned at boot
+  · restart audio to rescan · new driver: restart sclang`. HOTPLUG-1 korvasi
+  tämän 2026-08-08 tuoreella helper-prosessilla ja yhdellä todellisella
+  `find connected devices` -toiminnolla; nykyinen normi on GUI_SPEC §Audio.
 - Portit ajettu 2026-07-31: `CQ_COMPILE_OK`, **13 595 unit-passia / 0
   epäonnistumista / 38/38 luokkaa**, `CQ_SAFETY_PASSED`, `CQ_GUI_AUDIO_PASSED`,
   `CQ_GUI_AUDIO_PRESENCE_PASSED`, `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`,

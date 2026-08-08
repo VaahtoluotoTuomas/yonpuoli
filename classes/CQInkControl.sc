@@ -137,6 +137,7 @@ CQInkControl {
 	value_ { |newValue| value = newValue ? 0; view.refresh; ^this }
 	display_ { |string| display = string ? ""; view.refresh; ^this }
 	label_ { |string| label = string; view.refresh; ^this }
+	family_ { |newFamily| family = newFamily; view.refresh; ^this }
 	glyph_ { |icon| glyph = icon; view.refresh; ^this }
 	enabled_ { |flag|
 		enabled = flag == true;

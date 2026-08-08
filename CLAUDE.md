@@ -735,16 +735,19 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   without the GUI (headless config).
 - Windows: device names in `ServerOptions.device` ("ASIO : ..."); don't assume more
   than 2 in/out channels exist — read config.
-- **A newly installed audio driver needs a fresh `sclang`, not a server restart.**
+- **Windows device discovery needs both a stopped server and a fresh `sclang`.**
   `ServerOptions.inDevices`/`outDevices` → `_ListAudioDevices` → PortAudio: the
-  driver list is enumerated inside the *interpreter* process, so a driver installed
-  while the IDE was open is invisible to every boot and reboot of that session —
-  silently, with no error. Measured on ReaRoute 2026-07-30: registry and REAPER were
-  both correct, a standalone sclang saw 20 in / 27 out, the IDE session saw exactly
-  one device fewer per direction. Fix: IDE → Language → Reboot Interpreter. The
-  Audio page says so itself since the AUD-W gate — `scanned at boot · restart audio
-  to rescan · new driver: restart sclang` (`CQGuiAudioSetup.deviceListNote`,
-  `GUI_SPEC.md` §Audio, test included); the old text debt is paid.
+  main interpreter can retain its old list after endpoint hot-plug or driver install,
+  while enumerating there with scsynth running can wedge an owned WASAPI endpoint.
+  Measured on ReaRoute 2026-07-30: registry and REAPER were correct, a standalone
+  sclang saw 20 in / 27 out, and the IDE session stayed one device short per
+  direction through several server restarts. Production discovery therefore goes
+  only through `CQAudioDeviceProbe`: after lifecycle has stopped scsynth, its
+  PowerShell watchdog starts a fresh isolated daemon sclang for at most 20 seconds,
+  suppresses user startup files and returns exact data through a private temp file.
+  Never replace this with a live main-process call. The Audio page's confirmed
+  `find connected devices` action and `CQ.reboot` both enter that boundary;
+  `CQ.free` alone intentionally does not stop `Server.default`.
 - NRT scripts: remember `Score` needs the SynthDefs written into the score
   (`d_recv`) — they run in a fresh scsynth.
 - `Collection:includes` compares identity (`===`), not equality: membership

@@ -22,7 +22,7 @@ CQAudioBootRecoveryTest : UnitTest {
 
 	tearDown { CQConfig.postWarnings = true }
 
-	prFixture { |promoteFailure = false|
+	prFixture { |promoteFailure = false, forceFallback = false|
 		// Paths are value-equal Strings produced by several independent `++`
 		// calls. Dictionary is intentional: IdentityDictionary would miss a
 		// textually identical .bak key and turn the assertion into nil.interpret.
@@ -44,7 +44,8 @@ CQAudioBootRecoveryTest : UnitTest {
 			}
 		);
 		store = CQAudioProfileStore(profilePath, adapter);
-		recovery = CQAudioBootRecovery(base, candidate, profilePath, store);
+		recovery = CQAudioBootRecovery(base, candidate, profilePath, store,
+			forceFallback);
 		^(
 			files: files,
 			store: store,
@@ -134,23 +135,39 @@ CQAudioBootRecoveryTest : UnitTest {
 			"catalog rejection and fallback failure remain in one diagnostic");
 	}
 
-	test_readyBaseAtomicallyReplacesAndBacksUpTheRejectedProfile {
-		var f = this.prFixture, saved, backup;
+	test_readyTemporaryBaseKeepsThePreferredProfileUntouched {
+		var f = this.prFixture, saved;
 		f[\recovery].beginFallback("injected unhealthy clock");
+		this.assertEquals(f[\recovery].complete[\status], \fallbackReady,
+			"a fully ready base route is an explicit temporary fallback");
+		saved = f[\files][profilePath].interpret;
+		this.assertEquals(saved[\device], candidate[\device],
+			"temporary absence never overwrites the explicit preferred route");
+		this.assert(f[\files].includesKey(profilePath ++ ".bak").not,
+			"a session-only fallback creates no misleading preference backup");
+		this.assert(f[\store].hasPending.not,
+			"a session-only fallback writes no pending startup state");
+		this.assert(f[\recovery].result[\preferredRetained],
+			"the result tells the facade that the preferred route remains valid");
+	}
+
+	test_readyBaseRepairsOnlyAForcedMalformedProfile {
+		var f = this.prFixture(false, true), saved, backup;
+		f[\recovery].beginFallback("injected malformed profile", false);
 		this.assertEquals(f[\recovery].complete[\status], \rollbackReady,
-			"a fully ready base route becomes startup-ready");
+			"a malformed profile is repaired only after base reaches ready");
 		saved = f[\files][profilePath].interpret;
 		backup = f[\files][profilePath ++ ".bak"].interpret;
 		this.assertEquals(saved[\device], base[\device],
-			"the next startup receives the recovered base route");
+			"the repaired generated profile receives the working base route");
 		this.assertEquals(backup[\device], candidate[\device],
-			"the rejected K-Mix profile remains recoverable as .bak");
-		this.assert(f[\store].hasPending.not,
-			"successful promotion leaves no pending startup state");
+			"the rejected generated data remains in the ordinary backup");
+		this.assert(f[\recovery].result[\preferredRetained].not,
+			"corrupt data is never advertised as a retained preference");
 	}
 
 	test_saveFailureKeepsRunningFallbackRetryable {
-		var f = this.prFixture(true);
+		var f = this.prFixture(true, true);
 		f[\recovery].beginFallback("injected unhealthy clock");
 		this.assertEquals(f[\recovery].complete[\status], \notSaved,
 			"persistence failure does not misreport the running base as failed audio");

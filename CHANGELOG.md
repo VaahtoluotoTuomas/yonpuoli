@@ -10,6 +10,24 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Fixed
 
+- Windows audio hot-plug no longer depends on the long-lived IDE interpreter's
+  stale PortAudio list. Confirmed strong restarts now enumerate devices in a
+  bounded fresh helper `sclang` only after scsynth has stopped; its user startup
+  is suppressed, its class path isolated and its private temp result validated
+  and removed. Audio exposes `find connected devices` / `find preferred device`
+  with the same explicit restart impact gate. A valid headphones/interface
+  profile is no longer overwritten when that device is briefly absent: the base
+  route is labeled temporary and every later strong restart retries the saved
+  preference. Only malformed generated profiles retain the old ready-then-repair
+  and `.bak` behavior.
+
+- Audio changes can no longer leave their required follow-up visually stranded
+  at the opposite corner of the page. A valid pending change, armed device scan,
+  temporary fallback or save retry now keeps the whole restart gate statically
+  highlighted, fills the available primary action and places a textual downward
+  cue beside the originating host controls. Invalid/blocked recovery uses danger
+  ink, while clean, success, cancel and discard return the gate to neutral.
+
 - Inspector destination islands now derive their spans from the canonical
   16×32 order: Coco 1 and Coco 2 each cover all ten columns through `record`,
   followed by 5 FM, 5 Spesal and 2 deck columns. The same contract draws the

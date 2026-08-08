@@ -7,14 +7,16 @@
 // actual sample rate. If either the stopped-server catalog rejects the saved
 // device or the pre-graph clock gate rejects the resulting server, startup may
 // try the hand-maintained base config exactly once. If a fresh scan rejects all
-// configured routes, startup stops before scsynth. Only a fully ready fallback
-// is promoted; the rejected profile becomes the ordinary .bak.
+// configured routes, startup stops before scsynth. A valid preferred profile is
+// never replaced merely because its hardware is temporarily absent: the base
+// route is session-local and the next strong start retries the preference. Only
+// a malformed generated file is repaired by promoting a ready base profile.
 
 CQAudioBootRecovery {
 	var <base, <candidate, <profilePath, <store;
 	var <state = \candidate, <error, <candidateError, <fallbackError;
 	var <attemptCount = 1, <baseAvailability, <candidateAvailability;
-	var <alternative = false;
+	var <alternative = false, <preservePreferred = true;
 
 	*new { |base, candidate, profilePath, store, forceFallback = false|
 		^super.new.prInit(base, candidate, profilePath, store, forceFallback)
@@ -66,6 +68,9 @@ CQAudioBootRecovery {
 		store = injectedStore ? CQAudioProfileStore(profilePath);
 		alternative = (forceFallback == true)
 			or: { this.class.audioDiffers(base, candidate) };
+		// forceFallback means the stored file could not be loaded/validated. It
+		// is not a usable preference and may be repaired after base reaches ready.
+		preservePreferred = forceFallback != true;
 		^this
 	}
 
@@ -115,16 +120,21 @@ CQAudioBootRecovery {
 		^base.copy
 	}
 
-	// The base config becomes the new generated profile only after its complete
-	// session reached ready. CQAudioProfileStore's atomic promotion preserves the
-	// rejected profile as .bak.
+	// Temporary hardware absence never edits the valid preferred profile. A
+	// corrupt profile has no valid preference to retain, so that narrower path
+	// still repairs the generated sibling only after base reaches full ready.
 	complete {
 		if(state != \rollback) { ^this.result };
-		if(this.prSave) {
-			state = \rollbackReady;
+		if(preservePreferred) {
+			state = \fallbackReady;
 			error = candidateError;
 		} {
-			state = \notSaved;
+			if(this.prSave) {
+				state = \rollbackReady;
+				error = candidateError;
+			} {
+				state = \notSaved;
+			};
 		};
 		^this.result
 	}
@@ -155,6 +165,7 @@ CQAudioBootRecovery {
 			rollbackError: fallbackError,
 			attemptCount: attemptCount,
 			startupFallback: true,
+			preferredRetained: preservePreferred,
 			baseDevice: base[\device],
 			candidateDevice: candidate[\device]
 		)

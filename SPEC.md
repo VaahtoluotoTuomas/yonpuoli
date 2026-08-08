@@ -686,13 +686,18 @@ stale, failed or unavailable scan is never evidence of absence. If the
 candidate instead fails to open the server or fails the pre-graph actual-rate
 gate, the facade restarts once with the base config. Graph, SynthDef and later
 session failures never enter this audio fallback, and the base attempt cannot
-recurse. Only a fully ready base session may atomically replace the generated
-profile; the rejected file becomes its `.bak`. If the base also fails, startup
-remains failed and reports both reasons. If a fresh scan positively rejects
-every configured route (including a base-only setup), the operation fails
-before launching scsynth instead of relying on the driver's implicit default.
-A post-ready runtime device loss is diagnosed but never causes an automatic
-restart until the operator requests one of the explicit restart operations.
+recurse. If the generated profile is valid but its device is temporarily
+absent, a fully ready base session is explicitly a **temporary fallback**: it
+must not edit, back up or replace that preferred profile, and the next strong
+restart retries the preference. Only a malformed generated file has no valid
+preference to preserve; after the base reaches ready it may be atomically
+repaired, with the rejected file becoming `.bak`. If the base also fails,
+startup remains failed and reports both reasons. If a fresh scan positively
+rejects every configured route (including a base-only setup), the operation
+fails before launching scsynth instead of relying on the driver's implicit
+default. A post-ready runtime device loss is diagnosed but never causes an
+automatic restart until the operator requests one of the explicit restart
+operations.
 
 Device, sample rate, server block, hardware buffer and hardware channel changes
 are not hot-swapped. Apply requires a visible inline confirmation that
@@ -714,12 +719,30 @@ Audio I/O does not install drivers, create loopbacks/Aggregate Devices or
 bridge incompatible host APIs. The running page must not call
 `_ListAudioDevices`: physical Windows WASAPI testing showed that
 `ServerOptions.inDevices/outDevices` enumeration can wedge an already-owned
-endpoint. Until discovery is moved behind a stopped-server boundary, runtime
-choices are the exact configured endpoint(s) plus system default and the
-disabled control reads `configured devices`. Future directional discovery
-must collapse only exact duplicate Strings; similar names are never
-fuzzy-merged or parsed as host-API metadata. Device-list membership is not
-evidence of channel capacity.
+endpoint. Directional discovery therefore occurs only after the local server
+is confirmed stopped. On Windows it must run in a bounded fresh `sclang`
+process whose class path and startup files are isolated from the user's main
+interpreter; this renews PortAudio after endpoint hot-plug or driver install and
+returns only compile-string data through a private temporary file. Failure or
+timeout is nonfatal diagnostic data and may retain a stale cache, but must never
+enter the running process's PortAudio list. Other platforms may enumerate in
+the stopped main interpreter.
+
+The Audio page exposes **find connected devices** as a separate confirmed
+strong restart. It is disabled while REC is active, an Audio draft is dirty, or
+another restart is in flight. The confirmation names the audio stop, patch
+reset and effect on unrelated `Server.default` synths. A temporary fallback
+renames this action **find preferred device**, labels the running base route as
+temporary and keeps **retry preferred audio** reachable. The stopped scan's
+in/out counts and renewal action remain visible on their own `device list` row;
+the recommended/all-driver toggle is memory-only. `CQ.reboot` enters the same
+stopped discovery boundary. Ordinary `CQ.free` intentionally leaves
+`Server.default` running, so a following `CQ.boot` may only reuse the cache and
+must not enumerate until an explicit strong restart.
+
+Directional results collapse only exact duplicate Strings; similar names are
+never fuzzy-merged or parsed as host-API metadata. Device-list membership is
+not evidence of channel capacity.
 
 ### 7.2 Existing safety and hardware notes
 

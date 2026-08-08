@@ -63,12 +63,15 @@ plugins are required.
 
 2. Copy `config.example.scd` to `config.scd`. The copy is ignored by Git and
    holds machine-specific audio, MIDI, and path settings. Device discovery is
-   captured only while the local audio server is stopped; the running Audio
-   page reads that memory snapshot and never invokes `_ListAudioDevices`. Its
-   default Windows view keeps WASAPI/ASIO choices and exact configured
-   endpoints concise, while `show all drivers` reveals cached MME, DirectSound
-   and WDM-KS alternatives without another scan. If input and output are
-   separate Windows devices, use a pair from the same host API:
+   captured only while the local audio server is stopped; on Windows Yönpuoli
+   uses a bounded fresh helper interpreter so a newly connected endpoint or
+   installed driver is not hidden by the main interpreter's old PortAudio
+   list. The running Audio page reads only that memory snapshot and never
+   invokes `_ListAudioDevices`. Its default Windows view keeps WASAPI/ASIO
+   choices and exact configured endpoints concise, while `show all drivers`
+   reveals cached MME, DirectSound and WDM-KS alternatives without another
+   scan. If input and output are separate Windows devices, use a pair from the
+   same host API:
 
    ```supercollider
    device: ["Windows WASAPI : Microphone (...)", "Windows WASAPI : Speakers (...)"]
@@ -80,11 +83,19 @@ plugins are required.
    will reset. An active recorder blocks the restart. On a later ordinary
    startup, `CQ.reboot`, or the Audio page's clean restart, an absent saved
    device or an unhealthy actual sample rate triggers at most one automatic
-   retry with `config.scd`. The recovered route must reach full ready before it
-   replaces `config.audio.scd`; the rejected profile is kept as
-   `config.audio.scd.bak`. If a fresh scan finds neither configured route, the
-   operation stops before launching the audio server instead of silently
-   accepting the driver's default device.
+   retry with `config.scd`. A valid saved route remains the preference while
+   the base route runs only for that session; reconnecting the device and using
+   **find preferred device** retries it without reconstructing the setup. Only
+   a malformed generated profile is replaced after the base route reaches full
+   ready, with the rejected file retained as `config.audio.scd.bak`. If a fresh
+   scan finds neither configured route, the operation stops before launching
+   the audio server instead of silently accepting the driver's default device.
+
+   To use headphones or an interface connected while Yönpuoli is open, go to
+   **Drawer → audio → find connected devices**, then confirm the announced
+   audio restart. `CQ.reboot` is the code equivalent. `CQ.free` deliberately
+   leaves `Server.default` running, so `CQ.free; CQ.boot` alone cannot safely
+   renew the device list; after that sequence use the same Audio-page action.
 
 3. In the SuperCollider IDE, open **Edit → Preferences → Interpreter → Include
    paths** and add `<repo>/classes`. Recompile the class library with

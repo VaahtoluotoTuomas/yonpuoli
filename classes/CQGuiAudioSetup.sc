@@ -7,7 +7,7 @@
 CQGuiAudioSetup {
 	var gui, model, deviceProvider, transactionController;
 	var <view, <rail, <hostView, <inputView, <outputView, <restartView;
-	var <refreshButton, <discardButton, <applyButton;
+	var <refreshButton, <discoverButton, <discardButton, <applyButton;
 	var <modeMenu, <singleDeviceMenu, <inputDeviceMenu, <outputDeviceMenu;
 	var sampleRateMenu, blockSizeMenu, hardwareBufferMenu;
 	var liveLMenu, liveRMenu, micMenu;
@@ -26,9 +26,12 @@ CQGuiAudioSetup {
 	var <recorderCtl;
 	var <step = \compact, <metrics, <pageWidth = 1272, <skin = \night;
 	var ioBand, railLayout, topPad, hostGap, restartGap, bottomPad;
-	var hostFirstSpacer, hostTitleSpacer, refreshRightSpacer;
+	var hostFirstSpacer, hostTitleSpacer, deviceButtonGap, refreshRightSpacer;
 	var inputTitleSpacer, outputTitleSpacer, restartButtonSpacer;
-	var <confirming = false, <localStatus, <localError;
+	var <confirming = false, <discoveryRequested = false;
+	var <hostActionHint, <hostActionHintFamily = \whisper;
+	var <restartEmphasis;
+	var <localStatus, <localError;
 	var <inputPresence, <masterPresence, inputPresenceDraw, masterPresenceDraw;
 	var presenceGains;
 	var <presenceFrameCount = 0, <presenceRefreshCount = 0;
@@ -151,6 +154,29 @@ CQGuiAudioSetup {
 			^false
 		};
 		if(this.prCanApply.not) { ^false };
+		discoveryRequested = false;
+		confirming = true;
+		localStatus = nil;
+		localError = nil;
+		this.prSyncDraft;
+		^true
+	}
+
+	requestDeviceDiscovery {
+		if(this.prRecorderBusy) {
+			localStatus = \blocked;
+			localError = "stop REC before finding audio devices";
+			this.prSyncDraft;
+			^false
+		};
+		if(model.dirty) {
+			localStatus = \blocked;
+			localError = "apply or discard Audio changes before finding devices";
+			this.prSyncDraft;
+			^false
+		};
+		if(this.prCanDiscover.not) { ^false };
+		discoveryRequested = true;
 		confirming = true;
 		localStatus = nil;
 		localError = nil;
@@ -160,6 +186,7 @@ CQGuiAudioSetup {
 
 	cancelConfirmation {
 		confirming = false;
+		discoveryRequested = false;
 		localStatus = nil;
 		localError = nil;
 		this.prSyncDraft;
@@ -167,17 +194,23 @@ CQGuiAudioSetup {
 	}
 
 	confirmRestart {
-		var accepted;
+		var accepted, discovering;
 		if(confirming.not) { ^false };
+		discovering = discoveryRequested;
 		confirming = false;
+		discoveryRequested = false;
 		localStatus = \restarting;
 		localError = nil;
 		// A dirty draft crosses into the transactional profile flow. A clean
 		// page instead restarts the exact active config without writing a file.
-		accepted = if(model.dirty) {
-			transactionController[\apply].value(model) == true
+		accepted = if(discovering) {
+			transactionController[\discover].value == true
 		} {
-			transactionController[\restart].value == true
+			if(model.dirty) {
+				transactionController[\apply].value(model) == true
+			} {
+				transactionController[\restart].value == true
+			}
 		};
 		if(accepted.not) {
 			localStatus = transactionController[\status].value ? \failed;
@@ -220,7 +253,8 @@ CQGuiAudioSetup {
 		var cfg = model.draft, device = model.draftAt(\device), mode;
 		var responsive = this.prServerResponsive;
 		// The list is a stopped-server snapshot, so a device plugged in
-		// mid-session cannot appear until the next start. Say so where the
+		// mid-session cannot appear until confirmed discovery restarts audio.
+		// Say so where the
 		// counts already are: the `scanned at boot` wording used to live on
 		// the device control's label, which on any machine with a legacy
 		// driver always loses that slot to `show all drivers` -- so the age
@@ -399,13 +433,26 @@ CQGuiAudioSetup {
 		var status = this.transactionStatus;
 		case
 		{ confirming } {
-			validation =
-				"audio stops · current unsaved patch resets · Server.default restarts";
-			provenance = "unrelated synths on Server.default also stop";
+			validation = if(discoveryRequested) {
+				"audio stops · fresh device scan · preferred route retried"
+			} {
+				"audio stops · current unsaved patch resets · Server.default restarts"
+			};
+			provenance = if(discoveryRequested) {
+				"current patch and unrelated Server.default synths also stop"
+			} {
+				"unrelated synths on Server.default also stop"
+			};
 			family = \warning;
 		}
 		{ this.prRecorderBusy } {
 			validation = "stop REC before restarting audio";
+			family = \danger;
+		}
+		{ status == \blocked } {
+			validation = localError
+				?? { transactionController[\error].value }
+				?? { "audio operation blocked" };
 			family = \danger;
 		}
 		{ this.prServerResponsive.not } {
@@ -436,6 +483,11 @@ CQGuiAudioSetup {
 			provenance = transactionController[\error].value;
 			family = \danger;
 		}
+		{ status == \fallbackReady } {
+			validation = "preferred device unavailable · temporary audio active";
+			provenance = transactionController[\error].value;
+			family = \warning;
+		}
 		{ status == \failed } {
 			validation = "audio restart failed · output silent";
 			provenance = localError
@@ -457,7 +509,7 @@ CQGuiAudioSetup {
 			family = \danger;
 		}
 		{ model.dirty } {
-			validation = "valid draft · restart required";
+			validation = "changes waiting · restart required";
 			family = \warning;
 		}
 		{ status == \ready } {
@@ -496,7 +548,7 @@ CQGuiAudioSetup {
 		[view, rail, hostView, inputView, outputView, restartView, ioBand].do {
 			|item| item !? { item.background = palette[\recess]; item.refresh }
 		};
-		[refreshButton, discardButton, applyButton].do { |button|
+		[refreshButton, discoverButton, discardButton, applyButton].do { |button|
 			button !? { button.skin = skin }
 		};
 		allMenus.do { |menu| menu.skin = skin };
@@ -564,10 +616,13 @@ CQGuiAudioSetup {
 				responsive: { Cocoquantus.serverResponsive },
 				clockDanger: { Cocoquantus.audioClockDanger },
 				clockRate: { Cocoquantus.audioClockRate },
+				fallbackActive: { Cocoquantus.audioFallbackActive },
+				preferred: { Cocoquantus.preferredAudioConfig },
 				apply: { |audioModel|
 					Cocoquantus.reconfigureAudio(audioModel)
 				},
 				restart: { Cocoquantus.restartCurrentAudio },
+				discover: { Cocoquantus.refreshAudioDevices },
 				retry: { Cocoquantus.retryAudioProfileSave }
 			)
 		};
@@ -608,9 +663,12 @@ CQGuiAudioSetup {
 		var columns = CQGuiScale.columns(railW, 2, metrics[\gutter]);
 		refreshButton = this.prButton(this.prDeviceControlLabel,
 			this.prDeviceControlEnabled);
+		discoverButton = this.prButton(this.prDiscoveryLabel,
+			this.prCanDiscover);
 		discardButton = this.prButton("discard changes", false);
 		applyButton = this.prButton("apply & restart audio", false);
 		refreshButton.action = { this.prDeviceControlAction };
+		discoverButton.action = { this.requestDeviceDiscovery };
 		discardButton.action = { this.prDiscardOrCancel };
 		applyButton.action = { this.prApplyAction };
 		this.prBuildMenus;
@@ -619,7 +677,8 @@ CQGuiAudioSetup {
 			.background_(palette[\recess]);
 		hostView.drawFunc = {
 			try {
-				this.prDrawSection(hostView, "host / engine", this.hostRows, \line)
+				this.prDrawSection(hostView, "host / engine", this.hostRows, \line,
+					this.hostActionHint, this.hostActionHintFamily)
 			} { |error| CQInkControl.noteDrawError(error) }
 		};
 		this.prBuildHostLayout;
@@ -662,8 +721,7 @@ CQGuiAudioSetup {
 			.background_(palette[\recess]);
 		restartView.drawFunc = {
 			try {
-				this.prDrawSection(restartView, "restart gate",
-					this.restartRows, \warning)
+				this.prDrawRestartSection
 			} { |error| CQInkControl.noteDrawError(error) }
 		};
 		restartButtonSpacer = View().fixedHeight_(
@@ -738,11 +796,12 @@ CQGuiAudioSetup {
 		hostFirstSpacer = View().fixedHeight_(
 			metrics[\titleHeight] + metrics[\rowHeight]);
 		hostTitleSpacer = View().fixedHeight_(metrics[\titleHeight]);
+		deviceButtonGap = View().fixedWidth_(metrics[\rowGap]);
 		refreshRightSpacer = View().fixedWidth_(metrics[\contentInset]);
 		hostFirstSpacer.layout = VLayout(
 			hostTitleSpacer,
-			HLayout(nil, refreshButton.view, refreshRightSpacer)
-				.margins_(0).spacing_(0)
+			HLayout(nil, discoverButton.view, deviceButtonGap,
+				refreshButton.view, refreshRightSpacer).margins_(0).spacing_(0)
 		).margins_(0).spacing_(0);
 		devicePrimaryStack = StackLayout(singleDeviceMenu.view,
 			inputDeviceMenu.view).mode_(\stackOne);
@@ -816,19 +875,33 @@ CQGuiAudioSetup {
 	// one of three things, and on a machine with any legacy driver the
 	// `show all drivers` toggle wins that slot forever.
 	//
-	// The second clause was added 2026-07-31, after a correctly installed
-	// ReaRoute stayed invisible through several audio restarts: the driver list
-	// is enumerated inside the interpreter process (`_ListAudioDevices` ->
-	// PortAudio), so restarting audio can renew a *reconnected* device but never
-	// a *newly installed* driver. The old note promised both. A note that can
-	// lie about how to renew the list is the same defect class as a gate that
-	// can lie about passing.
+	// Since HOTPLUG-1, the stopped boundary launches a bounded fresh interpreter
+	// for Windows discovery. Both a reconnected endpoint and a newly installed
+	// driver therefore have one truthful renewal action; the running page itself
+	// still never enters PortAudio.
 	*deviceListNote { |source, refreshAvailable = false|
 		if(refreshAvailable) { ^"refresh devices to rescan" };
 		^if(#[scanned, stale].includes(source)) {
-			"scanned at boot · restart audio to rescan · new driver: restart sclang"
+			"fresh scan at boot · find connected devices to rescan"
 		} {
 			"configured devices only"
+		}
+	}
+
+	prFallbackActive {
+		var provider = transactionController[\fallbackActive];
+		^if(provider.isNil) {
+			this.transactionStatus == \fallbackReady
+		} {
+			provider.value == true
+		}
+	}
+
+	prDiscoveryLabel {
+		^if(this.prFallbackActive) {
+			"find preferred device"
+		} {
+			"find connected devices"
 		}
 	}
 
@@ -1110,23 +1183,96 @@ CQGuiAudioSetup {
 			}
 	}
 
+	prCanDiscover {
+		^transactionController[\discover].notNil
+			and: { model.dirty.not }
+			and: { transactionController[\lifecycle].value == \running }
+			and: { this.prRecorderBusy.not }
+			and: {
+				#[preparing, restarting, rollback].includes(
+					this.transactionStatus).not
+			}
+	}
+
+	// One stable semantic state drives the distant cue, the restart island and
+	// the primary action. This stays still (no pulse), survives until the user
+	// resolves it, and never relies on colour alone: the nearby copy changes too.
+	prRestartEmphasisFamily {
+		var device = model.draftAt(\device);
+		var reported = this.prDeviceReported(device,
+			CQAudioConfig.deviceMode(device));
+		var status = this.transactionStatus;
+		if(confirming) { ^\warning };
+		if(this.prRecorderBusy
+			or: { status == \blocked }
+			or: { this.prServerResponsive.not }
+			or: { this.prAudioClockDanger }
+			or: { #[rollback, rollbackReady, failed].includes(status) }
+			or: { model.valid.not }
+			or: { reported.not }) { ^\danger };
+		if(#[preparing, restarting, notSaved].includes(status)
+			or: { this.prFallbackActive }
+			or: { model.dirty }) { ^\warning };
+		^nil
+	}
+
+	prHostActionHint {
+		var status = this.transactionStatus;
+		if(confirming) { ^"confirmation below ↓" };
+		if(model.dirty and: { model.valid.not }) {
+			^"fix highlighted setting"
+		};
+		if(this.prRecorderBusy or: { status == \blocked }) {
+			^"restart blocked ↓"
+		};
+		if(this.prServerResponsive.not or: { this.prAudioClockDanger }
+			or: { #[rollback, rollbackReady, failed].includes(status) }) {
+			^"audio recovery below ↓"
+		};
+		if(status == \notSaved) { ^"save retry below ↓" };
+		if(this.prFallbackActive) { ^"preferred route waiting ↓" };
+		if(model.dirty) { ^"restart required ↓" };
+		if(#[preparing, restarting].includes(status)) { ^"restarting below ↓" };
+		^nil
+	}
+
 	prSyncDraft {
+		var actionFamily;
 		if(modeMenu.notNil) {
 			allMenus.do { |menu| menu.enabled = true };
 			this.prRefreshMenus;
+			discoverButton.label = if(confirming and: { discoveryRequested }) {
+				"confirmation below ↓"
+			} {
+				this.prDiscoveryLabel
+			};
 			if(confirming or: {
 				#[preparing, restarting, rollback].includes(
 					this.transactionStatus)
 			}) {
 				allMenus.do { |menu| menu.enabled = false };
 				refreshButton.enabled = false;
+				discoverButton.enabled = false;
 			} {
 				this.prUpdateDeviceControl;
+				discoverButton.enabled = this.prCanDiscover;
 			};
 			if(confirming) {
 				discardButton.label = "cancel";
 				discardButton.enabled = true;
-				applyButton.label = "restart";
+				applyButton.label = if(discoveryRequested) {
+					"scan & restart"
+				} {
+					if(model.dirty) {
+						"apply & restart audio"
+					} {
+						if(this.prFallbackActive) {
+							"retry preferred audio"
+						} {
+							"restart audio"
+						}
+					}
+				};
 				applyButton.enabled = true;
 			} {
 				discardButton.label = if(model.dirty) {
@@ -1142,11 +1288,21 @@ CQGuiAudioSetup {
 					applyButton.label = if(model.dirty) {
 						"apply & restart audio"
 					} {
-						"restart audio"
+						if(this.prFallbackActive) {
+							"retry preferred audio"
+						} {
+							"restart audio"
+						}
 					};
 					applyButton.enabled = this.prCanApply;
 				};
 			};
+			restartEmphasis = this.prRestartEmphasisFamily;
+			hostActionHint = this.prHostActionHint;
+			hostActionHintFamily = restartEmphasis ? \whisper;
+			actionFamily = if(applyButton.enabled) { restartEmphasis } { nil };
+			applyButton.family = actionFamily ? \line;
+			applyButton.value = if(actionFamily.notNil) { 1 } { 0 };
 			this.prScaleButtons;
 			[hostView, inputView, outputView, restartView].do { |surface|
 				surface !? { surface.refresh }
@@ -1171,6 +1327,7 @@ CQGuiAudioSetup {
 		hostFirstSpacer.fixedHeight =
 			metrics[\titleHeight] + metrics[\rowHeight];
 		hostTitleSpacer.fixedHeight = metrics[\titleHeight];
+		deviceButtonGap.fixedWidth = metrics[\rowGap];
 		refreshRightSpacer.fixedWidth = metrics[\contentInset];
 		inputTitleSpacer.fixedHeight = metrics[\titleHeight];
 		outputTitleSpacer.fixedHeight = metrics[\titleHeight];
@@ -1212,7 +1369,7 @@ CQGuiAudioSetup {
 	}
 
 	prScaleButtons {
-		[refreshButton, discardButton, applyButton].do { |button|
+		[refreshButton, discoverButton, discardButton, applyButton].do { |button|
 			button.scale = metrics;
 			button.resizeTo(CQGuiScale.buttonWidth(step, button.label),
 				metrics[\boxHeight]);
@@ -1299,6 +1456,30 @@ CQGuiAudioSetup {
 
 	prChannelChoices {
 		^Array.fill(64, { |index| this.class.channelText(index) })
+	}
+
+	prDrawRestartSection {
+		var palette = CQInk.palette(skin);
+		var rect = restartView.bounds.moveTo(0, 0);
+		var left = metrics[\contentInset];
+		var right = rect.width - metrics[\contentInset];
+		var titleY = metrics[\titleHeight] - 3;
+		if(restartEmphasis.notNil) {
+			Pen.fillColor = palette[restartEmphasis].copy.alpha_(
+				if(skin == \night) { 0.055 } { 0.04 });
+			Pen.fillRect(rect);
+			Pen.fillColor = palette[restartEmphasis].copy.alpha_(0.88);
+			Pen.fillRect(Rect(0, 0, 3, rect.height));
+		};
+		this.prDrawSection(restartView, "restart gate", this.restartRows,
+			restartEmphasis ? \line);
+		if(restartEmphasis.notNil) {
+			Pen.strokeColor = palette[restartEmphasis].copy.alpha_(0.88);
+			Pen.width = CQInk.strokes[\strong];
+			Pen.line(Point(left, titleY), Point(right, titleY));
+			Pen.stroke;
+		};
+		^this
 	}
 
 	prDrawSection { |surface, title, rows, titleFamily = \line,

@@ -9,6 +9,7 @@ Cocoquantus {
 	classvar spesalCache, micWatcher, micWasLive = false, trimDb = 0;
 	classvar <lifecycleState = \stopped, <sessionGeneration = 0, <lifecycleError;
 	classvar <audioProfilePresent = false;
+	classvar <audioPreferredConfig, <audioFallbackActive = false;
 	classvar <audioConfigModel, <audioReconfigureState = \idle;
 	classvar <audioReconfigureError, <audioReconfigureResult;
 	classvar audioTransaction, audioReopenPending = false;
@@ -56,6 +57,7 @@ Cocoquantus {
 			audioReconfigureError = nil;
 			audioReconfigureResult = nil;
 			audioReopenPending = false;
+			audioFallbackActive = false;
 		};
 		configPath = path ?? { this.repoDir +/+ "config.scd" };
 		lifecycleError = nil;
@@ -88,6 +90,7 @@ Cocoquantus {
 			sessionConfig = startupRecovery.selectInitial(
 				audioDeviceCatalog,
 				if(freshDeviceCapture) { audioDeviceCatalogState } { \unavailable });
+			audioFallbackActive = startupRecovery.fallbackActive;
 			if(startupRecovery.preflightFailed) {
 				this.prStartupAudioPreflightFailed(startupRecovery, onFailure);
 				^this
@@ -556,7 +559,15 @@ Cocoquantus {
 		if(audioDeviceCatalogError.notNil) {
 			result[\error] = audioDeviceCatalogError
 		};
+		result[\fallbackActive] = audioFallbackActive;
+		result[\preferredDevice] = audioPreferredConfig !? { |preferred|
+			preferred[\device]
+		};
 		^result
+	}
+
+	*preferredAudioConfig {
+		^audioPreferredConfig !? { |preferred| preferred.copy }
 	}
 
 	// Tests reset the process-lifetime memory cache explicitly. Ordinary
@@ -570,9 +581,12 @@ Cocoquantus {
 		^this
 	}
 
-	// The one production entry into `_ListAudioDevices`. A provider is accepted
-	// only for hermetic lifecycle tests; fake servers never hit real discovery.
-	// Failure is diagnostic data, not an audio-boot failure.
+	// The one production entry into audio-device discovery. On Windows its
+	// default is CQAudioDeviceProbe's bounded fresh sclang process, which renews
+	// PortAudio itself after hot-plug; other platforms retain the direct stopped-
+	// server primitive. A provider is accepted only for hermetic lifecycle tests;
+	// fake servers never hit real discovery. Failure is diagnostic data, not an
+	// audio-boot failure.
 	*prCaptureAudioDeviceCatalog { |targetServer, provider|
 		var success = false;
 		if(targetServer.isNil) { ^false };
@@ -584,12 +598,16 @@ Cocoquantus {
 		};
 		audioDeviceScanCount = audioDeviceScanCount + 1;
 		try {
-			audioDeviceCatalog = CQAudioDeviceCatalog.scan(provider);
+			audioDeviceCatalog = if(provider.isNil) {
+				CQAudioDeviceProbe.scan
+			} {
+				CQAudioDeviceCatalog.scan(provider)
+			};
 			audioDeviceCatalogState = \scanned;
 			audioDeviceCatalogError = nil;
 			success = true;
 			("Yönpuoli: cached % input / % output audio devices "
-				++ "before server boot.").format(
+				++ "from a stopped-server discovery.").format(
 					audioDeviceCatalog[\inputs].size,
 					audioDeviceCatalog[\outputs].size).postln;
 		} { |error|
@@ -652,13 +670,14 @@ Cocoquantus {
 		^audioTransaction.start
 	}
 
-	// A clean Audio page still needs a recovery operation. It first restarts the
-	// exact active configuration, but a fresh stopped-server scan may preselect
-	// the base route if that device has disappeared. Only a fully ready fallback
-	// rewrites the profile. This remains separate from CQAudioReconfigure: there
-	// is no new draft candidate to commit.
+	// A clean Audio page still needs a recovery operation. Normally it restarts
+	// the exact active configuration. If that session is a temporary base
+	// fallback, it reloads and retries the preserved preferred profile instead;
+	// the stopped-boundary fresh-process scan decides whether the device has
+	// returned. This remains separate from CQAudioReconfigure: there is no new
+	// draft candidate to commit.
 	*restartCurrentAudio {
-		var preparedConfig, base, startupRecovery;
+		var preparedConfig, base, startupRecovery, startupData;
 		var path = this.configFilePath;
 		if(lifecycleState != \running) {
 			audioReconfigureState = \failed;
@@ -673,10 +692,17 @@ Cocoquantus {
 			^false
 		};
 		try {
-			preparedConfig = CQConfig.validate(config).copy;
-			base = this.prLoadBaseConfig(path);
-			startupRecovery = CQAudioBootRecovery(
-				base, preparedConfig, CQAudioConfig.profilePathFor(path));
+			if(audioFallbackActive) {
+				startupData = this.prLoadStartupAudio(path);
+				preparedConfig = startupData[\config];
+				base = startupData[\base];
+				startupRecovery = startupData[\recovery];
+			} {
+				preparedConfig = CQConfig.validate(config).copy;
+				base = this.prLoadBaseConfig(path);
+				startupRecovery = CQAudioBootRecovery(
+					base, preparedConfig, CQAudioConfig.profilePathFor(path));
+			};
 		} { |failure|
 			audioReconfigureState = \failed;
 			audioReconfigureError = failure.errorString;
@@ -694,7 +720,8 @@ Cocoquantus {
 		);
 		this.prRestartAudioConfig(preparedConfig, {
 			if(audioBootRecovery.notNil and: {
-				#[rollbackReady, notSaved].includes(audioBootRecovery.state)
+				#[fallbackReady, rollbackReady, notSaved].includes(
+					audioBootRecovery.state)
 			}) {
 				// Startup recovery already published its more specific truth.
 				audioReopenPending = true;
@@ -726,6 +753,10 @@ Cocoquantus {
 		}, startupRecovery);
 		^true
 	}
+
+	// UI wording names discovery, while lifecycle ownership remains exactly the
+	// same confirmed strong restart as the clean Audio path above.
+	*refreshAudioDevices { ^this.restartCurrentAudio }
 
 	*retryAudioProfileSave {
 		if(audioTransaction.notNil) { ^audioTransaction.retrySave };
@@ -787,6 +818,9 @@ Cocoquantus {
 		recovery = recovery ?? {
 			CQAudioBootRecovery(base, candidate, profilePath)
 		};
+		// This is the last explicit valid preference, not necessarily the route
+		// selected for the current session after device preflight.
+		audioPreferredConfig = candidate.copy;
 		^(config: candidate.copy, base: base.copy, recovery: recovery)
 	}
 
@@ -931,6 +965,7 @@ Cocoquantus {
 		if(recovery.isNil or: { recovery.canFallback(stage).not }) { ^false };
 		path = this.configFilePath;
 		fallbackConfig = recovery.beginFallback(failure, true);
+		audioFallbackActive = true;
 		if(this.prRollbackFailedBoot(generation, sessionGraph, failure).not) {
 			^false
 		};
@@ -957,6 +992,7 @@ Cocoquantus {
 
 	*prStartupAudioFallbackFailed { |recovery, failure, onFailure|
 		var failed = recovery.fallbackFailed(failure);
+		audioFallbackActive = true;
 		audioBootRecovery = recovery;
 		lifecycleError = failed[\error];
 		this.prPublishAudioReconfigure(failed);
@@ -968,6 +1004,7 @@ Cocoquantus {
 
 	*prStartupAudioPreflightFailed { |recovery, onFailure|
 		lifecycleState = \failed;
+		audioFallbackActive = recovery.fallbackActive;
 		lifecycleError = recovery.error;
 		audioBootRecovery = recovery;
 		config = nil;
@@ -984,15 +1021,23 @@ Cocoquantus {
 		audioBootRecovery = recovery;
 		audioConfigModel = nil;
 		audioTransaction = nil;
-		audioProfilePresent = result[\status] == \rollbackReady;
+		audioFallbackActive = result[\status] == \fallbackReady;
+		audioProfilePresent = CQAudioProfileStore.profileExists(
+			recovery.profilePath);
 		this.prPublishAudioReconfigure(result);
-		if(result[\status] == \rollbackReady) {
-			("Yönpuoli: base Audio recovered and saved. The rejected startup "
-				++ "profile is preserved at %.bak.").format(
-					recovery.profilePath).postln;
+		if(result[\status] == \fallbackReady) {
+			("Yönpuoli: preferred Audio device is unavailable; base Audio is "
+				++ "running temporarily and the preferred profile remains at %.")
+				.format(recovery.profilePath).postln;
 		} {
-			("Yönpuoli: base Audio recovered, but the corrected profile was not "
-				++ "saved — %").format(result[\error]).warn;
+			if(result[\status] == \rollbackReady) {
+				("Yönpuoli: malformed Audio profile repaired after base Audio "
+					++ "reached ready; the rejected file is preserved at %.bak.")
+					.format(recovery.profilePath).postln;
+			} {
+				("Yönpuoli: base Audio recovered, but the corrected profile was not "
+					++ "saved — %").format(result[\error]).warn;
+			};
 		};
 		^result
 	}
@@ -1133,6 +1178,7 @@ Cocoquantus {
 				preparedConfig = startupRecovery.selectInitial(
 					audioDeviceCatalog,
 					if(freshCapture) { audioDeviceCatalogState } { \unavailable });
+				audioFallbackActive = startupRecovery.fallbackActive;
 				audioBootRecovery = startupRecovery;
 				if(startupRecovery.preflightFailed) {
 					this.prStartupAudioPreflightFailed(
@@ -1287,7 +1333,22 @@ Cocoquantus {
 		audioReconfigureResult = result.copy;
 		audioReconfigureState = result[\status];
 		audioReconfigureError = result[\error];
-		if(#[ready, notSaved, rollbackReady].includes(audioReconfigureState)) {
+		if(audioReconfigureState == \ready and: { config.notNil }) {
+			audioPreferredConfig = config.copy;
+			audioFallbackActive = false;
+		};
+		if(audioReconfigureState == \fallbackReady) {
+			audioFallbackActive = true;
+		};
+		if(audioReconfigureState == \rollbackReady and: {
+			result[\startupFallback] == true
+		}) {
+			// This is the corrupt-profile repair path, not temporary absence.
+			audioFallbackActive = false;
+			audioPreferredConfig = config !? { |current| current.copy };
+		};
+		if(#[ready, notSaved, fallbackReady, rollbackReady].includes(
+			audioReconfigureState)) {
 			audioConfigModel !? {
 				audioProfilePresent = audioConfigModel.profilePresent
 			};
