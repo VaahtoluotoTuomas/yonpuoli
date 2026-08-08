@@ -8,6 +8,19 @@ tagged. Earlier tags describe internal development baselines.
 
 ## Unreleased — Yönpuoli / Nocturne
 
+### Added
+
+- Added release-candidate captures of the complete Inspector and Workshop to the
+  README's collapsed Drawer gallery, beside the existing Night hero. A bounded
+  serverless capture gate reproduces both selected Drawer images; intermediate
+  pages and local captures remain outside Git.
+
+- Added a compact no-code quick reference with one self-running preset route,
+  one sample-to-loop route, the Night's body/banana grammar, Drawer roles,
+  global keys and first-line audio troubleshooting. Initial 1.0 release media is
+  now intentionally limited to current UI screenshots; audio and video remain
+  honest post-release additions rather than placeholder-driven blockers.
+
 ### Fixed
 
 - Windows audio hot-plug no longer depends on the long-lived IDE interpreter's

@@ -27,8 +27,12 @@ the persistent Audio restart guidance by 2026-08-08.
 - [x] Six authored release presets and five deliberate release snapshots.
 - [x] Fresh-interpreter Audio device discovery and preferred-route fallback.
 - [x] Stable pending-action guidance for Audio changes and device scans.
-- [ ] Release media: current hero image, short performance video and human-approved
-      audio excerpts.
+- [ ] Human-approve the current Night hero plus Inspector and Workshop Drawer
+      screenshots from the exact candidate UI.
+- [ ] Add and verify a one-click Windows launcher for an installed SuperCollider
+      runtime; keep a readable failure console and the developer launch path.
+- [ ] Human-approve the compact first-sound/reference path. Preserve Night as the
+      label-light instrument instead of covering it with a permanent help layer.
 - [ ] Remote CI green on the exact release candidate.
 - [ ] Merge `nocturne` into the default `main` branch.
 - [ ] Tag and publish `yonpuoli-1.0.0` with release notes and media links.
@@ -71,9 +75,10 @@ scripts remain in
 
 In order, subject to a new design decision:
 
-1. isolated Bits 5/8/12 listening study;
-2. three porous playing-mode experiments;
-3. Norns port research.
+1. honest performance video and three or four accepted audio excerpts;
+2. isolated Bits 5/8/12 listening study;
+3. three porous playing-mode experiments;
+4. Norns port research.
 
 These are not hidden release blockers and must not be presented as current
 features.

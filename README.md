@@ -23,7 +23,9 @@ electronic ecosystem.
 The sound engine, Night-only performance surface, hardware-I/O path,
 long-duration resource soak, controller map, first-touch playability and curated
 release content have passed their current acceptance gates. The remaining 1.0
-order is release media, remote CI, then the final merge and tag.
+work is the Windows launch/onboarding pass, screenshot approval, remote CI, then
+the final merge and tag. Audio and performance video are planned as later
+additions rather than initial-release blockers.
 [`PLAN.md`](PLAN.md) is the current status authority.
 
 ## What it offers
@@ -46,6 +48,19 @@ order is release media, remote CI, then the final merge and tag.
   stems, snapshots, and morphing.
 - A fixed output-safety chain and offline render tests designed for unpredictable
   feedback patches.
+
+<details>
+<summary><strong>Open the precision Drawer</strong></summary>
+
+**Inspector — exact 16×32 routing and preset entry**
+
+![Yönpuoli Drawer Inspector](docs/media/yonpuoli-drawer-inspector.png)
+
+**Workshop — secondary parameters and exact values**
+
+![Yönpuoli Drawer Workshop](docs/media/yonpuoli-drawer-workshop.png)
+
+</details>
 
 ## Requirements
 
@@ -111,6 +126,10 @@ plugins are required.
    graph is verified, followed by a two-second fade-in.
 
 ## Five-minute start
+
+Once Yönpuoli is open, begin a no-code first session with the compact
+[`Quick Reference`](docs/QUICK_REFERENCE.md). It gives one self-running route
+and one sample-to-loop route before explaining the Night's bodies and gestures.
 
 ```supercollider
 CQ.boot;
@@ -265,6 +284,7 @@ portfolio-oriented account of the project is in
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Code structure, ownership, and test architecture |
 | [`PLAN.md`](PLAN.md) | Concise release roadmap and current status |
 | [`SOURCES.md`](SOURCES.md) | Technical lineage, sources, and interpretations |
+| [`docs/QUICK_REFERENCE.md`](docs/QUICK_REFERENCE.md) | Compact first-sound path and Night/Drawer gesture reference |
 | [`docs/PLAYABILITY_GUIDE.md`](docs/PLAYABILITY_GUIDE.md) | Finnish hands-on tutorial: Coco memory, castle/Quantussy, organ, cables, shake, and Workshop dependencies |
 | [`docs/CASE_STUDY.md`](docs/CASE_STUDY.md) | Portfolio case study and engineering decisions |
 | [`docs/DEVELOPMENT_PROCESS.md`](docs/DEVELOPMENT_PROCESS.md) | AI-assisted workflow and ownership policy |
@@ -288,7 +308,8 @@ portfolio-oriented account of the project is in
   PANIC were verified with a four-output USB interface; NRT covers the shared
   stem safety ceiling.
 - Windows is the only currently tested release platform.
-- Yönpuoli 1.0 is not tagged and its public-beta media are not released yet.
+- Yönpuoli 1.0 is not tagged. Its initial release will include current UI
+  screenshots; audio excerpts and a performance video will be added later.
 
 ## License
 

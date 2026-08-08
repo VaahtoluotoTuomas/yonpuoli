@@ -58,6 +58,7 @@ $requiredMarker = switch -Wildcard ($leaf) {
     "gui_night_smoke.scd" { "CQ_GUI_NIGHT_PASSED"; break }
     "gui_night_phase_layer_smoke.scd" { "CQ_GUI_PHASE_LAYER_PASSED"; break }
     "gui_night_capture.scd" { "CQ_NIGHT_CAPTURE_DONE"; break }
+    "gui_release_capture.scd" { "CQ_RELEASE_CAPTURE_DONE"; break }
     default { $null }
 }
 $logDir = Join-Path $PSScriptRoot "tmp\gate-logs"

@@ -111,11 +111,14 @@ CQ.recStop;
 
 ## 7. Release media and sign-off
 
-- [ ] Hero screenshot is generated from the exact release candidate.
-- [ ] Short video shows direct Night playing, cable editing, Drawer precision and
-      PANIC without cuts that misrepresent response.
-- [ ] Audio excerpts are listened to on headphones and speakers, use only
-      redistributable/original source material, and name their preset/snapshot.
+- [ ] Night, Inspector and Workshop screenshots are generated from the exact
+      release-candidate UI and visually match it.
+- [ ] Night reads clearly as the README hero; the collapsed Drawer gallery adds
+      useful precision without overwhelming the introduction.
+- [ ] The compact reference gets a new user to both `organMode` and a captured
+      sample loop without code or a hidden prerequisite.
+- [ ] README and release notes make clear that performance video and audio
+      excerpts are planned after 1.0, not included or required now.
 - [ ] README, CASE_STUDY, CHANGELOG and release notes describe the same version,
       limitations and AI-assisted authorship.
 - [ ] Remote CI is green on the commit that will be tagged.
