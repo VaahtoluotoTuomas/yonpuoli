@@ -18,11 +18,11 @@ coarse converter, while a five-oscillator chaotic network and a signed patching
 matrix make the instrument behave less like an effect and more like a small
 electronic ecosystem.
 
-The sound engine, Night-only performance surface, hardware-I/O path, and
-long-duration resource soak have passed their current acceptance gates. Work is
-now focused on final 1.0 packaging: repository privacy and history review,
-controller mapping, first-touch playability, release media, and the final merge
-and tag. [`PLAN.md`](PLAN.md) is the current status authority.
+The sound engine, Night-only performance surface, hardware-I/O path,
+long-duration resource soak, controller map, first-touch playability and curated
+release content have passed their current acceptance gates. The remaining 1.0
+order is release media, remote CI, then the final merge and tag.
+[`PLAN.md`](PLAN.md) is the current status authority.
 
 ## What it offers
 
@@ -116,6 +116,30 @@ GUI shortcuts: `1/2` hold · `q/w` flip · `a/s` skip · `3..7` spesal ·
 `r` record · `space` panic · `p` shake. More live-coding examples are in
 [`live.scd`](live.scd).
 
+## Presets and snapshots
+
+The six authored release presets are deliberately different entry points:
+
+- `classic` animates external material like worn tape;
+- `selfNoise` grows irregular converter weather without an input;
+- `quantumDrone` catches the Quantussy ring in the two memories;
+- `organMode` is the clearest directly playable pitched voice;
+- `crossCurrent` makes held memories exchange phrases through SlotX;
+- `dustGarden` contrasts slow mist with fast, brittle converter chips.
+
+`empty` remains the clearing utility and `mayhem` the deterministic dense
+safety/stress field; both are callable presets, but they are not presented as
+artistic starting points.
+
+Yönpuoli also ships five exact snapshots. `example` is intentionally sparse and
+human-readable. `undertow`, `dust_bloom`, `glass_tide`, and `organ_lanterns` are
+complete self-starting scenes and useful A→B morph endpoints. Snapshots earn
+their place beside presets because they recall a deterministic whole instrument
+state; they do not replace the player's own session memories, which stay local
+and ignored by Git. Coco buffer audio is never stored, so a recalled scene
+rebuilds its material from its own live sources. See
+[`snapshots/README.md`](snapshots/README.md) for the exact bank and intent.
+
 ## Architecture and safety
 
 Every control surface writes through the same validated state funnel:
@@ -166,6 +190,7 @@ powershell -File tests/run_sclang_gate.ps1 tests/nrt_safety.scd         -> CQ_SA
 powershell -File tests/run_sclang_gate.ps1 tests/nrt_hold_integrity.scd -> CQ_HOLD_OK
 powershell -File tests/run_sclang_gate.ps1 tests/nrt_dust_character.scd -> CQ_DUST_OK
 powershell -File tests/run_sclang_gate.ps1 tests/nrt_selfnoise_character.scd -> CQ_SELFNOISE_OK
+powershell -File tests/run_sclang_gate.ps1 tests/nrt_release_content.scd -> CQ_RELEASE_CONTENT_OK
 powershell -File tests/run_sclang_gate.ps1 tests/gui_audio_setup_smoke.scd -> CQ_GUI_AUDIO_PASSED
 ```
 
@@ -249,8 +274,7 @@ portfolio-oriented account of the project is in
   PANIC were verified with a four-output USB interface; NRT covers the shared
   stem safety ceiling.
 - Windows is the only currently tested release platform.
-- Nocturne is active development, so the final Night-only product surface and
-  public-beta media are not released yet.
+- Yönpuoli 1.0 is not tagged and its public-beta media are not released yet.
 
 ## License
 

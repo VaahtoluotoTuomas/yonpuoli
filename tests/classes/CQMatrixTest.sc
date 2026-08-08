@@ -143,6 +143,42 @@ CQMatrixTest : UnitTest {
 		};
 	}
 
+	test_releasePresetManifestNamesSixAuthoredStarts {
+		this.assertEquals(CQMatrix.releasePresetNames,
+			#[classic, selfNoise, quantumDrone, organMode, crossCurrent, dustGarden],
+			"release presets keep six authored starts without counting clear or stress tools");
+		CQMatrix.releasePresetNames.do { |name|
+			this.assert(CQMatrix.presets[name].notNil,
+				"release preset % exists".format(name));
+		};
+		this.assert(CQMatrix.releasePresetNames.includes(\empty).not,
+			"the empty clearing utility is not advertised as an authored sound");
+		this.assert(CQMatrix.releasePresetNames.includes(\mayhem).not,
+			"the deterministic safety stress field is not advertised as an authored sound");
+	}
+
+	test_newReleasePresetsFeatureTheAcceptedMatrixMaterials {
+		var cross = CQMatrix.presets[\crossCurrent];
+		var dust = CQMatrix.presets[\dustGarden];
+		#[coco1_slotX, coco2_slotX].do { |dest|
+			this.assert(cross[\matrix].any { |triple| triple[1] == dest },
+				"crossCurrent authors % into its form".format(dest));
+		};
+		#[coco1_dust, coco2_dust].do { |dest|
+			this.assert(dust[\matrix].any { |triple| triple[1] == dest },
+				"dustGarden authors % into its form".format(dest));
+		};
+		this.assert(cross[\params][\coco1Organ] > 0
+			and: { cross[\params][\coco1SlotQ] > 0 },
+			"crossCurrent speaks from blank RAM while its held memories begin trading");
+		this.assert(dust[\params][\coco1Dust] >= 0.1
+			and: { dust[\params][\coco2Dust] >= 0.1 },
+			"dustGarden is a self-starting converter ecology");
+		this.assert(dust[\params][\coco1DustGrain] < 0.5
+			and: { dust[\params][\coco2DustGrain] > 0.5 },
+			"dustGarden gives the two shores audibly opposed mist/chip roles");
+	}
+
 	// phase-6 presets carry their load-bearing knobs (preset = weights + knobs,
 	// the KUUNTELU 4 lesson: a banana into a closed knob is dead data)
 	test_presetPhase6Params {
@@ -238,21 +274,18 @@ CQMatrixTest : UnitTest {
 		thisThread.randData = saved;
 	}
 
-	test_newSlotXAndDustMatrixRowsStayOutOfEcologicalShakeUntilAuditioned {
+	test_acceptedSlotXAndDustRowsParticipateInEcologicalShake {
 		#[coco1_slotX, coco1_dust, coco2_slotX, coco2_dust].do { |dest|
-			this.assert(CQMatrix.isShakeTarget(dest).not,
-				"% is explicitly quarantined from ecological shake".format(dest));
+			this.assert(CQMatrix.isShakeTarget(dest),
+				"% is admitted to ecological shake after acceptance".format(dest));
 		};
-		32.do { |i|
-			var planted;
-			matrix.shake(0.8, seed: 3000 + i, density: 1);
-			planted = matrix.asArray.select { |triple|
-				#[coco1_slotX, coco1_dust, coco2_slotX, coco2_dust]
-					.includes(triple[1])
-			};
-			this.assert(planted.isEmpty,
-				"seed % plants neither a skeleton nor decoration in quarantined rows"
-					.format(3000 + i));
+		this.assert(CQMatrix.isShakeTarget(\bogus).not,
+			"an unknown destination never becomes a shake target");
+		matrix.shake(0.8, seed: 3000, density: 1);
+		#[coco1_slotX, coco1_dust, coco2_slotX, coco2_dust].do { |dest|
+			this.assertEquals(matrix.asArray.count { |triple| triple[1] == dest },
+				CQMatrix.sourceNames.size,
+				"a full sow populates every source in accepted row %".format(dest));
 		};
 	}
 
@@ -307,6 +340,14 @@ CQMatrixTest : UnitTest {
 		};
 		this.assertEquals(families.size, 4,
 			"the deterministic seed sweep reaches all four contrasting ecologies");
+		matrix.shake(0.3, seed: 2);
+		this.assert(matrix.lastShakePlan[\skeleton].collect { |triple| triple[1] }
+			.includesAll(#[coco1_dust, coco2_dust]),
+			"dustGrowth owns both accepted Dust destinations in its audible skeleton");
+		matrix.shake(0.3, seed: 4);
+		this.assert(matrix.lastShakePlan[\skeleton].collect { |triple| triple[1] }
+			.includesAll(#[coco1_slotX, coco2_slotX]),
+			"crossfeed owns both accepted SlotX destinations in its audible skeleton");
 	}
 
 	test_shakeReplacesOldThrow {

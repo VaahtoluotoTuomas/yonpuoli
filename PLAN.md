@@ -1,6 +1,6 @@
 # Yönpuoli — ajantasainen kehityssuunnitelma (Nocturne-vaihe)
 
-Päivitetty 2026-08-03. Tämä tiedosto kertoo, **mitä tehdään seuraavaksi** ja
+Päivitetty 2026-08-08. Tämä tiedosto kertoo, **mitä tehdään seuraavaksi** ja
 **missä järjestyksessä**. Vaiheen yksityiskohtainen *miten* — jokaisen osan
 suunnittelu, geometria, karikot, korvakokeet — on
 [`docs/NIGHT_STANDALONE_PLAN.md`](docs/NIGHT_STANDALONE_PLAN.md):ssä; tämä
@@ -22,12 +22,15 @@ density-lain, mutta avasi Organ-tason, dust-tekstuurin, Record-lain, socket-
 layoutin ja kuun eleen korjauspassin. Käyttäjä hyväksyi 2026-08-03 sekä sen
 toimintalait että viimeisen visuaalipassin, bundled undon ja vapaan 8–10 shaken
 ensikäytön. PLAY-8 on kokonaan valmis.
-Sen jälkeinen SlotX/Dust-laajennus on nyt toteutettu paikallisesti: matriisi on
+Sen jälkeinen SlotX/Dust-laajennus on toteutettu ja hyväksytty: matriisi on
 16×32, `CQSpec` 76 parametria ja omistajuus Night 48 · Master 4 · Workshop 24.
 SlotX sai kaksi rajattua VCA-kohdetta; Dust kaksi omaa matriisikohdetta ja
-per-Coco `DustGrain`-akselit. Automaatti-, NRT-, GUI- ja renderöintikatselmus on
-vihreä, mutta fyysinen ele-/korvahyväksyntä on vielä avoin. Uudet neljä
-matriisisaraketta pysyvät siihen asti ekologisen shaken ulkopuolella.
+per-Coco `DustGrain`-akselit. Automaatti-, NRT-, GUI- ja renderöintikatselmus
+sekä fyysinen ele-/korvahyväksyntä ovat vihreitä. Käyttäjän myöhempi erillinen
+musiikillinen päätös avasi kaikki neljä saraketta ekologiseen shakeen.
+Inspectorin ryhmäotsikot käyttävät nyt samaa 10/10/5/5/2-sopimusta kuin
+matriisi, joten Coco-viivat päättyvät Recordiin; näkyvät nimet ovat lyhyesti
+`slotX` ja `dust`.
 Night + Master + Drawer on soittimen ainoa ylläpidettävä käyttöliittymä ja
 Night on soittimen maisema, ei sen kartta. Työ elää paikallisessa
 `nocturne`-haarassa.
@@ -49,8 +52,10 @@ GUI-inkrementit ja koko korvapassi ovat hyväksyttyjä. PLAY-7 sulki kaksi
 yhden muuttujan ehdokasta mutta avasi yhden rajatun suunnittelupäätöksen.
 Käyttäjä hyväksyi 2026-08-02 eksplisiittisesti kaikki PLAY-7:ää edeltävät
 soittotestit, sulki PLAY-8:n 2026-08-03 ja hyväksyi SlotX/Dust-laajennuksen
-kokonaan 2026-08-08. 1.0:aan jää **16n-rasti ja neljä julkaisutyötä**,
-tässä järjestyksessä:
+kokonaan 2026-08-08. Samana päivänä hän hyväksyi nykyiset 16n-ominaisuudet,
+poisti SlotX/Dust-shake-karanteenin ja pyysi julkaisusisällön arvioinnin.
+Sisältöpassi on valmis; seuraavat kohdat näyttävät suljetut päätökset ja jäljellä
+olevan julkaisujärjestyksen:
 
 1. [x] **PLAY-8 — ekologisen shaken korvahyväksyntä.** Soittotesti 7:n tulos
    2026-08-02 on **ei A eikä B**: `Spaf=0,12` oli korvalla liian pieni ja
@@ -78,16 +83,23 @@ tässä järjestyksessä:
    radiaalisen määrän, poikittaisen mist↔chip-akselin ja Hold-sulun. Lopullinen
    väljyys-, hiukkas-, root/dolby- ja TAB-silmäkorjaus hyväksyttiin 2026-08-08
    compact/fullscreen- ja oikean sovelluksen katselmuksessa. Vaihe on suljettu.
-   SlotX/Dust-sarakkeiden shake-karanteenin mahdollinen poisto on tästä erillinen
-   seuraava musiikillinen päätös eikä kuulu hyväksyntään automaattisesti.
-3. **16N-1 — faderipankin käsintesti.** Automaattinen portti on vihreä; rasti
-   vaatii 16n:n käteen (kanavanauhan luettavuus, Levelin paikka nauhan
-   lopussa, ristihäivytyksen etäisyys, F14:n sisältö, deckien poisto). Tämä on
-   ainoa asia joka blokkaa Tie 1.0:n kohtaa 7.
-4. Sitten järjestyksessä: **mitä julkaistaan** (neljä soitettavaa presettiä ja
-   `.gitignore`-poikkeuksena tasan yksi snapshot,
-   `snapshots/example.cqsnap.scd`) → **julkaisumedia** → **etä-CI vihreäksi**
-   → **merge `main`iin ja Yönpuolen 1.0-tagi**. Yksityiskohdat osiossa
+   Hyväksyntä ei yksin muuttanut shakea; seuraava erillinen päätös muutti.
+3. [x] **SLOTX/DUST — ekologiseen shakeen.** Kaikki 32 kohderiviä osallistuvat
+   koristeluun. `dustGrowth` istuttaa molemmat Dust-rivit ja `crossfeed` molemmat
+   SlotX-rivit; 1 024 seedin neljännes/puolikas/täysi-kuun keskiarvot ovat noin
+   5 / 13 / 78 johtoa. Unit- ja tuotanto-NRT pinnaavat perheiden identiteetit.
+4. [x] **16N-1 — nykyiset ominaisuudet hyväksytty.** Käyttäjä poisti 2026-08-08
+   erillisen fyysisen lisäkäsitestin 1.0-karanteenista. Vanha neljän kysymyksen
+   lohko jää vapaaehtoiseksi regressio-ohjeeksi, ei julkaisun blokkeriksi.
+5. [x] **Mitä julkaistaan.** Kuusi taiteellisesti kuratoitua presettiä:
+   `classic`, `selfNoise`, `quantumDrone`, `organMode`, `crossCurrent`,
+   `dustGarden`. `empty` on tyhjennystyökalu ja `mayhem` stressikenttä. Mukana
+   on viisi snapshotia: luettava `example` sekä neljä täyttä, tyhjästä RAMista
+   käynnistyvää sceneä `undertow`, `dust_bloom`, `glass_tide` ja
+   `organ_lanterns`. Neljä sceneä muodostaa kaksi mielekästä morph-paria
+   täyttämättä Memoryä; henkilökohtaiset snapshotit pysyvät gitignoredina.
+6. Seuraavaksi järjestyksessä: **julkaisumedia** → **etä-CI vihreäksi** →
+   **merge `main`iin ja Yönpuolen 1.0-tagi**. Yksityiskohdat osiossa
    "Tie 1.0:aan".
 
 Ei-estävää, tietoisesti myöhemmäksi jätettyä: 13.3b (Bits 5/8/12 eristetty
@@ -1876,8 +1888,8 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    Night-only-soittimeen, nykyiseen 1.0-tilanteeseen sekä tiiviiseen
    Cocoquantus-sukulinja- ja sanastokuvaukseen. Historian yksityisyysauditointi
    voi vielä vaatia yksittäisiä julkaisuviilauksia.
-7. **16n:n kartta päivitetty reverbin jäljiltä — automaattinen portti vihreä,
-   käyttäjän hyväksyntä auki (checklist `16N-1`).** `F14 / CC 45` kantoi
+7. [x] **16n:n kartta päivitetty reverbin jäljiltä — automaattinen portti vihreä,
+   nykyiset ominaisuudet hyväksytty 2026-08-08.** `F14 / CC 45` kantoi
    `spaceMix`ia; Space-FDN poistui tuotannosta 2026-07-28:n kuuntelupäätöksellä
    (SPEC §12 kohta 6). Käyttäjä päätti 2026-08-01 arvioida koko kartan eikä vain
    täyttää vapaata slottia.
@@ -1924,35 +1936,40 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    (yhden silmäyksen faderikaavio, taperit, mitä faderit *eivät* tavoita ja
    missä ne asiat asuvat).
 
-   **Auki, ja käyttäjän päätöksellä 2026-08-01 se ajetaan kohdan 8
-   soitettavuus-portin osana** — ei erillisenä pysähdyksenä, koska kartta on
-   soittotuntuma-asia ja kuuluu samaan istumaan ensikosketuksen oletusten ja
-   mukaan lähtevien presettien kanssa. Checklist `16N-1` kysyy neljä asiaa
+   **Hyväksytty 2026-08-08.** Käyttäjä hyväksyi nykyiset 16n-ominaisuudet ja
+   poisti erillisen lisäkäsitestin 1.0-karanteenista. Checklist `16N-1` jää
+   vapaaehtoiseksi laitteistoregressioksi ja kysyy neljä asiaa
    joihin automaatio ei vastaa: kanavanauhan luettavuus kädessä, Levelin paikka
    nauhan lopussa, ristihäivytyksen viiden faderin loikka (jos liian pitkä,
    layout B siirtää levelit vierekkäin F9/F10 ja `qFreq`/`qChaos` kahdella
    oikealle) ja se, ansaitseeko `SlotQ` edelleen 16n-faderinsa nyt kun SlotQ,
    SlotX ja Organ ovat kaikki suoraan Nightissä. Lohko sisältää `CQ.set`-
    vertailun kaikkiin kolmeen.
-8. **Soitettavuuskierros: mitä 1.0:n mukana lähtee, ja miltä ensikosketus
-   tuntuu.** Käyttäjän päätös 2026-07-31. Kaksi osaa samalla istumalla, koska
-   ne ovat sama kysymys eri etäisyydeltä — **ja käyttäjän päätöksellä
-   2026-08-01 kolmas: checklist `16N-1`, uuden 16n-kartan käsituntumaportti**
-   (kohta 7). Se kuuluu tähän eikä omaksi pysähdyksekseen, koska faderikartta,
-   nuppien oletukset ja mukaan lähtevät presetit ovat sama kysymys: miltä tämä
-   tuntuu ensimmäisessä ja sadannessa kädessä.
+8. [x] **Soitettavuuskierros ja julkaisusisältö: mitä 1.0:n mukana lähtee, ja
+   miltä ensikosketus tuntuu.** Käyttäjän päätös 2026-07-31, viimeinen
+   sisältöpäätös 2026-08-08. Ensikosketuksen paino- ja soittotestit ovat
+   hyväksyttyjä, nykyinen 16n-kartta hyväksyttiin ilman uutta karanteenia ja
+   preset/snapshot-paketti arvioitiin omana julkaisupassinaan.
 
-   **(a) Mitä paketissa on.** Presettejä on kuusi (`\empty`, `\classic`,
-   `\selfNoise`, `\quantumDrone`, `\organMode`, `\mayhem`), mutta `\empty` on
-   tyhjä ja `\mayhem`in params-osa on tyhjä — se täyttää nykyiset 512 solua muttei sytytä
-   yhtään äänilähdettä — joten soitettavia aloituspaikkoja on neljä.
-   **Snapshotteja lähtee mukana tasan yksi**: `.gitignore` päästää läpi vain
-   `snapshots/example.cqsnap.scd` ja sulkee pois kaikki henkilökohtaiset
-   (`/snapshots/*.cqsnap.scd`, `/presets/*.cqsnap.scd`). Se rajaus on oikein
-   eikä sitä pidä löysätä — mutta yksi esimerkki on todennäköisesti liian vähän
-   siihen, että ensimmäinen käyttäjä löytäisi soittimen. Päätettävä montako ja
-   millaisia luodaan, ja mitä ne opettavat: preset on resepti koodissa,
-   snapshot on tila levyllä (GUI_SPEC §8), ja ne vastaavat eri kysymykseen.
+   **(a) Mitä paketissa on — ratkaistu.** Kahdeksasta API-presetistä kuusi ovat
+   kuratoituja taiteellisia aloituksia: `\classic`, `\selfNoise`,
+   `\quantumDrone`, `\organMode`, uusi `\crossCurrent` (held-memory/SlotX-
+   fraasivaihto) ja uusi `\dustGarden` (hidas mist vastaan nopea chip).
+   `\empty` on tyhjennystyökalu ja `\mayhem` deterministinen safety/stress-
+   kenttä, eivät julkaisun soundiesittelyjä. Vanhat neljä kattavat ulkoisen
+   materiaalin, itse kasvavan kohinan, Quantussy-dronen ja suoraan soitettavan
+   urun; uudet kaksi täyttävät aukon, jossa hyväksytyt SlotX/Dust-sarakkeet
+   eivät aiemmin olleet presettien varsinaista muotoa.
+
+   **Snapshotteja lähtee mukana viisi.** `example` pysyy pienenä luettavana
+   tiedostomuoto-oppaana. Neljä täydellistä taiteellista sceneä ovat
+   `undertow`, `dust_bloom`, `glass_tide` ja `organ_lanterns`: kaksi luontevaa
+   morph-paria, mutta eivät niin monta että käyttäjän oma Memory täyttyisi.
+   Snapshot on perusteltu presetin rinnalla, koska se on deterministinen koko
+   tila ja morph-endpoint; käyttäjä tekee edelleen omat muistonsa. Kaikki muut
+   `/snapshots/*.cqsnap.scd`-tiedostot ja legacy-`/presets/*.cqsnap.scd` pysyvät
+   gitignoredina. Snapshot ei sisällä Coco-bufferin ääntä, joten kaikki neljä
+   sceneä syttyvät hiljaisesta RAMista omilla lähteillään.
 
    **(b) Ensikosketuksen oletukset.** Kierroksen alussa kytketyn johdon
    lähtöpaino oli `CQBananaGrammar`in `handStrength` = 0.5; ensimmäinen mitattu
@@ -2431,9 +2448,22 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    vihreät, ja käyttäjä hyväksyi korjauksen oikeassa sovelluksessa. Tarkka
    toteutusevidenssi on tiedostossa
    [`docs/SLOTX_DUST_UI_REPAIR_PLAN.md`](docs/SLOTX_DUST_UI_REPAIR_PLAN.md).
-   Shake-karanteeni säilyy, kunnes sen poisto päätetään erikseen musiikillisena
-   muutoksena.
-9. **Merge `main`iin ja 1.0-tagi.**
+   UI-portti ei yksin muuttanut shakea. Käyttäjän erillinen musiikillinen päätös
+   2026-08-08 poisti karanteenin: kaikki 32 riviä saavat koristelua,
+   `dustGrowth` omistaa molemmat Dust-rivit ja `crossfeed` molemmat SlotX-rivit.
+   1 024-seedinen dokumentaatioprobe mittasi neljännes/puolikas/täysi-kuulle
+   keskimäärin 5,40 / 13,38 / 78,39 johtoa.
+
+   **Julkaisusisällön automaattinen portti 2026-08-08.** Uudet presetit ja neljä
+   täyttä snapshotia renderöitiin production Quantussy+Coco-SynthDefeillä täysin
+   tyhjästä RAMista. Kuusi haaraa olivat finite, kuultavan rajan yläpuolella ja
+   kaikki vaaditut parit erosivat. Snapshot-haarojen post-master RMS-leviämä oli
+   8,24 dB; portti päättyi merkkiin `CQ_RELEASE_CONTENT_OK`. Manifestitestit
+   varmistavat kuusi taiteellista presettiä, viisi täsmällistä julkaisusnapshotia,
+   täydet/clampatut tilat, mic 0:n ja sen ettei yksityisiä tiedostoja enumerate.
+9. **Julkaisumedia, etä-CI, merge `main`iin ja 1.0-tagi.** Seuraava konkreettinen
+   vaihe on oikea kuva- ja äänidemo. Sen jälkeen ajetaan etä-CI vihreäksi,
+   sulautetaan `nocturne` `main`iin ja tehdään Yönpuolen 1.0-tagi.
 
 ### DAW-sillan keino: ReaRoute, ei VB-CABLE
 

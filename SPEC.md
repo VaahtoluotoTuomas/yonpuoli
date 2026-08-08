@@ -370,8 +370,10 @@ Outputs published to the mod source bus: `tri1..tri5` (±1 triangle), `cas1..cas
   Continuous decoration keeps a useful non-zero magnitude and random polarity;
   `amount` remains its ceiling. Gate/trig decoration is deliberately rarer and
   threshold-aware at magnitude 0.58…0.82. Skeleton ranges are destination-tuned:
-  Organ 0.20…0.38, SlotQ 0.28…0.42 and Record 0.68…0.82. The skeleton is written
-  last, so decoration cannot weaken it. Family selection, preparation and
+  Organ 0.20…0.38, SlotQ 0.28…0.42, SlotX 0.18…0.30, Dust 0.46…0.62 and Record
+  0.68…0.82. All 32 destination rows participate in decoration; `dustGrowth`
+  deliberately plants both Dust rows and `crossfeed` both SlotX rows. The
+  skeleton is written last, so decoration cannot weaken it. Family selection, preparation and
   spesal posture are drawn before decoration: the same seed therefore preserves
   the same family, skeleton, prepared controls and spesals at every `density`.
   Only the surrounding decoration changes. Even a thin crescent has a meaningful
@@ -384,12 +386,22 @@ Outputs published to the mod source bus: `tri1..tri5` (±1 triangle), `cas1..cas
   which maps its lit phase onto it — how *much* decoration is sown, while
   `patchDepth` remains the how-*hard* macro. Existing callers keep the historical
   10% decoration default.
-- Named presets shipped in v1 (derived from documented hardware patches):
-  `\empty`, `\classic` (tri→spaf both Cocos, castle→castle FM ring),
+- The six authored release presets are `\classic` (tri→spaf both Cocos,
+  castle→castle FM ring),
   `\selfNoise` (dust looping as irregular held-feedback weather with true cross-feed
   clearings), `\quantumDrone` (castles as audio, skip/flip animation),
   `\organMode` (organ outs as voices, cas→VCAs, tri→spaf light),
-  `\mayhem` (dense random, capped depths).
+  `\crossCurrent` (two held memories exchanging material through SlotX and
+  Record phrases), and `\dustGarden` (slow mist against fast chip weather with
+  light cross-migration). `\empty` is the clearing utility; `\mayhem` is the
+  dense deterministic safety/stress edge. They remain valid API presets but are
+  not advertised as artistic starts.
+- Five snapshots are versioned release material: `example` is the sparse,
+  human-readable format tutorial; `undertow`, `dust_bloom`, `glass_tide` and
+  `organ_lanterns` are complete self-starting states and deliberate morph
+  endpoints. This is a curated starter bank, not a reservation of the user's
+  memory: all other session snapshots remain local and ignored. A snapshot
+  stores parameters, matrix and Spesal state, never Coco buffer audio.
 
 ### 5.6 Master
 
@@ -503,6 +515,10 @@ form Night's continuous drone and converter topology; setup colour (`Pan`,
 `deckALevel`/`deckBLevel` already have their own crescents in Night, and
 `deckARate`/`deckBRate` are matrix destinations. All remain reachable from code
 and snapshots, and the setup parameters retain exact Workshop rows.
+
+The user accepted this current 16n feature set on 2026-08-08. The optional
+guided hand exercise remains useful regression material, but is not a 1.0
+quarantine or release blocker.
 
 ### 6.2 GUI panel
 
@@ -826,8 +842,8 @@ Documented so fidelity questions have one answer:
 1. Banana bay → named 16×32 signed-weight matrix with presets/shake/snapshots;
    ten software-native Coco destinations extend the hardware-parity core with
    Organ, SlotQ, directional SlotX, Dust and momentary Record modulation for
-   each memory. SlotX and Dust remain outside ecological shake after their
-   accepted sound/UI gate until a separate musical decision admits them.
+   each memory. All ten are now eligible for ecological shake; the SlotX/Dust
+   admission followed their accepted sound, gesture and UI gates.
 2. Global `patchDepth` macro and per-dest Schmitt thresholds (no hardware equivalent).
 3. Added parameters: `bits`, `wrap`, `interp`, `dust` level/grain, `qShLag`, castle `Off`
    detunes, castle audio sends — all default to authentic behavior.

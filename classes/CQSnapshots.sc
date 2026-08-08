@@ -21,9 +21,16 @@ CQSnapshots {
 		^super.newCopyArgs(state, matrix, dir, getSpesal, setSpesal, legacyDir)
 	}
 
+	// Versioned discovery material. The directory may also contain any number of
+	// gitignored player memories; this manifest names only the deliberately
+	// shipped files and lets tests audit them without touching personal sessions.
+	*releaseNames {
+		^#[example, undertow, dust_bloom, glass_tide, organ_lanterns]
+	}
+
 	save { |name, includeMic = false, note = ""|
 		var safe = this.prSafeName(name);
-		var path, params, data, d;
+		var path, params, data, text, d;
 		if(safe.isNil) { ^nil };
 		params = state.asEvent;
 		params.removeAt(\monitorMute);                 // panic is not memory
@@ -40,7 +47,10 @@ CQSnapshots {
 		);
 		if(File.exists(dir).not) { File.mkdir(dir) };
 		path = this.prPath(safe);
-		File.use(path, "w", { |f| f.write(data.asCompileString) });
+		// Object's pretty-printer wraps long Events as "comma + space + newline".
+		// The space is not data; remove it so versioned snapshots stay diff-clean.
+		text = data.asCompileString.replace(" \n", "\n");
+		File.use(path, "w", { |f| f.write(text) });
 		("CQSnapshots: saved '" ++ safe ++ "' -> " ++ path).postln;
 		^path
 	}

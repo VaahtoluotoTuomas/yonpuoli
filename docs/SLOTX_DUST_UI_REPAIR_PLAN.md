@@ -6,8 +6,9 @@
 > himmeän alfan; se korjattiin pitämällä chip-pään kirkkaus ennallaan. Ääni ja
 > toiminta on hyväksytty. SlotX on myös visuaalisesti hyväksytty ja jäädytetty.
 > Käyttäjä hyväksyi compact/fullscreen-kuvat ja oikean sovelluksen lopullisen
-> UI:n 2026-08-08. Checklisti on rastittu. Shake-karanteenia ei poistettu, koska
-> se on hyväksynnästä erillinen musiikillinen päätös.
+> UI:n 2026-08-08. Checklisti on rastittu. Tämä UI-passi ei itsessään poistanut
+> shake-karanteenia; käyttäjä poisti sen myöhemmin samana päivänä erillisenä
+> musiikillisena päätöksenä.
 
 Tämä dokumentti on toteuttajan työohje. Se syrjäyttää SlotX/Dust-välivaiheen
 väitteen valmiista visuaaliportista, mutta **ei** avaa hyväksyttyä DSP:tä,
@@ -36,8 +37,9 @@ käytösidenttisinä:
 - juurten drive/bias-eleet, parametrit, lähdevalinta, env-haara ja
   audioyhteys;
 - Nightin cable-first-, hover-, undo- ja fokuslait;
-- SlotX/Dust-shake-karanteeni. Sitä ei poisteta ennen tämän visuaaliportin
-  käyttäjähyväksyntää.
+- SlotX/Dust-shake-karanteeni tämän historiallisen UI-passin aikana. Sitä ei
+  poistettu ennen visuaaliportin käyttäjähyväksyntää; myöhempi erillinen päätös
+  ei muuta tämän työn alkuperäistä rajausta.
 
 Korjaukseen ei lisätä animaatiota, uutta ajastinta, telemetry-viestiä,
 parametria, tekstiä, paneelia eikä uutta väriä.
@@ -436,4 +438,6 @@ Hyväksynnän jälkeen:
 3. shake-karanteenin poistamista harkitaan omana musiikillisena päätöksenään;
 4. hyväksytty työ commitoidaan ja pushataan.
 
-Hyväksyntä sulkee UI-portin mutta ei yksin poista shake-karanteenia.
+Hyväksyntä sulki UI-portin mutta ei yksin poistanut shake-karanteenia. Käyttäjä
+teki poistosta erillisen päätöksen myöhemmin 2026-08-08; nykyinen toteutus kylvää
+kaikkia 32 riviä ja antaa Dust/SlotX-riveille omat perherungot.

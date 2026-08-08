@@ -118,7 +118,7 @@ one law so implementers never have to decide case by case:
 | `coco1`, `coco2` | delay voice · gray | coco strip header | the spiral's mouth |
 | `org1`, `org2` | organ · yellow | coco strip organ row | fruit hanging on the spiral |
 
-### 3.2 Destination inventory (28)
+### 3.2 Destination inventory (32)
 
 | dest | kind | socket | former Day home (history) | Night home |
 |---|---|---|---|---|
@@ -129,6 +129,8 @@ one law so implementers never have to decide case by case:
 | `cocoN_skip` | trig | ink ring ✦ + lamp | beside SKIP | spiral moon + lamp |
 | `cocoN_organ` | continuous | hollow yellow ring | — software-native | immediately outside the organ fruit; short root |
 | `cocoN_slotQ` | continuous | hollow orange ring | — software-native | beside the Quantussy gill toward the central ring |
+| `cocoN_slotX` | continuous | hollow neutral ring | — software-native | above/outside the directional crossfeed valve |
+| `cocoN_dust` | continuous | hollow neutral ring | — software-native | Coco-side rim of the inner-lower Dust veil |
 | `cocoN_record` | gate | danger-red ring ● + lamp | — software-native | upper outer rim: about 10 o'clock / 2 o'clock |
 | `castleK_fm` | continuous | blue ring | beside castle *k* range switch | inner moon of castle *k* |
 | `castleK_spesal` | trig | green ring + lamp | beside castle *k* step button | outer moon of castle *k* + lamp |
@@ -575,9 +577,10 @@ one of four seeded musical families — organ drone, Quantussy-memory pulse, dus
 growth or two-Coco crossfeed — and guarantees its own 3–5-cable skeleton. It
 then adds the moon-density random field as decoration. Gate/trig decoration is
 rarer than continuous colour and lives above the Schmitt boundary at
-0.58…0.82; Organ/SlotQ/Record skeleton weights use their destination-specific
-0.20…0.38 / 0.28…0.42 / 0.68…0.82 countries. The skeleton is written last, so
-chance cannot overwrite the route that makes the family audible.
+0.58…0.82; Organ/SlotQ/SlotX/Dust/Record skeleton weights use their
+destination-specific 0.20…0.38 / 0.28…0.42 / 0.18…0.30 / 0.46…0.62 /
+0.68…0.82 countries. The skeleton is written last, so chance cannot overwrite
+the route that makes the family audible.
 
 Every family selects three castles for its own sources, makes one balcium and
 two audio-rate, gives only those castles bounded sends, and prepares a small
@@ -592,9 +595,11 @@ decoration, so a seed keeps the same core at every moon density; only the field
 around it grows. Identical seed, density and incoming Night state reproduce the
 complete result.
 The GUI captures the pre-shake matrix and those exact safe values as one undo.
-All six Organ/SlotQ/Record destinations have their own Inspector columns and
-Night sockets; Record remains a momentary two-way writer/Hold inversion and
-never a second persistent Hold.
+All ten Organ/SlotQ/SlotX/Dust/Record destinations have their own Inspector
+columns and Night sockets. Every canonical row participates in decoration;
+`dustGrowth` deliberately plants both Dust sockets and `crossfeed` both SlotX
+sockets. Record remains a momentary two-way writer/Hold inversion and never a
+second persistent Hold.
 
 ### 7.3 Breed
 
@@ -622,8 +627,12 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
 > width is at least 35 px in compact and 39 px in roomy layout; height remains
 > 24/28 px respectively at the 1280×720 minimum. Destination symbols
 > are grouped into meaningful islands (`coco 1`, `coco 2`, `castle · fm`,
-> `castle · spesal`, `decks`) with short diagonal child labels; source rows retain
-> canonical order but expose their signal families. Replace the spreadsheet field
+> `castle · spesal`, `decks`) with exact contiguous spans 10 / 10 / 5 / 5 / 2.
+> Both Coco rules therefore run through their final `record` column; SlotX and
+> Dust display simply as `slotX` / `dust` inside their already named Coco island
+> while canonical symbols retain the `cocoN_` prefix. The same span contract
+> drives the headers and the strong grid seams. Source rows retain canonical
+> order but expose their signal families. Replace the spreadsheet field
 > of filled rectangles with quiet rails/intersections: an occupied cell becomes a
 > seated knot/plug whose size shows `|weight|`, while polarity uses both the normal
 > amber/blue law and distinct geometry. Hover emphasizes one source row and one
@@ -910,6 +919,12 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
   pointer hover and selection use one exact row height. Both Morph Bridge
   choice boxes share the Inspector preset box's closed and opened Ink hover
   language.
+  The release bank is intentionally five names: `example` is a sparse readable
+  file-format tutorial, while `undertow`, `dust_bloom`, `glass_tide` and
+  `organ_lanterns` are four complete self-starting scenes. Four scenes make two
+  useful A→B pairings without filling the player's page. Any other saved name is
+  personal session memory, not factory content; snapshots never include the Coco
+  buffers themselves.
 
 ---
 
@@ -928,7 +943,7 @@ meters:
 |---|---|---|---|
 | G1 | `/cq_aura` | 16 source magnitudes (lagged \|amp\|, canonical source order) | jack glow, cable pulse and root glow |
 | PLAY-3 | `/cq_castle` | five instantaneous raw-tri values, then the five realized oscillator rates smoothed 0.15 s. At ≤3 Hz the sample can move a pearl; above it the GUI discards the aliased position and draws one stable full-reed blur | the five castle inner-clock reeds |
-| G2 | `/cq_phase` | replyID 1/2; first: coco read-head position 0..1, **the read direction as an audio-rate mean** (`Lag.ar(dir, 0.15)`) and **the skip rate in Hz** (combined reset `\t_skip + skipTrig`, smoothed 0.2 s). Then three five-value blocks in destination order `[SP.AF, Input, Feedback, Organ, SlotQ]`: low-passed effective centres, audio-rate peak excursions around those centres, and summed absolute destination weights after `patchDepth`. SP.AF reports the **realized** `log2(clockHz / speed)` after the 750 Hz…sample-rate clock clamp; all four VCAs report their post-law, post-clip values. Both centre and excursion are reduced at audio rate before `A2K`: slow modulation may move, fast modulation becomes a stable range and never aliases into a false low-frequency gesture. Landed 2026-07-21 at 5 Hz; raised to the shared **15 Hz ambient ceiling** on 2026-07-29; Organ/SlotQ were appended with the six software-native destinations on 2026-08-02 without adding a message stream. Ordinary phase motion redraws only the dot/tail; quantized modulation changes redraw only the affected crescent, calyx or tributary route. The direction remains a mean, not a sample: ±1 = settled, near 0 = shuttling | the spiral spark, comet tail and mouth chevron; skip rate drives the struck mark's weight; the blocks drive five effective-value satellites/wakes |
+| G2 | `/cq_phase` | replyID 1/2; first: coco read-head position 0..1, **the read direction as an audio-rate mean** (`Lag.ar(dir, 0.15)`) and **the skip rate in Hz** (combined reset `\t_skip + skipTrig`, smoothed 0.2 s). Then three seven-value blocks in destination order `[SP.AF, Input, Feedback, Organ, SlotQ, SlotX, Dust]`: low-passed effective centres, audio-rate peak excursions around those centres, and summed absolute destination weights after `patchDepth`. SP.AF reports the **realized** `log2(clockHz / speed)` after the 750 Hz…sample-rate clock clamp; the five VCAs and Dust contribution report their post-law, post-clip values. Both centre and excursion are reduced at audio rate before `A2K`: slow modulation may move, fast modulation becomes a stable range and never aliases into a false low-frequency gesture. Landed 2026-07-21 at 5 Hz; raised to the shared **15 Hz ambient ceiling** on 2026-07-29; Organ/SlotQ were appended with the six software-native destinations on 2026-08-02, and SlotX/Dust with the 16×32 expansion, without adding a message stream. Ordinary phase motion redraws only the dot/tail; quantized modulation changes redraw only the affected crescent, calyx, tributary, bridge valve or Dust veil. The direction remains a mean, not a sample: ±1 = settled, near 0 = shuttling | the spiral spark, comet tail and mouth chevron; skip rate drives the struck mark's weight; the blocks drive seven effective-value satellites/wakes |
 | G2 / PLAY-3 | `/cq_charge` | three 15 Hz producer blocks sent by the synths that own the decisions: coco 1/2 each send `[flipCharge, skipCharge, recordCharge, flipGate, skipTrig, recordGate]`; Quantussy sends five spesal charges followed by the five exact spesal triggers. Charge is post-weight/pre-Schmitt and peak-held 0.15 s; fire is the already-computed post-Schmitt gate/trigger, independently peak-held so one sample reaches the eye. The GUI never derives “fired” from brightness or copies the Schmitt. Amber bead fill remains charge; a pale diamond flare is actual fire | charge/fire lamps — both “how close?” and “did it happen?” — plus the skip struck-regime input and Record's temporary effective-seal inversion (§16.6) |
 | AIO-4 | `/cq_io_inputs` | one ≤15 Hz three-channel raw-input presence block from `\cqInput`, canonical order `[rawLiveL, rawLiveR, rawMic]`, missing mic = 0; the taps precede `liveGain`, `micGain` and preamp source selection and write no bus/output | Audio page's three “does anything reach this configured port?” tracks; never evidence for a draft device |
 
@@ -1866,8 +1881,9 @@ collected into a panel:
   bird B and slightly above its flight line. It opens as a 0.22 crescent;
   decoration density is `0.2 × phase³`, while every non-empty throw also owns
   its 3–5-cable ecological skeleton. With gate rows sown at only 22 % of the
-  continuous-row probability, quarter/half/full average roughly 4–6 / 11–13 /
-  65–67 total cables before occasional overlap. Tap throws shake;
+  continuous-row probability, a 1,024-seed probe of the current 16×32 field
+  gives quarter/half/full means ≈ 5 / 13 / 78 total cables (5.40 / 13.38 /
+  78.39 before rounding). Tap throws shake;
   horizontal drag previews phase from its first pixel and pours it after the
   axis lock; a tap restores its exact starting phase before throwing. Vertical
   down holds rain/grow and
@@ -1967,11 +1983,11 @@ moon has always said how much seed to throw. PLAY-8 found the sparse end the
 most playable, so the current slower-first map is
 `density = 0.2 × phase³`; every non-empty phase additionally guarantees one
 3–5-cable ecological skeleton. Gate/trig rows use only 22 % of the decoration
-probability, so quarter/half/full average about 4–6 / 11–13 / 65–67 total
-cables in the 16×32 field. Accepted SlotX and Dust remain deliberately excluded
-from both shake skeletons and decoration until a separate musical decision
-admits them. A full
-sowing of the accepted columns usually passes `auraCableLimit`, so
+probability. Across all 32 accepted rows, the measured quarter/half/full means
+are about 5 / 13 / 78 total cables (1,024 deterministic seeds per phase).
+`dustGrowth` explicitly owns both Dust rows and `crossfeed` both SlotX rows in
+their five-cable skeletons. A full
+sowing usually passes `auraCableLimit`, so
 its cables keep §16.8's static ink — a big throw costs the pulse, and that is
 honest.
 **The new moon clears the bay** (amended 2026-07-22 after the second review

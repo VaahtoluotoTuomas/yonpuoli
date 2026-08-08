@@ -235,9 +235,9 @@ CQMatrix {
 			// moon this is about nine chance gates, not thirty-five simultaneous
 			// Schmitts; the family skeleton supplies the deliberate pulse.
 			var chance = if(this.class.isGateDest(dest)) { sow * 0.22 } { sow };
-			// New matrix organs enter ecological shake only after their own
-			// listening gate. Skipping the whole row (including random draws) keeps
-			// every established seed stable while SlotX and Dust are auditioned.
+			// Every accepted canonical destination participates. SlotX and Dust were
+			// initially skipped as a four-row audition quarantine; the user opened
+			// them after their sound, gesture and UI gates on 2026-08-08.
 			if(this.class.isShakeTarget(dest)) {
 				row.size.do { |si|
 					if(chance.coin) {
@@ -249,8 +249,7 @@ CQMatrix {
 	}
 
 	*isShakeTarget { |dest|
-		var text = dest.asString;
-		^text.endsWith("_slotX").not and: { text.endsWith("_dust").not }
+		^destNames.includes(dest)
 	}
 
 	*isGateDest { |dest|
@@ -384,10 +383,12 @@ CQMatrix {
 				skeleton.add([sources[1], \coco2_record, rrand(0.68, 0.82)]);
 				skeleton.add([sources[2], #[coco1_slotQ, coco2_slotQ].choose,
 					rrand(0.28, 0.38)]);
-				skeleton.add([sources[3], \coco1_fbVca,
-					rrand(0.18, 0.28) * #[-1, 1].choose]);
-				skeleton.add([sources[4], \coco2_fbVca,
-					rrand(0.18, 0.28) * #[-1, 1].choose]);
+				// Accepted Dust sockets now make the family's converter weather
+				// breathe explicitly instead of leaving both new columns decorative.
+				skeleton.add([sources[3], \coco1_dust,
+					rrand(0.46, 0.62) * #[-1, 1].choose]);
+				skeleton.add([sources[4], \coco2_dust,
+					rrand(0.46, 0.62) * #[-1, 1].choose]);
 			},
 			{ // crossfeed
 				[1, 2].do { |n|
@@ -404,8 +405,11 @@ CQMatrix {
 				params[\coco2Organ] = 0.03;
 				skeleton.add([sources[0], \coco1_record, rrand(0.68, 0.82)]);
 				skeleton.add([sources[1], \coco2_record, rrand(0.68, 0.82)]);
-				skeleton.add([sources[2], \coco1_slotQ, rrand(0.28, 0.40)]);
-				skeleton.add([sources[3], \coco2_slotQ, rrand(0.28, 0.40)]);
+				// The crossfeed family finally plants the bridge it is named for.
+				skeleton.add([sources[2], \coco1_slotX,
+					rrand(0.18, 0.30) * #[-1, 1].choose]);
+				skeleton.add([sources[3], \coco2_slotX,
+					rrand(0.18, 0.30) * #[-1, 1].choose]);
 				skeleton.add([sources[4], \coco2_organ, rrand(0.22, 0.34)]);
 			}
 		);
@@ -437,7 +441,7 @@ CQMatrix {
 	// Ten percent of the random field, plus the 3–5-cable audible skeleton: a
 	// full but still readable default throw. Gate rows use their deliberately
 	// lower sowing probability, so this is no longer a fixed percentage of all
-	// 512 cells (four newly auditioned rows are deliberately quarantined).
+	// 512 cells. All 32 accepted destination rows now participate.
 	*shakeDensity { ^0.1 }
 
 	// same manners as clampWeight: a malformed density warns and falls back to
@@ -473,6 +477,12 @@ CQMatrix {
 	// is dead without the spaf depth knob up), and SPEC's phase-6 presets
 	// (\selfNoise dust levels, \organMode organ levels) need params anyway.
 	// Params are CQSpec names, applied through the CQState funnel (clamped).
+	// `empty` is a clearing utility and `mayhem` is the deterministic stress edge;
+	// the named release set below contains the six musically authored starts.
+
+	*releasePresetNames {
+		^#[classic, selfNoise, quantumDrone, organMode, crossCurrent, dustGarden]
+	}
 
 	*presets {
 		^(
@@ -584,6 +594,81 @@ CQMatrix {
 					coco1Hold: 0, coco2Hold: 0,
 					coco1Fb: 0.9, coco2Fb: 0.9,
 					coco2Speed: 16000
+				)
+			),
+
+			// "two memories trading weather": the newly accepted SlotX columns are
+			// the form, not decoration. Opposed slow bridge pulls keep either Coco
+			// becoming a static copy of the other; two castle gates open held RAM in
+			// alternating phrases. Quiet organ and qMix layers make the state speak
+			// from empty buffers, while unequal clocks turn each exchange into new
+			// material rather than a louder feedback loop.
+			crossCurrent: (
+				matrix: [
+					[\tri1, \coco1_slotX, 0.26], [\tri2, \coco2_slotX, -0.28],
+					[\cas2, \coco1_record, 0.72], [\cas4, \coco2_record, 0.74],
+					[\tri3, \coco1_spaf, 0.15], [\tri3, \coco2_spaf, -0.17],
+					[\cas1, \coco1_organ, 0.24], [\cas5, \coco2_organ, 0.23],
+					[\cas3, \castle4_fm, 0.22], [\cas4, \castle2_fm, -0.20]
+				],
+				params: (
+					coco1Hold: 1, coco2Hold: 1,
+					coco1SlotPre: 0, coco2SlotPre: 0,
+					coco1SlotDeck: 0, coco2SlotDeck: 0,
+					coco1In: 0.82, coco2In: 0.82,
+					coco1Fb: 0.84, coco2Fb: 0.88,
+					coco1Dust: 0.025, coco2Dust: 0.035,
+					coco1DustGrain: 0.38, coco2DustGrain: 0.66,
+					coco1Organ: 0.055, coco2Organ: 0.05,
+					coco1SlotQ: 0.10, coco2SlotQ: 0.08,
+					coco1SlotX: 0.18, coco2SlotX: 0.22,
+					coco1Spaf: 0.18, coco2Spaf: 0.18,
+					coco1Speed: 12000, coco2Speed: 27000,
+					coco1Level: 0.90, coco2Level: 0.90,
+					coco1Pan: -0.32, coco2Pan: 0.32,
+					qFreq: 3.4, qChaos: 0.32,
+					c1Range: \infra, c2Range: \audio, c3Range: \balcium,
+					c4Range: \audio, c5Range: \audio,
+					c1Send: 0.12, c2Send: 0.22, c3Send: 0,
+					c4Send: 0.18, c5Send: 0.25
+				)
+			),
+
+			// "mist on one shore, chips on the other": both accepted Dust columns
+			// breathe under different clocks and opposite grain biases. Record gates
+			// close holes in an otherwise writing pair, while small SlotX pulls let
+			// fragments migrate between the soft and brittle converters. This is the
+			// release set's quietest self-starting texture, not a second selfNoise.
+			dustGarden: (
+				matrix: [
+					[\tri1, \coco1_dust, 0.56], [\tri4, \coco2_dust, -0.60],
+					[\cas2, \coco1_fbVca, -0.20], [\cas5, \coco2_fbVca, 0.22],
+					[\tri3, \coco1_slotX, 0.20], [\tri2, \coco2_slotX, -0.18],
+					[\cas3, \coco1_record, 0.70], [\cas1, \coco2_record, 0.72],
+					[\cas4, \castle5_fm, 0.22], [\cas5, \castle2_fm, -0.18]
+				],
+				params: (
+					coco1Hold: 0, coco2Hold: 0,
+					coco1SlotPre: 0, coco2SlotPre: 0,
+					coco1SlotDeck: 0, coco2SlotDeck: 0,
+					coco1In: 0.62, coco2In: 0.68,
+					coco1Fb: 0.78, coco2Fb: 0.84,
+					coco1Dust: 0.12, coco2Dust: 0.20,
+					coco1DustGrain: 0.16, coco2DustGrain: 0.84,
+					coco1Organ: 0.015, coco2Organ: 0.025,
+					coco1SlotQ: 0.08, coco2SlotQ: 0.12,
+					coco1SlotX: 0.08, coco2SlotX: 0.10,
+					coco1Spaf: 0.22, coco2Spaf: 0.22,
+					coco1Speed: 6500, coco2Speed: 34000,
+					coco1Bits: 7, coco2Bits: 9,
+					coco1DolbyFb: \gate, coco2DolbyFb: \off,
+					coco1Level: 0.95, coco2Level: 0.85,
+					coco1Pan: -0.42, coco2Pan: 0.42,
+					qFreq: 2.7, qChaos: 0.54,
+					c1Range: \infra, c2Range: \balcium, c3Range: \audio,
+					c4Range: \infra, c5Range: \audio,
+					c1Send: 0.08, c2Send: 0.12, c3Send: 0.18,
+					c4Send: 0, c5Send: 0.16
 				)
 			),
 

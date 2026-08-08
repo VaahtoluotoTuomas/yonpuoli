@@ -57,7 +57,7 @@ other Coco ──────────────── SlotX ────�
 
 Quantussy tri/cas + env + Coco + organ = 16 modulation sources
                                   │
-                                  └─> 28 matrix destinations
+                                  └─> 32 matrix destinations
 ```
 
 Kaksi rinnakkaista asiaa kannattaa pitää erillään:
@@ -695,7 +695,8 @@ kaksi kerrosta:
    jatkuvan koristelun yläraja; se ei pienennä taattua runkoa.
 
 Painot on eroteltu kohteen tehtävän mukaan. Organ-rungot ovat 0,20…0,38,
-SlotQ-rungot 0,28…0,42 ja Record-punchit 0,68…0,82. Gate/trig-koristelu on
+SlotQ-rungot 0,28…0,42, SlotX-rungot 0,18…0,30, Dust-rungot 0,46…0,62 ja
+Record-punchit 0,68…0,82. Gate/trig-koristelu on
 harvempaa kuin jatkuva koristelu ja sen itseisarvo on 0,58…0,82, joten sillä on
 oikea mahdollisuus ylittää +0,5-Schmitt; polariteetti arvotaan edelleen.
 Jatkuva koristelu ei enää kasaudu nollan tuntumaan. Runko kirjoitetaan viimeisenä,
@@ -725,14 +726,15 @@ Automaattinen tyhjän RAMin koe antoi kuun oletussirpillä seuraavat tulokset:
 
 | perhe | ensimmäinen seed | johtoja | RMS |
 |---|---:|---:|---:|
-| organ-drone | 3 | 3 | ≈ 0,0414 |
-| memory-pulse | 1 | 4 | ≈ 0,0866 |
-| dust-growth | 2 | 5 | ≈ 0,0591 |
-| crossfeed | 4 | 5 | ≈ 0,1452 |
+| organ-drone | 3 | 3 | ≈ 0,041385 |
+| memory-pulse | 1 | 5 | ≈ 0,089769 |
+| dust-growth | 2 | 5 | ≈ 0,062946 |
+| crossfeed | 4 | 5 | ≈ 0,023180 |
 
 RMS vaihtelee hieman pöly-UGenien satunnaisvaiheen mukana. Kaikki jäivät
 äärellisiksi, puhuivat täysin tyhjistä Cocoista ja erosivat toisistaan jokaisena
-parina; suhteellinen ero oli noin 1,64…4,10 dB. Erillinen kahdeksan polun NRT
+parina; SlotX/Dust-admission jälkeisen ajon suhteellinen ero oli noin
+1,60…3,85 dB. Erillinen kahdeksan polun NRT
 mittasi Organin aktiiviseksi RMS-arvoilla 0,044972/0,052433 ja SlotQ:n arvoilla
 0,133794/0,157749. Suljettu→auki-Record tuotti 0,353605/0,353616; avoin→suljettu-
 Record vaimensi saman referenssin täsmälleen nollaan. Molempien suuntien
@@ -813,10 +815,12 @@ ja NRT-portit. Mitattu aktiivinen SlotX-RMS oli 0,119051/0,141106 ja Dust-RMS
 
 Morph-kentän yläreuna nousi 18 → 13 prosenttiin ja alareuna 96 → 90 prosenttiin.
 Jokainen lehti saa lisäksi 5 px ground-vallihaudan, joten SlotX-silta kulkee sen
-takana eikä enää näytä liittyvän muistiin. Uudet SlotX/Dust-sarakkeet on rajattu
-pois ekologisen shaken sekä rungosta että koristelusta, myös RNG-järjestyksen
-säästäen. Hyväksyntä ei poista tätä karanteenia automaattisesti: mahdollinen
-avaaminen shake-ekologiaan on oma seuraava musiikillinen päätöksensä.
+takana eikä enää näytä liittyvän muistiin. UI-hyväksyntä ei itsessään muuttanut
+shakea, mutta käyttäjä teki sen jälkeen 2026-08-08 erillisen musiikillisen
+päätöksen ja poisti karanteenin. Kaikki 32 kohderiviä osallistuvat nyt
+koristeluun; `dustGrowth` istuttaa tarkoituksella molemmat Dust-rivit ja
+`crossfeed` molemmat SlotX-rivit. 1 024 seedin mittauksessa kuun neljännes/
+puolikas/täysi tuottivat keskimäärin noin 5 / 13 / 78 johtoa.
 `castleK_send` sekä Bits/Wrap jäävät edelleen erillisiksi myöhemmiksi ehdokkaiksi.
 
 Käyttäjän 2026-08-03 live-katselmus hyväksyi SlotX:n sekä koko SlotX/Dust-
@@ -837,11 +841,13 @@ density-lain, ja 2026-08-03 käyttäjä hyväksyi myös korjauspassin, bundled u
 sekä vapaan ensikäytön. PLAY-8 on suljettu. SlotX/Dust-uudistuksen ääni,
 toiminta ja UI ovat myös hyväksyttyjä, ja portti suljettiin 2026-08-08.
 
-Muodollinen seuraava 1.0-portti on 16n:n fyysinen käsituntumatesti. Ennen sitä tai
-sen rinnalla voidaan tehdä yksi erillinen musiikillinen päätös: jäävätkö
-SlotX/Dust-sarakkeet shake-karanteeniin vai otetaanko ne rajatusti ekologiseen
-shakeen. Hyväksyntä ei itsessään muuttanut shake-käytöstä.
+Käyttäjä hyväksyi 2026-08-08 nykyiset 16n-ominaisuudet ja poisti erillisen
+`16N-1`-käsitestin 1.0:n karanteenista. Samana päivänä SlotX/Dust otettiin
+rajatusti ekologiseen shakeen yllä kuvatulla tavalla. Julkaisusisältö on tämän
+jälkeen arvioitu ja portitettu: kuusi taiteellista presettiä sekä esimerkin
+lisäksi neljä täydellistä julkaisusnapshotia. Seuraava muodollinen työ on
+julkaisumedia, sitten etä-CI sekä merge/tagi.
 
-16n:n rinnakkainen käsituntumatesti on tiedostossa
+16n:n vapaaehtoinen regressio-ohje jää tiedostoon
 [`tests/manual_checklist.md`](../tests/manual_checklist.md) kohdassa `16N-1` ja
-yhden silmäyksen kartta tiedostossa [`16N_MAP.md`](16N_MAP.md).
+yhden silmäyksen kartta tiedostoon [`16N_MAP.md`](16N_MAP.md).

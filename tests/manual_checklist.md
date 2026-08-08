@@ -2399,10 +2399,9 @@ skip-merkin, koska siemenet ovat padin koko käyttöliittymä. Vaihtoehdot:
 
 ### 16N-1 — uusi 16n-kartta: kanavanauhat ja renkaan portti (SPEC §6.1)
 
-> **Tämä lohko ajetaan osana soitettavuus-porttia** (`PLAN.md` → Tie 1.0:aan
-> kohta 8), ei erillisenä pysähdyksenä. Syy: kartta on soittotuntuma-asia, ja
-> sitä pitää arvioida samalla istumalla kuin ensikosketuksen oletuksia ja
-> mukaan lähteviä presettejä — ei irrallaan niistä. Kartta yhdellä silmäyksellä:
+> **Status 2026-08-08:** käyttäjä hyväksyi nykyiset 16n-ominaisuudet ja poisti
+> tämän lisäkäsitestin 1.0:n karanteenista. Lohko säilyy vapaaehtoisena
+> laitteistoregressiona, ei julkaisua estävänä porttina. Kartta yhdellä silmäyksellä:
 > [`docs/16N_MAP.md`](../docs/16N_MAP.md).
 
 Tie 1.0:aan kohta 7. Reverbin eläköityminen vapautti `F14 / CC 45`:n, ja
@@ -2417,8 +2416,8 @@ preA+B Drive · coco1+2 SlotQ · patchDepth · masterVol.
 
 Automaattinen portti on vihreä (`CQ_COMPILE_OK`, 13 729 passia / 0 failurea /
 39/39 luokkaa, `CQ_SAFETY_PASSED`; `CQ_HOLD_OK` kantaa, koska DSP ei muuttunut).
-**Hyväksyntä on käsissä ja korvassa** — nämä neljä kysymystä ovat ne joihin
-automaatio ei vastaa.
+Alla olevat neljä kysymystä ovat edelleen hyödyllinen fyysisen laitteen
+regressiokierros, vaikka niitä ei enää vaadita 1.0:aan.
 
 ```supercollider
 // 16N-1 — Alkuasetelma. Kytke 16n USB:hen ENNEN boottia.
@@ -2426,7 +2425,7 @@ automaatio ei vastaa.
 CQ.boot;
 // -> TARKISTA post-ikkunasta "CQMidi16n: 16n found — CC 32..47 (any chan) live"
 CQ.midiRescan;                      // vain jos laitetta ei löytynyt
-CQ.recall(\classic);                // tai mikä tahansa soiva lähtötila
+CQ.patchPreset(\classic);           // tai mikä tahansa soiva lähtötila
 ```
 
 ```supercollider
@@ -2461,9 +2460,8 @@ CQ.set(\coco1Organ, 0); CQ.set(\coco2Organ, 0);
 //    Kysymys: kaipasitko niitä käteen, ja kumpaa?
 ```
 
-- [ ] 16N-1 hyväksytty **soitettavuus-portin osana** (pvm: ______ —
-      kanavanauhan luettavuus, Levelin paikka nauhan lopussa, ristihäivytyksen
-      etäisyys, F14:n sisältö, deckien poisto)
+- [x] 16N-1:n nykyiset ominaisuudet hyväksytty 2026-08-08; erillinen fyysinen
+      lisäkierros poistettu 1.0-karanteenista (ohje säilyy vapaaehtoisena)
 
 ---
 
@@ -2737,7 +2735,7 @@ PLAY-8 on kokonaan suljettu.
 
 ### SLOTX/DUST — uudet 16×32-kohteet ja Dust-usvat
 
-Tämä portti tehdään ennen kuin uudet SlotX/Dust-sarakkeet saavat osallistua
+Tämä portti tehtiin ennen kuin uudet SlotX/Dust-sarakkeet saivat osallistua
 ekologiseen shakeen. Recompiloi ensin luokkakirjasto (**Ctrl+Shift+L**) ja boottaa
 puhdas sessio. Pidä kuulokevoimakkuus maltillisena; Dust tallentuu oikeasti
 Coco-RAMiin ja voi kasvaa feedbackissa.
@@ -2747,8 +2745,8 @@ lopullisen UI:n. SlotX näyttää oikealta eikä sitä muutettu. Dust-sommittelu
 compact-juuren dolby-leikkauksen ja TAB-silmän ring-välin korjaus on toteutettu;
 automaattiset portit ja compact/roomy-kuvasarja ovat vihreät. Käyttäjä hyväksyi
 korjauksen myös oikeassa sovelluksessa, joten yhdistetty portti on suljettu.
-Shake-karanteeni säilyy erilliseen musiikilliseen päätökseen asti. Toteutuksen
-tarkka työjärjestys, tulos ja numeeriset hyväksyntärajat ovat tiedostossa
+Myöhempi erillinen musiikillinen päätös 2026-08-08 poisti shake-karanteenin.
+Toteutuksen tarkka työjärjestys, tulos ja numeeriset hyväksyntärajat ovat tiedostossa
 [`docs/SLOTX_DUST_UI_REPAIR_PLAN.md`](../docs/SLOTX_DUST_UI_REPAIR_PLAN.md).
 
 1. **Kuvan omistajuus ja väljyys.** Kummankin X-venttiilin ylä-/ulkopuolella on
@@ -2789,16 +2787,55 @@ tarkka työjärjestys, tulos ja numeeriset hyväksyntärajat ovat tiedostossa
    muuta sekä SlotX- että Dust-reittejä. Vanhan loopin sisällön ei pidä muuttua;
    uutta ristisyöttöä tai pölyä saa kirjoittua vasta kun Hold avataan. Poista
    johdot ja varmista, että käsin asetetut Hold-, SlotX- ja Dust-arvot säilyivät.
-6. **Shake-karanteeni.** Tee muutama tunnettu ja tuntematon shake, avaa Inspector
-   ja tarkista, että `slotX`- ja `dust`-sarakkeet pysyvät tyhjinä. Vanhat PLAY-8-
-   perheet saavat kuulostaa ennallaan; karanteenin tarkoitus on estää uuden
-   materiaalin sekoittuminen niiden hyväksyttyyn identiteettiin.
+6. **Shakeen hyväksyminen.** Tee muutama tunnettu ja tuntematon shake ja avaa
+   Inspector. Kaikki neljä `slotX`/`dust`-riviä saavat nyt kasvaa koristelussa.
+   Seed 2:n `dustGrowth`-rungossa pitää olla molemmat Dust-rivit ja seed 4:n
+   `crossfeed`-rungossa molemmat SlotX-rivit. Perheiden pitää silti säilyä
+   toisistaan erottuvina; automaattinen `CQ_SHAKE_ECOLOGY_OK` todistaa tämän.
 
 - [x] **SLOTX/DUST ääni, eleet ja toiminta hyväksytty 2026-08-03** (SlotX
       molempiin suuntiin, Dust amount + mist↔chip, matriisi ja Hold)
 - [x] **SLOTX/DUST UI-korjaus hyväksytty 2026-08-08** (Dust/skip/SP.AF-
       väljyys, tiheämmät staattiset speckit, root/dolby ja TAB-silmä/ring sekä
       compact/fullscreen)
-- [x] **SLOTX/DUST hyväksytty kokonaan 2026-08-08** (UI-portti suljettu;
-      shake-karanteenin mahdollinen poisto kirjattu erilliseksi seuraavaksi
-      musiikilliseksi päätökseksi)
+- [x] **SLOTX/DUST hyväksytty kokonaan 2026-08-08** (UI-portti suljettu)
+- [x] **SLOTX/DUST hyväksytty ekologiseen shakeen 2026-08-08** (kaikki 32
+      koristeluriviä; Dust/SlotX omissa nimikkoperheissään)
+
+---
+
+### RELEASE-1 — kuratoidut presetit ja snapshotit
+
+**Status 2026-08-08:** rakenteellinen/taiteellinen sisältöauditointi ja
+production-SynthDef-NRT ovat valmiit. Kuusi julkaisupresettiä kattavat eri
+soittoroolit: external-tape (`classic`), itse kasvava converter-sää
+(`selfNoise`), Quantussy-muisti (`quantumDrone`), suora urku (`organMode`),
+SlotX-fraasivaihto (`crossCurrent`) ja mist↔chip-kasvusto (`dustGarden`).
+`empty` on työkalu ja `mayhem` stressitesti, ei soundiesittely.
+
+Mukana lähtee viisi snapshotia: luettava `example` sekä täydet `undertow`,
+`dust_bloom`, `glass_tide`, `organ_lanterns`. Neljä sceneä on tarkoituksellinen
+määrä: kaksi A→B-paria ilman että käyttäjän oma Memory näyttää tehdaspankilta.
+Kaikki muut paikalliset snapshotit pysyvät gitignoredina. Snapshot ei tallenna
+Coco-bufferia, joten täydet scenet rakentavat materiaalin tyhjästä RAMista.
+
+Vapaaehtoinen, **ei 1.0:aa blokkaava** korvakierros ennen tagia:
+
+```supercollider
+CQ.patchPreset(\classic);       // ulkoinen materiaali/deck hyödyttää tätä
+CQ.patchPreset(\selfNoise);
+CQ.patchPreset(\quantumDrone);
+CQ.patchPreset(\organMode);
+CQ.patchPreset(\crossCurrent);
+CQ.patchPreset(\dustGarden);
+
+CQ.recall(\undertow);
+CQ.recall(\dust_bloom);
+CQ.recall(\glass_tide);
+CQ.recall(\organ_lanterns);
+```
+
+- [x] **RELEASE-1 manifesti ja sisältörakenne arvioitu 2026-08-08**
+- [x] **RELEASE-1 blank-RAM-NRT vihreä** (`CQ_RELEASE_CONTENT_OK`; kaikki
+      haarat finite/bounded/kuultavan rajan yli ja vaaditut parit erottuvat)
+- [ ] Vapaaehtoinen käyttäjän korvakierros ennen tagia (ei karanteeni)

@@ -44,6 +44,7 @@ CQSnapshotTest : UnitTest {
 	}
 
 	test_roundtripEquality {
+		var path, savedText;
 		state.set(\coco1Fb, 1.02);
 		state.set(\qChaos, 0.4);
 		state.set(\preASrc, \mic);
@@ -52,7 +53,10 @@ CQSnapshotTest : UnitTest {
 		matrix.patch(\cas3, \coco1_spaf, 0.7);
 		matrix.patch(\envA, \coco2_fbVca, -0.5);
 		spesal = [1, 2, 3, 4, 5];
-		snaps.save(\rt);
+		path = snaps.save(\rt);
+		savedText = File.readAllString(path);
+		this.assert(savedText.find(" \n").isNil,
+			"saved snapshot text has no pretty-printer trailing spaces");
 		state.set(\coco1Fb, 0.1);
 		state.set(\qChaos, 0.9);
 		state.set(\preASrc, \deckB);
@@ -165,6 +169,62 @@ CQSnapshotTest : UnitTest {
 		snaps.save(\alpha);
 		snaps.save(\beta);
 		this.assertEquals(snaps.list, ["alpha", "beta"], "list returns sorted names");
+	}
+
+	test_versionedReleaseSnapshotsAreSafeCompleteDistinctScenes {
+		var releaseDir = Cocoquantus.repoDir +/+ "snapshots";
+		var release = CQSnapshots(state, matrix, releaseDir,
+			{ spesal.copy }, { |values| spesal = values.copy }, releaseDir);
+		var artistic = CQSnapshots.releaseNames.reject { |name| name == \example };
+		var fingerprints = List.new;
+		this.assertEquals(CQSnapshots.releaseNames,
+			#[example, undertow, dust_bloom, glass_tide, organ_lanterns],
+			"the release exposes one tutorial and four curated scenes");
+		artistic.do { |name|
+			var data = release.read(name);
+			var params, missing, selfStarting;
+			this.assert(data.notNil, "release snapshot % parses".format(name));
+			if(data.notNil) {
+				params = data[\params];
+				missing = CQSpec.names.reject { |param|
+					param == \monitorMute or: { params[param].notNil }
+				};
+				this.assert(missing.isEmpty,
+					"% is a complete scene, missing only panic state (missing %)"
+						.format(name, missing));
+				this.assertEquals(params[\micGain], 0,
+					"% cannot open the microphone on recall".format(name));
+				this.assert(params[\monitorMute].isNil,
+					"% never stores or defeats panic".format(name));
+				selfStarting = (params[\coco1Dust] > 0)
+					or: { params[\coco2Dust] > 0 }
+					or: { params[\coco1Organ] > 0 }
+					or: { params[\coco2Organ] > 0 }
+					or: {
+						(params[\coco1SlotQ] > 0 or: { params[\coco2SlotQ] > 0 })
+						and: { (1..5).any { |k|
+							params[("c" ++ k ++ "Send").asSymbol] > 0
+						} }
+					};
+				this.assert(selfStarting,
+					"% can speak from blank RAM without a private sample".format(name));
+				this.assert(data[\meta][\note].asString.size > 20,
+					"% explains its musical role in Memory".format(name));
+				data[\matrix].do { |triple|
+					this.assert(CQMatrix.srcIndex(triple[0]).notNil
+						and: { CQMatrix.destIndex(triple[1]).notNil }
+						and: { triple[2].abs <= 1 },
+						"% contains only canonical bounded matrix routes".format(name));
+				};
+				fingerprints.add([
+					params.asCompileString, data[\matrix].asCompileString,
+					data[\spesal].asCompileString
+				].asCompileString);
+			};
+		};
+		this.assertEquals(fingerprints.as(Set).size, artistic.size,
+			"the four artistic snapshots are genuinely distinct states");
+		release.free;
 	}
 
 	test_legacyPresetFolderIsReadOnlyFallback {

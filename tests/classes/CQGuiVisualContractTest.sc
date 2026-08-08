@@ -113,6 +113,37 @@ CQGuiVisualContractTest : UnitTest {
 			"a maximized window gives the loom bigger cells, not just more slate");
 	}
 
+	test_inspectorDestinationHeadersCoverTheCanonical32Columns {
+		var groups = CQGuiMatrix.destGroups, cursor = 0;
+		this.assertEquals(groups.collect { |group| group[\title] },
+			["coco 1", "coco 2", "castle · fm", "castle · spesal", "decks"],
+			"the Inspector keeps its five semantic destination islands");
+		groups.do { |group|
+			this.assertEquals(group[\start], cursor,
+				"% starts exactly after the preceding island".format(group[\title]));
+			cursor = cursor + group[\count];
+		};
+		this.assertEquals(groups.collect { |group| group[\count] }, [10, 10, 5, 5, 2],
+			"both complete Coco islands include SlotX, Dust and Record");
+		this.assertEquals(cursor, CQMatrix.destNames.size,
+			"header spans and seam boundaries cover every canonical matrix column once");
+		this.assertEquals(CQMatrix.destNames[groups[0][\start] + groups[0][\count] - 1],
+			\coco1_record, "the coco 1 rule reaches through rec");
+		this.assertEquals(CQMatrix.destNames[groups[1][\start] + groups[1][\count] - 1],
+			\coco2_record, "the coco 2 rule reaches through rec");
+	}
+
+	test_inspectorShortensTheNewCocoDestinationLabels {
+		#[\coco1_slotX, \coco2_slotX].do { |dest|
+			this.assertEquals(CQGuiMatrix.destLabel(dest), "slotX",
+				"% uses the group-owned short label".format(dest));
+		};
+		#[\coco1_dust, \coco2_dust].do { |dest|
+			this.assertEquals(CQGuiMatrix.destLabel(dest), "dust",
+				"% uses the group-owned short label".format(dest));
+		};
+	}
+
 	test_memoryFillsTheSharedRailAtEveryStep {
 		CQGuiScale.steps.do { |step|
 			var page = if(step == \roomy) { 1434 } { 1272 };

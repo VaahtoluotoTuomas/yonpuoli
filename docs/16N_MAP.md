@@ -3,6 +3,9 @@
 Quick reference for the atovproject 16n faderbank. Normative source is
 [`SPEC.md` §6.1](../SPEC.md); this page only makes it glanceable. The map is
 remappable in `config.scd`, and the instrument plays fully without the 16n.
+The current feature set was accepted on 2026-08-08; the longer physical exercise
+in `tests/manual_checklist.md` remains optional regression guidance, not a 1.0
+release blocker.
 
 ```
  ── COCO 1 ─────────────────────  ── COCO 2 ─────────────────────  ── SHARED ────────────────────────

@@ -532,8 +532,9 @@ hit body. These measures do not reopen N3's grammar.
 
 - The **solitary moon** is Ø 70 in the far upper-right, beyond bird B and
   slightly above it. It opens as a 0.22 crescent and sows through
-  the PLAY-8 slow-first curve `0.2 × phase³` (quarter/half/full ≈ 4–6 / 11–13 /
-  65–67 total cables including the ecological core). Horizontal preview follows
+  the PLAY-8 slow-first curve `0.2 × phase³`. After all 32 rows were admitted,
+  a 1,024-seed probe measured quarter/half/full means ≈ 5 / 13 / 78 total
+  cables including the ecological core. Horizontal preview follows
   the first pixel; a release that remains a tap restores the exact starting
   phase before it throws. Down holds rain/grow and up holds sun/wither:
   one 8 px dominant-axis lock chooses the act, then 32 px of travel tensions

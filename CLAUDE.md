@@ -87,10 +87,11 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   bounded Dust destinations and one new DustGrain hand axis per Coco. Its full
   automated/NRT/GUI gate and rendered visual review are green. Sound, gesture
   and behavior were accepted on 2026-08-03; the repaired final UI was accepted
-  in the real application on 2026-08-08. Those four matrix columns still stay
-  out of ecological shake until a separate musical decision changes that.
+  in the real application on 2026-08-08. A subsequent explicit musical decision
+  admitted those four matrix columns to ecological shake: every row receives
+  decoration, `dustGrowth` owns both Dust rows and `crossfeed` both SlotX rows.
   The user explicitly accepted every pre-PLAY-7 listening test on 2026-08-02.
-  **One hands-on tick and four release jobs remain before 1.0**, in this order, and
+  **The content gate is closed; three release steps remain before 1.0**, in this order, and
   `PLAN.md`'s "Seuraava askel konkreettisesti" is the
   authority on them:
   1. [done] **PLAY-8 ecological-shake ear acceptance.** The user's 2026-08-02 PLAY-7 result
@@ -115,13 +116,16 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   2. [done] **SLOTX/DUST** — both matrix-fed X lanes, Dust's radial amount and
      transverse mist↔chip grain, Hold closure and the raised/moated morph seeds
      passed. The final Dust spacing, static-speck, root/dolby and tide-eye UI
-     repair was accepted on 2026-08-08. Shake quarantine remains a separate
-     post-acceptance musical decision.
-  3. **16N-1** — the faderbank hands-on tick. Automatic gate green; it needs
-     the 16n in hand and is the only thing blocking road-to-1.0 step 7.
-  4. Then: what ships (four playable presets, exactly one snapshot admitted by
-     `.gitignore`) → release media → remote CI green → merge to `main` and the
-     1.0 tag.
+     repair was accepted on 2026-08-08. Its separately decided shake admission
+     is also complete.
+  3. [done] **16N-1** — the user accepted the current 16n features on
+     2026-08-08 and removed the extra hands-on exercise from the 1.0 quarantine.
+     The checklist remains optional regression guidance.
+  4. [done] **What ships** — six authored presets (`classic`, `selfNoise`,
+     `quantumDrone`, `organMode`, `crossCurrent`, `dustGarden`) and exactly five
+     versioned snapshots (`example` plus four complete artistic scenes).
+     `empty` is a utility, `mayhem` a stress edge, and private memories stay ignored.
+  5. Next: release media → remote CI green → merge to `main` and the 1.0 tag.
   The visual correction has three durable laws. Continuous Coco destinations
   (SP.AF, Input VCA, Feedback VCA, Organ, SlotQ, SlotX, Dust) are hollow; interior glyphs
   are reserved for Flip/Skip/Record acts. Software-native Organ/SlotQ/Record
@@ -139,11 +143,19 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   and 36 static specks. Morph seeds sit at 13/90 % height with a 5 px ground
   moat; the separate tide eye uses 0.94. Grain 0.5 preserves the prior
   filtered-noise + Dust2 formula exactly.
-- **Current delivery gate (2026-08-08):** `CQ_COMPILE_OK`, **21,387 unit
+  Inspector group geometry is one 10/10/5/5/2 contract shared by header rules
+  and strong seams, so both Coco headings end at Record. Display labels shorten
+  only `cocoN_slotX`/`cocoN_dust` to `slotX`/`dust`; canonical names stay stable.
+- **Current delivery gate (2026-08-08):** `CQ_COMPILE_OK`, **21,660 unit
   passes / 0 failures / 40/40 classes**, all three GUI smokes,
   `CQ_MATRIX_INPUTS_OK`, `CQ_SHAKE_ECOLOGY_OK`, `CQ_PLAYABILITY_MEASURED`,
-  `CQ_HOLD_OK`, `CQ_DUST_OK`, `CQ_SELFNOISE_OK` and the full 90 s
-  `CQ_SAFETY_PASSED`. Rest/open captures were visually inspected. Active
+  `CQ_HOLD_OK`, `CQ_DUST_OK`, `CQ_SELFNOISE_OK`, `CQ_RELEASE_CONTENT_OK` and
+  the full 90 s `CQ_SAFETY_PASSED`. The exact four-scene generator also exits
+  with `CQ_RELEASE_SNAPSHOTS_WRITTEN`. Current shake-family RMS is
+  0.041385 / 0.089769 / 0.062946 / 0.023180; every pair remains distinct.
+  The six release-content branches have post-master RMS 0.008574 / 0.013069 /
+  0.005382 / 0.004706 / 0.012155 / 0.006428, with an 8.24 dB snapshot spread.
+  Rest/open captures were visually inspected. Active
   SlotX RMS is 0.119051/0.141106 and Dust RMS 0.018479/0.023670; all four held
   cases are exactly silent. The physical unplugged-K-Mix reboot from the prior
   delivery selected split WASAPI, reported about 47,969 Hz and advanced 100
@@ -353,9 +365,8 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
        `CQGui.sowDensity` maps phase cubically (`0.2 × phase³`). Every
        non-empty throw now also owns a 3–5-cable ecological skeleton; gate rows
        receive only 22% of continuous-row decoration probability. Across the
-       28 shake-enabled target columns of the 16×32 field, a quarter/half/full
-       moon therefore averages about 4–6 / 11–13 /
-       65–67 total cables. The old weight-ceiling
+       full 32-target field, a 1,024-seed probe gives quarter/half/full means
+       5.40 / 13.38 / 78.39 total cables (documented as ≈5 / 13 / 78). The old weight-ceiling
        mapping was redundant (`patchDepth` is already the how-alive macro) and
        inaudible — every throw rewrote the same ~35 cells, so a thin crescent
        read as "everything went quiet". **The new moon clears the bay** (round
@@ -381,8 +392,9 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
     deferred on 2026-07-27, reopened by PLAY-7 and implemented on 2026-08-02:
     four seeded audible families, destination-aware weights and an explicit safe
     musical-control preparation bundled with the matrix in GUI undo. PLAY-8 has
-    accepted its distinct-family and density-identity laws; the correction pass
-    now awaits its focused ear/hand retest. Do not dilute it into unrelated
+    accepted its distinct-family and density-identity laws, and the correction
+    pass passed its focused ear/hand retest on 2026-08-03. SlotX/Dust were
+    separately admitted on 2026-08-08. Do not dilute it into unrelated
     generic knob randomization.
   - **Spesal coupling chords** (accepted 2026-07-22, manual block G2.11b): the
     night's inner clock showed a castle's *state* but not
@@ -572,19 +584,14 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   tooling confirmation, not a fourth acceptance night.
 - **The user decided 2026-07-31 that five more items are 1.0 conditions**, so the
   road is now nine steps. Name/identity (**Yönpuoli**), the privacy audit
-  (`audit/PRIVACY_AUDIT.md`) and the README rewrite are **done**. The **16n map
-  is rebuilt and its automated gate is green; only the hands-on acceptance
-  (checklist `16N-1`) is open.** Every pre-PLAY-7 listening test is now
-  explicitly accepted (2026-08-02). PLAY-7 then rejected both global
-  boot/shake candidates;
-  the remaining musical choice is the separately auditioned ecological-shake
-  prototype described at the top of this handoff. What ships still requires
-  four playable presets, with `.gitignore` admitting exactly one snapshot,
-  `snapshots/example.cqsnap.scd`. The round opened with an NRT measurement of
-  the user's own observation that a patched cable or a big shake sometimes
-  makes no audible difference; it closed one real patch-side Schmitt issue but
-  the 2026-08-02 ear test proved that aggregate NRT difference was not enough
-  to make the uniform shake musically consequential.
+  (`audit/PRIVACY_AUDIT.md`), README rewrite, playability, current **16n map**,
+  ecological-shake admission and release-content curation are **done**. The
+  16n hands-on block remains optional regression guidance, not a blocker.
+  Every pre-PLAY-7 listening test was explicitly accepted (2026-08-02), PLAY-8
+  closed on 2026-08-03 and SlotX/Dust closed on 2026-08-08. The exact release
+  manifests now expose six authored presets and five snapshots; the four full
+  snapshot scenes and two new presets pass a production-SynthDef blank-RAM NRT.
+  The remaining order is release media, remote CI, then merge/tag.
   See PLAN.md → "Tie 1.0:aan".
 - **Playability tests 1–5 are accepted as of 2026-08-02.** The planted-cable
   first-touch weight is 0.60. Night planting is binary and silent until release:

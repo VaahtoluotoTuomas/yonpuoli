@@ -18,6 +18,41 @@ CQGuiMatrix {
 			CQGuiScale.metrics(step)[\cellHeight]]
 	}
 
+	// One public grouping contract owns both the header spans and the stronger
+	// grid seams. Keeping either as a second list caused the 16x32 expansion to
+	// leave the Inspector painted with the old 8+8+5+5+2 boundaries.
+	*destGroups {
+		^[(start: 0, count: 10, title: "coco 1"),
+			(start: 10, count: 10, title: "coco 2"),
+			(start: 20, count: 5, title: "castle · fm"),
+			(start: 25, count: 5, title: "castle · spesal"),
+			(start: 30, count: 2, title: "decks")]
+	}
+
+	// Display language only: canonical destination Symbols stay untouched for
+	// patches, presets and snapshots. Coco ownership is already stated by the
+	// group heading, so repeating it inside the narrow diagonal label wastes ink.
+	*destLabel { |dest|
+		^switch(dest,
+			\coco1_spaf, { "spaf" }, \coco1_inVca, { "in" },
+			\coco1_fbVca, { "fb" }, \coco1_flip, { "flip" },
+			\coco1_skip, { "skip" }, \coco1_organ, { "organ" },
+			\coco1_slotQ, { "q in" }, \coco1_slotX, { "slotX" },
+			\coco1_dust, { "dust" }, \coco1_record, { "rec" },
+			\coco2_spaf, { "spaf" },
+			\coco2_inVca, { "in" }, \coco2_fbVca, { "fb" },
+			\coco2_flip, { "flip" }, \coco2_skip, { "skip" },
+			\coco2_organ, { "organ" }, \coco2_slotQ, { "q in" },
+			\coco2_slotX, { "slotX" }, \coco2_dust, { "dust" },
+			\coco2_record, { "rec" },
+			\castle1_fm, { "1" }, \castle2_fm, { "2" },
+			\castle3_fm, { "3" }, \castle4_fm, { "4" }, \castle5_fm, { "5" },
+			\castle1_spesal, { "1" }, \castle2_spesal, { "2" },
+			\castle3_spesal, { "3" }, \castle4_spesal, { "4" },
+			\castle5_spesal, { "5" }, \deckA_rate, { "a · rate" },
+			\deckB_rate, { "b · rate" }, { dest.asString })
+	}
+
 	*loomSize { |step = \compact, pageWidth = 1272|
 		^Size(CQGuiScale.railWidth(step, pageWidth), CQGuiScale.loomHeight(step))
 	}
@@ -184,9 +219,12 @@ CQGuiMatrix {
 		#[5, 10, 12, 14].do { |row|
 			Pen.line(Point(0, row * cellH), Point(size.width, row * cellH));
 		};
-		#[8, 16, 21, 26].do { |column|
-			Pen.line(Point(labW + (column * cellW), 0),
-				Point(labW + (column * cellW), size.height));
+		this.class.destGroups.do { |group, i|
+			if(i > 0) {
+				var column = group[\start];
+				Pen.line(Point(labW + (column * cellW), 0),
+					Point(labW + (column * cellW), size.height));
+			};
 		};
 		Pen.stroke;
 
@@ -340,30 +378,11 @@ CQGuiMatrix {
 	}
 
 	prDestGroups {
-		^[(start: 0, count: 8, title: "coco 1"),
-			(start: 8, count: 8, title: "coco 2"),
-			(start: 16, count: 5, title: "castle · fm"),
-			(start: 21, count: 5, title: "castle · spesal"),
-			(start: 26, count: 2, title: "decks")]
+		^this.class.destGroups
 	}
 
 	prDestLabel { |dest|
-		^switch(dest,
-			\coco1_spaf, { "spaf" }, \coco1_inVca, { "in" },
-			\coco1_fbVca, { "fb" }, \coco1_flip, { "flip" },
-			\coco1_skip, { "skip" }, \coco1_organ, { "organ" },
-			\coco1_slotQ, { "q in" }, \coco1_record, { "rec" },
-			\coco2_spaf, { "spaf" },
-			\coco2_inVca, { "in" }, \coco2_fbVca, { "fb" },
-			\coco2_flip, { "flip" }, \coco2_skip, { "skip" },
-			\coco2_organ, { "organ" }, \coco2_slotQ, { "q in" },
-			\coco2_record, { "rec" },
-			\castle1_fm, { "1" }, \castle2_fm, { "2" },
-			\castle3_fm, { "3" }, \castle4_fm, { "4" }, \castle5_fm, { "5" },
-			\castle1_spesal, { "1" }, \castle2_spesal, { "2" },
-			\castle3_spesal, { "3" }, \castle4_spesal, { "4" },
-			\castle5_spesal, { "5" }, \deckA_rate, { "a · rate" },
-			\deckB_rate, { "b · rate" }, { dest.asString })
+		^this.class.destLabel(dest)
 	}
 
 	prDestColor { |dest, colors|

@@ -10,6 +10,13 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Fixed
 
+- Inspector destination islands now derive their spans from the canonical
+  16×32 order: Coco 1 and Coco 2 each cover all ten columns through `record`,
+  followed by 5 FM, 5 Spesal and 2 deck columns. The same contract draws the
+  strong seams and group rules, so headers cannot drift onto SlotX/Dust again.
+  The two Coco-local child labels are shortened to `slotX` and `dust` while
+  their canonical routing symbols remain unchanged.
+
 - Every `StackLayout` sibling above the Night's container is repainted after a
   layout. `routeView`, the gesture layer and the cable overlay are resized and
   repainted by Qt independently of the container whose `onResize` recomputes the
@@ -29,9 +36,20 @@ tagged. Earlier tags describe internal development baselines.
   per-Coco SlotX and Dust destinations. SlotX uses the accepted bounded VCA law;
   Dust uses a smaller signed-square ±0.18 contribution clipped to its 0…0.5
   material rail. Both report effective DSP telemetry without moving stored hand
-  values. Their sound, behavior and UI gates are closed; both remain
-  quarantined from ecological-shake skeletons and decoration pending a separate
-  post-acceptance musical decision.
+  values. Their sound, behavior and UI gates are closed. The subsequent musical
+  decision admitted both into ecological shake: all 32 rows now receive
+  density decoration, `dustGrowth` deliberately plants both Dust destinations
+  and `crossfeed` plants both SlotX destinations.
+
+- Audited the release content as six authored starts: `classic`, `selfNoise`,
+  `quantumDrone`, `organMode`, and the new `crossCurrent` and `dustGarden`.
+  `empty` remains a clearing utility and `mayhem` the deterministic safety/stress
+  field, rather than being presented as artistic presets. Five exact snapshots
+  now ship: the sparse readable `example` plus four complete, self-starting
+  scenes (`undertow`, `dust_bloom`, `glass_tide`, `organ_lanterns`). Personal
+  session memories remain ignored. A production-SynthDef NRT verifies that the
+  six new release-content branches speak from empty RAM, stay bounded and are
+  materially distinct.
 
 - Promoted Dust from the Workshop ledger into two Coco-local Night veils. A
   radial gesture controls amount and a transverse `DustGrain` axis crossfades
@@ -85,7 +103,9 @@ tagged. Earlier tags describe internal development baselines.
   `deckBLevel` already have their own Night crescents, `deckARate` and
   `deckBRate` are matrix destinations, and both remain reachable from the
   Workshop page, code and snapshots. The allocation rule behind the change is
-  now normative: a fader is worth most where no other hand reaches.
+  now normative: a fader is worth most where no other hand reaches. The user
+  accepted the current 16n feature set on 2026-08-08; its additional hands-on
+  exercise is no longer a 1.0 quarantine or release blocker.
 
 - Audio candidate readiness now requires three actual-sample-rate readings,
   spaced 0.75 seconds apart, all within 80–120% of the request before allocating
