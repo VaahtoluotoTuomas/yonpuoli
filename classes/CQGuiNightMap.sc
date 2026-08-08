@@ -1,5 +1,5 @@
 // CQGuiNightMap — the Night stage (GUI_SPEC §6, §16.6): a topology-true
-// archipelago carrying all 16 jacks, 28 sockets, the cable overlay and banana
+// archipelago carrying all 16 jacks, 32 sockets, the cable overlay and banana
 // grammar, plus the §6.1 night touch grammar (CQGuiNightTouch). Pure
 // view: geometry from CQNightGeometry, pixels from CQInk/CQInkNight, every
 // write through the shared grammar and funnels. Large stable bodies remain
@@ -16,6 +16,8 @@ CQGuiNightMap {
 	var <stageView, <container, <overlay, <routeView;
 	var <controller, <touch, <endpoints, <bodies;
 	var <groundView, <rootViews, <ringView, <eyeView, <castleViews, <shellViews;
+	var <dustViews, <dustNorms, <dustGrainNorms, <dustActive, <dustHover;
+	var <dustModStates;
 	var <readHeadViews, <birdViews, <shellPaintCounts, <readHeadPaintCounts;
 	// Level's shore moved onto this layer in PLAY-6.1, so the smoke has to be
 	// able to prove that an outside CQState write still repaints it — and the
@@ -92,6 +94,12 @@ CQGuiNightMap {
 		if(string.endsWith("_slotQ")) {
 			^(kind: \socket, family: \tri, paper: \clear)
 		};
+		if(string.endsWith("_slotX")) {
+			^(kind: \socket, family: \line, paper: \clear)
+		};
+		if(string.endsWith("_dust")) {
+			^(kind: \socket, family: \line, paper: \clear)
+		};
 		if(string.endsWith("_record")) {
 			^(kind: \socket, family: \danger, glyph: \rec, lamp: true,
 				paper: \clear,
@@ -134,6 +142,8 @@ CQGuiNightMap {
 				("coco" ++ n ++ "_skip").asSymbol,
 				("coco" ++ n ++ "_organ").asSymbol,
 				("coco" ++ n ++ "_slotQ").asSymbol,
+				("coco" ++ n ++ "_slotX").asSymbol,
+				("coco" ++ n ++ "_dust").asSymbol,
 				("coco" ++ n ++ "_record").asSymbol]
 		};
 		^[]
@@ -193,6 +203,8 @@ CQGuiNightMap {
 				names.add(("coco" ++ (i + 1) ++ suffix).asSymbol)
 			};
 			this.shellFlowNames(i).do { |name| names.add(name) };
+			names.add(this.dustParamName(i, \Dust));
+			names.add(this.dustParamName(i, \DustGrain));
 		};
 		// the ring's storm iris (§16.6)
 		names.add(\qFreq);
@@ -220,6 +232,11 @@ CQGuiNightMap {
 		^switch(target,
 			\level, { names[0] }, \organ, { names[1] },
 			\slotQ, { names[2] }, \slotX, { names[3] }, { nil })
+	}
+
+	*dustParamName { |cocoIndex, suffix = \Dust|
+		var n = cocoIndex.asInteger.clip(0, 1) + 1;
+		^("coco" ++ n ++ suffix.asString).asSymbol
 	}
 
 	// §6.1 crescent inventory: three continuous coco moons per shell plus one
@@ -275,7 +292,9 @@ CQGuiNightMap {
 	*crescentModState { |name, value, spread = 0, activity = 0|
 		var inventory = this.crescentNames(0) ++ this.crescentNames(1)
 			++ [this.shellFlowParam(0, \organ), this.shellFlowParam(0, \slotQ),
-				this.shellFlowParam(1, \organ), this.shellFlowParam(1, \slotQ)];
+				this.shellFlowParam(0, \slotX), this.shellFlowParam(1, \organ),
+				this.shellFlowParam(1, \slotQ), this.shellFlowParam(1, \slotX),
+				this.dustParamName(0), this.dustParamName(1)];
 		var entry, lowRaw, highRaw, step = this.crescentModStep, quant;
 		var center, lower, upper;
 		value = this.prTelemetryNumber(value);
@@ -426,6 +445,19 @@ CQGuiNightMap {
 		^this
 	}
 
+	setDustActive { |i, flag|
+		dustActive[i] = flag == true;
+		if(freed.not) { dustViews[i].refresh };
+		^this
+	}
+
+	paintDust { |i, amountNorm, grainNorm|
+		dustNorms[i] = (amountNorm ? 0).clip(0, 1);
+		dustGrainNorms[i] = (grainNorm ? 0.5).clip(0, 1);
+		if(freed.not) { dustViews[i].refresh };
+		^this
+	}
+
 	setCastleSendActive { |k, flag|
 		sendActive[k] = flag == true;
 		if(freed.not) { castleViews[k].refresh };
@@ -563,7 +595,7 @@ CQGuiNightMap {
 
 	stampCorner { |i|
 		gui.compass.stamp(i, matrix.fullMatrix);
-		if(freed.not) { compassView.refresh };
+		if(freed.not) { compassView.refresh; routeView.refresh };
 		^this
 	}
 
@@ -597,7 +629,7 @@ CQGuiNightMap {
 
 	clearCorner { |i|
 		gui.compass.clear(i);
-		if(freed.not) { compassView.refresh };
+		if(freed.not) { compassView.refresh; routeView.refresh };
 		^this
 	}
 
@@ -682,6 +714,7 @@ CQGuiNightMap {
 		overlay !? { overlay.backgrounded = next };
 		if(freed.not) {
 			compassView.refresh;
+			routeView.refresh;
 			tideGestureView !? { tideGestureView.refresh };
 		};
 		^this
@@ -840,11 +873,12 @@ CQGuiNightMap {
 		if(headRepaint) { readHeadViews[i].refresh };
 	}
 
-	// Five destination readings piggyback on each Coco's phase frame. Missing
+	// Seven destination readings piggyback on each Coco's phase frame. Missing
 	// telemetry freezes the last honest reading (as the read head does); a frame
 	// explicitly reporting zero connected weight removes the satellite. The
-	// first three belong to the old crescents; Organ and SlotQ continue the same
-	// wake language on the shell calyx and q gill.
+	// first three belong to the old crescents; Organ, SlotQ and SlotX continue
+	// the same wake language on the shell calyx and bridge gills, while Dust
+	// wears it as a hollow pearl in its own veil.
 	crescentModulationFrame { |i, values, spreads, activities|
 		var names, flowNames;
 		if(freed or: { values.isNil } or: { spreads.isNil }
@@ -864,7 +898,8 @@ CQGuiNightMap {
 			};
 		};
 		flowNames = [this.class.shellFlowParam(i, \organ),
-			this.class.shellFlowParam(i, \slotQ)];
+			this.class.shellFlowParam(i, \slotQ),
+			this.class.shellFlowParam(i, \slotX)];
 		flowNames.do { |name, m|
 			var before = flowModStates[name];
 			var after = this.class.crescentModState(name, values.at(m + 3),
@@ -876,6 +911,16 @@ CQGuiNightMap {
 				if(m == 0) { shellViews[i].refresh } { routeView.refresh };
 			};
 		};
+		{
+			var name = this.class.dustParamName(i);
+			var before = dustModStates[i];
+			var after = this.class.crescentModState(name, values.at(6),
+				spreads.at(6), activities.at(6));
+			if(this.class.crescentModStateChanged(before, after)) {
+				dustModStates[i] = after;
+				if(freed.not) { dustViews[i].refresh };
+			};
+		}.value;
 		^this
 	}
 
@@ -1023,6 +1068,11 @@ CQGuiNightMap {
 		flowActive = IdentitySet.new;
 		flowHover = IdentitySet.new;
 		flowModStates = IdentityDictionary.new;
+		dustNorms = [0, 0];
+		dustGrainNorms = [0.5, 0.5];
+		dustActive = [false, false];
+		dustHover = [false, false];
+		dustModStates = Array.newClear(2);
 		activeCrescents = IdentitySet.new;
 		hoverCrescents = IdentitySet.new;
 		dolbyStates = IdentityDictionary.new;
@@ -1092,6 +1142,13 @@ CQGuiNightMap {
 		shellViews = 2.collect { |i|
 			var view = this.prLayer;
 			view.drawFunc = { this.prSafeDraw { this.prDrawShell(i) } };
+			view
+		};
+		// Converter-local Dust is transparent irregular flesh, not a panel. Its
+		// view includes only the detached ownership breath and the veil's own hand.
+		dustViews = 2.collect { |i|
+			var view = this.prLayer(false);
+			view.drawFunc = { this.prSafeDraw { this.prDrawDust(i) } };
 			view
 		};
 		// The only continuously moving Coco ink gets clear, mouse-pass-through
@@ -1173,6 +1230,9 @@ CQGuiNightMap {
 					this.prShellBridgeTargetAt(i, v, x, y).notNil
 				}
 			))
+		};
+		dustViews.do { |view|
+			bananaControls.add((view: view, cableHover: true))
 		};
 		// The night bodies own their own first gesture pass (§6.1), so they
 		// register members only — no view for the controller to re-bind, or it
@@ -1310,6 +1370,23 @@ CQGuiNightMap {
 			view.mouseWheelAction = { |v, x, y, mods, xd, yd|
 				touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
 			};
+		};
+		dustViews.do { |view, i|
+			view.mouseDownAction = { |v, x, y, mods, button, clicks|
+				touch.dustDown(i, v, x, y, mods ? 0, button ? 0, clicks ? 1)
+			};
+			view.mouseMoveAction = { |v, x, y, mods|
+				touch.dustMove(i, v, x, y, mods ? 0)
+			};
+			view.mouseUpAction = { |v, x, y, mods, button|
+				touch.dustUp(i, v, x, y, mods ? 0, button ? 0)
+			};
+			view.mouseWheelAction = { |v, x, y, mods, xd, yd|
+				touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
+			};
+			view.acceptsMouseOver = true;
+			view.mouseOverAction = { |v, x, y| this.prHoverDust(i, v, x, y) };
+			view.mouseLeaveAction = { this.prHoverDust(i, nil, nil, nil) };
 		};
 		// the eye's own local layer sits over the ring's center, so both
 		// views speak the same ring grammar (prPoint maps via the container)
@@ -1572,6 +1649,20 @@ CQGuiNightMap {
 		};
 	}
 
+	prHoverDust { |i, view, x, y|
+		var next = false, point;
+		if(geometry.notNil and: { view.notNil }) {
+			point = this.prStagePoint(view, x, y);
+			next = CQNightGeometry.dustBodyHit(geometry[\dusts][i], point)
+				and: { overlay.patchAt(point).isNil };
+		};
+		if(next != dustHover[i]) {
+			dustHover[i] = next;
+			if(freed.not) { dustViews[i].refresh };
+		};
+		^this
+	}
+
 	// the ring's own line, hovered from either of the two views that speak the
 	// ring's grammar (the eye keeps its own round ground mask, §10)
 	prHoverRing { |view, x, y|
@@ -1668,7 +1759,7 @@ CQGuiNightMap {
 		};
 		if(next != compassHover) {
 			compassHover = next;
-			if(freed.not) { compassView.refresh };
+			if(freed.not) { compassView.refresh; routeView.refresh };
 		};
 	}
 
@@ -1828,6 +1919,7 @@ CQGuiNightMap {
 		castleViews.do { |view, k| view.bounds = geometry[\castles][k][\box] };
 		shellViews.do { |view, i|
 			view.bounds = geometry[\cocos][i][\shellBox] };
+		dustViews.do { |view, i| view.bounds = geometry[\dusts][i][\box] };
 		readHeadViews.do { |view, i|
 			view.bounds = geometry[\cocos][i][\shellBox] };
 		birdViews.do { |view, i| view.bounds = geometry[\birds][i][\box] };
@@ -1978,6 +2070,17 @@ CQGuiNightMap {
 					};
 				});
 			};
+			[\Dust, \DustGrain].do { |suffix|
+				var name = this.class.dustParamName(i, suffix);
+				gui.widgets.register(name, { |value|
+					if(suffix == \Dust) {
+						dustNorms[i] = CQSpec.unmap(name, value)
+					} {
+						dustGrainNorms[i] = CQSpec.unmap(name, value)
+					};
+					if(freed.not) { dustViews[i].refresh };
+				});
+			};
 			[\In, \Fb].do { |channel|
 				var dolbyName = ("coco" ++ n ++ "Dolby" ++ channel).asSymbol;
 				dolbyStates[dolbyName] = \off;
@@ -2020,7 +2123,6 @@ CQGuiNightMap {
 
 	prDrawGround {
 		if(geometry.isNil) { ^this };
-		this.prDrawCompass;
 		CQInkNight.drawSprout(geometry[\sprout], sproutState, \night);
 		// §16.7's border rings the bird AND its name, so it is drawn on the
 		// full-stage ground rather than inside the bird's own 44x32 layer —
@@ -2059,6 +2161,9 @@ CQGuiNightMap {
 			flowActive, flowHover, \night,
 			2.collect { |i|
 				flowModStates[this.class.shellFlowParam(i, \slotQ)]
+			},
+			2.collect { |i|
+				flowModStates[this.class.shellFlowParam(i, \slotX)]
 			});
 		geometry[\birds].do { |bird, i|
 			var deck = if(i == 0) { \deckA } { \deckB };
@@ -2082,6 +2187,18 @@ CQGuiNightMap {
 						this.prRevealedPreampSource(i)), \night)
 			};
 		};
+		// Memory seeds sit above the internal bridge with a ground-coloured moat,
+		// yet remain below real patch cables on the next StackLayout layer.
+		this.prDrawCompass;
+	}
+
+	prDrawDust { |i|
+		var dust;
+		if(geometry.isNil) { ^this };
+		dust = geometry[\dusts][i];
+		CQInkNight.drawDust(dust, dust[\box].leftTop,
+			dustNorms[i], dustGrainNorms[i], dustActive[i], dustHover[i],
+			dustModStates[i], \night);
 	}
 
 	prDrawRing {

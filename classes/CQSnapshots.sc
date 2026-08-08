@@ -284,7 +284,7 @@ CQSnapshots {
 	}
 
 	// apply everything through the funnels; sparse params leave the rest untouched
-	// A recall is one act, so it is one write and one announcement — not 74 of
+	// A recall is one act, so it is one write and one announcement — not 76 of
 	// each. The filtering (panic is not memory, unknown names are skipped) still
 	// happens here, before anything reaches the funnel (SOAK-1 finding A).
 	prApply { |data, origin = \snapshot, committed = true, operation = \recall|

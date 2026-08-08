@@ -38,7 +38,8 @@ CQGuiScaleTest : UnitTest {
 			\roomy, "a maximized window earns the roomy step");
 		this.assertEquals(CQGuiScale.stepFor(1912, 846), \roomy,
 			"so does a 1080p window maximized at 100 % scaling");
-		this.assertEquals(CQGuiScale.stepFor(1600, 450), \compact,
+		this.assertEquals(CQGuiScale.stepFor(1600,
+			CQGuiScale.minimumHeight(\roomy) + CQGuiScale.comfort - 1), \compact,
 			"a wide but short page stays compact — height is a real constraint");
 		this.assertEquals(CQGuiScale.stepFor(1200, 900), \compact,
 			"and so does a tall but narrow one");
@@ -158,7 +159,7 @@ CQGuiScaleTest : UnitTest {
 
 	test_theRailGrowsWithThePageUntilTheLoomCellIsCapped {
 		var narrow = CQGuiScale.railWidth(\roomy, 1434);
-		var wide = CQGuiScale.railWidth(\roomy, 1912);
+		var wide = CQGuiScale.railWidth(\roomy, 2200);
 		var absurd = CQGuiScale.railWidth(\roomy, 3000);
 		this.assert(wide > narrow,
 			"a wider page buys a wider rail rather than only slate");

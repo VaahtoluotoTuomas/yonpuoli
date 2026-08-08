@@ -507,8 +507,9 @@ weatherAsync = { |map, done|
 				var records = map.overlay.cableRecords;
 				var sampled = records.select { |record, i| (i % 29) == 0 };
 				var exact = true, selected, point, draws, renders;
-				check.value(records.size == 448,
-					"the dense hit/cache fixture really carries all 448 cables");
+				check.value(records.size
+					== (CQMatrix.sourceNames.size * CQMatrix.destNames.size),
+					"the dense hit/cache fixture really carries all 512 cables");
 				sampled.do { |record|
 					var fine = CQInk.cablePoints(record[\start], record[\finish],
 						(record[\points].size - 1) * 4);
@@ -597,6 +598,7 @@ droneChecks = { |map|
 	var saved = IdentityDictionary.new;
 	var exercise, bridgePriority;
 	var castle, view, local, finish, before;
+	var dust, dustView, dustLocal, dustFinish, dustSaved;
 	#[coco1Level, coco1Organ, coco1SlotQ, coco1SlotX,
 		coco2Level, coco2Organ, coco2SlotQ, coco2SlotX, c1Send].do { |name|
 		saved[name] = state.get(name)
@@ -642,6 +644,33 @@ droneChecks = { |map|
 	check.value(state.get(\coco1SlotX) > 0
 		and: { state.get(\coco2SlotX) > 0 },
 		"the two SlotX bridge valves remain independently directional");
+	// The veil is one two-axis hand: radial travel changes amount while the
+	// transverse grain travels independently, with no labels or hidden widget.
+	dust = map.geometry[\dusts][0];
+	dustView = map.dustViews[0];
+	dustLocal = dust[\center] - dust[\box].leftTop;
+	dustSaved = [state.get(\coco1Dust), state.get(\coco1DustGrain)];
+	state.set(\coco1Dust, 0.1);
+	state.set(\coco1DustGrain, 0.5);
+	map.paintDust(0, CQSpec.unmap(\coco1Dust, 0.1), 0.5);
+	dustView.mouseOverAction.value(dustView, dustLocal.x, dustLocal.y);
+	check.value(map.dustHover[0],
+		"the irregular Dust flesh owns hover only inside its visible breath");
+	dustView.mouseDownAction.value(dustView,
+		dustLocal.x, dustLocal.y, 0, 0, 1);
+	check.value(map.touch.performanceGestureActive and: { map.dustActive[0] },
+		"Dust captures one continuous two-axis Night hand");
+	dustFinish = dustLocal + (dust[\axis] * 36) + (dust[\tangent] * 24);
+	dustView.mouseMoveAction.value(dustView, dustFinish.x, dustFinish.y, 0);
+	dustView.mouseUpAction.value(dustView, dustFinish.x, dustFinish.y, 0, 0);
+	check.value(state.get(\coco1Dust) > 0.1
+		and: { state.get(\coco1DustGrain) > 0.5 }
+		and: { map.dustActive[0].not },
+		"radial Dust amount and transverse mist-to-chip grain write independently");
+	state.set(\coco1Dust, dustSaved[0]);
+	state.set(\coco1DustGrain, dustSaved[1]);
+	map.paintDust(0, CQSpec.unmap(\coco1Dust, dustSaved[0]),
+		CQSpec.unmap(\coco1DustGrain, dustSaved[1]));
 	// PLAY-7 feedback: the exact Q/X gills, unlike the surrounding shell,
 	// remain controls through a crossing banana. Find a real crossing for each
 	// of the four valves so the assertion cannot accidentally pass in clear sky.
@@ -848,10 +877,11 @@ punchChecks = { |map|
 			try {
 				var map = gui.nightMap;
 				check.value(map.notNil, "night map is built with the shell");
-				check.value(map.endpoints.size == 44
+				check.value(map.endpoints.size
+					== (CQMatrix.sourceNames.size + CQMatrix.destNames.size)
 					and: { CQMatrix.sourceNames.every { |n| map.endpoints[n].notNil } }
 					and: { CQMatrix.destNames.every { |n| map.endpoints[n].notNil } },
-					"night registers its own canonical 16 jacks and 28 sockets");
+					"night registers its own canonical 16 jacks and 32 sockets");
 				check.value(map.overlay.skin == \night
 					and: { map.overlay.view.acceptsMouse.not },
 					"night owns a hit-transparent phosphor cable overlay");
@@ -951,7 +981,7 @@ punchChecks = { |map|
 								+ endpoint[\anchor];
 							CQNightGeometry.distance(center, actual) < 1
 						},
-							"all 44 endpoint views keep their computed cable anchor");
+							"all 48 endpoint views keep their computed cable anchor");
 						map.overlay.invalidate;
 						check.value(map.overlay.cableRecords.every { |record|
 							CQNightGeometry.distance(record[\start],
@@ -1454,17 +1484,19 @@ punchChecks = { |map|
 															gui.prPhaseFrame(1, 0.62);
 															sparkPoint = map.sparkPoint(0);
 															gui.prPhaseFrame(1, 0.62, nil, nil,
-												[0, 1.1, 1.4, 0.62, 0.9],
-												[0.25, 0.3, 0.8, 0.08, 0.12],
-												[0.60, 0.60, 0.60, 0.60, 0.60]);
+										[0, 1.1, 1.4, 0.62, 0.9, 0.7, 0.22],
+										[0.25, 0.3, 0.8, 0.08, 0.12, 0.10, 0.04],
+										[0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 0.60]);
 															check.value(
 																map.crescentModStates[\coco1Spaf][\center] == 0.5
 																and: { map.crescentModStates[\coco1Spaf][\lower]
 																	< map.crescentModStates[\coco1Spaf][\upper] }
 												and: { map.crescentModStates[\coco1Fb][\clippedHigh] }
 												and: { map.flowModStates[\coco1Organ].notNil }
-												and: { map.flowModStates[\coco1SlotQ].notNil },
-												"continuous DSP telemetry draws crescents plus Organ/SlotQ wakes");
+								and: { map.flowModStates[\coco1SlotQ].notNil }
+								and: { map.flowModStates[\coco1SlotX].notNil }
+								and: { map.dustModStates[0].notNil },
+								"continuous DSP telemetry draws crescents, both gills and Dust wakes");
 															check.value(state.get(\coco1Spaf) == 0,
 																"the live satellite never falsifies or rewrites the stored SP.AF pearl");
 															speedBefore = state.get(\coco1Speed);

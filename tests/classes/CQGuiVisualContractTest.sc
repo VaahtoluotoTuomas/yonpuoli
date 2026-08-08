@@ -99,8 +99,8 @@ CQGuiVisualContractTest : UnitTest {
 			var page = if(step == \roomy) { 1434 } { 1272 };
 			var cell = CQGuiMatrix.cellSize(step, page);
 			var loom = CQGuiMatrix.loomSize(step, page);
-			this.assert(cell[0] >= 40 and: { cell[1] >= 24 },
-				"% : the expanded loom keeps broad, at-least-40x24 precision knots"
+			this.assert(cell[0] >= 35 and: { cell[1] >= 24 },
+				"% : the 32-column loom keeps broad, at-least-35x24 precision knots"
 					.format(step));
 			this.assertEquals(loom.height,
 				CQMatrix.sourceNames.size * cell[1],
@@ -187,12 +187,12 @@ CQGuiVisualContractTest : UnitTest {
 			"extracting the sums left the read-head telemetry intact");
 		// address · direction mean · skip rate, followed by slow-value / fast-
 		// excursion / connected-weight blocks ordered spaf, input, feedback,
-		// organ, SlotQ. The
+		// organ, SlotQ, SlotX and Dust. The
 		// continuous truth rides the existing message rather than opening another
 		// stream (§15 leaves message merging free, and §10 counts messages, not floats).
 		this.assertEquals(
-			coco.detect { |reply| reply[\name] == '/cq_phase' }[\values], 18,
-			"the phase message carries three reel values and five modulation triples");
+			coco.detect { |reply| reply[\name] == '/cq_phase' }[\values], 24,
+			"the phase message carries three reel values and seven modulation triples");
 		this.assertEquals(CQSynthDefs.phaseReplyHz, 15,
 			"the read head shares the 15 Hz ambient ceiling with castle motion");
 		this.assert(quantussy.collect { |reply| reply[\name] }

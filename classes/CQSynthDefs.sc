@@ -43,6 +43,9 @@ CQSynthDefs {
 	// open a closed Organ/SlotQ path without inventing a hidden boost country.
 	*organVcaCeiling { ^1.0 }
 	*slotQVcaCeiling { ^1.5 }
+	*slotXVcaCeiling { ^this.slotQVcaCeiling }
+	*dustCeiling { ^0.5 }
+	*dustMatrixRange { ^0.18 }
 	// The weighted band-limited square stack reaches only about +0.56 at the
 	// default 24 kHz clock. Its patch jack must inhabit the same useful ±1
 	// source country as tri/cas: ×1.6 then clip gives a default 0.60 banana
@@ -253,13 +256,13 @@ CQSynthDefs {
 		^SynthDef(\cqCoco, {
 			var buf, frames, speed, spafKnob, clockHz, ratio, dir, phase;
 			var here, hereSmooth, dolby, inSig, inVca, fbVca, inEnv, fbEnv;
-			var inCh, fbCh, dustLevel, dustSig, record, write, outTap;
-			var organ, organMod, voice, lvl, organVca, slotQVca;
+			var inCh, fbCh, dustLevel, dustGrain, dustGains, dustSig, record, write, outTap;
+			var organ, organMod, voice, lvl, organVca, slotQVca, slotXVca;
 			var patchDepth, mods, wSpaf, wInVca, wFbVca, wFlip, wSkip;
-			var wOrgan, wSlotQ, wRecord;
+			var wOrgan, wSlotQ, wSlotX, wDust, wRecord;
 			var selfModSources, cocoIndex;
 			var spafSum, inVcaSum, fbVcaSum, flipSum, skipSum;
-			var organSum, slotQSum, recordSum;
+			var organSum, slotQSum, slotXSum, dustSum, recordSum;
 			var flipMatrixGate, flipGate, skipTrig, recordMatrixGate;
 			var manualHold, effectiveHold;
 			var spafApplied, spafEffective, modActual, modSlow, modSpread, modActivity;
@@ -284,12 +287,16 @@ CQSynthDefs {
 			wSkip = CQSynthDefs.prMatrixWeight(\wSkipBus.ir(0), patchDepth);
 			wOrgan = CQSynthDefs.prMatrixWeight(\wOrganBus.ir(0), patchDepth);
 			wSlotQ = CQSynthDefs.prMatrixWeight(\wSlotQBus.ir(0), patchDepth);
+			wSlotX = CQSynthDefs.prMatrixWeight(\wSlotXBus.ir(0), patchDepth);
+			wDust = CQSynthDefs.prMatrixWeight(\wDustBus.ir(0), patchDepth);
 			wRecord = CQSynthDefs.prMatrixWeight(\wRecordBus.ir(0), patchDepth);
 			spafSum = Mix(mods * wSpaf);
 			inVcaSum = Mix(mods * wInVca);
 			fbVcaSum = Mix(mods * wFbVca);
 			organSum = Mix(mods * wOrgan);
 			slotQSum = Mix(mods * wSlotQ);
+			slotXSum = Mix(mods * wSlotX);
+			dustSum = Mix(mods * wDust);
 			recordSum = Mix(mods * wRecord);
 			// Schmitt threshold on gate/trig dests (SPEC §5.5): on rising through
 			// +0.5, off below +0.3 — a bare comparator would chatter on noisy sums
@@ -308,6 +315,9 @@ CQSynthDefs {
 			slotQVca = (\slotQ.kr(CQSpec.default(\coco1SlotQ),
 				CQSpec.lag(\coco1SlotQ)) + CQSynthDefs.prVcaLaw(slotQSum))
 				.clip(0, CQSynthDefs.slotQVcaCeiling);
+			slotXVca = (\slotX.kr(CQSpec.default(\coco1SlotX),
+				CQSpec.lag(\coco1SlotX)) + CQSynthDefs.prVcaLaw(slotXSum))
+				.clip(0, CQSynthDefs.slotXVcaCeiling);
 			// hard clamp floor..SR is post-modulation by design (SPEC §5.3): the
 			// floor sits an octave under the knob's own, so a banana into _spaf
 			// still reaches a country the hand alone cannot ("ground jack" trick)
@@ -334,7 +344,7 @@ CQSynthDefs {
 					* \slotDeck.kr(CQSpec.default(\coco1SlotDeck), CQSpec.lag(\coco1SlotDeck)))
 				+ (In.ar(\qMixBus.ir(0)) * slotQVca)
 				+ (InFeedback.ar(\crossBus.ir(0))   // other coco, one block late by design
-					* \slotX.kr(CQSpec.default(\coco1SlotX), CQSpec.lag(\coco1SlotX)));
+					* slotXVca);
 			// The knob is the valve's rest and the matrix opens and shuts it.
 			// §13.5's ear pass accepted one fixed signed p=2 contribution law:
 			// low cable weights still shade continuously, medium weights phrase,
@@ -356,9 +366,14 @@ CQSynthDefs {
 			// cell for many server samples and only the last error survives. That
 			// natural thinning makes the STORED crackle density follow clockHz
 			// linearly (~30..960 grains/s at 1.5k..48k), instead of quadratically.
-			dustLevel = \dust.kr(CQSpec.default(\coco1Dust), CQSpec.lag(\coco1Dust));
-			dustSig = (LPF.ar(WhiteNoise.ar, 9000) * 0.35)
-				+ (Dust2.ar(SampleRate.ir * 0.02) * 1.2);
+			dustLevel = CQSynthDefs.dustEffective(
+				\dust.kr(CQSpec.default(\coco1Dust), CQSpec.lag(\coco1Dust)),
+				dustSum);
+			dustGrain = \dustGrain.kr(CQSpec.default(\coco1DustGrain),
+				CQSpec.lag(\coco1DustGrain));
+			dustGains = CQSynthDefs.dustGrainGains(dustGrain);
+			dustSig = (LPF.ar(WhiteNoise.ar, 9000) * 0.35 * dustGains[0])
+				+ (Dust2.ar(SampleRate.ir * 0.02) * 1.2 * dustGains[1]);
 			record = (inCh * inVca) + (fbCh * fbVca) + (dustSig * dustLevel);
 			record = Select.ar(\wrap.kr(CQSpec.default(\coco1Wrap)),
 				[record.clip2(1), record.wrap2(1)]);       // ADC rails — safety #2
@@ -407,7 +422,7 @@ CQSynthDefs {
 			// cannot be drawn as motion (the eye fuses above ~10 Hz and this
 			// message is 15 Hz), so §16.6 draws it as weight instead.
 			//
-			// The same frame also carries the five continuous matrix destinations
+			// The same frame also carries the seven continuous matrix destinations
 			// as DSP truth: slow centre, unresolved excursion and connected weight.
 			// The first is allowed to move a small satellite pearl. Audio-rate motion
 			// is reduced *before* A2K to a stable peak wake, never sampled into a
@@ -415,12 +430,14 @@ CQSynthDefs {
 			// affect the destination. SP.AF reports the realized octave shift after
 			// the clock clamp (relative to the unmodulated speed), not an inaudible
 			// request beyond the rail;
-			// input/feedback/organ/SlotQ report their post-law, post-clip effective VCAs.
-			modActual = [spafEffective, inVca, fbVca, organVca, slotQVca];
+			// input/feedback/organ/SlotQ/SlotX report their post-law, post-clip
+			// effective VCAs; Dust reports its signed-square, post-clip level.
+			modActual = [spafEffective, inVca, fbVca, organVca, slotQVca,
+				slotXVca, dustLevel];
 			modSlow = Lag.ar(modActual, 0.035);
 			modSpread = LagUD.ar((modActual - modSlow).abs, 0, 0.18);
 			modActivity = [Mix(wSpaf.abs), Mix(wInVca.abs), Mix(wFbVca.abs),
-				Mix(wOrgan.abs), Mix(wSlotQ.abs)]
+				Mix(wOrgan.abs), Mix(wSlotQ.abs), Mix(wSlotX.abs), Mix(wDust.abs)]
 				.clip(0, 1);
 			phaseTelemetry = [A2K.kr(phase / frames),
 				A2K.kr(Lag.ar(dir, 0.15)),
@@ -640,5 +657,24 @@ CQSynthDefs {
 	*prVcaLaw { |sum|
 		var g = 1 + sum.clip(this.vcaSumClamp.neg, this.vcaSumClamp);
 		^(g.abs * g) - 1
+	}
+
+	// Dust is material, not a gain stage. A signed-square ±0.18 contribution
+	// gives the hand a quiet centre and lets positive/negative bananas grow or
+	// clear debris without allowing the converter injection above its 0.5 rail.
+	*dustMatrixContribution { |sum|
+		var m = sum.clip(-1, 1);
+		^(m.abs * m) * this.dustMatrixRange
+	}
+
+	*dustEffective { |hand, sum|
+		^(hand + this.dustMatrixContribution(sum)).clip(0, this.dustCeiling)
+	}
+
+	// Equal-power mist↔chip crossfade, normalized so the midpoint is exactly
+	// [1, 1]: DustGrain=0.5 is bit-for-formula compatible with the old sound.
+	*dustGrainGains { |grain|
+		var g = grain.clip(0, 1);
+		^[(2 * (1 - g)).sqrt, (2 * g).sqrt]
 	}
 }

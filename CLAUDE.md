@@ -73,7 +73,7 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
 
 ## Current handoff
 
-- **Where the work stands (2026-08-03).** Branch `nocturne`. Every Nocturne
+- **Where the work stands (2026-08-08).** Branch `nocturne`. Every Nocturne
   GUI increment (N1–N10), the whole ear pass (§13) and PLAY-1…PLAY-6.1 are
   accepted; so are the DAW bridge, the audio-clock guard, SOAK-1, the Yönpuoli
   identity, the privacy audit and the README. The dense-cable hover/Q-X
@@ -82,8 +82,15 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   milestone `dfee7af`. Its focused Night correction — exact socket paper,
   coherent glyphs and wider ring-to-Coco spacing — plus bundled undo and free
   shake were accepted on 2026-08-03. PLAY-8 is complete.
+  The subsequent SlotX/Dust implementation expands the matrix to 16×32 and
+  CQSpec to 76 parameters: two bounded SlotX destinations, two independently
+  bounded Dust destinations and one new DustGrain hand axis per Coco. Its full
+  automated/NRT/GUI gate and rendered visual review are green. Sound, gesture
+  and behavior were accepted on 2026-08-03; the repaired final UI was accepted
+  in the real application on 2026-08-08. Those four matrix columns still stay
+  out of ecological shake until a separate musical decision changes that.
   The user explicitly accepted every pre-PLAY-7 listening test on 2026-08-02.
-  **One tick and four release jobs remain before 1.0**, in this order, and
+  **One hands-on tick and four release jobs remain before 1.0**, in this order, and
   `PLAN.md`'s "Seuraava askel konkreettisesti" is the
   authority on them:
   1. [done] **PLAY-8 ecological-shake ear acceptance.** The user's 2026-08-02 PLAY-7 result
@@ -105,13 +112,18 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
      the free 8–10-shake first-use gate.
      Exact analysis and PLAY-8 seeds: `docs/PLAYABILITY_GUIDE.md` and
      `tests/manual_checklist.md`.
-  2. **16N-1** — the faderbank hands-on tick. Automatic gate green; it needs
+  2. [done] **SLOTX/DUST** — both matrix-fed X lanes, Dust's radial amount and
+     transverse mist↔chip grain, Hold closure and the raised/moated morph seeds
+     passed. The final Dust spacing, static-speck, root/dolby and tide-eye UI
+     repair was accepted on 2026-08-08. Shake quarantine remains a separate
+     post-acceptance musical decision.
+  3. **16N-1** — the faderbank hands-on tick. Automatic gate green; it needs
      the 16n in hand and is the only thing blocking road-to-1.0 step 7.
-  3. Then: what ships (four playable presets, exactly one snapshot admitted by
+  4. Then: what ships (four playable presets, exactly one snapshot admitted by
      `.gitignore`) → release media → remote CI green → merge to `main` and the
      1.0 tag.
   The visual correction has three durable laws. Continuous Coco destinations
-  (SP.AF, Input VCA, Feedback VCA, Organ, SlotQ) are hollow; interior glyphs
+  (SP.AF, Input VCA, Feedback VCA, Organ, SlotQ, SlotX, Dust) are hollow; interior glyphs
   are reserved for Flip/Skip/Record acts. Software-native Organ/SlotQ/Record
   views use transparent paper plus a shape-local circular socket mask, never a
   rectangular eraser; Record lamps mirror outward. Complete Coco organisms sit
@@ -121,18 +133,21 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   Bits 5/8/12 ear test), the three porous playing modes, and the Norns port
   (§14). Ecological shake is no longer in that bucket: its implementation is
   accepted in the current 1.0 candidate.
-  The next feature design is `cocoN_slotX` (16×30), then `cocoN_dust` (16×32).
-  The user rejected the earlier shared left-sky Dust bank: each Dust body must
-  stay attached to its own Coco in the inner-lower quadrant. Exact geometry,
-  morph-seed clearance and a possible second Dust texture axis remain a design
-  decision, not implemented behavior.
-- **Current delivery gate (2026-08-03):** `CQ_COMPILE_OK`, **18,629 unit
-  passes / 0 failures / 40/40 classes**, `CQ_GUI_NIGHT_PASSED` and
-  `CQ_GUI_AUDIO_PASSED`. The fresh rest/cables/control-edge captures were
-  visually inspected; roots are whole, socket marks coherent and the moved
-  organisms retain intentional margins. The physical unplugged-K-Mix reboot
-  selected split WASAPI before launch, reported about 47,969 Hz and advanced
-  100 Night phase frames in three seconds. DSP is unchanged in this delivery.
+  SlotX/Dust geometry is now accepted: mirrored SlotX sockets sit above the X
+  valves; each inner-lower Dust veil owns radial amount and transverse Grain at
+  a 240 body-px reach and 32° angle, with a detached 24 body-px ownership breath
+  and 36 static specks. Morph seeds sit at 13/90 % height with a 5 px ground
+  moat; the separate tide eye uses 0.94. Grain 0.5 preserves the prior
+  filtered-noise + Dust2 formula exactly.
+- **Current delivery gate (2026-08-08):** `CQ_COMPILE_OK`, **21,387 unit
+  passes / 0 failures / 40/40 classes**, all three GUI smokes,
+  `CQ_MATRIX_INPUTS_OK`, `CQ_SHAKE_ECOLOGY_OK`, `CQ_PLAYABILITY_MEASURED`,
+  `CQ_HOLD_OK`, `CQ_DUST_OK`, `CQ_SELFNOISE_OK` and the full 90 s
+  `CQ_SAFETY_PASSED`. Rest/open captures were visually inspected. Active
+  SlotX RMS is 0.119051/0.141106 and Dust RMS 0.018479/0.023670; all four held
+  cases are exactly silent. The physical unplugged-K-Mix reboot from the prior
+  delivery selected split WASAPI, reported about 47,969 Hz and advanced 100
+  Night phase frames in three seconds.
 - **Latest full DSP green gate (2026-08-02, committed PLAY-8 correction pass):**
   `CQ_COMPILE_OK`, **18,555 unit passes / 0 failures / 39/39 classes**;
   `CQ_GUI_SHELL_PASSED`, `CQ_GUI_DRAWER_PASSED`, `CQ_GUI_NIGHT_PASSED`;
@@ -211,8 +226,8 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   accepted on `nocturne-preamp-roots` the same day (checklist N7), and
   **build-order step 8, the Drawer workshop (§12.1), was accepted on
   `nocturne-drawer-workshop` on 2026-07-28 (checklist N8).** Its tested
-  PLAY-6's drone promotion leaves a Night 44 + Master 4 + Workshop 26 partition that
-  covers all 74 `CQSpec`
+  PLAY-6's drone promotion left, at that milestone, a Night 44 + Master 4 +
+  Workshop 26 partition that covered all 74 `CQSpec`
   parameters without Day. The user then chose Night as the sole interface and
   asked to merge the accepted chain: local `nocturne` now points at `dc95ced`.
   **N9's reversible Night-only cut was accepted on `nocturne-night-only`
@@ -316,7 +331,7 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   must call `view.refresh` when it actually creates the replacement. Without
   that, hover remains one cable behind until unrelated Qt damage and looks like
   a centimetre-scale hit-test error even though `patchAt` follows the exact
-  Bézier. Night-smoke now samples fine drawn curves in a 448-cable field and
+  Bézier. Night-smoke now samples fine drawn curves in a 512-cable field and
   asserts both render and subsequent presentation.
   - §16.7's dashed drop-target border is done and accepted (2026-07-22, checklist
     G2.10), both skins from one `CQInk.drawDropTarget`. Qt hands sclang **no
@@ -337,8 +352,9 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
        has a `density` argument (SPEC §5.5, code default 0.1) and
        `CQGui.sowDensity` maps phase cubically (`0.2 × phase³`). Every
        non-empty throw now also owns a 3–5-cable ecological skeleton; gate rows
-       receive only 22% of continuous-row decoration probability. In the 16×28
-       field a quarter/half/full moon therefore averages about 4–6 / 11–13 /
+       receive only 22% of continuous-row decoration probability. Across the
+       28 shake-enabled target columns of the 16×32 field, a quarter/half/full
+       moon therefore averages about 4–6 / 11–13 /
        65–67 total cables. The old weight-ceiling
        mapping was redundant (`patchDepth` is already the how-alive macro) and
        inaudible — every throw rewrote the same ~35 cells, so a thin crescent
@@ -605,7 +621,8 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   Each visible castle owns one deferred tap/radial-pull decision: ≤8 px release
   steps spesal, a deliberate inward/outward pull opens/closes `c1Send…c5Send`
   without first rewiring the clock. These 13 controls moved out of Workshop;
-  the exact tested ownership is Night 44 · Master 4 · Workshop 26.
+  the exact tested ownership at that milestone was Night 44 · Master 4 ·
+  Workshop 26; the later Dust/Grain promotion moves the current split to 48/4/24.
 - **PLAY-6.1 is accepted (2026-08-02, checklist `PLAY-6.1`)** — the user
   reviewed the corrected version live and signed it off. All four parts landed: SlotQ's anchors are the exact
   `cubicPoint(ringSegments[4]/[0], 0.5)` gap midpoints, SlotX is one two-lane
@@ -669,9 +686,9 @@ class-lib recompile (Ctrl+Shift+L) before live testing.
   deck faders left because `deckALevel`/`deckBLevel` already have Night crescents
   and `deckARate`/`deckBRate` are matrix destinations. The rule that decided it
   is normative: **a fader is worth most where no other hand reaches** — Night
-  now plays 44 params, Master 4 and the matrix 28 destinations. Level, Organ,
-  SlotQ and directional SlotX have Night bodies; Dust, Pan and the pre/deck
-  setup slots retain exact Workshop rows. F14 is measured, not taste: `qMix` has exactly one writer and one
+  now plays 48 params, Master 4 and the matrix 32 destinations. Level, Organ,
+  SlotQ, directional SlotX and Dust/DustGrain have Night bodies; Pan and the
+  pre/deck setup slots retain exact Workshop rows. F14 is measured, not taste: `qMix` has exactly one writer and one
   reader (`cocoNSlotQ`, default 0), so without a hand there F11/F12 shape a voice
   that never reaches the output. Do not "restore" the deck faders or link the
   two Levels without the user's decision.

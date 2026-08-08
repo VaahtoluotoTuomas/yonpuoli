@@ -6,8 +6,8 @@
 var ok = true, count, defsClass;
 
 count = try { CQSpec.specs.size } { |err| err.errorString.postln; -1 };
-if(count != 74) {
-	"CQSpec: expected 74 parameters, found %".format(count).postln;
+if(count != 76) {
+	"CQSpec: expected 76 parameters, found %".format(count).postln;
 	ok = false;
 };
 

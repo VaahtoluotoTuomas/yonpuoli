@@ -22,6 +22,12 @@ density-lain, mutta avasi Organ-tason, dust-tekstuurin, Record-lain, socket-
 layoutin ja kuun eleen korjauspassin. Käyttäjä hyväksyi 2026-08-03 sekä sen
 toimintalait että viimeisen visuaalipassin, bundled undon ja vapaan 8–10 shaken
 ensikäytön. PLAY-8 on kokonaan valmis.
+Sen jälkeinen SlotX/Dust-laajennus on nyt toteutettu paikallisesti: matriisi on
+16×32, `CQSpec` 76 parametria ja omistajuus Night 48 · Master 4 · Workshop 24.
+SlotX sai kaksi rajattua VCA-kohdetta; Dust kaksi omaa matriisikohdetta ja
+per-Coco `DustGrain`-akselit. Automaatti-, NRT-, GUI- ja renderöintikatselmus on
+vihreä, mutta fyysinen ele-/korvahyväksyntä on vielä avoin. Uudet neljä
+matriisisaraketta pysyvät siihen asti ekologisen shaken ulkopuolella.
 Night + Master + Drawer on soittimen ainoa ylläpidettävä käyttöliittymä ja
 Night on soittimen maisema, ei sen kartta. Työ elää paikallisessa
 `nocturne`-haarassa.
@@ -38,12 +44,12 @@ Portfolio- ja julkaisupinta on `README.md`:ssä, `SOURCES.md`:ssä ja `docs/`-ka
 case study / development process -dokumenteissa. Etärepon uudelleennimeäminen,
 public-vaihto ja oikeat kuva-/äänidemot ovat erillinen julkaisutoimi.
 
-**Seuraava askel konkreettisesti (2026-08-03).** Kaikki Nocturne-vaiheen
+**Seuraava askel konkreettisesti (2026-08-08).** Kaikki Nocturne-vaiheen
 GUI-inkrementit ja koko korvapassi ovat hyväksyttyjä. PLAY-7 sulki kaksi
 yhden muuttujan ehdokasta mutta avasi yhden rajatun suunnittelupäätöksen.
 Käyttäjä hyväksyi 2026-08-02 eksplisiittisesti kaikki PLAY-7:ää edeltävät
-soittotestit ja sulki PLAY-8:n 2026-08-03. 1.0:aan on jäljellä **yksi rasti ja
-neljä julkaisutyötä**,
+soittotestit, sulki PLAY-8:n 2026-08-03 ja hyväksyi SlotX/Dust-laajennuksen
+kokonaan 2026-08-08. 1.0:aan jää **16n-rasti ja neljä julkaisutyötä**,
 tässä järjestyksessä:
 
 1. [x] **PLAY-8 — ekologisen shaken korvahyväksyntä.** Soittotesti 7:n tulos
@@ -67,11 +73,18 @@ tässä järjestyksessä:
    shaken ensikäytön. Vaihe on suljettu.
    Tarkka tulos ja seed-kartta: `docs/PLAYABILITY_GUIDE.md` ja PLAY-8
    tiedostossa `tests/manual_checklist.md`.
-2. **16N-1 — faderipankin käsintesti.** Automaattinen portti on vihreä; rasti
+2. [x] **SLOTX/DUST — ele-, korva- ja visuaalihyväksyntä.** Käyttäjä hyväksyi
+   2026-08-03 kummankin X-socketin itsenäisen modulaation, Dust-usvan
+   radiaalisen määrän, poikittaisen mist↔chip-akselin ja Hold-sulun. Lopullinen
+   väljyys-, hiukkas-, root/dolby- ja TAB-silmäkorjaus hyväksyttiin 2026-08-08
+   compact/fullscreen- ja oikean sovelluksen katselmuksessa. Vaihe on suljettu.
+   SlotX/Dust-sarakkeiden shake-karanteenin mahdollinen poisto on tästä erillinen
+   seuraava musiikillinen päätös eikä kuulu hyväksyntään automaattisesti.
+3. **16N-1 — faderipankin käsintesti.** Automaattinen portti on vihreä; rasti
    vaatii 16n:n käteen (kanavanauhan luettavuus, Levelin paikka nauhan
    lopussa, ristihäivytyksen etäisyys, F14:n sisältö, deckien poisto). Tämä on
    ainoa asia joka blokkaa Tie 1.0:n kohtaa 7.
-3. Sitten järjestyksessä: **mitä julkaistaan** (neljä soitettavaa presettiä ja
+4. Sitten järjestyksessä: **mitä julkaistaan** (neljä soitettavaa presettiä ja
    `.gitignore`-poikkeuksena tasan yksi snapshot,
    `snapshots/example.cqsnap.scd`) → **julkaisumedia** → **etä-CI vihreäksi**
    → **merge `main`iin ja Yönpuolen 1.0-tagi**. Yksityiskohdat osiossa
@@ -82,20 +95,20 @@ korvatesti), kolme huokoista soittotilaa ja Norns-portti (§14) — tässä
 järjestyksessä, kaikki 1.0:n jälkeen. Ekologinen shake ei kuulu tähän listaan:
 sen toteutus ja PLAY-8-hyväksyntä ovat valmiit nykyisessä 1.0-ehdokkaassa.
 
-**Arvioitu seuraava input-jono, ei osa nykyistä PLAY-8-porttia:** ensin kaksi
-itsenäistä `cocoN_slotX`-kohdetta (16×30), koska niiden oma fyysinen X-venttiili
-ja lyhyt anatominen koti ovat jo olemassa; vasta sen oman feedback-adjacent
-NRT-/kuunteluportin jälkeen kaksi `cocoN_dust`-kohdetta (16×32). Vasemman
-taivaan yhteinen pölypankki hylättiin 2026-08-03 liian kaukana oikeasta Cocosta;
-suunnittelu jatkuu kahtena oman Cocon sisä-alaviistoon kiinnittyvänä kehona.
-Dust tarvitsee oman rajatun modulaatiokäyrän — Input/Feedback-VCA-lakia ei
-kopioida jatkuvaan kohinalähteeseen sokkona. Tarkka Night-symbolikieli ja perustelu ovat
-`docs/PLAYABILITY_GUIDE.md`:ssä.
+**SlotX/Dust-laajennus, toteutettu ja automaattisesti portitettu 2026-08-03:**
+kaksi `cocoN_slotX`-kohdetta käyttää SlotQ:n rajattua VCA-lakia; kaksi
+`cocoN_dust`-kohdetta käyttää omaa signed-square ±0,18 -lakia. Vasemman taivaan
+yhteinen pölypankki hylättiin liian kaukana oikeasta Cocosta, joten Nightissä on
+nyt kaksi omien Cocojensa sisä-alaviistoon kiinnittyvää, kaksisuuntaista
+Dust-usvaa. Määrä on radiaalinen ja uusi `cocoNDustGrain` poikittainen mist↔chip;
+0,5 säilyttää vanhan äänen täsmälleen. Morph-lehdet nostettiin ja erotettiin
+SlotX-sillasta 5 px ground-vallihaudalla. Tarkka DSP-, geometria- ja kuunteluportti
+on `docs/PLAYABILITY_GUIDE.md`:ssä.
 
 **Aiemmat hyväksynnät tiivistettynä.** **N9 hyväksyttiin 2026-07-28.** Day on
 poistettu, koska Night on inspiroivampi varsinainen soitin ja kahden
-käyttöliittymän ylläpito hajottaisi kehityksen. Space-eläköityksen jälkeen
-Night 44 · Master 4 · Workshop 26 on erillinen, koneellisesti todistettu
+käyttöliittymän ylläpito hajottaisi kehityksen. Space-eläköityksen ja Dust-
+promootion jälkeen Night 48 · Master 4 · Workshop 24 on erillinen, koneellisesti todistettu
 `CQSpec.names`-peitto. Dayn
 spesal-tähdistö ja staattinen muistipolkukartta saivat kirjatun kuoleman:
 Nightin osoittimen alla ilmestyvä suuntatotuudellinen kytkentäsointu kertoo
@@ -305,10 +318,10 @@ säilyy, vain mitat ja sommittelu muuttuvat, merkitykset eivät.
 - [x] **8. Drawer-workshop** (§12.1). **Valmis ja hyväksytty
   `nocturne-drawer-workshop`-haaralla 2026-07-28 (checklist N8).**
   Toteutettu §12.1.4:n vihreässä järjestyksessä:
-  1. Kolme omistajainventaariota julistettiin erikseen — nykyinen Night 44
+  1. Kolme omistajainventaariota julistettiin erikseen — nykyinen Night 48
      (`CQGuiNightMap.reachableParamNames`, koottu samoista semanttisista
      apureista joilla kehot piirretään), nykyinen Master 4
-     (`CQGuiPanels.masterParamNames`) ja Workshop 26 (`CQGuiWorkshop`in oma
+     (`CQGuiPanels.masterParamNames`) ja Workshop 24 (`CQGuiWorkshop`in oma
      manifesti) — ja `CQGuiCoverageTest` todistaa ne erillisiksi ja niiden
      unionin **täsmälleen `CQSpec.names`**iksi. Workshopin lista on
      eksplisiittinen, ei komplementti: huomenna lisätty parametri kaataa
@@ -1128,7 +1141,7 @@ hardware-I/O-katselmus.
   sopimuksesta; `\cqSpace`, FX-ryhmä, send/return-bussit ja master-return
   poistettiin tuotantograafista. Master ja Workshop eivät piirrä kuolleita
   säätimiä, F14 on inertti ja vanhojen snapshotien kentät ohitetaan.
-  Night 44 · Master 4 · Workshop 26 kattaa kaikki 74 elävää parametria.
+  Night 48 · Master 4 · Workshop 24 kattaa kaikki 76 elävää parametria.
   MemoryHalo säilyy vain arkistoidussa prototyyppitutkimuksessa.
 
 ## Valmis työvaihe AIO — Audio I/O Setup Drawerissa
@@ -1931,7 +1944,7 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
 
    **(a) Mitä paketissa on.** Presettejä on kuusi (`\empty`, `\classic`,
    `\selfNoise`, `\quantumDrone`, `\organMode`, `\mayhem`), mutta `\empty` on
-   tyhjä ja `\mayhem`in params-osa on tyhjä — se täyttää nykyiset 448 solua muttei sytytä
+   tyhjä ja `\mayhem`in params-osa on tyhjä — se täyttää nykyiset 512 solua muttei sytytä
    yhtään äänilähdettä — joten soitettavia aloituspaikkoja on neljä.
    **Snapshotteja lähtee mukana tasan yksi**: `.gitignore` päästää läpi vain
    `snapshots/example.cqsnap.scd` ja sulkee pois kaikki henkilökohtaiset
@@ -2061,7 +2074,7 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
      speed-poikkiviiva pysyy perusasetuksen staattisena
      kätenä; SP.AF-satelliitti ja lukupään liike näyttävät toteutuneen seurauksen.
 
-   Kaikki 74 parametria auditoidaan nyt myös reitityksenä: mic-enabled-graafissa
+   Kaikki 76 parametria auditoidaan nyt myös reitityksenä: mic-enabled-graafissa
    jokainen päätyy olemassa olevaan tuotanto-SynthDef-controliin; mic-off on
    ainoa tarkoituksellinen poikkeus. Opastettu soittoajo ja Nightiin
    mahdollisesti nostettavien `Level`/`SlotQ`/`Organ`-kandidaattien koe:
@@ -2172,7 +2185,7 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
      jälkeen `view.refresh`iä. Valinta jäi yhden kaapelin jälkeen odottamaan
      satunnaista Qt-damagea. Uusi render pyytää nyt aina oman esityspäivityksen.
      Night-smoke istuttaa aidon risteävän kaapelin jokaiselle neljälle Q/X-
-     venttiilille, käy 448 kaapelin `mayhem`-kentässä hienonnettuja piirrettyjä
+     venttiilille, käy 512 kaapelin `mayhem`-kentässä hienonnettuja piirrettyjä
      Bézier-pisteitä läpi (`patchAt(..., 2)` ei jätä aukkoja) ja todistaa sekä
      uuden hover-renderin että sitä seuraavan tuoreen blitin. Portit:
      `CQ_COMPILE_OK`, 14 827 / 0 / 39, `CQ_GUI_NIGHT_PASSED`.
@@ -2376,9 +2389,19 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    olivat Organ 0,044972/0,052433, SlotQ 0,133794/0,157749 ja suljettu→auki-
    Record 0,353605/0,353616; avoin→suljettu vaimeni täsmälleen nollaan.
    Käyttäjä hyväksyi 2026-08-03 viimeisen visuaalisen silmäyksen, bundled undon
-   ja vapaan ensikäytön; PLAY-8 on valmis. Seuraava erillinen prototyyppijono on
-   `cocoN_slotX` (16×30) → kaksi oman Cocon sisä-alaviistoon kiinnittyvää
-   `cocoN_dust`-kehoa (16×32). `castleK_send` ja Bits/Wrap jäävät myöhemmiksi.
+   ja vapaan ensikäytön; PLAY-8 on valmis.
+
+   **Toteutettu 2026-08-03 — SlotX/Dust 16×32.** Kaksi `cocoN_slotX`-kohdetta
+   käyttää samaa rajattua 1,5-kattoista VCA-lakia kuin SlotQ. Niiden neutraalit
+   ontot socketit ovat 32 px X-venttiilien ylä-/ulkopuolella, 15° peilattuna.
+   Kaksi `cocoN_dust`-kohdetta käyttää omaa signed-square ±0,18 -panostusta ja
+   0…0,5-kattoa. Dust siirtyi Workshopista kahdeksi oman Cocon sisä-alaviistoon
+   kiinnittyväksi Night-usvaksi; radiaalinen akseli säätää määrää ja uusi
+   `cocoNDustGrain` poikittain mist↔chip-jakaumaa. Grain 0,5 säilyttää vanhan
+   LPF-WhiteNoise + Dust2 -äänen täsmälleen. Morph-lehtien ylä-/alareuna siirtyi
+   13/90 prosenttiin ja 5 px ground-vallihauta erottaa lehdet SlotX-sillasta.
+   SlotX/Dust on jätetty sekä shaken rungon että koristelun ulkopuolelle avoimen
+   visuaaliportin ajaksi. `castleK_send` ja Bits/Wrap jäävät myöhemmiksi.
 
    Commitoidun `dfee7af`-välietapin koko automaattiportti: `CQ_COMPILE_OK`,
    **18 555 / 0 / 39**,
@@ -2389,6 +2412,27 @@ ja huokoiset soittotilat jäävät tarkoituksella tämän ulkopuolelle.
    visuaalipassin ja audiopalautuksen toimitusportti läpäisee `CQ_COMPILE_OK`,
    **18 629 / 0 / 40**, `CQ_GUI_NIGHT_PASSED` ja `CQ_GUI_AUDIO_PASSED`; uudet
    capturet tarkistettiin uudelleen.
+   SlotX/Dust-portti: **21 387 / 0 / 40**, kaikki kolme GUI-smokea,
+   `CQ_MATRIX_INPUTS_OK`, `CQ_SHAKE_ECOLOGY_OK`, `CQ_PLAYABILITY_MEASURED`,
+   `CQ_HOLD_OK`, `CQ_DUST_OK`, `CQ_SELFNOISE_OK` ja koko 90 s
+   `CQ_SAFETY_PASSED`. Aktiivinen SlotX-RMS 0,119051/0,141106 ja Dust-RMS
+   0,018479/0,023670; kaikkien neljän Hold-koe on nolla. Rest/open-capturet
+   renderöitiin ja tarkistettiin silmällä.
+
+   **Käyttäjäportti suljettu 2026-08-08.** SlotX toimii, sen anatomia on
+   hyväksytty eikä sitä muutettu. Dust amount, mist↔chip-Grain, matriisi ja Hold
+   säilyvät 2026-08-03 hyväksytyn mukaisina. Lopullinen Dust-geometria käyttää
+   arvoja `dustBodyReach = 240`, `dustBodyAngle = 32°` ja
+   `dustTailLength = 24`; shellistä usvaan kulkeva jatkuva suoni korvattiin
+   katkaistulla omistajuushengityksellä ja pinta käyttää 36:ta täysin staattista
+   speckiä. Collision-aware root-knot, 12 px:n dolby-väli ja
+   `tideGateFraction = 0.94` poistavat compact-tilan kaksi muuta regressiota.
+   Automaattiset geometria-, unit- ja Qt-portit sekä compact/roomy-kuvasarja ovat
+   vihreät, ja käyttäjä hyväksyi korjauksen oikeassa sovelluksessa. Tarkka
+   toteutusevidenssi on tiedostossa
+   [`docs/SLOTX_DUST_UI_REPAIR_PLAN.md`](docs/SLOTX_DUST_UI_REPAIR_PLAN.md).
+   Shake-karanteeni säilyy, kunnes sen poisto päätetään erikseen musiikillisena
+   muutoksena.
 9. **Merge `main`iin ja 1.0-tagi.**
 
 ### DAW-sillan keino: ReaRoute, ei VB-CABLE
@@ -3016,7 +3060,7 @@ primitiivi parametreille kuin `writeMatrix` on matriisille: sama clamppaus, sama
 serveripush, **yksi ilmoitus**. Lisäksi morph erottaa liikkuvat parametrit
 paikallaan pysyvistä — pari joka eroaa vain matriisissa (yön oma tapaus) ei
 maksa kehyksessä parametriliikennettä lainkaan. Sama niputus koskee `prApply`ta
-ja `prApplyDiscrete`ta, joten myös tavallinen recall on yksi teko eikä 74.
+ja `prApplyDiscrete`ta, joten myös tavallinen recall on yksi teko eikä 76.
 
 Mitattu `tests/morph_profile.scd`illa (headless, serverless):
 
@@ -3260,8 +3304,8 @@ säätimen, patch-kohteen ja eleen merkityksen kaikissa kolmessa tilassa.
   kirjoita–säilytä, `Flip` suunta ja `Skip` vaiheen uudelleenasetus.
   Tilat voivat laajentaa näiden seurausta, mutta sama säädin ei saa muuttua
   mielivaltaisesti toiseksi käsitteeksi.
-- Sama 16×28 patchi pysyy voimassa tilan yli. Nykyiset `spaf`, `inVca`,
-  `fbVca`, `flip`, `skip`, `organ`, `slotQ` ja `record` -summat annetaan myös
+- Sama 16×32 patchi pysyy voimassa tilan yli. Nykyiset `spaf`, `inVca`,
+  `fbVca`, `flip`, `skip`, `organ`, `slotQ`, `slotX`, `dust` ja `record` -summat annetaan myös
   uuden lukutavan käyttöön aina kun yhteys on semanttisesti sama. Uusia
   matriisikohteita lisätään vasta jos kuunteluprototyyppi osoittaa, ettei
   nykyinen kieli riitä; laajennus muuttaisi taas Inspectorin geometriaa,

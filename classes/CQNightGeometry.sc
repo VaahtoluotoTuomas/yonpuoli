@@ -289,6 +289,78 @@ CQNightGeometry {
 		^nil
 	}
 
+	// The drawn contour is seeded, but its hand is one quiet rotated ellipse
+	// tucked just inside that contour. This prevents transparent box corners
+	// from stealing open-water gestures while keeping the frail edge playable.
+	*dustBodyHit { |dust, point|
+		var delta, u, v, rx, ry;
+		if(dust.isNil or: { point.isNil }) { ^false };
+		delta = point - dust[\center];
+		rx = dust[\rx] + CQNightMeasures.dustHitSlack;
+		ry = dust[\ry] + CQNightMeasures.dustHitSlack;
+		u = ((delta.x * dust[\axis].x) + (delta.y * dust[\axis].y)) / rx;
+		v = ((delta.x * dust[\tangent].x) + (delta.y * dust[\tangent].y)) / ry;
+		^(u.squared + v.squared) <= 1
+	}
+
+	// One source of truth for both the N7 bias ink and its collision envelope.
+	// The top lobe swells while the lower one pinches; bias 1 is therefore the
+	// conservative body that has to clear the tall dolby papers.
+	*preampLobeBoxes { |knot, bias = 0|
+		var radius = CQNightMeasures.rootKnotR;
+		var topScale, bottomScale, offset;
+		bias = (bias ? 0).clip(0, 1);
+		offset = CQNightMeasures.rootLobeOffset * radius;
+		topScale = 1 + (bias * CQNightMeasures.rootBiasTopGrowth);
+		bottomScale = 1 - (bias * CQNightMeasures.rootBiasBottomShrink);
+		^[
+			Rect.aboutPoint(knot + Point(0, offset.neg),
+				radius * CQNightMeasures.rootLobeRx * topScale,
+				radius * CQNightMeasures.rootLobeRy * topScale),
+			Rect.aboutPoint(knot + Point(0, offset),
+				radius * CQNightMeasures.rootLobeRx * bottomScale,
+				radius * CQNightMeasures.rootLobeRy * bottomScale)
+		]
+	}
+
+	*preampLobeEnvelope { |knot, bias = 0|
+		var boxes = this.preampLobeBoxes(knot, bias);
+		^boxes[0].union(boxes[1])
+	}
+
+	*prRectHorizontalDistance { |a, b|
+		^max(max(a.left - b.right, b.left - a.right), 0)
+	}
+
+	// PLAY-8 moved the Cocos without moving the roots. Solve the shared root law
+	// from the actual 44x72 dolby papers instead of carrying a left-side nudge.
+	*prPreampKnot { |nominal, coco, height|
+		var lobe = this.preampLobeEnvelope(nominal, 1);
+		var hit = Rect.aboutPoint(nominal, CQNightMeasures.rootKnotHit,
+			CQNightMeasures.rootKnotHit);
+		var lobeTop = lobe.top - nominal.y;
+		var lobeBottom = lobe.bottom - nominal.y;
+		var hitTop = hit.top - nominal.y;
+		var y = nominal.y, maxY;
+		coco[\crescents].do { |center, m|
+			var box;
+			if(m > 0) {
+				box = this.crescentViewBox(center, true);
+				if(this.prRectHorizontalDistance(lobe, box)
+					< CQNightMeasures.rootDolbyClear) {
+					y = max(y, box.bottom + CQNightMeasures.rootDolbyClear
+						- lobeTop);
+				};
+				if(this.prRectHorizontalDistance(hit, box) <= 0) {
+					y = max(y, box.bottom - hitTop);
+				};
+			};
+		};
+		maxY = min(height - CQNightMeasures.rootStageClear - lobeBottom,
+			height - CQNightMeasures.rootKnotHit);
+		^Point(nominal.x, min(y, maxY))
+	}
+
 	// One visible castle = one spesal-step surface. The former clock-sized disc
 	// left dead flesh between its reach and the island edge; the seeded blob is
 	// now the exact hover/action boundary. The separate range ripple still wins
@@ -828,7 +900,7 @@ CQNightGeometry {
 			height * CQNightMeasures.ringHeightFraction);
 		var ringR = CQNightMeasures.ringRadius * scale;
 		var endpoints = IdentityDictionary.new;
-		var castles, ringSegments, ringSamples, ringBox, cocos, roots, birds;
+		var castles, ringSegments, ringSamples, ringBox, cocos, dusts, roots, birds;
 		var sprout, almanac, tideGate, tideGateBox, drone, xs, ys;
 
 		// five castles in a true ring, castle 1 at top, k -> k+1 clockwise —
@@ -922,7 +994,7 @@ CQNightGeometry {
 			} {
 				pi + CQNightMeasures.slotXValveAngle.degrad
 			};
-			// The three software-native inputs belong to their own organs, not to a
+			// The four software-native inputs belong to their own organs, not to a
 			// sixth/eighth moon row. Organ sits just beyond its fruit, SlotQ directly
 			// beside its gill, and Record on the free upper outer rim (10 o'clock on
 			// Coco 1, 2 o'clock on Coco 2). All old hardware-parity moons stay put.
@@ -930,10 +1002,18 @@ CQNightGeometry {
 				* (CQNightMeasures.orgStemReach * scale)))
 				+ ((orgDelta / orgLength) * CQNightMeasures.organInputOutset);
 			var recordAngle = if(i == 0) { (-150).degrad } { (-30).degrad };
+			var slotXInputAngle = if(i == 0) {
+				(-90 - CQNightMeasures.slotXInputTilt).degrad
+			} {
+				(-90 + CQNightMeasures.slotXInputTilt).degrad
+			};
+			var slotXValve = this.polar(center, valveR, xAngle);
 			var modInputs = (
 				organ: organInput,
 				slotQ: this.polar(center, valveR, qAngle)
 					+ (inward * CQNightMeasures.slotQInputGap),
+				slotX: slotXValve + (Point(cos(slotXInputAngle), sin(slotXInputAngle))
+					* CQNightMeasures.slotXInputGap),
 				record: this.polar(center,
 					outerR + CQNightMeasures.recordInputOutset, recordAngle)
 			);
@@ -942,6 +1022,7 @@ CQNightGeometry {
 					* (CQNightMeasures.organInputOutset
 						- CQNightMeasures.organPodOuter)),
 				slotQ: this.polar(center, valveR, qAngle),
+				slotX: slotXValve,
 				record: this.polar(center, outerR, recordAngle)
 			);
 			(center: center, outerR: outerR, winding: winding,
@@ -981,7 +1062,7 @@ CQNightGeometry {
 						levelStart + (levelSweep * (m / 48)))
 				},
 				slotQValve: this.polar(center, valveR, qAngle),
-				slotXValve: this.polar(center, valveR, xAngle),
+				slotXValve: slotXValve,
 				modInputs: modInputs,
 				modRoots: modRoots,
 				crescents: [126, 108, 90].collect { |degrees|
@@ -996,6 +1077,79 @@ CQNightGeometry {
 						degrees.degrad)
 				})
 		};
+		// Two converter-local breaths, mirrored in placement but independently
+		// seeded in contour. Their radial axis points away from the owning Coco;
+		// the perpendicular axis is the hand's mist↔chip grain gesture.
+		dusts = this.prSeeded(7719, {
+			2.collect { |i|
+				var coco = cocos[i];
+				var angle = if(i == 0) {
+					CQNightMeasures.dustBodyAngle.degrad
+				} {
+					pi - CQNightMeasures.dustBodyAngle.degrad
+				};
+				var axis = Point(cos(angle), sin(angle));
+				var tangent = Point(axis.y.neg, axis.x);
+				var center = coco[\center]
+					+ (axis * (CQNightMeasures.dustBodyReach * scale));
+				var rx = CQNightMeasures.dustRx * scale;
+				var ry = CQNightMeasures.dustRy * scale;
+				var anchors = 8.collect { |a|
+					var theta = (a / 8 * 2pi) + 0.10.rand2;
+					var jitter = 1 + 0.08.rand2;
+					center + (axis * (cos(theta) * rx * jitter))
+						+ (tangent * (sin(theta) * ry * jitter))
+				};
+				var segments = this.smoothClosedSegments(anchors);
+				var samples = this.sampleSegments(segments, 12);
+				var socket = center
+					- (axis * (CQNightMeasures.dustSocketInset * scale));
+				var tailStart = socket
+					- (axis * (CQNightMeasures.dustTailLength * scale));
+				var ownershipTail = 4.collect { |part|
+					tailStart + ((socket - tailStart) * (part / 3))
+				};
+				var ownershipTailSamples = 25.collect { |part|
+					tailStart + ((socket - tailStart) * (part / 24))
+				};
+				var seed = center - (axis * (CQNightMeasures.dustRx * 0.24 * scale));
+				var particleCount = CQNightMeasures.dustParticleCount;
+				var particles = particleCount.collect { |particle|
+					var theta = (particle * 137.507764).degrad + 0.04.rand2;
+					var rank = (particle * 17) % particleCount;
+					var radius = ((rank + 0.5) / particleCount).sqrt;
+					var point = center
+						+ (axis * (cos(theta) * rx * radius * 0.80))
+						+ (tangent * (sin(theta) * ry * radius * 0.74));
+					var length = 1
+						+ CQNightMeasures.dustParticleLengthJitter.rand2;
+					(point: point,
+						threshold: (particle + 0.5) / particleCount,
+						slant: CQNightMeasures.dustParticleSlant.rand2,
+						length: length,
+						alpha: 1 + CQNightMeasures.dustParticleAlphaJitter.rand2,
+						halfMax: (CQNightMeasures.dustParticleHalfMin
+							+ CQNightMeasures.dustParticleHalfGrain) * length)
+				};
+				var socketBox = this.endpointBox(socket, \socket, false);
+				var boundsPoints = samples ++ ownershipTailSamples
+					++ [socketBox.leftTop, socketBox.rightTop,
+						socketBox.leftBottom, socketBox.rightBottom]
+					++ particles.collect { |entry|
+						[
+							entry[\point] - Point(entry[\halfMax], entry[\halfMax]),
+							entry[\point] + Point(entry[\halfMax], entry[\halfMax])
+						]
+					}.flat;
+				var pad = CQNightMeasures.dustBoxPad;
+				(center: center, axis: axis, tangent: tangent,
+					rx: rx, ry: ry, anchors: anchors, segments: segments,
+					samples: samples, seed: seed, particles: particles,
+					socket: socket, ownershipTail: ownershipTail,
+					ownershipTailSamples: ownershipTailSamples,
+					box: this.prBoundsOf(boundsPoints, pad))
+			}
+		});
 		cocos.do { |coco, i|
 			var n = i + 1;
 			endpoints[("coco" ++ n).asSymbol] = coco[\mouth];
@@ -1003,10 +1157,11 @@ CQNightGeometry {
 			[\spaf, \inVca, \fbVca, \flip, \skip].do { |suffix, m|
 				endpoints[("coco" ++ n ++ "_" ++ suffix).asSymbol] = coco[\moons][m];
 			};
-			#[organ, slotQ, record].do { |suffix|
+			#[organ, slotQ, slotX, record].do { |suffix|
 				endpoints[("coco" ++ n ++ "_" ++ suffix).asSymbol] =
 					coco[\modInputs][suffix]
 			};
+			endpoints[("coco" ++ n ++ "_dust").asSymbol] = dusts[i][\socket];
 		};
 
 		castles.do { |castle, k|
@@ -1042,8 +1197,9 @@ CQNightGeometry {
 				var srcName = if(i == 0) { \preASrc } { \preBSrc };
 				var sourceValues = CQSpec.enumValues(srcName)
 					.reject { |value| value == \none };
-				var knot = Point(width * fraction,
+				var nominalKnot = Point(width * fraction,
 					height - (CQNightMeasures.rootKnotReach * scale));
+				var knot = this.prPreampKnot(nominalKnot, cocos[i], height);
 				var spacing = CQNightMeasures.rootSourceSpacing * scale;
 				var middle = (sourceValues.size - 1) * 0.5;
 				var strands = sourceValues.collect { |value, s|
@@ -1119,13 +1275,20 @@ CQNightGeometry {
 				var labelCenterX = max(restU, clearU) * inward;
 				var labelRect = Rect(labelCenterX - (labelExtent.x * 0.5),
 					labelTop, labelExtent.x, labelExtent.y);
+				var maxLobeEnvelope = this.preampLobeEnvelope(knot, 1);
+				var knotHitBox = Rect.aboutPoint(knot,
+					CQNightMeasures.rootKnotHit, CQNightMeasures.rootKnotHit);
 				var allPoints = strands.flat
 					++ vein ++ envBranch ++ [labelRect.leftTop,
-						labelRect.rightBottom];
+						labelRect.rightBottom, maxLobeEnvelope.leftTop,
+						maxLobeEnvelope.rightBottom, knotHitBox.leftTop,
+						knotHitBox.rightBottom];
 				(side: side, sourceValues: sourceValues,
 					sourceStrands: strands, knot: knot,
 					audioVein: vein, audioJoin: join,
 					envBranch: envBranch,
+					maxLobeEnvelope: maxLobeEnvelope,
+					knotHitBox: knotHitBox,
 					// The env jack uses transparent paper, so this exact cubic
 					// remains continuous beneath its dot without a repair seam.
 					arrival: (envTip - envBranch[2]) / envReach,
@@ -1229,7 +1392,8 @@ CQNightGeometry {
 			tideGate: tideGate, tideGateBox: tideGateBox,
 			castles: castles, ringSegments: ringSegments,
 			ringSamples: ringSamples, ringBox: ringBox,
-			cocos: cocos, drone: drone, roots: roots, sprout: sprout, birds: birds,
+			cocos: cocos, dusts: dusts, drone: drone, roots: roots,
+			sprout: sprout, birds: birds,
 			almanac: almanac, endpoints: endpoints)
 	}
 }

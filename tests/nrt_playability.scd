@@ -122,12 +122,12 @@ matrixCount = { |shake|
 };
 
 // Audio/control bus plan for two isolated copies of the real graph fragment.
-// Matrix control buses are in a separate namespace, so 100/500 are safely
+// Matrix control buses are in a separate namespace, so 100/700 are safely
 // independent of the audio-bus spans.
 branchPlan = [
 	(mod: 16, qMix: 32, pre: 33, out: 34, silent: 35, ctl: 100,
 		buf: 0, quantussy: 1100, coco: 1101),
-	(mod: 48, qMix: 64, pre: 65, out: 66, silent: 67, ctl: 500,
+	(mod: 48, qMix: 64, pre: 65, out: 66, silent: 67, ctl: 700,
 		buf: 1, quantussy: 1200, coco: 1201)
 ];
 
@@ -175,6 +175,8 @@ cocoArgs = { |branch, prepared, bootSpaf|
 		\wSkipBus, branch[\ctl] + (CQMatrix.destIndex(\coco1_skip) * 16),
 		\wOrganBus, branch[\ctl] + (CQMatrix.destIndex(\coco1_organ) * 16),
 		\wSlotQBus, branch[\ctl] + (CQMatrix.destIndex(\coco1_slotQ) * 16),
+		\wSlotXBus, branch[\ctl] + (CQMatrix.destIndex(\coco1_slotX) * 16),
+		\wDustBus, branch[\ctl] + (CQMatrix.destIndex(\coco1_dust) * 16),
 		\wRecordBus, branch[\ctl] + (CQMatrix.destIndex(\coco1_record) * 16),
 		\patchDepth, 1, \speed, CQSpec.default(\coco1Speed),
 		\spafKnob, if(prepared) { 0.35 } { bootSpaf },

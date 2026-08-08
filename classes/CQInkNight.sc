@@ -209,7 +209,7 @@ CQInkNight {
 	// is the stored slot amount, the destination gill is the hand, and an arrow
 	// near the arrival makes direction readable without labels or colour.
 	*drawDroneRoutes { |geometry, qNorms, xNorms, active, hover, skin = \night,
-		qModulations|
+		qModulations, xModulations|
 		var palette = CQInk.palette(skin);
 		active = active ? IdentitySet.new;
 		hover = hover ? IdentitySet.new;
@@ -230,8 +230,116 @@ CQInkNight {
 			var live = active.includes(name), over = hover.includes(name);
 			this.drawFlowPath(path, norm, \cas, live, over, palette);
 			this.drawFlowGill(path.last, path.last - path[2], norm, \cas,
-				live, over, palette);
+				live, over, palette, xModulations !? { xModulations.at(i) });
 		};
+	}
+
+	// Each Coco's converter breathes into one deterministic veil. Amount grows
+	// the inner body away from the shell; Grain crosses it tangentially from mist
+	// to chip debris. Nothing animates by itself: every fleck is seeded geometry,
+	// and the hollow radial pearl is matrix DSP truth rather than the stored hand.
+	*drawDust { |dust, origin, amountNorm = 0, grainNorm = 0.5,
+		active = false, hover = false, modulation, skin = \night|
+		var palette = CQInk.palette(skin);
+		var amount = (amountNorm ? 0).clip(0, 1);
+		var grain = (grainNorm ? 0.5).clip(0, 1);
+		var axis = dust[\axis], tangent = dust[\tangent], seed = dust[\seed];
+		var growth = 0.12 + (amount.sqrt * 0.88), grown, grownSegments;
+		var mist = 1 - grain, reach, grainPoint;
+		Pen.translate(origin.x.neg, origin.y.neg);
+		// A detached three-breath root points back to the owner without drawing a
+		// signal route out through the shell's crowded control sector. Its Coco end
+		// is frail and the socket end gradually becomes legible.
+		Pen.width = CQInk.strokes[\hairline];
+		3.do { |i|
+			var alpha = (0.16 + (i * 0.09))
+				* if(active or: { hover }) { 1.55 } { 1 };
+			Pen.strokeColor = palette[\whisper].copy.alpha_(alpha.min(0.72));
+			Pen.line(dust[\ownershipTail][i], dust[\ownershipTail][i + 1]);
+			Pen.stroke;
+		};
+		// Full potential remains a faint romantic outline even at zero.
+		Pen.strokeColor = palette[\whisper].copy
+			.alpha_(if(hover) { 0.74 } { 0.30 });
+		Pen.width = CQInk.strokes[if(hover) { \normal } { \hairline }];
+		this.strokeSegments(dust[\segments]);
+		if(amount > 0.001) {
+			grown = dust[\anchors].collect { |point|
+				seed + ((point - seed) * growth)
+			};
+			grownSegments = CQNightGeometry.smoothClosedSegments(grown);
+			Pen.fillColor = palette[\undertow].copy.alpha_(0.035 + (0.12 * amount));
+			this.addSegments(grownSegments);
+			Pen.fill;
+			Pen.strokeColor = palette[\undertow].copy
+				.alpha_(0.18 + (0.40 * amount));
+			Pen.width = CQInk.strokes[if(active) { \normal } { \hairline }];
+			this.strokeSegments(grownSegments);
+		};
+		// Three fixed vapour threads fade as the transverse hand chooses chips.
+		reach = dust[\rx] * (0.18 + (0.70 * amount.sqrt));
+		[-0.48, 0, 0.43].do { |lane, i|
+			var start = seed + (tangent * dust[\ry] * lane * 0.32);
+			var finish = seed + (axis * reach)
+				+ (tangent * dust[\ry] * lane * (0.55 + (0.2 * amount)));
+			Pen.strokeColor = palette[\undertow].copy
+				.alpha_(mist * (0.08 + (amount * 0.34)));
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.moveTo(start);
+			Pen.curveTo(finish,
+				start + (axis * reach * 0.38) + (tangent * (i - 1) * 3),
+				finish - (axis * reach * 0.30) - (tangent * (i - 1) * 2));
+			Pen.stroke;
+		};
+		// Seeded slivers: thresholds reveal an evenly distributed static pool;
+		// Grain turns their axis from vapour-wise to transverse chip debris.
+		dust[\particles].do { |particle|
+			if(particle[\threshold] <= amount.pow(0.72)) {
+				var angle = (grain * 0.5pi) + particle[\slant];
+				var slant = (axis * cos(angle)) + (tangent * sin(angle));
+				var half = (CQNightMeasures.dustParticleHalfMin
+					+ (grain * CQNightMeasures.dustParticleHalfGrain))
+					* particle[\length];
+				Pen.strokeColor = palette[\bone].copy
+					.alpha_(amount * (0.11 + (0.52 * grain))
+						* particle[\alpha]);
+				Pen.width = CQInk.strokes[\hairline];
+				Pen.line(particle[\point] - (slant * half),
+					particle[\point] + (slant * half));
+				Pen.stroke;
+			};
+		};
+		// A transverse bone spine is the second axis without a label or panel.
+		Pen.strokeColor = palette[\whisper].copy.alpha_(if(active) { 0.82 } { 0.42 });
+		Pen.width = CQInk.strokes[\hairline];
+		Pen.line(seed - (tangent * 12), seed + (tangent * 12));
+		Pen.stroke;
+		grainPoint = seed + (tangent * (((grain * 2) - 1) * 12));
+		Pen.fillColor = palette[\bone].copy.alpha_(if(active) { 1.0 } { 0.82 });
+		Pen.addOval(Rect.aboutPoint(grainPoint, 1.7, 1.7));
+		Pen.fill;
+		this.prDrawDustWake(dust, modulation, palette);
+	}
+
+	*prDrawDustWake { |dust, modulation, palette|
+		var seed = dust[\seed], axis = dust[\axis], reach = dust[\rx] * 0.82;
+		var value, lower, upper, at;
+		if(modulation.isNil) { ^this };
+		value = (modulation[\center] ? 0).clip(0, 1);
+		lower = (modulation[\lower] ? value).clip(0, 1);
+		upper = (modulation[\upper] ? value).clip(0, 1);
+		at = { |norm| seed + (axis * reach * norm) };
+		if((upper - lower) > 0.001) {
+			Pen.strokeColor = palette[\line].copy.alpha_(0.38);
+			Pen.width = CQInk.strokes[\normal];
+			Pen.line(at.value(lower), at.value(upper));
+			Pen.stroke;
+		};
+		Pen.fillColor = palette[\ground];
+		Pen.strokeColor = palette[\bone].copy.alpha_(0.86);
+		Pen.width = CQInk.strokes[\hairline];
+		Pen.addOval(Rect.aboutPoint(at.value(value), 2.2, 2.2));
+		Pen.fillStroke;
 	}
 
 	// PLAY-6.1's single under-ink. The night was already near its colour
@@ -646,6 +754,7 @@ CQInkNight {
 		routes = [
 			[coco[\modRoots][\organ], coco[\modInputs][\organ], \organ],
 			[coco[\modRoots][\slotQ], coco[\modInputs][\slotQ], \tri],
+			[coco[\modRoots][\slotX], coco[\modInputs][\slotX], \line],
 			[coco[\modRoots][\record], coco[\modInputs][\record], \danger]
 		];
 		routes.do { |route|
@@ -1461,7 +1570,7 @@ CQInkNight {
 		skin = \night|
 		var palette = CQInk.palette(skin), knot = root[\knot];
 		var radius = CQNightMeasures.rootKnotR;
-		var topScale, bottomScale, knotColor;
+		var lobeBoxes, knotColor;
 		Pen.translate(origin.x.neg, origin.y.neg);
 
 		root[\sourceStrands].do { |segment, i|
@@ -1487,29 +1596,20 @@ CQInkNight {
 
 		drive = drive.clip(0, 1);
 		bias = bias.clip(0, 1);
-		topScale = 1 + (bias * 0.48);
-		bottomScale = 1 - (bias * 0.30);
+		lobeBoxes = CQNightGeometry.preampLobeBoxes(knot, bias);
 		knotColor = palette[\pre];
 		// Drive darkens the living centre without turning a setting into a
 		// numeric display. Bias swells the outgoing lobe and pinches the intake
 		// lobe; at zero the two are exactly balanced.
 		Pen.fillColor = palette[\input].copy.alpha_(0.04 + (drive * 0.16));
-		Pen.addOval(Rect.aboutPoint(
-			knot + Point(0, radius * -0.42),
-			radius * 0.72 * topScale, radius * 0.48 * topScale));
+		Pen.addOval(lobeBoxes[0]);
 		Pen.fill;
-		Pen.addOval(Rect.aboutPoint(
-			knot + Point(0, radius * 0.42),
-			radius * 0.72 * bottomScale, radius * 0.48 * bottomScale));
+		Pen.addOval(lobeBoxes[1]);
 		Pen.fill;
 		Pen.strokeColor = knotColor.copy.alpha_(if(active) { 1 } { 0.88 });
 		Pen.width = CQInk.strokes[if(active) { \state } { \strong }];
-		Pen.addOval(Rect.aboutPoint(
-			knot + Point(0, radius * -0.42),
-			radius * 0.72 * topScale, radius * 0.48 * topScale));
-		Pen.addOval(Rect.aboutPoint(
-			knot + Point(0, radius * 0.42),
-			radius * 0.72 * bottomScale, radius * 0.48 * bottomScale));
+		Pen.addOval(lobeBoxes[0]);
+		Pen.addOval(lobeBoxes[1]);
 		Pen.stroke;
 		Pen.strokeColor = palette[\line].copy.alpha_(0.7);
 		Pen.width = CQInk.strokes[\hairline];
@@ -1698,6 +1798,13 @@ CQInkNight {
 			var angle = CQGuiNightTouch.angleAt(corner, tide.center);
 			var density = memories[c];
 			var fullness, seedInk;
+			// The bridge is real topology but unrelated to these memory leaves. A
+			// five-pixel ground wash makes it pass behind instead of joining them.
+			Pen.fillColor = palette[\ground];
+			Pen.strokeColor = palette[\ground];
+			Pen.width = CQNightMeasures.seedMoat * 2;
+			this.prAddSeed(corner, angle, true);
+			Pen.fillStroke;
 			if(density.isNil) {
 				// Vacant memory: an unmistakably open inward-facing husk.
 				Pen.strokeColor = palette[\whisper].copy.alpha_(

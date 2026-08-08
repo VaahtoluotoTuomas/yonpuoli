@@ -1889,7 +1889,7 @@ PowerShell-ikkunaansa** (ei editorin sisään, jotta se elää editorin yli).
 ~soakActivity = Routine({
     var step = 0;
     // KAKSI presettia tassa jarjestyksessa, ei yksi: \mayhem on tiheysstressi
-    // jonka params-osa on TYHJA -- se tayttaa 448 matriisisolua muttei sytyta
+    // jonka params-osa on TYHJA -- se tayttaa 512 matriisisolua muttei sytyta
     // yhtaan aanilahdetta, joten pelkastaan sina yo olisi aanettomasti tiheä.
     // \selfNoise antaa aanen (dust, fb, cross-feed) ilman sisaantuloa, ja
     // \mayhem korvaa sen jalkeen vain matriisin -> tiheä JA kuuluva yö.
@@ -2195,7 +2195,7 @@ portti: `CQ_COMPILE_OK`, **13 681 unit-passia / 0 failurea / 39 luokkaa**,
 // SOAK-FIX osa 1 (löydös A) -- morph ei saa jäädyttää. Ctrl+Shift+L ensin.
 CQ.boot;
 CQ.patchPreset(\selfNoise);
-CQ.patchPreset(\mayhem);      // 448 kaapelia: nykyinen täystiheä stressikenttä
+CQ.patchPreset(\mayhem);      // 512 kaapelia: nykyinen täystiheä stressikenttä
 CQ.snap(\fix_a);
 CQ.shake(0.3, density: 0.35);
 CQ.snap(\fix_b);
@@ -2734,3 +2734,71 @@ PLAY-8 on kokonaan suljettu.
       kuun määrälaki ja jatkuva ele, kuusi socketia/DSP-polku, kaksisuuntainen
       mutta käsin asetetun Holdin säilyttävä Record, Night-integraatio, bundled
       undo ja vapaa 8–10 shaken ensikäyttö)
+
+### SLOTX/DUST — uudet 16×32-kohteet ja Dust-usvat
+
+Tämä portti tehdään ennen kuin uudet SlotX/Dust-sarakkeet saavat osallistua
+ekologiseen shakeen. Recompiloi ensin luokkakirjasto (**Ctrl+Shift+L**) ja boottaa
+puhdas sessio. Pidä kuulokevoimakkuus maltillisena; Dust tallentuu oikeasti
+Coco-RAMiin ja voi kasvaa feedbackissa.
+
+**Tilanne 2026-08-08:** käyttäjä on hyväksynyt äänen, eleet, toiminnan ja
+lopullisen UI:n. SlotX näyttää oikealta eikä sitä muutettu. Dust-sommittelun,
+compact-juuren dolby-leikkauksen ja TAB-silmän ring-välin korjaus on toteutettu;
+automaattiset portit ja compact/roomy-kuvasarja ovat vihreät. Käyttäjä hyväksyi
+korjauksen myös oikeassa sovelluksessa, joten yhdistetty portti on suljettu.
+Shake-karanteeni säilyy erilliseen musiikilliseen päätökseen asti. Toteutuksen
+tarkka työjärjestys, tulos ja numeeriset hyväksyntärajat ovat tiedostossa
+[`docs/SLOTX_DUST_UI_REPAIR_PLAN.md`](../docs/SLOTX_DUST_UI_REPAIR_PLAN.md).
+
+1. **Kuvan omistajuus ja väljyys.** Kummankin X-venttiilin ylä-/ulkopuolella on
+   ontto neutraali socket peilikuvana SlotQ:n inputille. Kaksi Dust-usvaa ovat
+   omien Cocojensa sisä-alaviistossa. Uusi katkaistu hengitysjuuri osoittaa
+   socketista kohti omaa Cocoa mutta ei pujottele jatkuvana viivana shellin
+   ohjainryppääseen. Vasen Dust ei saa osua skipiin eikä oikea SP.AF:iin;
+   kummankin ympärillä pitää olla suunnitelman mitattu negatiivinen tila.
+   Morphauslehdet eivät saa näyttää kasvavan SlotX-sillasta: sillan pitää kulkea
+   ylempien lehtien takana, alalehdillä olla ilmaa reunaan ja TAB-silmällä olla
+   oma selvä väli ringiin.
+2. **SlotX kumpaankin suuntaan.** Tee vastakkaiseen Cocoon kuultava lähde, pidä
+   vastaanottavan Cocon käsin asetettu X-venttiili nollassa ja patchaa sen uusi
+   socket. Telemetry-waken pitää liikkua, käsiventtiilin ei. Toista peilikuvana.
+
+   ```supercollider
+   CQ.patchPreset(\empty);
+   CQ.set(\coco1Level, 0.8); CQ.set(\coco2Level, 0.8);
+   CQ.set(\coco1Hold, 0); CQ.set(\coco2Hold, 0);
+   CQ.set(\coco2Organ, 0.55); CQ.set(\coco1SlotX, 0);
+   CQ.patch(\tri3, \coco1_slotX, 0.6); // Coco 2 → Coco 1; odota yksi looppi
+   CQ.unpatch(\tri3, \coco1_slotX);
+   CQ.set(\coco1Organ, 0.55); CQ.set(\coco2SlotX, 0);
+   CQ.patch(\tri3, \coco2_slotX, 0.6); // Coco 1 → Coco 2
+   ```
+
+3. **Dust-määrä ja Grain.** Tartu usvan varsinaiseen epäsäännölliseen kehoon.
+   Radiaalinen veto Cocosta poispäin kasvattaa määrää. Poikittainen veto ei saa
+   muuttaa kokonaismäärän käsiasentoa: toisessa päässä materiaali on jatkuvampaa
+   usvaa, toisessa erillisempiä siruja/cracklea. Keskellä äänen pitää vastata
+   aiemmin hyväksyttyä Dustia. Muutos kuuluu vasta kun kirjoitettu materiaali
+   ehtii lukupäälle, joten odota oletusnopeudella noin yksi looppi.
+4. **Dust-matriisi.** Aseta Dust käsin nollaan ja istuta esimerkiksi
+   `CQ.patch(\tri3, \coco1_dust, 1)`. Usvan ontto telemetry-pearl saa liikkua ja
+   pölyä syntyä positiivisilla puolijaksoilla, mutta käsin asetettu määrä ei saa
+   liikkua. Negatiivinen johto saa vastaavasti raivata auki asetettua Dustia.
+5. **Hold-integriteetti.** Tee ensin lyhyt tunnistettava luuppi, sulje Hold ja
+   muuta sekä SlotX- että Dust-reittejä. Vanhan loopin sisällön ei pidä muuttua;
+   uutta ristisyöttöä tai pölyä saa kirjoittua vasta kun Hold avataan. Poista
+   johdot ja varmista, että käsin asetetut Hold-, SlotX- ja Dust-arvot säilyivät.
+6. **Shake-karanteeni.** Tee muutama tunnettu ja tuntematon shake, avaa Inspector
+   ja tarkista, että `slotX`- ja `dust`-sarakkeet pysyvät tyhjinä. Vanhat PLAY-8-
+   perheet saavat kuulostaa ennallaan; karanteenin tarkoitus on estää uuden
+   materiaalin sekoittuminen niiden hyväksyttyyn identiteettiin.
+
+- [x] **SLOTX/DUST ääni, eleet ja toiminta hyväksytty 2026-08-03** (SlotX
+      molempiin suuntiin, Dust amount + mist↔chip, matriisi ja Hold)
+- [x] **SLOTX/DUST UI-korjaus hyväksytty 2026-08-08** (Dust/skip/SP.AF-
+      väljyys, tiheämmät staattiset speckit, root/dolby ja TAB-silmä/ring sekä
+      compact/fullscreen)
+- [x] **SLOTX/DUST hyväksytty kokonaan 2026-08-08** (UI-portti suljettu;
+      shake-karanteenin mahdollinen poisto kirjattu erilliseksi seuraavaksi
+      musiikilliseksi päätökseksi)

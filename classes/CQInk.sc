@@ -44,6 +44,9 @@ CQInk {
 		palettes.values.do { |palette|
 			palette[\hold] = palette[\danger];
 			palette[\warn] = palette[\danger];
+			// Bone is the same pale mineral as event spark, but naming it lets
+			// static Dust anatomy use the colour without claiming an event.
+			palette[\bone] = palette[\spark];
 		};
 		glyphNames = #[wedge, flip, spark, wave, tickRing, pendulum,
 			hold, skip, spesal, panic, rec, drawer, collapse, expand, day, night];

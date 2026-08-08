@@ -7,7 +7,7 @@
 // shrunken Day panel.
 //
 // One manifest below drives BOTH the built layout and `paramNames`, so the
-// coverage audit can never test a second hand-copied list. The 26 names are
+// coverage audit can never test a second hand-copied list. The 24 names are
 // written out explicitly and are never computed as `CQSpec.names` minus the
 // other surfaces: a newly added parameter must fail the gate rather than
 // silently count as covered without a drawn control.
@@ -86,7 +86,7 @@ CQGuiWorkshop {
 		^CQGuiScale.columns(railWidth, 3, CQGuiScale.metrics(step)[\gutter])
 	}
 
-	// ---- the manifest (§12.1.1's exact 26 after the drone promotion) ----
+	// ---- the manifest (§12.1.1's exact 24 after Dust moved into Night) ----
 
 	// The service band keeps only live source services after Space retirement.
 	*serviceIslands {
@@ -115,8 +115,6 @@ CQGuiWorkshop {
 				(param: p.value("Bits"), label: "bits"),
 				(param: p.value("Wrap"), label: "wrap"),
 				(param: p.value("Interp"), label: "read")]),
-			(label: "material", rows: [
-				(param: p.value("Dust"), label: "dust", family: \cas)]),
 			(label: "output", rows: [
 				(param: p.value("Pan"), label: "pan")]),
 			// The two setup-only slots remain exact here. q and x moved into the

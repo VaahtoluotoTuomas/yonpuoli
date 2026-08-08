@@ -16,19 +16,27 @@ CQMatrixTest : UnitTest {
 
 	test_nameIndexMapping {
 		this.assertEquals(CQMatrix.sourceNames.size, 16, "16 sources (SPEC §5.5)");
-		this.assertEquals(CQMatrix.destNames.size, 28, "28 destinations (SPEC §5.5)");
+		this.assertEquals(CQMatrix.destNames.size, 32, "32 destinations (SPEC §5.5)");
 		this.assertEquals(CQMatrix.srcIndex(\tri1), 0, "tri1 is source 0");
 		this.assertEquals(CQMatrix.srcIndex(\org2), 15, "org2 is the last source");
 		this.assertEquals(CQMatrix.destIndex(\coco1_spaf), 0, "coco1_spaf is dest 0");
 		this.assertEquals(CQMatrix.destIndex(\coco1_organ), 5,
-			"coco 1 organ begins the software-native input trio");
-		this.assertEquals(CQMatrix.destIndex(\coco1_record), 7,
+			"coco 1 organ begins the software-native input family");
+		this.assertEquals(CQMatrix.destIndex(\coco1_slotX), 7,
+			"coco 1 SlotX follows its SlotQ counterpart");
+		this.assertEquals(CQMatrix.destIndex(\coco1_dust), 8,
+			"coco 1 Dust is a continuous material destination");
+		this.assertEquals(CQMatrix.destIndex(\coco1_record), 9,
 			"coco 1 record closes the first destination island");
-		this.assertEquals(CQMatrix.destIndex(\coco2_organ), 13,
+		this.assertEquals(CQMatrix.destIndex(\coco2_organ), 15,
 			"coco 2 mirrors the same independent organ input");
-		this.assertEquals(CQMatrix.destIndex(\coco2_record), 15,
-			"coco 2 mirrors the complete software-native trio");
-		this.assertEquals(CQMatrix.destIndex(\deckB_rate), 27, "deckB_rate is the last dest");
+		this.assertEquals(CQMatrix.destIndex(\coco2_slotX), 17,
+			"coco 2 mirrors the SlotX destination");
+		this.assertEquals(CQMatrix.destIndex(\coco2_dust), 18,
+			"coco 2 mirrors the Dust destination");
+		this.assertEquals(CQMatrix.destIndex(\coco2_record), 19,
+			"coco 2 mirrors the complete software-native family");
+		this.assertEquals(CQMatrix.destIndex(\deckB_rate), 31, "deckB_rate is the last dest");
 		this.assert(CQMatrix.srcIndex(\bogus).isNil, "unknown source has no index");
 		this.assert(CQMatrix.destIndex(\bogus).isNil, "unknown dest has no index");
 	}
@@ -168,7 +176,9 @@ CQMatrixTest : UnitTest {
 
 	test_presetMayhemDense {
 		matrix.preset(\mayhem);
-		this.assertEquals(matrix.asArray.size, 16 * 28, "\\mayhem patches every cell");
+		this.assertEquals(matrix.asArray.size,
+			CQMatrix.sourceNames.size * CQMatrix.destNames.size,
+			"\\mayhem patches every cell");
 		matrix.asArray.do { |t|
 			this.assert(t[2].abs <= 1.0, "\\mayhem weight % stays in range".format(t[2]));
 			this.assert(t[2] != 0.0, "\\mayhem weight is never zero");
@@ -193,7 +203,7 @@ CQMatrixTest : UnitTest {
 		var spesal = matrix.shake(0.4, seed: 99);
 		var cells = matrix.asArray;
 		this.assert(cells.size > 0, "shake patches something (seed 99)");
-		this.assert(cells.size < (16 * 28),
+		this.assert(cells.size < (CQMatrix.sourceNames.size * CQMatrix.destNames.size),
 			"shake stays sparse — it is a banana handful, not \\mayhem");
 		cells.do { |t|
 			this.assert(t[2].abs <= 0.82,
@@ -221,11 +231,29 @@ CQMatrixTest : UnitTest {
 			this.assert(continuous.abs.inclusivelyBetween(0.135, 0.3),
 				"ordinary continuous decoration no longer clusters near zero");
 			this.assert(newVca.abs.inclusivelyBetween(0.16, 0.3),
-				"Organ/SlotQ decoration stays useful but below its 0.45 ceiling");
+				"Organ/SlotQ/SlotX decoration stays useful but below its 0.45 ceiling");
 			this.assert(gate.abs.inclusivelyBetween(0.58, 0.8),
 				"default gate decoration has Schmitt headroom without a full-scale slam");
 		};
 		thisThread.randData = saved;
+	}
+
+	test_newSlotXAndDustMatrixRowsStayOutOfEcologicalShakeUntilAuditioned {
+		#[coco1_slotX, coco1_dust, coco2_slotX, coco2_dust].do { |dest|
+			this.assert(CQMatrix.isShakeTarget(dest).not,
+				"% is explicitly quarantined from ecological shake".format(dest));
+		};
+		32.do { |i|
+			var planted;
+			matrix.shake(0.8, seed: 3000 + i, density: 1);
+			planted = matrix.asArray.select { |triple|
+				#[coco1_slotX, coco1_dust, coco2_slotX, coco2_dust]
+					.includes(triple[1])
+			};
+			this.assert(planted.isEmpty,
+				"seed % plants neither a skeleton nor decoration in quarantined rows"
+					.format(3000 + i));
+		};
 	}
 
 	test_shakePlantsOneAudibleEcologyAndOnlyPreparesSafeMusicalControls {
@@ -352,7 +380,9 @@ CQMatrixTest : UnitTest {
 	test_shakeDensityClampFuzz {
 		var wild = CQMatrix(nil);
 		wild.shake(0.4, seed: 3, density: 9);
-		this.assert(wild.asArray.size >= 280 and: { wild.asArray.size < (16 * 28) },
+		this.assert(wild.asArray.size >= 280 and: {
+			wild.asArray.size < (CQMatrix.sourceNames.size * CQMatrix.destNames.size)
+		},
 			"a density over 1 fills continuous colour but keeps gate rows ecological");
 		wild = CQMatrix(nil);
 		wild.patch(\tri1, \coco1_spaf, 0.5);

@@ -13,7 +13,7 @@ var repo = File.realpath(thisProcess.nowExecutingPath).dirname.dirname;
 var tmpDir = repo +/+ "tests" +/+ "tmp";
 var cfg = CQConfig.validate(());
 var defs = CQSynthDefs.all(cfg);
-var sr = 48000, dur = 8.0, frames = 4096;
+var sr = 48000, dur = 8.0, frames = 4096, zeroWeights = 100;
 var speeds = [1500, 24000, 48000];
 var opts = ServerOptions.new;
 var results = List.new, ok = true;
@@ -42,6 +42,7 @@ makeScore = { |speed|
 	var score = Score.new;
 	defs.do { |d| score.add([0.0, [\d_recv, d.asBytes]]) };
 	score.add([0.0, [\d_recv, legacyDef.asBytes]]);
+	score.add([0.0, [\c_setn, zeroWeights, 16] ++ (0.0 ! 16)]);
 	score.add([0.0, [\b_alloc, 0, frames, 1]]);
 	score.add([0.0, [\b_alloc, 1, frames, 1]]);
 	score.add([0.0, [\g_new, 1000, 0, 0]]);
@@ -49,7 +50,13 @@ makeScore = { |speed|
 		\buf, 0, \preBus, 8, \deckBus, 8, \qMixBus, 8, \crossBus, 8,
 		\outBus, 0, \modSrcBus, 16, \modTapIdx, 12, \modOrganIdx, 14,
 		\cocoIndex, 0,
+		\wSpafBus, zeroWeights, \wInVcaBus, zeroWeights,
+		\wFbVcaBus, zeroWeights, \wFlipBus, zeroWeights,
+		\wSkipBus, zeroWeights, \wOrganBus, zeroWeights,
+		\wSlotQBus, zeroWeights, \wSlotXBus, zeroWeights,
+		\wDustBus, zeroWeights, \wRecordBus, zeroWeights,
 		\speed, speed, \inLevel, 0, \fbLevel, 0, \dust, 0.02,
+		\dustGrain, 0.5,
 		\hold, 0, \organLvl, 0, \level, 1,
 		\slotPre, 0, \slotDeck, 0, \slotQ, 0, \slotX, 0]]);
 	score.add([0.0, [\s_new, \cqTestLegacyDust, 1002, 1, 1000,

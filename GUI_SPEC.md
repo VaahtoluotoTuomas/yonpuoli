@@ -339,9 +339,9 @@ eye but must keep the topology truths):
   reverses. On the shell: org fruit (yellow source), the spiral's mouth (gray
   source), and moons spaf / inVca / fbVca / flip / skip (lamps on the
   gate/trigs). Each shell also owns its output-Level shoreline, audible-Organ
-  calyx, a destination-side SlotQ gill on the Quantussy tributary and one valve
-  of the two-lane directional SlotX bridge. These are landscape anatomy, not a
-  mixer panel and not a separate drone mode.
+  calyx, a destination-side SlotQ gill on the Quantussy tributary, one valve
+  of the two-lane directional SlotX bridge and one inner-lower Dust veil. These
+  are landscape anatomy, not a mixer panel and not a separate drone mode.
 - **Inputs as roots** at the bottom: envA left, envB right; root tips glow
   with follower level (aura).
 - **Decks as birds** at the top: deckA / deckB. The bird itself fetches:
@@ -414,7 +414,8 @@ and Alt retain the banana rip/polarity grammar.
 | **Level shoreline** | vertical drag on the shell's outer open shore. Its fill and pearl state the stored channel level; the CQSpec-owned 1.0 unity notch separates normal water from a danger-red boost reach. The spiral only breathes in opacity with Level and remains visible at zero | `cocoNLevel`, independent 0…1.5 exponential channel mix |
 | **Organ calyx** | vertical drag on the yellow flesh around the `orgN` seed. The calyx fill states the audible organ layer, while the central yellow jack never changes size or patchability — `Organ = 0` mutes the layer but never pretends the modulation source disappeared. Its unglyphed software-native Organ socket sits just outward from the fruit and needs only one short low-alpha root. Matrix activity appears as a separate effective-value pearl/wake on the calyx, never by moving the hand-set fill | `cocoNOrgan`, 0…1 · `cocoN_organ` matrix VCA |
 | **Quantussy tributary gill** | vertical drag on the short gill where the ring's faint amber side-river arrives at a shell. Zero leaves topology barely visible; pressure and pearl state the gain. The two shell gills are independent even though the default 16n performance fader links them. Inside the exact gill circle, hover and ordinary left press win a crossing cable; the rest of the shell does not. Its unglyphed software-native SlotQ socket sits immediately beside the gill toward the central ring, with only a tiny straight root; matrix activity adds a separate effective-value wake along the tributary | `cocoNSlotQ`, 0…1.5 gain from `qMix` into that Coco · `cocoN_slotQ` matrix VCA |
-| **two-lane cross-feed bridge** | vertical drag on either shell's own bridge valve. Arrowheads make the two simultaneous directions explicit and each lane keeps its own gain: the valve at Coco 1 receives Coco 2; the valve at Coco 2 receives Coco 1. It is never linked to SlotQ or to the opposite lane. Its exact valve circle has the same narrow hover/left-press priority through a cable | `coco1SlotX`: Coco 2 → Coco 1; `coco2SlotX`: Coco 1 → Coco 2, each 0…1.5 |
+| **two-lane cross-feed bridge** | vertical drag on either shell's own bridge valve. Arrowheads make the two simultaneous directions explicit and each lane keeps its own gain: the valve at Coco 1 receives Coco 2; the valve at Coco 2 receives Coco 1. It is never linked to SlotQ or to the opposite lane. Its exact valve circle has the same narrow hover/left-press priority through a cable. A neutral hollow SlotX socket stands 32 px above/outward from each valve, mirrored 15° away from vertical; matrix activity gets a separate pearl/wake and never moves the hand valve | `coco1SlotX`: Coco 2 → Coco 1; `coco2SlotX`: Coco 1 → Coco 2, each hand value plus bounded signed-square `cocoN_slotX` matrix VCA, clipped to 0…1.5 |
+| **converter Dust veil** | each Coco exhales into its own seeded irregular veil on the inner-lower shore, at a mirrored 240 body-px reach and 32° angle. Radial travel away from the Coco sets Dust amount; transverse travel crosses mist ↔ chip grain. Three short detached ownership strokes span 24 body-px toward the Coco without becoming a shell-to-Dust signal vein. The resting contour, vapour threads and 36 seeded slivers are static anatomy, never animation or a panel; amount reveals 0 / 13 / 22 / 31 / 36 slivers at normalized 0 / .25 / .5 / .8 / 1. A hollow socket on the Coco-side rim patches Dust amount; its telemetry pearl states effective DSP separately from the stored hand value | `cocoNDust`, 0…0.5 · `cocoNDustGrain`, 0…1 (0.5 is the exact legacy sound) · `cocoN_dust`: signed-square ±0.18 contribution clipped to 0…0.5 |
 | **the ring's eye** | the storm iris at the ring's center (§16.6); grab and drag — vertical = pitch, horizontal = chaos, and the iris itself answers on both axes. The weather of five castles from one fingertip | `qFreq` (y) + `qChaos` (x), relative |
 | **castle tap / tributary pull** | press anywhere inside the castle's complete visible seeded blob, exact centre and rim flesh included (§16.6). Release within the shared 8 px tap boundary performs one spesal step (same act as keys 3…7). Travel beyond it becomes only a radial send gesture: pull inward to open and outward to close. The step is deliberately deferred until release, so beginning a drone ride can never perform a transient internal rewire. The central dial remains the mechanism/state display and hover reveals which castle it reads as an inner chord | tap: `spesal(k)`; radial drag: `cKSend`, 0…1 |
 | **range ripple** | tap the drawn rate at a castle's 6 o'clock: one slow swell → one full cycle → five tight half-waves → one slow swell. The form is the whole regime display; no legacy `i/b/a` caption remains. Cable-first remains absolute, and ripple/clock hover cues are exclusive | `cNRange`: `infra → balcium → audio → infra` (CQSpec enum order) |
@@ -422,6 +423,15 @@ and Alt retain the banana rip/polarity grammar.
 | **bird folder walk** | wheel down = next file, wheel up = previous. Qt momentum is gated to one sign-step per 150 ms so one flick cannot skip a handful of perches; before a load, the deck's own guard scans the samples folder | `deckN.next / prev` |
 | **bird ruffle** | horizontal drag travels ≥ 6 px and reverses once by ≥ 6 px — one natural out-and-back; release chooses a random file. Repeated or broad ruffling remains valid once that reversal is clear. A drag that is neither a tap nor a ruffle is inert | `deckN.random` |
 | **the sowing moon** | the bone moon in the top-right sky (§16.6). It opens as a small 0.22 crescent. A press that travels < 8 px — the lasso's own threshold — throws an ecological shake at the moon's starting phase, with a 120 ms bone flash on *any* shake (`p` key, moon, code or pattern: one action notice, one light). Every non-empty throw has one 3–5-cable audible core. A **horizontal** drag previews phase continuously from its first pixel, pouring fuller (right) or darker (left); a tap restores the exact start before throwing. The lit fraction controls only how much random detail grows around that core through the slow-first cubic fertility curve in §10, no number | `shake` (matrix + bounded musical preparation — one bundled undo, one spellbook entry) · `shakeAmount` (GUI constant, no undo) |
+
+> **Dust-visuaali hyväksytty 2026-08-08.** SlotX-rivi pysyi kokonaan
+> jäädytettynä. Lopullinen Dust-korjaus käyttää yllä kirjattua 240 body-px:n
+> reachia, 32° kulmaa, 24 body-px:n katkaistua omistajuushengitystä ja 36:n
+> täysin staattisen speckin pintaa. Mitatut skip/SP.AF-välit, collision-aware
+> root/dolby-knot ja TAB-silmän oma ring-väli läpäisevät compact- ja roomy-portit.
+> Käyttäjä hyväksyi korjauksen myös oikeassa sovelluksessa. Toteutusevidenssi on
+> tiedostossa
+> [`docs/SLOTX_DUST_UI_REPAIR_PLAN.md`](docs/SLOTX_DUST_UI_REPAIR_PLAN.md).
 
 Skip's night home moved at the G2 gate (2026-07-22, replacing the read-head
 tap that landed 2026-07-21; the `a/s` keys remain). **A moving target is not a
@@ -444,7 +454,7 @@ and the night toolbar arrive with the later G2 steps as planned.
 
 ## 7. The weather machine
 
-The mouse's weakness is 448 small targets; its strength is one continuous
+The mouse's weakness is 512 small targets; its strength is one continuous
 gesture. The weather machine gives the matrix a macro plane. **Compass, grow,
 wither and breed write weights only.** Ecological shake is the one explicit,
 bounded exception: along with replacing the matrix it prepares only its
@@ -608,8 +618,8 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
 > second window. The selected Drawer page persists across close/reopen.
 >
 > In that workbench, prototype Inspector as a full-width **patch loom** while
-> preserving the exact canonical 16×28 matrix and every gesture below. Target cell
-> width is at least 40 px in compact and 45 px in roomy layout; height remains
+> preserving the exact canonical 16×32 matrix and every gesture below. Target cell
+> width is at least 35 px in compact and 39 px in roomy layout; height remains
 > 24/28 px respectively at the 1280×720 minimum. Destination symbols
 > are grouped into meaningful islands (`coco 1`, `coco 2`, `castle · fm`,
 > `castle · spesal`, `decks`) with short diagonal child labels; source rows retain
@@ -638,10 +648,10 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
   here too: no aura, glowing borders, cable animation, texture, decorative
   gradients or organism wobble — only a changing parameter, hover/press,
   `micGain` danger or another real state may brighten a mark.
-  - It owns the **26 setup parameters** Night and Master do not, so that a player who
+  - It owns the **24 setup parameters** Night and Master do not, so that a player who
     starts in Night and uses only Night, the Drawer and the Master strip reaches
     every `CQSpec` parameter (SPEC §6.2). The interactive partition is
-    **Night 44 · Master 4 · Workshop 26**, disjoint, and its union is asserted
+    **Night 48 · Master 4 · Workshop 24**, disjoint, and its union is asserted
     against `CQSpec.names` itself rather than a copied count. Workshop ownership
     is an **explicit manifest**, never `CQSpec.names` minus the others: a newly
     added parameter must fail the audit instead of silently counting as covered.
@@ -699,8 +709,8 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     thicken when the water grows; this responsive size step applies to the
     Drawer alone.
   - Rows are grouped by **signal meaning**, never alphabetically: each Coco as
-    *converter* (`bits`, `wrap`, `interp`) · *material* (`dust`) ·
-    *output* (`pan`) · *input mix* (`pre`, `deck`); the Quantussy as *s&h*
+    *converter* (`bits`, `wrap`, `interp`) · *output* (`pan`) · *input mix*
+    (`pre`, `deck`); the Quantussy as *s&h*
     (`qShLag`) · *detune* (`c1Off`…`c5Off`). Level, Organ, Q/X flow and castle
     sends have exactly one interactive GUI owner in Night. **Pair symmetry is structural**: both Coco ledgers are built
     by one helper with only the index changed, so their subgroup baselines match
@@ -716,7 +726,7 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     never boxed or rendered as pills. Spare vertical room collects below the
     ledgers as slate rather than stretching rows apart.
   - Semantic phosphor is used **sparingly**: slate is `recess`, rules and values
-    are bone/whisper, and only `dust`, the live input and the mic carry
+    are bone/whisper, and only the live input and the mic carry
     a family accent. Neutral slots and pan get no family —
     do not rainbow a column, and inline no color at the draw site.
   - **`micGain` lives here and nowhere else.** SPEC §6.2 forbids a second
@@ -850,7 +860,7 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     ≤15 Hz listener stream, primes Audio on open and repaints only changed
     presence geometry. Listener, pending generation and `/cq_io_inputs` OSCdef
     are released with the page/window.
-- **Inspector** = the existing 16×28 grid, demoted but upgraded with
+- **Inspector** = the existing 16×32 grid, demoted but upgraded with
   **touch-and-listen**: press a cell = audition ± 0.60 (mouse button = sign)
   until release, same bookkeeping and revert law as §4.1; double-click =
   plant 0.60; vertical drag = fine edit (current behavior); right-click =
@@ -936,7 +946,7 @@ the implementers' choice. Added sends must fit the §11 performance budget.
 
 GUI-local (not CQSpec parameters — they are gesture properties, like
 `shakeAmount`). Defaults below and clamp in their owning gesture classes; they
-do not enter snapshots or the 74-parameter registry. The current `gui: (...)`
+do not enter snapshots or the 76-parameter registry. The current `gui: (...)`
 config sub-event owns only `compassDir`, not these performance constants.
 
 | constant | default | meaning |
@@ -969,7 +979,7 @@ config sub-event owns only `compassDir`, not these performance constants.
   `\cq_gui_*`; cleanup idempotent on close, including the user's X.
 - **Two small state-API additions are required** (naming and shape yours):
   1. a **batched full-matrix write** that clamps every cell and emits **one**
-     change notification (compass, breed, undo need it — 448 per-cell
+     change notification (compass, breed, undo need it — 512 per-cell
      notifications per frame would melt the redraw);
   2. a **full-matrix read** (undo copies, corner stamps, spellbook export).
 - **View swaps must never block the language thread.** Hiding a view under the
@@ -1021,7 +1031,7 @@ config sub-event owns only `compassDir`, not these performance constants.
   and keep the static reviewed ink of §16.8's no-telemetry case, while the 16
   source jacks go on pulsing; below the limit nothing changes. A pulse that cannot
   be attributed to one cable is not information, and a late pulse is worse than
-  none. `\mayhem` now patches all 448 cells and is the case this exists for
+  none. `\mayhem` now patches all 512 cells and is the case this exists for
   (the pre-expansion 2026-07-21 benchmark was 164 ms per repaint at 352
   cables, 1.4 ms for all 16 jacks).
 - **The cable layer's offscreen cache** (landed at G3; measured 2026-07-22
@@ -1147,8 +1157,8 @@ gate, manual_checklist blocks in the established copy-pasteable format.
   opposite corners and crossfade ecosystems with one finger; right-drag
   wobble snaps back cleanly; breed offspring differs but rhymes.
 - **N8 — the Workshop** (§8): the fourth Drawer page and the ledger row.
-  Tests: a **dynamic coverage gate** proving the current Night 44 / Master 4 /
-  Workshop 26 interactive sets disjoint and their union equal to
+  Tests: a **dynamic coverage gate** proving the current Night 48 / Master 4 /
+  Workshop 24 interactive sets disjoint and their union equal to
   `CQSpec.names` — the three inventories are declared independently and none
   is a complement of the others; ownership tests for the then-four-tab order, page
   persistence and the single `micGain` path; binding tests for num, bipolar
@@ -1437,9 +1447,10 @@ a categorical/event act whose anatomy alone does not say what happens: Flip,
 Skip and Record. Castle FM and deck rate keep their wave/pendulum marks because
 those remote sockets have no adjacent scale that names their dimension. This
 orthogonal law replaces the old redundant wedge shared by Input and Feedback.
-The unglyphed SlotX valve follows the same economy but is not a matrix socket:
-its two bridge lanes and opposed external arrowheads already state both the
-quantity and direction, so another mark inside the valve would duplicate them.
+The unglyphed SlotX valve follows the same economy: its two bridge lanes and
+opposed external arrowheads already state hand quantity and direction, while a
+separate nearby hollow socket is the matrix destination. Nothing is drawn
+inside the valve merely to repeat what the bridge already says.
 
 ### 16.6 Bodies (night-map anatomy, in primitives)
 
@@ -1795,7 +1806,7 @@ intake body, not an envelope on a stick:
 - The canonical green `envA` / `envB` jack is a smaller outward side-growth
   from that same post-preamp vein. It remains the only patchable endpoint;
   the preamp anatomy adds no second source jack. The complete inventory is now
-  exactly 16×28 because six software-native Coco sockets were added elsewhere.
+  exactly 16×32 because ten software-native Coco sockets were added elsewhere.
   The side-growth is one tangent-led
   cubic all the way to the dot; the endpoint view uses transparent paper, so
   no straight repair stub or rectangular seam interrupts it.
@@ -1865,9 +1876,11 @@ collected into a panel:
   sun 2.5…6 Hz) and visibly add drops/rays. Rain and sun are transient faces
   beside the moon and exist only while held — no static satellites remain.
 - There is no pond, shore or pad. Four inward-pointing memory seeds in the
-  NW/NE/SW/SE winds at 31/69 % width and 18/96 % height imply a large
-  bilinear tide field through the bay. Their drawn kernels are 11×7 px and
-  each owns a 28 px-diameter touch body. At rest only those seeds are inked.
+  NW/NE/SW/SE winds at 31/69 % width and 13/90 % height imply a large
+  bilinear tide field through the bay. Their drawn kernels are 11×7 px, each
+  owns a 28 px-diameter touch body, and a 5 px ground-coloured moat makes the
+  unrelated SlotX bridge pass visibly behind the upper leaves. At rest only
+  those seeds are inked.
   During a voyage, a small cross and four
   sparse wavefront pulls (≤ 8 % alpha) reveal the relation; there is no
   ambient animation and no rectangular boundary.
@@ -1955,7 +1968,10 @@ most playable, so the current slower-first map is
 `density = 0.2 × phase³`; every non-empty phase additionally guarantees one
 3–5-cable ecological skeleton. Gate/trig rows use only 22 % of the decoration
 probability, so quarter/half/full average about 4–6 / 11–13 / 65–67 total
-cables in the 16×28 field. A full sowing usually passes `auraCableLimit`, so
+cables in the 16×32 field. Accepted SlotX and Dust remain deliberately excluded
+from both shake skeletons and decoration until a separate musical decision
+admits them. A full
+sowing of the accepted columns usually passes `auraCableLimit`, so
 its cables keep §16.8's static ink — a big throw costs the pulse, and that is
 honest.
 **The new moon clears the bay** (amended 2026-07-22 after the second review

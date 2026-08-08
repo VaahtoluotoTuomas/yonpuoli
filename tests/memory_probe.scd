@@ -129,7 +129,7 @@ bootProbe = { |withGui = true, withDeckLoads = false|
 	runConfig[\sixteenN][\enabled] = false;
 	CQ.boot(nil, {
 		CQ.panic;
-		CQ.patchPreset(\mayhem); // same 448-cable GUI burden as the soak
+		CQ.patchPreset(\mayhem); // same 512-cable GUI burden as the soak
 		AppClock.sched(warmupSeconds, { postGc.value(\measuredWindowStart); nil });
 		AppClock.sched(seconds, { finish.value; nil });
 		if(withDeckLoads) {
@@ -364,7 +364,7 @@ switch(scenario,
 
 	// The same act once a second.
 	//
-	// CQSpellbook.lineLimit is 20 000 lines and one dense act writes ~448, so the
+	// CQSpellbook.lineLimit is 20 000 lines and one dense act writes ~512, so the
 	// cap is only reached after ~45 acts -- which a 9 s cadence cannot manage
 	// inside one probe window. The first verification run of the cap measured a
 	// journal still filling and was therefore no verification at all: it showed

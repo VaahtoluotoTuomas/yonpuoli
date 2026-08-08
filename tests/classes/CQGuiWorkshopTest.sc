@@ -1,6 +1,6 @@
 // The Drawer Workshop's own contracts (NIGHT_STANDALONE_PLAN §12.1.3/§12.1.5):
 // the ledger row's geometry, its exact-value reading, and the funnel bindings
-// every one of the 26 rows is built with. Serverless and Qt-free — the rendered
+// every one of the 24 rows is built with. Serverless and Qt-free — the rendered
 // page is asserted by the Drawer smoke.
 
 CQGuiWorkshopTest : UnitTest {
@@ -35,7 +35,7 @@ CQGuiWorkshopTest : UnitTest {
 				"% : the Coco ledgers are the same width".format(step));
 		};
 		this.assertEquals(CQGuiScale.railWidth(\compact, 1272), 1200,
-			"the 28-column windowed loom keeps more than its 24 px margin");
+			"the 32-column windowed loom keeps more than its 24 px margin");
 		this.assert(CQGuiScale.railWidth(\roomy, 1434)
 			> CQGuiScale.railWidth(\compact, 1272),
 			"a maximized window buys a wider rail, not only more slate");
@@ -50,9 +50,9 @@ CQGuiWorkshopTest : UnitTest {
 		var groups = items.select { |item| item[\kind] == \group };
 		var y = 0;
 		this.assertEquals(items.first[\kind], \title, "an island opens with its title");
-		this.assertEquals(rowItems.size, 7, "coco 1 lays out its seven setup rows");
+		this.assertEquals(rowItems.size, 6, "coco 1 lays out its six setup rows");
 		this.assertEquals(groups.collect { |item| item[\label] },
-			["converter", "material", "output", "input mix"],
+			["converter", "output", "input mix"],
 			"rows are grouped by signal meaning, in the normative converter order");
 		items.do { |item|
 			this.assertEquals(item[\y], y,
@@ -63,10 +63,10 @@ CQGuiWorkshopTest : UnitTest {
 			"the score's end IS the island's height");
 		this.assertEquals(CQGuiWorkshop.islandHeight(coco),
 			CQGuiScale.tallestIslandHeight(\compact),
-			"a seven-parameter Coco is still the page's tallest island");
+			"a six-parameter Coco is still the page's tallest island");
 		this.assert(CQGuiWorkshop.islandHeight(coco, \roomy)
 			> CQGuiWorkshop.islandHeight(coco, \compact),
-			"the roomy step gives the same seven rows more room");
+			"the roomy step gives the same six rows more room");
 	}
 
 	test_bothCocoLedgersComeFromOneHelper {
@@ -102,8 +102,8 @@ CQGuiWorkshopTest : UnitTest {
 		};
 		this.assertEquals(accented.collect { |row| row[\param] }.asArray.copy
 			.sort { |a, b| a.asString <= b.asString },
-			[\coco1Dust, \coco2Dust, \liveGain, \micGain],
-			"only dust, the live input and the mic carry a family accent here");
+			[\liveGain, \micGain],
+			"only the live input and the mic carry a family accent here");
 		accented.do { |row|
 			this.assert(CQInk.palette(\day)[row[\family]].notNil,
 				"% names a real palette family".format(row[\param]));
@@ -313,17 +313,17 @@ CQGuiWorkshopTest : UnitTest {
 				this.prRow(row[\param], row[\label], row[\family])
 			}
 		};
-		this.assertEquals(built.size, 26,
-			"the manifest builds 26 controls");
+		this.assertEquals(built.size, 24,
+			"the manifest builds 24 controls");
 		this.assertEquals(built.collect { |row| row.kind }.as(IdentitySet).asArray,
 			[\ledger],
-			"all 26 are ledger rows — no native widgets and no Day knobs");
+			"all 24 are ledger rows — no native widgets and no Day knobs");
 		built.do { |row|
 			this.assert(row.isInteractive,
 				"'%' is an enabled interactive control".format(row.label));
 			this.assert(row.action.notNil, "'%' is funnel-bound".format(row.label));
 		};
-		this.assertEquals(owner.controls.size, 26,
+		this.assertEquals(owner.controls.size, 24,
 			"every row is registered with the GUI's Ink control list");
 		CQGuiWorkshop.paramNames.do { |name|
 			this.assertEquals((updaters[name] ? []).size, 1,

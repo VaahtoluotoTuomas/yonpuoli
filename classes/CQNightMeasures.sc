@@ -94,10 +94,34 @@ CQNightMeasures {
 	// away from the organ it belongs to as the stage grows.
 	*organInputOutset { ^48 }               // px — outward from the organ fruit jack
 	*slotQInputGap { ^34 }                  // px — beside the Q gill toward the ring
+	*slotXInputGap { ^32 }                  // px — above/outward from the X gill
+	*slotXInputTilt { ^15 }                 // degrees outward from vertical
 	*recordInputOutset { ^38 }              // px — just beyond the upper outer rim
 	*modInputStop { ^7 }                    // px — semantic root stops at socket ink
 	*organPodInner { ^18 }                  // px — jack keeps the fruit's seed
 	*organPodOuter { ^32 }                  // px — annular audible-organ hand
+
+	// Each converter exhales into its own inner-lower veil. The body grows from
+	// the shell toward the bay; a transverse seed carries the mist↔chip axis.
+	// Its ownership root is deliberately detached from the crowded shell: the
+	// mirrored body and its inward-pointing breath say which Coco owns it.
+	*dustBodyReach { ^240 }                  // body — Coco centre to veil centre
+	*dustBodyAngle { ^32 }                   // degrees below the inward axis
+	*dustRx { ^53 }                          // body — along the radial amount axis
+	*dustRy { ^36 }                          // body — across the grain axis
+	*dustSocketInset { ^48 }                 // body — Coco-side rim from veil centre
+	*dustTailLength { ^24 }                  // body — detached root back toward Coco
+	*dustBodyClear { ^12 }                   // px — contour breath from other bodies
+	*dustTailClear { ^10 }                   // px — detached root breath from controls
+	*dustParticleCount { ^36 }               // static seeded specks at full amount
+	*dustParticleHalfMin { ^0.7 }            // px — mist-end half-length
+	*dustParticleHalfGrain { ^1.4 }          // px — added at the chip end
+	*dustParticleLengthJitter { ^0.16 }      // proportion, seeded once
+	*dustParticleAlphaJitter { ^0.16 }       // proportion, seeded once
+	*dustParticleSlant { ^0.16 }             // radians around the grain axis
+	*dustBoxPad { ^8 }                       // px — clear paper around veil ink
+	*dustHitSlack { ^6 }                     // px — irregular veil hand tolerance
+	*dustSensitivity { ^120 }                // px for one normalized axis span
 
 	// The mouth's two stationary transport marks hang below the jack, and the
 	// flood pushed them further out than they have ever hung: the grown jack
@@ -189,6 +213,13 @@ CQNightMeasures {
 	*rootBudY { ^-4 }                       // body
 	*rootKnotR { ^18 }                      // body — drawn two-lobed preamp knot
 	*rootKnotHit { ^27 }                    // px — axis-locked drive / bias gesture
+	*rootLobeOffset { ^0.42 }               // × knot radius, above/below centre
+	*rootLobeRx { ^0.72 }                   // × knot radius
+	*rootLobeRy { ^0.48 }                   // × knot radius
+	*rootBiasTopGrowth { ^0.48 }            // max outgoing-lobe swell
+	*rootBiasBottomShrink { ^0.30 }         // max intake-lobe pinch
+	*rootDolbyClear { ^12 }                 // px — full bias envelope below dolby
+	*rootStageClear { ^8 }                  // px — full lobe envelope above waterline
 	*rootBoxPad { ^14 }                     // px — transparent local repaint layer
 	*rootLabelExtent { ^Point(72, 14) }      // px — transient provenance only
 	// "Beside, not over, the delta" is a promise a fixed inset cannot keep: the
@@ -245,13 +276,14 @@ CQNightMeasures {
 	// rectangle itself is never drawn; these fractions place only its seeds.
 	*tideLeftFraction { ^0.31 }
 	*tideRightFraction { ^0.69 }
-	*tideTopFraction { ^0.18 }
-	*tideBottomFraction { ^0.96 }
+	*tideTopFraction { ^0.13 }
+	*tideBottomFraction { ^0.90 }
 	*stampRadius { ^14 }                    // px touch body around a tiny seed
+	*seedMoat { ^5 }                        // px ground wash around seed leaves
 	// The bay-wide focus is opened by a small gill below the two lower
 	// castles. It is an organ of the same landscape, not a toolbar toggle:
 	// closed = ordinary cable grammar, open = cables submerged + tide playable.
-	*tideGateFraction { ^0.94 }             // of stage height
+	*tideGateFraction { ^0.94 }             // of stage height, below raised field
 	*tideGateHit { ^24 }                    // px, one compact touch body
 	*tideGateBoxSlack { ^2 }                // px past the hover echo
 	*seedLength { ^11 }                     // px, inward-pointing kernel

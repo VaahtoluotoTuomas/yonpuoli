@@ -69,7 +69,7 @@ centred = { |inner, outer|
 						and: { grid.header.drawFunc.notNil }
 						and: { grid.status.parent !== grid.grid },
 						"Inspector keeps grouped headers and exact route detail outside the loom");
-					check.value(grid.cellSize[0] >= 40
+					check.value(grid.cellSize[0] >= 35
 						and: { grid.cellSize[1] >= 24 }
 						and: { grid.grid.bounds.width
 							== CQGuiScale.railWidth(drawer.step, drawer.pageSize.width) }
@@ -77,7 +77,7 @@ centred = { |inner, outer|
 							== (CQMatrix.sourceNames.size * grid.cellSize[1]) }
 						and: { grid.header.bounds.height
 							== CQGuiScale.metrics(drawer.step)[\headerHeight] },
-						"workbench exposes the full 16x28 patch loom with large targets");
+						"workbench exposes the full 16x32 patch loom with large targets");
 					check.value(grid.status.absoluteBounds.left == grid.grid.absoluteBounds.left
 						and: { grid.status.parent.absoluteBounds.right
 							== grid.grid.absoluteBounds.right },
@@ -313,7 +313,7 @@ centred = { |inner, outer|
 									gui.shell.toggleDrawer;
 									AppClock.sched(0.3, {
 										try {
-											var beforeDust, interpRail, dustRail;
+											var beforePan, interpRail, panRail;
 											check.value(gui.shellState.viewMode == \night
 												and: { gui.shellState.drawerTab == \workshop }
 												and: { gui.shell.workspaceStack.index == 1 }
@@ -353,14 +353,15 @@ centred = { |inner, outer|
 												and: { workshop.mainLedgers[0].bounds.width
 													== workshop.mainLedgers[2].bounds.width },
 												"the body is the coco / quantussy / coco triptych, the pair equal");
-											check.value(workshop.rows.size == 26
+											check.value(workshop.rows.size == 24
 												and: { workshop.rows.every { |row|
 													row.kind == \ledger and: { row.isInteractive }
 												} },
-												"all 26 Workshop parameters render as enabled ledger rows");
+												"all 24 Workshop parameters render as enabled ledger rows");
 											check.value(#[coco1Level, coco2Level,
 												coco1Organ, coco2Organ, coco1SlotQ, coco2SlotQ,
-												coco1SlotX, coco2SlotX, c1Send, c2Send, c3Send,
+												coco1SlotX, coco2SlotX, coco1Dust, coco2Dust,
+												coco1DustGrain, coco2DustGrain, c1Send, c2Send, c3Send,
 												c4Send, c5Send].every { |name| rowOf.value(name).isNil },
 												"Night's promoted performance controls have no duplicate Workshop rows");
 											// no scroll view: the last row of the
@@ -372,7 +373,7 @@ centred = { |inner, outer|
 												},
 												"the deepest retained Workshop rows are contained");
 											check.value(CQInkControl.drawErrors == 0,
-												"the islands and 26 ledger rows paint without callback errors");
+												"the islands and 24 ledger rows paint without callback errors");
 											// The user's N8 rounds: one shared page frame.
 											// Measured parent-relative, because a hidden
 											// StackLayout page reports stale ABSOLUTE
@@ -395,14 +396,14 @@ centred = { |inner, outer|
 												"and that top is the step's own vertical margin");
 											// the rail writes through the funnel, and
 											// only the rail does
-											dustRail = railOf.value(\coco1Dust);
-											pressRow.value(\coco1Dust, dustRail.right);
-											check.value(state.get(\coco1Dust)
-												== CQSpec.map(\coco1Dust, 1),
+											panRail = railOf.value(\coco1Pan);
+											pressRow.value(\coco1Pan, panRail.right);
+											check.value(state.get(\coco1Pan)
+												== CQSpec.map(\coco1Pan, 1),
 												"a press at the rail's end writes the parameter's own maximum");
-											beforeDust = state.get(\coco1Dust);
-											pressRow.value(\coco1Dust, 4);
-											check.value(state.get(\coco1Dust) == beforeDust,
+											beforePan = state.get(\coco1Pan);
+											pressRow.value(\coco1Pan, 4);
+											check.value(state.get(\coco1Pan) == beforePan,
 												"a press on the label column writes nothing");
 											interpRail = railOf.value(\coco1Interp);
 											pressRow.value(\coco1Interp, interpRail.right - 2);
@@ -430,12 +431,12 @@ centred = { |inner, outer|
 														"the Workshop remains phosphor on recessed slate");
 													check.value(rowOf.value(\coco1Interp).display
 														== CQSpec.enumValues(\coco1Interp).last.asString
-														and: { rowOf.value(\coco1Dust).display
-															== CQGuiWidgets.ledgerFormat(\coco1Dust,
-																state.get(\coco1Dust)) },
+												and: { rowOf.value(\coco1Pan).display
+													== CQGuiWidgets.ledgerFormat(\coco1Pan,
+														state.get(\coco1Pan)) },
 														"every row's exact value follows the paced state stream");
 													state.set(\coco1Interp, CQSpec.default(\coco1Interp));
-													state.set(\coco1Dust, CQSpec.default(\coco1Dust));
+											state.set(\coco1Pan, CQSpec.default(\coco1Pan));
 													check.value(workshop.micLive
 														and: { rowOf.value(\micGain).display == "2.000" },
 														"the one mic control follows the live value exactly");

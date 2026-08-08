@@ -288,6 +288,9 @@ CQSpec {
 			this.prToggle(p.value("Wrap"), 0);
 			this.prEnum(p.value("Interp"), #[zoh, smooth], \zoh);
 			this.prNum(p.value("Dust"), 0, 0.5, 4, 0.02);
+			// Night's transverse veil axis. At 0.5 the legacy filtered-noise and
+			// sparse-chip components retain their exact original gains.
+			this.prNum(p.value("DustGrain"), 0, 1, \lin, 0.5);
 			this.prNum(p.value("Organ"), 0, 1, \lin, 0);
 			this.prNum(p.value("Level"), 0, 1.5, 4, 0.8, 0.03,
 				nil, (unity: 1.0));

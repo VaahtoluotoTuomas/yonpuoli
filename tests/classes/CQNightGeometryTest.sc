@@ -1,6 +1,6 @@
 // CQNightGeometryTest — the §15 topology truths of the Night map, asserted
 // without a window: ring order and direction, cocos left/right, roots below,
-// birds above, the full 44-endpoint inventory and the §16.10 hit spacing.
+// birds above, the full 48-endpoint inventory and the §16.10 hit spacing.
 
 CQNightGeometryTest : UnitTest {
 
@@ -29,6 +29,28 @@ CQNightGeometryTest : UnitTest {
 		var dx = max(max(rect.left - point.x, point.x - rect.right), 0);
 		var dy = max(max(rect.top - point.y, point.y - rect.bottom), 0);
 		^sqrt(dx.squared + dy.squared)
+	}
+
+	prRectsDistance { |a, b|
+		var dx = max(max(a.left - b.right, b.left - a.right), 0);
+		var dy = max(max(a.top - b.bottom, b.top - a.bottom), 0);
+		^sqrt(dx.squared + dy.squared)
+	}
+
+	prPointSetsDistance { |a, b|
+		var best = inf;
+		a.do { |left|
+			b.do { |right| best = min(best, this.prDistance(left, right)) };
+		};
+		^best
+	}
+
+	prRootInk { |root|
+		^root[\sourceStrands].collect { |segment|
+			CQNightGeometry.sampleSegments([segment], 24)
+		}.flat
+			++ CQNightGeometry.sampleSegments([root[\audioVein]], 48)
+			++ CQNightGeometry.sampleSegments([root[\envBranch]], 24)
 	}
 
 	test_topologyTruths {
@@ -71,8 +93,8 @@ CQNightGeometryTest : UnitTest {
 		var points = geo[\endpoints];
 		var names = CQMatrix.sourceNames ++ CQMatrix.destNames;
 		var stage = Rect(0, 0, 1280, 570);
-		this.assertEquals(points.size, 44,
-			"the night map places exactly 16 jacks and 28 sockets");
+		this.assertEquals(points.size, 48,
+			"the night map places exactly 16 jacks and 32 sockets");
 		names.do { |name|
 			this.assert(points[name].notNil,
 				"canonical endpoint % has a night home".format(name));
@@ -108,6 +130,20 @@ CQNightGeometryTest : UnitTest {
 			this.assertFloatEquals((coco[\modInputs][\slotQ].x
 				- coco[\slotQValve].x).abs, CQNightMeasures.slotQInputGap,
 				"coco % SlotQ root is only one short side stem".format(n), 1e-6);
+			this.assertEquals(geo[\endpoints][("coco" ++ n ++ "_slotX").asSymbol],
+				coco[\modInputs][\slotX],
+				"coco % SlotX socket terminates its own gill root".format(n));
+			this.assertFloatEquals(this.prDistance(coco[\slotXValve],
+				coco[\modInputs][\slotX]), CQNightMeasures.slotXInputGap,
+				"coco % SlotX socket keeps the chosen 32 px gill gap".format(n), 1e-6);
+			this.assert(coco[\modInputs][\slotX].y < coco[\slotXValve].y,
+				"coco % SlotX socket rises above its valve".format(n));
+			this.assert(if(i == 0) {
+				coco[\modInputs][\slotX].x < coco[\slotXValve].x
+			} {
+				coco[\modInputs][\slotX].x > coco[\slotXValve].x
+			}, "coco % SlotX socket tilts outward as SlotQ's mirrored counterpart"
+				.format(n));
 			this.assertFloatEquals(this.prDistance(coco[\center],
 				coco[\modInputs][\record]),
 				coco[\outerR] + CQNightMeasures.recordInputOutset,
@@ -132,6 +168,182 @@ CQNightGeometryTest : UnitTest {
 			this.prEndpointBox(\coco2_record, geo[\endpoints][\coco2_record]).right
 				> (geo[\endpoints][\coco2_record].x + 30),
 			"coco 2 Record paper and lamp mirror outward to the right");
+	}
+
+	test_dustVeilsStayCocoLocalMirroredAndOpenInTheMiddle {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var stage = Rect(0, 0, size[0], size[1]);
+			var endpointNames = CQMatrix.sourceNames ++ CQMatrix.destNames;
+			var seedBoxes = geo[\almanac][\stamps].collect { |stamp|
+				Rect.aboutPoint(stamp, CQNightMeasures.seedHalo,
+					CQNightMeasures.seedHalo)
+			};
+			this.assertEquals(geo[\dusts].size, 2,
+				"the landscape grows exactly one Dust veil per Coco");
+			geo[\dusts].do { |dust, i|
+				var coco = geo[\cocos][i];
+				var name = ("coco" ++ (i + 1) ++ "_dust").asSymbol;
+				var contour = dust[\samples];
+				var tail = dust[\ownershipTailSamples];
+				var socketBox = this.prEndpointBox(name, dust[\socket]);
+				var outside = dust[\center]
+					+ (dust[\axis] * (dust[\rx]
+						+ CQNightMeasures.dustHitSlack + 1));
+				this.assertFloatEquals(this.prDistance(coco[\center], dust[\center]),
+					CQNightMeasures.dustBodyReach * geo[\scale],
+					"Dust % keeps its Coco-local radial reach (%x%)"
+						.format(i + 1, *size), 1e-6);
+				this.assert(dust[\center].y > coco[\center].y
+					and: { if(i == 0) {
+						dust[\center].x > coco[\center].x
+					} {
+						dust[\center].x < coco[\center].x
+					} }, "Dust % exhales down and inward toward the bay (%x%)"
+						.format(i + 1, *size));
+				this.assertFloatEquals(
+					(dust[\axis].x * dust[\tangent].x)
+						+ (dust[\axis].y * dust[\tangent].y), 0,
+					"Dust % amount and grain axes stay perpendicular"
+						.format(i + 1), 1e-9);
+				this.assertEquals(geo[\endpoints][name], dust[\socket],
+					"% is anchored on its veil's Coco-side rim".format(name));
+				this.assertFloatEquals(this.prDistance(dust[\center], dust[\socket]),
+					CQNightMeasures.dustSocketInset * geo[\scale],
+					"% keeps the short socket inset".format(name), 1e-6);
+				this.assertFloatEquals(this.prDistance(
+					dust[\ownershipTail].first, dust[\ownershipTail].last),
+					CQNightMeasures.dustTailLength * geo[\scale],
+					"Dust % owns one short detached breath root".format(i + 1), 1e-6);
+				this.assertEquals(dust[\ownershipTail].last, dust[\socket],
+					"Dust %'s detached root terminates at its socket".format(i + 1));
+				this.assert(stage.contains(dust[\box]),
+					"Dust % contour, tail and socket stay on stage (%x%)"
+						.format(i + 1, *size));
+				this.assert(dust[\box].contains(socketBox)
+					and: { tail.every { |point| dust[\box].containsPoint(point) } },
+					"Dust %'s local layer holds its socket and whole detached root"
+						.format(i + 1));
+				this.assert(CQNightGeometry.dustBodyHit(dust, dust[\center]),
+					"Dust % answers throughout its visible breath".format(i + 1));
+				this.assert(CQNightGeometry.dustBodyHit(dust, outside).not,
+					"Dust % transparent box corners remain open water".format(i + 1));
+				dust[\particles].do { |particle|
+					var particleBox = Rect.aboutPoint(particle[\point],
+						particle[\halfMax], particle[\halfMax]);
+					this.assert(CQNightGeometry.dustBodyHit(dust, particle[\point]),
+						"Dust % seeded particles remain inside its hand".format(i + 1));
+					this.assert(dust[\box].contains(particleBox),
+						"Dust %'s longest particle sliver stays inside its layer"
+							.format(i + 1));
+				};
+				this.assertEquals(dust[\particles].size,
+					CQNightMeasures.dustParticleCount,
+					"Dust % owns the reviewed static particle pool".format(i + 1));
+				this.assertEquals([0, 0.25, 0.5, 0.8, 1].collect { |amount|
+					dust[\particles].select { |particle|
+						particle[\threshold] <= amount.pow(0.72)
+					}.size
+				}, [0, 13, 22, 31, 36],
+					"Dust %'s amount curve reveals a dense, even static pool"
+						.format(i + 1));
+
+				endpointNames.reject { |other| other == name }.do { |other|
+					var box = this.prEndpointBox(other, geo[\endpoints][other]);
+					var bodyGap = contour.collect { |point|
+						this.prRectDistance(point, box)
+					}.minItem;
+					var tailGap = tail.collect { |point|
+						this.prRectDistance(point, box)
+					}.minItem;
+					this.assert(bodyGap >= CQNightMeasures.dustBodyClear,
+						"Dust % contour clears endpoint % by % px (%x%)"
+							.format(i + 1, other, CQNightMeasures.dustBodyClear, *size));
+					this.assert(tailGap >= CQNightMeasures.dustTailClear,
+						"Dust % tail clears endpoint % by % px (%x%)"
+							.format(i + 1, other, CQNightMeasures.dustTailClear, *size));
+				};
+				geo[\cocos].do { |otherCoco, c|
+					otherCoco[\crescents].do { |center, m|
+						var box = CQNightGeometry.crescentViewBox(center, m > 0);
+						this.assert(contour.collect { |point|
+							this.prRectDistance(point, box)
+						}.minItem >= CQNightMeasures.dustBodyClear,
+							"Dust % contour clears coco % crescent % (%x%)"
+								.format(i + 1, c + 1, m, *size));
+						this.assert(tail.collect { |point|
+							this.prRectDistance(point, box)
+						}.minItem >= CQNightMeasures.dustTailClear,
+							"Dust % tail clears coco % crescent % (%x%)"
+								.format(i + 1, c + 1, m, *size));
+					};
+				};
+				[coco[\chevron], coco[\skipMark]].do { |mark, m|
+					var markBox = Rect.aboutPoint(mark,
+						CQNightMeasures.markHitReach,
+						CQNightMeasures.markHitReach);
+					this.assert(contour.collect { |point|
+						this.prRectDistance(point, markBox)
+					}.minItem >= CQNightMeasures.dustBodyClear,
+						"Dust % contour clears its % mark (%x%)"
+							.format(i + 1, [\chevron, \skip][m], *size));
+					this.assert(tail.collect { |point|
+						this.prRectDistance(point, markBox)
+					}.minItem >= CQNightMeasures.dustTailClear,
+						"Dust % tail clears its % mark (%x%)"
+							.format(i + 1, [\chevron, \skip][m], *size));
+					this.assert(this.prRectsDistance(socketBox, markBox)
+						>= CQNightMeasures.dustBodyClear,
+						"Dust % socket clears its % mark by % px (%x%)"
+							.format(i + 1, [\chevron, \skip][m],
+								CQNightMeasures.dustBodyClear, *size));
+				};
+				geo[\castles].do { |castle, k|
+					this.assert(this.prPointSetsDistance(contour,
+						castle[\blobSamples]) >= CQNightMeasures.dustBodyClear,
+						"Dust % contour clears castle % flesh (%x%)"
+							.format(i + 1, k + 1, *size));
+					this.assert(contour.collect { |point|
+						this.prRectDistance(point, CQNightGeometry.rangeBox(castle))
+					}.minItem >= CQNightMeasures.dustBodyClear,
+						"Dust % contour clears castle % range hand (%x%)"
+							.format(i + 1, k + 1, *size));
+				};
+				seedBoxes.do { |box, s|
+					this.assert(contour.collect { |point|
+						this.prRectDistance(point, box)
+					}.minItem >= CQNightMeasures.dustBodyClear,
+						"Dust % contour clears morph seed % (%x%)"
+							.format(i + 1, s, *size));
+				};
+				geo[\roots].do { |root, r|
+					this.assert(this.prPointSetsDistance(contour,
+						this.prRootInk(root)) >= CQNightMeasures.dustBodyClear,
+						"Dust % contour clears root % ink (%x%)"
+							.format(i + 1, r + 1, *size));
+					this.assert(contour.collect { |point|
+						this.prRectDistance(point, root[\maxLobeEnvelope])
+					}.minItem >= CQNightMeasures.dustBodyClear,
+						"Dust % contour clears root % bias lobes (%x%)"
+							.format(i + 1, r + 1, *size));
+				};
+			};
+			// Named regressions from the compact screenshot: none is allowed to
+			// hide behind the generic all-obstacles loop above.
+			this.assert(geo[\dusts][0][\samples].collect { |point|
+				this.prRectDistance(point,
+					this.prEndpointBox(\coco1_skip, geo[\endpoints][\coco1_skip]))
+			}.minItem >= CQNightMeasures.dustBodyClear,
+				"coco1 Dust no longer crosses coco1_skip (%x%)".format(*size));
+			this.assert(geo[\dusts][1][\samples].collect { |point|
+				this.prRectDistance(point, CQNightGeometry.crescentViewBox(
+					geo[\cocos][1][\crescents][0], false))
+			}.minItem >= CQNightMeasures.dustBodyClear,
+				"coco2 Dust no longer clips its SP.AF crescent (%x%)".format(*size));
+			this.assert(geo[\dusts][0][\box].right < geo[\dusts][1][\box].left,
+				"the paired veils preserve a broad central negative space (%x%)"
+					.format(*size));
+		};
 	}
 
 	test_shellOrganismsHaveInnerBreathAndOuterMargin {
@@ -984,6 +1196,14 @@ CQNightGeometryTest : UnitTest {
 				[tide.leftTop, tide.rightTop, tide.leftBottom, tide.rightBottom],
 				"the four seeds ARE the tide's TL TR BL BR corners (%x%)"
 					.format(*size));
+			this.assertFloatEquals(tide.top,
+				size[1] * CQNightMeasures.tideTopFraction,
+				"the raised morph field uses its reviewed top fraction", 1e-9);
+			this.assertFloatEquals(tide.bottom,
+				size[1] * CQNightMeasures.tideBottomFraction,
+				"the raised morph field leaves deliberate lower air", 1e-9);
+			this.assert(CQNightMeasures.seedMoat >= 5,
+				"each leaf carries enough ground moat to pass unrelated bridges behind it");
 			stamps.do { |stamp, c|
 				var seedBox = Rect.aboutPoint(stamp, seedReach, seedReach);
 				this.assertEquals(CQNightGeometry.stampHit(
@@ -1008,6 +1228,11 @@ CQNightGeometryTest : UnitTest {
 				geo[\roots].do { |root, i|
 					this.assert(root[\box].intersects(seedBox).not,
 						"seed %'s whole hand clears root %'s event paper (%x%)"
+							.format(c, i + 1, *size));
+				};
+				geo[\dusts].do { |dust, i|
+					this.assert(dust[\box].intersects(seedBox).not,
+						"seed %'s whole hand clears Dust veil % (%x%)"
 							.format(c, i + 1, *size));
 				};
 				endpointNames.do { |name|
@@ -1066,10 +1291,21 @@ CQNightGeometryTest : UnitTest {
 				"field and tide use one direct coordinate frame");
 			this.assertFloatEquals(gate.x, geo[\ringCenter].x,
 				"the tide gill grows on the organism's centre line", 0.001);
-			this.assert(tide.containsPoint(gate)
-				and: { Rect(0, 0, size[0], size[1]).contains(gateBox) },
-				"the tide gill belongs to the field and stays on the stage (%x%)"
-					.format(*size));
+			block { |done|
+				var ringBottom = geo[\ringSamples].collect(_.y).maxItem;
+				var lowerSeeds = stamps.copyRange(2, 3);
+				this.assert((gate.y - ringBottom)
+					>= (CQNightMeasures.tideGateHit + 20),
+					"the tide gill keeps a 44 px centreline breath below the ring (%x%)"
+						.format(*size));
+				this.assert(Rect(0, 0, size[0], size[1]).contains(gateBox)
+					and: { (size[1] - gateBox.bottom) >= 8 },
+					"the tide gill stays on stage with lower breathing room (%x%)"
+						.format(*size));
+				this.assert(gate.y > lowerSeeds.collect(_.y).maxItem,
+					"the tide gill is a focus organ below the lower morph leaves (%x%)"
+						.format(*size));
+			};
 			this.assert(CQNightGeometry.tideGateHit(geo, gate)
 				and: { CQNightGeometry.tideGateHit(geo,
 					gate + Point(CQNightMeasures.tideGateHit + 2, 0)).not },
@@ -1082,6 +1318,15 @@ CQNightGeometryTest : UnitTest {
 			geo[\cocos].do { |coco, i|
 				this.assert(gateBox.intersects(coco[\shellBox]).not,
 					"the tide gill clears cocoon % (%x%)".format(i + 1, *size));
+			};
+			geo[\dusts].do { |dust, i|
+				this.assert(gateBox.intersects(dust[\box]).not,
+					"the tide gill clears Dust veil % (%x%)".format(i + 1, *size));
+			};
+			stamps.do { |stamp, i|
+				this.assert(gateBox.intersects(Rect.aboutPoint(stamp,
+					CQNightMeasures.seedHalo, CQNightMeasures.seedHalo)).not,
+					"the tide gill clears morph seed % (%x%)".format(i, *size));
 			};
 			endpointNames.do { |name|
 				var spec = CQGuiNightMap.endpointSpec(name);
@@ -1467,27 +1712,36 @@ CQNightGeometryTest : UnitTest {
 		[[1280, 570], [1920, 855]].do { |size|
 			var geo = CQNightGeometry.compute(size[0], size[1]);
 			var stage = Rect(0, 0, size[0], size[1]);
-			var half = CQNightMeasures.crescentExtent * 0.5;
 			geo[\roots].do { |root, i|
 				var envName = if(i == 0) { \envA } { \envB };
 				var tipBox = CQNightGeometry.endpointBox(
 					geo[\endpoints][envName], \jack);
-				var sourceInk = root[\sourceStrands].collect { |segment|
-					CQNightGeometry.sampleSegments([segment], 12)
-				}.flat;
-				var veinInk = CQNightGeometry.sampleSegments(
-					[root[\audioVein]], 32) ++ [root[\audioJoin]];
-				var rootInk = sourceInk ++ veinInk ++ root[\envBranch];
+				var rootInk = this.prRootInk(root) ++ [root[\audioJoin]];
 				this.assert(stage.contains(tipBox),
 					"root %'s tip jack stays on the stage (%x%)"
 						.format(i + 1, *size));
+				this.assert(stage.contains(root[\maxLobeEnvelope])
+					and: { stage.contains(root[\knotHitBox]) },
+					"root %'s full bias body and hand stay on stage (%x%)"
+						.format(i + 1, *size));
 				geo[\cocos].do { |coco, c|
 					coco[\crescents].do { |point, m|
-						var box = Rect.aboutPoint(point, half, half);
+						var box = CQNightGeometry.crescentViewBox(point, m > 0);
 						this.assert(rootInk.every { |sample|
 							box.containsPoint(sample).not },
 							"root % misses coco % crescent % (%x%)"
 								.format(i + 1, c + 1, m, *size));
+						if(c == i and: { m > 0 }) {
+							this.assert(this.prRectsDistance(
+								root[\maxLobeEnvelope], box)
+								>= CQNightMeasures.rootDolbyClear,
+								"root %'s worst bias lobes clear dolby % by % px (%x%)"
+									.format(i + 1, m,
+										CQNightMeasures.rootDolbyClear, *size));
+							this.assert(root[\knotHitBox].intersects(box).not,
+								"root %'s whole drive/bias hand clears dolby % (%x%)"
+									.format(i + 1, m, *size));
+						};
 					};
 					if(c == i) {
 						this.assert(CQNightGeometry.spiralDistance(coco,

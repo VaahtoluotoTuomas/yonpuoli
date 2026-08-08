@@ -50,14 +50,15 @@ abort = { |error|
 				check.value(CQGuiShell.respondsTo(\toggleView).not
 					and: { gui.respondsTo(\cableOverlay).not },
 					"no Day destination or hidden Day cable layer remains");
-				check.value(map.endpoints.size == 44
+				check.value(map.endpoints.size
+					== (CQMatrix.sourceNames.size + CQMatrix.destNames.size)
 					and: { CQMatrix.sourceNames.every {
 						|name| map.endpoints[name].notNil
 					} }
 					and: { CQMatrix.destNames.every {
 						|name| map.endpoints[name].notNil
 					} },
-					"Night registers the canonical 16 jacks and 28 sockets");
+					"Night registers the canonical 16 jacks and 32 sockets");
 				check.value(map.overlay.skin == \night
 					and: { map.overlay.view.acceptsMouse.not }
 					and: { map.overlay.cableCount == 2 },

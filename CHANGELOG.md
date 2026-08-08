@@ -25,6 +25,24 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Changed
 
+- Expanded the canonical signed matrix from 16×28 to 16×32 with independent
+  per-Coco SlotX and Dust destinations. SlotX uses the accepted bounded VCA law;
+  Dust uses a smaller signed-square ±0.18 contribution clipped to its 0…0.5
+  material rail. Both report effective DSP telemetry without moving stored hand
+  values. Their sound, behavior and UI gates are closed; both remain
+  quarantined from ecological-shake skeletons and decoration pending a separate
+  post-acceptance musical decision.
+
+- Promoted Dust from the Workshop ledger into two Coco-local Night veils. A
+  radial gesture controls amount and a transverse `DustGrain` axis crossfades
+  mist and chip sources; its midpoint preserves the prior sound exactly. The
+  seeded irregular bodies are static, label-free anatomy with their matrix
+  sockets on the Coco-side rim. The accepted layout uses a mirrored 240 body-px
+  reach, 32° angle, a detached 24 body-px ownership breath and 36 static specks;
+  collision-aware root placement clears the Dolby anatomy. The morph leaves
+  moved to 13/90 % stage height and gained a 5 px ground moat so the unrelated
+  SlotX bridge passes behind them, while the separate tide eye rests at 94 %.
+
 - Routed the Night's internal audio streams through the landscape instead of
   across it. Both leave the river at its two empty gaps — the exact midpoints of
   the seeded castle 5→1 and 1→2 cubics — and the two cross-feed lanes now share
@@ -48,8 +66,10 @@ tagged. Earlier tags describe internal development baselines.
   per-Coco Level shores, audible Organ calyces, SlotQ tributary gills and two
   independent directional SlotX bridge valves, plus a radial `cKSend` pull on
   every castle. A castle release under 8 px remains its spesal step, so opening
-  a send never performs a transient rewire. These 13 parameters left Workshop;
-  the tested GUI ownership partition is now Night 44 · Master 4 · Workshop 26.
+  a send never performs a transient rewire. These 13 parameters left Workshop.
+  Dust subsequently moved beside those bodies and gained its Grain axis; the
+  tested GUI ownership partition is now Night 48 · Master 4 · Workshop 24 across
+  all 76 parameters.
 
 - Rebuilt the 16n fader map (SPEC §6.1) as two identical Coco channel strips
   plus a six-fader shared section, replacing the former eight-plus-eight split.

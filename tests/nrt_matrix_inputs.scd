@@ -1,9 +1,12 @@
-// NRT regression for the six software-native Coco matrix inputs.
+// NRT regression for the ten software-native Coco matrix inputs.
 // Two real \cqCoco instances per destination prove that:
 //   - coco1/2_organ can open a closed audible Organ calyx;
 //   - coco1/2_slotQ can open a closed Quantussy input gill;
+//   - coco1/2_slotX can open a closed cross-Coco input gill;
+//   - coco1/2_dust can grow converter material from a closed Dust hand;
 //   - coco1/2_record invert either hand-set Hold state for the gate duration:
 //     a sealed writer opens and an open writer freezes, without changing Hold.
+// Four further held voices prove SlotX and Dust cannot write through Hold.
 // A matching all-zero render proves none of those signals leaks through the
 // manual controls by itself. Prints CQ_MATRIX_INPUTS_OK / _FAILED last.
 
@@ -26,10 +29,11 @@ var check = { |condition, message|
 // field; isolation here makes a wrong per-Coco destination argument impossible
 // to hide behind another test voice.
 var modBuses = #[16, 32, 48, 64, 80, 96];
-var qBus = 120, preBus = 121, silentBus = 122;
+var qBus = 200, preBus = 201, xBus = 202, silentBus = 203;
 var zeroWeights = 100;
-var routeBuses = #[116, 132, 148, 164, 180, 196];
-var routeWeights = #[0.30, 0.34, 0.38, 0.42, 0.70, 0.76];
+var routeBuses = #[116, 132, 148, 164, 180, 196, 212, 228, 244, 260];
+var routeWeights = #[0.30, 0.34, 0.38, 0.42, 0.70, 0.76,
+	0.36, 0.40, 0.80, 0.90];
 var bufFrames = 4096;
 
 var sourceDef = SynthDef(\cqTestMatrixInputSources, {
@@ -44,9 +48,11 @@ var sourceDef = SynthDef(\cqTestMatrixInputSources, {
 	Out.ar(\mod6.ir(96), [high] ++ (0 ! 15));
 	Out.ar(\qBus.ir(120), SinOsc.ar(183, 0, 0.55));
 	Out.ar(\preBus.ir(121), SinOsc.ar(271, 0, 0.50));
+	Out.ar(\xBus.ir(122), SinOsc.ar(137, 0, 0.52));
 });
 
-var commonArgs = { |buf, out, modBus, cocoIndex, wOrgan, wSlotQ, wRecord|
+var commonArgs = { |buf, out, modBus, cocoIndex,
+	wOrgan, wSlotQ, wSlotX, wDust, wRecord|
 	[
 		\buf, buf, \outBus, out, \modSrcBus, modBus,
 		\modTapIdx, if(cocoIndex == 0) { 12 } { 13 },
@@ -56,7 +62,8 @@ var commonArgs = { |buf, out, modBus, cocoIndex, wOrgan, wSlotQ, wRecord|
 		\wSpafBus, zeroWeights, \wInVcaBus, zeroWeights,
 		\wFbVcaBus, zeroWeights, \wFlipBus, zeroWeights,
 		\wSkipBus, zeroWeights, \wOrganBus, wOrgan,
-		\wSlotQBus, wSlotQ, \wRecordBus, wRecord,
+		\wSlotQBus, wSlotQ, \wSlotXBus, wSlotX,
+		\wDustBus, wDust, \wRecordBus, wRecord,
 		\patchDepth, 1, \speed, if(cocoIndex == 0) { 18000 } { 24000 },
 		\spafKnob, 0, \fbLevel, 0, \dust, 0,
 		\organLvl, 0, \level, 1, \slotDeck, 0, \slotX, 0
@@ -68,7 +75,7 @@ var makeScore = { |active = true|
 	var zero = 0.0 ! 16;
 	defs.do { |def| score.add([0.0, [\d_recv, def.asBytes]]) };
 	score.add([0.0, [\d_recv, sourceDef.asBytes]]);
-	8.do { |i| score.add([0.0, [\b_alloc, i, bufFrames, 1]]) };
+	16.do { |i| score.add([0.0, [\b_alloc, i, bufFrames, 1]]) };
 	score.add([0.0, [\c_setn, zeroWeights, 16] ++ zero]);
 	routeBuses.do { |bus, i|
 		var weights = 0.0 ! 16;
@@ -80,13 +87,13 @@ var makeScore = { |active = true|
 		\mod1, modBuses[0], \mod2, modBuses[1],
 		\mod3, modBuses[2], \mod4, modBuses[3],
 		\mod5, modBuses[4], \mod6, modBuses[5],
-		\qBus, qBus, \preBus, preBus]]);
+		\qBus, qBus, \preBus, preBus, \xBus, xBus]]);
 
 	// Organ pair: empty held RAM and a closed manual calyx. Only wOrgan can speak.
 	2.do { |i|
 		score.add([0.0, [\s_new, \cqCoco, 1010 + i, 1, 1000]
 			++ commonArgs.value(i, i, modBuses[i], i,
-				routeBuses[i], zeroWeights, zeroWeights)
+				routeBuses[i], zeroWeights, zeroWeights, zeroWeights, zeroWeights)
 			++ [\preBus, silentBus, \qMixBus, silentBus,
 				\inLevel, 0, \slotPre, 0, \slotQ, 0, \hold, 1]]);
 	};
@@ -96,7 +103,7 @@ var makeScore = { |active = true|
 	2.do { |i|
 		score.add([0.0, [\s_new, \cqCoco, 1040 + i, 1, 1000]
 			++ commonArgs.value(i + 6, i + 6, modBuses[i + 4], i,
-				zeroWeights, zeroWeights, routeBuses[i + 4])
+				zeroWeights, zeroWeights, zeroWeights, zeroWeights, routeBuses[i + 4])
 			++ [\preBus, preBus, \qMixBus, silentBus,
 				\inLevel, 1, \slotPre, 1, \slotQ, 0, \hold, 0]]);
 	};
@@ -105,7 +112,7 @@ var makeScore = { |active = true|
 	2.do { |i|
 		score.add([0.0, [\s_new, \cqCoco, 1020 + i, 1, 1000]
 			++ commonArgs.value(i + 2, i + 2, modBuses[i + 2], i,
-				zeroWeights, routeBuses[i + 2], zeroWeights)
+				zeroWeights, routeBuses[i + 2], zeroWeights, zeroWeights, zeroWeights)
 			++ [\preBus, silentBus, \qMixBus, qBus,
 				\inLevel, 1, \slotPre, 0, \slotQ, 0, \hold, 0]]);
 	};
@@ -115,9 +122,41 @@ var makeScore = { |active = true|
 	2.do { |i|
 		score.add([0.0, [\s_new, \cqCoco, 1030 + i, 1, 1000]
 			++ commonArgs.value(i + 4, i + 4, modBuses[i + 4], i,
-				zeroWeights, zeroWeights, routeBuses[i + 4])
+				zeroWeights, zeroWeights, zeroWeights, zeroWeights, routeBuses[i + 4])
 			++ [\preBus, preBus, \qMixBus, silentBus,
 				\inLevel, 1, \slotPre, 1, \slotQ, 0, \hold, 1]]);
+	};
+
+	// SlotX pair: an external cross-lane exists, but the manual X gill is shut.
+	2.do { |i|
+		score.add([0.0, [\s_new, \cqCoco, 1050 + i, 1, 1000]
+			++ commonArgs.value(i + 8, i + 8, modBuses[i], i,
+				zeroWeights, zeroWeights, routeBuses[i + 6], zeroWeights, zeroWeights)
+			++ [\preBus, silentBus, \qMixBus, silentBus, \crossBus, xBus,
+				\inLevel, 1, \slotPre, 0, \slotQ, 0, \slotX, 0, \hold, 0]]);
+	};
+
+	// Dust pair: empty RAM, closed hand, no audio input. Only wDust can seed it.
+	2.do { |i|
+		score.add([0.0, [\s_new, \cqCoco, 1060 + i, 1, 1000]
+			++ commonArgs.value(i + 10, i + 10, modBuses[i + 4], i,
+				zeroWeights, zeroWeights, zeroWeights, routeBuses[i + 8], zeroWeights)
+			++ [\preBus, silentBus, \qMixBus, silentBus,
+				\inLevel, 0, \slotPre, 0, \slotQ, 0, \dust, 0, \hold, 0]]);
+	};
+
+	// The same live SlotX and Dust routes must remain bit-silent under Hold.
+	2.do { |i|
+		score.add([0.0, [\s_new, \cqCoco, 1070 + i, 1, 1000]
+			++ commonArgs.value(i + 12, i + 12, modBuses[i], i,
+				zeroWeights, zeroWeights, routeBuses[i + 6], zeroWeights, zeroWeights)
+			++ [\preBus, silentBus, \qMixBus, silentBus, \crossBus, xBus,
+				\inLevel, 1, \slotPre, 0, \slotQ, 0, \slotX, 0, \hold, 1]]);
+		score.add([0.0, [\s_new, \cqCoco, 1080 + i, 1, 1000]
+			++ commonArgs.value(i + 14, i + 14, modBuses[i + 4], i,
+				zeroWeights, zeroWeights, zeroWeights, routeBuses[i + 8], zeroWeights)
+			++ [\preBus, silentBus, \qMixBus, silentBus,
+				\inLevel, 0, \slotPre, 0, \slotQ, 0, \dust, 0, \hold, 1]]);
 	};
 	score.add([dur, [\c_set, 0, 0]]);
 	score
@@ -159,7 +198,7 @@ var statsFor = { |path|
 		rms: sums.collect { |sum| (sum / count).sqrt }, peaks: peaks)
 };
 
-opts.numOutputBusChannels = 8;
+opts.numOutputBusChannels = 16;
 opts.numInputBusChannels = 0;
 opts.blockSize = cfg[\blockSize];
 opts.verbosity = -1;
@@ -171,7 +210,11 @@ File.mkdir(tmpDir);
 	var baseline, active;
 	var labels = #[coco1_organ, coco2_organ, coco1_slotQ, coco2_slotQ,
 		coco1_record_open, coco2_record_open,
-		coco1_record_close, coco2_record_close];
+		coco1_record_close, coco2_record_close,
+		coco1_slotX, coco2_slotX, coco1_dust, coco2_dust,
+		coco1_slotX_hold, coco2_slotX_hold, coco1_dust_hold, coco2_dust_hold];
+	var opening = #[0, 1, 2, 3, 4, 5, 8, 9, 10, 11];
+	var held = #[12, 13, 14, 15];
 	try {
 		render.value(makeScore.value(false), baselinePath);
 		render.value(makeScore.value(true), activePath);
@@ -180,11 +223,12 @@ File.mkdir(tmpDir);
 		("matrix inputs RMS baseline % | active %")
 			.format(baseline[\rms].collect(_.round(0.000001)),
 				active[\rms].collect(_.round(0.000001))).postln;
-		check.value(baseline[\channels] == 8 and: { active[\channels] == 8 },
-			"both renders contain six destinations plus both Record directions");
+		check.value(baseline[\channels] == 16 and: { active[\channels] == 16 },
+			"both renders contain ten destinations, both Record directions and four Hold seals");
 		check.value(baseline[\finite] and: { active[\finite] },
-			"all six destination renders are finite");
-		labels.keep(6).do { |label, i|
+			"all sixteen destination and Hold renders are finite");
+		opening.do { |i|
+			var label = labels[i];
 			check.value(baseline[\rms][i] <= 1e-7,
 				"% stays silent with its manual seal closed and no matrix cable"
 					.format(label));
@@ -197,6 +241,7 @@ File.mkdir(tmpDir);
 		};
 		labels.drop(6).do { |label, j|
 			var i = j + 6;
+			if(i < 8) {
 			check.value(baseline[\rms][i] >= 0.005,
 				"% writes audibly while manual Hold is open (RMS %)"
 					.format(label, baseline[\rms][i].round(0.000001)));
@@ -206,6 +251,13 @@ File.mkdir(tmpDir);
 			check.value(active[\peaks][i] <= 1.01,
 				"% remains bounded (peak %)"
 					.format(label, active[\peaks][i].round(0.000001)));
+			};
+		};
+		held.do { |i|
+			check.value(baseline[\rms][i] <= 1e-7
+				and: { active[\rms][i] <= 1e-7 },
+				"% cannot write through Hold even with its matrix route live"
+					.format(labels[i]));
 		};
 	} { |error|
 		ok = false;

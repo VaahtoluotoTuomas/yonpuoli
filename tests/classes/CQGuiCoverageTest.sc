@@ -30,12 +30,12 @@ CQGuiCoverageTest : UnitTest {
 	// ---- the partition ----
 
 	test_theThreeSurfacesDeclareTheirIntendedCounts {
-		this.assertEquals(this.prNight.size, 44,
-			"Night plays 44 interactive parameters after the drone promotion");
+		this.assertEquals(this.prNight.size, 48,
+			"Night plays 48 interactive parameters after the Dust promotion");
 		this.assertEquals(this.prMaster.size, 4,
 			"the persistent Master strip owns 4");
-		this.assertEquals(this.prWorkshop.size, 26,
-			"the Workshop ledger owns the 26 remaining setup parameters");
+		this.assertEquals(this.prWorkshop.size, 24,
+			"the Workshop ledger owns the 24 remaining setup parameters");
 	}
 
 	test_eachSurfaceNamesRealParametersOnce {
@@ -78,11 +78,11 @@ CQGuiCoverageTest : UnitTest {
 			"the interactive union is exactly CQSpec.names");
 	}
 
-	test_thePartitionIsCurrentlySeventyFour {
+	test_thePartitionIsCurrentlySeventySix {
 		// a diagnostic, deliberately separate from the gate above: it tells a
 		// future reader what the registry held when the contract was written
-		this.assertEquals(CQSpec.names.size, 74,
-			"the registry holds 74 live parameters after Space retirement");
+		this.assertEquals(CQSpec.names.size, 76,
+			"the registry holds 76 live parameters after the Dust grain addition");
 	}
 
 	// ---- the intended split, named surface by surface ----
@@ -96,7 +96,7 @@ CQGuiCoverageTest : UnitTest {
 		};
 		[1, 2].do { |n|
 			#[\In, \Fb, \Speed, \Spaf, \DolbyIn, \DolbyFb, \Hold, \Flip,
-				\Level, \Organ, \SlotQ, \SlotX].do { |suffix|
+				\Level, \Organ, \SlotQ, \SlotX, \Dust, \DustGrain].do { |suffix|
 				var name = ("coco" ++ n ++ suffix).asSymbol;
 				this.assert(night.includes(name),
 					"the shell plays %".format(name));
@@ -144,15 +144,15 @@ CQGuiCoverageTest : UnitTest {
 		var workshop = this.prWorkshop;
 		var expected = #[
 			liveGain, micGain, deckARate, deckBRate, deckALoop, deckBLoop,
-			coco1Bits, coco1Wrap, coco1Interp, coco1Dust, coco1Pan,
+			coco1Bits, coco1Wrap, coco1Interp, coco1Pan,
 			coco1SlotPre, coco1SlotDeck,
 			qShLag, c1Off, c2Off, c3Off, c4Off, c5Off,
-			coco2Bits, coco2Wrap, coco2Interp, coco2Dust, coco2Pan,
+			coco2Bits, coco2Wrap, coco2Interp, coco2Pan,
 			coco2SlotPre, coco2SlotDeck
 		];
 		// `sort` is in place and a `#[...]` literal is immutable: copy first
 		this.assertEquals(this.prSorted(workshop), this.prSorted(expected),
-			"the Workshop manifest is the contract's exact 26 setup names");
+			"the Workshop manifest is the contract's exact 24 setup names");
 	}
 
 	// SPEC §6.2: the GUI never grows a second interactive micGain path. The
@@ -175,8 +175,8 @@ CQGuiCoverageTest : UnitTest {
 	// The Drawer's own five-page order is asserted where the pages are
 	// published, in CQGuiVisualContractTest.
 	test_theRemainingObligationsAreOwnedElsewhere {
-		this.assertEquals(CQGuiMatrix.cellSize(\compact, 1272), [40, 24],
-			"the Inspector owns the full 16x28 signed matrix without inner scroll");
+		this.assertEquals(CQGuiMatrix.cellSize(\compact, 1272), [35, 24],
+			"the Inspector owns the full 16x32 signed matrix without inner scroll");
 		#[snapshotName, snapshotSave, snapshotRecall, morph].do { |item|
 			this.assert(CQGuiMemory.ownedItems.includes(item),
 				"Memory still owns %".format(item));

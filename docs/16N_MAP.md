@@ -69,8 +69,8 @@ elsewhere stayed off the map:
 | `Hold`, `Flip`, skip, spesal, dolby | Night map bodies + the keyboard (`1/2`, `q/w`, `a/s`, `3–7`) |
 | `preASrc`/`preBSrc`, `preABias`/`preBBias` | the preamp roots in the Night map |
 | `cKRange` | the castles' range ripples in the Night map |
-| `Organ`, `SlotX`, `cKSend` | each Cocon organ calyx, the two-way bridge valves and the castles' radial tributaries in Night (`SlotQ` also has a Night gill) |
+| `Organ`, `SlotX`, `Dust`/`DustGrain`, `cKSend` | each Cocon organ calyx, the two-way bridge valves, the inner-lower Dust veils and the castles' radial tributaries in Night (`SlotQ` also has a Night gill) |
 | `masterDry`, `monitorMute` | the Master strip |
-| `Dust`, `Pan`, `SlotPre`, `SlotDeck`, `cKOff`, `liveGain`, `micGain`, `Bits`, `Wrap`, `Interp` | the Drawer's Workshop page |
+| `Pan`, `SlotPre`, `SlotDeck`, `cKOff`, `liveGain`, `micGain`, `Bits`, `Wrap`, `Interp` | the Drawer's Workshop page |
 
-All 74 parameters are also reachable from code (`CQ.set`) and from snapshots.
+All 76 parameters are also reachable from code (`CQ.set`) and from snapshots.

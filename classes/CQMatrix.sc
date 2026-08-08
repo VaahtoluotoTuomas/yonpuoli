@@ -21,9 +21,9 @@ CQMatrix {
 		// ARCHITECTURE §3.3 — canonical matrix destination order
 		destNames = #[
 			\coco1_spaf, \coco1_inVca, \coco1_fbVca, \coco1_flip, \coco1_skip,
-			\coco1_organ, \coco1_slotQ, \coco1_record,
+			\coco1_organ, \coco1_slotQ, \coco1_slotX, \coco1_dust, \coco1_record,
 			\coco2_spaf, \coco2_inVca, \coco2_fbVca, \coco2_flip, \coco2_skip,
-			\coco2_organ, \coco2_slotQ, \coco2_record,
+			\coco2_organ, \coco2_slotQ, \coco2_slotX, \coco2_dust, \coco2_record,
 			\castle1_fm, \castle2_fm, \castle3_fm, \castle4_fm, \castle5_fm,
 			\castle1_spesal, \castle2_spesal, \castle3_spesal, \castle4_spesal,
 			\castle5_spesal, \deckA_rate, \deckB_rate
@@ -235,12 +235,22 @@ CQMatrix {
 			// moon this is about nine chance gates, not thirty-five simultaneous
 			// Schmitts; the family skeleton supplies the deliberate pulse.
 			var chance = if(this.class.isGateDest(dest)) { sow * 0.22 } { sow };
-			row.size.do { |si|
-				if(chance.coin) {
-					weights[di][si] = this.class.decorationWeight(dest, amt)
+			// New matrix organs enter ecological shake only after their own
+			// listening gate. Skipping the whole row (including random draws) keeps
+			// every established seed stable while SlotX and Dust are auditioned.
+			if(this.class.isShakeTarget(dest)) {
+				row.size.do { |si|
+					if(chance.coin) {
+						weights[di][si] = this.class.decorationWeight(dest, amt)
+					};
 				};
 			};
 		};
+	}
+
+	*isShakeTarget { |dest|
+		var text = dest.asString;
+		^text.endsWith("_slotX").not and: { text.endsWith("_dust").not }
 	}
 
 	*isGateDest { |dest|
@@ -253,6 +263,7 @@ CQMatrix {
 	*isNewVcaDest { |dest|
 		var text = dest.asString;
 		^text.endsWith("_organ") or: { text.endsWith("_slotQ") }
+			or: { text.endsWith("_slotX") }
 	}
 
 	// The four documented PLAY-8 fixture seeds retain their identities, while
@@ -426,7 +437,7 @@ CQMatrix {
 	// Ten percent of the random field, plus the 3–5-cable audible skeleton: a
 	// full but still readable default throw. Gate rows use their deliberately
 	// lower sowing probability, so this is no longer a fixed percentage of all
-	// 448 cells.
+	// 512 cells (four newly auditioned rows are deliberately quarantined).
 	*shakeDensity { ^0.1 }
 
 	// same manners as clampWeight: a malformed density warns and falls back to

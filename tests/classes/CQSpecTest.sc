@@ -7,7 +7,7 @@ CQSpecTest : UnitTest {
 	tearDown { CQSpec.postWarnings = true }
 
 	test_registryMatchesSpec {
-		this.assertEquals(CQSpec.specs.size, 74, "SPEC §5 defines 74 parameters");
+		this.assertEquals(CQSpec.specs.size, 76, "SPEC §5 defines 76 parameters");
 		this.assertEquals(CQSpec.default(\coco1Fb), 0.35, "coco1Fb default");
 		this.assertEquals(CQSpec.default(\coco1Pan), -0.3, "coco1Pan default");
 		this.assertEquals(CQSpec.default(\coco2Pan), 0.3, "coco2Pan default");
@@ -17,6 +17,18 @@ CQSpecTest : UnitTest {
 		this.assertEquals(CQSpec.default(\c5Send), 0.5, "c5Send default");
 		this.assertEquals(CQSpec.default(\coco1Hold), 1,
 			"power-on state is loop-locked (SPEC §5.3)");
+	}
+
+	test_dustGrainKeepsTheLegacySoundAtItsLinearMidpoint {
+		[\coco1DustGrain, \coco2DustGrain].do { |name|
+			var spec = CQSpec.at(name)[\spec];
+			this.assertEquals([spec.minval, spec.maxval], [0, 1],
+				"% spans the complete mist-to-chip axis".format(name));
+			this.assertEquals(CQSpec.default(name), 0.5,
+				"% defaults to the legacy equal-component sound".format(name));
+			this.assertFloatEquals(CQSpec.map(name, 0.5), 0.5,
+				"% uses a transparent linear hand map".format(name), 1e-9);
+		};
 	}
 
 	test_defaultsSurviveClamp {

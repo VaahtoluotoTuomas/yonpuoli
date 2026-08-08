@@ -55,7 +55,12 @@ makeScore = {
 			\wInVcaBus, destBus.value(("coco" ++ coco ++ "_inVca").asSymbol),
 			\wFbVcaBus, destBus.value(("coco" ++ coco ++ "_fbVca").asSymbol),
 			\wFlipBus, destBus.value(("coco" ++ coco ++ "_flip").asSymbol),
-			\wSkipBus, destBus.value(("coco" ++ coco ++ "_skip").asSymbol)]
+			\wSkipBus, destBus.value(("coco" ++ coco ++ "_skip").asSymbol),
+			\wOrganBus, destBus.value(("coco" ++ coco ++ "_organ").asSymbol),
+			\wSlotQBus, destBus.value(("coco" ++ coco ++ "_slotQ").asSymbol),
+			\wSlotXBus, destBus.value(("coco" ++ coco ++ "_slotX").asSymbol),
+			\wDustBus, destBus.value(("coco" ++ coco ++ "_dust").asSymbol),
+			\wRecordBus, destBus.value(("coco" ++ coco ++ "_record").asSymbol)]
 	};
 
 	preset[\matrix].do { |t|

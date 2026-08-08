@@ -25,6 +25,12 @@ var n10ChevronRestOutput = Cocoquantus.repoDir +/+ "tests" +/+ "tmp"
 	+/+ "n10-chevron-rest.png";
 var n10ChevronHoverOutput = Cocoquantus.repoDir +/+ "tests" +/+ "tmp"
 	+/+ "n10-chevron-hover.png";
+var dustOpenOutput = Cocoquantus.repoDir +/+ "tests" +/+ "tmp"
+	+/+ "dust-open.png";
+var repairOutput = { |size, stateName|
+	Cocoquantus.repoDir +/+ "tests" +/+ "tmp"
+		+/+ ("slotx-dust-ui-" ++ size ++ "-" ++ stateName ++ ".png")
+};
 // PLAY-6.1's own review pair, at both reference stages: the internal streams
 // closed (the landscape at rest) and open, with real patch cables above them,
 // so the undertow can be judged against the bananas it has to differ from.
@@ -70,7 +76,8 @@ matrix.patch(\cas4, \coco2_fbVca, 0.37);
 			try {
 				var map = gui.nightMap;
 				var paintView;
-				var render, renderCrop;
+				var render, renderCrop, repairOutputs, renderRepair;
+				var setDustReview, setBiasReview, setDustTelemetry;
 				var ringPoint, ringLocal;
 				paintView = { |view|
 					var bounds = view.bounds;
@@ -101,6 +108,8 @@ matrix.patch(\cas4, \coco2_fbVca, 0.37);
 						paintView.value(map.eyeView);
 						map.castleViews.do(paintView);
 						map.shellViews.do(paintView);
+						map.dustViews.do(paintView);
+						map.readHeadViews.do(paintView);
 						map.birdViews.do(paintView);
 						paintView.value(map.almanacView);
 						map.endpoints.values.do { |endpoint|
@@ -130,6 +139,8 @@ matrix.patch(\cas4, \coco2_fbVca, 0.37);
 						paintView.value(map.eyeView);
 						map.castleViews.do(paintView);
 						map.shellViews.do(paintView);
+						map.dustViews.do(paintView);
+						map.readHeadViews.do(paintView);
 						map.birdViews.do(paintView);
 						paintView.value(map.almanacView);
 						map.endpoints.values.do { |endpoint|
@@ -142,6 +153,36 @@ matrix.patch(\cas4, \coco2_fbVca, 0.37);
 					};
 					image.write(path);
 					image.free;
+				};
+				repairOutputs = List.new;
+				renderRepair = { |size, stateName|
+					var path = repairOutput.value(size, stateName);
+					render.value(path);
+					repairOutputs.add(path);
+				};
+				setDustReview = { |amount, grain|
+					2.do { |i|
+						var amountName = CQGuiNightMap.dustParamName(i);
+						var grainName = CQGuiNightMap.dustParamName(i, \DustGrain);
+						state.set(amountName, CQSpec.map(amountName, amount));
+						state.set(grainName, CQSpec.map(grainName, grain));
+					};
+				};
+				setBiasReview = { |norm|
+					#[preABias, preBBias].do { |name|
+						state.set(name, CQSpec.map(name, norm))
+					};
+				};
+				setDustTelemetry = { |active = true|
+					var activity = if(active) { 0.72 } { 0 };
+					gui.prPhaseFrame(1, 0.43, nil, nil,
+						[0, 0, 0, 0, 0, 0, 0.36],
+						[0, 0, 0, 0, 0, 0, 0.11],
+						[0, 0, 0, 0, 0, 0, activity]);
+					gui.prPhaseFrame(2, 0.57, nil, nil,
+						[0, 0, 0, 0, 0, 0, 0.28],
+						[0, 0, 0, 0, 0, 0, 0.08],
+						[0, 0, 0, 0, 0, 0, activity]);
 				};
 				map.overlay.backgrounded_(false);
 				map.overlay.invalidate;
@@ -241,9 +282,112 @@ matrix.patch(\cas4, \coco2_fbVca, 0.37);
 											operation: \play61Capture);
 										map.overlay.invalidate;
 									}],
-									[0.15, {
-										render.value(play61.value("roomy-zero"));
-									}]
+					[0.15, {
+						render.value(play61.value("roomy-zero"));
+						state.set(\coco1Dust, CQSpec.map(\coco1Dust, 0.72));
+						state.set(\coco2Dust, CQSpec.map(\coco2Dust, 0.72));
+						state.set(\coco1DustGrain,
+							CQSpec.map(\coco1DustGrain, 0.12));
+						state.set(\coco2DustGrain,
+							CQSpec.map(\coco2DustGrain, 0.88));
+					}],
+					[0.15, {
+						render.value(dustOpenOutput);
+						setDustTelemetry.value(false);
+						map.tideFocusLatched_(false);
+						matrix.preset(\empty, origin: \test,
+							committed: false, operation: \dustUiCapture);
+						map.overlay.invalidate;
+						setDustReview.value(0, 0.5);
+						setBiasReview.value(0.5);
+						gui.window.setInnerExtent(1280, 720);
+					}],
+					[0.4, {
+						renderRepair.value("compact", "rest");
+						setDustReview.value(1, 0);
+					}],
+					[0.15, {
+						renderRepair.value("compact", "high-mist");
+						setDustReview.value(1, 1);
+					}],
+					[0.15, {
+						renderRepair.value("compact", "high-chip");
+						setDustReview.value(0.78, 0.5);
+						matrix.patch(\cas1, \coco1_dust, 0.65);
+						matrix.patch(\tri4, \coco2_dust, -0.58);
+						setDustTelemetry.value(true);
+						map.overlay.invalidate;
+					}],
+					[0.15, {
+						renderRepair.value("compact", "telemetry-cables");
+						matrix.preset(\empty, origin: \test,
+							committed: false, operation: \dustUiCapture);
+						setDustTelemetry.value(false);
+						map.overlay.invalidate;
+						setDustReview.value(0, 0.5);
+						setBiasReview.value(0);
+					}],
+					[0.15, {
+						renderRepair.value("compact", "root-bias-0");
+						setBiasReview.value(1);
+					}],
+					[0.15, {
+						renderRepair.value("compact", "root-bias-1");
+						setBiasReview.value(0.5);
+						map.tideFocusLatched_(false);
+					}],
+					[0.15, {
+						renderRepair.value("compact", "tide-focus-closed");
+						map.tideFocusLatched_(true);
+					}],
+					[0.15, {
+						renderRepair.value("compact", "tide-focus-open");
+						map.tideFocusLatched_(false);
+						setDustReview.value(0, 0.5);
+						gui.window.setInnerExtent(1920, 1005);
+					}],
+					[0.4, {
+						renderRepair.value("roomy", "rest");
+						setDustReview.value(1, 0);
+					}],
+					[0.15, {
+						renderRepair.value("roomy", "high-mist");
+						setDustReview.value(1, 1);
+					}],
+					[0.15, {
+						renderRepair.value("roomy", "high-chip");
+						setDustReview.value(0.78, 0.5);
+						matrix.patch(\cas1, \coco1_dust, 0.65);
+						matrix.patch(\tri4, \coco2_dust, -0.58);
+						setDustTelemetry.value(true);
+						map.overlay.invalidate;
+					}],
+					[0.15, {
+						renderRepair.value("roomy", "telemetry-cables");
+						matrix.preset(\empty, origin: \test,
+							committed: false, operation: \dustUiCapture);
+						setDustTelemetry.value(false);
+						map.overlay.invalidate;
+						setDustReview.value(0, 0.5);
+						setBiasReview.value(0);
+					}],
+					[0.15, {
+						renderRepair.value("roomy", "root-bias-0");
+						setBiasReview.value(1);
+					}],
+					[0.15, {
+						renderRepair.value("roomy", "root-bias-1");
+						setBiasReview.value(0.5);
+						map.tideFocusLatched_(false);
+					}],
+					[0.15, {
+						renderRepair.value("roomy", "tide-focus-closed");
+						map.tideFocusLatched_(true);
+					}],
+					[0.15, {
+						renderRepair.value("roomy", "tide-focus-open");
+						map.tideFocusLatched_(false);
+					}]
 								];
 								play61Names.do { |name| state.set(name, 0) };
 								runSteps.value(play61Steps, {
@@ -255,11 +399,13 @@ matrix.patch(\cas4, \coco2_fbVca, 0.37);
 										++ " | " ++ n10HeartOutput
 										++ " | " ++ n10HeartRestOutput ++ " | "
 										++ n10ChevronRestOutput ++ " | "
-										++ n10ChevronHoverOutput ++ " | "
-										++ play61.value("min-zero") ++ " | "
-										++ play61.value("min-open") ++ " | "
-										++ play61.value("roomy-open") ++ " | "
-										++ play61.value("roomy-zero")).postln;
+									++ n10ChevronHoverOutput ++ " | "
+									++ dustOpenOutput ++ " | "
+									++ play61.value("min-zero") ++ " | "
+									++ play61.value("min-open") ++ " | "
+									++ play61.value("roomy-open") ++ " | "
+									++ play61.value("roomy-zero") ++ " | "
+									++ repairOutputs.asArray.join(" | ")).postln;
 									"CQ_NIGHT_CAPTURE_DONE".postln;
 									0.exit;
 								});

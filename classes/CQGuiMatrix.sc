@@ -1,4 +1,4 @@
-// CQGuiMatrix — the 16×28 precision matrix as the §8 patch-loom experiment.
+// CQGuiMatrix — the 16×32 precision matrix as the §8 patch-loom experiment.
 // Quiet rails preserve exact coordinates; planted cells become weighted knots.
 // Header, loom and route ribbon are separate fixed regions in the workbench.
 

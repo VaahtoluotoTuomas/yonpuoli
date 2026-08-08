@@ -1,7 +1,7 @@
 // N9 — Night is the instrument, not one half of a two-skin runtime.
 // This contract keeps the removal structural and reversible: the live shell
 // has one instrument destination, while the Drawer and persistent Master keep
-// the complete Night 44 + Master 4 + Workshop 26 ownership proved elsewhere.
+// the complete Night 48 + Master 4 + Workshop 24 ownership proved elsewhere.
 
 CQGuiNightOnlyTest : UnitTest {
 	test_shellHasOneNightInstrumentDestination {

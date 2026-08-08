@@ -41,12 +41,12 @@ if(found.size != familyOrder.size) {
 	Error("could not find all four deterministic shake families").throw
 };
 
-// Four disjoint production fragments. Matrix control buses need 448 slots per
-// branch (28 destinations x 16 sources), so each gets a 500-bus country.
+// Four disjoint production fragments. Matrix control buses need 512 slots per
+// branch (32 destinations x 16 sources), so each gets a 600-bus country.
 branches = 4.collect { |i|
 	(mod: 16 + (i * 32), qMix: 32 + (i * 32), coco1: 33 + (i * 32),
 		coco2: 34 + (i * 32), silent: 35 + (i * 32),
-		ctl: 100 + (i * 500), buf1: i * 2, buf2: (i * 2) + 1,
+		ctl: 100 + (i * 600), buf1: i * 2, buf2: (i * 2) + 1,
 		out: i, node: 1100 + (i * 20))
 };
 
@@ -85,6 +85,8 @@ makeScore = {
 				\wSkipBus, destBus.value(("coco" ++ n ++ "_skip").asSymbol),
 				\wOrganBus, destBus.value(("coco" ++ n ++ "_organ").asSymbol),
 				\wSlotQBus, destBus.value(("coco" ++ n ++ "_slotQ").asSymbol),
+				\wSlotXBus, destBus.value(("coco" ++ n ++ "_slotX").asSymbol),
+				\wDustBus, destBus.value(("coco" ++ n ++ "_dust").asSymbol),
 				\wRecordBus, destBus.value(("coco" ++ n ++ "_record").asSymbol),
 				\patchDepth, value.value(\patchDepth),
 				\speed, value.value(prefix.value("Speed")),
@@ -92,6 +94,7 @@ makeScore = {
 				\inLevel, value.value(prefix.value("In")),
 				\fbLevel, value.value(prefix.value("Fb")),
 				\dust, value.value(prefix.value("Dust")),
+				\dustGrain, value.value(prefix.value("DustGrain")),
 				\hold, value.value(prefix.value("Hold")),
 				\organLvl, value.value(prefix.value("Organ")),
 				\level, value.value(prefix.value("Level")),

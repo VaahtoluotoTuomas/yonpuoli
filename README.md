@@ -31,10 +31,11 @@ and tag. [`PLAN.md`](PLAN.md) is the current status authority.
   dust, and square-stack organ voices.
 - A five-castle Quantussy-inspired modulation network that moves from slow
   stepped wandering to audio-rate chaos.
-- A 16×28 signed routing matrix with binary magnetic planting, held-cable attenuation, moving,
-  ripping, harvesting, undo, snapshots, and morphing. Six software-native Coco
-  inputs let the Quantussy breathe the organ, feed its own audio into memory,
-  and momentarily invert recording/hold without changing the hand-set Hold state.
+- A 16×32 signed routing matrix with binary magnetic planting, held-cable attenuation, moving,
+  ripping, harvesting, undo, snapshots, and morphing. Ten software-native Coco
+  inputs let the Quantussy breathe the organ, SlotQ and directional cross-feed,
+  shape converter dust, and momentarily invert recording/hold without changing
+  the hand-set Hold state.
 - The Ink & Phosphor GUI: one playable Night landscape whose shell shores,
   organ calyces, Quantussy tributaries and directional cross-feed bridge open
   drones without a separate mode; a persistent Master strip; and a Drawer for
@@ -87,7 +88,7 @@ plugins are required.
 
 3. In the SuperCollider IDE, open **Edit → Preferences → Interpreter → Include
    paths** and add `<repo>/classes`. Recompile the class library with
-   **Ctrl+Shift+L**. `CQSpec.specs.size` should return `74`. Developers running the
+   **Ctrl+Shift+L**. `CQSpec.specs.size` should return `76`. Developers running the
    unit suite also add `<repo>/tests/classes`.
 
 4. Put a few `.wav`, `.aiff`, or `.flac` files in the ignored `samples/`

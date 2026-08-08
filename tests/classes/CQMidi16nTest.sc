@@ -93,7 +93,7 @@ CQMidi16nTest : UnitTest {
 	test_everySlotIsAssigned {
 		CQSpec.map16n.do { |slot, i|
 			this.assert(slot.size > 0,
-				"F% carries a parameter: 16 faders, 74 params, none wasted"
+				"F% carries a parameter: 16 faders, 76 params, none wasted"
 					.format(i + 1));
 		};
 	}

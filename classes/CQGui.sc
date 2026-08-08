@@ -13,8 +13,8 @@ CQGui {
 	var <inkControls;
 	var <spesalStates;
 	// `/cq_phase`: read-head address, audio-rate direction mean and skip rate,
-	// followed by the five continuous Coco destinations' reduced live truth
-	// (§9): the three crescent moons plus Organ and SlotQ's shell wakes. The
+	// followed by the seven continuous Coco destinations' reduced live truth
+	// (§9): three crescents plus Organ/SlotQ/SlotX and Dust wakes. The
 	// reel fields remain nil until the server reports.
 	var <phaseNorms, <phaseDirs, <phaseSkipHz;
 	// AIO-4 caches raw hardware-input and post-safety master presence even while
@@ -657,13 +657,13 @@ CQGui {
 		}, '/cq_spesal');
 		// GUI_SPEC §9 loop phase: the read head's own 15 Hz message. Night gives
 		// the comet its own cheap layer. The appended continuous-destination
-		// triples feed three tiny crescents plus Organ and SlotQ's local wakes.
+		// triples feed three tiny crescents plus Organ/SlotQ/SlotX and Dust wakes.
 		OSCdef(\cq_gui_phase, { |msg|
 			var values, spreads, activities;
-			if(msg.size >= 21) {
-				values = msg.copyRange(6, 10);
-				spreads = msg.copyRange(11, 15);
-				activities = msg.copyRange(16, 20);
+			if(msg.size >= 27) {
+				values = msg.copyRange(6, 12);
+				spreads = msg.copyRange(13, 19);
+				activities = msg.copyRange(20, 26);
 			};
 			{
 				this.prPhaseFrame(msg[2], msg[3], msg[4], msg[5],

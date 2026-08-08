@@ -71,7 +71,7 @@ CQState {
 	// SynthDef argument. Returning a deep copy keeps the state funnel's routing
 	// table private while letting the release contract prove that no CQSpec knob
 	// is merely stored/displayed. micGain is intentionally absent when the graph
-	// has no configured mic channel (SPEC §7); with a mic-enabled config all 74
+	// has no configured mic channel (SPEC §7); with a mic-enabled config all 76
 	// parameters must appear.
 	routeManifest {
 		var copy = IdentityDictionary.new;
@@ -125,7 +125,8 @@ CQState {
 				[\In, \inLevel], [\Fb, \fbLevel], [\Speed, \speed], [\Spaf, \spafKnob],
 				[\DolbyIn, \dolbyIn], [\DolbyFb, \dolbyFb], [\Hold, \hold],
 				[\Flip, \flip], [\Bits, \bits], [\Wrap, \wrap], [\Interp, \interp],
-				[\Dust, \dust], [\Organ, \organLvl], [\Level, \level],
+				[\Dust, \dust], [\DustGrain, \dustGrain],
+				[\Organ, \organLvl], [\Level, \level],
 				[\SlotPre, \slotPre], [\SlotDeck, \slotDeck], [\SlotQ, \slotQ],
 				[\SlotX, \slotX]
 			].do { |pair|

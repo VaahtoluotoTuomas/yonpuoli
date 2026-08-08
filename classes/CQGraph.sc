@@ -112,6 +112,8 @@ CQGraph {
 				\wSkipBus, buses[(n ++ "_skip").asSymbol].index,
 				\wOrganBus, buses[(n ++ "_organ").asSymbol].index,
 				\wSlotQBus, buses[(n ++ "_slotQ").asSymbol].index,
+				\wSlotXBus, buses[(n ++ "_slotX").asSymbol].index,
+				\wDustBus, buses[(n ++ "_dust").asSymbol].index,
 				\wRecordBus, buses[(n ++ "_record").asSymbol].index
 			], groups[\cocos]);
 		};

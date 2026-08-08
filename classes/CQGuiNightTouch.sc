@@ -10,7 +10,7 @@ CQGuiNightTouch {
 	var map, state, overlay;
 	var <>controller;   // set after construction — the controller binds later
 	var wind, punch, eyeDrag, crescentDrag, moonDrag, preampDrag;
-	var shellFlowDrag, castleDrag;
+	var shellFlowDrag, castleDrag, dustDrag;
 	var compassDrag, weatherHold, birdDrag, birdWheelAt;
 
 	*new { |map, state, overlay| ^super.newCopyArgs(map, state, overlay) }
@@ -33,6 +33,14 @@ CQGuiNightTouch {
 	// The intake knot is a slower, two-axis knead. The first 8 px lock the
 	// dominant axis; 240 px then spans either normalized CQSpec range.
 	*preampSensitivity { ^1 / 240 }
+	*dustSensitivity { ^1 / CQNightMeasures.dustSensitivity }
+
+	*dustAxisNorms { |amount, grain, delta, axis, tangent|
+		var radial = (delta.x * axis.x) + (delta.y * axis.y);
+		var across = (delta.x * tangent.x) + (delta.y * tangent.y);
+		^[(amount + (radial * this.dustSensitivity)).clip(0, 1),
+			(grain + (across * this.dustSensitivity)).clip(0, 1)]
+	}
 
 	// SP.AF is bipolar and its musically useful home is exact zero. A secondary
 	// click may return only these two crescents there; all other right-button
@@ -653,19 +661,66 @@ CQGuiNightTouch {
 		^this
 	}
 
+	// ---- converter breath: radial amount · transverse mist↔chip grain ----
+
+	dustDown { |index, view, x, y, modifiers = 0, button = 0, clicks = 1|
+		var point = this.prPoint(view, x, y), geo = map.geometry, dust;
+		var body = ("coco" ++ (index + 1)).asSymbol;
+		if(geo.isNil) { ^this };
+		dust = geo[\dusts][index];
+		if(modifiers.isAlt or: { overlay.patchAt(point).notNil }
+			or: { button != 0 } or: { CQNightGeometry.dustBodyHit(dust, point).not }) {
+			^this.forwardDown(view, x, y, modifiers, button, clicks, body)
+		};
+		dustDrag = (index: index, startPoint: point,
+			amountName: CQGuiNightMap.dustParamName(index, \Dust),
+			grainName: CQGuiNightMap.dustParamName(index, \DustGrain),
+			amount: this.prNorm(CQGuiNightMap.dustParamName(index, \Dust)),
+			grain: this.prNorm(CQGuiNightMap.dustParamName(index, \DustGrain)));
+		map.setDustActive(index, true);
+		^this
+	}
+
+	dustMove { |index, view, x, y, modifiers = 0|
+		var point, dust, norms;
+		if(dustDrag.isNil or: { dustDrag[\index] != index }) {
+			^this.landscapeMove(view, x, y, modifiers)
+		};
+		point = this.prPoint(view, x, y);
+		dust = map.geometry[\dusts][index];
+		norms = this.class.dustAxisNorms(dustDrag[\amount], dustDrag[\grain],
+			point - dustDrag[\startPoint], dust[\axis], dust[\tangent]);
+		this.prSet(dustDrag[\amountName], norms[0]);
+		this.prSet(dustDrag[\grainName], norms[1]);
+		map.paintDust(index, this.prNorm(dustDrag[\amountName]),
+			this.prNorm(dustDrag[\grainName]));
+		^this
+	}
+
+	dustUp { |index, view, x, y, modifiers = 0, button = 0|
+		if(dustDrag.notNil and: { dustDrag[\index] == index }) {
+			map.setDustActive(index, false);
+			dustDrag = nil;
+			^this
+		};
+		^this.landscapeUp(view, x, y, modifiers, button)
+	}
+
 	// A cancelled continuous gesture keeps the value already heard, exactly as
 	// a crescent does; cancellation only releases the transient bright hand.
 	/* public for the map's one Esc/Tab/panic/free choke point */
 	cancelPerformance {
 		shellFlowDrag !? { map.setFlowActive(shellFlowDrag[\name], false) };
 		castleDrag !? { map.setCastleSendActive(castleDrag[\index], false) };
+		dustDrag !? { map.setDustActive(dustDrag[\index], false) };
 		shellFlowDrag = nil;
 		castleDrag = nil;
+		dustDrag = nil;
 		^this
 	}
 
 	performanceGestureActive {
-		^shellFlowDrag.notNil or: { castleDrag.notNil }
+		^shellFlowDrag.notNil or: { castleDrag.notNil } or: { dustDrag.notNil }
 	}
 
 	// ---- the almanac corner: the sowing moon ----

@@ -52,8 +52,8 @@ claims about the hardware:
 - the exact eight-state Spesal mapping as four partners × two hold modes;
 - the square-stack organ derivation from address-counter bits;
 - clock, feedback, converter, dust, preamp, and VCA response curves;
-- the 16×28 signed-weight routing matrix, including the six software-native
-  Organ/SlotQ/Record destinations, and its Schmitt-trigger destinations;
+- the 16×32 signed-weight routing matrix, including the ten software-native
+  Organ/SlotQ/SlotX/Dust/Record destinations, and its Schmitt-trigger destinations;
 - presets, snapshots, morphing, file decks, recording, stems, the retired v1.0
   Space experiment, and all computer/headphone safety layers;
 - the Day, Night, Drawer, compass, tide, and weather interfaces;

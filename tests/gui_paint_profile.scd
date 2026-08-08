@@ -16,7 +16,7 @@ var state = CQState(nil);
 var matrix = CQMatrix(nil);
 var config = CQConfig.validate((headless: true));
 var gui, ok = true, results = List.new;
-var counts = #[12, 35, 48, 70, 140, 448];
+var counts = #[12, 35, 48, 70, 140, 512];
 var abort = { |error|
 	error !? { error.reportError };
 	("FAIL: paint profile aborted"

@@ -50,7 +50,7 @@ CQGuiCableOverlay {
 	// patches therefore keep the reviewed static ink, which is exactly the look
 	// §16.8 already defines for "no telemetry", while the 16 source jacks go on
 	// pulsing (all sixteen together cost about one cable). No hand-built patch
-	// comes near the limit; `\mayhem` patches all 448 cells and does.
+	// comes near the limit; `\mayhem` patches all 512 cells and does.
 	*auraCableLimit { ^48 }
 	*backgroundAlpha { ^0.14 }
 

@@ -38,10 +38,10 @@ change into maintenance across two interfaces.
 
 The prerequisites are met:
 
-- the Drawer **workshop** carries the 26 setup CQSpec parameters with honest
-  ledger controls. After the 2026-08-02 PLAY-6 drone promotion, Night 44 ·
-  Master 4 · Workshop 26 are disjoint and their tested union is exactly all
-  74 `CQSpec.names`; `micGain`
+- the Drawer **workshop** carries the 24 setup CQSpec parameters with honest
+  ledger controls. After the 2026-08-03 Dust promotion, Night 48 ·
+  Master 4 · Workshop 24 are disjoint and their tested union is exactly all
+  76 `CQSpec.names`; `micGain`
   has one interactive home and keeps its warning;
 - Day's **spesal constellation is recorded dead**, not transplanted. Night's
   under-hand coupling chord carries the same partner, mode and signal direction
@@ -711,7 +711,7 @@ The root increment therefore does this:
   either deck may feed either preamp.
 - Do not add decorative root count without information, and do not invent
   extra patchable audio jacks. Making `preA` / `preB` audio patchable would
-  expand the current canonical 16×28 matrix and is a separate DSP/interface epic.
+  expand the current canonical 16×32 matrix and is a separate DSP/interface epic.
 - The mic sprout remains a truthful three-state provenance cue beside side A.
 
 The second-review implementation contract is now precise:
@@ -846,7 +846,7 @@ The old N8 sketch named examples but did not define “remaining”, a count, a
 machine-checkable partition, the fourth-page shell work, or the one-GUI-path
 rule for `micGain`. It was not sufficient handoff for implementation.
 
-`CQSpec` currently contains **74** parameters. “Reachable” in this gate means
+`CQSpec` currently contains **76** parameters. “Reachable” in this gate means
 all of the following:
 
 - the player starts in Night and uses only Night, the Drawer and the
@@ -866,30 +866,31 @@ The intended partition is exact and disjoint:
 
 | Surface | Count | CQSpec parameters |
 |---|---:|---|
-| Night | 44 | `deckALevel`, `deckBLevel`; `preASrc`, `preBSrc`, `preADrive`, `preBDrive`, `preABias`, `preBBias`; for each Coco: `In`, `Fb`, `Speed`, `Spaf`, `DolbyIn`, `DolbyFb`, `Hold`, `Flip`, `Level`, `Organ`, `SlotQ`, `SlotX`; `qFreq`, `qChaos`; `c1Range`…`c5Range`; `c1Send`…`c5Send` |
+| Night | 48 | `deckALevel`, `deckBLevel`; `preASrc`, `preBSrc`, `preADrive`, `preBDrive`, `preABias`, `preBBias`; for each Coco: `In`, `Fb`, `Speed`, `Spaf`, `DolbyIn`, `DolbyFb`, `Hold`, `Flip`, `Level`, `Organ`, `SlotQ`, `SlotX`, `Dust`, `DustGrain`; `qFreq`, `qChaos`; `c1Range`…`c5Range`; `c1Send`…`c5Send` |
 | Master | 4 | `masterVol`, `masterDry`, `patchDepth`, `monitorMute` (the PANIC/resume control) |
-| Workshop | 26 | the explicit inventory below |
-| **Total** | **74** | must equal `CQSpec.names`, with no missing or duplicate owner |
+| Workshop | 24 | the explicit inventory below |
+| **Total** | **76** | must equal `CQSpec.names`, with no missing or duplicate owner |
 
 This partition describes the night-first GUI, not every observer. For
 example, Night may keep reading `micGain` to draw its sprout without becoming
 an interactive owner.
 
-The **26 Workshop parameters** are:
+The **24 Workshop parameters** are:
 
 | Ledger island | Count | Exact names |
 |---|---:|---|
 | Inputs and decks | 6 | `liveGain`, `micGain`, `deckARate`, `deckBRate`, `deckALoop`, `deckBLoop` |
-| Coco 1 remainder | 7 | `coco1Bits`, `coco1Wrap`, `coco1Interp`, `coco1Dust`, `coco1Pan`, `coco1SlotPre`, `coco1SlotDeck` |
+| Coco 1 remainder | 6 | `coco1Bits`, `coco1Wrap`, `coco1Interp`, `coco1Pan`, `coco1SlotPre`, `coco1SlotDeck` |
 | Quantussy remainder | 6 | `qShLag`, `c1Off`…`c5Off` |
-| Coco 2 remainder | 7 | `coco2Bits`, `coco2Wrap`, `coco2Interp`, `coco2Dust`, `coco2Pan`, `coco2SlotPre`, `coco2SlotDeck` |
+| Coco 2 remainder | 6 | `coco2Bits`, `coco2Wrap`, `coco2Interp`, `coco2Pan`, `coco2SlotPre`, `coco2SlotDeck` |
 
 The other SPEC §6.2 obligations are already owned, but the N8 exit audit must
 name them too: Night owns hold/flip/skip, spesal step, dolby, ranges, patching
 and deck loading/navigation; Inspector owns patch presets and the full
-16×28 signed matrix; Memory owns snapshots and A→B morph; Night/Master show
+16×32 signed matrix; Memory owns snapshots and A→B morph; Night/Master show
 the required hold, spesal/activity, filename, meters, REC/elapsed and notice
-state. A CQSpec-only test is therefore necessary but not sufficient.
+state. Dust and DustGrain now live together in each Night veil. A CQSpec-only
+test is therefore necessary but not sufficient.
 
 ### 12.1.2 Preconditions and non-goals
 
@@ -1116,11 +1117,11 @@ Add the following contracts before calling the page complete:
 
 1. **Dynamic coverage unit test** (`CQGuiVisualContractTest` or a narrowly
    named new unit class):
-   - Workshop manifest has 26 unique real `CQSpec` names;
-   - Night has 44, Master 4, and the three interactive-owner sets are
+   - Workshop manifest has 24 unique real `CQSpec` names;
+   - Night has 48, Master 4, and the three interactive-owner sets are
      disjoint;
    - their union equals `CQSpec.names` exactly and has the same size.
-   Keep the current 74 as a diagnostic assertion if useful, but the equality
+   Keep the current 76 as a diagnostic assertion if useful, but the equality
    to `CQSpec.names` is the future-proof gate.
 2. **Ownership tests**:
    - all five Drawer tabs appear in the normative order;
@@ -1747,11 +1748,11 @@ them the hardware never had either. What ships / is replaced / is cut:
 |---|---|---|
 | coco pair, in-loop clip→quantize, dust, organ, dolby | optional ambience → norns system reverb | stems and the retired Space FDN |
 | quantussy: 5 castles, spesal, chaos — count is identity | recorder → norns tape | watchdog auto-trim (notice may stay) |
-| 16×28 matrix semantics, including six Organ/SlotQ/Record Coco inputs, patchDepth, ecological shake/tide/weather math | decks → **softcut as source**, its output feeding the coco input slot (softcut stays clean; the coco does the dirt) | `\smooth` interp (keep `\zoh` — the authentic one *is* the cheap one) |
+| 16×32 matrix semantics, including ten Organ/SlotQ/SlotX/Dust/Record Coco inputs, patchDepth, ecological shake/tide/weather math | decks → **softcut as source**, its output feeding the coco input slot (softcut stays clean; the coco does the dirt) | `\smooth` interp (keep `\zoh` — the authentic one *is* the cheap one) |
 | master safety chain — **non-negotiable on headphones** | mic path → norns inputs as liveL/R | GUI telemetry rates (polls at 10 Hz grid / ~12 fps screen) |
 
 The load-bearing lever from the memo, now even more valuable: **the
-sparse matrix**. The dense 28×16 audio-rate summing mostly multiplies
+sparse matrix**. The dense 32×16 audio-rate summing mostly multiplies
 zeros; a played patch is 10–70 cables. Rebuild the mod-routing graph on
 *topology* change only (weight changes stay bus writes). Consequence to
 embrace, not hide: a cable insertion may click — **a banana contact

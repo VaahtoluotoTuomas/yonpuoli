@@ -245,6 +245,7 @@ Per Coco `n` ∈ {1,2} (names shown for n=1):
 | `coco1Wrap` | 0/1 | 0 | — | 0 = converter clips (authentic-safe); 1 = digital wraparound overflow (evil mode, still level-bounded downstream) |
 | `coco1Interp` | enum | `\zoh` | — | `\zoh` (authentic stair-step DAC) / `\smooth` (cubic read, tamer top end) |
 | `coco1Dust` | 0–0.5 | 0.02 | exp | filtered low bed + sparse bipolar chip errors injected pre-converter; stored error density follows Speed |
+| `coco1DustGrain` | 0–1 | 0.5 | lin | mist↔chip balance for the two Dust sources; 0.5 gives both their exact legacy gains |
 | `coco1Organ` | 0–1 | 0 | lin | level of the organ square-stack voice (pitch tracks Speed) into this Coco's output mix |
 | `coco1Level` | 0–1.5 | 0.8 | exp | output level to mix; 1.0 is the Night shoreline's unity landmark |
 | `coco1Pan` | −1–1 | −0.3 (coco2: +0.3) | bipolar | |
@@ -295,12 +296,13 @@ Outputs published to the mod source bus: `tri1..tri5` (±1 triangle), `cas1..cas
   at Speed 24000 the band-limited weighted stack measured only `+0.5602`, so a
   default 0.60 cable could never reach the common `+0.5` Schmitt threshold.
   The conditioned jack does, while remaining a bounded bipolar source.
-- **Destinations (28):** per Coco: `_spaf` (speed FM, scaled by `cocoNSpaf`), `_inVca`,
-  `_fbVca`, `_flip` (gate), `_skip` (trig), `_organ`, `_slotQ`, `_record`;
+- **Destinations (32):** per Coco: `_spaf` (speed FM, scaled by `cocoNSpaf`), `_inVca`,
+  `_fbVca`, `_flip` (gate), `_skip` (trig), `_organ`, `_slotQ`, `_slotX`,
+  `_dust`, `_record`;
   per castle: `_fm` (octaves), `_spesal` (trig); plus `deckA_rate`,
   `deckB_rate` (±1 rate offset). The first five Coco inputs preserve the real
-  instrument's logical banana inventory. Organ, SlotQ and Record are six
-  software-native inputs: one independent destination per function and Coco.
+  instrument's logical banana inventory. Organ, SlotQ, SlotX, Dust and Record
+  are ten software-native inputs: one independent destination per function and Coco.
 - Weight range **−1.0–1.0** per (source, dest) pair. Negative weight = inverso
   (inverted CV) — this is how verso/inverso polarity is expressed.
 - A new Night or Inspector cable starts at **±0.60**. This is above the +0.5
@@ -319,19 +321,26 @@ Outputs published to the mod source bus: `tri1..tri5` (±1 triangle), `cas1..cas
   and not the strength of its guaranteed skeleton.
 - Gate/trig destinations use a Schmitt threshold: rising through +0.5 fires (gates:
   >+0.5 = on).
-- **VCA law (`_inVca`, `_fbVca`, `_organ`, `_slotQ`).** The knob is the valve's resting position and the
+- **VCA law (`_inVca`, `_fbVca`, `_organ`, `_slotQ`, `_slotX`).** The knob is the valve's resting position and the
   matrix adds to it, but the modulation's contribution is **shaped, not linear**:
   `shaped = (1 + sum)² − 1`, with `sum` clamped to ±2 before the shaping. Fixed
   points: 0 contributes nothing, so the knob/default keeps its zero-sum value;
   −1 contributes −1 (closing a knob at or below unity, only subtracting one above
   unity); +1 contributes +3 where linear contributed +1. At a knob of unity the
   pre-clip value is `(1 + sum)²`, but the actual input/feedback gains remain
-  capped at 2/2.5/1/1.5 respectively. VCA-bananas in stored snapshots are therefore sonically
+  capped at 2/2.5/1/1.5/1.5 respectively. VCA-bananas in stored snapshots are therefore sonically
   revoiced even though their numeric knob and weight values are not migrated.
   This is an interpretation (an analog verso/inverso VCA breathes rather than
   slides — §13.5), documented like the organ derivation, and it is bounded by
   the same output clips and by `clip2` inside the recirculation. Continuous VCA
   paths only; gate/trig destinations keep their Schmitt semantics.
+- **Dust law (`_dust`).** Dust is converter material, not another gain stage.
+  With `m = sum.clip(-1, 1)`, the matrix contribution is `|m| × m × 0.18` and
+  `effectiveDust = (hand + contribution).clip(0, 0.5)`. This gives fine control
+  around zero, allows positive growth and negative clearing, and cannot lift the
+  continuous noise source beyond its existing rail. `DustGrain` is hand-only:
+  its source gains are `[sqrt(2 × (1−g)), sqrt(2 × g)]`, so `g = 0.5` is exactly
+  `[1,1]` and preserves the accepted filtered-noise + sparse-chip sound.
 - **Record law (`_record`).** Its Schmitt gate momentarily inverts the writer:
   `effectiveHold = |manualHold − recordGate|`. A positive gate therefore opens
   a held writer **and** freezes an already-open writer. It never writes
@@ -483,14 +492,14 @@ the one castle in `\audio` range with a non-zero send (§5.4). Which castles fee
 whatever they send, as routing is to level on any mixer.
 
 **Allocation rule (normative for future changes):** a fader is worth most where
-no other hand reaches. The GUI's Night map plays 44 parameters directly and the
-Master strip 4, while the matrix reaches 28 destinations by modulation.
+no other hand reaches. The GUI's Night map plays 48 parameters directly and the
+Master strip 4, while the matrix reaches 32 destinations by modulation.
 Duplication between layers is intended where the gesture is a continuous
 two-handed ride (§6 requires each layer to suffice alone) — but new assignments
-prefer parameters no other surface can play. Per-Coco `Level`, `Organ`, `SlotQ`
-and directional `SlotX`, plus `c1Send`…`c5Send`, now form Night's continuous
-drone topology; setup colour (`Dust`, `Pan`, `SlotPre`, `SlotDeck`) remains in
-Workshop. This is also why the deck faders left the map:
+prefer parameters no other surface can play. Per-Coco `Level`, `Organ`, `SlotQ`,
+directional `SlotX`, two-axis `Dust`/`DustGrain`, plus `c1Send`…`c5Send`, now
+form Night's continuous drone and converter topology; setup colour (`Pan`,
+`SlotPre`, `SlotDeck`) remains in Workshop. This is also why the deck faders left the map:
 `deckALevel`/`deckBLevel` already have their own crescents in Night, and
 `deckARate`/`deckBRate` are matrix destinations. All remain reachable from code
 and snapshots, and the setup parameters retain exact Workshop rows.
@@ -518,7 +527,7 @@ Requirements on any GUI, independent of skin:
   and the notice line.
 - **It must make reachable without code**: hold, flip, skip, Spesal step, dolby
   and range switches, every §5 `CQSpec` parameter, patch presets, snapshots +
-  A→B morph, the full 16×28 signed-weight matrix, and file loading including
+  A→B morph, the full 16×32 signed-weight matrix, and file loading including
   drag-and-drop.
 - **Mic**: the preamp's mic control carries a warning color when `micGain` > 0
   while a builtin output is active, and the GUI never grows a second `micGain`
@@ -814,11 +823,13 @@ performance pass (§9 budget), full acceptance re-run, v1.0 tag.
 
 Documented so fidelity questions have one answer:
 
-1. Banana bay → named 16×28 signed-weight matrix with presets/shake/snapshots;
-   six software-native Coco destinations extend the hardware-parity core with
-   Organ, SlotQ and momentary Record modulation for each memory.
+1. Banana bay → named 16×32 signed-weight matrix with presets/shake/snapshots;
+   ten software-native Coco destinations extend the hardware-parity core with
+   Organ, SlotQ, directional SlotX, Dust and momentary Record modulation for
+   each memory. SlotX and Dust remain outside ecological shake after their
+   accepted sound/UI gate until a separate musical decision admits them.
 2. Global `patchDepth` macro and per-dest Schmitt thresholds (no hardware equivalent).
-3. Added parameters: `bits`, `wrap`, `interp`, `dust` level, `qShLag`, castle `Off`
+3. Added parameters: `bits`, `wrap`, `interp`, `dust` level/grain, `qShLag`, castle `Off`
    detunes, castle audio sends — all default to authentic behavior.
 4. File decks, snapshots, morphing, disk recorder: studio affordances, no hw analog.
 5. Master limiter, watchdog, lags, clamps: safety layer the hardware never needed

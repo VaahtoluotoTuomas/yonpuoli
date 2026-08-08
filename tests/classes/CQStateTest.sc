@@ -96,7 +96,7 @@ CQStateTest : UnitTest {
 		state.set(\coco1Fb, 1.0);
 		e = state.asEvent;
 		this.assertEquals(e[\coco1Fb], 1.0, "asEvent reflects current values");
-		this.assertEquals(e.size, 74, "asEvent carries every parameter");
+		this.assertEquals(e.size, 76, "asEvent carries every parameter");
 	}
 
 	// Playability audit (PLAN item 8): storage and GUI coverage are not enough.
@@ -119,7 +119,7 @@ CQStateTest : UnitTest {
 		defs[\deckB] = defs[\deckA];
 
 		this.assertEquals(manifest.size, CQSpec.names.size,
-			"a mic-enabled graph routes all 74 CQSpec parameters");
+			"a mic-enabled graph routes all 76 CQSpec parameters");
 		CQSpec.names.do { |name|
 			var route = manifest[name];
 			var pairs;

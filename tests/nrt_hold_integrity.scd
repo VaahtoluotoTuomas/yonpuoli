@@ -23,7 +23,7 @@ var check = { |bool, msg|
 };
 
 // NRT bus plan (out = 2, in = 2 -> private buses start at 4)
-var bSilent = 8, bSink = 9, bFeed = 10, bModSrc = 16;
+var bSilent = 8, bSink = 9, bFeed = 10, bModSrc = 16, bZeroWeights = 100;
 var bufFrames = 65536;                       // small RAM for fast renders
 
 var a4Clock = 24000;                         // capture pass = 65536/24000 = 2.73 s
@@ -47,6 +47,11 @@ var cocoBase = { |extra|
 	[\buf, 0, \preBus, bSilent, \deckBus, bFeed, \qMixBus, bSilent,
 		\crossBus, bSilent, \modSrcBus, bModSrc, \modTapIdx, 12, \modOrganIdx, 14,
 		\cocoIndex, 0,
+		\wSpafBus, bZeroWeights, \wInVcaBus, bZeroWeights,
+		\wFbVcaBus, bZeroWeights, \wFlipBus, bZeroWeights,
+		\wSkipBus, bZeroWeights, \wOrganBus, bZeroWeights,
+		\wSlotQBus, bZeroWeights, \wSlotXBus, bZeroWeights,
+		\wDustBus, bZeroWeights, \wRecordBus, bZeroWeights,
 		\inLevel, 1.0, \dust, 0, \organLvl, 0, \level, 1.0,
 		\slotPre, 0, \slotDeck, 1.0, \slotQ, 0, \slotX, 0] ++ extra
 };
@@ -58,6 +63,7 @@ var makeA4Score = {
 	var score = Score.new;
 	defs.do { |d| score.add([0.0, [\d_recv, d.asBytes]]) };
 	score.add([0.0, [\d_recv, srcDef.asBytes]]);
+	score.add([0.0, [\c_setn, bZeroWeights, 16] ++ (0.0 ! 16)]);
 	score.add([0.0, [\b_alloc, 0, bufFrames, 1]]);
 	score.add([0.0, [\g_new, 1000, 0, 0]]);
 	score.add([0.0, [\s_new, \cqTestHoldSrc, 1001, 1, 1000, \out, bFeed]]);
@@ -81,6 +87,7 @@ var makeA5Score = {
 	var score = Score.new;
 	defs.do { |d| score.add([0.0, [\d_recv, d.asBytes]]) };
 	score.add([0.0, [\d_recv, impDef.asBytes]]);
+	score.add([0.0, [\c_setn, bZeroWeights, 16] ++ (0.0 ! 16)]);
 	score.add([0.0, [\b_alloc, 0, bufFrames, 1]]);
 	score.add([0.0, [\g_new, 1000, 0, 0]]);
 	score.add([0.0, [\s_new, \cqTestImpulse, 1001, 1, 1000,

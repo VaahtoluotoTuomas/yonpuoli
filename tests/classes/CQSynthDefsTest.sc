@@ -57,6 +57,8 @@ CQSynthDefsTest : UnitTest {
 			"matrix Organ cannot exceed the hand calyx's full-open value");
 		this.assertEquals(CQSynthDefs.slotQVcaCeiling, 1.5,
 			"matrix SlotQ shares the hand gill's documented gain country");
+		this.assertEquals(CQSynthDefs.slotXVcaCeiling, CQSynthDefs.slotQVcaCeiling,
+			"matrix SlotX is the mirrored gill and uses the same bounded rail");
 		this.assert(organAtPointThree.inclusivelyBetween(0.68, 0.70),
 			"a tuned 0.30 Organ cable is clearly audible without rail pinning");
 		this.assert(slotAtPointFour.inclusivelyBetween(0.95, 0.97),
@@ -76,17 +78,52 @@ CQSynthDefsTest : UnitTest {
 			"the same Record gate freezes an open writer");
 	}
 
-	test_cocoSynthOwnsAllThreeIndependentSoftwareInputBuses {
+	test_cocoSynthOwnsAllFiveIndependentSoftwareInputBuses {
 		var def = CQSynthDefs.all(CQConfig.validate(())).detect { |item|
 			item.name == \cqCoco
 		};
 		var controls = def.allControlNames.collect { |control| control.name.asSymbol };
-		#[wOrganBus, wSlotQBus, wRecordBus].do { |name|
+		#[wOrganBus, wSlotQBus, wSlotXBus, wDustBus, wRecordBus].do { |name|
 			this.assert(controls.includes(name),
 				"cqCoco exposes the independent % matrix bus".format(name));
 		};
 		this.assert(CQSynthDefs.gateOnThreshold < 0.58,
 			"the ecological record floor has measured Schmitt headroom");
+	}
+
+	test_dustMatrixLawHasSignedQuietGrowthAndHardMaterialRails {
+		this.assertFloatEquals(CQSynthDefs.dustMatrixContribution(0), 0,
+			"an unpatched Dust socket leaves the hand untouched", 1e-12);
+		this.assertFloatEquals(CQSynthDefs.dustMatrixContribution(0.5), 0.045,
+			"a half banana shades Dust gently through signed-square shaping", 1e-12);
+		this.assertFloatEquals(CQSynthDefs.dustMatrixContribution(-0.5), -0.045,
+			"negative phase clears by the same amount", 1e-12);
+		this.assertFloatEquals(CQSynthDefs.dustMatrixContribution(1), 0.18,
+			"full positive modulation reaches the documented +0.18 range", 1e-12);
+		this.assertFloatEquals(CQSynthDefs.dustMatrixContribution(-1), -0.18,
+			"full negative modulation reaches the documented -0.18 range", 1e-12);
+		this.assertFloatEquals(CQSynthDefs.dustMatrixContribution(99), 0.18,
+			"a mayhem sum clamps before shaping", 1e-12);
+		this.assertFloatEquals(CQSynthDefs.dustEffective(0.2, 0), 0.2,
+			"zero matrix sum is exactly backward compatible", 1e-12);
+		this.assertFloatEquals(CQSynthDefs.dustEffective(0.1, -1), 0,
+			"negative modulation cannot drive material below silence", 1e-12);
+		this.assertFloatEquals(CQSynthDefs.dustEffective(0.4, 1), 0.5,
+			"positive modulation cannot exceed the converter's Dust rail", 1e-12);
+	}
+
+	test_dustGrainMidpointExactlyPreservesTheOldTwoSourceFormula {
+		var mist = CQSynthDefs.dustGrainGains(0);
+		var legacy = CQSynthDefs.dustGrainGains(0.5);
+		var chip = CQSynthDefs.dustGrainGains(1);
+		this.assertFloatEquals(legacy[0], 1, "legacy mist gain stays exactly one", 1e-12);
+		this.assertFloatEquals(legacy[1], 1, "legacy chip gain stays exactly one", 1e-12);
+		this.assertFloatEquals(mist[0], 2.sqrt,
+			"the mist end keeps equal-power loudness", 1e-12);
+		this.assertFloatEquals(mist[1], 0, "the mist end removes chips", 1e-12);
+		this.assertFloatEquals(chip[0], 0, "the chip end removes mist", 1e-12);
+		this.assertFloatEquals(chip[1], 2.sqrt,
+			"the chip end keeps equal-power loudness", 1e-12);
 	}
 
 	// A VCA that folds back up as its control drives further negative would

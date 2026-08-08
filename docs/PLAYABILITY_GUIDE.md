@@ -15,15 +15,15 @@ Pelkkä GUI:n luokkakirjaston vaihto ei vaihda jo serverillä eläviä pitkäik�
 
 Nykyinen release-sopimus todistaa koneellisesti seuraavat asiat:
 
-- Nightin 44, Masterin 4 ja Workshopin 26 interaktiivista parametria ovat
-  erilliset ja niiden yhdiste on täsmälleen kaikki 74 `CQSpec`-parametria.
-- Mikillä varustetussa graafissa kaikki 74 parametria päätyvät oikean
+- Nightin 48, Masterin 4 ja Workshopin 24 interaktiivista parametria ovat
+  erilliset ja niiden yhdiste on täsmälleen kaikki 76 `CQSpec`-parametria.
+- Mikillä varustetussa graafissa kaikki 76 parametria päätyvät oikean
   tuotanto-SynthDefin oikeasti olemassa olevaan control-argumenttiin. Kun
   Audio-sivulla `mic` on pois, ainoa tarkoituksella DSP:stä irti oleva säädin
   on `micGain`; käyttöliittymä ei silloin teeskentele olematonta mikkiä.
-- Matriisissa on yksi kanoninen 16 lähteen järjestys ja 28 kohdetta. Jokainen
-  kohde lukee saman 16-kanavaisen painovektorin, joten lähde–kohde-solujen 448
-  yhdistelmää ei ole toteutettu 448 erillisellä, erkaantuvalla koodipolulla.
+- Matriisissa on yksi kanoninen 16 lähteen järjestys ja 32 kohdetta. Jokainen
+  kohde lukee saman 16-kanavaisen painovektorin, joten lähde–kohde-solujen 512
+  yhdistelmää ei ole toteutettu 512 erillisellä, erkaantuvalla koodipolulla.
 - Offline-renderi `tests/nrt_playability.scd` käyttää oikeita `\cqQuantussy`-
   ja `\cqCoco`-SynthDefejä, mittaa A/B-eron ja jättää kuuntelutiedostot
   `tests/tmp/`-hakemistoon.
@@ -239,7 +239,7 @@ Workshop ei sisällä kuolleita lisukkeita. Erityisesti nämä kannattaa hahmott
 | `qShLag`, `cKOff` | held-askelten pehmeys ja linnan yksilöviritys |
 
 Night + Master + Drawer tavoittavat siis kaiken, mutta **Night yksin ei ole
-itsenäinen 74 säätimen syntikka**. Tämän kierroksen aidot
+itsenäinen 76 säätimen syntikka**. Tämän kierroksen aidot
 promootiokandidaatit ovat `cocoNLevel`, yhteinen `SlotQ` ja `Organ`: jos jokin
 niistä osoittautuu alla toistuvasti fraasin sisäiseksi eleeksi eikä
 setup-päätökseksi, sille pitää suunnitella Night-ele. Sitä ei pidä ratkaista
@@ -559,7 +559,7 @@ ainoastaan neljän Q/X-sillanpään täsmällinen kidusympyrä voittaa kaapelin
 hoverissa ja tavallisella vasemmalla painalluksella. Sen ympärillä kuori on yhä
 kaapeli-ensin, ja oikea painike/Alt säilyttävät banaanieleensä.
 Workshopista poistettiin näiden kaksoiskappaleet: nykyinen omistajuus on
-Night 44 · Master 4 · Workshop 26. Automaattinen geometria-, omistajuus- ja
+Night 48 · Master 4 · Workshop 24. Automaattinen geometria-, omistajuus- ja
 GUI-eleportti on vihreä; tämän testin jäljellä oleva osa on käsin tehtävä
 soitettavuus- ja luettavuusarvio.
 
@@ -632,17 +632,24 @@ Aidon Cocoquantuksen looginen banaaniydin on yhä kokonaan mukana: kummallakin
 Cocolla SP.AF, Input-VCA, Feedback-VCA, Flip ja Skip (10 kohdetta), sekä
 viidellä castlella FM ja Spesal (10 kohdetta). Verso/inverso on yksi signed-
 kohde, jossa negatiivinen paino kääntää polariteetin. Näiden 20 hardware-
-kohteen ja kahden software-only deck-rate-kohteen rinnalla on nyt kuusi
-Yönpuolen omaa Coco-kohdetta. Nykyinen inventaario on siis **16×28**, ja kaikki
-28 kohdetta ovat sekä Inspectorissa että Nightissä.
+kohteen ja kahden software-only deck-rate-kohteen rinnalla on nyt kymmenen
+Yönpuolen omaa Coco-kohdetta. Nykyinen inventaario on siis **16×32**, ja kaikki
+32 kohdetta ovat sekä Inspectorissa että Nightissä.
 
-Kuusi uutta kohdetta ovat aidosti itsenäisiä:
+Kymmenen software-native-kohdetta ovat aidosti itsenäisiä:
 
 - `coco1_organ`, `coco2_organ`: matriisisumma lisätään Organ-nupin lepoarvoon
   samalla epälineaarisesti hengittävällä VCA-lailla kuin Input/Feedback ja
   rajataan alueelle 0…1. Nollassa oleva käsiasetus voidaan siis avata.
 - `coco1_slotQ`, `coco2_slotQ`: vastaava VCA-panostus `qMix`-sisääntuloon,
   rajattuna alueelle 0…1,5. Kummallakin Cocolla on oma kohteensa.
+- `coco1_slotX`, `coco2_slotX`: sama rajattu, signed-square-VCA-laki Cocolta
+  toiselle kulkevaan X-kaistaan. Matriisi voi avata tai sulkea käsin asetettua
+  venttiiliä, mutta efektiivinen gain pysyy aina alueella 0…1,5.
+- `coco1_dust`, `coco2_dust`: Dust käyttää tarkoituksella pienempää omaa lakia:
+  `m = sum.clip(-1, 1)`, `delta = |m| × m × 0,18`, ja efektiivinen määrä on
+  `(hand + delta).clip(0, 0.5)`. Se voi siis hengittää kumpaankin suuntaan
+  nostamatta jatkuvan kohinan kattoa hallitsemattomasti.
 - `coco1_record`, `coco2_record`: 0,5/0,3-Schmittillä rajattu hetkellinen
   **Hold-inversio**. Positiivinen gate avaa suljetun kirjoittajan ja jäädyttää
   jo avoimen kirjoittajan. Se ei koskaan muuta `cocoNHold`-parametria, vaan
@@ -650,24 +657,24 @@ Kuusi uutta kohdetta ovat aidosti itsenäisiä:
 
 Nightissä vanhoja hardware-pariteetin kuita ei siirretty. Organ-socket on aivan
 organ-hedelmän ulkopuolella, SlotQ-socket suoraan Q-kiduksen vieressä keskirenkaan
-puolella ja danger-punainen Record-socket kuoren yläulkokehällä: vasemmalla noin
-kello 10:ssä, oikealla noin kello 2:ssa. Niitä yhdistävät vain lyhyet, suorat ja
+puolella, SlotX-socket 32 px oman X-venttiilin ylä-/ulkopuolella ja danger-
+punainen Record-socket kuoren yläulkokehällä: vasemmalla noin kello 10:ssä,
+oikealla noin kello 2:ssa. Dustin ontto socket istuu oman sisä-alaviiston
+usvakehon Coco-puoleisella reunalla. Niitä yhdistävät vain lyhyet, suorat ja
 matalan alfan anatomiset juuret; mikään viiva ei enää kulje Cocon läpi.
 
 Socket-kieli käyttää kahta toisistaan riippumatonta kanavaa. Väri ja viereinen
 anatomia kertovat jatkuvan suureen, joten SP.AF, Input VCA, Feedback VCA, Organ
-ja SlotQ ovat kaikki onttoja renkaita ilman sisämerkkiä. Sisämerkki varataan
+SlotQ, SlotX ja Dust ovat kaikki onttoja renkaita ilman sisämerkkiä. Sisämerkki varataan
 kategoriselle/tapahtumaeleelle: Flipin vastakkaiset chevronit, Skipin kipinä ja
 Recordin ympyrä. Näin Input ja Feedback eivät enää jaa perusteetonta `>`-merkkiä;
-niiden omat asteikkosirpit erottavat ne toisistaan. Organin ja SlotQ:n toteutunut
-VCA näkyy omana pearl/wake-liikkeenään; Recordin charge/fire-lamppu ja punainen
-sinetti näyttävät efektiivisen tilan molempiin suuntiin. Käsiasetus ei liiku
-modulaation mukana.
-Nykyinen tyhjä SlotX-venttiili ei ole vielä matriisisocket: sillan kahden kaistan
-ulkoiset nuolenkärjet kertovat jo suureen ja suunnan, joten venttiilin sisämerkki
-olisi vain sama tieto toiseen kertaan.
+niiden omat asteikkosirpit erottavat ne toisistaan. Organin, SlotQ:n, SlotX:n ja
+Dustin toteutunut VCA näkyy omana pearl/wake-liikkeenään; Recordin charge/fire-
+lamppu ja punainen sinetti näyttävät efektiivisen tilan molempiin suuntiin.
+Käsiasetus ei liiku modulaation mukana. SlotX:n socket on erillään venttiilistä:
+sillan nuolenkärjet kertovat käden gainin ja suunnan, ontto rengas matriisireitin.
 
-Organ/SlotQ/Record-socketien näkymäpaperi on läpinäkyvä ja taustaa peitetään vain
+Software-native-socketien näkymäpaperi on läpinäkyvä ja taustaa peitetään vain
 varsinaisen pyöreän socketin alta. Vasemman Record-lamppu kasvaa ulospäin vasemmalle
 ja oikean ulospäin oikealle, joten kumpikaan haalea punainen juuri ei katkea
 näkymättömään suorakulmioon. Molemmat kokonaiset Coco-organismit liikkuivat
@@ -771,44 +778,69 @@ shaken ensikäytön 2026-08-03. PLAY-8 on siis kokonaan hyväksytty: visuaalinen
 kieli, kuusi uutta polkua, ekologisen shaken perheet ja määrälaki sekä yhden
 teon palauttava undo toimivat yhtenä soittimena.
 
-### Seuraavat matriisikohteet: ensin SlotX, sitten Dust omana prototyyppinään
+### SlotX ja Dust — hyväksytty kokonaan 2026-08-08
 
-SlotX on seuraava looginen lisäys nyt, kun SlotQ:lla on oma matriisi-input.
-Suositus on kaksi itsenäistä kohdetta, `coco1_slotX` ja `coco2_slotX`: käsin
-asetettu SlotX olisi lepoventtiili ja matriisisumma avaisi sitä samalla rajatulla
-VCA-periaatteella alueella 0…1,5. Night-koti olisi ontto neutraali socket heti
-oman X-venttiilin vieressä ja juuri lähes olematon — uuden symbolilain mukaan ei
-uutta kirjainta tai nuolta. Tämä kasvattaisi matriisin 16×30:een. Koska SlotX on
-feedbackia sivuava Coco→Coco-reitti, se tarvitsee oman NRT-turva-/hold-portin ja
-kuuntelun ennen kuin crossfeed-shake saa käyttää sitä.
+Kaksi itsenäistä `cocoN_slotX`-kohdetta käyttävät nyt täsmälleen SlotQ:n kanssa
+samaa rajattua VCA-lakia ja 1,5:n kattoa. Kummankin ontto neutraali socket on
+32 px oman X-venttiilin ylä-/ulkopuolella, 15° ulospäin pystysuorasta, joten pari
+vastaa peilattuna SlotQ:n sisäänpäin katsovia socketteja. `/cq_phase` näyttää
+efektiivisen pearl/wake-arvon liikuttamatta käsin asetettua venttiiliä.
 
-Dust kuuluu perustellusti Nightiin, mutta ei vain uutena irrallisena socketina.
-Se on samanaikaisesti käsin soitettava sointiväri ja mahdollinen Quantussy-kohde,
-joten pinta ja matriisipolku kannattaa prototypoida yhdessä SlotX:n jälkeen.
-Ensimmäinen ehdotus yhdestä vasemman taivaan kaksilobisesta pankista hylättiin
-2026-08-03: oikean Cocon Dust olisi jäänyt liian kauas omasta organismistaan.
-Seuraava suunnitteluportti sijoittaa kaksi toisiinsa kuuluvaa mutta itsenäistä
-sumu-/pölykehoa omien Cocojensa sisä-alaviistoon, niin että lyhyt anatominen
-yhteys kertoo omistajan. Samassa portissa ratkaistaan morph-kentän lehtien
-väljyys sekä se, jääkö ele yhden Dust-määrän säätimeksi vai saako se toisen,
-selvästi samaan materiaaliin kuuluvan tekstuuriakselin. Mitään näistä ei ole
-vielä lukittu tuotantogeometriaksi tai DSP-sopimukseksi.
+Dust siirtyi Workshopista Nightiin kahtena oman Cocon sisä-alaviistoon
+kiinnittyvänä, seedattuna 106×72 body-px:n usvakehona. Lopullinen peilattu
+sijoitus käyttää 240 body-px:n reachia ja 32° kulmaa. Kolme lyhyttä, yhteensä
+24 body-px:n katkaistua hengitysvetoa ja Coco-puoleisen reunan ontto
+`cocoN_dust`-socket tekevät omistajuuden luettavaksi ilman shellistä Dustiin
+jatkuvaa signaalisuonta, tekstiä, paneelia tai animaatiota. Radiaalinen veto
+Cocosta poispäin säätää määrää; poikittainen veto säätää uutta
+`cocoNDustGrain`-akselia usvasta sirpaleiseen crackleen. Täysin staattinen
+36-speckin pooli tihenee amountin mukana: normeilla 0 / 0,25 / 0,5 / 0,8 / 1
+näkyy 0 / 13 / 22 / 31 / 36 speckiä.
 
-Dust ei saa kopioida VCA-lakia sokkona. Parametrin yläraja on 0,5 ja jatkuva
-WhiteNoise-pohja nostaa nopeasti koko soittimen kohinalattiaa, joten sille pitää
-mitata oma rajattu modulaatiokäyrä ja kuunnella tyhjän RAMin sekä kierron kasvu.
-Kahden Dust-kohteen jälkeen matriisi olisi 16×32. SlotX- ja Dust-askeleet
-pidetään erillään, jotta niiden musiikillinen vaikutus voidaan todella tunnistaa.
-`castleK_send` sekä Bits/Wrap jäävät tämän
-jälkeen erillisiksi ehdokkaiksi.
+Äänellisesti Dust syntyy Cocon kirjoitussignaalissa inputin ja feedbackin jälkeen,
+ennen clip/wrap-rajoitusta, bittikvantisointia ja RAM-kirjoitusta. Siksi se ei ole
+vain ulostulokohinaa: avoimella kirjoittajalla se tallentuu muistiin, kiertää ja
+voi kertyä feedbackin mukana; Holdissa se ei kirjoita läpi. Määrä säätää tämän
+koko materiaalin tasoa. Grain ristihäivyttää 9 kHz alipäästettyä jatkuvaa
+WhiteNoise-pohjaa ja harvaa bipolaarista `Dust2`-cracklea. Keskikohta 0,5 antaa
+molemmille täsmälleen vanhat kertoimet `[1,1]`, joten oletusääni ei muuttunut;
+ääripäät muuttavat tekstuurin jakaumaa eivätkä lisää kolmatta kohinalähdettä.
+
+Dust-matriisi ei kopioi VCA-lakia: signed-square-panostus on vain ±0,18 ja lopputulos
+rajataan 0…0,5:een. SlotX- ja Dust-kohteet saivat omat telemetry-, safety-, Hold-
+ja NRT-portit. Mitattu aktiivinen SlotX-RMS oli 0,119051/0,141106 ja Dust-RMS
+0,018479/0,023670; kaikki neljä Hold-versiota olivat täsmälleen hiljaa.
+
+Morph-kentän yläreuna nousi 18 → 13 prosenttiin ja alareuna 96 → 90 prosenttiin.
+Jokainen lehti saa lisäksi 5 px ground-vallihaudan, joten SlotX-silta kulkee sen
+takana eikä enää näytä liittyvän muistiin. Uudet SlotX/Dust-sarakkeet on rajattu
+pois ekologisen shaken sekä rungosta että koristelusta, myös RNG-järjestyksen
+säästäen. Hyväksyntä ei poista tätä karanteenia automaattisesti: mahdollinen
+avaaminen shake-ekologiaan on oma seuraava musiikillinen päätöksensä.
+`castleK_send` sekä Bits/Wrap jäävät edelleen erillisiksi myöhemmiksi ehdokkaiksi.
+
+Käyttäjän 2026-08-03 live-katselmus hyväksyi SlotX:n sekä koko SlotX/Dust-
+uudistuksen äänen, eleet ja toiminnan. SlotX jäädytettiin. Seurannut UI-passi
+siirsi Dustit pois skip/SP.AF-alueilta, korvasi jatkuvan suonen katkaistulla
+omistajuushengityksellä, tihensi speckit, teki juuren knotista dolby-laatikot
+tuntevan ja palautti TAB-silmälle oman ring-välin. Geometria-, unit- ja Qt-portit
+sekä compact/roomy-kuvasarja ovat vihreät. Käyttäjä hyväksyi lopullisen UI:n
+oikeassa sovelluksessa 2026-08-08, joten SlotX/Dust-portti on kokonaan suljettu.
+Tarkka mitattu työohje ja toteutusevidenssi ovat tiedostossa
+[`SLOTX_DUST_UI_REPAIR_PLAN.md`](SLOTX_DUST_UI_REPAIR_PLAN.md).
 
 ## Seuraava päätös
 
 Kaikki PLAY-7:ää edeltävät soittotestit on hyväksytty ja A/B-kandidaatit on
 suljettu. PLAY-8:n ensimmäinen kierros hyväksyi neljän perheen erottuvuuden ja
 density-lain, ja 2026-08-03 käyttäjä hyväksyi myös korjauspassin, bundled undon
-sekä vapaan ensikäytön. PLAY-8 on suljettu. SlotX/Dust ovat seuraavat kaksi
-erillistä prototyyppiä; niiden layout- ja DSP-sopimus suunnitellaan ennen koodia.
+sekä vapaan ensikäytön. PLAY-8 on suljettu. SlotX/Dust-uudistuksen ääni,
+toiminta ja UI ovat myös hyväksyttyjä, ja portti suljettiin 2026-08-08.
+
+Muodollinen seuraava 1.0-portti on 16n:n fyysinen käsituntumatesti. Ennen sitä tai
+sen rinnalla voidaan tehdä yksi erillinen musiikillinen päätös: jäävätkö
+SlotX/Dust-sarakkeet shake-karanteeniin vai otetaanko ne rajatusti ekologiseen
+shakeen. Hyväksyntä ei itsessään muuttanut shake-käytöstä.
 
 16n:n rinnakkainen käsituntumatesti on tiedostossa
 [`tests/manual_checklist.md`](../tests/manual_checklist.md) kohdassa `16N-1` ja

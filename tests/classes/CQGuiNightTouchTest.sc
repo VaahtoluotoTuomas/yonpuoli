@@ -278,4 +278,26 @@ CQGuiNightTouchTest : UnitTest {
 			0.5, Point(40, 0), inward), 0.5,
 			"tangential travel invents no send change", 1e-9);
 	}
+
+	test_dustVeilSeparatesRadialAmountFromTangentialGrain {
+		var axis = Point(1, 0), tangent = Point(0, 1), mixed, radial, across;
+		mixed = CQGuiNightTouch.dustAxisNorms(
+			0.2, 0.5, Point(60, -30), axis, tangent);
+		this.assertFloatEquals(mixed[0], 0.7,
+			"60 px outward adds half of the Dust amount range", 1e-9);
+		this.assertFloatEquals(mixed[1], 0.25,
+			"30 px across toward mist removes one quarter of grain", 1e-9);
+		radial = CQGuiNightTouch.dustAxisNorms(
+			0.2, 0.5, Point(120, 0), axis, tangent);
+		this.assertFloatEquals(radial[0], 1,
+			"a full radial span clamps amount at its ceiling", 1e-9);
+		this.assertFloatEquals(radial[1], 0.5,
+			"a purely radial pull leaves grain exactly at home", 1e-9);
+		across = CQGuiNightTouch.dustAxisNorms(
+			0.2, 0.5, Point(0, 120), axis, tangent);
+		this.assertFloatEquals(across[0], 0.2,
+			"a purely tangential pull leaves amount untouched", 1e-9);
+		this.assertFloatEquals(across[1], 1,
+			"one tangential span reaches the chip end", 1e-9);
+	}
 }
