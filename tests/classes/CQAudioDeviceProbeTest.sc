@@ -25,8 +25,29 @@ CQAudioDeviceProbeTest : UnitTest {
 		}, "the helper writes only the caller-owned private result path");
 		this.assert(command.contains("-TimeoutSeconds 20"),
 			"the fresh interpreter has an explicit bounded lifetime");
+		this.assert(command.contains("-Passes 1") and: {
+			command.contains("-SettleMilliseconds 750")
+		}, "ordinary startup requests one bounded probe pass");
 		this.assert(command.contains("sclang.exe"),
 			"the active SuperCollider installation is passed explicitly when known");
+	}
+
+	test_playerDiscoveryRequestsASettledFreshProcessSeries {
+		var calls = 0, observedCommand, result;
+		CQAudioDeviceProbe.probeRunner = { |command|
+			calls = calls + 1;
+			observedCommand = command;
+			(inputs: ["Windows WASAPI : Microphone"],
+				outputs: ["Windows WASAPI : Headphones"])
+		};
+		result = CQAudioDeviceProbe.scanSettled;
+		this.assertEquals(calls, 1,
+			"one watchdog owns the complete settled discovery series");
+		this.assert(observedCommand.contains("-Passes 3"),
+			"explicit hot-plug discovery asks for three fresh PortAudio passes");
+		this.assertEquals(result[\outputs],
+			["Windows WASAPI : Headphones"],
+			"the final settled output remains exact");
 	}
 
 	test_injectedFreshProbePreservesExactDirectionalNames {
@@ -75,5 +96,19 @@ CQAudioDeviceProbeTest : UnitTest {
 			"fresh helper data receives stopped-scan provenance");
 		this.assertEquals(catalog[\outputs], ["fresh headphones"],
 			"the facade publishes the exact fresh output name from memory");
+	}
+
+	test_facadeSettledCaptureUsesTheHotPlugProbeMode {
+		var command, stoppedServer = Server(\cqSettledProbeTest,
+			NetAddr("127.0.0.1", 59996));
+		CQAudioDeviceProbe.probeRunner = { |value|
+			command = value;
+			(inputs: ["fresh mic"], outputs: ["fresh headphones"])
+		};
+		this.assert(Cocoquantus.prCaptureAudioDeviceCatalog(
+			stoppedServer, nil, true),
+			"explicit discovery accepts the settled production capture");
+		this.assert(command.contains("-Passes 3"),
+			"the facade distinguishes player discovery from one-pass startup");
 	}
 }

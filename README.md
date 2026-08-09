@@ -23,8 +23,8 @@ electronic ecosystem.
 The sound engine, Night-only performance surface, hardware-I/O path,
 long-duration resource soak, controller map, first-touch playability and curated
 release content have passed their current acceptance gates. The remaining 1.0
-work is the Windows launch/onboarding pass, screenshot approval, remote CI, then
-the final merge and tag. Audio and performance video are planned as later
+work is one final launcher teardown/persistence check, remote CI, then the final
+merge and tag. Audio and performance video are planned as later
 additions rather than initial-release blockers.
 [`PLAN.md`](PLAN.md) is the current status authority.
 
@@ -74,62 +74,101 @@ additions rather than initial-release blockers.
 Yönpuoli uses only SuperCollider's standard UGens; no Quarks or third-party
 plugins are required.
 
-## Installation
+## Quick Windows start
 
-1. Clone the repository and install SuperCollider.
+1. Install SuperCollider, then download/unzip or clone this repository.
+2. Double-click [`YONPUOLI.bat`](YONPUOLI.bat). It finds the newest installed
+   SuperCollider 3.13+, builds an isolated application class path, and creates
+   `config.scd`, `samples/`, and the other local runtime folders when missing.
+   No IDE preferences or evaluated code are required.
+3. Keep the small diagnostic console open while playing. Close the Yönpuoli
+   window to free the instrument, stop its owned audio server, and close the
+   launcher cleanly.
+4. Put a `.wav`, `.aiff`, or `.flac` file in `samples/`, then follow the short
+   first-loop path below.
 
-2. Copy `config.example.scd` to `config.scd`. The copy is ignored by Git and
-   holds machine-specific audio, MIDI, and path settings. Device discovery is
-   captured only while the local audio server is stopped; on Windows Yönpuoli
-   uses a bounded fresh helper interpreter so a newly connected endpoint or
-   installed driver is not hidden by the main interpreter's old PortAudio
-   list. The running Audio page reads only that memory snapshot and never
-   invokes `_ListAudioDevices`. Its default Windows view keeps WASAPI/ASIO
-   choices and exact configured endpoints concise, while `show all drivers`
-   reveals cached MME, DirectSound and WDM-KS alternatives without another
-   scan. If input and output are separate Windows devices, use a pair from the
-   same host API:
+The launcher never overwrites an existing local configuration. Advanced users
+may pass `-Sclang "C:\path\to\sclang.exe"` or set `SC_LANG` if automatic
+discovery should not choose the newest Program Files installation. Each launch
+uses its own free local audio-server port, so it neither attaches to an IDE
+server nor waits on a stale process at SuperCollider's conventional port 57110.
 
-   ```supercollider
-   device: ["Windows WASAPI : Microphone (...)", "Windows WASAPI : Speakers (...)"]
-   ```
+## First loop without code
 
-   Audio-page edits are stored in the ignored sibling `config.audio.scd`; the
-   hand-maintained `config.scd` is never rewritten. Apply first explains that
-   audio, unrelated synths on `Server.default`, and the unsaved Yönpuoli patch
-   will reset. An active recorder blocks the restart. On a later ordinary
-   startup, `CQ.reboot`, or the Audio page's clean restart, an absent saved
-   device or an unhealthy actual sample rate triggers at most one automatic
-   retry with `config.scd`. A valid saved route remains the preference while
-   the base route runs only for that session; reconnecting the device and using
-   **find preferred device** retries it without reconstructing the setup. Only
-   a malformed generated profile is replaced after the base route reaches full
-   ready, with the rejected file retained as `config.audio.scd.bak`. If a fresh
-   scan finds neither configured route, the operation stops before launching
-   the audio server instead of silently accepting the driver's default device.
+1. Tap either bird at the top of Night and choose an audio file.
+2. Raise Master **dry** to preview it.
+3. Tap the small heart in the matching Coco spiral so it is open, and let the
+   sample write into memory.
+4. Tap the heart again to seal Hold, lower **dry**, then play the loop with the
+   spiral and its Input, Feedback and Level gestures.
 
-   To use headphones or an interface connected while Yönpuoli is open, go to
-   **Drawer → audio → find connected devices**, then confirm the announced
-   audio restart. `CQ.reboot` is the code equivalent. `CQ.free` deliberately
-   leaves `Server.default` running, so `CQ.free; CQ.boot` alone cannot safely
-   renew the device list; after that sequence use the same Audio-page action.
+Start at a low volume; `Space` is always PANIC. The compact
+[`Quick Reference`](docs/QUICK_REFERENCE.md) explains the rest of Night, the
+Drawer pages and alternate self-running voices.
 
-3. In the SuperCollider IDE, open **Edit → Preferences → Interpreter → Include
-   paths** and add `<repo>/classes`. Recompile the class library with
-   **Ctrl+Shift+L**. `CQSpec.specs.size` should return `76`. Developers running the
-   unit suite also add `<repo>/tests/classes`.
+## Audio setup and local configuration
 
-4. Put a few `.wav`, `.aiff`, or `.flac` files in the ignored `samples/`
-   directory. Field recordings and modular material work especially well.
+`config.scd` is ignored by Git and holds machine-specific audio, MIDI, and path
+settings. Device discovery is captured only while the local audio server is
+stopped; on Windows Yönpuoli uses a bounded fresh helper interpreter so a newly
+connected endpoint or installed driver is not hidden by an old PortAudio list.
+Normal startup uses one pass. A player-requested scan uses three fresh passes
+750 ms apart so a newly inserted wired jack has time to appear.
+The Audio page keeps WASAPI/ASIO choices concise, while **show all drivers**
+reveals cached MME, DirectSound and WDM-KS alternatives. If input and output are
+separate Windows devices, use a pair from the same host API:
 
-5. Evaluate `boot.scd`, or run `CQ.boot`. Boot is deliberately silent while the
-   graph is verified, followed by a two-second fade-in.
+```supercollider
+device: ["Windows WASAPI : Microphone (...)", "Windows WASAPI : Speakers (...)"]
+```
+
+Mixed host pairs such as ASIO input with WASAPI output cannot form one PortAudio
+stream, so Yönpuoli marks them invalid before restart or persistence.
+
+Audio-page edits are stored in the ignored sibling `config.audio.scd`; the
+hand-maintained `config.scd` is never rewritten. Apply first explains that
+audio, unrelated synths on `Server.default`, and the unsaved Yönpuoli patch will
+reset. An active recorder blocks the restart. On a later startup or clean Audio
+restart, an absent saved device or unhealthy actual sample rate triggers at most
+one automatic retry with `config.scd`. A valid saved route remains the preference
+while the base route runs only for that session. Startup still opens the Night
+instrument with the Drawer closed; a temporary route is announced in Master's
+`TEMPORARY AUDIO · drawer → audio` notice instead of taking over the screen.
+
+To use headphones or an interface connected while Yönpuoli is open, go to
+**Drawer → audio → find connected devices**, confirm the announced scan/restart,
+and wait for the replacement page to say **device scan complete · choose route
+above**. Then choose the route and use the highlighted restart action. For a
+laptop microphone plus wired headphones, choose **split devices**, keep both on
+the same host API, and select the exact `Windows WASAPI` microphone and headphone
+entries. Reconnecting a saved route exposes **find preferred device**. While a
+saved route is absent, Audio offers two deliberate choices: **retry preferred
+audio** preserves and retries
+it, while **keep current audio → keep & restart** makes the working temporary
+route the new preference. If a fresh scan finds neither configured route,
+startup stops instead of silently accepting an unknown default device.
+`CQ.reboot` is the code equivalent of the confirmed fresh restart. `CQ.free`
+deliberately leaves `Server.default` running, so `CQ.free; CQ.boot` alone does
+not renew the device list; use the Audio-page action afterward. Only a malformed
+generated profile is repaired after the base route reaches ready, with its
+rejected data retained as `config.audio.scd.bak`.
+
+## Developer / IDE start
+
+1. Copy `config.example.scd` to `config.scd` if the launcher has not already
+   created it.
+2. In the SuperCollider IDE, add `<repo>/classes` under **Edit → Preferences →
+   Interpreter → Include paths**, then recompile with **Ctrl+Shift+L**.
+   `CQSpec.specs.size` should return `76`. Unit-suite development also adds
+   `<repo>/tests/classes`.
+3. Evaluate `boot.scd`, or run `CQ.boot`. Boot stays silent until the graph is
+   verified, followed by a two-second fade-in.
 
 ## Five-minute start
 
 Once Yönpuoli is open, begin a no-code first session with the compact
-[`Quick Reference`](docs/QUICK_REFERENCE.md). It gives one self-running route
-and one sample-to-loop route before explaining the Night's bodies and gestures.
+[`Quick Reference`](docs/QUICK_REFERENCE.md). It teaches the sample-to-Coco loop
+first, then presents Organ and other self-running voices as alternate layers.
 
 ```supercollider
 CQ.boot;

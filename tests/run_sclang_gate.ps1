@@ -17,6 +17,23 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+function Stop-GatedProcessTree {
+    param([System.Diagnostics.Process]$OwnedProcess)
+
+    if ($null -eq $OwnedProcess -or $OwnedProcess.HasExited) { return }
+    $taskkill = Join-Path $env:SystemRoot "System32\taskkill.exe"
+    try {
+        & $taskkill /PID $OwnedProcess.Id /T /F 2>$null | Out-Null
+        $OwnedProcess.WaitForExit()
+    } catch {
+        if (-not $OwnedProcess.HasExited) {
+            $OwnedProcess.Kill()
+            $OwnedProcess.WaitForExit()
+        }
+    }
+}
+
 if ([string]::IsNullOrWhiteSpace($Sclang)) {
     $Sclang = & (Join-Path $PSScriptRoot 'resolve_sclang.ps1')
 }
@@ -59,6 +76,7 @@ $requiredMarker = switch -Wildcard ($leaf) {
     "gui_night_phase_layer_smoke.scd" { "CQ_GUI_PHASE_LAYER_PASSED"; break }
     "gui_night_capture.scd" { "CQ_NIGHT_CAPTURE_DONE"; break }
     "gui_release_capture.scd" { "CQ_RELEASE_CAPTURE_DONE"; break }
+    "launcher_app_smoke.scd" { "CQ_YONPUOLI_APP_SCRIPT_OK"; break }
     default { $null }
 }
 $logDir = Join-Path $PSScriptRoot "tmp\gate-logs"
@@ -121,8 +139,7 @@ $stdout = $process.StandardOutput.ReadToEndAsync()
 $stderr = $process.StandardError.ReadToEndAsync()
 
 if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
-    $process.Kill()
-    $process.WaitForExit()
+    Stop-GatedProcessTree $process
     $combined = $stdout.Result + $stderr.Result
     [System.IO.File]::WriteAllText($logPath, $combined)
     [Console]::Out.Write($stdout.Result)

@@ -1,6 +1,6 @@
 # Yönpuoli — release roadmap
 
-Updated 2026-08-08. This is the concise public status and release order. The
+Updated 2026-08-09. This is the concise public status and release order. The
 complete Nocturne design and acceptance journal is preserved in
 [`docs/history/PLAN_nocturne.md`](docs/history/PLAN_nocturne.md); it is evidence,
 not a current to-do list.
@@ -8,15 +8,19 @@ not a current to-do list.
 ## Current status
 
 Yönpuoli is a Windows-tested SuperCollider feedback instrument in release-candidate
-state. The sound engine, Night performance surface, Master and Drawer, 16×32
-routing matrix, Audio I/O recovery, optional 16n map, release presets and release
-snapshots are implemented. Automated compile, unit, NRT safety/hold and GUI gates
-are maintained in the repository. Audible, visual and hardware claims remain
-human acceptance decisions rather than conclusions inferred from automation.
+state. The sound engine, Night performance surface, Master and five-page Drawer,
+16×32 routing matrix, Audio I/O recovery, optional 16n map, release presets and
+release snapshots are implemented. The candidate also has an installed-runtime
+Windows launcher and a concise sample-loop-first README path. Automated compile, unit, NRT
+safety/hold and GUI gates are maintained in the repository. Audible, visual and
+hardware claims remain human acceptance decisions rather than conclusions
+inferred from automation.
 
 The user accepted the Nocturne interaction and sound passes, SlotX/Dust, the
-current 16n feature set, curated release content, connected-device recovery and
-the persistent Audio restart guidance by 2026-08-08.
+current 16n feature set, curated release content, persistent Audio restart
+guidance and release screenshots by 2026-08-08. The installed-runtime launcher,
+private audio server, Night-first startup, replacement GUI after Audio restart
+and settled wired-headphone discovery were accepted on 2026-08-09.
 
 ## Public-release gate
 
@@ -27,12 +31,15 @@ the persistent Audio restart guidance by 2026-08-08.
 - [x] Six authored release presets and five deliberate release snapshots.
 - [x] Fresh-interpreter Audio device discovery and preferred-route fallback.
 - [x] Stable pending-action guidance for Audio changes and device scans.
-- [ ] Human-approve the current Night hero plus Inspector and Workshop Drawer
-      screenshots from the exact candidate UI.
-- [ ] Add and verify a one-click Windows launcher for an installed SuperCollider
-      runtime; keep a readable failure console and the developer launch path.
-- [ ] Human-approve the compact first-sound/reference path. Preserve Night as the
-      label-light instrument instead of covering it with a permanent help layer.
+- [x] Human-approved Night hero plus Inspector and Workshop Drawer screenshots
+      from the exact candidate UI.
+- [x] Human-verify the implemented `YONPUOLI.bat` installed-runtime launch,
+      private-server isolation, Night-first startup, replacement GUI after an
+      Audio restart and settled wired-headphone discovery; automated
+      resolver/config/script gates pass.
+- [ ] Final human check that **keep current audio** survives a relaunch and that
+      closing the replacement window also closes the diagnostic console without
+      leaving an owned `sclang` or `scsynth` process.
 - [ ] Remote CI green on the exact release candidate.
 - [ ] Merge `nocturne` into the default `main` branch.
 - [ ] Tag and publish `yonpuoli-1.0.0` with release notes and media links.

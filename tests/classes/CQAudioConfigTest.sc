@@ -70,6 +70,23 @@ CQAudioConfigTest : UnitTest {
 			"a split side may intentionally use the system default");
 	}
 
+	test_splitDevicesCannotCrossPortAudioHostApis {
+		this.assertEquals(
+			CQAudioConfig.deviceHostApi("Windows WASAPI : Headphones"),
+			"Windows WASAPI",
+			"only the complete host-API prefix is identified");
+		this.assert(CQAudioConfig.splitDevicePairValid([
+			"Windows WASAPI : Microphone", "Windows WASAPI : Headphones"
+		]), "a directional pair inside one host API remains valid");
+		this.assertException({
+			CQAudioConfig.merge((), (device: [
+				"ASIO : Realtek ASIO",
+				"Windows WASAPI : Headphones"
+			]))
+		}, Error,
+			"ASIO input plus WASAPI output is rejected before it can be saved");
+	}
+
 	test_deviceCatalogOnlyRemovesExactDuplicates {
 		var inputs = [
 			"WASAPI : Lake", "WASAPI : Lake", "ASIO : Fjord",
@@ -205,7 +222,7 @@ CQAudioConfigTest : UnitTest {
 			var score = CQGuiAudioSetup.layoutFor(step);
 			var used = (2 * m[\vMargin]) + score[\hostHeight]
 				+ score[\ioHeight] + score[\restartHeight]
-				+ (2 * m[\bandGap]);
+				+ (2 * m[\rowGap]);
 			this.assert(used <= height,
 				"% Audio composition fits without scrolling (% <= %)"
 					.format(step, used, height));

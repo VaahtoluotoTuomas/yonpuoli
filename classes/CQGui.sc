@@ -457,6 +457,7 @@ CQGui {
 		};
 		window.onClose = { shellState.close; this.prCleanup };
 		window.view.children.do { |ch| this.prDefocus(ch) };
+		this.prUpdateNotice;
 		window.front;
 		if(Cocoquantus.consumeAudioReopen) {
 			shell.selectDrawer(\audio);
@@ -959,6 +960,9 @@ CQGui {
 			} {
 				"OUTPUT HOT (> 5 s)"
 			});
+		};
+		if(Cocoquantus.audioFallbackActive) {
+			parts = parts.add("TEMPORARY AUDIO · drawer → audio")
 		};
 		noticeView !? { noticeView.string = parts.join(" · ") };
 	}

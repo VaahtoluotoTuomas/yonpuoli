@@ -161,6 +161,26 @@ CQAudioReconfigureTest : UnitTest {
 			"save retry adds no server restart");
 	}
 
+	test_cleanFallbackCanExplicitlyReplaceTheOldPreference {
+		var f = this.prFixture;
+		f[\files][profilePath] = (device: "ASIO : absent").asCompileString;
+		f[\model].profilePresent = true;
+		this.assert(f[\transaction].start.not,
+			"an ordinary clean page still refuses an accidental profile rewrite");
+		this.assert(f[\transaction].start(true),
+			"the explicit keep-current path may transact the clean active route");
+		this.assertEquals(f[\attempts].size, 1,
+			"keeping current audio proves it through one controlled restart");
+		f[\callbacks][0][\ready].value;
+		this.assertEquals(f[\transaction].state, \ready,
+			"the ready current route becomes the saved preference");
+		this.assertEquals(f[\files][profilePath].interpret[\device],
+			CQAudioConfig.defaultMarker,
+			"the old absent device is replaced by the exact active route");
+		this.assert(f[\model].dirty.not and: { f[\model].profilePresent },
+			"the adopted route is clean generated-profile truth");
+	}
+
 	test_guardsAreInertBeforePendingOrRestart {
 		var f = this.prFixture;
 		f[\model].setDraft(\sampleRate, 96000);

@@ -9,7 +9,29 @@ Use a low monitoring level. Recompile the class library after changing
 `classes/*.sc`, then start from a clean interpreter unless the step explicitly
 tests recovery.
 
-## 1. First launch, silence and panic
+## 1. Windows one-click launch
+
+Use a clean unpacked copy, or back up any existing local `config.scd` before
+testing first-run creation. Do not start SuperCollider or run `CQ.boot` first.
+
+- [ ] Double-click `YONPUOLI.bat`; no IDE preference, code evaluation or manual
+      class-path setup is required.
+- [ ] On a genuinely fresh copy, `config.scd` and the runtime folders are
+      prepared without replacing an existing local config.
+- [ ] The diagnostic console stays open while the instrument is running and the
+      names distinct private language/audio ports while the application reaches
+      the Night window with the Drawer closed. Initial
+      profile fallback/repair must not open the Drawer or redirect to Audio.
+- [ ] A responsive SuperCollider IDE server on port 57110 does not get adopted,
+      stopped or waited on by the one-click application.
+- [ ] A confirmed Drawer → Audio restart closes the old GUI, opens its
+      replacement and leaves the standalone application alive.
+- [ ] Closing the replacement GUI frees audio and closes the diagnostic console
+      without leaving `sclang` or `scsynth` running.
+- [ ] An intentionally invalid `-Sclang` path produces a readable, paused error
+      instead of a flashing or silent console.
+
+## 2. First sound, silence and panic
 
 ```supercollider
 // Start with mic gain at zero and a stereo route you can hear safely.
@@ -27,7 +49,7 @@ CQ.resume;
 - [ ] Blank/rest level is safe and PANIC is immediate.
 - [ ] Resume returns the same session without duplicate nodes or GUI.
 
-## 2. Release presets
+## 3. Release presets
 
 Use the same modest master level for all six. `classic` benefits from a loaded
 deck or live input; the others can speak from their own sources.
@@ -46,7 +68,7 @@ CQ.patchPreset(\dustGarden);
 - [ ] `empty` clears usefully and `mayhem` remains a stress field, not a promoted
       artistic starting point.
 
-## 3. Release snapshots and morphs
+## 4. Release snapshots and morphs
 
 ```supercollider
 CQ.recall(\undertow);
@@ -62,8 +84,13 @@ CQ.morph(\dust_bloom, \organ_lanterns, 12);
 - [ ] The two morph pairs remain responsive and musically distinct.
 - [ ] Recalled mic gain stays zero and PANIC remains reachable during morph.
 
-## 4. Night and Drawer interaction
+## 5. Night and Drawer interaction
 
+- [ ] Follow the README path without code: load one bird, preview it if needed,
+      write a phrase into the matching Coco, seal Hold, lower dry and play the
+      memory.
+- [ ] Organ, Quantussy drones and self-noise read as optional voices after the
+      loop path, not as an equal or preceding first lesson.
 - [ ] Plant, lift, move, attenuate, invert and remove a cable without a stuck
       audition or gesture.
 - [ ] Play both Coco Levels, Organ, SlotQ, SlotX and Dust/Grain bodies from Night.
@@ -73,28 +100,45 @@ CQ.morph(\dust_bloom, \organ_lanterns, 12);
       release bank.
 - [ ] Compact and roomy layouts contain all controls and remain responsive.
 
-## 5. Audio-device recovery
+## 6. Audio-device recovery
 
 ```supercollider
 // With a clean Audio draft, connect headphones or an interface while Yönpuoli
 // is open. Drawer -> audio -> find connected devices.
 // First click: only the static impact confirmation appears.
-// Confirm scan & restart, choose the exact route, then apply & restart audio.
+// Confirm scan & restart and wait for the rebuilt Audio page to report scan
+// completion. Choose the exact route, then apply & restart audio.
 Cocoquantus.audioClockState;       // -> \ok
 Cocoquantus.audioFallbackActive;   // -> false on the preferred route
 Cocoquantus.preferredAudioConfig;  // -> exact chosen route
 ```
 
 - [ ] `find connected devices` becomes `confirmation below ↓` before stopping.
+- [ ] The replacement page reports `device scan complete · choose route above`
+      and fresh input/output counts after the settled three-pass Windows scan.
+- [ ] Between the old server's exit and the replacement boot, the launcher
+      console prints a new `Yönpuoli: cached … from a stopped-server discovery.`
+      line.
 - [ ] Pending changes show the host cue, highlighted restart gate and filled CTA.
-- [ ] The connected route appears without rebooting the main interpreter.
+- [ ] Every host control aligns with its own painted row: device mode, device or
+      split input/output, sample rate, server block and hardware buffer.
+- [ ] A mixed recognized split pair such as ASIO input plus WASAPI output is
+      invalid and cannot be applied or saved.
+- [ ] A newly connected wired `Windows WASAPI : Headphones (...)` endpoint
+      appears in the output list without rebooting the main interpreter. In
+      split mode it can be paired only with a WASAPI input.
 - [ ] Success, cancel and discard retract all pending emphasis.
 - [ ] Removing the preferred device uses an explicit temporary base fallback
-      without overwriting the preference.
+      without overwriting the preference. Startup remains on Night and Master
+      reads `TEMPORARY AUDIO · drawer → audio`.
 - [ ] Reconnecting and `find preferred device` restores it in one confirmed
       restart; Night moves and the clock returns to `\ok`.
+- [ ] With the preference still absent, `keep current audio` first shows
+      `keep & restart`; confirmation makes the working route preferred. Close
+      and relaunch through `YONPUOLI.bat`: the old fallback warning does not
+      repeat and the application still opens on Night.
 
-## 6. Recording and optional hardware
+## 7. Recording and optional hardware
 
 ```supercollider
 CQ.rec;
@@ -109,14 +153,15 @@ CQ.recStop;
 - [ ] If testing a 16n, all 16 faders follow `docs/16N_MAP.md`; unplug/replug plus
       `CQ.midiRescan` restores control without affecting GUI-only use.
 
-## 7. Release media and sign-off
+## 8. Release media and sign-off
 
 - [ ] Night, Inspector and Workshop screenshots are generated from the exact
       release-candidate UI and visually match it.
 - [ ] Night reads clearly as the README hero; the collapsed Drawer gallery adds
       useful precision without overwhelming the introduction.
-- [ ] The compact reference gets a new user to both `organMode` and a captured
-      sample loop without code or a hidden prerequisite.
+- [ ] The README and compact reference get a new user to a captured sample loop
+      without code or a hidden prerequisite; `organMode` remains an optional
+      secondary route.
 - [ ] README and release notes make clear that performance video and audio
       excerpts are planned after 1.0, not included or required now.
 - [ ] README, CASE_STUDY, CHANGELOG and release notes describe the same version,

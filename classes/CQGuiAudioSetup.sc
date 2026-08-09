@@ -26,9 +26,11 @@ CQGuiAudioSetup {
 	var <recorderCtl;
 	var <step = \compact, <metrics, <pageWidth = 1272, <skin = \night;
 	var ioBand, railLayout, topPad, hostGap, restartGap, bottomPad;
-	var hostFirstSpacer, hostTitleSpacer, deviceButtonGap, refreshRightSpacer;
+	var hostFirstSpacer, hostTitleSpacer, deviceListMenuSpacer;
+	var deviceButtonGap, refreshRightSpacer;
 	var inputTitleSpacer, outputTitleSpacer, restartButtonSpacer;
 	var <confirming = false, <discoveryRequested = false;
+	var <adoptCurrentRequested = false;
 	var <hostActionHint, <hostActionHintFamily = \whisper;
 	var <restartEmphasis;
 	var <localStatus, <localError;
@@ -46,7 +48,7 @@ CQGuiAudioSetup {
 	*layoutFor { |step = \compact|
 		var m = CQGuiScale.metrics(step);
 		^(
-			hostHeight: m[\titleHeight] + (7 * m[\rowHeight]),
+			hostHeight: m[\titleHeight] + (8 * m[\rowHeight]),
 			ioHeight: m[\titleHeight] + (6 * m[\rowHeight]),
 			restartHeight: m[\titleHeight] + (2 * m[\rowHeight])
 				+ m[\rowGap] + m[\boxHeight] + (2 * m[\contentInset])
@@ -155,6 +157,7 @@ CQGuiAudioSetup {
 		};
 		if(this.prCanApply.not) { ^false };
 		discoveryRequested = false;
+		adoptCurrentRequested = false;
 		confirming = true;
 		localStatus = nil;
 		localError = nil;
@@ -177,6 +180,18 @@ CQGuiAudioSetup {
 		};
 		if(this.prCanDiscover.not) { ^false };
 		discoveryRequested = true;
+		adoptCurrentRequested = false;
+		confirming = true;
+		localStatus = nil;
+		localError = nil;
+		this.prSyncDraft;
+		^true
+	}
+
+	requestAdoptCurrent {
+		if(this.prCanAdoptCurrent.not) { ^false };
+		discoveryRequested = false;
+		adoptCurrentRequested = true;
 		confirming = true;
 		localStatus = nil;
 		localError = nil;
@@ -187,6 +202,7 @@ CQGuiAudioSetup {
 	cancelConfirmation {
 		confirming = false;
 		discoveryRequested = false;
+		adoptCurrentRequested = false;
 		localStatus = nil;
 		localError = nil;
 		this.prSyncDraft;
@@ -194,22 +210,29 @@ CQGuiAudioSetup {
 	}
 
 	confirmRestart {
-		var accepted, discovering;
+		var accepted, discovering, adopting;
 		if(confirming.not) { ^false };
 		discovering = discoveryRequested;
+		adopting = adoptCurrentRequested;
 		confirming = false;
 		discoveryRequested = false;
+		adoptCurrentRequested = false;
 		localStatus = \restarting;
 		localError = nil;
-		// A dirty draft crosses into the transactional profile flow. A clean
-		// page instead restarts the exact active config without writing a file.
+		// A dirty draft and the explicit keep-current fallback exit cross the
+		// transactional profile flow. An ordinary clean page restarts the exact
+		// active config without writing a file.
 		accepted = if(discovering) {
 			transactionController[\discover].value == true
 		} {
-			if(model.dirty) {
-				transactionController[\apply].value(model) == true
+			if(adopting) {
+				transactionController[\adopt].value(model) == true
 			} {
-				transactionController[\restart].value == true
+				if(model.dirty) {
+					transactionController[\apply].value(model) == true
+				} {
+					transactionController[\restart].value == true
+				}
 			}
 		};
 		if(accepted.not) {
@@ -436,9 +459,13 @@ CQGuiAudioSetup {
 			validation = if(discoveryRequested) {
 				"audio stops · fresh device scan · preferred route retried"
 			} {
-				"audio stops · current unsaved patch resets · Server.default restarts"
+				if(adoptCurrentRequested) {
+					"audio stops · current route becomes preferred"
+				} {
+					"audio stops · current unsaved patch resets · Server.default restarts"
+				}
 			};
-			provenance = if(discoveryRequested) {
+			provenance = if(discoveryRequested or: { adoptCurrentRequested }) {
 				"current patch and unrelated Server.default synths also stop"
 			} {
 				"unrelated synths on Server.default also stop"
@@ -512,6 +539,12 @@ CQGuiAudioSetup {
 			validation = "changes waiting · restart required";
 			family = \warning;
 		}
+		{ status == \ready and: { this.prDiscoveryComplete } } {
+			validation = "device scan complete · choose route above";
+			provenance = "% inputs / % outputs in the fresh list".format(
+				inputDeviceSnapshot.size, outputDeviceSnapshot.size);
+			family = \input;
+		}
 		{ status == \ready } {
 			validation = "audio ready";
 			family = \input;
@@ -577,8 +610,8 @@ CQGuiAudioSetup {
 			metrics[\titleHeight] + (2 * metrics[\rowHeight])
 				+ metrics[\rowGap];
 		topPad.fixedHeight = metrics[\vMargin];
-		hostGap.fixedHeight = metrics[\bandGap];
-		restartGap.fixedHeight = metrics[\bandGap];
+		hostGap.fixedHeight = metrics[\rowGap];
+		restartGap.fixedHeight = metrics[\rowGap];
 		bottomPad.fixedHeight = metrics[\vMargin];
 		this.prScaleButtons;
 		this.prScaleMenus(railW, columns);
@@ -616,10 +649,17 @@ CQGuiAudioSetup {
 				responsive: { Cocoquantus.serverResponsive },
 				clockDanger: { Cocoquantus.audioClockDanger },
 				clockRate: { Cocoquantus.audioClockRate },
+				discoveryComplete: {
+					var result = Cocoquantus.audioReconfigureResult;
+					result.notNil and: { result[\deviceDiscovery] == true }
+				},
 				fallbackActive: { Cocoquantus.audioFallbackActive },
 				preferred: { Cocoquantus.preferredAudioConfig },
 				apply: { |audioModel|
 					Cocoquantus.reconfigureAudio(audioModel)
+				},
+				adopt: { |audioModel|
+					Cocoquantus.keepCurrentAudio(audioModel)
 				},
 				restart: { Cocoquantus.restartCurrentAudio },
 				discover: { Cocoquantus.refreshAudioDevices },
@@ -733,8 +773,8 @@ CQGuiAudioSetup {
 				.margins_(0).spacing_(metrics[\rowGap])
 		).margins_(metrics[\contentInset]).spacing_(0);
 
-		hostGap = View().fixedHeight_(metrics[\bandGap]);
-		restartGap = View().fixedHeight_(metrics[\bandGap]);
+		hostGap = View().fixedHeight_(metrics[\rowGap]);
+		restartGap = View().fixedHeight_(metrics[\rowGap]);
 		bottomPad = View().fixedHeight_(metrics[\vMargin]);
 		railLayout = VLayout(hostView, hostGap, ioBand, restartGap,
 			restartView, bottomPad).margins_(0).spacing_(0);
@@ -795,6 +835,7 @@ CQGuiAudioSetup {
 		var primarySlot = View(), outputSlot = View(), blank = View();
 		hostFirstSpacer = View().fixedHeight_(
 			metrics[\titleHeight] + metrics[\rowHeight]);
+		deviceListMenuSpacer = View().fixedHeight_(metrics[\rowHeight]);
 		hostTitleSpacer = View().fixedHeight_(metrics[\titleHeight]);
 		deviceButtonGap = View().fixedWidth_(metrics[\rowGap]);
 		refreshRightSpacer = View().fixedWidth_(metrics[\contentInset]);
@@ -818,7 +859,7 @@ CQGuiAudioSetup {
 			this.prMenuRow(hardwareBufferMenu.view)
 		];
 		hostView.layout = VLayout(
-			*([hostFirstSpacer] ++ hostMenuRows)
+			*([hostFirstSpacer, deviceListMenuSpacer] ++ hostMenuRows)
 		).margins_(0).spacing_(0);
 		^this
 	}
@@ -1126,10 +1167,14 @@ CQGuiAudioSetup {
 		if(confirming) {
 			this.cancelConfirmation
 		} {
-			model.discard;
-			localStatus = \idle;
-			localError = nil;
-			this.prSyncDraft;
+			if(model.dirty.not and: { this.prFallbackActive }) {
+				this.requestAdoptCurrent
+			} {
+				model.discard;
+				localStatus = \idle;
+				localError = nil;
+				this.prSyncDraft;
+			}
 		};
 		^this
 	}
@@ -1169,6 +1214,11 @@ CQGuiAudioSetup {
 		^provider !? { provider.value }
 	}
 
+	prDiscoveryComplete {
+		var provider = transactionController[\discoveryComplete];
+		^provider.notNil and: { provider.value == true }
+	}
+
 	prCanApply {
 		var device = model.draftAt(\device);
 		var reported = this.prDeviceReported(device,
@@ -1186,6 +1236,19 @@ CQGuiAudioSetup {
 	prCanDiscover {
 		^transactionController[\discover].notNil
 			and: { model.dirty.not }
+			and: { transactionController[\lifecycle].value == \running }
+			and: { this.prRecorderBusy.not }
+			and: {
+				#[preparing, restarting, rollback].includes(
+					this.transactionStatus).not
+			}
+	}
+
+	prCanAdoptCurrent {
+		^transactionController[\adopt].notNil
+			and: { this.prFallbackActive }
+			and: { model.dirty.not }
+			and: { model.valid }
 			and: { transactionController[\lifecycle].value == \running }
 			and: { this.prRecorderBusy.not }
 			and: {
@@ -1263,13 +1326,17 @@ CQGuiAudioSetup {
 				applyButton.label = if(discoveryRequested) {
 					"scan & restart"
 				} {
-					if(model.dirty) {
-						"apply & restart audio"
+					if(adoptCurrentRequested) {
+						"keep & restart"
 					} {
-						if(this.prFallbackActive) {
-							"retry preferred audio"
+						if(model.dirty) {
+							"apply & restart audio"
 						} {
-							"restart audio"
+							if(this.prFallbackActive) {
+								"retry preferred audio"
+							} {
+								"restart audio"
+							}
 						}
 					}
 				};
@@ -1278,9 +1345,15 @@ CQGuiAudioSetup {
 				discardButton.label = if(model.dirty) {
 					"discard changes"
 				} {
-					"no changes"
+					if(this.prFallbackActive) {
+						"keep current audio"
+					} {
+						"no changes"
+					}
 				};
-				discardButton.enabled = model.dirty;
+				discardButton.enabled = model.dirty or: {
+					this.prCanAdoptCurrent
+				};
 				if(this.transactionStatus == \notSaved) {
 					applyButton.label = "retry save";
 					applyButton.enabled = true;
@@ -1326,6 +1399,7 @@ CQGuiAudioSetup {
 		if(hostMenuRows.isNil) { ^this };
 		hostFirstSpacer.fixedHeight =
 			metrics[\titleHeight] + metrics[\rowHeight];
+		deviceListMenuSpacer.fixedHeight = metrics[\rowHeight];
 		hostTitleSpacer.fixedHeight = metrics[\titleHeight];
 		deviceButtonGap.fixedWidth = metrics[\rowGap];
 		refreshRightSpacer.fixedWidth = metrics[\contentInset];

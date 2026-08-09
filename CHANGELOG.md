@@ -10,29 +10,59 @@ tagged. Earlier tags describe internal development baselines.
 
 ### Added
 
+- Added a double-click Windows application path. `YONPUOLI.bat` discovers an
+  installed SuperCollider, creates an isolated temporary class configuration,
+  prepares the local config and runtime folders on first launch, and owns the
+  interpreter/audio-server lifetime until the window closes. Confirmed Audio
+  restarts replace the GUI without accidentally terminating the application;
+  startup failures remain visible in the diagnostic console.
+
 - Added release-candidate captures of the complete Inspector and Workshop to the
   README's collapsed Drawer gallery, beside the existing Night hero. A bounded
   serverless capture gate reproduces both selected Drawer images; intermediate
   pages and local captures remain outside Git.
 
-- Added a compact no-code quick reference with one self-running preset route,
-  one sample-to-loop route, the Night's body/banana grammar, Drawer roles,
+- Added a compact no-code quick reference with the sample-to-loop route first,
+  a secondary self-running preset route, the Night's body/banana grammar, Drawer roles,
   global keys and first-line audio troubleshooting. Initial 1.0 release media is
   now intentionally limited to current UI screenshots; audio and video remain
   honest post-release additions rather than placeholder-driven blockers.
 
 ### Fixed
 
+- The Windows launcher now gives each standalone run a private free audio-server
+  port instead of attaching to an IDE server or an orphaned process on port
+  57110. `sclang` also shares the diagnostic console rather than becoming a
+  detached child, so a failed or manually closed launch is much less likely to
+  leave an invisible language/server pair blocking the next start.
+
+- One-click startup now always presents the Night instrument instead of letting
+  startup Audio recovery open the Drawer. A temporary route remains visible in
+  Master's `TEMPORARY AUDIO · drawer → audio` notice; only a restart explicitly
+  initiated on Audio reopens that page. Audio's host controls now share the same
+  eight-row geometry as their painted labels, preventing device selections from
+  landing one row high. Recognized split input/output devices must use one host
+  API, so an accidental ASIO/WASAPI pair is rejected and recovered as malformed
+  rather than becoming a repeating launch preference. A confirmed
+  **keep current audio** action can deliberately make a working fallback persistent.
+
 - Windows audio hot-plug no longer depends on the long-lived IDE interpreter's
   stale PortAudio list. Confirmed strong restarts now enumerate devices in a
   bounded fresh helper `sclang` only after scsynth has stopped; its user startup
   is suppressed, its class path isolated and its private temp result validated
-  and removed. Audio exposes `find connected devices` / `find preferred device`
-  with the same explicit restart impact gate. A valid headphones/interface
+  and removed. Player-triggered discovery now takes three separated fresh
+  passes so a wired jack published during the first enumeration reaches the
+  final list; ordinary startup remains one pass. The rebuilt Audio page names
+  `device scan complete · choose route above` and reports its fresh directional
+  counts. Audio exposes `find connected devices` / `find preferred device` with
+  the same explicit restart impact gate. A valid headphones/interface
   profile is no longer overwritten when that device is briefly absent: the base
   route is labeled temporary and every later strong restart retries the saved
   preference. Only malformed generated profiles retain the old ready-then-repair
-  and `.bak` behavior.
+  and `.bak` behavior. Responsive restarts explicitly wait for the old scsynth
+  process to exit before discovery: SuperCollider's `Server.reboot` server-off
+  callback can precede process exit, which previously made the safety guard skip
+  the fresh scan and left the rebuilt Audio page on its startup-time device list.
 
 - Audio changes can no longer leave their required follow-up visually stranded
   at the opposite corner of the page. A valid pending change, armed device scan,
@@ -177,7 +207,7 @@ tagged. Earlier tags describe internal development baselines.
   while the same server PID kept processing audio and answering three external
   status probes.
 - Moved directional audio-device discovery to a confirmed stopped-server
-  boundary before a fresh boot or inside `Server.reboot`'s server-off callback.
+  boundary before a fresh boot or between an explicit quit and replacement boot.
   The running Audio page now consumes only that memory snapshot and never calls
   `_ListAudioDevices`. Its local recommended/all toggle hides exact legacy
   Windows host prefixes by default while retaining every exact active/draft

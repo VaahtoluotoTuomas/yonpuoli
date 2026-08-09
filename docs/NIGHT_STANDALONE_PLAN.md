@@ -1125,7 +1125,7 @@ Add the following contracts before calling the page complete:
    Keep the current 76 as a diagnostic assertion if useful, but the equality
    to `CQSpec.names` is the future-proof gate.
 2. **Ownership tests**:
-   - all five Drawer tabs appear in the normative order;
+   - all five then-current Drawer tabs appear in the normative order;
    - `\workshop` is accepted, persists across close/reopen and rejects no
      global key behavior;
    - `micGain` occurs in Workshop's interactive manifest and not Day's,
@@ -1193,7 +1193,7 @@ only when:
   cheapness/rejection list at both review sizes;
 - there is exactly one interactive `micGain` GUI path, with warning and
   persistent notice intact;
-- the five-page Drawer lifecycle, focus, queued swap, skin and cleanup laws
+- the then-five-page Drawer lifecycle, focus, queued swap, skin and cleanup laws
   hold;
 - the full automated gate is green and the N8 checklist is accepted by the
   user.

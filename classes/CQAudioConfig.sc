@@ -61,6 +61,27 @@ CQAudioConfig {
 		{ \split }
 	}
 
+	// PortAudio cannot open one stream across two different host APIs. Device
+	// endpoint text remains otherwise opaque: only the complete, conventional
+	// "host API : endpoint" boundary is read, and an unfamiliar name is left
+	// alone rather than guessed. This catches e.g. ASIO input + WASAPI output.
+	*deviceHostApi { |device|
+		var split;
+		if(device.isString.not) { ^nil };
+		split = device.find(" : ");
+		if(split.isNil or: { split <= 0 }) { ^nil };
+		^device.copyRange(0, split - 1)
+	}
+
+	*splitDevicePairValid { |device|
+		var inputHost, outputHost;
+		if(this.deviceMode(device) != \split) { ^true };
+		inputHost = this.deviceHostApi(device[0]);
+		outputHost = this.deviceHostApi(device[1]);
+		if(inputHost.isNil or: { outputHost.isNil }) { ^true };
+		^inputHost == outputHost
+	}
+
 	*deviceReported { |device, devices|
 		var hasExact;
 		devices = devices ? [];
@@ -144,6 +165,12 @@ CQAudioConfig {
 		// accept nil by CQConfig's own contract.
 		validated = CQConfig.validate(raw);
 		resets.do { |key| validated.removeAt(key) };
+		if(this.splitDevicePairValid(validated[\device]).not) {
+			Error("CQAudioConfig: split input/output devices must use the same "
+				++ "host API (got % / %)".format(
+					this.deviceHostApi(validated[\device][0]),
+					this.deviceHostApi(validated[\device][1]))).throw;
+		};
 		^validated
 	}
 

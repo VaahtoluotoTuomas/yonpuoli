@@ -587,7 +587,7 @@ Cocoquantus {
 	// server primitive. A provider is accepted only for hermetic lifecycle tests;
 	// fake servers never hit real discovery. Failure is diagnostic data, not an
 	// audio-boot failure.
-	*prCaptureAudioDeviceCatalog { |targetServer, provider|
+	*prCaptureAudioDeviceCatalog { |targetServer, provider, settled = false|
 		var success = false;
 		if(targetServer.isNil) { ^false };
 		if(targetServer.applicationRunning or: { targetServer.serverRunning }) {
@@ -599,7 +599,11 @@ Cocoquantus {
 		audioDeviceScanCount = audioDeviceScanCount + 1;
 		try {
 			audioDeviceCatalog = if(provider.isNil) {
-				CQAudioDeviceProbe.scan
+				if(settled) {
+					CQAudioDeviceProbe.scanSettled
+				} {
+					CQAudioDeviceProbe.scan
+				}
 			} {
 				CQAudioDeviceCatalog.scan(provider)
 			};
@@ -632,11 +636,19 @@ Cocoquantus {
 		^answer
 	}
 
+	// Only an operation the player explicitly initiated may reopen the rebuilt
+	// GUI on Audio. Initial boot — including a usable temporary fallback — must
+	// still land on Night.
+	*prRequestAudioReopen {
+		audioReopenPending = true;
+		^this
+	}
+
 	// Confirmed Audio I/O restart. The GUI passes only its non-Qt model; all
 	// pending-file, server and rollback ownership remains below the facade.
-	*reconfigureAudio { |model|
+	*reconfigureAudio { |model, allowClean = false|
 		var path = this.configFilePath;
-		var base, store, runner, transaction;
+		var base, store, runner, transaction, accepted;
 		if(model.isNil) {
 			audioReconfigureState = \invalid;
 			audioReconfigureError = "missing Audio configuration model";
@@ -667,7 +679,29 @@ Cocoquantus {
 				}
 			});
 		audioTransaction = transaction;
-		^audioTransaction.start
+		this.prRequestAudioReopen;
+		accepted = audioTransaction.start(allowClean);
+		if(accepted.not) { audioReopenPending = false };
+		^accepted
+	}
+
+	// A valid-but-absent preferred route is preserved automatically. The player
+	// may explicitly replace it with the already-running fallback; this reuses
+	// the ordinary pending/restart/promote transaction so persistence is proven
+	// only after the current route reaches ready again.
+	*keepCurrentAudio { |model|
+		if(audioFallbackActive.not) {
+			audioReconfigureState = \blocked;
+			audioReconfigureError = "current audio is not a temporary fallback";
+			^false
+		};
+		if(model.notNil and: { model.dirty }) {
+			audioReconfigureState = \blocked;
+			audioReconfigureError =
+				"discard Audio changes before keeping the current route";
+			^false
+		};
+		^this.reconfigureAudio(model, true)
 	}
 
 	// A clean Audio page still needs a recovery operation. Normally it restarts
@@ -676,7 +710,7 @@ Cocoquantus {
 	// the stopped-boundary fresh-process scan decides whether the device has
 	// returned. This remains separate from CQAudioReconfigure: there is no new
 	// draft candidate to commit.
-	*restartCurrentAudio {
+	*restartCurrentAudio { |discoverDevices = false|
 		var preparedConfig, base, startupRecovery, startupData;
 		var path = this.configFilePath;
 		if(lifecycleState != \running) {
@@ -716,27 +750,26 @@ Cocoquantus {
 		audioReconfigureResult = (
 			status: \restarting,
 			error: nil,
-			cleanRestart: true
+			cleanRestart: true,
+			deviceDiscovery: discoverDevices
 		);
+		this.prRequestAudioReopen;
 		this.prRestartAudioConfig(preparedConfig, {
-			if(audioBootRecovery.notNil and: {
+			if(audioBootRecovery.isNil or: {
 				#[fallbackReady, rollbackReady, notSaved].includes(
-					audioBootRecovery.state)
+					audioBootRecovery.state).not
 			}) {
-				// Startup recovery already published its more specific truth.
-				audioReopenPending = true;
-			} {
 				audioReconfigureState = \ready;
 				audioReconfigureError = nil;
 				audioReconfigureResult = (
 					status: \ready,
 					error: nil,
-					cleanRestart: true
+					cleanRestart: true,
+					deviceDiscovery: discoverDevices
 				);
-				// This callback runs before the rebuilt GUI is constructed.
-				audioReopenPending = true;
 			};
 		}, { |failure|
+			audioReopenPending = false;
 			if(audioBootRecovery.isNil or: {
 				audioBootRecovery.state != \failed
 			}) {
@@ -750,13 +783,13 @@ Cocoquantus {
 				("Yönpuoli: Audio restart failed — "
 					++ audioReconfigureError).warn;
 			};
-		}, startupRecovery);
+		}, startupRecovery, discoverDevices);
 		^true
 	}
 
 	// UI wording names discovery, while lifecycle ownership remains exactly the
 	// same confirmed strong restart as the clean Audio path above.
-	*refreshAudioDevices { ^this.restartCurrentAudio }
+	*refreshAudioDevices { ^this.restartCurrentAudio(true) }
 
 	*retryAudioProfileSave {
 		if(audioTransaction.notNil) { ^audioTransaction.retrySave };
@@ -1064,12 +1097,13 @@ Cocoquantus {
 	}
 
 	*prRestartAudioConfig { |preparedConfig, onReady, onFailure,
-		startupRecovery|
+		startupRecovery, settledDiscovery = false|
 		var targetServer = server ?? { Server.default };
 		var path = this.configFilePath;
 		this.free({
 			this.prRebootPrepared(targetServer, path, preparedConfig,
-				onReady, onFailure, nil, nil, startupRecovery)
+				onReady, onFailure, nil, nil, startupRecovery,
+				settledDiscovery)
 		});
 	}
 
@@ -1102,8 +1136,9 @@ Cocoquantus {
 	}
 
 	*prRebootPrepared { |targetServer, path, preparedConfig, onReady, onFailure,
-		deviceProvider, afterReady, startupRecovery|
+		deviceProvider, afterReady, startupRecovery, settledDiscovery = false|
 		var optionGraph, generation, action, fail, bootAfterForcedQuit, handoffBoot;
+		var stoppedQuitPolls = 0, pollStoppedQuit;
 		var forcedQuitPolls = 0, prepareLaunch, launchBoot, pollForcedQuit;
 		var forcedClearance, handoffPolls = 0;
 		path = path ?? { this.repoDir +/+ "config.scd" };
@@ -1172,7 +1207,7 @@ Cocoquantus {
 		ServerBoot.add(action, targetServer);
 		prepareLaunch = {
 			var freshCapture = this.prCaptureAudioDeviceCatalog(
-				targetServer, deviceProvider);
+				targetServer, deviceProvider, settledDiscovery);
 			var accepted = true;
 			startupRecovery !? {
 				preparedConfig = startupRecovery.selectInitial(
@@ -1207,12 +1242,46 @@ Cocoquantus {
 						targetServer.boot(onFailure: {
 							if(sessionGeneration == generation) {
 								fail.value(Error(
-									"server boot after forced quit failed"));
+									"server boot after restart failed"));
 							};
 						});
 					} { |err|
 						if(sessionGeneration == generation) { fail.value(err) };
 					};
+				};
+			};
+		};
+		// Server:quit's completion belongs to ServerStatusWatcher: on Windows it
+		// can run before the old scsynth process has actually exited. Stock
+		// Server:reboot evaluates its server-off callback at that same point. The
+		// device-catalog guard then correctly refuses discovery because
+		// applicationRunning is still true, leaving the Audio page with its old
+		// snapshot even though the replacement scsynth later lists a hot-plugged
+		// endpoint. Wait for both witnesses before scanning or booting.
+		pollStoppedQuit = {
+			if((sessionGeneration != generation) or: {
+				lifecycleState != \booting
+			}) {
+				nil
+			} {
+				if(targetServer.applicationRunning or: {
+					targetServer.serverRunning
+				}) {
+					stoppedQuitPolls = stoppedQuitPolls + 1;
+					// A driver may take a moment to release on Windows; wait up to
+					// ten seconds, while the ordinary healthy exit still proceeds
+					// on the first 50 ms observation.
+					if(stoppedQuitPolls >= 200) {
+						fail.value(Error(
+							"server process did not stop before restart"));
+					} {
+						AppClock.sched(0.05, {
+							pollStoppedQuit.value;
+							nil
+						});
+					};
+				} {
+					launchBoot.value;
 				};
 			};
 		};
@@ -1303,25 +1372,17 @@ Cocoquantus {
 					}, false);
 				};
 			} {
-				if(startupRecovery.notNil) {
-					if(targetServer.applicationRunning or: {
-						targetServer.serverRunning
-					}) {
-						targetServer.quit(launchBoot, {
-							if(sessionGeneration == generation) {
-								fail.value(Error(
-									"server quit before startup recovery failed"));
-							};
-						});
-					} {
-						launchBoot.value;
-					};
-				} {
-					targetServer.reboot({ prepareLaunch.value }, {
+				if(targetServer.applicationRunning or: {
+					targetServer.serverRunning
+				}) {
+					targetServer.quit({ pollStoppedQuit.value }, {
 						if(sessionGeneration == generation) {
-							fail.value(Error("server reboot failed"));
+							fail.value(Error(
+								"server quit before restart failed"));
 						};
 					});
+				} {
+					launchBoot.value;
 				};
 			};
 		} { |err|
@@ -1352,7 +1413,6 @@ Cocoquantus {
 			audioConfigModel !? {
 				audioProfilePresent = audioConfigModel.profilePresent
 			};
-			if(guiPanel.isNil) { audioReopenPending = true };
 		};
 		if(audioReconfigureState == \failed
 			and: { result[\startupFallback] != true }) {

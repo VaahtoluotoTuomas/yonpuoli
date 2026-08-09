@@ -29,10 +29,11 @@ var catalog = (
 	outputs: [longOutput, common, common]
 );
 var page, cachedPage, cachedModel, window, ok = true;
-var applies = 0, cleanRestarts = 0, discoveries = 0;
+var applies = 0, adopts = 0, cleanRestarts = 0, discoveries = 0;
 var retries = 0, cachedReads = 0;
 var restartStatus = \idle, restartError, recorderState = \idle;
 var fallbackActive = false;
+var discoveryComplete = false;
 var recorderNotifier = Object.new;
 var responsive = true;
 var capturedProfile;
@@ -43,10 +44,17 @@ var controller = (
 	status: { restartStatus },
 	error: { restartError },
 	responsive: { responsive },
+	discoveryComplete: { discoveryComplete },
 	fallbackActive: { fallbackActive },
 	preferred: { nil },
 	apply: { |audioModel|
 		applies = applies + 1;
+		capturedProfile = audioModel.draftProfile.copy;
+		restartStatus = \restarting;
+		true
+	},
+	adopt: { |audioModel|
+		adopts = adopts + 1;
 		capturedProfile = audioModel.draftProfile.copy;
 		restartStatus = \restarting;
 		true
@@ -71,6 +79,8 @@ var compactOutput = Cocoquantus.repoDir +/+ "tests" +/+ "tmp"
 	+/+ "audio-setup-compact.png";
 var roomyOutput = Cocoquantus.repoDir +/+ "tests" +/+ "tmp"
 	+/+ "audio-setup-roomy.png";
+var fallbackOutput = Cocoquantus.repoDir +/+ "tests" +/+ "tmp"
+	+/+ "audio-setup-fallback.png";
 var check = { |condition, message|
 	if(condition) { ("ok:   " ++ message).postln } {
 		ok = false;
@@ -161,6 +171,19 @@ render = { |path|
 					and: { hostRows[3][\value] == longInput }
 					and: { hostRows[4][\value] == longOutput },
 					"split input/output device Strings remain exact model data");
+				check.value((page.modeMenu.view.absoluteBounds.top
+					- (page.hostView.absoluteBounds.top
+						+ CQGuiScale.metrics(\compact)[\titleHeight]
+						+ (2 * CQGuiScale.metrics(\compact)[\rowHeight]))).abs <= 1
+					and: { (page.inputDeviceMenu.view.absoluteBounds.top
+						- (page.hostView.absoluteBounds.top
+							+ CQGuiScale.metrics(\compact)[\titleHeight]
+							+ (3 * CQGuiScale.metrics(\compact)[\rowHeight]))).abs <= 1 }
+					and: { (page.outputDeviceMenu.view.absoluteBounds.top
+						- (page.hostView.absoluteBounds.top
+							+ CQGuiScale.metrics(\compact)[\titleHeight]
+							+ (4 * CQGuiScale.metrics(\compact)[\rowHeight]))).abs <= 1 },
+					"device mode/input/output controls align with their own painted rows");
 				// The device list rides its own row (2026-07-31): the engine row
 				// ran under `show all drivers` once the note grew, and AUD-W's
 				// danger text lengthens the engine value further.
@@ -235,6 +258,15 @@ render = { |path|
 					and: { discoveries == 1 }
 					and: { cleanRestarts == 0 },
 					"confirmed discovery uses its dedicated facade action");
+				restartStatus = \ready;
+				discoveryComplete = true;
+				page.refreshTransaction;
+				check.value(page.restartRows[0][\value]
+					== "device scan complete · choose route above"
+					and: { page.restartRows[1][\value].find("outputs in the fresh list").notNil }
+					and: { hasText.value(page.outputDeviceSnapshot, longOutput) },
+					"rebuilt Audio names scan completion and exposes the fresh output list");
+				discoveryComplete = false;
 				restartStatus = \idle;
 				page.refreshTransaction;
 				check.value(page.requestApply
@@ -343,13 +375,25 @@ render = { |path|
 				check.value(page.restartRows[0][\value]
 					== "preferred device unavailable · temporary audio active"
 					and: { page.discoverButton.label == "find preferred device" }
+					and: { page.discardButton.label == "keep current audio" }
+					and: { page.discardButton.enabled }
 					and: { page.applyButton.label == "retry preferred audio" }
 					and: { page.discoverButton.enabled }
 					and: { page.hostActionHint == "preferred route waiting ↓" }
 					and: { page.restartEmphasis == \warning }
 					and: { page.applyButton.family == \warning }
 					and: { page.applyButton.value == 1 },
-					"temporary fallback stays explicit and keeps preference recovery reachable");
+					"temporary fallback offers both preference recovery and an explicit current-route exit");
+				render.value(fallbackOutput);
+				check.value(page.requestAdoptCurrent
+					and: { page.confirming }
+					and: { page.adoptCurrentRequested }
+					and: { page.applyButton.label == "keep & restart" }
+					and: { page.restartRows[0][\value]
+						== "audio stops · current route becomes preferred" },
+					"keeping the fallback first names its persistent restart impact");
+				check.value(page.confirmRestart and: { adopts == 1 },
+					"confirmed keep-current uses the dedicated profile transaction");
 				fallbackActive = false;
 				restartStatus = \idle;
 				restartError = nil;

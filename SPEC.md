@@ -675,7 +675,11 @@ retain an explicit `nil` value, so the generated profile uses the private value
 `\default` under `device`, `hardwareBufferSize`, `micChan` or `stemOuts`; the
 Audio model decodes it to the corresponding real `nil` config truth before the
 candidate reaches `CQGraph`. Device Strings remain exact, escaped data and are
-never parsed from or evaluated as UI text.
+never evaluated as UI text. The sole structural read is the complete
+`host API : endpoint` boundary: when split input/output Strings expose that
+conventional prefix, both must name the same host API. An ASIO/WASAPI pair is
+invalid and cannot be saved or launched; unfamiliar device Strings remain
+opaque rather than being guessed.
 
 On an ordinary initial boot or a non-transactional strong restart (`CQ.reboot`
 or the Audio page's clean restart), a generated profile is a recoverable
@@ -689,15 +693,25 @@ session failures never enter this audio fallback, and the base attempt cannot
 recurse. If the generated profile is valid but its device is temporarily
 absent, a fully ready base session is explicitly a **temporary fallback**: it
 must not edit, back up or replace that preferred profile, and the next strong
-restart retries the preference. Only a malformed generated file has no valid
-preference to preserve; after the base reaches ready it may be atomically
-repaired, with the rejected file becoming `.bak`. If the base also fails,
-startup remains failed and reports both reasons. If a fresh scan positively
+restart retries the preference. The only exception is an explicit player
+decision on Audio: **keep current audio** names that the running base route will
+become preferred, requires its own `keep & restart` confirmation, and uses the
+same pending/restart/promote transaction as an edited candidate. Only a
+malformed generated file has no valid preference to preserve; after the base
+reaches ready it may be atomically repaired, with the rejected file becoming
+`.bak`. If the base also fails, startup remains failed and reports both reasons.
+If a fresh scan positively
 rejects every configured route (including a base-only setup), the operation
 fails before launching scsynth instead of relying on the driver's implicit
 default. A post-ready runtime device loss is diagnosed but never causes an
 automatic restart until the operator requests one of the explicit restart
 operations.
+
+Every ordinary launch presents the Night instrument with the Drawer closed,
+including a successful temporary fallback or malformed-profile repair. A
+temporary route adds `TEMPORARY AUDIO · drawer → audio` to the persistent Master
+notice rather than taking over the stage. Only an Audio operation explicitly
+confirmed by the player may reopen the rebuilt GUI on Audio.
 
 Device, sample rate, server block, hardware buffer and hardware channel changes
 are not hot-swapped. Apply requires a visible inline confirmation that
@@ -726,17 +740,24 @@ interpreter; this renews PortAudio after endpoint hot-plug or driver install and
 returns only compile-string data through a private temporary file. Failure or
 timeout is nonfatal diagnostic data and may retain a stale cache, but must never
 enter the running process's PortAudio list. Other platforms may enumerate in
-the stopped main interpreter.
+the stopped main interpreter. Ordinary boot uses one bounded Windows pass;
+player-triggered discovery uses three fresh passes separated by 750 ms and
+publishes the final result so a newly inserted wired endpoint can settle.
 
 The Audio page exposes **find connected devices** as a separate confirmed
 strong restart. It is disabled while REC is active, an Audio draft is dirty, or
 another restart is in flight. The confirmation names the audio stop, patch
 reset and effect on unrelated `Server.default` synths. A temporary fallback
 renames this action **find preferred device**, labels the running base route as
-temporary and keeps **retry preferred audio** reachable. The stopped scan's
-in/out counts and renewal action remain visible on their own `device list` row;
-the recommended/all-driver toggle is memory-only. `CQ.reboot` enters the same
-stopped discovery boundary. Ordinary `CQ.free` intentionally leaves
+temporary and keeps **retry preferred audio** reachable. Its second clean action,
+**keep current audio**, first confirms `keep & restart` and then deliberately
+replaces the unavailable preference only after the current route reaches ready.
+The stopped scan's in/out counts and renewal action remain visible on their own
+`device list` row; a successful explicit scan also states
+`device scan complete · choose route above` before any new endpoint is
+selected. The
+recommended/all-driver toggle is memory-only. `CQ.reboot` enters the same stopped
+discovery boundary. Ordinary `CQ.free` intentionally leaves
 `Server.default` running, so a following `CQ.boot` may only reuse the cache and
 must not enumerate until an explicit strong restart.
 

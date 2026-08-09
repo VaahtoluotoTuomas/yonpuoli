@@ -6,17 +6,7 @@ by design, and `Space` is always PANIC.
 
 ## Sound in 60 seconds
 
-### Start without a sample
-
-1. Open **drawer → inspector**.
-2. Choose `organMode` and click **apply preset**.
-3. Close the Drawer to return to Night.
-4. On either Coco shell, drag vertically on the yellow Organ calyx to change its
-   voice level. Drag along the spiral groove to change pitch and memory speed.
-5. Try `quantumDrone`, `selfNoise`, or `dustGarden` when you want a different
-   self-running starting point.
-
-### Turn a sample into a loop
+### Primary path: turn a sample into a loop
 
 1. Tap either bird at the top of Night and choose an audio file. Dropping a
    `.wav`, `.aiff`, or `.flac` file on the bird works too.
@@ -29,8 +19,21 @@ by design, and `Space` is always PANIC.
    to shape how material enters and circulates. Feedback around unity loops;
    above unity blooms into bounded converter crunch.
 
-The two routes are complementary: presets provide immediate native material,
-while the birds teach the sample-to-memory path.
+This sample-to-memory act is the instrument's centre: external sound enters the
+coarse converter, becomes held Coco memory, and is then played as a loop.
+
+### Alternate voices: start without a sample
+
+1. Open **drawer → inspector**.
+2. Choose `organMode` and click **apply preset**.
+3. Close the Drawer to return to Night.
+4. On either Coco shell, drag vertically on the yellow Organ calyx to change its
+   voice level. Drag along the spiral groove to change pitch and memory speed.
+5. Try `quantumDrone`, `selfNoise`, or `dustGarden` when you want a different
+   self-running layer.
+
+These presets are useful alternate entrances, but they are secondary to learning
+how a bird is written into a Coco and sealed into a playable loop.
 
 ## Read the Night
 
@@ -105,7 +108,9 @@ morph endpoints.
 4. For immediate self-generated sound, apply `organMode` in Inspector.
 5. For an audio-route problem, open **Drawer → audio**. If you connected a new
    device, use **find connected devices**, confirm the scan/restart, select the
-   route, then use the highlighted restart action.
+   route, then use the highlighted restart action. If Night says
+   `TEMPORARY AUDIO`, use **retry preferred audio** to keep waiting for the saved device,
+   or **keep current audio → keep & restart** to make the working route persist.
 
 For a guided deep dive in Finnish, see
 [`PLAYABILITY_GUIDE.md`](PLAYABILITY_GUIDE.md). Exact parameter behavior lives in

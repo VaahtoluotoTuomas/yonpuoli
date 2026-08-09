@@ -66,7 +66,7 @@ deferred): **GUI = the eyes + the hands. Code = the memory + the rituals.
 | region | role |
 |---|---|
 | **Night map** | the archipelago (§6): the sole topology-true performance landscape — bodies, gestures, jacks and bananas rather than transplanted knobs or numbers. |
-| **Master strip** | persistent, never covered: vol, dry, space, depth, GR meter, notice line, REC + elapsed, PANIC. |
+| **Master strip** | persistent, never covered: vol, dry, depth, GR meter, notice line, REC + elapsed, PANIC. |
 | **Drawer** | replaces Night in the central stage on demand (click, no key), never covers the Master strip. Tabs: **inspector** (the exact matrix loom), **workshop** (§8 — the ledger page completing SPEC §6.2 reachability), **spellbook** (§8), **memory** (snapshots + morph), **audio** (rightmost technical machine/engine boundary). |
 
 Keyboard: the sacred map is unchanged and global —
@@ -682,7 +682,7 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     and begin their first ink at one **content inset** inside it — the
     Workshop's labels, the loom's row names and the seed bank's boxes all start
     on the same vertical line. The workbench reads as one surface rather than
-    four adjacent layouts. The bottom is deliberately free — the pages hold different amounts
+    five adjacent layouts. The bottom is deliberately free — the pages hold different amounts
     of content — and a page whose body can use extra height (Memory's
     snapshot column and patch fingerprint) takes it rather than stopping at a
     constant. Added 2026-07-28 after the N8 review found the Inspector on a
@@ -765,16 +765,23 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     full-width **restart gate**. It is recessed slate with straight hairlines,
     never native preferences chrome, cards, jack balls or a patch bay.
   - Host shows the active lifecycle/sample-rate/block/hardware-buffer line,
-    device mode and exact device String(s). Default/single mode uses one long
-    device row; split mode uses input/output rows. Long names preserve their
+    device-list provenance, device mode and exact device String(s). One shared
+    eight-row score owns both the painted labels and the controls: engine,
+    device list, device mode, input/device, output/reserved, sample rate, server
+    block and hardware buffer. Default/single mode uses one long device row and
+    keeps the output slot blank; split mode uses input/output rows. No menu may
+    move onto the label above it. Long names preserve their
     beginning and use a tail ellipsis before Qt receives the String, so both
     text and highlight remain one row. Directional discovery runs only after
     the local server is confirmed stopped: before a fresh boot or inside a
     confirmed strong restart. On Windows that boundary launches a bounded
     fresh helper `sclang` with isolated class paths and no user startup files,
     so both endpoint hot-plug and a newly installed driver renew PortAudio
-    without trusting the main interpreter's old list. The exact in-memory
-    snapshot is handed to the rebuilt runtime page.
+    without trusting the main interpreter's old list. Ordinary boot uses one
+    pass. The player-triggered `find connected devices` path uses three fresh
+    passes 750 ms apart and publishes only the final snapshot, because Windows
+    may expose a wired jack after the first enumeration has begun. The exact
+    in-memory snapshot is handed to the rebuilt runtime page.
     Opening Audio, opening a menu, resizing, switching tabs and toggling driver
     visibility perform zero `_ListAudioDevices` calls. The former live path was
     withdrawn after it reproducibly wedged the physical Windows WASAPI server.
@@ -790,7 +797,14 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     draft, active REC and in-flight restart disable it. The recommended/all
     driver toggle remains purely local and may sit beside discovery, but both
     right edges and their explicit gap must stay on the same rail as the device
-    menus at both reviewed size steps.
+    menus at both reviewed size steps. A split input/output selection may use
+    only one recognized host API; a mixed ASIO/WASAPI pair is shown invalid and
+    cannot reach restart.
+    After a successful explicit scan, the rebuilt page says
+    `device scan complete · choose route above` and gives the fresh
+    input/output counts in
+    provenance. This is not an automatic route choice: selecting the new exact
+    endpoint and applying it remain a second, deliberate restart.
     **A `device list` row states what the list is and how to renew it**
     (`CQGuiAudioSetup.deviceListNote`), beside the in/out counts: `refresh
     devices to rescan` while an injected/local refresh is safe, `fresh scan at
@@ -841,9 +855,9 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     draft, discovery confirmation, temporary fallback or save retry gives the
     gate one static ochre wash, a three-pixel leading rule and a strong title
     rule; its available primary action is filled ochre and carries the exact
-    verb (`apply & restart audio`, `scan & restart`, `retry preferred audio` or
-    `retry save`). Invalid, blocked and failed/recovery states use the same
-    geometry in danger ink, but a disabled primary action remains an unfilled
+    verb (`apply & restart audio`, `scan & restart`, `retry preferred audio`,
+    `keep & restart` or `retry save`). Invalid, blocked and failed/recovery
+    states use the same geometry in danger ink, but a disabled primary action remains an unfilled
     neutral control. Success, cancel and discard retract the emphasis.
     This never pulses and colour is not its only signal: the host title adds a
     short downward text cue such as `restart required ↓`, while an armed
@@ -855,8 +869,10 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
   - AIO-1 is deliberately read-only through its visual acceptance gate:
     refresh works, while discard/apply are structurally disabled. Later gates
     activate the same composition without rebuilding the page on tab changes,
-    resize or restart. A successful restart reopens symbolic tab `\audio` on
-    the fresh GUI; no old Qt reference crosses a generation boundary.
+    resize or restart. A restart explicitly initiated from Audio reopens
+    symbolic tab `\audio` on the fresh GUI; initial boot/recovery never requests
+    that focus and remains on Night. No old Qt reference crosses a generation
+    boundary.
   - AIO-1's static layout was accepted by the user on 2026-07-29. AIO-2 makes
     all nine startup fields draft-editable, marks changed rows with the small
     ochre delta rule, preserves exact invalid values/reasons and enables
@@ -882,6 +898,13 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     validation reads `preferred device unavailable · temporary audio active`;
     the generated profile remains untouched, discovery becomes `find preferred
     device` and the clean primary action becomes `retry preferred audio`.
+    A clean secondary `keep current audio` action gives the player an explicit
+    exit from repeated fallback; it first changes the gate to `audio stops ·
+    current route becomes preferred` with a `keep & restart` confirmation, then
+    uses the ordinary safe profile transaction. Until that confirmation succeeds,
+    the unavailable preference remains untouched. With the Drawer closed, the
+    same state appears only as `TEMPORARY AUDIO · drawer → audio` in Master and
+    never replaces Night with Audio automatically.
   - AIO-4 taps raw live L/R/mic before their gains, reuses the existing
     post-safety master pair and renders coarse quantized presence only. The GUI
     caches both streams while hidden, combines their 15/20 Hz arrivals into one

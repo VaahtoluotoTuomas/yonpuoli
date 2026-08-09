@@ -7,7 +7,7 @@ CQTestServer {
 	var <bufferAllocator, <options;
 	var <messages, <syncGates, <bootCallbacks, <rebootCount = 0, <bindCount = 0;
 	var <quitCount = 0, <bootCount = 0, <>unresponsive = false;
-	var <>processRunning = true;
+	var <>processRunning = true, <>quitCallbackBeforeProcessExit = false;
 	var <>failSyncAt, <syncCallCount = 0;
 	var nextNode = 1000, releasedSyncs = 0;
 
@@ -98,8 +98,17 @@ CQTestServer {
 	quit { |onComplete, onFailure, watchShutDown = true|
 		quitCount = quitCount + 1;
 		unresponsive = false;
+		if(quitCallbackBeforeProcessExit) {
+			onComplete.value;
+		} {
+			processRunning = false;
+			onComplete.value;
+		};
+	}
+
+	completeProcessExit {
 		processRunning = false;
-		onComplete.value;
+		^this
 	}
 
 	boot { |register = true, onComplete, onFailure|

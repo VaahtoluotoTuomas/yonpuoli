@@ -26,7 +26,7 @@ CQAudioReconfigure {
 		)
 	}
 
-	start {
+	start { |allowClean = false|
 		var token, recorderState;
 		if(this.isActive) {
 			^this.prReject(\blocked, "audio restart already in progress")
@@ -38,7 +38,7 @@ CQAudioReconfigure {
 		if(#[starting, recording, stopping].includes(recorderState)) {
 			^this.prReject(\blocked, "stop REC before restarting audio")
 		};
-		if(model.dirty.not) {
+		if(model.dirty.not and: { allowClean != true }) {
 			^this.prReject(\blocked, "audio draft has no changes")
 		};
 		if(model.valid.not) {

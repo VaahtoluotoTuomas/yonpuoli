@@ -34,24 +34,29 @@ CQAudioDeviceProbe {
 				thisProcess.pid, serial, 1000000000.rand)
 	}
 
-	*commandFor { |outputPath, sclangPath|
+	*settledPasses { ^3 }
+	*settleMilliseconds { ^750 }
+
+	*commandFor { |outputPath, sclangPath, passes = 1|
 		var command = "powershell.exe -NoProfile -NonInteractive "
 			++ "-ExecutionPolicy Bypass -File " ++ this.runnerPath.quote
 			++ " -OutputPath " ++ outputPath.asString.quote
-			++ " -TimeoutSeconds " ++ this.timeoutSeconds.asString;
+			++ " -TimeoutSeconds " ++ this.timeoutSeconds.asString
+			++ " -Passes " ++ passes.asInteger.max(1).asString
+			++ " -SettleMilliseconds " ++ this.settleMilliseconds.asString;
 		sclangPath !? {
 			command = command ++ " -Sclang " ++ sclangPath.asString.quote
 		};
 		^command
 	}
 
-	*scan {
+	*scan { |passes = 1|
 		var runner = probeRunner, outputPath, command, code, result;
 		if(thisProcess.platform.name != \windows) {
 			^CQAudioDeviceCatalog.scan
 		};
 		outputPath = this.outputPath;
-		command = this.commandFor(outputPath, this.sclangPath);
+		command = this.commandFor(outputPath, this.sclangPath, passes);
 		if(runner.notNil) {
 			^CQAudioDeviceCatalog.normalize(
 				runner.value(command, outputPath, this.probePath))
@@ -74,4 +79,11 @@ CQAudioDeviceProbe {
 		};
 		^result
 	}
+
+	// A player-triggered hot-plug scan intentionally costs a few extra seconds:
+	// Windows can publish the jack endpoint after the first fresh PortAudio
+	// process has already enumerated. Each pass is a new bounded interpreter and
+	// the final pass is the truth used by the rebuilt GUI. Ordinary startup keeps
+	// the single-pass path above.
+	*scanSettled { ^this.scan(this.settledPasses) }
 }

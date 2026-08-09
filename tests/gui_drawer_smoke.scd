@@ -497,15 +497,15 @@ centred = { |inner, outer|
 																		<= (workshop.view.absoluteBounds.bottom + 1)
 																},
 																"the deepest rows are still contained at the bigger step");
-															check.value(grid.cellSize[1]
-																> CQGuiScale.metrics(\compact)[\cellHeight]
-																and: { drawer.spellbookGui.rail.bounds.width
-																	== workshop.railWidth }
-																and: { drawer.audioSetup.railWidth
-																	== workshop.railWidth }
-																and: { drawer.memoryGui.railWidth
-																	== workshop.railWidth },
-																"the loom grows too and all five pages keep one rail");
+											check.value(grid.cellSize[1]
+												> CQGuiScale.metrics(\compact)[\cellHeight]
+												and: { drawer.spellbookGui.rail.bounds.width
+													== workshop.railWidth }
+												and: { drawer.audioSetup.railWidth
+													== workshop.railWidth }
+												and: { drawer.memoryGui.railWidth
+													== workshop.railWidth },
+												"the loom grows too and all five pages keep one rail");
 															check.value(CQInkControl.drawErrors == 0,
 																"the Night skin paints cleanly at both size steps");
 															// Every Drawer page must

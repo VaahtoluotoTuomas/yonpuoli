@@ -135,7 +135,8 @@ CQSessionLifecycleTest : UnitTest {
 		});
 
 		server.runNextBoot;
-		this.assertEquals(server.rebootCount, 1,
+		this.assert(server.quitCount == 1 and: { server.bootCount == 1 }
+			and: { server.rebootCount == 0 },
 			"an enumerable profile with a catastrophic clock restarts once");
 		this.assertEquals(failures, 0,
 			"the candidate failure is not terminal before the base attempt");
@@ -150,7 +151,8 @@ CQSessionLifecycleTest : UnitTest {
 		this.assertEquals(Cocoquantus.config[\device], baseDevice,
 			"the second boot uses config.scd data, never the rejected profile");
 		server.runNextBoot;
-		this.assertEquals(server.rebootCount, 1,
+		this.assert(server.quitCount == 1 and: { server.bootCount == 1 }
+			and: { server.rebootCount == 0 },
 			"a failed base route cannot recurse into a reboot loop");
 		this.assertEquals(failures, 1,
 			"two failed routes produce one final caller failure");
@@ -225,22 +227,41 @@ CQSessionLifecycleTest : UnitTest {
 			"the runtime page receives an exact nonfatal scan diagnostic");
 	}
 
-	test_preparedRebootCapturesInsideServerOffCallback {
-		var scanRunning, reads = 0;
+	test_preparedRebootWaitsForProcessExitBeforeRenewingCatalog {
+		var scanRunning, reads = 0, catalog;
 		var prepared = CQConfig.validate((
 			headless: true,
 			sixteenN: (enabled: false)
 		));
+		server.processRunning = false;
+		Cocoquantus.prCaptureAudioDeviceCatalog(server, {
+			(inputs: ["old input"], outputs: ["old speakers"])
+		});
+		server.processRunning = true;
+		server.quitCallbackBeforeProcessExit = true;
 		Cocoquantus.prRebootPrepared(server, configPath, prepared, nil, nil, {
 			reads = reads + 1;
 			scanRunning =
 				server.applicationRunning or: { server.serverRunning };
-			(inputs: ["input"], outputs: ["output"])
-		});
-		this.assertEquals(server.rebootCount, 1,
-			"responsive AIO-5 capture reuses the one real reboot boundary");
+			(inputs: ["fresh input"], outputs: ["fresh headphones"])
+		}, nil, nil, true);
+		this.assert(reads == 0 and: { server.bootCount == 0 },
+			"the status-off callback cannot scan while the old process still lives");
+		catalog = Cocoquantus.audioDeviceCatalogForGui(prepared);
+		this.assert(catalog[\outputs].any { |name| name == "old speakers" },
+			"the running-process callback leaves the previous snapshot intact");
+		server.completeProcessExit;
+		0.1.wait;
+		this.assert(server.quitCount == 1 and: { server.bootCount == 1 }
+			and: { server.rebootCount == 0 },
+			"responsive discovery uses one explicit stop and replacement boot");
 		this.assert(reads == 1 and: { scanRunning.not },
-			"responsive reboot invokes discovery only in its server-off callback");
+			"discovery runs exactly once after the operating-system process exits");
+		catalog = Cocoquantus.audioDeviceCatalogForGui(prepared);
+		this.assert(catalog[\outputs].any { |name| name == "fresh headphones" }
+			and: {
+				catalog[\outputs].any { |name| name == "old speakers" }.not
+		}, "the replacement Audio page receives the renewed hot-plug catalog");
 	}
 
 	test_startupAwareRebootSkipsMissingProfileBeforeServerLaunch {
@@ -324,8 +345,9 @@ CQSessionLifecycleTest : UnitTest {
 				failures = failures + 1;
 				failureText = failure.errorString
 			});
-		this.assertEquals(server.rebootCount, 1,
-			"prepared Audio candidate crosses the real facade reboot boundary once");
+		this.assert(server.quitCount == 1 and: { server.bootCount == 1 }
+			and: { server.rebootCount == 0 },
+			"prepared Audio candidate crosses one explicit stop/boot boundary");
 		server.runServerBoot;
 		0.02.wait;
 		this.assertEquals(Cocoquantus.config[\sampleRate], 96000,
@@ -475,7 +497,8 @@ CQSessionLifecycleTest : UnitTest {
 			"no fixture, no query — the OS is reached only for a real Server");
 	}
 
-	test_audioResultRequestsOneSymbolicAudioReopen {
+	test_onlyPlayerInitiatedAudioWorkRequestsAReopen {
+		Cocoquantus.consumeAudioReopen;
 		Cocoquantus.prPublishAudioReconfigure((
 			status: \rollbackReady,
 			error: "candidate failed",
@@ -483,8 +506,11 @@ CQSessionLifecycleTest : UnitTest {
 			rollbackError: nil,
 			attemptCount: 2
 		));
+		this.assert(Cocoquantus.audioReopenRequested.not,
+			"an initial startup result never steals focus from Night");
+		Cocoquantus.prRequestAudioReopen;
 		this.assert(Cocoquantus.audioReopenRequested,
-			"rollback-ready data requests the symbolic Audio page");
+			"an explicit Audio operation requests the symbolic Audio page");
 		this.assert(Cocoquantus.consumeAudioReopen,
 			"the rebuilt GUI consumes the reopen request once");
 		this.assert(Cocoquantus.consumeAudioReopen.not,

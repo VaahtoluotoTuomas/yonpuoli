@@ -28,6 +28,7 @@ intended approach** — they show the trick, not final compilable code.
 ```
 yonpuoli/
 ├── SPEC.md  ARCHITECTURE.md  CLAUDE.md  README.md
+├── YONPUOLI.bat                // double-click Windows application launcher
 ├── boot.scd                    // user entry point: loads config, Cocoquantus.boot
 ├── live.scd                    // performance scratchpad: example blocks, patch recipes
 ├── config.example.scd          // template → user copies to config.scd (gitignored)
@@ -59,8 +60,9 @@ yonpuoli/
 │   ├── CQSnapshots.sc          // save/recall/morph
 │   ├── CQRecorder.sc           // disk recording (master + stems)
 │   ├── CQDeck.sc               // transactional file player control
-│   └── CQDeckPair.sc           // atomic linked-stereo coordinator
-├── support/                    // isolated audio-probe script/classes/watchdog
+│   ├── CQDeckPair.sc           // atomic linked-stereo coordinator
+│   └── CQStandaloneApp.sc      // pure lifecycle decisions for one-click mode
+├── support/                    // isolated app/audio-probe scripts and class overlays
 ├── presets/                    // patch recipes + legacy snapshot read fallback
 ├── snapshots/                  // *.cqsnap.scd snapshot files (text, versioned)
 ├── samples/                    // user field recordings (gitignored)
@@ -329,12 +331,13 @@ Language side on `\cq_hot`: engage −6 dB trim (a lagged synth arg), GUI notice
 | `Cocoquantus` | facade singleton; owns boot lifecycle and all subsystems | Explicit `stopped/booting/running/stopping/failed` state plus monotonically increasing session generation; stale callbacks self-cancel. `*boot(configPath)`, waitable `*free(onDone)`, strong `*reboot`, confirmed `*reconfigureAudio(model)` and profile-neutral `*restartCurrentAudio`. `*serverResponsive` distinguishes a status-watcher process record from a server that still answers; the pre-graph audio-clock gate additionally requires three reported actual-sample-rate readings, 0.75 s apart, each within 80–120% of the request before a session can become ready. An unresponsive local server is quit through its owned PID before a fresh boot, avoiding a second process on the occupied port. `CQ : Cocoquantus {}` empty subclass = short alias (classvars shared) |
 | `CQSpec` | parameter registry | `*specs` (IdentityDictionary name → ControlSpec+default+lag+16n slot), `*clamp(name, val)`, `*default(name)`, exact invertible hand maps and semantic reference landmarks; mirrors SPEC §5 tables 1:1. SP.AF's signed-square hand taper changes normalized control resolution only — stored octave values and DSP remain linear/direct |
 | `CQConfig` | config load/validate | reads `config.scd`, fills defaults, validates channels/paths, hard-fails informatively |
-| `CQAudioConfig` | pure Audio profile model | Owns the exact nine Audio keys, `defaults < base < overlay` merge, active/draft/dirty/valid separation, 0↔1 channel display boundary and sibling profile path. Generated explicit nils use private `\default` because an Event drops nil-valued keys; the marker is decoded before the candidate reaches `CQGraph`. No Qt, file, server, CQSpec or snapshot dependency |
+| `CQStandaloneApp` | pure one-click lifecycle policy | Validates the launcher's private audio-server port and distinguishes a user-closed same-generation GUI from the old GUI closed during a confirmed Audio restart. The standalone script can therefore avoid the conventional shared port and adopt the replacement GUI, while ordinary IDE use retains the facade's independent GUI lifecycle |
+| `CQAudioConfig` | pure Audio profile model | Owns the exact nine Audio keys, `defaults < base < overlay` merge, active/draft/dirty/valid separation, 0↔1 channel display boundary and sibling profile path. Split device Strings remain exact endpoint data, while a narrow complete-prefix check rejects recognized cross-host pairs such as ASIO input plus WASAPI output. Generated explicit nils use private `\default` because an Event drops nil-valued keys; the marker is decoded before the candidate reaches `CQGraph`. No Qt, file, server, CQSpec or snapshot dependency |
 | `CQAudioDeviceCatalog` | pure normalized device snapshot/filter boundary | Calls an injected provider once, exact-deduplicates directional names, merges exact active/draft endpoints, derives the single-device intersection and produces reversible recommended/all cached views. The Windows recommendation recognizes only complete legacy host prefixes; it never fuzzily parses endpoint names, touches Qt, persists machine names or scans by itself after construction |
-| `CQAudioDeviceProbe` | stopped-boundary device discovery | On Windows launches `support/audio_device_probe.scd` in a fresh daemon `sclang` through a 20-second PowerShell watchdog, an isolated standard-library class path and suppressed user startup files. Data crosses back only as an exact compile-string Event in a random private temp file, which is validated and deleted. The injected runner makes unit tests hermetic. Other platforms retain direct stopped-process enumeration |
+| `CQAudioDeviceProbe` | stopped-boundary device discovery | On Windows launches `support/audio_device_probe.scd` in a fresh daemon `sclang` through a 20-second PowerShell watchdog, an isolated standard-library class path and suppressed user startup files. Ordinary boot uses one pass; explicit hot-plug discovery runs three fresh processes 750 ms apart and trusts the final snapshot, allowing a newly published jack endpoint to settle without making every launch slower. Data crosses back only as an exact compile-string Event in a random private temp file, which is validated and deleted. The injected runner makes unit tests hermetic. Other platforms retain direct stopped-process enumeration |
 | `CQAudioProfileStore` | generated Audio overlay persistence | Writes only the sibling `.audio.scd.pending`, loads it back, hard-gates its keys and validates the merged candidate before exposure. Promotion is a same-directory atomic replacement, preserves one `.bak`, never writes `config.scd`, and keeps a validated pending file retryable after rename failure |
 | `CQAudioBootRecovery` | pure startup preflight/recovery coordinator | Treats the generated profile as a candidate and the base config as its sole fallback. Fresh device absence can preselect the base, or fail before scsynth when every configured route is absent; server-open or pre-graph clock failure can restart the base exactly once. A valid temporarily unavailable preference is never overwritten: ready base Audio becomes `fallbackReady` for that session, and a later strong restart retries the profile. Only the forced malformed-profile path repairs the generated sibling and preserves its rejected data as `.bak`; no server, Qt or lifecycle side effects live in this class |
-| `CQAudioReconfigure` | serverless AIO-3 transaction coordinator | Gates lifecycle and recorder state, captures previous/candidate data, drives one candidate restart and at most one rollback through an injected facade runner, ignores stale generations, promotes only after ready and keeps rename failure retryable without a reboot. No Qt or server dependency |
+| `CQAudioReconfigure` | serverless AIO-3 transaction coordinator | Gates lifecycle and recorder state, captures previous/candidate data, drives one candidate restart and at most one rollback through an injected facade runner, ignores stale generations, promotes only after ready and keeps rename failure retryable without a reboot. Clean drafts are rejected unless the explicit temporary-fallback adoption path requests the same proven transaction. No Qt or server dependency |
 | `CQGraph` | server plumbing | allocates buses/groups/buffers, builds ServerOptions from config, spawn order, `s.sync` between stages, teardown, CmdPeriod re-arm hook |
 | `CQState` | value store + funnel | `set(name, val)` → clamp → `synth.set` / bus write → `changed(\param, name, val)`. `get`, `asEvent` (for snapshots), `load(event)`. Enum params travel to the server as indices into the CQSpec value list; every other layer writes symbols through the funnel |
 | `CQMatrix` | routing weights | name↔index maps (source 16, dest 32 — canonical orders §3.2/3.3), metadata-bearing single-cell writes plus deep `fullMatrix`/clamped `writeMatrix` batch transactions, weight cache mirrored to `wDest` buses, existing triple `asArray/load`, presets and ecological shake. `releasePresetNames` identifies the six authored release starts while `empty` remains a utility and `mayhem` a deterministic stress edge. A seeded shake produces one of four 3–5-cable audible skeletons plus density-controlled decoration, and publishes only its explicit safe musical-parameter preparation as `lastShakePlan`; the model itself never writes `CQState`. All 32 destinations participate in decoration; `dustGrowth` owns both Dust rows and `crossfeed` both SlotX rows |
@@ -345,7 +348,7 @@ Language side on `\cq_hot`: engage −6 dB trim (a lagged synth arg), GUI notice
 | `CQInspector` | Drawer precision gesture state | Shares `CQAudition`; press previews the shared first-touch strength (currently ±0.60), vertical frames are transient, and release publishes one committed fine-edit plus one shared GUI-undo entry; lifecycle cancellation restores the pre-gesture cell |
 | `CQGuiScale` | the Drawer's two size steps | Pure arithmetic, no Qt and no state: the measured page inset, the `compact`/`roomy` thresholds, both type/metric records, ascent/descent-safe short text-band height, the shared rail width (derived from the Inspector loom's clamped cell), the column split that keeps the Coco pair equal, and caption measurement for buttons. Every Drawer page asks it rather than holding a literal; `CQGui` feeds it the drawer stage's own resize callback |
 | `CQGuiWorkshop` | Drawer ledger page (GUI_SPEC §8) | One explicit manifest of the 24 setup parameters Night and Master do not own drives **both** the built layout and `paramNames`, so the coverage audit and the rendered page are the same data — Workshop ownership is never computed as `CQSpec.names` minus the other surfaces. Level, Organ, SlotQ, SlotX, Dust/DustGrain and the five castle sends have one interactive GUI home in Night. The shared responsive rail carries three source-service modules over a coco/quantussy/coco body, with one `islandLayout` score feeding both the Qt layout and the island's painted titles. Owns the GUI's single interactive `micGain` row and its persistent warning subscription; builds with the GUI, not on demand. Pure view: every row writes through `CQGuiWidgets` → `CQState` |
-| `CQGuiAudioSetup` | fifth/rightmost Drawer page (SPEC §7.1 / GUI_SPEC §8) | Three-zone Ink composition on the shared rail: host/engine, stable input/output islands and restart gate. The running page consumes the facade's stopped-server snapshot and never calls `_ListAudioDevices`; one local button toggles recommended/all cached drivers and a separate confirmed `find connected devices` action crosses the strong stopped-server discovery boundary. Dirty drafts, recorder activity and in-flight restarts block discovery. A temporary fallback is named honestly and exposes `find preferred device` / `retry preferred audio`. Edits only `CQAudioConfig`'s draft; first Apply enters the static inline confirmation, while confirmed restart passes only the non-Qt model to the facade. One testable `restartEmphasis` state drives the persistent warning/danger gate, filled available CTA and host-side downward copy; clean, success, cancel and discard retract all three together. A page-owned `CQRecorder` controller updates the restart lock on every state transition and is removed on free. Renders ready/not-saved/fallback/rollback/failed truth. AIO-4 draws coarse raw-input tracks plus shared post-safety master L/R presence from a GUI-owned cache. Quantized deltas and the visible-tab gate prevent hidden or sub-pixel repaint work. The page unregisters its listeners on free and never retains a view callback across reboot |
+| `CQGuiAudioSetup` | fifth/rightmost Drawer page (SPEC §7.1 / GUI_SPEC §8) | Three-zone Ink composition on the shared rail: host/engine, stable input/output islands and restart gate. One eight-row host score aligns the painted engine/device-list/mode/device/rate/buffer labels with their exact controls in both single and split modes. The running page consumes the facade's stopped-server snapshot and never calls `_ListAudioDevices`; one local button toggles recommended/all cached drivers and a separate confirmed `find connected devices` action crosses the strong stopped-server discovery boundary. Its replacement page explicitly reports scan completion and fresh directional counts before asking the player to choose a route. Dirty drafts, recorder activity and in-flight restarts block discovery. A temporary fallback is named honestly and exposes `find preferred device` / `retry preferred audio` plus the separately confirmed `keep current audio` adoption path. Edits only `CQAudioConfig`'s draft; first Apply enters the static inline confirmation, while confirmed restart passes only the non-Qt model to the facade. One testable `restartEmphasis` state drives the persistent warning/danger gate, filled available CTA and host-side downward copy; clean, success, cancel and discard retract all three together. A page-owned `CQRecorder` controller updates the restart lock on every state transition and is removed on free. Renders ready/not-saved/fallback/rollback/failed truth. AIO-4 draws coarse raw-input tracks plus shared post-safety master L/R presence from a GUI-owned cache. Quantized deltas and the visible-tab gate prevent hidden or sub-pixel repaint work. The page unregisters its listeners on free and never retains a view callback across reboot |
 | `CQGuiMatrix` | experimental Inspector patch loom | Exact canonical 16×32 single-`UserView` field with ≥35×24 px hit cells at the supported compact size, grouped destination islands, family-marked rows, weighted/polarity-shaped knots, persistent route selection, quiet hover row/column focus and an exact-cell spark cue; no inner scroll or new state funnel. One published `destGroups` contract drives both header rules and strong seams: Coco 1 = 0…9, Coco 2 = 10…19, FM = 20…24, Spesal = 25…29, decks = 30…31. `destLabel` shortens only the displayed Coco-local SlotX/Dust names; canonical symbols stay intact |
 | `CQInkMenu` | Drawer choice box | Replaces Qt's only-partly-styleable `PopUpMenu` for Inspector presets, Memory's Morph Bridge and Audio setup fields. The collapsed box and temporary borderless choice list are both painted from the active Ink palette; CR/LF/tab/control whitespace is collapsed only in display text, long labels are ellipsized before drawing, disabled choices keep the same subdued geometry, and large lists are capped at 16 wheel-scrollable rows. The popup enables mouse-over on its own top-level window, opens upward near the screen edge, and teardown owns the temporary window |
 | `CQInkList` | Drawer persistent single-selection list | Replaces native `ListView` where selectable row geometry must be exact. One application-owned `rowHeight` drives paint, ordinary no-button hover and click selection, preventing platform frame/content metrics from moving the highlight to an adjacent row; Memory's saved snapshots are its first client |
@@ -380,7 +383,31 @@ is boot configuration rather than a musical parameter. AIO-3 implements the
 whole confirmed arrow: pending roundtrip, candidate boot, three-reading
 pre-graph actual-sample-rate health gate, commit-after-running or exactly one last-working
 rollback. A clean draft can instead restart the exact active config without
-creating a profile. AIO-4 adds only signal-presence telemetry.
+creating a profile. The one clean-draft exception is an explicit
+`keep current audio` decision during temporary fallback; it deliberately sends
+the already-running base route through the same pending/restart/promote proof
+before replacing the preference. AIO-4 adds only signal-presence telemetry.
+
+The Windows application path is a deliberately separate owner boundary:
+
+```
+YONPUOLI.bat → support/launch_yonpuoli.ps1 → isolated daemon sclang
+             → support/yonpuoli_app.scd → Cocoquantus.boot
+```
+
+The launcher discovers SuperCollider, creates an ephemeral class configuration
+that excludes user startup files, reserves a private free audio-server port and
+owns the interpreter until the application window closes. The standalone app
+therefore never attaches to an IDE server or a stale process on the conventional
+57110 port. Its language process shares the diagnostic console rather than
+becoming a detached child. The first GUI always presents Night with the Drawer
+closed, even
+when startup selected or repaired a fallback route. Its monitor follows session
+generations so an Audio restart adopts the replacement GUI instead of exiting;
+only that player-initiated restart asks the replacement to reopen Audio. A
+same-generation window close frees the facade, quits the owned audio server and
+exits cleanly. This ownership applies only to the one-click path; `CQ.boot` in
+the IDE keeps its existing lifecycle semantics.
 
 ---
 
@@ -428,6 +455,10 @@ accepts an `onDone` callback; a boot requested during stopping is queued behind 
 `CQ.reboot` is intentionally stronger than `free` + `boot`: it performs a
 controlled `Server.quit` → stopped-device scan/profile preflight → `Server.boot`, so
 boot-only options take effect without launching a known-missing configured device.
+The facade does not treat the `Server.quit` completion callback as process exit:
+on Windows that callback may arrive while the old scsynth process still owns its
+endpoints, so both `applicationRunning` and `serverRunning` must clear before the
+stopped-device scan or replacement boot begins.
 The project uses `Server.default`, so this explicit command also terminates unrelated
 synths on that shared server; ordinary `CQ.free` never quits it.
 If SuperCollider's status watcher marks the local server unresponsive, the facade
@@ -452,8 +483,10 @@ discard as `no changes` and offers `restart audio`; that path first targets the
 exact active config, but shares the stopped-scan base fallback when its device
 has disappeared. A valid missing-device profile stays untouched while the ready
 base route is marked as a temporary fallback; later `find preferred device`,
-clean restart or `CQ.reboot` retries it. Only the malformed-profile recovery
-path rewrites the generated sibling after full readiness.
+clean restart or `CQ.reboot` retries it. The player may instead confirm
+`keep current audio`; the current base route is then promoted through the same
+transaction and becomes the next launch preference. Only malformed-profile
+recovery rewrites the generated sibling automatically after full readiness.
 
 ---
 
