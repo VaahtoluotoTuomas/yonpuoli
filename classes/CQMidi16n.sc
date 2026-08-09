@@ -113,7 +113,7 @@ CQMidi16n {
 			// identifies the fader. An integer chan pins single-channel firmware.
 			var chanDesc = if(cfg[\chan].isNil) { "any chan" } {
 				"chan " ++ (cfg[\chan] + 1) };
-			if(MIDIClient.initialized.not) { MIDIClient.init };   // guarded (CLAUDE.md)
+			if(MIDIClient.initialized.not) { MIDIClient.init };   // guarded (AGENTS.md)
 			MIDIIn.connectAll;
 			MIDIdef.cc(\cq_16n, { |val, num|
 				this.handleCC(num, val);

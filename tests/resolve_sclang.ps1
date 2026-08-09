@@ -2,7 +2,7 @@
 # ASCII ONLY: Windows PowerShell 5.1 reads a BOM-less script as ANSI, and a
 # non-ASCII byte can terminate a string and break the parse far below itself.
 #
-# CLAUDE.md: machine-specific values live in config.scd or tests/dev_paths.scd,
+# AGENTS.md: machine-specific values live in config.scd or tests/dev_paths.scd,
 # both gitignored. A tracked default like "C:\Program Files\SuperCollider-3.13.0"
 # is both a machine dependency and a version pin that goes stale.
 #

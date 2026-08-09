@@ -1512,7 +1512,7 @@ CQNightGeometryTest : UnitTest {
 		};
 	}
 
-	// ---- §8's collision matrix (NIGHT_STANDALONE_PLAN §8) ----
+	// ---- Night geometry's collision matrix (GUI_SPEC) ----
 	// The spring flood re-bases the night's measures, and a measure is safe only
 	// if the bodies it grows still miss each other. These asserts were written
 	// BEFORE any constant moved, at both reference stage sizes, so a measure

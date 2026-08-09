@@ -6,7 +6,7 @@
 // hand-drawn archipelago, and a redraw never boils.
 //
 // The measures themselves live next door in `CQNightMeasures` — this class is
-// the math that composes them (NIGHT_STANDALONE_PLAN §8). Nothing here is a
+// the math that composes them (GUI_SPEC Night geometry). Nothing here is a
 // size literal; if a number belongs to a body or a hit target, it belongs there.
 
 CQNightGeometry {

@@ -6,11 +6,11 @@ delay/loopers around a five-oscillator chaotic "Quantussy" brain. It is no longe
 positioned as a faithful emulator; its software-native routing, safety architecture,
 file and memory systems, and Night interface deliberately take it in its own direction.
 This document defines **what** the instrument does. `ARCHITECTURE.md` defines how the code
-is organized. `CLAUDE.md` defines working rules for implementation.
+is organized. `AGENTS.md` contains the repository's durable implementation rules.
 
-Status: **implemented normative specification.** The v1.0 engine and Archipelago GUI
-baseline are complete; the active Nocturne phase is tracked in `PLAN.md`. Parameter
-names, ranges, defaults and safety requirements here remain the single source of truth.
+Status: **implemented release specification.** The engine and Night performance
+surface are complete. Parameter names, ranges, defaults, and safety requirements
+here remain the single source of truth.
 
 ---
 
@@ -28,7 +28,7 @@ names, ranges, defaults and safety requirements here remain the single source of
    feedback setting or user error to produce a damaging output level. Surprising sound
    yes; surprising loudness no.
 4. **Professional code.** Testable, documented, one source of truth for parameters,
-   clean server/language separation. See CLAUDE.md invariants.
+   clean server/language separation. See the invariants in `AGENTS.md`.
 
 ### Non-goals
 - Circuit-level accuracy (no component modeling, no claim of null-test equivalence).
@@ -516,24 +516,20 @@ form Night's continuous drone and converter topology; setup colour (`Pan`,
 `deckARate`/`deckBRate` are matrix destinations. All remain reachable from code
 and snapshots, and the setup parameters retain exact Workshop rows.
 
-The user accepted this current 16n feature set on 2026-08-08. The optional
-guided hand exercise remains useful regression material, but is not a 1.0
-quarantine or release blocker.
+The optional guided 16n exercise remains useful regression material, but the
+controller is not required for ordinary GUI use.
 
 ### 6.2 GUI panel
 
-> **Version note (edited 2026-07-28, during N9):** GUI **structure, interaction
-> grammar, visual language, motion and constants are normative in
+> GUI **structure, interaction grammar, visual language, motion and constants
+> are normative in
 > [`GUI_SPEC.md`](GUI_SPEC.md)** — one window whose sole instrument surface is
 > the Night map, with a persistent Master strip and a Drawer
-> (inspector · workshop · spellbook · memory · audio). The former Day panel is retained
-> only as design history; N9 removed its runtime stage after Night + Master +
-> Workshop proved exact coverage of every `CQSpec` parameter. This subsection
-> no longer describes a layout; it keeps only what the GUI owes *this* document.
+> (inspector · workshop · spellbook · memory · audio). This subsection keeps
+> only what the GUI owes *this* document.
 > Parameters, ranges, curves, DSP and all §8 safety invariants remain SPEC's,
 > and §8 wins any conflict. The retired v1.0 four-column panel is preserved in
-> this section as it stood at the `v1.0` tag; its build log is
-> [`docs/history/PLAN_v1.0.md`](docs/history/PLAN_v1.0.md).
+> this section as design history; the `v1.0` tag contains its original state.
 
 Requirements on any GUI, independent of skin:
 
@@ -833,7 +829,7 @@ an optional comfort feature (sustained-loud notice; opt-in −6 dB auto-ease via
 
 ---
 
-## 10. Acceptance criteria
+## 10. Verification
 
 Automated (must pass in CI/dev loop, see ARCHITECTURE §9):
 - A1 Class library + all SynthDefs compile clean (`CQ_COMPILE_OK`).
@@ -847,7 +843,7 @@ Automated (must pass in CI/dev loop, see ARCHITECTURE §9):
 - A5 NRT unity-looper: fb = 1.0, one impulse train pass → repeat energy decay within
   ±1 dB over 30 s (requant noise floor growth allowed, level drift not).
 
-Manual listening checklist (user-verified, `tests/manual_checklist.md`):
+Manual listening checks (`tests/manual_checklist.md`):
 - M1 Speed sweep re-pitches held loop smoothly; slow = dark/gritty, fast = bright.
 - M2 Feedback ride: 0.9 ≈ echoes, 1.0 ≈ looper, 1.15 = escalating crunch, level stable.
 - M3 Chaos sweep 0→1 traverses stable→vibrato→stepped wander→hyperchaos.
@@ -860,22 +856,12 @@ Manual listening checklist (user-verified, `tests/manual_checklist.md`):
 
 ---
 
-## 11. Milestones
+## 11. Release shape
 
-**M1 — it sounds right (core DSP, code-only control).**
-Config/boot, groups/buses, Coco pair (hold/flip/skip, dolby, dust, organ, bits/wrap),
-Quantussy (spesal, chaos, ranges), matrix + presets `\empty \classic`, master safety,
-live in + deck A, facade API, tests A1–A5 green. Exit: play a code-only session.
-
-**M2 — it plays right (interfaces).**
-16n layer, GUI panel complete, snapshots + morph, shake, deck B + folder navigation,
-mic path + warnings, remaining presets, keyboard map. Exit: 30-min session without
-typing anything but patch lines; M1–M8 checklist pass.
-
-**M3 — it ships (polish).**
-The v1.0 baseline included the later-retired Space FDN; stems + stem recording,
-watchdog trim, pattern event type, README,
-performance pass (§9 budget), full acceptance re-run, v1.0 tag.
+Yönpuoli 1.0 combines the complete sound engine with the Night performance
+surface, five-page Drawer, Windows launcher, six authored presets, five factory
+snapshots, recording, and optional 16n control. Audio excerpts and performance
+video are separate presentation work, not part of the instrument contract.
 
 ---
 
@@ -886,15 +872,14 @@ Documented so fidelity questions have one answer:
 1. Banana bay → named 16×32 signed-weight matrix with presets/shake/snapshots;
    ten software-native Coco destinations extend the hardware-parity core with
    Organ, SlotQ, directional SlotX, Dust and momentary Record modulation for
-   each memory. All ten are now eligible for ecological shake; the SlotX/Dust
-   admission followed their accepted sound, gesture and UI gates.
+   each memory. All ten are eligible for ecological shake.
 2. Global `patchDepth` macro and per-dest Schmitt thresholds (no hardware equivalent).
 3. Added parameters: `bits`, `wrap`, `interp`, `dust` level/grain, `qShLag`, castle `Off`
    detunes, castle audio sends — all default to authentic behavior.
 4. File decks, snapshots, morphing, disk recorder: studio affordances, no hw analog.
 5. Master limiter, watchdog, lags, clamps: safety layer the hardware never needed
    (it can't exceed line level; a computer + headphones can).
-6. The v1.0 Space FDN was a software-only experiment and was retired after the
-   2026-07-28 listening decision; current production has no built-in reverb.
+6. The v1.0 Space FDN was a software-only experiment and was retired after
+   comparative listening; current production has no built-in reverb.
 7. Spesal 8-state semantics and organ derivation are marked interpretations (§2, §3).
 8. Stereo image: hardware is dual-mono to a stereo out; SC adds pan/width control.

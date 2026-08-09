@@ -9,7 +9,7 @@ var runner;
 UnitTest.reportPasses = false;   // failures still print in full
 
 runner = {
-	// `completed` and `aborted` exist because the marker is the gate (CLAUDE.md)
+	// `completed` and `aborted` exist because the marker is the gate (AGENTS.md)
 	// and it once lied: an uncaught error inside a test class printed
 	// CQ_TESTS_FAILED and then the run carried on to a summary of zero failures
 	// and CQ_TESTS_PASSED, because sclang's `try` does not survive the routine

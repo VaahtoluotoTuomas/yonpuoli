@@ -1,154 +1,136 @@
-# Yönpuoli — portfolio case study
+# Yönpuoli — a personal instrument built with AI
 
-## The project
+## Building something I wanted to play
 
-Yönpuoli is a standalone experimental feedback instrument built in SuperCollider.
-It combines two deliberately low-fidelity delay/loopers, a five-oscillator chaotic
-modulation network, a signed routing matrix, file and live inputs, recording, and
-an original graphical playing surface.
+I began Yönpuoli because I wanted to explore ideas from Peter Blasser's
+Ciat-Lonbarde Cocoquantus without owning the physical instrument. The early
+project was a software study: two deliberately coarse clocked memories, a
+five-oscillator Quantussy network, and patchable feedback.
 
-The project began as a way to study and experience ideas from Peter Blasser's
-Ciat-Lonbarde Cocoquantus without owning the physical instrument. It gradually
-became a separate software instrument. The current Night surface no longer copies
-the hardware panel: it turns the signal topology into a landscape of shells,
-castles, birds, roots, tides, and weather gestures.
+It gradually stopped being an emulator project. File decks, snapshots, a signed
+routing matrix, output safety, and the Night landscape pulled it toward its own
+identity. Yönpuoli is now a standalone SuperCollider instrument whose central
+act is simple: let an outside sound enter a Coco memory, close the loop, and
+play what the memory becomes.
 
-## My role
+The interface follows that idea. Birds carry samples, shells hold memories,
+castles disturb them, roots bring in live sound, and cables grow across the
+landscape. The imagery is not decoration placed over a conventional panel. It
+is my attempt to make signal flow readable without making the instrument lose
+its mystery.
 
-I conceived the project and directed its sonic and visual design. I defined the
-requirements and acceptance criteria, made the final product decisions, played
-every release candidate, and conducted the listening, visual, mouse, and hardware
-controller reviews.
+## My role and the AI collaboration
 
-Claude Code and OpenAI Codex were used extensively as coding agents. They proposed
-and implemented much of the source code, documentation, and automated tests. I do
-not present the repository as code that I manually typed alone. My contribution is
-the combination of product direction, sound and interaction design, specification,
-agent orchestration, acceptance testing, and ongoing technical ownership. The
-working agreement is documented in
-[`DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md).
+I conceived the project and directed its musical and visual design. I decided
+what the instrument should do, wrote and refined its specifications, played the
+iterations, and made the final choices about sound, interaction, safety, and
+release scope.
 
-## Constraints that shaped the design
+Claude Code and OpenAI Codex were used extensively as coding agents. They
+proposed and implemented a large part of the source code, tests, documentation,
+and debugging work. I do not describe Yönpuoli as a repository I hand-coded
+alone. My work has been closer to instrument design and technical direction:
+turning musical intentions into explicit behavior, examining implementations,
+finding failures through use, and continuing the iteration until the result
+felt coherent under the hand and ear.
 
-- **Feedback must remain playable.** Signals may become noisy, aliased, saturated,
-  and chaotic, but no patch may create an unbounded hardware-output path.
-- **The converter is part of the instrument.** Clipping and quantization happen
-  inside the feedback loop, so every repeat can acquire more digital wear.
-- **Code, MIDI, GUI, snapshots, and generative gestures must agree.** Every write
-  uses the same parameter or routing funnel and the same limits.
-- **The interface must show real state.** Ambient motion is derived from server
-  telemetry; decorative animation cannot imply activity that is not happening.
-- **The system must remain usable without optional hardware.** GUI, 16n, file
-  decks, microphone, and stems degrade independently.
-- **Listening is part of verification.** A headless test cannot decide whether a
-  feedback taper, chaos range, gesture, or visual hierarchy is musically useful.
+That process was not automatic. Plausible-looking solutions were often wrong in
+practice. I rejected interactions that hid state, visual effects that suggested
+signal activity that was not real, a resizable Drawer that weakened the playing
+surface, and sounds that passed technical tests but did not belong to the
+instrument.
 
-## Architecture
+## A few decisions that shaped the result
 
-The language side and audio server have deliberately different responsibilities:
+### The loop comes first
+
+Yönpuoli can make sound from its organ, noise, and chaotic network, but the
+sample-to-memory path is the instrument's centre. This changed both the release
+presets and the documentation: the first lesson is loading a bird, writing it
+into a Coco, sealing Hold, and reshaping the loop. Self-running voices are
+presented as secondary entrances rather than a shortcut around the main idea.
+
+### Feedback above unity is playable territory
+
+Feedback greater than 1.0 is not treated as an invalid value. It is where echoes
+become loops and loops become dense converter weather. The recirculating signal
+is therefore clipped or wrapped before every re-quantization pass, while every
+hardware output crosses a separate DC-removal, bounded-headroom, limiter, and
+bad-value-squelch chain.
+
+This keeps dangerous level growth out of the hardware path without sanding away
+the unstable part of the sound. Offline renders exercise the real SynthDefs
+under hostile patches, but listening still decides whether the result is
+musically useful.
+
+### Every control tells the same truth
+
+GUI gestures, MIDI, code, snapshots, presets, and generative shakes all write
+through the same validated state and matrix funnels:
 
 ```text
-controllers and GUI
-        │
-        v
-CQState / CQMatrix ----> CQSpec validation
-        │
-        v
-fixed scsynth graph ----> output safety chain
-        │
-        └--------------> state and telemetry notifications ----> GUI
+hands / code / MIDI
+         │
+         v
+ CQState / CQMatrix ──> CQSpec validation ──> fixed audio graph
+         ^                                        │
+         └──────── state and telemetry ───────────┘
 ```
 
-Three decisions are especially important:
+This matters most in a strange interface. A shell, fader, recalled snapshot, and
+live-coding command must not develop four subtly different meanings. Night's
+ambient motion also comes from real server telemetry rather than an unrelated
+decorative clock.
 
-1. **One state funnel.** All parameter paths clamp through `CQSpec`; matrix writes
-   have an equivalent transaction funnel. A new UI gesture cannot silently invent
-   a second interpretation of a parameter.
-2. **A static playing graph.** Repatching changes control-bus weights rather than
-   rebuilding synth nodes. Async deck swaps and recording are explicit,
-   cancellable transactions.
-3. **Fail toward silence.** Boot, teardown, malformed state, server loss, and bad
-   sample values converge on silence rather than an unlimited output.
+### Windows audio recovery became part of the instrument
 
-The detailed structure is in [`../ARCHITECTURE.md`](../ARCHITECTURE.md).
+Connecting headphones after startup exposed a surprisingly deep platform
+problem: the long-lived SuperCollider interpreter could keep a stale PortAudio
+device list. Restarting the audio server alone did not guarantee fresh device
+discovery.
 
-## A design decision: feedback above unity
+The final path stops the owned server, launches a small bounded helper
+interpreter with an isolated class path, samples the Windows device list more
+than once, validates the result, and only then rebuilds the audio session. The
+player sees one explicit scan/restart gesture and a highlighted next action.
+Solving the lifecycle problem and explaining it clearly in the interface were
+equally important parts of the fix.
 
-Ordinary audio software often treats feedback above 1.0 as an error. Here it is an
-important playing region: echoes become loops and loops become dense, quantized
-crunch. The design makes that region available while bounding it structurally.
+## Working by playing
 
-The recirculating signal is clipped or wrapped before every quantization pass. A
-separate, non-bypassable output chain removes DC, supplies bounded headroom,
-limits peaks, and squelches NaN/invalid values. Offline renders exercise the real
-SynthDefs under worst-case patches and inspect the resulting audio.
+Automated checks cover parameter limits, routing, lifecycle transactions,
+snapshot migration, output safety, hold integrity, GUI geometry, gesture
+cancellation, and paint cost. They are useful because feedback software has
+failure modes that are difficult to notice in casual use.
 
-## An engineering decision: test the risks, not just the functions
-
-The test suite includes ordinary unit tests, but the release gates are organized
-around failure modes:
-
-- malformed parameter and snapshot values;
-- overlapping or invalid output configurations;
-- stale async deck loads and linked-stereo partial failure;
-- rapid recorder operations and session teardown races;
-- lossless hold and unity-feedback energy;
-- NaN, DC, and peak safety under worst-case DSP;
-- GUI gesture cancellation, hit priority, geometry, and repaint cost.
-
-The independent audit was valuable because it challenged the tests themselves. It
-found a release-blocking output-configuration safety hole and several lifecycle
-risks despite the existing green suite. The findings were reproduced before the
-remediation plan was accepted. That experience changed the project rule from
-“many tests pass” to “the important oracle is demonstrated and known failures make
-it turn red.” The preserved reports are indexed in [`../audit/README.md`](../audit/README.md).
-
-## Human evaluation
-
-Each visible or audible increment stops at a runnable version. I then test it with
-the actual window, mouse, ears, samples, and controller before the next increment
-begins. Reviews have rejected plausible implementations: a resizable drawer,
-decorative animation, a preset constellation that required reading labels, and
-several visually attractive indicators that represented the wrong signal fact.
-
-The full historical checklist records these decisions rather than presenting them
-as automated proof. The current checklist is intentionally shorter and contains
-only live regressions and the active Nocturne gates.
-
-## Current result
-
-- audio engine and code/MIDI control layer complete;
-- Night, Master, and Drawer accepted as the single maintained performance
-  surface, with the earlier Day surface deliberately retired;
-- serverless unit, non-realtime safety and hold-integrity, GUI interaction, and
-  paint-performance gates;
-- main/stem outputs, live inputs, panic, recording, and a bidirectional REAPER
-  bridge verified on the reference hardware;
-- long-duration resource soak accepted using private-memory, SuperCollider heap,
-  bounded-resource, audio-clock, and responsiveness evidence;
-- Yönpuoli selected as the independent product identity, with Cocoquantus named
-  openly as lineage rather than as an emulation promise.
+They are not the final musical judge. Audible and visible increments were tested
+in the real application with samples, headphones, an audio interface, a mouse,
+and optional controller hardware. Several changes went through many small rounds
+because a cue could be technically functional and still feel misplaced.
 
 ## What I learned
 
-- A detailed specification is useful only when implementation, tests, and current
-  status can be traced back to it.
-- AI-generated tests can share the implementation's mistaken assumptions; an
-  adversarial reproducer and mutation check are stronger than a pass count.
-- GUI performance must be measured inside the real paint event. Several intuitive
-  optimizations were slower or deadlocked Qt.
-- A musical interface is not accepted when it merely works. The cue, gesture,
-  audible response, and displayed state must describe the same event.
-- Technical ownership does not come from who typed a line. It comes from being able
-  to explain, test, change, and support the behavior safely.
+- A specification is most useful when every control surface shares it, not when
+  it merely describes the code afterward.
+- AI-generated implementation and AI-generated tests can share the same wrong
+  assumption. A small reproducer that fails for the right reason is more useful
+  than a large pass count.
+- GUI performance and interaction have to be measured in the real Qt event
+  path. Intuitive fixes can be slower or can introduce deadlocks.
+- Experimental does not have to mean careless. The interface can remain obscure
+  and discoverable while lifecycle, output safety, and displayed state remain
+  explicit.
+- Supporting software is an ongoing practice: being able to navigate, explain,
+  test, change, and maintain the behavior matters more than manual keystroke
+  count.
 
-## Next steps
+## Where it is now
 
-The technical, privacy, 16n, playability, release-content and Windows-launch
-gates are complete. Yönpuoli 1.0 is published from `main` as
-`yonpuoli-1.0.0`, with the accepted Night, Inspector and Workshop screenshots.
-Audio excerpts and a performance video follow the release rather than blocking
-it. The technical-ownership study continues through the state
-funnel, feedback/safety DSP path and Night gesture path. Large GUI owners can
-then be decomposed one covered responsibility at a time under the policy in
-[`DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md).
+Yönpuoli 1.0 contains the complete Night surface, six authored presets, five
+factory snapshots, recording, optional 16n control, and a no-code Windows
+launcher. The first release uses current interface screenshots; performance
+video and audio excerpts will follow when they represent the instrument well.
+
+The exact implementation is described in [`../ARCHITECTURE.md`](../ARCHITECTURE.md),
+the signal and behavior contract in [`../SPEC.md`](../SPEC.md), and the playing
+surface in the [`Night field guide`](QUICK_REFERENCE.md).

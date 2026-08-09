@@ -235,7 +235,7 @@ CQGuiVisualContractTest : UnitTest {
 	}
 
 	// SendReply's UGen inputs are [trig, replyID, nameLength, name..., values...].
-	// Names come back as Symbols: `includes` compares identity (CLAUDE.md).
+	// Names come back as Symbols: `includes` compares identity (AGENTS.md).
 	prReplies { |config, defName|
 		var def = CQSynthDefs.all(config).detect { |d| d.name == defName };
 		if(def.isNil) { ^[] };
@@ -322,7 +322,7 @@ CQGuiVisualContractTest : UnitTest {
 						.format(width.round(0.1), label, mono));
 			};
 		};
-		// `includes` is identity on a String collection (CLAUDE.md pitfall)
+		// `includes` is identity on a String collection (AGENTS.md pitfall)
 		this.assert(CQGuiMemory.morphMeterLabels.any { |l| l == "arrived" },
 			"the completion word is one of the sized labels");
 	}

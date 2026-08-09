@@ -1458,7 +1458,7 @@ Cocoquantus {
 		this.prStopAudioClockWatch;
 	}
 
-	// AUD-W (PLAN.md "AUD-W:n sopimus"). A read-only runtime guard: it reads the
+	// Audio-clock watchdog. A read-only runtime guard: it reads the
 	// value the existing status watcher already fills from /status replies, so it
 	// adds no server traffic, and it must NEVER reach for a device listing — that
 	// is the isolated 2026-07-29 wedge. Low frequency by design; a healthy clock

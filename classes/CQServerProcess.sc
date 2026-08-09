@@ -30,7 +30,7 @@ CQServerProcess {
 	classvar <>commandRunner;
 
 	// Symbols, never Strings: Collection:includes compares identity, so a table
-	// of Strings would silently never match (CLAUDE.md, known pitfalls).
+	// of Strings would silently never match (AGENTS.md, durable rules).
 	*serverImageNames { ^#[scsynth, supernova] }
 
 	// UDP because that is the port scsynth binds for OSC; the language's own

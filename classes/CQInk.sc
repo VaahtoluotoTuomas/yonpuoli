@@ -593,7 +593,7 @@ CQInk {
 			this.font(\number), palette[\line]);
 	}
 
-	// ---- the Workshop ledger row (GUI_SPEC §16.7, NIGHT_STANDALONE_PLAN §12.1.3)
+	// ---- the Workshop ledger row (GUI_SPEC §16.7)
 	// A precision page needs a control the Day kit does not have: label at left,
 	// one hairline value rail in the middle, the exact value in mono at right,
 	// and never a knob. The rail's geometry is published here so the drawing and

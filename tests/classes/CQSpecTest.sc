@@ -150,7 +150,7 @@ CQSpecTest : UnitTest {
 		[\liveGain, \micGain, \deckALevel, \coco1In, \coco1Fb, \coco1Level,
 			\coco1Dust, \coco1Organ, \masterDry].do { |name|
 			this.assert(CQSpec.lag(name) >= 0.03,
-				"gain param '%' lagged >= 30 ms (CLAUDE.md safety)".format(name));
+				"gain param '%' lagged >= 30 ms (AGENTS.md safety)".format(name));
 		};
 		this.assertFloatEquals(CQSpec.lag(\masterVol), 0.1, "masterVol lagged 100 ms");
 		this.assertFloatEquals(CQSpec.lag(\patchDepth), 0.05, "patchDepth lagged 50 ms");

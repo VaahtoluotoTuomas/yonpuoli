@@ -1,5 +1,5 @@
 // live.scd — performance scratchpad. Evaluate blocks manually; nothing here is
-// loaded automatically and no scratch code belongs in classes/ (CLAUDE.md).
+// loaded automatically and no scratch code belongs in classes/ (AGENTS.md).
 
 // ---- phase 1 smoke test / KUUNTELU 1 ----
 /*

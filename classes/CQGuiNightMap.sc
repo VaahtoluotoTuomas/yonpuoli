@@ -178,7 +178,7 @@ CQGuiNightMap {
 		)
 	}
 
-	// The night's own interactive CQSpec inventory (NIGHT_STANDALONE_PLAN §12.1.1):
+	// The night's own interactive CQSpec inventory (GUI_SPEC interaction contract):
 	// every parameter a hand can actually play from this landscape. It is composed
 	// from the same semantic helpers the bodies are drawn from, never derived as
 	// somebody else's complement — a parameter that loses its touch point must

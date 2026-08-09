@@ -1,4 +1,4 @@
-// The Drawer Workshop's own contracts (NIGHT_STANDALONE_PLAN §12.1.3/§12.1.5):
+// The Drawer Workshop's own contracts (GUI_SPEC Workshop/reachability sections):
 // the ledger row's geometry, its exact-value reading, and the funnel bindings
 // every one of the 24 rows is built with. Serverless and Qt-free — the rendered
 // page is asserted by the Drawer smoke.

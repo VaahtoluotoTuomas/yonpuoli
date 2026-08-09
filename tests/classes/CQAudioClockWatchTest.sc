@@ -39,7 +39,7 @@ CQAudioClockWatchTest : UnitTest {
 		this.assertEquals(watch.streakCount, 0, "a healthy run holds no streak");
 	}
 
-	// Measured 2026-07-30 (PLAN.md): a Modern Standby wake travels outside BOTH
+	// Measured 2026-07-30: a Modern Standby wake travels outside BOTH
 	// bounds before it settles. A naive three-sample check called this a fault
 	// twice, in both directions, while nothing was broken.
 	test_measuredStandbyWakeIsNotAFault {

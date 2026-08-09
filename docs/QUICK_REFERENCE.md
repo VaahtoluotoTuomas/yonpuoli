@@ -1,8 +1,9 @@
-# Yönpuoli quick reference
+# Yönpuoli Night field guide
 
-Yönpuoli is meant to be learned by touching it, but it should not make the first
-sound a puzzle. Start at a low monitoring level. The blank instrument is quiet
-by design, and `Space` is always PANIC.
+This quick reference maps the complete Night playing surface. Yönpuoli is meant
+to be learned by touching it, but it should not make the first sound a puzzle.
+Start at a low monitoring level. The blank instrument is quiet by design, and
+`Space` is always PANIC.
 
 ## Sound in 60 seconds
 
@@ -112,7 +113,5 @@ morph endpoints.
    `TEMPORARY AUDIO`, use **retry preferred audio** to keep waiting for the saved device,
    or **keep current audio → keep & restart** to make the working route persist.
 
-For a guided deep dive in Finnish, see
-[`PLAYABILITY_GUIDE.md`](PLAYABILITY_GUIDE.md). Exact parameter behavior lives in
-[`../SPEC.md`](../SPEC.md), and the complete interaction grammar in
-[`../GUI_SPEC.md`](../GUI_SPEC.md).
+Exact parameter behavior lives in [`../SPEC.md`](../SPEC.md), and the complete
+interaction grammar in [`../GUI_SPEC.md`](../GUI_SPEC.md).

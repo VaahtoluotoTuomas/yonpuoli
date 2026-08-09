@@ -27,7 +27,7 @@ intended approach** — they show the trick, not final compilable code.
 
 ```
 yonpuoli/
-├── SPEC.md  ARCHITECTURE.md  CLAUDE.md  README.md
+├── SPEC.md  ARCHITECTURE.md  AGENTS.md  README.md
 ├── YONPUOLI.bat                // double-click Windows application launcher
 ├── boot.scd                    // user entry point: loads config, Cocoquantus.boot
 ├── live.scd                    // performance scratchpad: example blocks, patch recipes
@@ -337,7 +337,7 @@ Language side on `\cq_hot`: engage −6 dB trim (a lagged synth arg), GUI notice
 | `CQAudioDeviceProbe` | stopped-boundary device discovery | On Windows launches `support/audio_device_probe.scd` in a fresh daemon `sclang` through a 20-second PowerShell watchdog, an isolated standard-library class path and suppressed user startup files. Ordinary boot uses one pass; explicit hot-plug discovery runs three fresh processes 750 ms apart and trusts the final snapshot, allowing a newly published jack endpoint to settle without making every launch slower. Data crosses back only as an exact compile-string Event in a random private temp file, which is validated and deleted. The injected runner makes unit tests hermetic. Other platforms retain direct stopped-process enumeration |
 | `CQAudioProfileStore` | generated Audio overlay persistence | Writes only the sibling `.audio.scd.pending`, loads it back, hard-gates its keys and validates the merged candidate before exposure. Promotion is a same-directory atomic replacement, preserves one `.bak`, never writes `config.scd`, and keeps a validated pending file retryable after rename failure |
 | `CQAudioBootRecovery` | pure startup preflight/recovery coordinator | Treats the generated profile as a candidate and the base config as its sole fallback. Fresh device absence can preselect the base, or fail before scsynth when every configured route is absent; server-open or pre-graph clock failure can restart the base exactly once. A valid temporarily unavailable preference is never overwritten: ready base Audio becomes `fallbackReady` for that session, and a later strong restart retries the profile. Only the forced malformed-profile path repairs the generated sibling and preserves its rejected data as `.bak`; no server, Qt or lifecycle side effects live in this class |
-| `CQAudioReconfigure` | serverless AIO-3 transaction coordinator | Gates lifecycle and recorder state, captures previous/candidate data, drives one candidate restart and at most one rollback through an injected facade runner, ignores stale generations, promotes only after ready and keeps rename failure retryable without a reboot. Clean drafts are rejected unless the explicit temporary-fallback adoption path requests the same proven transaction. No Qt or server dependency |
+| `CQAudioReconfigure` | serverless audio-restart transaction coordinator | Gates lifecycle and recorder state, captures previous/candidate data, drives one candidate restart and at most one rollback through an injected facade runner, ignores stale generations, promotes only after ready and keeps rename failure retryable without a reboot. Clean drafts are rejected unless the explicit temporary-fallback adoption path requests the same proven transaction. No Qt or server dependency |
 | `CQGraph` | server plumbing | allocates buses/groups/buffers, builds ServerOptions from config, spawn order, `s.sync` between stages, teardown, CmdPeriod re-arm hook |
 | `CQState` | value store + funnel | `set(name, val)` → clamp → `synth.set` / bus write → `changed(\param, name, val)`. `get`, `asEvent` (for snapshots), `load(event)`. Enum params travel to the server as indices into the CQSpec value list; every other layer writes symbols through the funnel |
 | `CQMatrix` | routing weights | name↔index maps (source 16, dest 32 — canonical orders §3.2/3.3), metadata-bearing single-cell writes plus deep `fullMatrix`/clamped `writeMatrix` batch transactions, weight cache mirrored to `wDest` buses, existing triple `asArray/load`, presets and ecological shake. `releasePresetNames` identifies the six authored release starts while `empty` remains a utility and `mayhem` a deterministic stress edge. A seeded shake produces one of four 3–5-cable audible skeletons plus density-controlled decoration, and publishes only its explicit safe musical-parameter preparation as `lastShakePlan`; the model itself never writes `CQState`. All 32 destinations participate in decoration; `dustGrowth` owns both Dust rows and `crossfeed` both SlotX rows |
@@ -537,7 +537,7 @@ the real preset data — the safety proof covers the actual shipped graph.
 ## 9. Performance notes
 
 - Whole instrument ≈ 1 quantussy synth (5 oscs + S&Hs), 2 coco synths (few BufRd/BufWr,
-  gates, amplitude followers), decks, FDN, master. Well under SPEC's 25% budget; no
+  gates, amplitude followers), decks, input telemetry, and master. Well under SPEC's 25% budget; no
   demand-rate UGens on hot paths; meters at 20 Hz.
 - `bufFrames` ≤ 2^19: Phasor phase stays integer-exact in float32 (< 2^24).
 - Block size 64 default. LocalIn (Quantussy ring and each Coco's own matrix-source

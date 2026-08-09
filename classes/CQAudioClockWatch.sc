@@ -1,4 +1,4 @@
-// CQAudioClockWatch — AUD-W:n puhdas malli (PLAN.md "AUD-W:n sopimus").
+// CQAudioClockWatch — pure model of the audio-clock health contract.
 //
 // Ei serveriä, ei GUI:ta, ei omaa kelloa: tälle syötetään lukemia ja se vastaa
 // tilalla. Sen ainoa tehtävä on erottaa **jumissa oleva** audiokello

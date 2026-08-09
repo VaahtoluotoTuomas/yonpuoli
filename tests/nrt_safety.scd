@@ -1,6 +1,6 @@
 // NRT safety render (SPEC §10 A3). Renders the REAL SynthDefs offline (scsynth
 // -N, no audio device) under worst-case input and asserts: peak <= -0.75 dBFS,
-// no NaN/inf, |DC| <= 0.02. Thresholds may NEVER be raised (CLAUDE.md safety #6).
+// no NaN/inf, |DC| <= 0.02. Thresholds may NEVER be raised (AGENTS.md).
 // Cases: master-chain torture, coco worst case (fb 1.25 + drive 40 + wrap +
 // dust max + max cross-feed), quantussy worst case (all castles audio range,
 // chaos 1, all sends up, through coco1's converter — qMix must be audible AND

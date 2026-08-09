@@ -1,8 +1,6 @@
-# Yönpuoli — concise release checklist
+# Yönpuoli — manual smoke test
 
-This is the current human release pass. The complete accepted Nocturne, Audio,
-SOAK, 16n, playability and release-content scripts are preserved in
-[`../docs/history/manual_checklist_nocturne.md`](../docs/history/manual_checklist_nocturne.md).
+This is the short repeatable hands-on pass for the current instrument.
 Automation does not check a box in this file on behalf of a listener.
 
 Use a low monitoring level. Recompile the class library after changing
@@ -150,21 +148,5 @@ CQ.recStop;
 - [ ] REC blocks Audio restart until recording has stopped.
 - [ ] If testing a multichannel interface, stems 1/2 are independent of main
       1/2 and PANIC silences every physical output.
-- [ ] If testing a 16n, all 16 faders follow `docs/16N_MAP.md`; unplug/replug plus
+- [ ] If testing a 16n, all 16 faders follow `../docs/16N_MAP.md`; unplug/replug plus
       `CQ.midiRescan` restores control without affecting GUI-only use.
-
-## 8. Release media and sign-off
-
-- [x] Night, Inspector and Workshop screenshots are generated from the exact
-      release-candidate UI and visually match it.
-- [x] Night reads clearly as the README hero; the collapsed Drawer gallery adds
-      useful precision without overwhelming the introduction.
-- [x] The README and compact reference get a new user to a captured sample loop
-      without code or a hidden prerequisite; `organMode` remains an optional
-      secondary route.
-- [x] README and release notes make clear that performance video and audio
-      excerpts are planned after 1.0, not included or required now.
-- [x] README, CASE_STUDY, CHANGELOG and release notes describe the same version,
-      limitations and AI-assisted authorship.
-- [x] Remote CI is green on the commit that will be tagged.
-- [x] `nocturne` is merged to `main`; release tag is `yonpuoli-1.0.0`.

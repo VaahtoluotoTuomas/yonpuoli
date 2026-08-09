@@ -1,5 +1,5 @@
 // CQGuiWorkshop — the Drawer's fourth page: the bay's quiet measurement table
-// (NIGHT_STANDALONE_PLAN §12.1, GUI_SPEC §8). Night is open water, asymmetric
+// (GUI_SPEC §8). Night is open water, asymmetric
 // bodies and gesture; this is the same instrument in the opposite grammar —
 // recessed slate, straight rules, exact names and values, stable coordinates
 // and no uninvited motion. Same Ink kit, palette, type and hover language; no

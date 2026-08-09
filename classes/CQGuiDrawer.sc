@@ -126,7 +126,7 @@ CQGuiDrawer {
 		memoryView = memoryGui.view;
 		// the bay's measurement table. Built with the GUI, never on demand: its
 		// mic row owns the persistent MIC LIVE warning, and closing the Drawer
-		// may not silence that (NIGHT_STANDALONE_PLAN §12.1.3).
+		// may not silence that (GUI_SPEC persistent-notice contract).
 		workshop = CQGuiWorkshop(gui, state);
 		workshopView = workshop.view;
 		// The complete Audio page is built once with the GUI. Its AIO-3

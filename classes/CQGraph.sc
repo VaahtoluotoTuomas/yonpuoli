@@ -1,5 +1,5 @@
 // CQGraph — owns every server object: buses, groups, buffers, synths.
-// Nothing else allocates on the server (CLAUDE.md). The server instance is
+// Nothing else allocates on the server (AGENTS.md). The server instance is
 // passed in — never assumed. build/spawn must be called from a Routine
 // (Cocoquantus.boot runs inside waitForBoot's Routine) because they sync.
 
@@ -20,7 +20,7 @@ CQGraph {
 	}
 
 	// build ServerOptions from config before boot; channel counts derive from
-	// the highest configured index — never assume more channels exist (CLAUDE.md)
+	// the highest configured index — never assume more channels exist (AGENTS.md)
 	applyOptions {
 		var o = server.options;
 		var dev = config[\device];
@@ -139,7 +139,7 @@ CQGraph {
 	}
 
 	// registration API for the only allowed synth churn (deck loads, recorder):
-	// callers hand ownership over so teardown stays in one place (CLAUDE.md)
+	// callers hand ownership over so teardown stays in one place (AGENTS.md)
 	registerSynth { |key, synth| synths[key] = synth }
 	registerBuffer { |key, buffer| buffers[key] = buffer }
 

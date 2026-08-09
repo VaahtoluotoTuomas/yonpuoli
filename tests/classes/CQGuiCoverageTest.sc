@@ -1,5 +1,5 @@
 // SPEC §6.2's completeness obligation, made machine-checkable
-// (NIGHT_STANDALONE_PLAN §12.1.1/§12.1.5): a player who starts in Night and
+// (GUI_SPEC reachability contract): a player who starts in Night and
 // uses only Night, the Drawer and the persistent Master strip must reach every
 // CQSpec parameter. Day, code and the 16n do not count.
 //

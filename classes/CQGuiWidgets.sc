@@ -125,7 +125,7 @@ CQGuiWidgets {
 	}
 
 	// the ledger's exact-value reading; a rail with no value is not enough for
-	// this page (NIGHT_STANDALONE_PLAN §12.1.1)
+	// this precision page (GUI_SPEC)
 	*ledgerFormat { |name, value|
 		var e = CQSpec.at(name);
 		if(e.isNil) { ^(value ? "").asString };

@@ -1,4 +1,4 @@
-// CQNightMeasures — the night's measures, in one table (NIGHT_STANDALONE_PLAN §8).
+// CQNightMeasures — the night's measures, in one table (GUI_SPEC Night geometry).
 // Numbers only: no math, no Qt, no state. CQNightGeometry composes them into the
 // archipelago, CQGuiNightMap sizes its views from them and CQInkNight draws its
 // bodies at them, so the spring flood is one readable table instead of thirty

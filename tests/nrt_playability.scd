@@ -1,4 +1,4 @@
-// Playability measurement for PLAN.md -> "Tie 1.0:aan", item 8.
+// Playability measurement for the sample-to-loop and self-running paths.
 //
 // This is deliberately a measurement, not a taste gate. It uses the real
 // \cqQuantussy and \cqCoco SynthDefs. It retains the pre-PLAY-7 first-touch and
