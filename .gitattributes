@@ -3,8 +3,8 @@
 .gitattributes text eol=lf
 .gitignore text eol=lf
 *.md text eol=lf
-*.sc text eol=lf
-*.scd text eol=lf
+*.sc text eol=lf linguist-language=SuperCollider
+*.scd text eol=lf linguist-language=SuperCollider
 *.yml text eol=lf
 *.yaml text eol=lf
 *.quark text eol=lf
