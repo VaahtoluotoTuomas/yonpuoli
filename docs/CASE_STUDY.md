@@ -144,14 +144,11 @@ only live regressions and the active Nocturne gates.
 
 ## Next steps
 
-The technical, privacy, 16n, playability and release-content gates are complete.
-The release-candidate screenshots are accepted, and the one-click Windows launch
-plus compact README-to-loop path are implemented. The active roadmap is
-[`../PLAN.md`](../PLAN.md): complete the hands-on launch/close, settled-headphone
-discovery and visual playing review, verify remote CI on that exact candidate,
-then merge and tag Yönpuoli 1.0.
+The technical, privacy, 16n, playability, release-content and Windows-launch
+gates are complete. Yönpuoli 1.0 is published from `main` as
+`yonpuoli-1.0.0`, with the accepted Night, Inspector and Workshop screenshots.
 Audio excerpts and a performance video follow the release rather than blocking
-it. After release, the technical-ownership study continues through the state
+it. The technical-ownership study continues through the state
 funnel, feedback/safety DSP path and Night gesture path. Large GUI owners can
 then be decomposed one covered responsibility at a time under the policy in
 [`DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md).

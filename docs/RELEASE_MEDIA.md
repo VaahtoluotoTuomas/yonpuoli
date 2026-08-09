@@ -67,7 +67,7 @@ maintainer has heard and accepted the exact exports.
 
 ## 1.0 acceptance record
 
-Before merge and tag, record in `tests/manual_checklist.md` that:
+The accepted `yonpuoli-1.0.0` record confirms that:
 
 - all three screenshots were captured from the candidate UI and match it;
 - the Night hero reads clearly at README width;

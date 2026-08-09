@@ -7,8 +7,8 @@ not a current to-do list.
 
 ## Current status
 
-Yönpuoli is a Windows-tested SuperCollider feedback instrument in release-candidate
-state. The sound engine, Night performance surface, Master and five-page Drawer,
+Yönpuoli 1.0 is a Windows-tested SuperCollider feedback instrument. The sound
+engine, Night performance surface, Master and five-page Drawer,
 16×32 routing matrix, Audio I/O recovery, optional 16n map, release presets and
 release snapshots are implemented. The candidate also has an installed-runtime
 Windows launcher and a concise sample-loop-first README path. Automated compile, unit, NRT
@@ -37,12 +37,12 @@ and settled wired-headphone discovery were accepted on 2026-08-09.
       private-server isolation, Night-first startup, replacement GUI after an
       Audio restart and settled wired-headphone discovery; automated
       resolver/config/script gates pass.
-- [ ] Final human check that **keep current audio** survives a relaunch and that
+- [x] Final human check that **keep current audio** survives a relaunch and that
       closing the replacement window also closes the diagnostic console without
       leaving an owned `sclang` or `scsynth` process.
-- [ ] Remote CI green on the exact release candidate.
-- [ ] Merge `nocturne` into the default `main` branch.
-- [ ] Tag and publish `yonpuoli-1.0.0` with release notes and media links.
+- [x] Remote CI green on the exact release candidate.
+- [x] Merge `nocturne` into the default `main` branch.
+- [x] Tag and publish `yonpuoli-1.0.0` with release notes and media links.
 
 The old `v1.0` tag belongs to the pre-Yönpuoli Cocoquantus study. It is an
 internal technical milestone, not the Yönpuoli public release. `archipelago-1.0`

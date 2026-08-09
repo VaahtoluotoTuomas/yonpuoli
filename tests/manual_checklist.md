@@ -26,7 +26,7 @@ testing first-run creation. Do not start SuperCollider or run `CQ.boot` first.
       stopped or waited on by the one-click application.
 - [ ] A confirmed Drawer → Audio restart closes the old GUI, opens its
       replacement and leaves the standalone application alive.
-- [ ] Closing the replacement GUI frees audio and closes the diagnostic console
+- [x] Closing the replacement GUI frees audio and closes the diagnostic console
       without leaving `sclang` or `scsynth` running.
 - [ ] An intentionally invalid `-Sclang` path produces a readable, paused error
       instead of a flashing or silent console.
@@ -133,7 +133,7 @@ Cocoquantus.preferredAudioConfig;  // -> exact chosen route
       reads `TEMPORARY AUDIO · drawer → audio`.
 - [ ] Reconnecting and `find preferred device` restores it in one confirmed
       restart; Night moves and the clock returns to `\ok`.
-- [ ] With the preference still absent, `keep current audio` first shows
+- [x] With the preference still absent, `keep current audio` first shows
       `keep & restart`; confirmation makes the working route preferred. Close
       and relaunch through `YONPUOLI.bat`: the old fallback warning does not
       repeat and the application still opens on Night.
@@ -155,16 +155,16 @@ CQ.recStop;
 
 ## 8. Release media and sign-off
 
-- [ ] Night, Inspector and Workshop screenshots are generated from the exact
+- [x] Night, Inspector and Workshop screenshots are generated from the exact
       release-candidate UI and visually match it.
-- [ ] Night reads clearly as the README hero; the collapsed Drawer gallery adds
+- [x] Night reads clearly as the README hero; the collapsed Drawer gallery adds
       useful precision without overwhelming the introduction.
-- [ ] The README and compact reference get a new user to a captured sample loop
+- [x] The README and compact reference get a new user to a captured sample loop
       without code or a hidden prerequisite; `organMode` remains an optional
       secondary route.
-- [ ] README and release notes make clear that performance video and audio
+- [x] README and release notes make clear that performance video and audio
       excerpts are planned after 1.0, not included or required now.
-- [ ] README, CASE_STUDY, CHANGELOG and release notes describe the same version,
+- [x] README, CASE_STUDY, CHANGELOG and release notes describe the same version,
       limitations and AI-assisted authorship.
-- [ ] Remote CI is green on the commit that will be tagged.
-- [ ] `nocturne` is merged to `main`; release tag is `yonpuoli-1.0.0`.
+- [x] Remote CI is green on the commit that will be tagged.
+- [x] `nocturne` is merged to `main`; release tag is `yonpuoli-1.0.0`.

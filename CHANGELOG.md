@@ -6,7 +6,7 @@ under `docs/history/`; the active work order is `PLAN.md`.
 The project follows semantic versioning once the first Yönpuoli public beta is
 tagged. Earlier tags describe internal development baselines.
 
-## Unreleased — Yönpuoli / Nocturne
+## yonpuoli-1.0.0 — 2026-08-09
 
 ### Added
 

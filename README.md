@@ -6,6 +6,8 @@
 
 *Memory circulates until it becomes weather.*
 
+[Download Yönpuoli 1.0.0](https://github.com/VaahtoluotoTuomas/yonpuoli/releases/tag/yonpuoli-1.0.0)
+
 ![Yönpuoli Night performance surface](docs/media/yonpuoli-night.png)
 
 > **Lineage, not emulation.** Yönpuoli grew from a software study of Peter
@@ -22,10 +24,9 @@ electronic ecosystem.
 
 The sound engine, Night-only performance surface, hardware-I/O path,
 long-duration resource soak, controller map, first-touch playability and curated
-release content have passed their current acceptance gates. The remaining 1.0
-work is one final launcher teardown/persistence check, remote CI, then the final
-merge and tag. Audio and performance video are planned as later
-additions rather than initial-release blockers.
+release content have passed their 1.0 acceptance gates. Audio excerpts and a
+performance video are planned as later additions rather than initial-release
+blockers.
 [`PLAN.md`](PLAN.md) is the current status authority.
 
 ## What it offers
@@ -328,6 +329,7 @@ portfolio-oriented account of the project is in
 | [`docs/CASE_STUDY.md`](docs/CASE_STUDY.md) | Portfolio case study and engineering decisions |
 | [`docs/DEVELOPMENT_PROCESS.md`](docs/DEVELOPMENT_PROCESS.md) | AI-assisted workflow and ownership policy |
 | [`docs/RELEASE_MEDIA.md`](docs/RELEASE_MEDIA.md) | Honest capture brief and release-media acceptance |
+| [`docs/RELEASE_NOTES_1.0.0.md`](docs/RELEASE_NOTES_1.0.0.md) | Yönpuoli 1.0.0 release notes |
 | [`audit/README.md`](audit/README.md) | Audit authority and reading order |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Contribution and verification workflow |
 | [`CHANGELOG.md`](CHANGELOG.md) | Release-level history |
@@ -347,8 +349,8 @@ portfolio-oriented account of the project is in
   PANIC were verified with a four-output USB interface; NRT covers the shared
   stem safety ceiling.
 - Windows is the only currently tested release platform.
-- Yönpuoli 1.0 is not tagged. Its initial release will include current UI
-  screenshots; audio excerpts and a performance video will be added later.
+- Yönpuoli 1.0 includes current UI screenshots; audio excerpts and a performance
+  video will be added later.
 
 ## License
 
