@@ -17,7 +17,9 @@ CQRecorderTest : UnitTest {
 	}
 
 	test_timestampFormat {
-		var d = Date.new(2026, 7, 18, 14, 30, 5, 0, 0);
+		// Leave dayOfWeek/rawSeconds unresolved: SC 3.14 treats an explicit
+		// rawSeconds of 0 as authoritative and correctly resolves it to 1970.
+		var d = Date.new(2026, 7, 18, 14, 30, 5);
 		var path = CQRecorder.nextFreePath(tmpDir, d);
 		this.assertEquals(path.basename, "cq_260718_143005.wav",
 			"filename is cq_YYMMDD_HHMMSS.wav (SPEC §5.7)");
@@ -26,13 +28,13 @@ CQRecorderTest : UnitTest {
 	}
 
 	test_timestampZeroPadding {
-		var d = Date.new(2026, 1, 2, 3, 4, 5, 0, 0);
+		var d = Date.new(2026, 1, 2, 3, 4, 5);
 		this.assertEquals(CQRecorder.nextFreePath(tmpDir, d).basename,
 			"cq_260102_030405.wav", "single-digit fields are zero-padded");
 	}
 
 	test_neverOverwrites {
-		var d = Date.new(2026, 7, 18, 14, 30, 5, 0, 0);
+		var d = Date.new(2026, 7, 18, 14, 30, 5);
 		var first = CQRecorder.nextFreePath(tmpDir, d);
 		File.use(first, "w", { |f| f.write("x") });
 		this.assertEquals(CQRecorder.nextFreePath(tmpDir, d).basename,

@@ -1,19 +1,87 @@
-// CQGuiMatrix — the 16×22 precision matrix as the §8 patch-loom experiment.
+// CQGuiMatrix — the 16×32 precision matrix as the §8 patch-loom experiment.
 // Quiet rails preserve exact coordinates; planted cells become weighted knots.
 // Header, loom and route ribbon are separate fixed regions in the workbench.
 
 CQGuiMatrix {
-	classvar cellW = 48, cellH = 24, labW = 72, headerH = 64;
-
 	var matrix, inspector, <view, <grid, <header, <status, ctl;
-	var <selectedSrc, <selectedDest, hoverSi, hoverDi;
-	var skin = \day;
+	var <selectedSrc, <selectedDest, <hoverSi, <hoverDi;
+	var skin = \night;
+	// the loom's own measurements, taken from the Drawer's size step. The
+	// cell width sets the shared content rail every Drawer page aligns to, so
+	// the loom is where the workbench's width is decided (CQGuiScale).
+	var <step = \compact, metrics, cellW, cellH, labW, headerH;
 
-	*new { |matrix, inspector| ^super.newCopyArgs(matrix, inspector).prBuild }
-	*cellSize { ^[cellW, cellH] }
-	*loomSize {
-		^Size(labW + (CQMatrix.destNames.size * cellW),
-			CQMatrix.sourceNames.size * cellH)
+	*new { |matrix, inspector, step| ^super.newCopyArgs(matrix, inspector).prBuild(step) }
+
+	*cellSize { |step = \compact, pageWidth = 1272|
+		^[CQGuiScale.loomCell(step, pageWidth),
+			CQGuiScale.metrics(step)[\cellHeight]]
+	}
+
+	// One public grouping contract owns both the header spans and the stronger
+	// grid seams. Keeping either as a second list caused the 16x32 expansion to
+	// leave the Inspector painted with the old 8+8+5+5+2 boundaries.
+	*destGroups {
+		^[(start: 0, count: 10, title: "coco 1"),
+			(start: 10, count: 10, title: "coco 2"),
+			(start: 20, count: 5, title: "castle · fm"),
+			(start: 25, count: 5, title: "castle · spesal"),
+			(start: 30, count: 2, title: "decks")]
+	}
+
+	// Display language only: canonical destination Symbols stay untouched for
+	// patches, presets and snapshots. Coco ownership is already stated by the
+	// group heading, so repeating it inside the narrow diagonal label wastes ink.
+	*destLabel { |dest|
+		^switch(dest,
+			\coco1_spaf, { "spaf" }, \coco1_inVca, { "in" },
+			\coco1_fbVca, { "fb" }, \coco1_flip, { "flip" },
+			\coco1_skip, { "skip" }, \coco1_organ, { "organ" },
+			\coco1_slotQ, { "q in" }, \coco1_slotX, { "slotX" },
+			\coco1_dust, { "dust" }, \coco1_record, { "rec" },
+			\coco2_spaf, { "spaf" },
+			\coco2_inVca, { "in" }, \coco2_fbVca, { "fb" },
+			\coco2_flip, { "flip" }, \coco2_skip, { "skip" },
+			\coco2_organ, { "organ" }, \coco2_slotQ, { "q in" },
+			\coco2_slotX, { "slotX" }, \coco2_dust, { "dust" },
+			\coco2_record, { "rec" },
+			\castle1_fm, { "1" }, \castle2_fm, { "2" },
+			\castle3_fm, { "3" }, \castle4_fm, { "4" }, \castle5_fm, { "5" },
+			\castle1_spesal, { "1" }, \castle2_spesal, { "2" },
+			\castle3_spesal, { "3" }, \castle4_spesal, { "4" },
+			\castle5_spesal, { "5" }, \deckA_rate, { "a · rate" },
+			\deckB_rate, { "b · rate" }, { dest.asString })
+	}
+
+	*loomSize { |step = \compact, pageWidth = 1272|
+		^Size(CQGuiScale.railWidth(step, pageWidth), CQGuiScale.loomHeight(step))
+	}
+
+	cellSize { ^[cellW, cellH] }
+	loomSize { ^Size(labW + (CQMatrix.destNames.size * cellW), grid.bounds.height) }
+
+	// Nothing is rebuilt on a step change: the loom is one UserView whose ink is
+	// computed from these four numbers, so a resize is four assignments and a
+	// repaint.
+	applyScale { |nextStep, pageWidth = 1272|
+		var size;
+		step = nextStep ? step;
+		metrics = CQGuiScale.metrics(step);
+		cellW = CQGuiScale.loomCell(step, pageWidth);
+		cellH = metrics[\cellHeight];
+		labW = metrics[\loomLabel];
+		headerH = metrics[\headerHeight];
+		size = Size(labW + (CQMatrix.destNames.size * cellW),
+			CQMatrix.sourceNames.size * cellH);
+		header !? { header.fixedSize = Size(size.width, headerH) };
+		grid !? { grid.fixedSize = size };
+		status !? {
+			status.font = CQInk.font(\notice, metrics[\notice]);
+			status.fixedHeight = metrics[\barHeight];
+		};
+		header !? { header.refresh };
+		grid !? { grid.refresh };
+		^this
 	}
 
 	free {
@@ -36,9 +104,16 @@ CQGuiMatrix {
 
 	// ---- private ----
 
-	prBuild {
+	prBuild { |initialStep|
 		var srcs = CQMatrix.sourceNames, dests = CQMatrix.destNames;
-		var palette = CQInk.palette(\day), size = this.class.loomSize;
+		var palette = CQInk.palette(\night), size;
+		step = initialStep ? \compact;
+		metrics = CQGuiScale.metrics(step);
+		cellW = CQGuiScale.loomCell(step, 1272);
+		cellH = metrics[\cellHeight];
+		labW = metrics[\loomLabel];
+		headerH = metrics[\headerHeight];
+		size = Size(labW + (dests.size * cellW), srcs.size * cellH);
 		header = UserView().fixedSize_(Size(size.width, headerH))
 			.background_(palette[\recess]);
 		header.drawFunc = {
@@ -51,6 +126,9 @@ CQGuiMatrix {
 		grid.mouseDownAction = { |v, x, y, mod, btn, clickCount|
 			this.prMouseDown(x, y, btn, clickCount ? 1, srcs, dests)
 		};
+		// mouseMoveAction only runs while a button is held; ordinary hover is
+		// mouseOverAction in Qt. Keep both paths on the same hit geometry.
+		grid.mouseOverAction = { |v, x, y| this.prMouseMove(x, y, srcs, dests) };
 		grid.mouseMoveAction = { |v, x, y| this.prMouseMove(x, y, srcs, dests) };
 		grid.mouseUpAction = { |v, x, y, mod, btn|
 			this.prMouseUp(btn, srcs, dests)
@@ -64,8 +142,8 @@ CQGuiMatrix {
 			};
 		};
 		status = StaticText().string_("select a knot · exact route and weight appear here")
-			.font_(CQInk.font(\notice)).stringColor_(palette[\line])
-			.align_(\left).fixedHeight_(24);
+			.font_(CQInk.font(\notice, metrics[\notice])).stringColor_(palette[\line])
+			.align_(\left).fixedHeight_(metrics[\barHeight]);
 		view = grid;
 		ctl = SimpleController(matrix);
 		ctl.put(\patch, { |obj, what, src, dest, wght|
@@ -82,31 +160,34 @@ CQGuiMatrix {
 
 	prDrawHeader { |dests|
 		var colors = CQInk.palette(skin), focusDi = hoverDi;
-		var groups = this.prDestGroups;
+		var groups = this.prDestGroups, ruleY = metrics[\subgroup] + 8;
 		focusDi = focusDi ? CQMatrix.destIndex(selectedDest);
 		groups.do { |group|
 			var left = labW + (group[\start] * cellW);
 			var width = group[\count] * cellW;
-			Pen.stringCenteredIn(group[\title], Rect(left, 2, width, 12),
-				CQInk.font(\label), colors[\whisper]);
+			Pen.stringCenteredIn(group[\title],
+				Rect(left, 2, width, metrics[\subgroup] + 4),
+				CQInk.font(\label, metrics[\subgroup]), colors[\line]);
 			Pen.strokeColor = colors[\whisper].copy.alpha_(0.45);
 			Pen.width = CQInk.strokes[\hairline];
-			Pen.line(Point(left + 5, 18), Point(left + width - 5, 18));
+			Pen.line(Point(left + 5, ruleY), Point(left + width - 5, ruleY));
 			Pen.stroke;
 		};
 		dests.do { |dest, di|
 			var color = this.prDestColor(dest, colors);
 			if(di != focusDi) { color = color.copy.alpha_(0.72) };
 			Pen.use {
-				Pen.translate(labW + (di * cellW) + 10, headerH - 7);
+				Pen.translate(labW + (di * cellW) + (cellW / 5).max(8), headerH - 7);
 				Pen.rotate(-0.25pi);
-				Pen.stringAtPoint(this.prDestLabel(dest), 0@0, CQInk.font(\range), color);
+				Pen.stringAtPoint(this.prDestLabel(dest), 0@0,
+					CQInk.font(\range, metrics[\loomDestSize]), color);
 			};
 		};
 	}
 
 	prDrawGrid { |srcs, dests|
-		var colors = CQInk.palette(skin), size = this.class.loomSize;
+		var colors = CQInk.palette(skin);
+		var size = Size(labW + (dests.size * cellW), srcs.size * cellH);
 		var focusSi = hoverSi ? CQMatrix.srcIndex(selectedSrc);
 		var focusDi = hoverDi ? CQMatrix.destIndex(selectedDest);
 		var selectedSi = CQMatrix.srcIndex(selectedSrc);
@@ -138,9 +219,12 @@ CQGuiMatrix {
 		#[5, 10, 12, 14].do { |row|
 			Pen.line(Point(0, row * cellH), Point(size.width, row * cellH));
 		};
-		#[5, 10, 15, 20].do { |column|
-			Pen.line(Point(labW + (column * cellW), 0),
-				Point(labW + (column * cellW), size.height));
+		this.class.destGroups.do { |group, i|
+			if(i > 0) {
+				var column = group[\start];
+				Pen.line(Point(labW + (column * cellW), 0),
+					Point(labW + (column * cellW), size.height));
+			};
 		};
 		Pen.stroke;
 
@@ -148,8 +232,11 @@ CQGuiMatrix {
 			var y = (si * cellH) + (cellH / 2), familyColor;
 			var labelColor = if(si == focusSi) { colors[\line] } { colors[\whisper] };
 			familyColor = colors[this.prSourceFamily(src)];
-			Pen.stringAtPoint(this.prSourceLabel(src), 2@(y - 5),
-				CQInk.font(\label), labelColor);
+			// the shared content inset: the loom's row names begin on the same
+			// vertical line as every other Drawer page's first ink
+			Pen.stringAtPoint(this.prSourceLabel(src),
+				metrics[\contentInset]@(y - (metrics[\loomLabelSize] / 2) - 1),
+				CQInk.font(\label, metrics[\loomLabelSize]), labelColor);
 			Pen.fillColor = familyColor;
 			Pen.fillOval(Rect(labW - 15, y - 3, 6, 6));
 		};
@@ -194,8 +281,22 @@ CQGuiMatrix {
 			Pen.stroke;
 		};
 		if(selected or: { hovered }) {
-			Pen.strokeColor = colors[\line].copy.alpha_(if(selected) { 0.9 } { 0.48 });
-			Pen.width = if(selected) { CQInk.strokes[\strong] } { CQInk.strokes[\hairline] };
+			if(hovered) {
+				Pen.fillColor = colors[\spark].copy.alpha_(0.16);
+				Pen.addRoundedRect(Rect(cx - (cellW / 2) + 3,
+					cy - (cellH / 2) + 2, cellW - 6, cellH - 4), 4, 4);
+				Pen.fill;
+			};
+			Pen.strokeColor = if(hovered) {
+				colors[\spark].copy.alpha_(0.92)
+			} {
+				colors[\line].copy.alpha_(0.9)
+			};
+			Pen.width = if(selected or: { hovered }) {
+				CQInk.strokes[\strong]
+			} {
+				CQInk.strokes[\normal]
+			};
 			Pen.addRoundedRect(Rect(cx - (cellW / 2) + 4, cy - (cellH / 2) + 3,
 				cellW - 8, cellH - 6), 3, 3);
 			Pen.stroke;
@@ -277,32 +378,20 @@ CQGuiMatrix {
 	}
 
 	prDestGroups {
-		^[(start: 0, count: 5, title: "coco 1"),
-			(start: 5, count: 5, title: "coco 2"),
-			(start: 10, count: 5, title: "castle · fm"),
-			(start: 15, count: 5, title: "castle · spesal"),
-			(start: 20, count: 2, title: "decks")]
+		^this.class.destGroups
 	}
 
 	prDestLabel { |dest|
-		^switch(dest,
-			\coco1_spaf, { "spaf" }, \coco1_inVca, { "in" },
-			\coco1_fbVca, { "fb" }, \coco1_flip, { "flip" },
-			\coco1_skip, { "skip" }, \coco2_spaf, { "spaf" },
-			\coco2_inVca, { "in" }, \coco2_fbVca, { "fb" },
-			\coco2_flip, { "flip" }, \coco2_skip, { "skip" },
-			\castle1_fm, { "1" }, \castle2_fm, { "2" },
-			\castle3_fm, { "3" }, \castle4_fm, { "4" }, \castle5_fm, { "5" },
-			\castle1_spesal, { "1" }, \castle2_spesal, { "2" },
-			\castle3_spesal, { "3" }, \castle4_spesal, { "4" },
-			\castle5_spesal, { "5" }, \deckA_rate, { "a · rate" },
-			\deckB_rate, { "b · rate" }, { dest.asString })
+		^this.class.destLabel(dest)
 	}
 
 	prDestColor { |dest, colors|
 		var name = dest.asString;
 		^case
 			{ name.find("spaf").notNil } { colors[\spaf] }
+			{ name.find("_organ").notNil } { colors[\organ] }
+			{ name.find("_slotQ").notNil } { colors[\tri] }
+			{ name.find("_record").notNil } { colors[\input] }
 			{ name.find("_fm").notNil } { colors[\fm] }
 			{ name.find("spesal").notNil } { colors[\input] }
 			{ colors[\whisper] }

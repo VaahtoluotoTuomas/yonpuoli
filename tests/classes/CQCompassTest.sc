@@ -107,6 +107,23 @@ CQCompassTest : UnitTest {
 			"no cell is unconditionally eternal or unconditionally drowned");
 	}
 
+	test_memoryDensitySeparatesVacancySilenceAndLife {
+		var compass = CQCompass(nil);
+		var silent = this.prDense([]);
+		var living = this.prDense([[\tri1, \coco1_spaf, 0.4]]);
+		this.assert(compass.cornerDensity(0).isNil,
+			"a vacant seed is no memory at all");
+		compass.stamp(0, silent);
+		compass.stamp(1, living);
+		this.assertEquals(compass.cornerDensity(0), 0,
+			"a stored silent patch is an occupied dormant kernel");
+		this.assertFloatEquals(compass.cornerDensity(1),
+			1 / (CQMatrix.destNames.size * CQMatrix.sourceNames.size),
+			"a living kernel reports its planted-cell density", 1e-9);
+		this.assertEquals(compass.memoryDensities[2], nil,
+			"the four-state inventory preserves a vacant slot");
+	}
+
 	test_gatesSurviveTheVoyage {
 		// the amplitude blend's failure case: a 0.9 flip banana must still
 		// clear the +0.5 Schmitt at the pad's midpoint if it stands at all

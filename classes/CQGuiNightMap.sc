@@ -1,39 +1,71 @@
 // CQGuiNightMap — the Night stage (GUI_SPEC §6, §16.6): a topology-true
-// archipelago carrying the same 16 jacks, 22 sockets, cable overlay and banana
-// grammar as Day, plus the §6.1 night touch grammar (CQGuiNightTouch). Pure
+// archipelago carrying all 16 jacks, 32 sockets, the cable overlay and banana
+// grammar, plus the §6.1 night touch grammar (CQGuiNightTouch). Pure
 // view: geometry from CQNightGeometry, pixels from CQInk/CQInkNight, every
-// write through the shared grammar and funnels. The layers are opaque-backed
-// (ground → ring → eye → castles → shells → birds → endpoints → crescents →
-// labels, the hit-transparent overlay on top) so an ambient repaint touches
+// write through the shared grammar and funnels. Large stable bodies remain
+// opaque-backed; the eye, castles and their local details use transparent
+// paper so only their actual round/irregular bodies mask the river. Z order is
+// ground → ring → eye →
+// castles → shells → read heads → birds → endpoints → crescents → labels → cable overlay →
+// hit-transparent tide gesture overlay, so an ambient repaint touches
 // only the views whose information actually moved (§10) — the storm iris in
 // particular repaints without re-inking the ring.
 
 CQGuiNightMap {
 	var gui, state, matrix, config;
-	var <stageView, <container, <overlay, <controller, <touch, <endpoints, <bodies;
-	var <groundView, <ringView, <eyeView, <castleViews, <shellViews, <birdViews;
+	var <stageView, <container, <overlay, <routeView;
+	var <controller, <touch, <endpoints, <bodies;
+	var <groundView, <rootViews, <ringView, <eyeView, <castleViews, <shellViews;
+	var <dustViews, <dustNorms, <dustGrainNorms, <dustActive, <dustHover;
+	var <dustModStates;
+	var <readHeadViews, <birdViews, <shellPaintCounts, <readHeadPaintCounts;
+	// Level's shore moved onto this layer in PLAY-6.1, so the smoke has to be
+	// able to prove that an outside CQState write still repaints it — and the
+	// stage size of its LAST paint, so a stale layer can be told from a fresh
+	// one. Qt resizes this sibling independently of the container, so without
+	// the repaint prLayout now forces, the streams could sit at the previous
+	// geometry indefinitely.
+	var <routePaintCount = 0, <routePaintSize;
+	// A separate layout-request witness keeps the headless smoke independent of
+	// whether the host OS exposes an otherwise invisible test window. The real
+	// paint count/size below still proves that Qt eventually ran the drawFunc.
+	var <routeLayoutRefreshCount = 0, <routeLayoutRefreshSize;
+	var <birdHover, <birdFlash, birdFlashGeneration, fileDialog, deckAction;
 	var <almanacView, <moonHover = false, <moonFlash = false;
-	// the §7.1 compass water: its own opaque layer, so pouring a voyage never
-	// re-inks the moon and a moon flash never re-inks the field
+	// The tide is the full ground itself: four seeds, no pool body or outline.
 	var <compassView, <compassHover, <compassDragState;
-	var <breedArmed = false, <breedFirst, <weatherActive, <weatherFlash;
+	var <tideGestureView, <tideGateView, <tideGateHover = false;
+	var <tideGesturePaintCount = 0;
+	var <tideFocus = false, <tideFocusLatched = false;
+	var <tideFocusRequested = false;
+	var <weatherActive, <weatherFlash, <weatherIntensity = 0;
 	var blendPending, blendScheduled = false, lastBlendWrite = 0;
-	var <crescentViews, crescentNorms, activeCrescents, hoverCrescents, labels;
-	var <geometry, <eyeActive = false;
+	var <crescentViews, crescentNorms, <crescentModStates;
+	var activeCrescents, hoverCrescents, labels;
+	var <dolbyStates, <dolbyHover;
+	var <geometry, <eyeActive = false, <eyeHover = false;
 	var <eyeFreqNorm = 0.5, <eyeChaosNorm = 0.15;
-	var <speedNorms, <shellHover, <dialHover, <bodyHover, <rimHover, <ringHover = false;
+	var <speedNorms, <shellHover, <dialHover, <rangeHover, <bodyHover;
+	var <rimHover, <heartHover, <chevronHover, <ringHover = false;
+	// Promoted performance mix: Level shoreline, audible Organ flesh, qMix gill
+	// and the destination-side x gill. The dictionary key is the real CQSpec
+	// name, so drawing, touch and coverage cannot invent parallel identities.
+	var <flowNorms, <flowActive, <flowHover, <flowModStates, <sendNorms, <sendActive;
+	var <preampHover, <preampSourceHover, <preampActive;
+	var <preampDriveNorms, <preampBiasNorms, <preampSlotNorms, <deckSlotNorms;
+	var <preampSources, preampPainted;
 	var <sparkDirs, <skipHover, <skipFlash, sparkPainted, flipPainted;
 	var struckCount, <struckOn, <struckNorms, <struckBlink;
-	var <fireflyPhase = 0.0, lastFireflyTime, castlePainted;
-	var <holdStates, <flipStates, <rangeLetters, <sproutState;
+	var <fireflyPhase = 0.0, lastFireflyTime, <castleMotions;
+	var <holdStates, <flipStates, <rangeStates, <sproutState;
 	var freed = false;
 
 	*new { |gui, state, matrix, config|
 		^super.newCopyArgs(gui, state, matrix, config).prBuild
 	}
 
-	// same families, glyphs and lamps as the Day skin — one learned shape
-	// (§16.7); decorations are the night homes of §3.1 (leaf, crown, fruit
+	// Shared families, glyphs and lamps form one learned shape (§16.7);
+	// decorations are the Night homes of §3.1 (leaf, crown, fruit
 	// stem — the mouth chevron lives on the shell as a §6.1 touch).
 	*endpointSpec { |name|
 		var string = name.asString, prefix = string.keep(3).asSymbol;
@@ -46,12 +78,34 @@ CQGuiNightMap {
 		};
 		if(CQMatrix.destIndex(name).isNil) { ^nil };
 		if(string.endsWith("_spaf")) { ^(kind: \socket, family: \spaf) };
-		if(string.endsWith("Vca")) { ^(kind: \socket, family: \line, glyph: \wedge) };
+		// Coco's continuous destinations are hollow rings. Their adjacent scale or
+		// anatomy says which quantity they belong to; interior glyphs are reserved
+		// for categorical/event acts on this already dense shell cluster.
+		if(string.endsWith("Vca")) { ^(kind: \socket, family: \line) };
 		if(string.endsWith("_flip")) {
 			^(kind: \socket, family: \line, glyph: \flip, lamp: true)
 		};
 		if(string.endsWith("_skip")) {
 			^(kind: \socket, family: \line, glyph: \spark, lamp: true)
+		};
+		if(string.endsWith("_organ")) {
+			^(kind: \socket, family: \organ, paper: \clear)
+		};
+		if(string.endsWith("_slotQ")) {
+			^(kind: \socket, family: \tri, paper: \clear)
+		};
+		if(string.endsWith("_slotX")) {
+			^(kind: \socket, family: \line, paper: \clear)
+		};
+		if(string.endsWith("_dust")) {
+			^(kind: \socket, family: \line, paper: \clear)
+		};
+		if(string.endsWith("_record")) {
+			^(kind: \socket, family: \danger, glyph: \rec, lamp: true,
+				paper: \clear,
+				// The lamp belongs outside its shell. A fixed right-hand lamp put
+				// coco 1's opaque owner directly over its inward-running red root.
+				lampSide: if(string.beginsWith("coco1")) { -1 } { 1 })
 		};
 		if(string.endsWith("_fm")) { ^(kind: \socket, family: \fm, glyph: \wave) };
 		if(string.endsWith("_spesal")) {
@@ -60,37 +114,129 @@ CQGuiNightMap {
 		^(kind: \socket, family: \line, glyph: \pendulum)
 	}
 
-	// §6 solo-light bodies at night — the anatomy's own groupings (§16.6), and
-	// deliberately the Day panel's own body names where the grouping is the
-	// same organ, so one shared grammar cannot hold two solos for one body.
-	// The castles are the night's own finer bodies. Roots and birds carry
+	// §6 solo-light bodies — the Night anatomy's useful groupings (§16.6).
+	// A castle already has four precise endpoint solos, while its whole visible
+	// flesh is the spesal-step clock; a second body solo would still be redundant,
+	// so the body grammar begins at the two shells and the whole ring. Roots and birds carry
 	// exactly one endpoint each: their jack/socket solo already lights the very
 	// same cables, so a body there would be a second name for one act.
 	*bodyNames {
-		^#[castle1, castle2, castle3, castle4, castle5, coco1, coco2, quantussy]
+		^#[coco1, coco2, quantussy]
 	}
 
 	*bodyEndpointNames { |name|
 		var string = name.asString, n;
 		if(name == \quantussy) {
 			^CQMatrix.sourceNames.copyRange(0, 9)
-				++ CQMatrix.destNames.copyRange(10, 19)
+				++ CQMatrix.destNames.select { |dest|
+					dest.asString.beginsWith("castle")
+				}
 		};
 		n = string.last.asString;
-		if(string.beginsWith("castle")) {
-			^[("tri" ++ n).asSymbol, ("cas" ++ n).asSymbol,
-				("castle" ++ n ++ "_fm").asSymbol,
-				("castle" ++ n ++ "_spesal").asSymbol]
-		};
 		if(string.beginsWith("coco")) {
 			^[("coco" ++ n).asSymbol, ("org" ++ n).asSymbol,
 				("coco" ++ n ++ "_spaf").asSymbol,
 				("coco" ++ n ++ "_inVca").asSymbol,
 				("coco" ++ n ++ "_fbVca").asSymbol,
 				("coco" ++ n ++ "_flip").asSymbol,
-				("coco" ++ n ++ "_skip").asSymbol]
+				("coco" ++ n ++ "_skip").asSymbol,
+				("coco" ++ n ++ "_organ").asSymbol,
+				("coco" ++ n ++ "_slotQ").asSymbol,
+				("coco" ++ n ++ "_slotX").asSymbol,
+				("coco" ++ n ++ "_dust").asSymbol,
+				("coco" ++ n ++ "_record").asSymbol]
 		};
 		^[]
+	}
+
+	// N7 source truth. Membership and order are never copied into the view;
+	// each side reads its own CQSpec enum.
+	*preampParamName { |index, suffix|
+		var side = if(index == 0) { "A" } { "B" };
+		^("pre" ++ side ++ suffix.asString).asSymbol
+	}
+
+	*preampSourceValues { |index|
+		^CQSpec.enumValues(this.preampParamName(index, \Src))
+	}
+
+	*preampSourceIndex { |index, value|
+		var name = this.preampParamName(index, \Src);
+		var audible = this.preampSourceValues(index)
+			.reject { |candidate| candidate == \none };
+		^audible.indexOf(CQSpec.clamp(name, value))
+	}
+
+	*preampSourceLabel { |value|
+		^switch(value,
+			\liveL, { "live l" },
+			\liveR, { "live r" },
+			\deckA, { "deck a" },
+			\deckB, { "deck b" },
+			\mic, { "mic" },
+			{ "none" }
+		)
+	}
+
+	// The night's own interactive CQSpec inventory (NIGHT_STANDALONE_PLAN §12.1.1):
+	// every parameter a hand can actually play from this landscape. It is composed
+	// from the same semantic helpers the bodies are drawn from, never derived as
+	// somebody else's complement — a parameter that loses its touch point must
+	// disappear from here too, and the coverage gate must then fail.
+	// Read-only marks are deliberately absent: the mic sprout draws `micGain` and
+	// the roots read `cocoNSlotPre`, but neither is an owner here.
+	*reachableParamNames {
+		var names = List.new;
+		// the deck level crescents under the birds' wings (§6.1)
+		this.crescentNames(2).do { |name| names.add(name) };
+		// each root: the source strand delta and the drive/bias knot (§10)
+		2.do { |i|
+			#[\Src, \Drive, \Bias].do { |suffix|
+				names.add(this.preampParamName(i, suffix))
+			};
+		};
+		// each shell: three tide crescents, the winding spiral, the heart, the
+		// mouth chevron, two dolby oysters and the promoted performance mix
+		2.do { |i|
+			this.crescentNames(i).do { |name| names.add(name) };
+			#[\Speed, \Hold, \Flip, \DolbyIn, \DolbyFb].do { |suffix|
+				names.add(("coco" ++ (i + 1) ++ suffix).asSymbol)
+			};
+			this.shellFlowNames(i).do { |name| names.add(name) };
+			names.add(this.dustParamName(i, \Dust));
+			names.add(this.dustParamName(i, \DustGrain));
+		};
+		// the ring's storm iris (§16.6)
+		names.add(\qFreq);
+		names.add(\qChaos);
+		// the castles' range ripples and radial qMix tributaries (§3)
+		5.do { |k|
+			names.add(("c" ++ (k + 1) ++ "Range").asSymbol);
+			names.add(("c" ++ (k + 1) ++ "Send").asSymbol);
+		};
+		^names.asArray
+	}
+
+	*shellFlowNames { |cocoIndex|
+		var n = cocoIndex.asInteger.clip(0, 1) + 1;
+		^[
+			("coco" ++ n ++ "Level").asSymbol,
+			("coco" ++ n ++ "Organ").asSymbol,
+			("coco" ++ n ++ "SlotQ").asSymbol,
+			("coco" ++ n ++ "SlotX").asSymbol
+		]
+	}
+
+	*shellFlowParam { |cocoIndex, target|
+		var names = this.shellFlowNames(cocoIndex);
+		^switch(target,
+			\level, { names[0] }, \organ, { names[1] },
+			\slotQ, { names[2] }, \slotX, { names[3] }, { nil })
+	}
+
+	*dustParamName { |cocoIndex, suffix = \Dust|
+		var n = cocoIndex.asInteger.clip(0, 1) + 1;
+		^("coco" ++ n ++ suffix.asString).asSymbol
 	}
 
 	// §6.1 crescent inventory: three continuous coco moons per shell plus one
@@ -103,10 +249,122 @@ CQGuiNightMap {
 		)
 	}
 
+	// A scale exists only where the parameter has a musically named landmark.
+	// Its positions come from CQSpec; the view receives semantics, not ranges.
+	*crescentScaleFor { |name|
+		var inventory = this.crescentNames(0) ++ this.crescentNames(1)
+			++ this.crescentNames(nil);
+		var text = name.asString, points;
+		if(inventory.includes(name).not) { ^nil };
+		if(text.endsWith("Fb")) {
+			points = CQSpec.mapBreakpoints(name);
+			^if(points.isNil) { nil } {
+				(kind: \feedback, edges: points.collect { |point| point[0] })
+			}
+		};
+		if(text.endsWith("Spaf")) {
+			^(kind: \spaf, center: CQSpec.centerNorm(name),
+				fine: [CQSpec.referenceNorm(name, \fineNeg),
+					CQSpec.referenceNorm(name, \finePos)],
+				octaves: [CQSpec.referenceNorm(name, \octaveNeg),
+					CQSpec.referenceNorm(name, \octavePos)])
+		};
+		if(text.endsWith("In")) {
+			^(kind: \input, unity: CQSpec.referenceNorm(name, \unity))
+		};
+		if(#[deckALevel, deckBLevel].includes(name)) {
+			^(kind: \level, unity: CQSpec.referenceNorm(name, \unity))
+		};
+		^nil
+	}
+
+	// A second pearl is allowed to state DSP truth without moving the setting
+	// pearl away from the value the hand actually stored. The centre follows
+	// motion the 15 Hz eye can resolve; lower..upper is the server-reduced wake
+	// of faster motion. Quantizing to about half a pixel of arc travel prevents
+	// a stationary source from repainting a tiny view for numeric dust.
+	*crescentModStep { ^1 / 96 }
+	// Once the reduced excursion spans this much of a crescent, an instantaneous
+	// 15 Hz centre is no longer a readable position. The wake already states the
+	// range, so its midpoint is the honest stable home for the hollow pearl.
+	*crescentFastSpan { ^1 / 16 }
+
+	*crescentModState { |name, value, spread = 0, activity = 0|
+		var inventory = this.crescentNames(0) ++ this.crescentNames(1)
+			++ [this.shellFlowParam(0, \organ), this.shellFlowParam(0, \slotQ),
+				this.shellFlowParam(0, \slotX), this.shellFlowParam(1, \organ),
+				this.shellFlowParam(1, \slotQ), this.shellFlowParam(1, \slotX),
+				this.dustParamName(0), this.dustParamName(1)];
+		var entry, lowRaw, highRaw, step = this.crescentModStep, quant;
+		var center, lower, upper;
+		value = this.prTelemetryNumber(value);
+		spread = this.prTelemetryNumber(spread);
+		activity = this.prTelemetryNumber(activity);
+		if(inventory.includes(name).not or: { value.isNil }
+			or: { spread.isNil } or: { activity.isNil }
+			or: { activity.abs <= 0.001 }) { ^nil };
+		entry = CQSpec.at(name);
+		lowRaw = value - spread.abs;
+		highRaw = value + spread.abs;
+		quant = { |norm|
+			((norm / step).round * step).clip(0, 1)
+		};
+		center = quant.value(CQSpec.unmap(name, value));
+		lower = quant.value(CQSpec.unmap(name, lowRaw));
+		upper = quant.value(CQSpec.unmap(name, highRaw));
+		if((upper - lower) >= this.crescentFastSpan) {
+			center = quant.value((lower + upper) * 0.5)
+		};
+		^(center: center, lower: lower, upper: upper,
+			clippedLow: lowRaw < entry[\spec].minval,
+			clippedHigh: highRaw > entry[\spec].maxval)
+	}
+
+	*crescentModStateChanged { |before, after|
+		if(before.isNil) { ^after.notNil };
+		if(after.isNil) { ^true };
+		^#[center, lower, upper, clippedLow, clippedHigh].any { |key|
+			before[key] != after[key]
+		}
+	}
+
+	// `/cq_castle` gives each raw triangle plus its realized oscillator rate.
+	// Below this ceiling the 15 Hz eye has enough samples to show a travelling
+	// pearl. Above it, one stable full-reed blur is more truthful than aliasing.
+	*castleResolvedCeiling { ^3 }
+	*castleMotionStep { ^1 / 32 }
+
+	*castleMotionState { |value, hz|
+		var step = this.castleMotionStep, position;
+		value = this.prTelemetryNumber(value);
+		if(value.isNil) { ^nil };
+		hz = this.prTelemetryNumber(hz);
+		if(hz.notNil and: { hz.abs > this.castleResolvedCeiling }) {
+			^(mode: \blur, position: 0.5, strength: 1)
+		};
+		position = (((value.clip(-1, 1) + 1) * 0.5) / step).round * step;
+		^(mode: \resolved, position: position.clip(0, 1), strength: 1)
+	}
+
+	*castleMotionStateChanged { |before, after|
+		if(before.isNil) { ^after.notNil };
+		if(after.isNil) { ^true };
+		^#[mode, position, strength].any { |key| before[key] != after[key] }
+	}
+
+	*prTelemetryNumber { |value|
+		if(value.isNumber.not) { ^nil };
+		value = value.asFloat;
+		if(value.isNaN or: { value.abs == inf }) { ^nil };
+		^value
+	}
+
 	free {
 		if(freed) { ^this };
 		freed = true;
-		touch !? { touch.cancelWeather };
+		// window close, GUI free and CmdPeriod all reach here — restore a held
+		// punch and let go of any weather gesture through the one choke point
+		this.cancelGestures;
 		controller !? { controller.free };
 		overlay !? { overlay.free };
 	}
@@ -123,11 +381,11 @@ CQGuiNightMap {
 	// §16.6: which castle each castle reads is *structure*, so it is drawn only
 	// where the hand is asking — one chord under a hovered castle, all five
 	// under the hovered river, nothing at rest. The partner and the hold mode
-	// come from the Day constellation's own adapter, so one spesal state can
-	// never mean two different couplings in two skins.
+	// come from the one semantic adapter, so state and visible coupling cannot
+	// drift apart.
 	chordCastles {
 		if(ringHover) { ^(0..4) };
-		^(0..4).select { |k| dialHover[k] or: { bodyHover[k] } }
+		^(0..4).select { |k| dialHover[k] }
 	}
 
 	spesalChords {
@@ -138,7 +396,7 @@ CQGuiNightMap {
 			var partner = CQGuiCastleConstellation.partnerIndex(k, state);
 			// the chord runs the way the signal runs: the partner's triangle is
 			// sampled INTO this castle (SPEC §2.2), so the light travels
-			// partner -> k, and the Day link now points the same way
+			// partner -> k: the light travels with the signal
 			(path: CQNightGeometry.spesalChord(geometry, partner, k),
 				track: CQGuiCastleConstellation.trackMode(state))
 		}
@@ -163,18 +421,66 @@ CQGuiNightMap {
 		if(freed.not) { eyeView.refresh };
 	}
 
+	flowNorm { |name| ^flowNorms[name] ? 0 }
+
+	setFlowActive { |name, flag|
+		var i;
+		if(flag == true) { flowActive.add(name) } { flowActive.remove(name) };
+		i = if(this.class.shellFlowNames(0).includes(name)) { 0 } { 1 };
+		if(freed.not) {
+			shellViews[i].refresh;
+			routeView.refresh;
+		};
+		^this
+	}
+
+	paintFlow { |name, norm|
+		var i;
+		flowNorms[name] = (norm ? 0).clip(0, 1);
+		i = if(this.class.shellFlowNames(0).includes(name)) { 0 } { 1 };
+		if(freed.not) {
+			shellViews[i].refresh;
+			routeView.refresh;
+		};
+		^this
+	}
+
+	setDustActive { |i, flag|
+		dustActive[i] = flag == true;
+		if(freed.not) { dustViews[i].refresh };
+		^this
+	}
+
+	paintDust { |i, amountNorm, grainNorm|
+		dustNorms[i] = (amountNorm ? 0).clip(0, 1);
+		dustGrainNorms[i] = (grainNorm ? 0.5).clip(0, 1);
+		if(freed.not) { dustViews[i].refresh };
+		^this
+	}
+
+	setCastleSendActive { |k, flag|
+		sendActive[k] = flag == true;
+		if(freed.not) { castleViews[k].refresh };
+		^this
+	}
+
+	paintCastleSend { |k, norm|
+		sendNorms[k] = (norm ? 0).clip(0, 1);
+		if(freed.not) { castleViews[k].refresh };
+		^this
+	}
+
 	// ---- the almanac corner (§6.1, §16.6) ----
-	// shakeAmount is a GUI constant, not a CQSpec param, and it is ONE state
-	// worn by three layers: the Day knob, the `p` key and this moon. The write
-	// goes to CQGui, which clamps it and fans the new phase back out to both
-	// skins — so the moon can never disagree with the knob.
+	// shakeAmount is a GUI constant, not a CQSpec param. The write goes to
+	// CQGui, which clamps it and fans the new phase back to the moon; the `p`
+	// key and code trigger the same action without owning another value.
 	shakeAmount { ^gui.shakeAmount }
 	pourShake { |norm| gui.shakeAmount = norm; ^this }
 	throwShake { gui.shake; ^this }
 
-	// any shake flashes the moon, from any layer — `p`, the Day button and code
-	// all hang off the one `\action` notice, exactly as the skip marks do, so
-	// one state shows in three places with one light. It flashes even at the new
+	// Any shake flashes the moon — `p`, the moon, code and patterns all hang
+	// off the one `\action` notice, exactly as the skip marks do. It flashes
+	// even at the new
 	// moon, where nothing is sown: the flash says the press landed, and the dark
 	// disc says why nothing grew.
 	flashShake {
@@ -220,7 +526,7 @@ CQGuiNightMap {
 		matrix.writeMatrix(gui.compass.blendAt(norm.x, norm.y),
 			origin: \gui, committed: false, operation: \compassFrame);
 		compassDragState = (pos: norm, pull: CQCompass.bilinear(norm.x, norm.y));
-		compassView.refresh;
+		tideGestureView.refresh;
 		^this
 	}
 
@@ -234,7 +540,7 @@ CQGuiNightMap {
 			origin: \gui, committed: true, operation: \compass);
 		gui.bananaGrammar.rememberMatrix(before);
 		compassDragState = nil;
-		compassView.refresh;
+		tideGestureView.refresh;
 		^this
 	}
 
@@ -246,7 +552,7 @@ CQGuiNightMap {
 		overlay.stormMode = false;
 		compassDragState = nil;
 		if(freed) { ^this };
-		compassView.refresh;
+		tideGestureView.refresh;
 		from = matrix.fullMatrix;
 		steps.do { |i|
 			var t = (i + 1) / steps;
@@ -277,68 +583,146 @@ CQGuiNightMap {
 		blendPending = nil;
 		overlay.stormMode = false;
 		compassDragState = nil;
-		if(freed.not) { compassView.refresh };
+		if(freed.not) { tideGestureView.refresh };
 		^this
 	}
 
-	// corner seeds: a tap stamps the live matrix (weights only, ever), a
-	// right press clears the memory. Neither touches the bay, so neither is an
-	// undo op; both auto-save through CQCompass.
+	// Corner seeds are memories, not four identical buttons. A filled tap
+	// recalls; Shift writes/overwrites; an open Tab/gill focus lets an empty tap
+	// write without a keyboard; right clears. Dragging one filled seed onto
+	// another breeds them without introducing a graft tool.
+	cornerStamped { |i| ^gui.compass.corner(i).notNil }
+
 	stampCorner { |i|
 		gui.compass.stamp(i, matrix.fullMatrix);
-		if(freed.not) { compassView.refresh };
+		if(freed.not) { compassView.refresh; routeView.refresh };
+		^this
+	}
+
+	*hasDolbyCrescent { |name|
+		var string = name.asString;
+		^(string.beginsWith("coco")
+			and: { string.endsWith("In") or: { string.endsWith("Fb") } })
+	}
+
+	*dolbyNameForCrescent { |name|
+		var string;
+		if(this.hasDolbyCrescent(name).not) { ^nil };
+		string = name.asString;
+		^if(string.endsWith("In")) {
+			(string.keep(string.size - 2) ++ "DolbyIn").asSymbol
+		} {
+			(string.keep(string.size - 2) ++ "DolbyFb").asSymbol
+		}
+	}
+
+	seedTap { |i, overwrite = false, focusWrite = false|
+		if(overwrite) { ^this.stampCorner(i) };
+		if(this.cornerStamped(i)) {
+			^this.commitBlend(Point(i % 2, i div: 2), matrix.fullMatrix)
+		};
+		if(focusWrite) { ^this.stampCorner(i) };
+		// Reading an unplanted husk is intentionally inert. Writing is guarded
+		// by Shift, or by opening the bay with Tab/the gill.
 		^this
 	}
 
 	clearCorner { |i|
 		gui.compass.clear(i);
-		if(freed.not) { compassView.refresh };
+		if(freed.not) { compassView.refresh; routeView.refresh };
 		^this
 	}
 
-	// §7.3 breed: arm the graft, pick two parents, the offspring becomes the
-	// bay — one committed write, one undo op. Pressing the graft again, or any
-	// stray pad press, forgets it; so does Esc (cancelWeather).
-	armBreed {
-		breedArmed = breedArmed.not;
-		breedFirst = nil;
-		if(freed.not) { compassView.refresh };
-		^this
-	}
-
-	disarmBreed {
-		if(breedArmed or: { breedFirst.notNil }) {
-			breedArmed = false;
-			breedFirst = nil;
-			if(freed.not) { compassView.refresh };
+	previewBreed { |i, point|
+		var target = CQNightGeometry.stampHit(geometry[\almanac], point);
+		if(target == i or: { target.notNil and: {
+			this.cornerStamped(target).not } }) {
+			target = nil
 		};
+		compassDragState = (breedFrom: i, cursor: point,
+			breedTarget: target);
+		if(freed.not) { tideGestureView.refresh };
 		^this
 	}
 
-	pickParent { |i|
+	breedCorners { |a, b|
 		var before, offspring;
-		if(breedArmed.not) { ^this };
-		if(breedFirst.isNil) {
-			breedFirst = i;
-			if(freed.not) { compassView.refresh };
-			^this
+		if(this.cornerStamped(a).not or: { this.cornerStamped(b).not }) {
+			^this.clearVoyage
 		};
 		before = matrix.fullMatrix;
-		offspring = CQCompass.breed(gui.compass.corner(breedFirst),
-			gui.compass.corner(i));
+		offspring = CQCompass.breed(gui.compass.corner(a), gui.compass.corner(b));
 		matrix.writeMatrix(offspring, origin: \gui, committed: true,
 			operation: \breed);
 		gui.bananaGrammar.rememberMatrix(before);
-		this.prFlashWeather(\breed);
-		breedArmed = false;
-		breedFirst = nil;
-		if(freed.not) { compassView.refresh };
+		compassDragState = nil;
+		if(freed.not) { tideGestureView.refresh };
+		^this
+	}
+
+	// Shift is a momentary water focus; Tab and the gill latch the same state.
+	// Modifier release waits until a captured tide gesture ends, so the cable
+	// field cannot jump back over the pointer mid-voyage. A latch survives Esc,
+	// panic and view changes until Tab/the gill explicitly closes it.
+	modifierTideFocus_ { |flag|
+		tideFocusRequested = flag == true;
+		if(tideFocusRequested) {
+			if(gui.bananaGrammar.isInHand.not) { this.prSetTideFocus(true) };
+		} {
+			if(touch.isNil or: { touch.tideActive.not }) {
+				this.prSetTideFocus(tideFocusLatched)
+			};
+		};
+		^this
+	}
+
+	toggleTideFocus {
+		if(gui.bananaGrammar.isInHand) { ^this };
+		tideFocusLatched = tideFocusLatched.not;
+		this.prSetTideFocus(tideFocusLatched or: { tideFocusRequested });
+		^this
+	}
+
+	tideFocusLatched_ { |flag|
+		tideFocusLatched = flag == true;
+		if(gui.bananaGrammar.isInHand.not) {
+			this.prSetTideFocus(tideFocusLatched or: { tideFocusRequested })
+		};
+		^this
+	}
+
+	tideFocusGesture_ { |flag|
+		if(flag == true and: { gui.bananaGrammar.isInHand.not }) {
+			this.prSetTideFocus(true)
+		};
+		^this
+	}
+
+	finishTideFocus { |shifted = false|
+		tideFocusRequested = shifted == true;
+		if(touch.isNil or: { touch.tideActive.not }) {
+			this.prSetTideFocus((tideFocusLatched or: { tideFocusRequested })
+				and: { gui.bananaGrammar.isInHand.not })
+		};
+		^this
+	}
+
+	prSetTideFocus { |flag|
+		var next = flag == true;
+		if(next == tideFocus) { ^this };
+		tideFocus = next;
+		overlay !? { overlay.backgrounded = next };
+		if(freed.not) {
+			compassView.refresh;
+			routeView.refresh;
+			tideGestureView !? { tideGestureView.refresh };
+		};
 		^this
 	}
 
 	// one §7.2 seed lands (grow) or one cable thins (wither) — audible at
 	// once as a transient write; the mark flashes 120 ms per act, so a held
-	// rain visibly rains at its own 2.5 Hz
+	// rain visibly rains at the pull's current tension
 	weatherStep { |mark|
 		var change;
 		if(freed) { ^false };
@@ -366,54 +750,93 @@ CQGuiNightMap {
 		^this
 	}
 
-	weatherActive_ { |mark|
+	// Rain and sun are transient faces of the moon's vertical gesture. No
+	// weather glyph exists on the resting tide.
+	prRefreshWeather {
+		if(freed.not) { almanacView.refresh };
+	}
+
+	weatherGesture { |mark, intensity = 0|
+		var next = (intensity ? 0).asFloat.clip(0, 1);
+		if(mark.isNil) { next = 0 };
+		if(mark == weatherActive
+			and: { (next - weatherIntensity).abs <= 0.001 }) { ^this };
 		weatherActive = mark;
-		if(freed.not) { compassView.refresh };
+		weatherIntensity = next;
+		this.prRefreshWeather;
+		^this
+	}
+
+	weatherActive_ { |mark|
+		^this.weatherGesture(mark,
+			if(mark.isNil) { 0 } { weatherIntensity })
 	}
 
 	prFlashWeather { |mark|
 		if(freed) { ^this };
 		weatherFlash = mark;
-		compassView.refresh;
+		this.prRefreshWeather;
 		AppClock.sched(CQInk.momentaryFlash, {
 			if(freed.not and: { weatherFlash == mark }) {
 				weatherFlash = nil;
-				compassView.refresh;
+				this.prRefreshWeather;
 			};
 			nil
 		});
 		^this
 	}
 
-	// every hand-off-the-wheel path (Esc, Tab, panic, free) lands here
-	cancelWeather {
-		touch !? { touch.cancelWeather };
+	// The single "hand comes off every night gesture" choke point. Every
+	// non-mouse-up exit path lands here — Esc and Tab (CQGui.prKey), panic
+	// (CQGui.cancelAudition), and window close / GUI free / CmdPeriod (free,
+	// below). Restoring the momentary punch FIRST is deliberate: a stuck punch
+	// leaves a loop recording over itself (§2), so it is the destructive one.
+	// The weather's uncommitted voyage then goes home like the elastic.
+	cancelGestures {
+		touch !? {
+			touch.cancelPunch;
+			touch.cancelPreamp;
+			touch.cancelBird;
+			touch.cancelPerformance;
+			touch.cancelWeather;
+		};
+		tideFocusRequested = false;
+		this.prSetTideFocus(tideFocusLatched);
 		^this
 	}
 
-	// one '/cq_phase' frame (CQGui caches the funnel truth in phaseNorms; the
-	// 5 Hz send rate is the repaint ceiling, §10). The comet's direction is
+	// One 15 Hz '/cq_phase' frame (CQGui caches the funnel truth in phaseNorms).
+	// Only the clear read-head layer follows ordinary address motion; the
+	// static shell repaints solely when the direction regime changes. The
+	// comet's direction is
 	// read from the phase's actual travel — wrap-aware — so a matrix-driven
 	// flip shows truthfully even when the chevron's param says otherwise.
 	// A move under ~1.5 px along the line keeps the frame.
 	paintPhase { |i|
 		var norm = gui.phaseNorms[i], mean = gui.phaseDirs[i];
-		var delta, mode, struck, rate, repaint = false;
+		var delta, mode, struck, rate, priorDir;
+		var shellRepaint = false, headRepaint = false;
 		if(freed) { ^this };
 		// the chevron's regime can change while the address barely moves — a
 		// shuttled loop goes nowhere — so it gets its own gate
 		mode = this.flipMode(i);
-		if(mode != flipPainted[i]) { flipPainted[i] = mode; repaint = true };
+		if(mode != flipPainted[i]) {
+			flipPainted[i] = mode;
+			shellRepaint = true
+		};
 		// so does the comet's: a hammered loop never leaves the eye, and a
 		// bead crawling near zero would read as "almost stopped" — the exact
 		// opposite of the truth
 		struck = this.prStruck(i);
-		if(struck != struckOn[i]) { struckOn[i] = struck; repaint = true };
+		if(struck != struckOn[i]) {
+			struckOn[i] = struck;
+			headRepaint = true
+		};
 		// the weight only moves in the steps the drawing can show
 		rate = this.class.struckNorm(gui.phaseSkipHz[i]);
 		if(struck and: { rate != struckNorms[i] }) {
 			struckNorms[i] = rate;
-			repaint = true;
+			headRepaint = true;
 		};
 		// and the mark twinkles once per frame while the state is in force —
 		// §16.9's read-head spark, ambient at the telemetry rate. The frames
@@ -421,43 +844,111 @@ CQGuiNightMap {
 		// a claim about liveness it can no longer make (§9's law, in motion)
 		if(struck) {
 			struckBlink[i] = struckBlink[i].not;
-			repaint = true;
+			headRepaint = true;
 		} {
 			struckBlink[i] = false;
 		};
 		// the tail shares the chevron's one truth wherever the server reports a
 		// settled direction; the wrap-aware travel stays the fallback
+		priorDir = sparkDirs[i];
 		if(mean.notNil and: { mean.abs > this.class.shuttleFloor }) {
 			sparkDirs[i] = mean.sign
 		};
+		if(sparkDirs[i] != priorDir) { headRepaint = true };
 		if(norm.notNil) {
 			if(sparkPainted[i].isNil) {
 				sparkPainted[i] = norm;
-				repaint = true;
+				headRepaint = true;
 			} {
 				delta = norm - sparkPainted[i];
 				if(delta.abs > 0.5) { delta = delta - delta.sign };  // the mouth seam
 				if(delta.abs >= 0.002) {
 					if(mean.isNil and: { delta != 0 }) { sparkDirs[i] = delta.sign };
 					sparkPainted[i] = norm;
-					repaint = true;
+					headRepaint = true;
 				};
 			};
 		};
-		if(repaint) { shellViews[i].refresh };
+		if(shellRepaint) { shellViews[i].refresh };
+		if(headRepaint) { readHeadViews[i].refresh };
+	}
+
+	// Seven destination readings piggyback on each Coco's phase frame. Missing
+	// telemetry freezes the last honest reading (as the read head does); a frame
+	// explicitly reporting zero connected weight removes the satellite. The
+	// first three belong to the old crescents; Organ, SlotQ and SlotX continue
+	// the same wake language on the shell calyx and bridge gills, while Dust
+	// wears it as a hollow pearl in its own veil.
+	crescentModulationFrame { |i, values, spreads, activities|
+		var names, flowNames;
+		if(freed or: { values.isNil } or: { spreads.isNil }
+			or: { activities.isNil }) { ^this };
+		i = (i ? 0).asInteger;
+		if(i < 0 or: { i > 1 }) { ^this };
+		names = this.class.crescentNames(i);
+		names.do { |name, m|
+			var before = crescentModStates[name];
+			var after = this.class.crescentModState(name, values.at(m),
+				spreads.at(m), activities.at(m));
+			if(this.class.crescentModStateChanged(before, after)) {
+				if(after.isNil) { crescentModStates.removeAt(name) } {
+					crescentModStates[name] = after
+				};
+				crescentViews[name] !? { |view| view.refresh };
+			};
+		};
+		flowNames = [this.class.shellFlowParam(i, \organ),
+			this.class.shellFlowParam(i, \slotQ),
+			this.class.shellFlowParam(i, \slotX)];
+		flowNames.do { |name, m|
+			var before = flowModStates[name];
+			var after = this.class.crescentModState(name, values.at(m + 3),
+				spreads.at(m + 3), activities.at(m + 3));
+			if(this.class.crescentModStateChanged(before, after)) {
+				if(after.isNil) { flowModStates.removeAt(name) } {
+					flowModStates[name] = after
+				};
+				if(m == 0) { shellViews[i].refresh } { routeView.refresh };
+			};
+		};
+		{
+			var name = this.class.dustParamName(i);
+			var before = dustModStates[i];
+			var after = this.class.crescentModState(name, values.at(6),
+				spreads.at(6), activities.at(6));
+			if(this.class.crescentModStateChanged(before, after)) {
+				dustModStates[i] = after;
+				if(freed.not) { dustViews[i].refresh };
+			};
+		}.value;
+		^this
+	}
+
+	castleFrame { |values, rates|
+		if(freed or: { values.isNil }) { ^this };
+		5.do { |k|
+			var before = castleMotions[k];
+			var rate = if(rates.isNil) { nil } { rates.at(k) };
+			var after = this.class.castleMotionState(values.at(k), rate);
+			if(this.class.castleMotionStateChanged(before, after)) {
+				castleMotions[k] = after;
+				castleViews[k].refresh;
+			};
+		};
+		^this
 	}
 
 	// skip's charge is peak-held 0.15 s on the server (§9), so if it is still
-	// lit when the next 5 Hz phase frame lands, the loop was restarted inside
-	// that window. Two frames running means the head is being thrown back
+	// lit across about 0.2 s of 15 Hz phase frames, the loop was restarted
+	// inside that window. Four frames running means the head is being thrown back
 	// faster than the eye can follow, and it wears the struck mark (§16.6).
 	// No new telemetry and no client-side timer: the charge already says it.
-	*struckFrames { ^2 }
+	*struckFrames { ^4 }
 
 	// The rate the struck mark wears as weight, 8 Hz → 2 kHz over a log scale
 	// (rate is a pitch to the ear, so it is an octave axis to the eye too).
 	// Quantized to the eight steps the drawing can actually distinguish, so a
-	// drifting rate cannot repaint the shell on every 5 Hz frame for nothing.
+	// drifting rate cannot repaint the read-head layer on every frame for nothing.
 	*struckSteps { ^8 }
 
 	*struckNorm { |hz|
@@ -476,8 +967,8 @@ CQGuiNightMap {
 		^struckCount[i] >= this.class.struckFrames
 	}
 
-	// any skip flashes the mouth mark, exactly as it flashes the Day button —
-	// both hang off the one `\action` notice, so code and patterns show too
+	// Any skip flashes the mouth mark through the one `\action` notice, so
+	// keys, code and patterns show too.
 	flashSkip { |n|
 		var i = n.asInteger - 1;
 		if(freed or: { i < 0 } or: { i > 1 }) { ^this };
@@ -502,6 +993,9 @@ CQGuiNightMap {
 	chargeChanged { |name|
 		if(freed) { ^this };
 		endpoints[name] !? { |endpoint| endpoint[\view].refresh };
+		if(name.asString.endsWith("_record")) {
+			shellViews[if(name.asString.beginsWith("coco1")) { 0 } { 1 }].refresh
+		};
 	}
 
 	crescentActive { |name, flag|
@@ -509,6 +1003,30 @@ CQGuiNightMap {
 			activeCrescents.remove(name)
 		};
 		if(freed.not) { crescentViews[name] !? { |view| view.refresh } };
+	}
+
+	setPreampActive { |i, flag|
+		preampActive[i] = flag == true;
+		if(freed.not) {
+			rootViews[i].refresh;
+			routeView.refresh;
+		};
+		^this
+	}
+
+	paintPreampDrive { |i, norm|
+		preampDriveNorms[i] = norm;
+		if(freed.not) {
+			rootViews[i].refresh;
+			shellViews[i].refresh;
+		};
+		^this
+	}
+
+	paintPreampBias { |i, norm|
+		preampBiasNorms[i] = norm;
+		if(freed.not) { rootViews[i].refresh };
+		^this
 	}
 
 	// One /cq_aura frame that actually moved (CQGui gates the stream and the
@@ -525,12 +1043,12 @@ CQGuiNightMap {
 		CQMatrix.sourceNames.do { |src|
 			endpoints[src] !? { |endpoint| endpoint[\view].refresh };
 		};
-		5.do { |k|
-			var value = auraValues[5 + k] ? 0;   // cas1..cas5 canonical slots
-			if(castlePainted[k].isNil
-				or: { (value - castlePainted[k]).abs >= 0.04 }) {
-				castlePainted[k] = value;
-				castleViews[k].refresh;
+		2.do { |i|
+			var value = auraValues[10 + i] ? 0; // envA/envB, post-preamp truth
+			if(preampPainted[i].isNil
+				or: { (value - preampPainted[i]).abs >= 0.04 }) {
+				preampPainted[i] = value;
+				rootViews[i].refresh;
 			};
 		};
 		if(overlay.cableCount > 0 and: { overlay.auraPulses }) {
@@ -541,20 +1059,46 @@ CQGuiNightMap {
 	// ---- private ----
 
 	prBuild {
-		var night = CQInk.palette(\night), crescentControls;
+		var night = CQInk.palette(\night), bananaControls;
 		endpoints = IdentityDictionary.new;
 		crescentViews = IdentityDictionary.new;
 		crescentNorms = IdentityDictionary.new;
+		crescentModStates = IdentityDictionary.new;
+		flowNorms = IdentityDictionary.new;
+		flowActive = IdentitySet.new;
+		flowHover = IdentitySet.new;
+		flowModStates = IdentityDictionary.new;
+		dustNorms = [0, 0];
+		dustGrainNorms = [0.5, 0.5];
+		dustActive = [false, false];
+		dustHover = [false, false];
+		dustModStates = Array.newClear(2);
 		activeCrescents = IdentitySet.new;
 		hoverCrescents = IdentitySet.new;
-		castlePainted = Array.newClear(5);
+		dolbyStates = IdentityDictionary.new;
+		dolbyHover = IdentitySet.new;
+		castleMotions = Array.newClear(5);
+		sendNorms = Array.fill(5, 0);
+		sendActive = Array.fill(5, false);
 		holdStates = [false, false];
 		flipStates = [false, false];
 		speedNorms = [0.5, 0.5];
 		shellHover = [false, false];
 		rimHover = [false, false];
+		heartHover = [false, false];
+		chevronHover = [false, false];
 		dialHover = Array.fill(5, false);
+		rangeHover = Array.fill(5, false);
 		bodyHover = Array.fill(5, false);
+		preampHover = [false, false];
+		preampSourceHover = [nil, nil];
+		preampActive = [false, false];
+		preampDriveNorms = [0, 0];
+		preampBiasNorms = [0, 0];
+		preampSlotNorms = [0, 0];
+		deckSlotNorms = [0, 0];
+		preampSources = [\none, \none];
+		preampPainted = Array.newClear(2);
 		sparkDirs = [1, 1];
 		skipHover = [false, false];
 		skipFlash = [false, false];
@@ -564,17 +1108,34 @@ CQGuiNightMap {
 		struckBlink = [false, false];
 		sparkPainted = Array.newClear(2);
 		flipPainted = Array.newClear(2);
-		rangeLetters = ["", "", "", "", ""];
+		shellPaintCounts = [0, 0];
+		readHeadPaintCounts = [0, 0];
+		rangeStates = Array.newClear(5);
 		sproutState = CQNightGeometry.sproutState(config[\micChan].notNil, 0);
 		container = View().background_(night[\ground]);
 		groundView = this.prLayer;
 		groundView.drawFunc = { this.prSafeDraw { this.prDrawGround } };
+		// Transparent local layers keep drive/bias and env telemetry repaints
+		// off the whole bay. Shell paper later redraws the exact final vein.
+		rootViews = 2.collect { |i|
+			var view = this.prLayer(false);
+			view.drawFunc = { this.prSafeDraw { this.prDrawPreamp(i) } };
+			view
+		};
+		// Public compatibility name; the tide is now painted by, and receives
+		// open-water gestures through, the full-stage ground.
+		compassView = groundView;
 		ringView = this.prLayer;
 		ringView.drawFunc = { this.prSafeDraw { this.prDrawRing } };
-		eyeView = this.prLayer;
+		// Clear rectangular paper plus CQInkNight's round ground mask: the iris
+		// hides the river behind its body without clipping coupling chords at
+		// the invisible corners of its repaint layer.
+		eyeView = this.prLayer(false);
 		eyeView.drawFunc = { this.prSafeDraw { this.prDrawEye } };
 		castleViews = 5.collect { |k|
-			var view = this.prLayer;
+			// Transparent paper lets the river remain continuous around the
+			// irregular flesh. drawCastle masks only the flesh itself.
+			var view = this.prLayer(false);
 			view.drawFunc = { this.prSafeDraw { this.prDrawCastle(k) } };
 			view
 		};
@@ -583,18 +1144,39 @@ CQGuiNightMap {
 			view.drawFunc = { this.prSafeDraw { this.prDrawShell(i) } };
 			view
 		};
+		// Converter-local Dust is transparent irregular flesh, not a panel. Its
+		// view includes only the detached ownership breath and the veil's own hand.
+		dustViews = 2.collect { |i|
+			var view = this.prLayer(false);
+			view.drawFunc = { this.prSafeDraw { this.prDrawDust(i) } };
+			view
+		};
+		// The only continuously moving Coco ink gets clear, mouse-pass-through
+		// paper of its own. At 15 Hz this redraws a dot and one short tail,
+		// while the much heavier shell remains still.
+		readHeadViews = 2.collect { |i|
+			var view = this.prLayer(false).acceptsMouse_(false);
+			view.drawFunc = { this.prSafeDraw { this.prDrawReadHead(i) } };
+			view
+		};
 		birdViews = 2.collect { |i|
 			var view = this.prLayer;
 			view.drawFunc = { this.prSafeDraw { this.prDrawBird(i) } };
 			view
+		};
+		birdHover = [false, false];
+		birdFlash = [false, false];
+		birdFlashGeneration = [0, 0];
+		// Dialog.openPanel is asynchronous. Keeping the launcher injectable
+		// lets the headless smoke prove the tap route without opening native UI.
+		fileDialog = { |callback, path|
+			Dialog.openPanel(callback, nil, false, path)
 		};
 		// the almanac corner sits above the bodies in z but on water none of
 		// them reach, so its opaque layer covers nothing (§16.6, pinned by the
 		// geometry's clearance tests)
 		almanacView = this.prLayer;
 		almanacView.drawFunc = { this.prSafeDraw { this.prDrawAlmanac } };
-		compassView = this.prLayer;
-		compassView.drawFunc = { this.prSafeDraw { this.prDrawCompass } };
 		(CQMatrix.sourceNames ++ CQMatrix.destNames).do { |name|
 			this.prMakeEndpoint(name)
 		};
@@ -609,12 +1191,49 @@ CQGuiNightMap {
 			gui.setDeckLabel(which, label, night[\whisper]);
 			label
 		};
+		tideGateView = this.prLayer(false);
 		overlay = CQGuiCableOverlay(matrix, endpoints, gui.bananaGrammar,
 			{ |src| gui.auraFor(src) }).skin_(\night);
+		// Provenance must cross every invisible Qt paper edge. It lives above
+		// the landscape but below real patch cables and accepts no mouse.
+		routeView = UserView()
+			.background_(night[\clear])
+			.acceptsMouse_(false);
+		routeView.drawFunc = {
+			this.prSafeDraw { this.prDrawRoutes }
+		};
+		// Gesture ink must cross every opaque landscape rectangle. This view is
+		// the topmost stage sibling and never accepts the mouse.
+		tideGestureView = UserView()
+			.background_(night[\clear])
+			.acceptsMouse_(false);
+		tideGestureView.drawFunc = {
+			this.prSafeDraw { this.prDrawTideGesture }
+		};
 		touch = CQGuiNightTouch(this, state, overlay);
 		this.prBindTouch;
-		crescentControls = List.new;
-		crescentViews.values.do { |view| crescentControls.add((view: view)) };
+		bananaControls = List.new;
+		// These are controls for gesture binding, but their own touch grammar is
+		// cable-first. Let the shared controller publish
+		// the cable hover after the crescent/oyster cue has yielded.
+		crescentViews.values.do { |view|
+			bananaControls.add((view: view, cableHover: true))
+		};
+		// Q and X terminate in small, explicit gills.  Those two exact hit
+		// circles are controls even when an arbitrary planted cable crosses them;
+		// the rest of each large shell view keeps the ordinary cable-first law.
+		shellViews.do { |view, i|
+			bananaControls.add((
+				view: view,
+				cableHover: true,
+				cablePriority: { |v, x, y|
+					this.prShellBridgeTargetAt(i, v, x, y).notNil
+				}
+			))
+		};
+		dustViews.do { |view|
+			bananaControls.add((view: view, cableHover: true))
+		};
 		// The night bodies own their own first gesture pass (§6.1), so they
 		// register members only — no view for the controller to re-bind, or it
 		// would overwrite the touch handlers installed just above.
@@ -623,36 +1242,54 @@ CQGuiNightMap {
 			bodies[name] = (name: name, members: this.class.bodyEndpointNames(name))
 		};
 		controller = CQGuiBananaController(gui.bananaGrammar, endpoints,
-			bodies, overlay, crescentControls);
+			bodies, overlay, bananaControls);
 		controller.bindGround(container);
 		touch.controller = controller;
+		this.prBindTideGround;
+		this.prBindTideGate;
 		this.prBindDrops;
 		stageView = View().background_(night[\ground]).layout_(
-			StackLayout(overlay.view, container).mode_(\stackAll));
+			StackLayout(tideGestureView, overlay.view, routeView, container)
+				.mode_(\stackAll));
 		container.onResize = { this.prLayout };
 		this.prRegisterUpdaters;
 		{ this.prLayout }.defer;
 		^this
 	}
 
-	prLayer {
+	prLayer { |opaque = true|
+		var palette = CQInk.palette(\night);
 		^UserView(container, Rect(0, 0, 4, 4))
-			.background_(CQInk.palette(\night)[\ground])
+			.background_(palette[if(opaque) { \ground } { \clear }])
 	}
 
 	prMakeEndpoint { |name|
 		var spec = this.class.endpointSpec(name);
-		var jack = spec[\kind] == \jack;
-		var width = if(spec[\lamp] == true) { 34 } { if(jack) { 26 } { 20 } };
-		var height = if(jack) { 26 } { 20 };
-		var anchor = if(jack) { Point(13, 13) } { Point(9, 10) };
+		// the box and its anchor come from CQNightGeometry, so the map, the
+		// clearance tests and the view itself size from one table (rake 12)
+		var extent = CQNightGeometry.endpointExtent(spec[\kind], spec[\lamp]);
+		var anchor = CQNightGeometry.endpointAnchor(spec[\kind],
+			spec[\lamp] == true, spec[\lampSide] ? 1);
+		var width = extent.x, height = extent.y;
+		var castleDetail = name.asString.beginsWith("tri")
+			or: { name.asString.beginsWith("cas") }
+			or: { name.asString.beginsWith("castle") };
+		var rootTip = #[envA, envB].includes(name);
+		var shellMouth = #[coco1, coco2].includes(name);
 		var view = UserView(container, Rect(0, 0, width, height))
-			.background_(CQInk.palette(\night)[\ground]);
+			.background_(CQInk.palette(\night)[
+				if(castleDetail or: { rootTip } or: { shellMouth }
+					or: { spec[\paper] == \clear }) {
+					\clear
+				} {
+					\ground
+				}]);
 		view.drawFunc = {
 			this.prSafeDraw {
 				spec[\decoration] !? { this.prDrawDecoration(name, spec, anchor) };
 				gui.drawEndpoint(name, spec[\kind], anchor, spec[\family],
-					spec[\glyph], spec[\lamp] == true, \night);
+					spec[\glyph], spec[\lamp] == true, \night,
+					spec[\lampSide] ? 1);
 			}
 		};
 		endpoints[name] = (name: name, kind: spec[\kind], view: view,
@@ -660,22 +1297,37 @@ CQGuiNightMap {
 	}
 
 	prMakeCrescent { |name|
-		var view = UserView(container, Rect(0, 0, 24, 24))
+		var extent = CQNightMeasures.crescentExtent;
+		var carriesDolby = this.class.hasDolbyCrescent(name);
+		var height = if(carriesDolby) {
+			CQNightMeasures.dolbyCrescentHeight
+		} {
+			extent
+		};
+		var view = UserView(container, Rect(0, 0, extent, height))
 			.background_(CQInk.palette(\night)[\ground]);
 		var family = if(name.asString.endsWith("Spaf")) { \spaf } { nil };
+		var scale = this.class.crescentScaleFor(name);
 		view.drawFunc = {
 			this.prSafeDraw {
-				CQInkNight.drawCrescent(Point(12, 12), crescentNorms[name] ? 0,
+				CQInkNight.drawCrescent(Point(extent * 0.5, extent * 0.5),
+					crescentNorms[name] ? 0,
 					family, activeCrescents.includes(name)
-						or: { hoverCrescents.includes(name) }, \night);
+						or: { hoverCrescents.includes(name) }, \night, scale,
+					crescentModStates[name]);
+				if(carriesDolby) {
+					CQInkNight.drawDolbyOyster(
+						Point(extent * 0.5, (extent * 0.5)
+							+ CQNightMeasures.dolbyOysterDrop),
+						dolbyStates[this.class.dolbyNameForCrescent(name)] ? \off,
+						if(name.asString.endsWith("In")) { 1 } { -1 },
+						dolbyHover.includes(name), \night);
+				};
 			}
-		};
-		view.mouseEnterAction = {
-			hoverCrescents.add(name);
-			view.refresh;
 		};
 		view.mouseLeaveAction = {
 			hoverCrescents.remove(name);
+			dolbyHover.remove(name);
 			view.refresh;
 		};
 		crescentViews[name] = view;
@@ -684,6 +1336,27 @@ CQGuiNightMap {
 	// the §6.1 gesture pass sits on the touch bodies before the controller
 	// binds the remaining paper; everything unclaimed falls through
 	prBindTouch {
+		rootViews.do { |view, i|
+			view.mouseDownAction = { |v, x, y, mods, button, clicks|
+				touch.preampDown(i, v, x, y, mods ? 0, button ? 0, clicks ? 1)
+			};
+			view.mouseMoveAction = { |v, x, y, mods|
+				touch.preampMove(i, v, x, y, mods ? 0)
+			};
+			view.mouseUpAction = { |v, x, y, mods, button|
+				touch.preampUp(i, v, x, y, mods ? 0, button ? 0)
+			};
+			view.mouseWheelAction = { |v, x, y, mods, xd, yd|
+				touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
+			};
+			view.acceptsMouseOver = true;
+			view.mouseOverAction = { |v, x, y|
+				this.prHoverPreamp(i, v, x, y)
+			};
+			view.mouseLeaveAction = {
+				this.prHoverPreamp(i, nil, nil, nil)
+			};
+		};
 		shellViews.do { |view, i|
 			view.mouseDownAction = { |v, x, y, mods, button, clicks|
 				touch.shellDown(i, v, x, y, mods ? 0, button ? 0, clicks ? 1)
@@ -698,7 +1371,24 @@ CQGuiNightMap {
 				touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
 			};
 		};
-		// the eye's own opaque layer sits over the ring's center, so both
+		dustViews.do { |view, i|
+			view.mouseDownAction = { |v, x, y, mods, button, clicks|
+				touch.dustDown(i, v, x, y, mods ? 0, button ? 0, clicks ? 1)
+			};
+			view.mouseMoveAction = { |v, x, y, mods|
+				touch.dustMove(i, v, x, y, mods ? 0)
+			};
+			view.mouseUpAction = { |v, x, y, mods, button|
+				touch.dustUp(i, v, x, y, mods ? 0, button ? 0)
+			};
+			view.mouseWheelAction = { |v, x, y, mods, xd, yd|
+				touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
+			};
+			view.acceptsMouseOver = true;
+			view.mouseOverAction = { |v, x, y| this.prHoverDust(i, v, x, y) };
+			view.mouseLeaveAction = { this.prHoverDust(i, nil, nil, nil) };
+		};
+		// the eye's own local layer sits over the ring's center, so both
 		// views speak the same ring grammar (prPoint maps via the container)
 		[ringView, eyeView].do { |view|
 			view.mouseDownAction = { |v, x, y, mods, button, clicks|
@@ -719,14 +1409,35 @@ CQGuiNightMap {
 				touch.castleDown(k, v, x, y, mods ? 0, button ? 0, clicks ? 1)
 			};
 			view.mouseMoveAction = { |v, x, y, mods|
-				touch.forwardMove(v, x, y, mods ? 0)
+				touch.castleMove(k, v, x, y, mods ? 0)
 			};
 			view.mouseUpAction = { |v, x, y, mods, button|
-				touch.forwardUp(v, x, y, mods ? 0, button ? 0)
+				touch.castleUp(k, v, x, y, mods ? 0, button ? 0)
 			};
 			view.mouseWheelAction = { |v, x, y, mods, xd, yd|
 				touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
 			};
+		};
+		birdViews.do { |view, i|
+			view.mouseDownAction = { |v, x, y, mods, button, clicks|
+				touch.birdDown(i, v, x, y, mods ? 0, button ? 0, clicks ? 1);
+				true
+			};
+			view.mouseMoveAction = { |v, x, y, mods|
+				touch.birdMove(i, v, x, y, mods ? 0);
+				true
+			};
+			view.mouseUpAction = { |v, x, y, mods, button|
+				touch.birdUp(i, v, x, y, mods ? 0, button ? 0);
+				true
+			};
+			view.mouseWheelAction = { |v, x, y, mods, xd, yd|
+				touch.birdWheel(i, v, x, y, mods ? 0, yd ? 0);
+				true
+			};
+			view.acceptsMouseOver = true;
+			view.mouseOverAction = { |v, x, y| this.prHoverBird(i, v, x, y) };
+			view.mouseLeaveAction = { this.prHoverBird(i, nil, nil, nil) };
 		};
 		almanacView.mouseDownAction = { |v, x, y, mods, button, clicks|
 			touch.almanacDown(v, x, y, mods ? 0, button ? 0, clicks ? 1)
@@ -762,6 +1473,10 @@ CQGuiNightMap {
 			view.mouseUpAction = { |v, x, y, mods, button|
 				touch.crescentUp(name, v, x, y, mods ? 0, button ? 0)
 			};
+			view.acceptsMouseOver = true;
+			view.mouseOverAction = { |v, x, y|
+				this.prHoverCrescent(name, v, x, y)
+			};
 		};
 		// static hover cues (§4.5: hover never pulses — ink only, and never
 		// where a cable would win the press). Cheap test first, patchAt only
@@ -778,8 +1493,14 @@ CQGuiNightMap {
 		};
 		[ringView, eyeView].do { |view|
 			view.acceptsMouseOver = true;
-			view.mouseOverAction = { |v, x, y| this.prHoverRing(v, x, y) };
-			view.mouseLeaveAction = { this.prHoverRing(nil, nil, nil) };
+			view.mouseOverAction = { |v, x, y|
+				this.prHoverEye(v, x, y);
+				this.prHoverRing(v, x, y);
+			};
+			view.mouseLeaveAction = {
+				this.prHoverEye(nil, nil, nil);
+				this.prHoverRing(nil, nil, nil);
+			};
 		};
 		almanacView.acceptsMouseOver = true;
 		almanacView.mouseOverAction = { |v, x, y| this.prHoverAlmanac(v, x, y) };
@@ -789,44 +1510,168 @@ CQGuiNightMap {
 		compassView.mouseLeaveAction = { this.prHoverCompass(nil, nil, nil) };
 	}
 
+	// The shared controller first teaches every piece of paper the ordinary
+	// banana/harvest grammar. Open night ground then gets this one extra pass:
+	// a left voyage inside the four winds, with every unclaimed act forwarded
+	// straight back to that controller.
+	prBindTideGround {
+		groundView.mouseDownAction = { |v, x, y, mods, button, clicks|
+			touch.tideDown(v, x, y, mods ? 0, button ? 0, clicks ? 1)
+		};
+		groundView.mouseMoveAction = { |v, x, y, mods|
+			touch.tideMove(v, x, y, mods ? 0)
+		};
+		groundView.mouseUpAction = { |v, x, y, mods, button|
+			touch.tideUp(v, x, y, mods ? 0, button ? 0)
+		};
+		groundView.mouseWheelAction = { |v, x, y, mods, xd, yd|
+			touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
+		};
+		^this
+	}
+
+	// The gill is the GUI entrance to the same state Tab latches. It is the one
+	// narrow exception to cable-first priority: its exact hit shape owns hover
+	// and press even beneath a span, while the rest of this layer still yields.
+	prBindTideGate {
+		tideGateView.mouseDownAction = { |v, x, y, mods, button, clicks|
+			touch.tideGateDown(v, x, y, mods ? 0, button ? 0, clicks ? 1)
+		};
+		tideGateView.mouseMoveAction = { |v, x, y, mods|
+			this.prHoverTideGate(v, x, y);
+			if(tideGateHover.not) {
+				touch.landscapeMove(v, x, y, mods ? 0)
+			}
+		};
+		tideGateView.mouseUpAction = { |v, x, y, mods, button|
+			touch.landscapeUp(v, x, y, mods ? 0, button ? 0)
+		};
+		tideGateView.mouseWheelAction = { |v, x, y, mods, xd, yd|
+			touch.forwardWheel(v, x, y, mods ? 0, yd ? 0)
+		};
+		tideGateView.acceptsMouseOver = true;
+		tideGateView.mouseOverAction = { |v, x, y|
+			this.prHoverTideGate(v, x, y)
+		};
+		tideGateView.mouseLeaveAction = {
+			this.prHoverTideGate(nil, nil, nil)
+		};
+		^this
+	}
+
 	prStagePoint { |view, x, y|
 		^view.mapToGlobal(Point(x, y)) - container.mapToGlobal(0@0)
 	}
 
-	prHoverShell { |i, view, x, y|
-		var near = false, mark = false, rim = false, point, free = true;
+	prHoverPreamp { |i, view, x, y|
+		var next = false, nextSource, point, free = false;
 		if(geometry.notNil and: { view.notNil }) {
 			point = this.prStagePoint(view, x, y);
 			free = overlay.patchAt(point).isNil;
-			near = (CQNightGeometry.spiralDistance(geometry[\cocos][i], point)
-				<= 8) and: { free };
-			// the skip mark sits off the winding surface, above the mouth
-			// jack, so it answers the hand on its own account
-			mark = free and: {
-				CQNightGeometry.markHit(geometry[\cocos][i][\skipMark], point)
+			if(free) {
+				next = CQNightGeometry.preampKnotHit(
+					geometry[\roots][i], point);
+				if(next.not) {
+					nextSource = CQNightGeometry.preampSourceHit(
+						geometry[\roots][i], point)
+				};
 			};
-			// the winding surface and the mark are consulted first, so the rim
-			// cue never advertises a body solo where the next press would wind
-			rim = free and: { near.not } and: { mark.not }
-				and: { CQNightGeometry.shellRimHit(geometry[\cocos][i], point) };
 		};
-		if((near != shellHover[i]) or: { mark != skipHover[i] }
-			or: { rim != rimHover[i] }) {
-			shellHover[i] = near;
-			skipHover[i] = mark;
-			rimHover[i] = rim;
-			if(freed.not) { shellViews[i].refresh };
+		if(next != preampHover[i]
+			or: { nextSource != preampSourceHover[i] }) {
+			preampHover[i] = next;
+			preampSourceHover[i] = nextSource;
+			if(freed.not) {
+				rootViews[i].refresh;
+				routeView.refresh;
+			};
 		};
 	}
 
+	// The cue asks CQNightGeometry.shellTargetAt — the SAME question the press
+	// asks (§4.5). It used to re-derive its own chain and left the heart out of
+	// it entirely, so the innermost turn of the groove lit the wind cue while
+	// the press toggled the loop. Deriving all four cues from one answer also
+	// makes them mutually exclusive by construction rather than by three
+	// hand-written `.not`s.
+	prShellBridgeTargetAt { |i, view, x, y|
+		var point, target;
+		if(geometry.isNil or: { view.isNil }) { ^nil };
+		point = this.prStagePoint(view, x, y);
+		target = CQNightGeometry.shellFlowTargetAt(geometry[\cocos][i], point);
+		^if(#[slotQ, slotX].includes(target)) { target } { nil }
+	}
+
+	prHoverShell { |i, view, x, y|
+		var target, flowTarget, flowName, previousFlow, flowChanged;
+		var bridgeTarget, heart, near, mark, rim, chevron, point;
+		previousFlow = this.class.shellFlowNames(i)
+			.detect { |name| flowHover.includes(name) };
+		if(geometry.notNil and: { view.notNil }) {
+			point = this.prStagePoint(view, x, y);
+			bridgeTarget = this.prShellBridgeTargetAt(i, view, x, y);
+			// Q/X gills are the narrow exception requested for the two internal
+			// bridges. Everywhere else a cable inside its hit path still wins.
+			if(bridgeTarget.notNil) {
+				flowTarget = bridgeTarget;
+				gui.bananaGrammar.hoverCable = nil;
+			} {
+				if(overlay.patchAt(point).isNil) {
+				flowTarget = CQNightGeometry.shellFlowTargetAt(
+					geometry[\cocos][i], point);
+				if(flowTarget.isNil) {
+					target = CQNightGeometry.shellTargetAt(geometry[\cocos][i], point)
+				};
+				};
+			};
+		};
+		flowName = this.class.shellFlowParam(i, flowTarget);
+		this.class.shellFlowNames(i).do { |name| flowHover.remove(name) };
+		flowName !? { flowHover.add(flowName) };
+		flowChanged = previousFlow != flowName;
+		heart = target == \heart;
+		near = target == \wind;
+		mark = target == \skip;
+		rim = target == \rim;
+		chevron = target == \chevron;
+		if(flowChanged or: { near != shellHover[i] } or: { mark != skipHover[i] }
+			or: { rim != rimHover[i] } or: { heart != heartHover[i] }
+			or: { chevron != chevronHover[i] }) {
+			shellHover[i] = near;
+			skipHover[i] = mark;
+			rimHover[i] = rim;
+			heartHover[i] = heart;
+			chevronHover[i] = chevron;
+			if(freed.not) {
+				shellViews[i].refresh;
+				if(flowChanged) { routeView.refresh };
+			};
+		};
+	}
+
+	prHoverDust { |i, view, x, y|
+		var next = false, point;
+		if(geometry.notNil and: { view.notNil }) {
+			point = this.prStagePoint(view, x, y);
+			next = CQNightGeometry.dustBodyHit(geometry[\dusts][i], point)
+				and: { overlay.patchAt(point).isNil };
+		};
+		if(next != dustHover[i]) {
+			dustHover[i] = next;
+			if(freed.not) { dustViews[i].refresh };
+		};
+		^this
+	}
+
 	// the ring's own line, hovered from either of the two views that speak the
-	// ring's grammar (the eye keeps its own opaque layer, §10)
+	// ring's grammar (the eye keeps its own round ground mask, §10)
 	prHoverRing { |view, x, y|
 		var near = false, point;
 		if(geometry.notNil and: { view.notNil }) {
 			point = this.prStagePoint(view, x, y);
 			near = CQNightGeometry.ringBodyHit(geometry, point)
-				and: { CQNightGeometry.distance(point, geometry[\eye]) > 12 }
+				and: { CQNightGeometry.distance(point, geometry[\eye])
+					> CQNightMeasures.eyeHit }
 				and: { overlay.patchAt(point).isNil };
 		};
 		if(near != ringHover) {
@@ -835,22 +1680,40 @@ CQGuiNightMap {
 		};
 	}
 
-	// two cues on one body, told apart by where the hand is: the inner clock's
-	// face brightens for the step tap, the body wears the §4.5 outer echo for
-	// its §6 solo. A cable under the pointer wins both (§4.5), and a repaint
-	// happens only when a boolean actually flips.
+	// The eye is a larger weather body than its pupil: the four rings it reveals
+	// all belong to the same gesture. Like the press path, its cue yields to a
+	// planted cable before promising that the next hand will move the macro.
+	prHoverEye { |view, x, y|
+		var near = false, point;
+		if(geometry.notNil and: { view.notNil }) {
+			point = this.prStagePoint(view, x, y);
+			near = CQNightGeometry.distance(point, geometry[\eye])
+				<= CQNightMeasures.eyeHit
+				and: { overlay.patchAt(point).isNil };
+		};
+		if(near != eyeHover) {
+			eyeHover = near;
+			if(freed.not) { eyeView.refresh };
+		};
+	}
+
+	// Two exclusive controls: the complete visible castle steps its inner clock,
+	// while the 6-o'clock rate ripple keeps its own smaller priority surface.
 	prHoverCastle { |k, view, x, y|
-		var near = false, body = false, point, free = true;
+		var dial = false, range = false, point, free = true;
 		if(geometry.notNil and: { view.notNil }) {
 			point = this.prStagePoint(view, x, y);
 			free = overlay.patchAt(point).isNil;
-			near = CQNightGeometry.dialHit(geometry[\castles][k], point) and: { free };
-			body = free and: { near.not }
-				and: { CQNightGeometry.bodyHit(geometry[\castles][k], point) };
+			range = CQNightGeometry.rangeHit(geometry[\castles][k], point)
+				and: { free };
+			dial = free and: { range.not }
+				and: { CQNightGeometry.dialHit(geometry[\castles][k], point) };
 		};
-		if((near != dialHover[k]) or: { body != bodyHover[k] }) {
-			dialHover[k] = near;
-			bodyHover[k] = body;
+		if((dial != dialHover[k]) or: { range != rangeHover[k] }
+			or: { bodyHover[k] }) {
+			dialHover[k] = dial;
+			rangeHover[k] = range;
+			bodyHover[k] = false;
 			if(freed.not) {
 				castleViews[k].refresh;
 				// the coupling chord lives on the ring's layer (§16.6): a castle
@@ -864,11 +1727,11 @@ CQGuiNightMap {
 	// cable crossing the sky wins the press (§4.5), so it wins the cue too, and
 	// a repaint happens only when the boolean actually flips.
 	prHoverAlmanac { |view, x, y|
-		var moon = false, point;
+		var moon = false, point, free = false;
 		if(geometry.notNil and: { view.notNil }) {
 			point = this.prStagePoint(view, x, y);
-			moon = CQNightGeometry.moonHit(geometry[\almanac], point)
-				and: { overlay.patchAt(point).isNil };
+			free = overlay.patchAt(point).isNil;
+			moon = CQNightGeometry.moonHit(geometry[\almanac], point) and: { free };
 		};
 		if(moon != moonHover) {
 			moonHover = moon;
@@ -876,9 +1739,9 @@ CQGuiNightMap {
 		};
 	}
 
-	// one cue at a time on the water: a seed, the pad, or a weather mark — and
-	// a cable crossing the corner wins them all (§4.5). Repaint only when the
-	// element under the hand actually changes.
+	// At rest only a seed advertises an action. The field itself becomes
+	// perceptible under Shift focus or after the hand has crossed the 8 px
+	// threshold; ordinary open water keeps no widget hover rectangle.
 	prHoverCompass { |view, x, y|
 		var next, point, almanac, seed;
 		if(geometry.notNil and: { view.notNil }) {
@@ -887,20 +1750,111 @@ CQGuiNightMap {
 			if(overlay.patchAt(point).isNil) {
 				seed = CQNightGeometry.stampHit(almanac, point);
 				next = if(seed.notNil) { [\stamp, seed] } {
-					if(CQNightGeometry.compassHit(almanac, point)) { \pad } {
-						CQNightGeometry.weatherHit(almanac, point)
+					if(tideFocus
+						and: { CQNightGeometry.compassHit(almanac, point) }) {
+						\pad
 					}
 				};
 			};
 		};
 		if(next != compassHover) {
 			compassHover = next;
-			if(freed.not) { compassView.refresh };
+			if(freed.not) { compassView.refresh; routeView.refresh };
 		};
 	}
 
-	// §6.1 bird drop: same plumbing as the Day deck box — every view of the
-	// bird accepts the file, and the deck guards its own unbooted state
+	prHoverBird { |i, view, x, y|
+		var next = false, point;
+		if(geometry.notNil and: { view.notNil }) {
+			point = this.prStagePoint(view, x, y);
+			next = overlay.patchAt(point).isNil;
+		};
+		if(next != birdHover[i]) {
+			birdHover[i] = next;
+			if(freed.not) {
+				birdViews[i].refresh;
+				routeView.refresh;
+			};
+		};
+	}
+
+	// Test seams for the one native dialog and for serverless route assertions.
+	// Production leaves deckAction nil, which reaches the real CQDeck facade.
+	fileDialog_ { |func| fileDialog = func; ^this }
+	deckAction_ { |func| deckAction = func; ^this }
+
+	fetchDeck { |index|
+		var which = if(index == 0) { \deckA } { \deckB };
+		fileDialog.value({ |chosen|
+			if(freed.not and: { chosen.notNil }) {
+				this.prDeckAction(which, \load, chosen)
+			};
+		}, this.prSamplesDir);
+		^this
+	}
+
+	prSamplesDir {
+		var path = config[\folders][\samples].asString;
+		^if(PathName(path).isAbsolutePath) {
+			path
+		} {
+			Cocoquantus.repoDir +/+ path
+		}
+	}
+
+	stepDeck { |index, action|
+		var which = if(index == 0) { \deckA } { \deckB };
+		if(#[next, prev].includes(action)) {
+			this.prDeckAction(which, action)
+		};
+		^this
+	}
+
+	randomDeck { |index|
+		this.prDeckAction(if(index == 0) { \deckA } { \deckB }, \random);
+		^this
+	}
+
+	prDeckAction { |which, action, value|
+		var deck;
+		if(freed) { ^this };
+		if(deckAction.notNil) {
+			deckAction.value(which, action, value);
+			^this
+		};
+		deck = this.prDeckFor(which);
+		deck !? {
+			switch(action,
+				\load, { deck.load(value) },
+				\next, { deck.next },
+				\prev, { deck.prev },
+				\random, { deck.random }
+			);
+		};
+		^this
+	}
+
+	// The deck's \file notice is the success authority shared by dialog, wheel,
+	// ruffle, drop and code. One 120 ms light therefore covers all five paths.
+	deckLoaded { |which|
+		var i = if(which == \deckA) { 0 } { 1 }, generation;
+		if(freed) { ^this };
+		birdFlashGeneration[i] = birdFlashGeneration[i] + 1;
+		generation = birdFlashGeneration[i];
+		birdFlash[i] = true;
+		birdViews[i].refresh;
+		AppClock.sched(CQInk.momentaryFlash, {
+			if(freed.not and: { birdFlashGeneration[i] == generation }) {
+				birdFlash[i] = false;
+				birdViews[i].refresh;
+			};
+			nil
+		});
+		^this
+	}
+
+	// §6.1 bird drop: every view of the bird accepts the file, and the deck
+	// guards its own unbooted state.
 	prBindDrops {
 		var canDrop = {
 			View.currentDrag.isString
@@ -924,7 +1878,7 @@ CQGuiNightMap {
 					// cue and action share one rect, in the coordinates the
 					// cursor poll speaks (§16.7)
 					if(accepted) {
-						gui.dropTargetHover(name, groundView, {
+						gui.dropTargetHover(name, [groundView, birdViews[i]], {
 							this.prGlobalRect(
 								geometry !? { |geo| geo[\birds][i][\dropRect] })
 						})
@@ -945,7 +1899,7 @@ CQGuiNightMap {
 	}
 
 	prDeckFor { |which|
-		if(Cocoquantus.graph.isNil) { ^nil };
+		if(freed or: { Cocoquantus.graph.isNil }) { ^nil };
 		^if(which == \deckA) { Cocoquantus.deckA } { Cocoquantus.deckB }
 	}
 
@@ -956,12 +1910,17 @@ CQGuiNightMap {
 		if(bounds.width < 200 or: { bounds.height < 200 }) { ^this };
 		geometry = CQNightGeometry.compute(bounds.width, bounds.height);
 		groundView.bounds = Rect(0, 0, bounds.width, bounds.height);
+		rootViews.do { |view, i| view.bounds = geometry[\roots][i][\box] };
 		almanacView.bounds = geometry[\almanac][\box];
-		compassView.bounds = geometry[\almanac][\compassBox];
+		tideGateView.bounds = geometry[\tideGateBox];
 		ringView.bounds = geometry[\ringBox];
-		eyeView.bounds = Rect.aboutPoint(geometry[\eye], 22, 22);
+		eyeView.bounds = Rect.aboutPoint(geometry[\eye], CQNightMeasures.eyeLayerR,
+			CQNightMeasures.eyeLayerR);
 		castleViews.do { |view, k| view.bounds = geometry[\castles][k][\box] };
 		shellViews.do { |view, i|
+			view.bounds = geometry[\cocos][i][\shellBox] };
+		dustViews.do { |view, i| view.bounds = geometry[\dusts][i][\box] };
+		readHeadViews.do { |view, i|
 			view.bounds = geometry[\cocos][i][\shellBox] };
 		birdViews.do { |view, i| view.bounds = geometry[\birds][i][\box] };
 		endpoints.keysValuesDo { |name, endpoint|
@@ -981,17 +1940,109 @@ CQGuiNightMap {
 		labels.do { |label, i| label.bounds = geometry[\birds][i][\labelRect] };
 		gui.refreshDeckLabels;   // the boxes just changed: re-fit the names
 		container.refresh;
+		// THREE siblings live above the container in the StackLayout, and Qt
+		// resizes and repaints them independently of it — so each of them can
+		// paint once before this geometry exists, or once with the previous
+		// geometry at the new size, and then never again until a hover happens
+		// to touch it. That is one bug with two faces: the drone streams were
+		// invisible until first hovered after boot, and every line stood in its
+		// old place for seconds after a maximize. Repaint all three here, and
+		// let the cable overlay drop the caches it keys on the stage extent and
+		// on where the endpoints were.
+		routeLayoutRefreshCount = routeLayoutRefreshCount + 1;
+		routeLayoutRefreshSize = Point(geometry[\width], geometry[\height]);
+		routeView.refresh;
+		tideGestureView.refresh;
+		overlay.relayout;
 	}
 
 	prPlaceCrescent { |name, center|
-		crescentViews[name].bounds =
-			Rect(center.x - 12, center.y - 12, 24, 24);
+		crescentViews[name].bounds = CQNightGeometry.crescentViewBox(center,
+			this.class.hasDolbyCrescent(name));
+	}
+
+	prHoverCrescent { |name, view, x, y|
+		var center = this.crescentCenter(name), point, oyster = false;
+		var crescent = false, free = true;
+		if(view.notNil and: { center.notNil }) {
+			point = view.mapToGlobal(Point(x, y))
+				- container.mapToGlobal(0@0);
+			free = overlay.patchAt(point).isNil;
+			if(free and: { this.class.hasDolbyCrescent(name) }) {
+				oyster = CQNightGeometry.dolbyOysterHit(center, point)
+			};
+			crescent = free and: { oyster.not }
+				and: { CQNightGeometry.crescentControlHit(center, point) };
+		};
+		if(crescent) { hoverCrescents.add(name) } {
+			hoverCrescents.remove(name)
+		};
+		if(oyster) { dolbyHover.add(name) } { dolbyHover.remove(name) };
+		if(freed.not) { crescentViews[name].refresh };
+		^this
+	}
+
+	crescentCenter { |name|
+		2.do { |i|
+			this.class.crescentNames(i).do { |candidate, m|
+				if(candidate == name) { ^geometry[\cocos][i][\crescents][m] };
+			};
+		};
+		this.class.crescentNames(nil).do { |candidate, i|
+			if(candidate == name) { ^geometry[\birds][i][\levelCrescent] };
+		};
+		^nil
 	}
 
 	prRegisterUpdaters {
+		2.do { |i|
+			var srcName = this.class.preampParamName(i, \Src);
+			var driveName = this.class.preampParamName(i, \Drive);
+			var biasName = this.class.preampParamName(i, \Bias);
+			gui.widgets.register(srcName, { |value|
+				preampSources[i] = value;
+				if(freed.not) {
+					rootViews[i].refresh;
+					routeView.refresh;
+				};
+			});
+			gui.widgets.register(driveName, { |value|
+				preampDriveNorms[i] = CQSpec.unmap(driveName, value);
+				if(freed.not) {
+					rootViews[i].refresh;
+					shellViews[i].refresh;
+				};
+			});
+			gui.widgets.register(biasName, { |value|
+				preampBiasNorms[i] = CQSpec.unmap(biasName, value);
+				if(freed.not) { rootViews[i].refresh };
+			});
+			gui.widgets.register(("coco" ++ (i + 1) ++ "SlotPre").asSymbol,
+				{ |value|
+					preampSlotNorms[i] = CQSpec.unmap(
+						("coco" ++ (i + 1) ++ "SlotPre").asSymbol, value);
+					if(freed.not) {
+						rootViews[i].refresh;
+						shellViews[i].refresh;
+					};
+				});
+			gui.widgets.register(("coco" ++ (i + 1) ++ "SlotDeck").asSymbol,
+				{ |value|
+					deckSlotNorms[i] = CQSpec.unmap(
+						("coco" ++ (i + 1) ++ "SlotDeck").asSymbol, value);
+					if(freed.not) {
+						routeView.refresh;
+					};
+				});
+		};
 		5.do { |k|
 			gui.widgets.register(("c" ++ (k + 1) ++ "Range").asSymbol, { |value|
-				rangeLetters[k] = CQNightGeometry.rangeLetter(value);
+				rangeStates[k] = value;
+				if(freed.not) { castleViews[k].refresh };
+			});
+			gui.widgets.register(("c" ++ (k + 1) ++ "Send").asSymbol, { |value|
+				sendNorms[k] = CQSpec.unmap(
+					("c" ++ (k + 1) ++ "Send").asSymbol, value);
 				if(freed.not) { castleViews[k].refresh };
 			});
 		};
@@ -1010,6 +2061,37 @@ CQGuiNightMap {
 				speedNorms[i] = CQSpec.unmap(speedName, value);
 				if(freed.not) { shellViews[i].refresh };
 			});
+			this.class.shellFlowNames(i).do { |name|
+				gui.widgets.register(name, { |value|
+					flowNorms[name] = CQSpec.unmap(name, value);
+					if(freed.not) {
+						shellViews[i].refresh;
+						routeView.refresh;
+					};
+				});
+			};
+			[\Dust, \DustGrain].do { |suffix|
+				var name = this.class.dustParamName(i, suffix);
+				gui.widgets.register(name, { |value|
+					if(suffix == \Dust) {
+						dustNorms[i] = CQSpec.unmap(name, value)
+					} {
+						dustGrainNorms[i] = CQSpec.unmap(name, value)
+					};
+					if(freed.not) { dustViews[i].refresh };
+				});
+			};
+			[\In, \Fb].do { |channel|
+				var dolbyName = ("coco" ++ n ++ "Dolby" ++ channel).asSymbol;
+				dolbyStates[dolbyName] = \off;
+				gui.widgets.register(dolbyName, { |value|
+					dolbyStates[dolbyName] = value;
+					if(freed.not) {
+						crescentViews[("coco" ++ n ++ channel).asSymbol]
+							.refresh
+					};
+				});
+			};
 		};
 		gui.widgets.register(\qFreq, { |value|
 			eyeFreqNorm = CQSpec.unmap(\qFreq, value);
@@ -1041,7 +2123,6 @@ CQGuiNightMap {
 
 	prDrawGround {
 		if(geometry.isNil) { ^this };
-		geometry[\roots].do { |root| CQInkNight.drawRoot(root, \night) };
 		CQInkNight.drawSprout(geometry[\sprout], sproutState, \night);
 		// §16.7's border rings the bird AND its name, so it is drawn on the
 		// full-stage ground rather than inside the bird's own 44x32 layer —
@@ -1057,15 +2138,77 @@ CQGuiNightMap {
 		};
 	}
 
+	prDrawRoutes {
+		routePaintCount = routePaintCount + 1;
+		if(geometry.isNil) { routePaintSize = nil; ^this };
+		routePaintSize = Point(geometry[\width], geometry[\height]);
+		// Level's shore is drawn here rather than on its shell, for one reason:
+		// it runs along the exterior, where the in/fb crescents' deliberately
+		// opaque ground views used to cut it into pieces. This layer is above
+		// every landscape rectangle and below the real patch cables, so the
+		// shoreline is whole and still cannot climb over a banana. It is drawn
+		// before the q/x streams so the internal topology reads on top of the
+		// output mix, not through it.
+		geometry[\cocos].do { |coco, i|
+			var name = this.class.shellFlowParam(i, \level);
+			CQInkNight.drawLevelShore(coco, flowNorms[name] ? 0,
+				CQSpec.referenceNorm(name, \unity) ? 1,
+				flowActive.includes(name), flowHover.includes(name), \night);
+		};
+		CQInkNight.drawDroneRoutes(geometry,
+			2.collect { |i| flowNorms[this.class.shellFlowParam(i, \slotQ)] ? 0 },
+			2.collect { |i| flowNorms[this.class.shellFlowParam(i, \slotX)] ? 0 },
+			flowActive, flowHover, \night,
+			2.collect { |i|
+				flowModStates[this.class.shellFlowParam(i, \slotQ)]
+			},
+			2.collect { |i|
+				flowModStates[this.class.shellFlowParam(i, \slotX)]
+			});
+		geometry[\birds].do { |bird, i|
+			var deck = if(i == 0) { \deckA } { \deckB };
+			if(birdHover[i] and: { deckSlotNorms[i] > 0 }) {
+				CQInkNight.drawBirdRoute(
+					bird[\directRoute], deckSlotNorms[i], \direct, \night)
+			};
+			2.do { |r|
+				if(this.prRevealedPreampSource(r) == deck
+					and: { birdHover[i] or: { this.prPreampRevealed(r) } }) {
+					CQInkNight.drawBirdRoute(
+						bird[\rootRoutes][r], 1, \preamp, \night)
+				};
+			};
+		};
+		2.do { |i|
+			if(this.prPreampRevealed(i)) {
+				CQInkNight.drawPreampLabel(
+					geometry[\roots][i],
+					this.class.preampSourceLabel(
+						this.prRevealedPreampSource(i)), \night)
+			};
+		};
+		// Memory seeds sit above the internal bridge with a ground-coloured moat,
+		// yet remain below real patch cables on the next StackLayout layer.
+		this.prDrawCompass;
+	}
+
+	prDrawDust { |i|
+		var dust;
+		if(geometry.isNil) { ^this };
+		dust = geometry[\dusts][i];
+		CQInkNight.drawDust(dust, dust[\box].leftTop,
+			dustNorms[i], dustGrainNorms[i], dustActive[i], dustHover[i],
+			dustModStates[i], \night);
+	}
+
 	prDrawRing {
 		if(geometry.isNil) { ^this };
 		CQInkNight.drawRing(geometry, fireflyPhase, ringHover, \night,
 			this.spesalChords);
 	}
 
-	// the almanac corner's sky: the sowing moon wearing its phase. The weather
-	// lives on its own layer below (prDrawCompass), so the two never repaint
-	// each other.
+	// One remote weather body. Rain or sun exists only while the moon's locked
+	// vertical gesture is active; at rest there is no satellite toolbar.
 	prDrawAlmanac {
 		var almanac;
 		if(geometry.isNil) { ^this };
@@ -1073,27 +2216,81 @@ CQGuiNightMap {
 		Pen.translate(almanac[\box].left.neg, almanac[\box].top.neg);
 		CQInkNight.drawSowingMoon(almanac[\moon], almanac[\moonR],
 			gui.shakeAmount, moonHover, moonFlash, \night);
+		weatherActive !? { |name|
+			CQInkNight.drawWeatherMark(name,
+				almanac[\weatherPreview][name], false, true,
+				weatherFlash == name, false, \night, weatherIntensity)
+		};
 	}
 
-	// the compass water (§7.1, drawn since G3): pad, corner seeds, the weather
-	// row. At rest nothing here moves, so this layer costs a still bay zero
-	// repaints — it repaints under the hand and on the 120 ms weather flashes.
+	prDrawPreamp { |i|
+		var root, source, hoverIndex;
+		if(geometry.isNil) { ^this };
+		root = geometry[\roots][i];
+		source = preampSources[i];
+		hoverIndex = preampSourceHover[i];
+		CQInkNight.drawPreampRoot(root, root[\box].leftTop,
+			preampDriveNorms[i], preampBiasNorms[i],
+			this.class.preampSourceIndex(i, source),
+			hoverIndex, preampActive[i],
+			gui.auraFor(if(i == 0) { \envA } { \envB }) ? 0,
+			preampSlotNorms[i], \night);
+	}
+
+	prPreampRevealed { |i|
+		^preampHover[i] or: { preampActive[i] }
+			or: { preampSourceHover[i].notNil }
+	}
+
+	prRevealedPreampSource { |i|
+		var hover = preampSourceHover[i];
+		if(hover.notNil and: { geometry.notNil }) {
+			^geometry[\roots][i][\sourceValues][hover]
+		};
+		^preampSources[i]
+	}
+
+	prHoverTideGate { |view, x, y|
+		var next = false, point;
+		if(geometry.notNil and: { view.notNil }) {
+			point = this.prStagePoint(view, x, y);
+			next = CQNightGeometry.tideGateHit(geometry, point);
+			if(next) { gui.bananaGrammar.hoverCable = nil };
+		};
+		if(next != tideGateHover) {
+			tideGateHover = next;
+			if(freed.not) { tideGestureView.refresh };
+		};
+	}
+
+	// The tide is inferred by four seeds. No shore or rectangle is drawn at
+	// rest; focus and a live voyage reveal only faint pulls through the bay.
 	prDrawCompass {
 		var almanac;
 		if(geometry.isNil) { ^this };
 		almanac = geometry[\almanac];
-		Pen.translate(almanac[\compassBox].left.neg, almanac[\compassBox].top.neg);
-		CQInkNight.drawCompass(almanac, gui.compass.stampedMask,
-			compassDragState, breedArmed, breedFirst, compassHover,
-			weatherActive, weatherFlash, \night);
+		CQInkNight.drawTideField(almanac, gui.compass.memoryDensities,
+			tideFocus, compassHover, \night);
+	}
+
+	prDrawTideGesture {
+		if(geometry.isNil) { ^this };
+		tideGesturePaintCount = tideGesturePaintCount + 1;
+		CQInkNight.drawTideGesture(geometry[\almanac],
+			compassDragState, \night);
+		// Draw the gill on the hit-transparent topological layer. Its event view
+		// stays below, but no planted cable can erase the cue it promises.
+		CQInkNight.drawTideGate(geometry[\tideGate], Point(0, 0),
+			tideFocus, tideGateHover, \night);
 	}
 
 	prDrawEye {
 		var origin;
 		if(geometry.isNil) { ^this };
-		origin = Rect.aboutPoint(geometry[\eye], 22, 22).leftTop;
+		origin = Rect.aboutPoint(geometry[\eye], CQNightMeasures.eyeLayerR,
+			CQNightMeasures.eyeLayerR).leftTop;
 		Pen.translate(origin.x.neg, origin.y.neg);
-		CQInkNight.drawEye(geometry[\eye], eyeActive,
+		CQInkNight.drawEye(geometry[\eye], eyeActive, eyeHover,
 			eyeFreqNorm, eyeChaosNorm, \night);
 	}
 
@@ -1102,9 +2299,10 @@ CQGuiNightMap {
 		if(geometry.isNil) { ^this };
 		castle = geometry[\castles][k];
 		CQInkNight.drawCastle(castle, castle[\box].leftTop,
-			gui.auraFor(("cas" ++ (k + 1)).asSymbol),
-			(gui.spesalStates[k] ? 0).asInteger, rangeLetters[k],
-			dialHover[k], bodyHover[k], \night);
+			castleMotions[k],
+			(gui.spesalStates[k] ? 0).asInteger, rangeStates[k],
+			sendNorms[k], sendActive[k],
+			dialHover[k], rangeHover[k], \night);
 	}
 
 	// The read direction is what the loop is actually doing, and the FLIP param
@@ -1115,7 +2313,7 @@ CQGuiNightMap {
 	// G2.5 review). The param is instant and exact, so it decides on its own.
 	// Otherwise the direction comes from `/cq_phase`'s audio-rate mean — never
 	// from client-side guessing, which aliased badly once the gate fired faster
-	// than the 5 Hz frame: a settled loop reads ±1, and a loop being shuttled
+	// than the 15 Hz frame: a settled loop reads ±1, and a loop being shuttled
 	// faster than an arrow can be read collapses toward 0, where the honest
 	// mark is the opposed chevron rather than a frozen or lying arrowhead.
 	*shuttleFloor { ^0.5 }
@@ -1131,37 +2329,72 @@ CQGuiNightMap {
 	}
 
 	prDrawShell { |i|
-		var coco;
+		var coco, levelName, organName, performance;
 		if(geometry.isNil) { ^this };
+		shellPaintCounts[i] = shellPaintCounts[i] + 1;
 		coco = geometry[\cocos][i];
+		levelName = this.class.shellFlowParam(i, \level);
+		organName = this.class.shellFlowParam(i, \organ);
+		// Level's amount is still here, because the spiral's own stroke alpha
+		// breathes with it. Its unity, hand and hover are not: since PLAY-6.1
+		// the shoreline itself is drawn on routeView, which reads those three
+		// straight from the same fields. Passing a second copy no view reads
+		// would only invite the two to disagree.
+		performance = (
+			level: flowNorms[levelName] ? 0,
+			organ: flowNorms[organName] ? 0,
+			organActive: flowActive.includes(organName),
+			organHover: flowHover.includes(organName),
+			organModulation: flowModStates[organName]
+		);
 		CQInkNight.drawShell(coco, coco[\shellBox].leftTop,
 			holdStates[i], this.flipMode(i), speedNorms[i], shellHover[i],
-			gui.phaseNorms[i], sparkDirs[i], skipHover[i], skipFlash[i],
-			if(struckOn[i]) { struckNorms[i] }, struckBlink[i],
-			rimHover[i], \night);
+			skipHover[i], skipFlash[i], rimHover[i], heartHover[i],
+			chevronHover[i], \night, geometry[\roots][i],
+			gui.auraFor(if(i == 0) { \envA } { \envB }) ? 0,
+			preampDriveNorms[i], preampSlotNorms[i], performance,
+			(gui.fireFor(("coco" ++ (i + 1) ++ "_record").asSymbol) ? 0) > 0.01);
 	}
 
-	// the night half of §16.7's drop-target law; the Day deck box wears the
-	// identical mark, from the same CQInk primitive
+	prDrawReadHead { |i|
+		var coco;
+		if(geometry.isNil) { ^this };
+		readHeadPaintCounts[i] = readHeadPaintCounts[i] + 1;
+		coco = geometry[\cocos][i];
+		CQInkNight.drawReadHead(coco, coco[\shellBox].leftTop,
+			gui.phaseNorms[i], sparkDirs[i],
+			if(struckOn[i]) { struckNorms[i] }, struckBlink[i], \night);
+	}
+
+	// §16.7's one dashed drop-target mark, from the shared CQInk primitive.
 	*dropTargetName { |which| ^("night_" ++ which).asSymbol }
 
 	prDrawBird { |i|
-		var bird;
+		var bird, which, active;
 		if(geometry.isNil) { ^this };
 		bird = geometry[\birds][i];
-		CQInkNight.drawBird(bird, bird[\box].leftTop, \night);
+		which = if(i == 0) { \deckA } { \deckB };
+		active = birdHover[i]
+			or: { gui.dropTargetIs(this.class.dropTargetName(which)) };
+		CQInkNight.drawBird(bird, bird[\box].leftTop,
+			active, birdFlash[i], \night);
 	}
 
 	prDrawDecoration { |name, spec, anchor|
 		switch(spec[\decoration],
 			\leaf, { CQInkNight.drawLeaf(anchor, \night) },
 			\crown, { CQInkNight.drawCrown(anchor, \night) },
-			\stem, { CQInkNight.drawStemStub(anchor, \night) },
-			\root, {
+			\stem, {
 				geometry !? { |geo|
-					CQInkNight.drawRootStub(anchor,
-						geo[\roots][if(name == \envA) { 0 } { 1 }][\arrival], \night)
+					CQInkNight.drawOrganUnderlay(
+						geo[\cocos][if(name == \org1) { 0 } { 1 }],
+						anchor, \night)
 				}
+			},
+			\root, {
+				// envA/B paper is transparent: the one exact curved branch
+				// already reaches the anchor beneath this jack without a seam.
+				nil
 			}
 		);
 	}

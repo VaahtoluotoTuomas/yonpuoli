@@ -20,13 +20,15 @@ CQGuiNightMapTest : UnitTest {
 	}
 
 	// The struck head wears its trigger rate as weight, never as motion: above
-	// ~10 Hz the eye fuses a flicker, and this surface only gets 5 Hz, so any
+	// ~10 Hz the eye fuses a flicker, and this surface gets 15 Hz, so any
 	// blink would be a rate the GUI invented — slower than the truth. The
 	// mapping is logarithmic (a rate is a pitch to the ear) and quantized to
 	// the steps the drawing can show, so a drifting rate cannot repaint the
-	// shell every frame for a difference nobody can see (§10, §16.6).
+	// read-head layer every frame for a difference nobody can see (§10, §16.6).
 	test_struckRateReadsAsWeightOnALogScale {
 		var steps = CQGuiNightMap.struckSteps;
+		this.assertEquals(CQGuiNightMap.struckFrames, 4,
+			"four 15 Hz frames preserve the old roughly 0.2 s struck threshold");
 		this.assertEquals(CQGuiNightMap.struckNorm(nil), 0,
 			"no telemetry weighs nothing — the mark cannot invent a rate");
 		this.assertEquals(CQGuiNightMap.struckNorm(8), 0,
@@ -42,7 +44,7 @@ CQGuiNightMapTest : UnitTest {
 			"the weight rises with the rate");
 		this.assertEquals(CQGuiNightMap.struckNorm(128),
 			CQGuiNightMap.struckNorm(132),
-			"a rate that drifts inside one step never repaints the shell");
+			"a rate that drifts inside one step never repaints the read-head layer");
 		this.assert((CQGuiNightMap.struckNorm(512) * steps).frac < 1e-9,
 			"every weight lands on one of the drawing's own steps");
 	}
@@ -52,10 +54,11 @@ CQGuiNightMapTest : UnitTest {
 			CQGuiNightMap.endpointSpec(name)[\lamp] == true
 		};
 		this.assertEquals(lamped,
-			[\coco1_flip, \coco1_skip, \coco2_flip, \coco2_skip,
+			[\coco1_flip, \coco1_skip, \coco1_record,
+				\coco2_flip, \coco2_skip, \coco2_record,
 				\castle1_spesal, \castle2_spesal, \castle3_spesal,
 				\castle4_spesal, \castle5_spesal],
-			"charge lamps sit on the nine gate/trig sockets in /cq_charge order");
+			"charge lamps sit on all eleven gate/trig sockets in /cq_charge order");
 	}
 
 	test_familiesMatchDaySkin {
@@ -75,8 +78,41 @@ CQGuiNightMapTest : UnitTest {
 			"fm moons carry the wave glyph");
 		this.assertEquals(CQGuiNightMap.endpointSpec(\deckA_rate)[\glyph], \pendulum,
 			"the wing socket carries the pendulum glyph");
-		this.assertEquals(CQGuiNightMap.endpointSpec(\coco1_inVca)[\glyph], \wedge,
-			"vca moons carry the open wedge");
+		#[coco1_spaf, coco1_inVca, coco1_fbVca, coco1_organ, coco1_slotQ,
+			coco1_slotX, coco1_dust,
+			coco2_spaf, coco2_inVca, coco2_fbVca, coco2_organ, coco2_slotQ,
+			coco2_slotX, coco2_dust]
+		.do { |name|
+			this.assert(CQGuiNightMap.endpointSpec(name)[\glyph].isNil,
+				"% is one hollow continuous Coco socket".format(name));
+		};
+		this.assertEquals(CQGuiNightMap.endpointSpec(\coco1_organ)[\family], \organ,
+			"the independent organ input inherits the calyx's yellow family");
+		this.assert(CQGuiNightMap.endpointSpec(\coco1_organ)[\glyph].isNil,
+			"organ proximity makes a redundant direction wedge unnecessary");
+		this.assertEquals(CQGuiNightMap.endpointSpec(\coco2_slotQ)[\family], \tri,
+			"the independent SlotQ input inherits the Quantussy tributary family");
+		this.assert(CQGuiNightMap.endpointSpec(\coco2_slotQ)[\glyph].isNil,
+			"the Q gill and its adjacent socket need no direction wedge");
+		#[coco1_slotX, coco2_slotX, coco1_dust, coco2_dust].do { |name|
+			this.assertEquals(CQGuiNightMap.endpointSpec(name)[\family], \line,
+				"% stays a neutral hollow modulation socket".format(name));
+			this.assert(CQGuiNightMap.endpointSpec(name)[\glyph].isNil,
+				"% trusts its adjacent anatomy instead of adding a glyph".format(name));
+		};
+		this.assertEquals(CQGuiNightMap.endpointSpec(\coco1_record)[\family], \danger,
+			"the Record toggle belongs to the red Hold/REC family, not green input");
+		this.assertEquals(CQGuiNightMap.endpointSpec(\coco1_record)[\glyph], \rec,
+			"the matrix writer input has an unambiguous record seal glyph");
+		this.assertEquals(CQGuiNightMap.endpointSpec(\coco1_record)[\lampSide], -1,
+			"coco 1's Record lamp sits outward, clear of its inward semantic root");
+		this.assertEquals(CQGuiNightMap.endpointSpec(\coco2_record)[\lampSide], 1,
+			"coco 2's Record lamp mirrors outward");
+		#[coco1_organ, coco1_slotQ, coco1_slotX, coco1_dust, coco1_record,
+			coco2_organ, coco2_slotQ, coco2_slotX, coco2_dust, coco2_record].do { |name|
+			this.assertEquals(CQGuiNightMap.endpointSpec(name)[\paper], \clear,
+				"% uses shape-local paper, never an invisible rectangle".format(name));
+		};
 	}
 
 	test_sourceDecorations {
@@ -89,7 +125,26 @@ CQGuiNightMapTest : UnitTest {
 		this.assertEquals(CQGuiNightMap.endpointSpec(\org1)[\decoration], \stem,
 			"org jacks keep their stem tip");
 		this.assertEquals(CQGuiNightMap.endpointSpec(\envA)[\decoration], \root,
-			"a root tip redraws its own arrival under its opaque view");
+			"a root tip keeps its semantic while transparent paper preserves its curve");
+	}
+
+	test_preampProvenanceComesFromCQSpec {
+		var values = CQSpec.enumValues(\preASrc);
+		this.assertEquals(CQGuiNightMap.preampSourceValues(0), values,
+			"preamp A reveals CQSpec's source order verbatim");
+		this.assertEquals(CQGuiNightMap.preampSourceValues(1),
+			CQSpec.enumValues(\preBSrc),
+			"preamp B reveals its own CQSpec vocabulary");
+		values.reject { |value| value == \none }.do { |value, i|
+			this.assertEquals(CQGuiNightMap.preampSourceIndex(0, value), i,
+				"% selects its one unlabelled intake strand".format(value));
+		};
+		this.assert(CQGuiNightMap.preampSourceIndex(0, \none).isNil,
+			"`none` honestly lights no intake strand");
+		this.assertEquals(CQGuiNightMap.preampSourceLabel(\liveL), "live l",
+			"camel-case live provenance is readable only when revealed");
+		this.assertEquals(CQGuiNightMap.preampSourceLabel(\deckB), "deck b",
+			"deck provenance uses the bird's learned name");
 	}
 
 	// The night has no presets (decided with the user 2026-07-22, superseding
@@ -106,6 +161,13 @@ CQGuiNightMapTest : UnitTest {
 		this.assert(CQGuiNightMap.methods.every { |method|
 			#[sow, flashStar].includes(method.name).not
 		}, "no sowing door survives on the night map");
+	}
+
+	test_theNightCarriesNoLegacyRangeLetters {
+		this.assert(CQGuiNightMap.instVarNames.includes(\rangeLetters).not,
+			"the playable ripple needs no i/b/a state beside its regime");
+		this.assert(CQNightGeometry.respondsTo(\rangeLetter).not,
+			"night geometry no longer translates current state into legacy text");
 	}
 
 	test_crescentInventory {
@@ -125,22 +187,180 @@ CQGuiNightMapTest : UnitTest {
 		};
 	}
 
-	// GUI_SPEC §6: solo-light on a body lights everything touching it. The
-	// night's bodies are its own anatomy, but they keep the Day panel's names
-	// where the organ is the same — one grammar must not hold two solos for it.
+	test_dronePerformanceInventoryLivesOnItsSourceBodies {
+		this.assertEquals(CQGuiNightMap.shellFlowNames(0),
+			[\coco1Level, \coco1Organ, \coco1SlotQ, \coco1SlotX],
+			"coco 1 owns level, audible organ, q intake and incoming x flow");
+		this.assertEquals(CQGuiNightMap.shellFlowNames(1),
+			[\coco2Level, \coco2Organ, \coco2SlotQ, \coco2SlotX],
+			"coco 2 mirrors the same four performance organs");
+		#[\level, \organ, \slotQ, \slotX].do { |target, i|
+			this.assertEquals(CQGuiNightMap.shellFlowParam(0, target),
+				CQGuiNightMap.shellFlowNames(0)[i],
+				"the % hit resolves to one real funnel parameter".format(target));
+		};
+		this.assert(CQGuiNightMap.shellFlowParam(0, \bogus).isNil,
+			"unknown shell flesh owns no parameter");
+		[1, 2].do { |n|
+			#[\Level, \Organ, \SlotQ, \SlotX, \Dust, \DustGrain].do { |suffix|
+				this.assert(CQGuiNightMap.reachableParamNames.includes(
+					("coco" ++ n ++ suffix).asSymbol),
+					"Night coverage includes coco% %".format(n, suffix));
+			};
+		};
+		(1..5).do { |k|
+			this.assert(CQGuiNightMap.reachableParamNames.includes(
+				("c" ++ k ++ "Send").asSymbol),
+				"castle % owns its qMix send".format(k));
+		};
+		this.assertFloatEquals(CQSpec.map(\coco1Level,
+			CQSpec.referenceNorm(\coco1Level, \unity)), 1.0,
+			"the shoreline's unity notch comes from CQSpec", 1e-9);
+	}
+
+	test_dustVeilsOwnBothAxesThroughOneCocoLocalNameHelper {
+		this.assertEquals(CQGuiNightMap.dustParamName(0), \coco1Dust,
+			"left veil's radial axis owns coco1 Dust");
+		this.assertEquals(CQGuiNightMap.dustParamName(0, \DustGrain),
+			\coco1DustGrain, "left veil's transverse axis owns coco1 grain");
+		this.assertEquals(CQGuiNightMap.dustParamName(1), \coco2Dust,
+			"right veil mirrors the radial owner");
+		this.assertEquals(CQGuiNightMap.dustParamName(1, \DustGrain),
+			\coco2DustGrain, "right veil mirrors the transverse owner");
+	}
+
+	test_crescentScalesNameOnlyHonestSemanticBoundaries {
+		var spaf = CQGuiNightMap.crescentScaleFor(\coco1Spaf);
+		var input = CQGuiNightMap.crescentScaleFor(\coco1In);
+		var feedback = CQGuiNightMap.crescentScaleFor(\coco1Fb);
+		var level = CQGuiNightMap.crescentScaleFor(\deckALevel);
+		this.assertEquals(spaf[\kind], \spaf,
+			"SP.AF names signed direction rather than danger");
+		this.assertFloatEquals(spaf[\center], 0.5,
+			"SP.AF zero is derived from its bipolar parameter map");
+		this.assertEquals(spaf[\fine], [0.375, 0.625],
+			"SP.AF's inner harbour is the CQSpec-owned +/-0.25 octave country");
+		this.assertEquals(spaf[\octaves], [0.25, 0.75],
+			"SP.AF's paired pinpricks land on exact +/-1 octave");
+		this.assertEquals(input[\kind], \input,
+			"input names normal gain and overdrive");
+		this.assertFloatEquals(input[\unity], 0.5,
+			"input unity is derived from CQSpec");
+		this.assertEquals(feedback[\kind], \feedback,
+			"feedback retains its audible three-region scale");
+		this.assertEquals(feedback[\edges], [0.0, 0.5, 0.9, 1.0],
+			"feedback scale follows its exact taper breakpoints");
+		this.assertEquals(level[\kind], \level,
+			"bird level exposes its one honest nominal/boost boundary");
+		this.assertFloatEquals(CQSpec.map(\deckALevel, level[\unity]), 1.0,
+			"the bird reference lands on exact unity despite its curved map");
+		this.assert(CQGuiNightMap.crescentScaleFor(\qFreq).isNil,
+			"a continuous control with no semantic boundary gets no scale");
+		this.assert(CQGuiNightMap.crescentScaleFor(\coco1DolbyIn).isNil,
+			"a similarly suffixed non-crescent cannot acquire a decorative scale");
+	}
+
+	test_crescentModulationSeparatesSlowTruthFromFastWake {
+		var quiet = CQGuiNightMap.crescentModState(\coco1Spaf, 1, 0.25, 0);
+		var spaf = CQGuiNightMap.crescentModState(\coco1Spaf, 0, 0.25, 0.60);
+		var other = CQGuiNightMap.crescentModState(\coco2Spaf, 1, 0, 0.60);
+		var clipped = CQGuiNightMap.crescentModState(\coco1Fb, 2, 0, 0.60);
+		var fast = CQGuiNightMap.crescentModState(\coco1Spaf, 3.5, 2, 0.60);
+		// PLAY-5 organ-source conditioning widens the former ~0.015-octave wake
+		// by about ×1.6 while keeping its slow centre at zero.
+		var organ = CQGuiNightMap.crescentModState(
+			\coco1Spaf, 0, 0.024, 0.20);
+		var organInput = CQGuiNightMap.crescentModState(
+			\coco1Organ, 0.62, 0.08, 0.30);
+		var slotQInput = CQGuiNightMap.crescentModState(
+			\coco2SlotQ, 0.9, 0.12, 0.30);
+		var slotXInput = CQGuiNightMap.crescentModState(
+			\coco1SlotX, 0.7, 0.10, 0.30);
+		var dustInput = CQGuiNightMap.crescentModState(
+			\coco2Dust, 0.22, 0.04, 0.30);
+		this.assert(quiet.isNil,
+			"no connected matrix weight draws no invented live pearl");
+		this.assertFloatEquals(spaf[\center], 0.5,
+			"a centred applied pitch contribution sits at SP.AF zero", 1e-9);
+		this.assertEquals([spaf[\lower], spaf[\upper]], [0.375, 0.625],
+			"an unresolved +/-0.25 octave excursion spans the signed-square harbour");
+		this.assertFloatEquals(other[\center], 0.75,
+			"the same DSP octave maps identically on coco 2", 1e-9);
+		this.assert(clipped[\center] == 1 and: { clipped[\clippedHigh] },
+			"effective feedback beyond the hand range lands at a capped endpoint");
+		this.assertFloatEquals(fast[\center],
+			((((fast[\lower] + fast[\upper]) * 0.5)
+				/ CQGuiNightMap.crescentModStep).round
+				* CQGuiNightMap.crescentModStep),
+			"a wide unresolved wake parks the satellite at its stable midpoint", 1e-9);
+		this.assert(fast[\center] != CQSpec.unmap(\coco1Spaf, 3.5),
+			"a clipped audio-rate wake cannot saw at its sampled instantaneous value");
+		this.assert((organ[\upper] - organ[\lower]) >= 0.05,
+			"the tutorial organ self-route survives quantization as a visible wake");
+		this.assert(organInput.notNil and: { slotQInput.notNil }
+			and: { slotXInput.notNil } and: { dustInput.notNil },
+			"calyx, both gills and Dust accept the same honest DSP modulation frame");
+		this.assert(
+			CQGuiNightMap.crescentModStateChanged(spaf, spaf.copy).not,
+			"an unchanged quantized wake costs no repaint");
+		this.assert(CQGuiNightMap.crescentModStateChanged(spaf, other),
+			"a visible satellite move requests its small view repaint");
+	}
+
+	test_castleMotionUsesPearlOnlyBelowTheDisplayCeiling {
+		var slow = CQGuiNightMap.castleMotionState(-0.5, 1);
+		var fastA = CQGuiNightMap.castleMotionState(-0.9, 120);
+		var fastB = CQGuiNightMap.castleMotionState(0.9, 120);
+		this.assertEquals(slow[\mode], \resolved,
+			"an infra triangle is slow enough for a moving pearl");
+		this.assertFloatEquals(slow[\position], 0.25,
+			"the slow pearl maps the signed raw triangle onto its reed", 1e-9);
+		this.assertEquals(fastA, (mode: \blur, position: 0.5, strength: 1),
+			"an audio-rate triangle becomes one stable full-reed blur");
+		this.assert(CQGuiNightMap.castleMotionStateChanged(fastA, fastB).not,
+			"opposite audio samples cannot alias into a false two-position saw");
+		this.assert(CQGuiNightMap.castleMotionState(nil, 1).isNil,
+			"no oscillator telemetry invents no live pearl");
+	}
+
+	test_onlyCocoChannelCrescentsCarryDolby {
+		#[coco1In, coco1Fb, coco2In, coco2Fb].do { |name|
+			var dolby = CQGuiNightMap.dolbyNameForCrescent(name);
+			this.assert(CQGuiNightMap.hasDolbyCrescent(name),
+				"% owns an oyster".format(name));
+			this.assert(CQSpec.at(dolby).notNil,
+				"% maps to the real CQSpec enum %".format(name, dolby));
+		};
+		#[coco1Spaf, coco2Spaf, deckALevel, deckBLevel].do { |name|
+			this.assert(CQGuiNightMap.hasDolbyCrescent(name).not,
+				"% keeps its plain crescent".format(name));
+			this.assert(CQGuiNightMap.dolbyNameForCrescent(name).isNil,
+				"% invents no dolby parameter".format(name));
+		};
+		this.assertEquals(CQGuiNightMap.dolbyNameForCrescent(\coco1In),
+			\coco1DolbyIn, "input oyster controls input dolby");
+		this.assertEquals(CQGuiNightMap.dolbyNameForCrescent(\coco2Fb),
+			\coco2DolbyFb, "feedback oyster controls feedback dolby");
+	}
+
+	// GUI_SPEC §6: only useful multi-endpoint Night bodies carry group solo.
 	test_soloBodiesAreTheNightAnatomy {
 		this.assertEquals(CQGuiNightMap.bodyNames,
-			#[castle1, castle2, castle3, castle4, castle5, coco1, coco2, quantussy],
-			"five castles, two shells and the ring carry the night's body solo");
-		this.assertEquals(CQGuiNightMap.bodyEndpointNames(\castle3),
-			#[tri3, cas3, castle3_fm, castle3_spesal],
-			"a castle body owns its two buds and its two moons");
+			#[coco1, coco2, quantussy],
+			"the two shells and whole ring keep useful multi-organ solos");
+		this.assert(CQGuiNightMap.bodyEndpointNames(\castle3).isEmpty,
+			"a castle's four precise endpoints need no redundant flesh solo");
 		this.assertEquals(CQGuiNightMap.bodyEndpointNames(\coco2),
-			CQGuiPanels.bodyEndpointNames(\coco2),
-			"a shell is the Day coco panel's own body, so one solo serves both");
+			#[coco2, org2, coco2_spaf, coco2_inVca, coco2_fbVca,
+				coco2_flip, coco2_skip, coco2_organ, coco2_slotQ, coco2_slotX,
+				coco2_dust, coco2_record],
+			"a shell owns its two sources and ten sockets");
 		this.assertEquals(CQGuiNightMap.bodyEndpointNames(\quantussy),
-			CQGuiPanels.bodyEndpointNames(\quantussy),
-			"the ring is the Day quantussy panel's own body");
+			CQMatrix.sourceNames.copyRange(0, 9)
+				++ CQMatrix.destNames.select { |dest|
+					dest.asString.beginsWith("castle")
+				},
+			"the ring owns every castle source and destination");
 		this.assert(CQGuiNightMap.bodyEndpointNames(\bogus).isEmpty,
 			"an unknown body claims no endpoints");
 	}

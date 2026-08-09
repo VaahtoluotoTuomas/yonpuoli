@@ -21,7 +21,12 @@ CQInk {
 			// amber sat at 1.2:1 against cream and simply vanished (user review
 			// 2026-07-21). This deep amber reads 3.15:1 — §16.2's large-mark
 			// floor — while the night lamp stays luminous.
-			lamp: Color.new255(181, 122, 22)
+			lamp: Color.new255(181, 122, 22),
+			// PLAY-6.1: the instrument's own internal audio streams run under a
+			// single low-chroma ink, so the drone topology separates from the
+			// patch cables by DEPTH instead of by a sixth bright family. Never
+			// a line's own colour — always the water beneath one.
+			undertow: Color.new255(82, 111, 113)
 		);
 		palettes[\night] = (
 			clear: Color.new(0, 0, 0, 0),
@@ -33,11 +38,15 @@ CQInk {
 			organ: Color.new255(255, 222, 89), pre: Color.new255(242, 239, 228),
 			verso: Color.new255(255, 174, 66), inverso: Color.new255(98, 169, 255),
 			danger: Color.new255(255, 107, 84), warning: Color.new255(255, 217, 138),
-			lamp: Color.new255(255, 233, 168)
+			lamp: Color.new255(255, 233, 168),
+			undertow: Color.new255(102, 144, 151)
 		);
 		palettes.values.do { |palette|
 			palette[\hold] = palette[\danger];
 			palette[\warn] = palette[\danger];
+			// Bone is the same pale mineral as event spark, but naming it lets
+			// static Dust anatomy use the colour without claiming an event.
+			palette[\bone] = palette[\spark];
 		};
 		glyphNames = #[wedge, flip, spark, wave, tickRing, pendulum,
 			hold, skip, spesal, panic, rec, drawer, collapse, expand, day, night];
@@ -46,9 +55,41 @@ CQInk {
 	*palette { |skin = \day| ^palettes[skin] ?? { palettes[\day] } }
 	*strokes { ^(hairline: 1.0, normal: 1.5, strong: 2.0, state: 3.0) }
 
-	// §16.7: a momentary control shows a 120 ms ink flash. One constant, so the
-	// Day button and the night's mouth mark can never drift out of step.
+	// §16.7: a momentary control shows a 120 ms ink flash. One constant keeps
+	// every action entrance in step.
 	*momentaryFlash { ^0.12 }
+
+	// A Qt text entry cannot be Pen-drawn, so it borrows the Ink hover and
+	// selection language through its own Qt palette instead of showing the OS
+	// default. Hover is `spark` at the same weight a menu box uses; selection is
+	// `spaf`, the weight a list row uses -- never native highlight blue.
+	// User review 2026-07-30 (the morph bridge's seconds box).
+	*textEntryInk { |skin = \day, hovered = false|
+		var p = this.palette(skin);
+		^(
+			text: p[\line],
+			background: if(hovered) { p[\ground].blend(p[\spark], 0.10) } {
+				p[\ground]
+			},
+			highlight: p[\ground].blend(p[\spaf], 0.34),
+			highlightText: p[\line]
+		)
+	}
+
+	*applyTextEntryInk { |view, skin = \day, hovered = false|
+		var ink = this.textEntryInk(skin, hovered);
+		view.palette = view.palette
+			.base_(ink[\background]).baseText_(ink[\text])
+			.highlight_(ink[\highlight]).highlightText_(ink[\highlightText]);
+		if(view.isKindOf(NumberBox)) {
+			view.normalColor_(ink[\text]);
+			// Qt's default typing colour is red, which reads as an error. It is
+			// not even a pending state any more: a box's live text is what its
+			// action reads, so what you see is what happens.
+			view.typingColor_(ink[\text]);
+		};
+		^view
+	}
 	*metrics {
 		^(grid: 8, labelSize: 10, numberSize: 10, noticeSize: 11,
 			rangeSize: 9, knobDiameter: 26, featuredKnobDiameter: 34,
@@ -64,14 +105,29 @@ CQInk {
 		)
 	}
 
-	*font { |role = \label|
+	// A knob's box must hold its label band, the circle, the value arc's 3 px
+	// and the value readout. The reviewed Day figure is `diameter + 30` at
+	// 10 px type; a larger label needs the difference twice over, above and
+	// below. Day and Night pass no size and are pixel-identical to before.
+	*knobBoxHeight { |diameter, labelSize|
+		var grown = if(labelSize.isNil) { 0 } {
+			4 * (labelSize - this.metrics[\labelSize])
+		};
+		^diameter + 30 + grown
+	}
+
+	// The face is always the kit's (§16.4: two faces, generic constructors).
+	// `size` overrides only the *size*, for the Drawer's two reviewed steps
+	// (CQGuiScale) — the Night landscape keeps the fixed px sizes §16.10
+	// requires and simply never passes one.
+	*font { |role = \label, size|
 		var m = this.metrics;
 		^switch(role,
-			\number, { Font.monospace(m[\numberSize]) },
-			\notice, { Font.sansSerif(m[\noticeSize]) },
-			\spellbook, { Font.monospace(m[\noticeSize]) },
-			\range, { Font.sansSerif(m[\rangeSize]) },
-			{ Font.sansSerif(m[\labelSize]) }
+			\number, { Font.monospace(size ? m[\numberSize]) },
+			\notice, { Font.sansSerif(size ? m[\noticeSize]) },
+			\spellbook, { Font.monospace(size ? m[\noticeSize]) },
+			\range, { Font.sansSerif(size ? m[\rangeSize]) },
+			{ Font.sansSerif(size ? m[\labelSize]) }
 		)
 	}
 
@@ -124,17 +180,21 @@ CQInk {
 		Pen.stroke;
 	}
 
-	*drawJack { |center, family, skin = \day, state = \idle, aura = 0|
+	*drawJack { |center, family, skin = \day, state = \idle, aura = 0,
+		sizeScale = 1|
 		var palette = this.palette(skin), radius;
-		radius = switch(state, \inHand, { 5 }, \hover, { 4.5 }, { 4 });
+		radius = switch(state, \inHand, { 5 }, \hover, { 4.5 }, { 4 })
+			* sizeScale;
 		if(aura > 0) {
 			Pen.fillColor = palette[family].copy.alpha_((aura * 0.22).clip(0, 0.22));
-			Pen.addOval(Rect.aboutPoint(center, 8 + (aura * 5), 8 + (aura * 5)));
+			Pen.addOval(Rect.aboutPoint(center,
+				(8 + (aura * 5)) * sizeScale,
+				(8 + (aura * 5)) * sizeScale));
 			Pen.fill;
 		};
 		if(state == \hover) {
 			Pen.fillColor = palette[family].copy.alpha_(0.10);
-			Pen.addOval(Rect.aboutPoint(center, 7, 7));
+			Pen.addOval(Rect.aboutPoint(center, 7 * sizeScale, 7 * sizeScale));
 			Pen.fill;
 		};
 		Pen.fillColor = palette[family];
@@ -146,9 +206,28 @@ CQInk {
 		Pen.stroke;
 	}
 
-	*drawSocket { |center, family, skin = \day, state = \idle, candidateWeight|
+	*drawSocket { |center, family, skin = \day, state = \idle, candidateWeight,
+		sizeScale = 1|
 		var palette = this.palette(skin), radius, halo;
-		radius = if(state == \candidate) { 7.2 } { 6 };
+		radius = if(state == \candidate) { 7.2 } { 6 } * sizeScale;
+		// Endpoint views may be transparent when several anatomical sockets live
+		// close together. Mask only the socket's real circular flesh: a rectangular
+		// paper edge must never erase a neighbouring root or ring.
+		Pen.fillColor = palette[\ground];
+		Pen.addOval(Rect.aboutPoint(center, radius, radius));
+		Pen.fill;
+		// Static invitation while a cable is in hand. It never pulses: Night
+		// reserves motion for telemetry, but every legal landing place should
+		// become readable before the hand has to guess.
+		if(state == \available) {
+			Pen.fillColor = palette[family].copy.alpha_(0.10);
+			Pen.addOval(Rect.aboutPoint(center, 10 * sizeScale, 10 * sizeScale));
+			Pen.fill;
+			Pen.strokeColor = palette[family].copy.alpha_(0.48);
+			Pen.width = this.strokes[\hairline];
+			Pen.addOval(Rect.aboutPoint(center, 10 * sizeScale, 10 * sizeScale));
+			Pen.stroke;
+		};
 		if(state == \candidate) {
 			halo = if((candidateWeight ? 1) < 0) {
 				palette[\inverso]
@@ -156,12 +235,12 @@ CQInk {
 				palette[\verso]
 			};
 			Pen.fillColor = halo.copy.alpha_(0.18);
-			Pen.addOval(Rect.aboutPoint(center, 11, 11));
+			Pen.addOval(Rect.aboutPoint(center, 11 * sizeScale, 11 * sizeScale));
 			Pen.fill;
 		};
 		if(state == \hover) {
 			Pen.fillColor = palette[family].copy.alpha_(0.09);
-			Pen.addOval(Rect.aboutPoint(center, 9, 9));
+			Pen.addOval(Rect.aboutPoint(center, 9 * sizeScale, 9 * sizeScale));
 			Pen.fill;
 		};
 		Pen.strokeColor = palette[family];
@@ -183,26 +262,43 @@ CQInk {
 		Pen.fill;
 	}
 
-	*drawLamp { |center, charge = 0, on = false, skin = \day|
-		var palette = this.palette(skin), fill = if(on) { 1 } { (charge / 0.5).clip(0, 1) };
+	*drawLamp { |center, charge = 0, on = false, skin = \day, sizeScale = 1, fired|
+		var palette = this.palette(skin), fire, fill;
+		fire = if(fired.isNil) { if(on) { 1 } { 0 } } {
+			fired.asFloat.clip(0, 1)
+		};
+		fill = if(fired.isNil and: { on }) { 1 } { (charge / 0.5).clip(0, 1) };
 		// An idle charge lamp is a recessed bead, not another hollow patch socket.
 		Pen.fillColor = palette[\recess];
-		Pen.addOval(Rect.aboutPoint(center, 4, 4));
+		Pen.addOval(Rect.aboutPoint(center, 4 * sizeScale, 4 * sizeScale));
 		Pen.fill;
-		// Past the Schmitt's on-threshold the bead blooms (GUI_SPEC §16.8): a
-		// gate reads as lit steady, a trig as the bloom decaying with the
-		// server's peak-hold. Costs two Pen calls only while something fires.
-		if(on) {
+		// Charge remains amber inside the bead. An exact post-Schmitt event gets
+		// a pale diamond flare as a second, form-first fact: a steady diamond is
+		// an active gate; a trigger leaves the server-held flare to decay.
+		if(fired.isNil and: { on }) {
 			Pen.fillColor = palette[\lamp].copy.alpha_(0.28);
-			Pen.addOval(Rect.aboutPoint(center, 7, 7));
+			Pen.addOval(Rect.aboutPoint(center, 7 * sizeScale, 7 * sizeScale));
 			Pen.fill;
 		};
+		if(fired.notNil and: { fire > 0.01 }) {
+			Pen.fillColor = palette[\spark].copy.alpha_(0.12 * fire);
+			Pen.addOval(Rect.aboutPoint(center, 8 * sizeScale, 8 * sizeScale));
+			Pen.fill;
+			Pen.strokeColor = palette[\spark].copy.alpha_(0.35 + (0.6 * fire));
+			Pen.width = this.strokes[\normal];
+			Pen.moveTo(center + Point(0, -7 * sizeScale));
+			Pen.lineTo(center + Point(7 * sizeScale, 0));
+			Pen.lineTo(center + Point(0, 7 * sizeScale));
+			Pen.lineTo(center + Point(-7 * sizeScale, 0));
+			Pen.lineTo(center + Point(0, -7 * sizeScale));
+			Pen.stroke;
+		};
 		Pen.fillColor = palette[\lamp].copy.alpha_(fill);
-		Pen.addOval(Rect.aboutPoint(center, 4, 4));
+		Pen.addOval(Rect.aboutPoint(center, 4 * sizeScale, 4 * sizeScale));
 		Pen.fill;
 		Pen.strokeColor = palette[\whisper];
 		Pen.width = this.strokes[\hairline];
-		Pen.addOval(Rect.aboutPoint(center, 4, 4));
+		Pen.addOval(Rect.aboutPoint(center, 4 * sizeScale, 4 * sizeScale));
 		Pen.stroke;
 	}
 
@@ -262,6 +358,51 @@ CQInk {
 		Pen.stroke;
 	}
 
+	// A focused cable states its weight instead of asking the eye to estimate a
+	// 1.5 px width interval. The orbit's travelled fraction is |weight|, while
+	// its direction and hue repeat polarity. This data helper keeps the visual
+	// promise unit-testable without turning the instrument into a numeric panel.
+	*cableWeightReadout { |weight = 0|
+		var clipped = weight.asFloat.clip(-1, 1);
+		var direction = if(clipped < 0) { -1 } { if(clipped > 0) { 1 } { 0 } };
+		^(magnitude: clipped.abs, direction: direction,
+			family: if(direction < 0) { \inverso } { \verso })
+	}
+
+	// Hover-only midpoint moon. It is deliberately drawn after every planted
+	// cable, so dense routes cannot bury the readout belonging to the pointer.
+	*drawCableWeightMoon { |points, weight, skin = \day|
+		var palette = this.palette(skin), data, center;
+		var radius = 6.5, origin = -0.5pi, arcSweep, arcStart, pearlAngle, pearl;
+		if(points.isNil or: { points.size < 1 }) { ^this };
+		data = this.cableWeightReadout(weight);
+		center = points[points.size div: 2];
+
+		Pen.fillColor = palette[\recess].copy.alpha_(0.98);
+		Pen.addOval(Rect.aboutPoint(center, radius, radius));
+		Pen.fill;
+		Pen.strokeColor = palette[\whisper].copy.alpha_(0.82);
+		Pen.width = this.strokes[\hairline];
+		Pen.addOval(Rect.aboutPoint(center, radius, radius));
+		Pen.stroke;
+
+		arcSweep = 2pi * data[\magnitude];
+		if(arcSweep > 0) {
+			arcStart = if(data[\direction] < 0) { origin - arcSweep } { origin };
+			Pen.strokeColor = palette[data[\family]];
+			Pen.width = this.strokes[\strong];
+			Pen.addArc(center, radius - 1.2, arcStart, arcSweep);
+			Pen.stroke;
+			pearlAngle = if(data[\direction] < 0) { arcStart } {
+				origin + arcSweep
+			};
+			pearl = center + (Point(cos(pearlAngle), sin(pearlAngle)) * (radius - 1.2));
+			Pen.fillColor = palette[data[\family]];
+			Pen.addOval(Rect.aboutPoint(pearl, 1.5, 1.5));
+			Pen.fill;
+		};
+	}
+
 	*drawLasso { |points, skin = \day|
 		var palette = this.palette(skin);
 		if(points.isNil or: { points.size < 2 }) { ^this };
@@ -289,10 +430,16 @@ CQInk {
 	}
 
 	*drawKnob { |rect, value = 0, label = "", display = "", family,
-		skin = \day, active = false, diameter|
+		skin = \day, active = false, diameter, labelSize|
 		var palette = this.palette(skin), m = this.metrics;
+		var size = labelSize ? m[\labelSize];
 		var radius = (diameter ? m[\knobDiameter]) / 2;
-		var center = Point(rect.center.x, rect.top + 14 + radius);
+		// The value arc sits 3 px outside the circle and sweeps over the top, so
+		// the label needs clearance from the ARC, not from the knob. The default
+		// path keeps the reviewed 14 px exactly; a caller that grew the type
+		// (the Master strip) gets a band measured from its own size.
+		var band = if(labelSize.isNil) { 14 } { size + 8 };
+		var center = Point(rect.center.x, rect.top + band + radius);
 		var start = 0.75pi, sweep = 1.5pi, angle, pointer, accent;
 		value = value.clip(0, 1);
 		accent = palette[family] ?? { palette[\whisper] };
@@ -302,8 +449,9 @@ CQInk {
 			Pen.addOval(Rect.aboutPoint(center, radius + 6, radius + 6));
 			Pen.stroke;
 		};
-		Pen.stringCenteredIn(label.asString, Rect(rect.left, rect.top, rect.width, 11),
-			this.font(\label), palette[\whisper]);
+		Pen.stringCenteredIn(label.asString,
+			Rect(rect.left, rect.top, rect.width, size + 2),
+			this.font(\label, labelSize), palette[\whisper]);
 		Pen.strokeColor = palette[\line];
 		Pen.width = this.strokes[\normal];
 		Pen.addOval(Rect.aboutPoint(center, radius, radius));
@@ -319,12 +467,12 @@ CQInk {
 		Pen.line(center, pointer);
 		Pen.stroke;
 		Pen.stringCenteredIn(if(skin == \night) { "" } { display.asString },
-			Rect(rect.left, rect.bottom - 11, rect.width, 10),
-			this.font(\number), palette[\whisper]);
+			Rect(rect.left, rect.bottom - size - 2, rect.width, size + 1),
+			this.font(\number, labelSize), palette[\whisper]);
 	}
 
 	*drawButton { |rect, label, skin = \day, active = false, pressed = false,
-		accent = \line, glyph, surface = \ground, hover = false|
+		accent = \line, glyph, surface = \ground, hover = false, labelSize|
 		var palette = this.palette(skin), body = rect.insetBy(1, 2), ink = palette[accent];
 		var fill = if(active or: { pressed }) { ink } { palette[surface] };
 		var text = if(active or: { pressed }) { palette[surface] } { ink };
@@ -346,7 +494,7 @@ CQInk {
 		Pen.stringCenteredIn(label.asString,
 			Rect(body.left + if(glyph.isNil) { 2 } { 14 }, body.top,
 				body.width - if(glyph.isNil) { 4 } { 16 }, body.height),
-			this.font(\label), text);
+			this.font(\label, labelSize), text);
 	}
 
 	*drawSlider { |rect, value = 0, skin = \day, family, hover = false|
@@ -445,6 +593,204 @@ CQInk {
 			this.font(\number), palette[\line]);
 	}
 
+	// ---- the Workshop ledger row (GUI_SPEC §16.7, NIGHT_STANDALONE_PLAN §12.1.3)
+	// A precision page needs a control the Day kit does not have: label at left,
+	// one hairline value rail in the middle, the exact value in mono at right,
+	// and never a knob. The rail's geometry is published here so the drawing and
+	// the hit test are literally the same rectangle (§4.5: cue and action share
+	// one geometry) — no view may compute a second one.
+
+	// `scale` is a CQGuiScale metrics Event; nil means the compact step, so a
+	// caller that has no opinion still gets a reviewed geometry.
+	*ledgerMetrics { |scale|
+		var m = scale ?? { CQGuiScale.metrics(\compact) };
+		^(height: m[\rowHeight], inset: m[\contentInset],
+			labelWidth: m[\ledgerLabel], valueWidth: m[\ledgerValue],
+			gap: m[\ledgerGap],
+			// the grab band and the seat bead follow the row, so the whole
+			// control grows as one thing rather than as a bigger box holding
+			// the same small marks
+			grab: (m[\rowHeight] / 6).round.asInteger,
+			seatRadius: m[\rowHeight] / 6.8,
+			labelSize: m[\label], valueSize: m[\value], seatSize: m[\subgroup])
+	}
+
+	*ledgerRailRect { |rect, scale|
+		var m = this.ledgerMetrics(scale), body = rect.insetBy(m[\inset], 0);
+		var left = body.left + m[\labelWidth];
+		var right = body.right - m[\valueWidth] - m[\gap];
+		^Rect(left, body.top, (right - left).max(16), body.height)
+	}
+
+	// a press is answered only over the rail (plus a small grab band at each
+	// end): a mis-aimed click on the label may not slam a parameter to its floor
+	*ledgerHitsRail { |rect, x, scale|
+		var rail = this.ledgerRailRect(rect, scale);
+		var grab = this.ledgerMetrics(scale)[\grab];
+		^(x >= (rail.left - grab)) and: { x <= (rail.right + grab) }
+	}
+
+	*ledgerNormAt { |rect, x, scale|
+		var rail = this.ledgerRailRect(rect, scale);
+		if(rail.width <= 0) { ^nil };
+		^((x - rail.left) / rail.width).clip(0, 1)
+	}
+
+	*ledgerSeatAt { |rect, x, count = 2, scale|
+		var rail = this.ledgerRailRect(rect, scale);
+		if(count < 1 or: { rail.width <= 0 }) { ^nil };
+		^((((x - rail.left) / rail.width) * count).floor.asInteger)
+			.clip(0, count - 1)
+	}
+
+	*drawLedgerRow { |rect, mode = \num, value = 0, label = "", display = "",
+		seats, family, skin = \day, hover = false, pressed = false,
+		center, danger = false, scale|
+		var palette = this.palette(skin), m = this.ledgerMetrics(scale);
+		var body = rect.insetBy(m[\inset], 0);
+		var rail = this.ledgerRailRect(rect, scale);
+		var accent = palette[family] ?? { palette[\line] };
+		var textH = m[\labelSize] + 4;
+		var y = rail.center.y, norm, handleX, originX, reach;
+		Pen.stringLeftJustIn(label.asString,
+			Rect(body.left, body.center.y - (textH / 2),
+				m[\labelWidth] - m[\gap], textH),
+			this.font(\label, m[\labelSize]),
+			if(hover) { palette[\line] } { palette[\whisper] });
+		Pen.strokeColor = if(hover) { palette[\line] } { palette[\whisper] };
+		Pen.width = this.strokes[\hairline];
+		Pen.line(Point(rail.left, y), Point(rail.right, y));
+		Pen.stroke;
+		if(#[\toggle, \enum].includes(mode)) {
+			this.prLedgerSeats(rail, seats ? [], (value ? 0).asInteger,
+				accent, palette, hover, m);
+		} {
+			// a unipolar rail fills from its left end; a bipolar one grows away
+			// from a visible centre tick, so zero is a place and not a guess
+			norm = (value ? 0).clip(0, 1);
+			handleX = rail.left + (rail.width * norm);
+			originX = rail.left + (rail.width * (center ? 0));
+			center !? {
+				Pen.strokeColor = palette[\whisper];
+				Pen.width = this.strokes[\hairline];
+				Pen.line(Point(originX, y - 5), Point(originX, y + 5));
+				Pen.stroke;
+			};
+			Pen.strokeColor = accent;
+			Pen.width = this.strokes[\strong];
+			Pen.line(Point(originX, y), Point(handleX, y));
+			Pen.stroke;
+			// the handle is a tick drawn across the rail — a setting on a scale
+			// wears a scale mark, exactly as the shell's reel notch does (§16.6)
+			reach = m[\seatRadius] * if(hover) { 1.7 } { 1.3 };
+			Pen.strokeColor = if(hover) { palette[\spark] } { accent };
+			Pen.width = this.strokes[\normal];
+			Pen.line(Point(handleX, y - reach), Point(handleX, y + reach));
+			Pen.stroke;
+		};
+		Pen.stringRightJustIn(display.asString,
+			Rect(body.right - m[\valueWidth], body.center.y - (textH / 2),
+				m[\valueWidth], textH),
+			this.font(\number, m[\valueSize]),
+			if(hover) { palette[\spark] } { palette[\line] });
+		if(pressed) {
+			Pen.strokeColor = accent.copy.alpha_(0.55);
+			Pen.width = this.strokes[\hairline];
+			Pen.addRoundedRect(Rect(rail.left - m[\grab], rect.top + 2,
+				rail.width + (2 * m[\grab]), rect.height - 4),
+				this.metrics[\buttonRadius], this.metrics[\buttonRadius]);
+			Pen.stroke;
+		};
+		// SPEC §7: the mic row may brighten red — its module may not
+		if(danger) {
+			Pen.strokeColor = palette[\danger].copy.alpha_(0.7);
+			Pen.width = this.strokes[\normal];
+			Pen.addRoundedRect(body.insetBy(0, 2),
+				this.metrics[\buttonRadius], this.metrics[\buttonRadius]);
+			Pen.stroke;
+		};
+	}
+
+	// a toggle or enum is stable seats, never a sliding value: one labelled seat
+	// per value, in the order CQSpec gave them
+	*prLedgerSeats { |rail, seats, index, accent, palette, hover = false, m|
+		var cell = rail.width / seats.size.max(1);
+		var radius = m[\seatRadius], textH = m[\seatSize] + 4;
+		seats.do { |seat, i|
+			var left = rail.left + (cell * i);
+			var seatCenter = Point(left + (radius * 2), rail.center.y);
+			var lit = i == index;
+			if(lit) {
+				Pen.fillColor = accent;
+				Pen.addOval(Rect.aboutPoint(seatCenter, radius, radius));
+				Pen.fill;
+			} {
+				Pen.strokeColor = palette[\whisper];
+				Pen.width = this.strokes[\hairline];
+				Pen.addOval(Rect.aboutPoint(seatCenter, radius, radius));
+				Pen.stroke;
+			};
+			Pen.stringLeftJustIn(seat.asString,
+				Rect(seatCenter.x + radius + 4, rail.center.y - (textH / 2),
+					(cell - (radius * 3) - 4).max(8), textH),
+				this.font(\range, m[\seatSize]),
+				if(lit) {
+					if(hover) { palette[\spark] } { palette[\line] }
+				} {
+					palette[\whisper]
+				});
+		};
+	}
+
+	// One ledger island: its title over a full rule, then its subgroups. The y
+	// offsets come from the caller's own layout list, so the painted labels and
+	// the laid-out rows can never drift apart.
+	//
+	// Three ranks, told by rule length rather than by shouting (§16.4 keeps
+	// everything lowercase but PANIC/REC/HOLD): the island title carries a rule
+	// across the whole island, a subgroup carries a lighter rule from the end of
+	// its own name to the island's edge, and a row carries only its value rail.
+	// The subgroup label is line ink, not whisper — it names a region of the
+	// signal, and the rows under it are the whispers.
+	*drawLedgerIsland { |rect, items, skin = \day, scale, titleFamily = \line|
+		var palette = this.palette(skin), m = this.ledgerMetrics(scale);
+		var sizes = scale ?? { CQGuiScale.metrics(\compact) };
+		var left = rect.left + m[\inset], right = rect.right - m[\inset];
+		items.do { |item|
+			var y = rect.top + item[\y], textH, ruleY, labelEnd;
+			switch(item[\kind],
+				\title, {
+					textH = sizes[\title] + 4;
+					Pen.stringLeftJustIn(item[\label].asString,
+						Rect(left, y + 2, right - left, textH),
+						this.font(\label, sizes[\title]),
+						palette[item[\family] ? titleFamily]);
+					Pen.strokeColor = palette[\whisper];
+					Pen.width = this.strokes[\hairline];
+					Pen.line(Point(left, y + item[\height] - 3),
+						Point(right, y + item[\height] - 3));
+					Pen.stroke;
+				},
+				\group, {
+					textH = sizes[\subgroup] + 4;
+					ruleY = y + (item[\height] / 2) + 1;
+					labelEnd = left + CQGuiScale.textWidth(item[\label],
+						sizes[\subgroup]) + 10;
+					Pen.stringLeftJustIn(item[\label].asString,
+						Rect(left, y + ((item[\height] - textH) / 2),
+							right - left, textH),
+						this.font(\label, sizes[\subgroup]), palette[\line]);
+					if(labelEnd < (right - 12)) {
+						Pen.strokeColor = palette[\whisper].copy.alpha_(0.4);
+						Pen.width = this.strokes[\hairline];
+						Pen.line(Point(labelEnd, ruleY), Point(right, ruleY));
+						Pen.stroke;
+					};
+				}
+			);
+		};
+	}
+
 	*drawOrganFrame { |rect, title, family = \line, skin = \day, seed = 0|
 		var palette = this.palette(skin), y = rect.top + 22, points;
 		points = this.wobble([Point(rect.left + 8, y), Point(rect.center.x - 42, y),
@@ -458,185 +804,40 @@ CQInk {
 			this.font(\label), palette[\line]);
 	}
 
-	// A functional overview of the normative Coco converter order. This is not
-	// a waveform: it makes the otherwise dispersed control islands read as one
-	// memory instrument, from the input mixer to the RAM output tap.
-	*drawCocoSignalPath { |rect, skin = \day, seed = 0|
-		var palette = this.palette(skin), labels, points, linePoints;
-		var left, right, topY, bottomY, xStep, last, before, delta, length, unit, normal;
-		labels = ["mix", "dolby", "vca+fb", "dust", "rail", "bits", "ram", "out"];
-		left = rect.left + 16;
-		right = rect.right - 16;
-		topY = rect.top + 29;
-		bottomY = rect.bottom - 21;
-		xStep = (right - left) / 3;
-		points = [
-			Point(left, topY), Point(left + xStep, topY),
-			Point(left + (xStep * 2), topY), Point(right, topY),
-			Point(right, bottomY), Point(left + (xStep * 2), bottomY),
-			Point(left + xStep, bottomY), Point(left, bottomY)
-		];
-		linePoints = this.wobble(points, seed, 0.65);
-		Pen.stringLeftJustIn("signal memory path",
-			Rect(rect.left + 2, rect.top + 3, rect.width - 4, 10),
-			this.font(\range), palette[\whisper]);
-		Pen.strokeColor = palette[\whisper].copy.alpha_(0.72);
-		Pen.width = this.strokes[\hairline];
-		Pen.moveTo(linePoints.first);
-		linePoints.drop(1).do { |point| Pen.lineTo(point) };
-		Pen.stroke;
-		points.do { |point, i|
-			var labelRect;
-			Pen.fillColor = if(i == 0) { palette[\input] } {
-				if(i == (points.size - 1)) { palette[\cas] } { palette[\ground] }
-			};
-			Pen.strokeColor = if(#[4, 5].includes(i)) { palette[\fm] } { palette[\line] };
-			Pen.width = this.strokes[\hairline];
-			Pen.addOval(Rect.aboutPoint(point, 3.5, 3.5));
-			Pen.fillStroke;
-			labelRect = if(i == 3) {
-				Rect(point.x - 50, point.y + 8, 42, 10)
-			} {
-				if(i == 4) {
-					Rect(point.x - 50, point.y + 8, 42, 10)
-				} {
-					Rect(point.x - (xStep * 0.48),
-						if(i < 4) { point.y + 8 } { point.y - 18 },
-						xStep * 0.96, 10)
-				}
-			};
-			Pen.stringCenteredIn(labels[i], labelRect,
-				this.font(\range), palette[\whisper]);
-		};
-		last = points.last;
-		before = points[points.size - 2];
-		delta = last - before;
-		length = sqrt(delta.x.squared + delta.y.squared).max(0.001);
-		unit = delta / length;
-		normal = Point(unit.y.neg, unit.x);
-		Pen.strokeColor = palette[\cas];
-		Pen.line(last, last - (unit * 6) + (normal * 3));
-		Pen.line(last, last - (unit * 6) - (normal * 3));
-		Pen.stroke;
-	}
-
-	// The Quantussy map receives semantic geometry from its view class. A single
-	// link means sample-and-hold; the parallel link means track-and-hold. The
-	// three beads preserve the established 15-bit display, while the small dot
-	// inside each castle reports the instantaneous /cq_castle activity sample.
-	*drawCastleConstellation { |rect, points, partners, modes, states, activity,
-		skin = \day, seed = 0|
-		var palette = this.palette(skin), map, mapped, contour;
-		map = Rect(rect.left + 20, rect.top + 23, rect.width - 40, rect.height - 46);
-		mapped = points.collect { |point|
-			Point(map.left + (point.x * map.width), map.top + (point.y * map.height))
-		};
-		Pen.stringLeftJustIn("spesal topology",
-			Rect(rect.left + 2, rect.top + 2, 90, 10),
-			this.font(\range), palette[\whisper]);
-		Pen.stringRightJustIn("S sample  T track",
-			Rect(rect.right - 105, rect.top + 2, 103, 10),
-			this.font(\range), palette[\whisper]);
-		contour = this.wobble(mapped ++ [mapped.first], seed, 0.7);
-		Pen.strokeColor = palette[\whisper].copy.alpha_(0.22);
-		Pen.width = this.strokes[\hairline];
-		Pen.moveTo(contour.first);
-		contour.drop(1).do { |point| Pen.lineTo(point) };
-		Pen.stroke;
-		// the link runs the way the signal runs: castle i samples its PARTNER's
-		// triangle into its own S&H (SPEC §2.2), so the arrow lands on the
-		// reader, not on the one being read (amended 2026-07-22 — an arrow that
-		// points against the flow is the only mark in the app that would)
-		mapped.do { |node, i|
-			this.drawDirectedLink(mapped[partners[i]], node, modes[i], skin);
-		};
-		mapped.do { |center, i|
-			var state = states[i].asInteger, act = (activity[i] ? 0).clip(-1, 1);
-			Pen.fillColor = palette[\recess];
-			Pen.strokeColor = palette[\tri];
-			Pen.width = this.strokes[\normal];
-			Pen.addOval(Rect.aboutPoint(center, 11, 11));
-			Pen.fillStroke;
-			Pen.stringCenteredIn((i + 1).asString,
-				Rect.aboutPoint(center - Point(0, 2), 8, 8),
-				this.font(\range), palette[\line]);
-			Pen.fillColor = palette[\cas];
-			Pen.addOval(Rect.aboutPoint(center + Point(act * 6, 5), 1.8, 1.8));
-			Pen.fill;
-			3.do { |bit|
-				var bitCenter = center + Point((bit - 1) * 6, 16);
-				Pen.fillColor = if(state.bitTest(2 - bit)) {
-					palette[\input]
-				} {
-					palette[\recess]
-				};
-				Pen.strokeColor = palette[\whisper];
-				Pen.width = this.strokes[\hairline];
-				Pen.addOval(Rect.aboutPoint(bitCenter, 2.1, 2.1));
-				Pen.fillStroke;
-			};
-			Pen.stringAtPoint(if(modes[i]) { "T" } { "S" }, center + Point(13, -6),
-				this.font(\range), palette[\line]);
-			Pen.stringAtPoint(state.asString, center + Point(12, 10),
-				this.font(\range), palette[\whisper]);
-		};
-	}
-
-	// `start` is the castle being read, `end` the one reading it — the arrow
-	// therefore points downstream, with the sampled signal.
-	// **Track-and-hold is drawn broken, not doubled** (amended 2026-07-22): a
-	// track-and-hold follows its input while the clock is high and freezes
-	// while it is low, so a link that is connected half the time *is* the
-	// mechanism. The old parallel line was the same fact told twice, and its
-	// second stroke ran into the arrowhead. Cross-ticks were not available:
-	// barbs already mean inverso polarity on the cables (§16.8). Pen's dash
-	// pattern is global state, so it is put back before the arrow is drawn.
-	*drawDirectedLink { |start, end, track = false, skin = \day|
-		var palette = this.palette(skin), delta, length, unit, normal;
-		var from, to, arrow, wing;
-		delta = end - start;
-		length = sqrt(delta.x.squared + delta.y.squared).max(0.001);
-		unit = delta / length;
-		normal = Point(unit.y.neg, unit.x);
-		from = start + (unit * 13);
-		to = end - (unit * 14);
-		Pen.strokeColor = palette[\input].copy.alpha_(0.58);
-		Pen.width = this.strokes[\hairline];
-		if(track) { Pen.lineDash = FloatArray[5, 5] };
-		Pen.line(from, to);
-		Pen.stroke;
-		if(track) { Pen.lineDash = FloatArray[1, 0] };
-		arrow = to - (unit * 2);
-		wing = 4;
-		Pen.line(arrow, arrow - (unit * wing) + (normal * 2.4));
-		Pen.line(arrow, arrow - (unit * wing) - (normal * 2.4));
-		Pen.stroke;
-	}
-
-	*drawToolHeader { |rect, title, skin = \day|
-		var palette = this.palette(skin), y = rect.top + 18;
+	// `labelSize` lets a surface with its own type step (the Drawer's pages, the
+	// persistent chrome) title its boxes at the size the rest of that surface
+	// reads at; nil keeps the kit's fixed px. The title rect is measured from
+	// the box rather than fixed at 80/90 px, which clipped a longer caption the
+	// moment the type grew.
+	*drawToolHeader { |rect, title, skin = \day, labelSize|
+		var palette = this.palette(skin), size = labelSize ? this.metrics[\labelSize];
+		var y = rect.top + size + 8;
 		Pen.strokeColor = palette[\whisper];
 		Pen.width = this.strokes[\hairline];
 		Pen.line(Point(rect.left + 8, y), Point(rect.right - 8, y));
 		Pen.stroke;
-		Pen.stringLeftJustIn(title.asString, Rect(rect.left + 8, rect.top + 3, 90, 11),
-			this.font(\label), palette[\line]);
+		Pen.stringLeftJustIn(title.asString,
+			Rect(rect.left + 8, rect.top + 3, (rect.width - 16).max(20), size + 3),
+			this.font(\label, labelSize), palette[\line]);
 	}
 
-	*drawToolBox { |rect, title, skin = \day, active = false|
+	*drawToolBox { |rect, title, skin = \day, active = false, labelSize,
+		titleTop = 3|
 		var palette = this.palette(skin), body = rect.insetBy(1, 1);
+		var size = labelSize ? this.metrics[\labelSize];
 		Pen.fillColor = palette[\ground];
 		Pen.strokeColor = if(active) { palette[\line] } { palette[\whisper] };
 		Pen.width = this.strokes[\hairline];
 		Pen.addRoundedRect(body, this.metrics[\buttonRadius], this.metrics[\buttonRadius]);
 		Pen.fillStroke;
-		Pen.stringLeftJustIn(title.asString, Rect(body.left + 6, body.top + 3, 80, 11),
-			this.font(\label), palette[\line]);
+		Pen.stringLeftJustIn(title.asString,
+			Rect(body.left + 6, body.top + titleTop,
+				(body.width - 12).max(20), size + 3),
+			this.font(\label, labelSize), palette[\line]);
 	}
 
 	// §16.7's only dashed rectangle in the whole app: a file drag is hovering a
-	// drop target. Both skins share the one mark — the Day deck box and the
-	// night's bird are the same law, so they must not drift apart. Pen's dash
+	// Night bird. Pen's dash
 	// pattern is global state, so it is put back to solid here rather than
 	// trusting every call site to remember.
 	*drawDropTarget { |rect, skin = \day|

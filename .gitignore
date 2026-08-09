@@ -1,7 +1,37 @@
 # machine-specific (CLAUDE.md: no absolute paths in the repo)
 config.scd
+# Personal tool state: permissions, caches and machine-specific instructions.
+# Public collaboration rules stay in AGENTS.md and CLAUDE.md.
+.claude/
+.agents/
+.codex/
+CLAUDE.local.md
+PLAN.local.md
+
+# Local environment files. A documented example may still be versioned.
+.env
+.env.*
+!.env.example
+
+# Editor and OS metadata.
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*~
+*.audio.scd
+*.audio.scd.pending
+*.audio.scd.bak
 tests/dev_paths.scd
 tests/sclang_conf_dev.yaml
+
+# Generated diagnostics and compiled SynthDefs.
+*.log
+*.dmp
+*.scsyndef
+/synthdefs/
 
 # audio material and output
 samples/
@@ -11,8 +41,14 @@ tests/tmp/
 # Archipelago GUI runtime state (not a user preset)
 /presets/compass.cqcompass.scd
 
-# Session snapshots: CQ.snap writes these while playing — personal state, not
-# repo material. Only the documented example is versioned. (They will move to
-# snapshots/ when the folders are split; see PLAN.md.)
+# Legacy snapshot location: still read for compatibility, never written.
 /presets/*.cqsnap.scd
-!/presets/example.cqsnap.scd
+
+# Session snapshots: CQ.snap writes these while playing — personal state, not
+# repo material. Only the exact documented release bank below is versioned.
+/snapshots/*.cqsnap.scd
+!/snapshots/example.cqsnap.scd
+!/snapshots/undertow.cqsnap.scd
+!/snapshots/dust_bloom.cqsnap.scd
+!/snapshots/glass_tide.cqsnap.scd
+!/snapshots/organ_lanterns.cqsnap.scd

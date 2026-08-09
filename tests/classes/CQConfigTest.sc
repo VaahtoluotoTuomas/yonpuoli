@@ -17,6 +17,8 @@ CQConfigTest : UnitTest {
 		this.assertEquals(cfg[\sampleRate], 48000, "default sampleRate");
 		this.assertEquals(cfg[\outChans], [0, 1], "default outChans");
 		this.assertEquals(cfg[\bufFrames], 131072, "default bufFrames");
+		this.assertEquals(cfg[\folders][\snapshots], "snapshots",
+			"snapshots have their own default folder");
 		this.assertEquals(cfg[\sixteenN][\ccBase], 32, "default 16n ccBase");
 		this.assert(cfg[\sixteenN][\chan].isNil,
 			"16n chan defaults to nil = any channel (atovproject per-fader channels)");
@@ -41,6 +43,8 @@ CQConfigTest : UnitTest {
 		var cfg = CQConfig.validate((sixteenN: (enabled: false)));
 		this.assertEquals(cfg[\sixteenN][\enabled], false, "user subkey applied");
 		this.assertEquals(cfg[\sixteenN][\ccBase], 32, "missing subkeys filled from defaults");
+		this.assertEquals(cfg[\folders][\snapshots], "snapshots",
+			"old partial folder configs inherit the snapshots default");
 	}
 
 	test_badValuesRejected {
@@ -57,6 +61,7 @@ CQConfigTest : UnitTest {
 			(sixteenN: (chan: \any)),
 			(autoTrim: 3),
 			(folders: (samples: 42)),
+			(folders: (snapshots: 42)),
 			(device: 7),
 			(device: ["only in"]),
 			(device: [1, 2])

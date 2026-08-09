@@ -1,6 +1,6 @@
 // CQNightGeometryTest — the §15 topology truths of the Night map, asserted
 // without a window: ring order and direction, cocos left/right, roots below,
-// birds above, the full 38-endpoint inventory and the §16.10 hit spacing.
+// birds above, the full 48-endpoint inventory and the §16.10 hit spacing.
 
 CQNightGeometryTest : UnitTest {
 
@@ -8,21 +8,49 @@ CQNightGeometryTest : UnitTest {
 		^sqrt((b.x - a.x).squared + (b.y - a.y).squared)
 	}
 
-	// mirrors CQGuiNightMap.prMakeEndpoint: jack 26x26 anchored (13,13),
-	// socket 20x20 anchored (9,10), a lamped socket widens to 34
+	// the very box CQGuiNightMap.prMakeEndpoint builds — including the outward
+	// Record-lamp mirror — so a flooded view size can never pass a clearance
+	// test it would fail live
 	prEndpointBox { |name, center|
 		var spec = CQGuiNightMap.endpointSpec(name);
-		var jack = spec[\kind] == \jack;
-		var width = if(spec[\lamp] == true) { 34 } { if(jack) { 26 } { 20 } };
-		var height = if(jack) { 26 } { 20 };
-		var anchor = if(jack) { Point(13, 13) } { Point(9, 10) };
-		^Rect(center.x - anchor.x, center.y - anchor.y, width, height)
+		^CQNightGeometry.endpointBox(center, spec[\kind], spec[\lamp],
+			spec[\lampSide] ? 1)
+	}
+
+	// how far out a point lies in the pool's own elliptical frame: 1 is exactly
+	// on the mean shore, so every reach assert reads the same at any scale
+	prPoolReach { |pool, point|
+		var u = (point.x - pool[\center].x) / pool[\rx];
+		var v = (point.y - pool[\center].y) / pool[\ry];
+		^sqrt((u * u) + (v * v))
 	}
 
 	prRectDistance { |point, rect|
 		var dx = max(max(rect.left - point.x, point.x - rect.right), 0);
 		var dy = max(max(rect.top - point.y, point.y - rect.bottom), 0);
 		^sqrt(dx.squared + dy.squared)
+	}
+
+	prRectsDistance { |a, b|
+		var dx = max(max(a.left - b.right, b.left - a.right), 0);
+		var dy = max(max(a.top - b.bottom, b.top - a.bottom), 0);
+		^sqrt(dx.squared + dy.squared)
+	}
+
+	prPointSetsDistance { |a, b|
+		var best = inf;
+		a.do { |left|
+			b.do { |right| best = min(best, this.prDistance(left, right)) };
+		};
+		^best
+	}
+
+	prRootInk { |root|
+		^root[\sourceStrands].collect { |segment|
+			CQNightGeometry.sampleSegments([segment], 24)
+		}.flat
+			++ CQNightGeometry.sampleSegments([root[\audioVein]], 48)
+			++ CQNightGeometry.sampleSegments([root[\envBranch]], 24)
 	}
 
 	test_topologyTruths {
@@ -65,8 +93,8 @@ CQNightGeometryTest : UnitTest {
 		var points = geo[\endpoints];
 		var names = CQMatrix.sourceNames ++ CQMatrix.destNames;
 		var stage = Rect(0, 0, 1280, 570);
-		this.assertEquals(points.size, 38,
-			"the night map places exactly 16 jacks and 22 sockets");
+		this.assertEquals(points.size, 48,
+			"the night map places exactly 16 jacks and 32 sockets");
 		names.do { |name|
 			this.assert(points[name].notNil,
 				"canonical endpoint % has a night home".format(name));
@@ -77,6 +105,269 @@ CQNightGeometryTest : UnitTest {
 			names.drop(i + 1).do { |b|
 				this.assert(this.prDistance(points[a], points[b]) >= 24,
 					"% and % keep the 24 px hit spacing (16.10)".format(a, b));
+			};
+		};
+	}
+
+	test_softwareInputsSitBesideTheirOwnOrgansWithoutMovingHardwareSockets {
+		var geo = CQNightGeometry.compute(1280, 570);
+		geo[\cocos].do { |coco, i|
+			var n = i + 1;
+			#[organ, slotQ, record].do { |suffix|
+				var name = ("coco" ++ n ++ "_" ++ suffix).asSymbol;
+				this.assertEquals(geo[\endpoints][name], coco[\modInputs][suffix],
+					"% is the endpoint of its under-winding semantic root".format(name));
+				this.assert(coco[\shellBox].containsPoint(coco[\modInputs][suffix]),
+					"% remains on its own shell paper".format(name));
+			};
+			this.assertFloatEquals(this.prDistance(coco[\orgCenter],
+				coco[\modInputs][\organ]), CQNightMeasures.organInputOutset,
+				"coco % Organ input sits one clear socket-gap beyond its fruit"
+					.format(n), 1e-6);
+			this.assertFloatEquals(coco[\modInputs][\slotQ].y,
+				coco[\slotQValve].y,
+				"coco % SlotQ input sits level with its gill".format(n), 1e-6);
+			this.assertFloatEquals((coco[\modInputs][\slotQ].x
+				- coco[\slotQValve].x).abs, CQNightMeasures.slotQInputGap,
+				"coco % SlotQ root is only one short side stem".format(n), 1e-6);
+			this.assertEquals(geo[\endpoints][("coco" ++ n ++ "_slotX").asSymbol],
+				coco[\modInputs][\slotX],
+				"coco % SlotX socket terminates its own gill root".format(n));
+			this.assertFloatEquals(this.prDistance(coco[\slotXValve],
+				coco[\modInputs][\slotX]), CQNightMeasures.slotXInputGap,
+				"coco % SlotX socket keeps the chosen 32 px gill gap".format(n), 1e-6);
+			this.assert(coco[\modInputs][\slotX].y < coco[\slotXValve].y,
+				"coco % SlotX socket rises above its valve".format(n));
+			this.assert(if(i == 0) {
+				coco[\modInputs][\slotX].x < coco[\slotXValve].x
+			} {
+				coco[\modInputs][\slotX].x > coco[\slotXValve].x
+			}, "coco % SlotX socket tilts outward as SlotQ's mirrored counterpart"
+				.format(n));
+			this.assertFloatEquals(this.prDistance(coco[\center],
+				coco[\modInputs][\record]),
+				coco[\outerR] + CQNightMeasures.recordInputOutset,
+				"coco % Record input sits just beyond the rim".format(n), 1e-6);
+			this.assert(coco[\modInputs][\record].y < coco[\center].y
+				and: { if(i == 0) {
+					coco[\modInputs][\record].x < coco[\center].x
+				} {
+					coco[\modInputs][\record].x > coco[\center].x
+				} }, "Record homes mirror at ten and two o'clock");
+			#[spaf, inVca, fbVca, flip, skip].do { |suffix, m|
+				var name = ("coco" ++ n ++ "_" ++ suffix).asSymbol;
+				this.assertEquals(geo[\endpoints][name], coco[\moons][m],
+					"the original % moon keeps its established home".format(name));
+			};
+		};
+		this.assert(
+			this.prEndpointBox(\coco1_record, geo[\endpoints][\coco1_record]).left
+				< (geo[\endpoints][\coco1_record].x - 30),
+			"coco 1 Record paper and lamp grow outward to the left");
+		this.assert(
+			this.prEndpointBox(\coco2_record, geo[\endpoints][\coco2_record]).right
+				> (geo[\endpoints][\coco2_record].x + 30),
+			"coco 2 Record paper and lamp mirror outward to the right");
+	}
+
+	test_dustVeilsStayCocoLocalMirroredAndOpenInTheMiddle {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var stage = Rect(0, 0, size[0], size[1]);
+			var endpointNames = CQMatrix.sourceNames ++ CQMatrix.destNames;
+			var seedBoxes = geo[\almanac][\stamps].collect { |stamp|
+				Rect.aboutPoint(stamp, CQNightMeasures.seedHalo,
+					CQNightMeasures.seedHalo)
+			};
+			this.assertEquals(geo[\dusts].size, 2,
+				"the landscape grows exactly one Dust veil per Coco");
+			geo[\dusts].do { |dust, i|
+				var coco = geo[\cocos][i];
+				var name = ("coco" ++ (i + 1) ++ "_dust").asSymbol;
+				var contour = dust[\samples];
+				var tail = dust[\ownershipTailSamples];
+				var socketBox = this.prEndpointBox(name, dust[\socket]);
+				var outside = dust[\center]
+					+ (dust[\axis] * (dust[\rx]
+						+ CQNightMeasures.dustHitSlack + 1));
+				this.assertFloatEquals(this.prDistance(coco[\center], dust[\center]),
+					CQNightMeasures.dustBodyReach * geo[\scale],
+					"Dust % keeps its Coco-local radial reach (%x%)"
+						.format(i + 1, *size), 1e-6);
+				this.assert(dust[\center].y > coco[\center].y
+					and: { if(i == 0) {
+						dust[\center].x > coco[\center].x
+					} {
+						dust[\center].x < coco[\center].x
+					} }, "Dust % exhales down and inward toward the bay (%x%)"
+						.format(i + 1, *size));
+				this.assertFloatEquals(
+					(dust[\axis].x * dust[\tangent].x)
+						+ (dust[\axis].y * dust[\tangent].y), 0,
+					"Dust % amount and grain axes stay perpendicular"
+						.format(i + 1), 1e-9);
+				this.assertEquals(geo[\endpoints][name], dust[\socket],
+					"% is anchored on its veil's Coco-side rim".format(name));
+				this.assertFloatEquals(this.prDistance(dust[\center], dust[\socket]),
+					CQNightMeasures.dustSocketInset * geo[\scale],
+					"% keeps the short socket inset".format(name), 1e-6);
+				this.assertFloatEquals(this.prDistance(
+					dust[\ownershipTail].first, dust[\ownershipTail].last),
+					CQNightMeasures.dustTailLength * geo[\scale],
+					"Dust % owns one short detached breath root".format(i + 1), 1e-6);
+				this.assertEquals(dust[\ownershipTail].last, dust[\socket],
+					"Dust %'s detached root terminates at its socket".format(i + 1));
+				this.assert(stage.contains(dust[\box]),
+					"Dust % contour, tail and socket stay on stage (%x%)"
+						.format(i + 1, *size));
+				this.assert(dust[\box].contains(socketBox)
+					and: { tail.every { |point| dust[\box].containsPoint(point) } },
+					"Dust %'s local layer holds its socket and whole detached root"
+						.format(i + 1));
+				this.assert(CQNightGeometry.dustBodyHit(dust, dust[\center]),
+					"Dust % answers throughout its visible breath".format(i + 1));
+				this.assert(CQNightGeometry.dustBodyHit(dust, outside).not,
+					"Dust % transparent box corners remain open water".format(i + 1));
+				dust[\particles].do { |particle|
+					var particleBox = Rect.aboutPoint(particle[\point],
+						particle[\halfMax], particle[\halfMax]);
+					this.assert(CQNightGeometry.dustBodyHit(dust, particle[\point]),
+						"Dust % seeded particles remain inside its hand".format(i + 1));
+					this.assert(dust[\box].contains(particleBox),
+						"Dust %'s longest particle sliver stays inside its layer"
+							.format(i + 1));
+				};
+				this.assertEquals(dust[\particles].size,
+					CQNightMeasures.dustParticleCount,
+					"Dust % owns the reviewed static particle pool".format(i + 1));
+				this.assertEquals([0, 0.25, 0.5, 0.8, 1].collect { |amount|
+					dust[\particles].select { |particle|
+						particle[\threshold] <= amount.pow(0.72)
+					}.size
+				}, [0, 13, 22, 31, 36],
+					"Dust %'s amount curve reveals a dense, even static pool"
+						.format(i + 1));
+
+				endpointNames.reject { |other| other == name }.do { |other|
+					var box = this.prEndpointBox(other, geo[\endpoints][other]);
+					var bodyGap = contour.collect { |point|
+						this.prRectDistance(point, box)
+					}.minItem;
+					var tailGap = tail.collect { |point|
+						this.prRectDistance(point, box)
+					}.minItem;
+					this.assert(bodyGap >= CQNightMeasures.dustBodyClear,
+						"Dust % contour clears endpoint % by % px (%x%)"
+							.format(i + 1, other, CQNightMeasures.dustBodyClear, *size));
+					this.assert(tailGap >= CQNightMeasures.dustTailClear,
+						"Dust % tail clears endpoint % by % px (%x%)"
+							.format(i + 1, other, CQNightMeasures.dustTailClear, *size));
+				};
+				geo[\cocos].do { |otherCoco, c|
+					otherCoco[\crescents].do { |center, m|
+						var box = CQNightGeometry.crescentViewBox(center, m > 0);
+						this.assert(contour.collect { |point|
+							this.prRectDistance(point, box)
+						}.minItem >= CQNightMeasures.dustBodyClear,
+							"Dust % contour clears coco % crescent % (%x%)"
+								.format(i + 1, c + 1, m, *size));
+						this.assert(tail.collect { |point|
+							this.prRectDistance(point, box)
+						}.minItem >= CQNightMeasures.dustTailClear,
+							"Dust % tail clears coco % crescent % (%x%)"
+								.format(i + 1, c + 1, m, *size));
+					};
+				};
+				[coco[\chevron], coco[\skipMark]].do { |mark, m|
+					var markBox = Rect.aboutPoint(mark,
+						CQNightMeasures.markHitReach,
+						CQNightMeasures.markHitReach);
+					this.assert(contour.collect { |point|
+						this.prRectDistance(point, markBox)
+					}.minItem >= CQNightMeasures.dustBodyClear,
+						"Dust % contour clears its % mark (%x%)"
+							.format(i + 1, [\chevron, \skip][m], *size));
+					this.assert(tail.collect { |point|
+						this.prRectDistance(point, markBox)
+					}.minItem >= CQNightMeasures.dustTailClear,
+						"Dust % tail clears its % mark (%x%)"
+							.format(i + 1, [\chevron, \skip][m], *size));
+					this.assert(this.prRectsDistance(socketBox, markBox)
+						>= CQNightMeasures.dustBodyClear,
+						"Dust % socket clears its % mark by % px (%x%)"
+							.format(i + 1, [\chevron, \skip][m],
+								CQNightMeasures.dustBodyClear, *size));
+				};
+				geo[\castles].do { |castle, k|
+					this.assert(this.prPointSetsDistance(contour,
+						castle[\blobSamples]) >= CQNightMeasures.dustBodyClear,
+						"Dust % contour clears castle % flesh (%x%)"
+							.format(i + 1, k + 1, *size));
+					this.assert(contour.collect { |point|
+						this.prRectDistance(point, CQNightGeometry.rangeBox(castle))
+					}.minItem >= CQNightMeasures.dustBodyClear,
+						"Dust % contour clears castle % range hand (%x%)"
+							.format(i + 1, k + 1, *size));
+				};
+				seedBoxes.do { |box, s|
+					this.assert(contour.collect { |point|
+						this.prRectDistance(point, box)
+					}.minItem >= CQNightMeasures.dustBodyClear,
+						"Dust % contour clears morph seed % (%x%)"
+							.format(i + 1, s, *size));
+				};
+				geo[\roots].do { |root, r|
+					this.assert(this.prPointSetsDistance(contour,
+						this.prRootInk(root)) >= CQNightMeasures.dustBodyClear,
+						"Dust % contour clears root % ink (%x%)"
+							.format(i + 1, r + 1, *size));
+					this.assert(contour.collect { |point|
+						this.prRectDistance(point, root[\maxLobeEnvelope])
+					}.minItem >= CQNightMeasures.dustBodyClear,
+						"Dust % contour clears root % bias lobes (%x%)"
+							.format(i + 1, r + 1, *size));
+				};
+			};
+			// Named regressions from the compact screenshot: none is allowed to
+			// hide behind the generic all-obstacles loop above.
+			this.assert(geo[\dusts][0][\samples].collect { |point|
+				this.prRectDistance(point,
+					this.prEndpointBox(\coco1_skip, geo[\endpoints][\coco1_skip]))
+			}.minItem >= CQNightMeasures.dustBodyClear,
+				"coco1 Dust no longer crosses coco1_skip (%x%)".format(*size));
+			this.assert(geo[\dusts][1][\samples].collect { |point|
+				this.prRectDistance(point, CQNightGeometry.crescentViewBox(
+					geo[\cocos][1][\crescents][0], false))
+			}.minItem >= CQNightMeasures.dustBodyClear,
+				"coco2 Dust no longer clips its SP.AF crescent (%x%)".format(*size));
+			this.assert(geo[\dusts][0][\box].right < geo[\dusts][1][\box].left,
+				"the paired veils preserve a broad central negative space (%x%)"
+					.format(*size));
+		};
+	}
+
+	test_shellOrganismsHaveInnerBreathAndOuterMargin {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var stage = Rect(0, 0, size[0], size[1]);
+			geo[\cocos].do { |coco, i|
+				var innerBreath = CQNightGeometry.distance(coco[\center],
+					geo[\ringCenter]) - geo[\ringR] - coco[\outerR];
+				var recordName = if(i == 0) { \coco1_record } { \coco2_record };
+				var recordBox = this.prEndpointBox(recordName,
+					geo[\endpoints][recordName]);
+				var edgeMargin = if(i == 0) { recordBox.left } {
+					size[0] - recordBox.right
+				};
+				this.assert(innerBreath >= (100 * geo[\scale]),
+					"coco % keeps a broad readable shore from the castle ring (%x%)"
+						.format(i + 1, *size));
+				this.assert(edgeMargin >= 50,
+					"coco %'s outer Record ink keeps intentional stage margin (%x%)"
+						.format(i + 1, *size));
+				this.assert(stage.contains(coco[\shellBox]),
+					"coco %'s moved shell paper remains on stage (%x%)"
+						.format(i + 1, *size));
 			};
 		};
 	}
@@ -116,10 +407,60 @@ CQNightGeometryTest : UnitTest {
 			"coco 2 mirrors coco 1's winding");
 	}
 
+	test_droneControlsAreTopologyAndHitTruth {
+		var geo = CQNightGeometry.compute(1280, 570);
+		geo[\cocos].do { |coco, i|
+			var levelPoint = coco[\levelSamples][24];
+			var organPoint = coco[\orgCenter]
+				+ Point(CQNightMeasures.organPodOuter - 1, 0);
+			this.assertEquals(CQNightGeometry.shellFlowTargetAt(coco, levelPoint),
+				\level, "coco %'s drawn shoreline is its Level hand".format(i + 1));
+			this.assertEquals(CQNightGeometry.shellFlowTargetAt(
+				coco, coco[\slotQValve]), \slotQ,
+				"coco %'s q gill owns SlotQ".format(i + 1));
+			this.assertEquals(CQNightGeometry.shellFlowTargetAt(
+				coco, coco[\slotXValve]), \slotX,
+				"coco %'s x gill owns its incoming cross-feed".format(i + 1));
+			this.assertEquals(CQNightGeometry.shellFlowTargetAt(coco, organPoint),
+				\organ, "coco %'s fruit flesh owns audible Organ".format(i + 1));
+			this.assert(CQNightGeometry.organPodHit(coco, coco[\orgCenter]).not,
+				"the yellow seed remains exclusively patchable");
+			this.assert(coco[\shellBox].containsPoint(coco[\slotQValve])
+				and: { coco[\shellBox].containsPoint(coco[\slotXValve]) }
+				and: { coco[\shellBox].containsPoint(levelPoint) },
+				"all promoted shell hands stay on their real Qt paper");
+			this.assert(CQNightGeometry.distance(coco[\slotQValve], coco[\slotXValve])
+				> (CQNightMeasures.flowValveHit * 2),
+				"q and x gills cannot swallow one another");
+		};
+		this.assertEquals(geo[\drone][\slotQPaths][0].last,
+			geo[\cocos][0][\slotQValve],
+			"left q tributary terminates on the left q gill");
+		this.assertEquals(geo[\drone][\slotXPaths][0].first,
+			geo[\cocos][1][\slotXValve],
+			"coco1SlotX starts at coco 2");
+		this.assertEquals(geo[\drone][\slotXPaths][0].last,
+			geo[\cocos][0][\slotXValve],
+			"coco1SlotX arrives at coco 1");
+		this.assertEquals(geo[\drone][\slotXPaths][1].first,
+			geo[\cocos][0][\slotXValve],
+			"coco2SlotX starts at coco 1");
+		this.assertEquals(geo[\drone][\slotXPaths][1].last,
+			geo[\cocos][1][\slotXValve],
+			"coco2SlotX arrives at coco 2");
+		geo[\castles].do { |castle, k|
+			var towardEye = geo[\ringCenter] - castle[\center];
+			var vein = castle[\sendEnd] - castle[\sendStart];
+			this.assert(((towardEye.x * vein.x) + (towardEye.y * vein.y)) > 0,
+				"castle %'s send tributary points inward to qMix".format(k + 1));
+		};
+	}
+
 	test_touchHomes {
 		var geo = CQNightGeometry.compute(1280, 570);
 		var coco = geo[\cocos][0];
 		var onSpiral = coco[\spiralSamples][30];
+		var castle = geo[\castles][2];
 		[0, 1].do { |i|
 			var shell = geo[\cocos][i];
 			this.assert(shell[\shellBox].containsPoint(shell[\center])
@@ -143,11 +484,21 @@ CQNightGeometryTest : UnitTest {
 				geo[\castles][2][\dialR], 0.3)),
 			"a tap on the dial radius hits the dial");
 		this.assert(CQNightGeometry.dialHit(geo[\castles][2],
-			geo[\castles][2][\center]).not,
-			"the castle's center is not the dial");
-		// the body is the §6 solo target and wears the §4.5 hover echo — one
-		// geometry for both, reaching `bodyMargin` px outside the drawn blob so
-		// it answers the approaching hand
+			geo[\castles][2][\center]),
+			"the drawn clock face has no dead eye at its exact centre");
+		this.assert(castle[\blobSamples].every { |edge|
+			CQNightGeometry.dialHit(castle, castle[\center]
+				+ ((edge - castle[\center]) * 0.94))
+		}, "all visible castle flesh, including the irregular rim, steps spesal");
+		this.assert([0, 16, 32, 48, 64, 80].every { |index|
+			var edge = castle[\blobSamples][index];
+			var radial = edge - castle[\center];
+			var outside = edge + (radial
+				/ CQNightGeometry.distance(Point(0, 0), radial) * 6);
+			CQNightGeometry.dialHit(castle, outside).not
+		}, "the castle action stops just beyond its own visible seeded outline");
+		// The body geometry still separates island ground from weather water,
+		// reaching `bodyMargin` px outside the irregular drawn blob.
 		this.assert(CQNightGeometry.bodyHit(geo[\castles][2],
 			geo[\castles][2][\center]),
 			"the castle's center is inside its own body");
@@ -157,7 +508,7 @@ CQNightGeometryTest : UnitTest {
 			"the body answers just outside the drawn blob (the margin)");
 		this.assert(CQNightGeometry.bodyHit(geo[\castles][2],
 			geo[\castles][2][\center] + Point(geo[\castles][2][\bodyRx]
-				+ CQNightGeometry.bodyMargin + 4, 0)).not,
+				+ CQNightMeasures.bodyMargin + 4, 0)).not,
 			"past the margin it is water again");
 		this.assert(CQNightGeometry.bodyHit(geo[\castles][2],
 			geo[\castles][2][\center], 0),
@@ -166,13 +517,12 @@ CQNightGeometryTest : UnitTest {
 			geo[\castles][2][\box].leftTop + Point(2, 2)).not,
 			"the layer box's corner is water, not flesh");
 		geo[\castles].do { |castle, k|
-			// the hover echo is drawn on that same boundary — it must fit inside
-			// the castle's own opaque layer or it would be clipped
+			// The full island-ground target must fit inside the transparent layer.
 			this.assert(castle[\box].width
-				>= (2 * (castle[\bodyRx] + CQNightGeometry.bodyMargin))
+				>= (2 * (castle[\bodyRx] + CQNightMeasures.bodyMargin))
 				and: { castle[\box].height
-					>= (2 * (castle[\bodyRy] + CQNightGeometry.bodyMargin)) },
-				"castle %'s hover echo fits inside its own layer".format(k + 1));
+					>= (2 * (castle[\bodyRy] + CQNightMeasures.bodyMargin)) },
+				"castle %'s island ground fits inside its own layer".format(k + 1));
 		};
 		// each body is taken by its own drawn outline (§16.6) — the cue and the
 		// action share one geometry on all three
@@ -200,23 +550,84 @@ CQNightGeometryTest : UnitTest {
 			this.assert(bird[\labelRect].top > (bird[\rateSocket].y + 10),
 				"bird %'s filename clears the rate socket's own view".format(i + 1));
 		};
-		// the root arrives on a unit vector, so its tip jack can redraw the
-		// passage that its opaque view would otherwise swallow — and the side
-		// twig must not disappear under that same box
+		// N7 roots expose the whole intake story: the CQSpec source vocabulary
+		// enters one knot, audio joins a real Cocoon turn, and the canonical env
+		// jack is only the smaller side-growth.
 		geo[\roots].do { |root, i|
 			var arrival = root[\arrival];
-			var tipBox = Rect.aboutPoint(root[\points].last, 13, 13);
+			var srcName = if(i == 0) { \preASrc } { \preBSrc };
+			var envName = if(i == 0) { \envA } { \envB };
+			var sourceValues = CQSpec.enumValues(srcName)
+				.reject { |value| value == \none };
+			var coco = geo[\cocos][i];
+			this.assertEquals(root[\sourceValues], sourceValues,
+				"root % derives its five intake strands from CQSpec".format(i + 1));
+			this.assertEquals(root[\sourceStrands].size, sourceValues.size,
+				"root % draws one strand per audible provenance".format(i + 1));
+			root[\sourceStrands].doAdjacentPairs { |left, right|
+				this.assert(
+					(right.first.x - left.first.x)
+						> (CQNightMeasures.rootSourceSpacing
+							* geo[\scale] * 0.65),
+					"root % keeps adjacent source mouths separately readable"
+						.format(i + 1));
+			};
+			root[\sourceStrands].do { |strand, s|
+				var sample = CQNightGeometry.cubicPoint(strand, 0.12);
+				this.assertEquals(
+					CQNightGeometry.preampSourceHit(root, sample), s,
+					"root % strand % is an individually selectable source"
+						.format(i + 1, s + 1));
+			};
+			this.assert(
+				(root[\sourceStrands].last.first.x
+					- root[\sourceStrands].first.first.x).abs
+					> (CQNightMeasures.rootSourceSpacing * 3),
+				"root % opens into a wide irregular delta".format(i + 1));
+			this.assert(
+				CQNightGeometry.distance(root[\audioJoin],
+					CQNightGeometry.spiralPoint(coco,
+						CQNightMeasures.rootVeinJoinNorm)) < 0.001,
+				"root %'s audio vein joins the real Cocoon spiral"
+					.format(i + 1));
+			this.assertEquals(geo[\endpoints][envName], root[\envBranch].last,
+				"root %'s canonical env jack is the post-preamp side bud"
+					.format(i + 1));
+			this.assertEquals(root[\envBranch].size, 4,
+				"root %'s env output is one smooth cubic, not a repaired stub"
+					.format(i + 1));
+			this.assert(
+				((root[\envBranch][1] - root[\envBranch][0]).x
+					* (CQNightGeometry.cubicPoint(root[\audioVein], 0.24)
+						- CQNightGeometry.cubicPoint(root[\audioVein], 0.2)).x)
+				+ ((root[\envBranch][1] - root[\envBranch][0]).y
+					* (CQNightGeometry.cubicPoint(root[\audioVein], 0.24)
+						- CQNightGeometry.cubicPoint(root[\audioVein], 0.2)).y)
+				> 0,
+				"root %'s env output leaves in the audio vein's direction"
+					.format(i + 1));
+			this.assert(((root[\labelRect].center.x - root[\knot].x)
+				* root[\side]) < 0,
+				"root %'s provenance rests inward beside the knot, off the strands"
+					.format(i + 1));
 			this.assertFloatEquals(
 				sqrt(arrival.x.squared + arrival.y.squared), 1.0,
 				"root %'s arrival is a unit direction".format(i + 1), 0.0001);
-			this.assert(arrival.y < 0,
-				"root % arrives climbing toward its tip".format(i + 1));
-			this.assert(tipBox.containsPoint(root[\branch][0]).not
-				and: { tipBox.containsPoint(root[\branch][1]).not }
-				and: { (root[\branch][0].y > tipBox.bottom)
-					and: { root[\branch][1].y > tipBox.bottom } },
-				"root %'s twig stays clear of its tip jack's opaque box"
+			this.assert((arrival.x * root[\side]) > 0,
+				"root %'s env bud grows outward from the audio vein"
 					.format(i + 1));
+			this.assert(CQNightGeometry.preampKnotHit(root, root[\knot]),
+				"root %'s drive knot answers at its visible centre".format(i + 1));
+			this.assert(CQNightGeometry.preampKnotHit(root,
+				root[\knot] + Point(CQNightMeasures.rootKnotHit + 2, 0)).not,
+				"root %'s drive target ends outside its promised hand radius"
+					.format(i + 1));
+			(root[\sourceStrands].flat ++ root[\audioVein]
+				++ root[\envBranch]).do { |point|
+				this.assert(root[\box].containsPoint(point),
+					"root %'s transparent local layer holds its anatomy"
+						.format(i + 1));
+			};
 		};
 		this.assertEquals(geo[\eye], geo[\ringCenter],
 			"the ring's eye sits at the ring's center");
@@ -224,6 +635,23 @@ CQNightGeometryTest : UnitTest {
 			and: { CQNightGeometry.distance(geo[\birds][0][\levelCrescent],
 				geo[\endpoints][\deckA_rate]) >= 24 },
 			"the bird box holds the bird; its crescent clears the rate moon");
+		geo[\birds].do { |bird, i|
+			this.assertEquals(bird[\directRoute].first, bird[\center],
+				"bird %'s direct deck route begins in its body".format(i + 1));
+			this.assert(
+				CQNightGeometry.spiralDistance(geo[\cocos][i],
+					bird[\directRoute].last) < 0.001,
+				"bird %'s direct deck route lands on its own Cocoon"
+					.format(i + 1));
+			this.assertEquals(bird[\rootRoutes].size, 2,
+				"bird % has conditional provenance paths to either preamp"
+					.format(i + 1));
+			bird[\rootRoutes].do { |route, r|
+				this.assertEquals(route.last, geo[\roots][r][\knot],
+					"bird %'s preamp route % lands on the real knot"
+						.format(i + 1, r + 1));
+			};
+		};
 	}
 
 	// The reel mark crosses the groove instead of riding it (G2 gate): against
@@ -270,6 +698,24 @@ CQNightGeometryTest : UnitTest {
 		};
 	}
 
+	test_maximumReelNotchRemainsVisibleBeforeTheMouthJack {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			geo[\cocos].do { |coco, i|
+				var norm = CQNightGeometry.reelNotchNorm(1);
+				var point = CQNightGeometry.spiralPoint(coco, norm);
+				this.assertEquals(norm, CQNightMeasures.reelMaxNorm,
+					"coco %'s full value keeps the reviewed display inset (%x%)"
+						.format(i + 1, *size));
+				this.assert(CQNightGeometry.distance(point, coco[\mouth])
+					> (CQNightMeasures.jackDotRim
+						+ CQNightMeasures.notchHoverReach),
+					"coco %'s full-speed tick clears the mouth jack even on hover (%x%)"
+						.format(i + 1, *size));
+			};
+		};
+	}
+
 	// the G2.3 clip fixes, pinned: no opaque endpoint view may cover the
 	// chevron glyph, the inner clock's face or any of its eight bead homes
 	test_inkClearances {
@@ -277,7 +723,7 @@ CQNightGeometryTest : UnitTest {
 			var geo = CQNightGeometry.compute(size[0], size[1]);
 			geo[\cocos].do { |coco, i|
 				var glyph = Rect.aboutPoint(coco[\chevron], 6, 5);
-				var jack = Rect.aboutPoint(coco[\mouth], 13, 13);
+				var jack = CQNightGeometry.endpointBox(coco[\mouth], \jack);
 				this.assert((glyph.intersects(jack)).not,
 					"coco % chevron glyph clears the mouth jack's view (%x%)"
 						.format(i + 1, *size));
@@ -285,6 +731,26 @@ CQNightGeometryTest : UnitTest {
 					Rect.aboutPoint(coco[\chevron], 10, 10)),
 					"coco % chevron touch box stays inside the shell (%x%)"
 						.format(i + 1, *size));
+			};
+			// "Beside, not over, the delta" is not a claim a constant inset can
+			// make about a seeded delta: at 1280x570 the ground erasure behind
+			// root B's provenance ran straight through its leftmost strand
+			// (found live, 2026-07-28). The label gives way to the strands it
+			// names; this pins the exact rectangle CQInkNight fills.
+			geo[\roots].do { |root, i|
+				var wash = root[\labelRect].insetBy(
+					CQNightMeasures.rootLabelWashPad.x.neg,
+					CQNightMeasures.rootLabelWashPad.y.neg);
+				root[\sourceStrands].do { |strand, s|
+					var gap = (0, 0.002 .. 1).collect { |t|
+						this.prRectDistance(
+							CQNightGeometry.cubicPoint(strand, t), wash)
+					}.minItem;
+					this.assert(gap >= CQNightMeasures.rootLabelClear,
+						"root % strand % is never cut by the provenance "
+						"erasure (gap % px, %x%)"
+							.format(i + 1, s + 1, gap.round(0.01), *size));
+				};
 			};
 			geo[\castles].do { |castle, k|
 				var n = k + 1, center = castle[\center];
@@ -330,28 +796,89 @@ CQNightGeometryTest : UnitTest {
 		};
 	}
 
+	// The defect this was written against (found in the user's hands, 2026-07-29):
+	// at slow speeds the reel pearl sits inside the heart's disc, and the hover
+	// cue lit the winding surface there while the press toggled the loop. Both
+	// chains now ask one question, so the assert that matters is that the answer
+	// is single and heart-first everywhere the two bodies overlap.
+	test_shellTargetIsOneAnswer {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			geo[\cocos].do { |coco, i|
+				var n = i + 1, center = coco[\center];
+				var heartR = coco[\heartRadius];
+				var slow = CQNightGeometry.spiralPoint(coco, 0);
+				var overlapped = 0;
+				this.assertEquals(CQNightGeometry.shellTargetAt(coco, center),
+					\heart,
+					"coco % centre is the heart (%x%)".format(n, *size));
+				// the regression itself: the slowest reel position belongs to
+				// the heart, so the cue may not offer a wind there
+				this.assertEquals(CQNightGeometry.shellTargetAt(coco, slow),
+					\heart,
+					"coco % slowest reel pearl answers as heart, not wind (%x%)"
+						.format(n, *size));
+				// ...and the groove is still fully playable one turn out
+				this.assertEquals(
+					CQNightGeometry.shellTargetAt(coco,
+						CQNightGeometry.spiralPoint(coco, 0.5)),
+					\wind,
+					"coco % mid-groove still winds (%x%)".format(n, *size));
+				this.assertEquals(CQNightGeometry.shellTargetAt(coco,
+					coco[\chevron]), \chevron,
+					"coco % chevron answers as itself (%x%)".format(n, *size));
+				this.assertEquals(CQNightGeometry.shellTargetAt(coco,
+					coco[\skipMark]), \skip,
+					"coco % skip mark answers as itself (%x%)".format(n, *size));
+				this.assertEquals(CQNightGeometry.shellTargetAt(coco,
+					coco[\mouth]), \wind,
+					"coco % mouth end of the groove still winds, and the rim "
+					"band never steals it (%x%)".format(n, *size));
+				this.assert(CQNightGeometry.shellTargetAt(coco,
+					center + Point(coco[\outerR] * 3, 0)).isNil,
+					"coco % open water past the shell claims nothing (%x%)"
+						.format(n, *size));
+				// no point inside the heart's disc may ever answer as anything
+				// else — this is the exact class of drift that produced the bug
+				201.do { |k|
+					var norm = k / 200;
+					var p = CQNightGeometry.spiralPoint(coco, norm);
+					if(CQNightGeometry.distance(p, center) <= heartR) {
+						overlapped = overlapped + 1;
+						this.assertEquals(CQNightGeometry.shellTargetAt(coco, p),
+							\heart,
+							"coco % groove at norm % is inside the heart and "
+							"answers heart (%x%)".format(n, norm, *size));
+					};
+				};
+				this.assert(overlapped > 0,
+					"coco % really has groove inside the heart at this size — "
+					"the overlap the assert above guards is not hypothetical (%x%)"
+						.format(n, *size));
+			};
+		};
+	}
+
 	// The almanac corner (§16.6) lives on water the bodies leave free: right of
 	// coco 2's own box, past bird B's name box, inside the stage at every
 	// scale. The sowing moon must be takeable by the same rim it draws — flash
-	// halo included, or the layer would clip its own light — and G3's compass
-	// water must already be empty and clear: the home is pinned now so the
-	// corner cannot grow into it later, but nothing is drawn there, because a
-	// dead control breaks §4.5 and §16.12 at once.
-	test_almanacCorner {
+	// halo included, or the layer would clip its own light. Since §9 the moon
+	// rides the birds' own altitude band and the tide pool hangs below it, so
+	// the two are a composition rather than a column, and their layers still
+	// have to keep off each other: a moon flash may never re-ink the water.
+	legacy_almanacCorner {
 		[[1280, 570], [1920, 855]].do { |size|
 			var geo = CQNightGeometry.compute(size[0], size[1]);
 			var almanac = geo[\almanac];
-			var box = almanac[\box], compass = almanac[\compass];
+			var box = almanac[\box], compass = almanac[\compassBox];
 			var moon = almanac[\moon], moonR = almanac[\moonR];
+			var pool = almanac[\pool];
 			var names = CQMatrix.sourceNames ++ CQMatrix.destNames;
-			[[\corner, box], [\water, compass]].do { |pair|
+			[[\sky, box], [\water, compass]].do { |pair|
 				var rect = pair[1];
 				this.assert(rect.left >= 0 and: { rect.right <= size[0] }
 					and: { rect.top >= 0 } and: { rect.bottom <= size[1] },
 					"the almanac % stays on the stage (%x%)"
-						.format(pair[0], *size));
-				this.assert(rect.left > geo[\cocos][1][\shellBox].right,
-					"the almanac % opens right of coco 2's own box (%x%)"
 						.format(pair[0], *size));
 				geo[\birds].do { |bird, i|
 					this.assert(rect.intersects(bird[\dropRect]).not,
@@ -364,24 +891,50 @@ CQNightGeometryTest : UnitTest {
 							.format(pair[0], name, *size));
 				};
 				geo[\roots].do { |root, i|
-					(root[\points] ++ root[\branch]).do { |point|
+					(root[\sourceStrands].flat ++ root[\audioVein]
+						++ root[\envBranch]).do { |point|
 						this.assert(rect.containsPoint(point).not,
 							"root % keeps out of the almanac % (%x%)"
 								.format(i + 1, pair[0], *size));
 					};
 				};
 			};
-			this.assert(box.intersects(compass).not
-				and: { compass.top >= box.bottom },
-				"G3's compass water waits below the constellation (%x%)"
+			this.assert(box.intersects(compass).not,
+				"the sky and the water are two places, not one corner (%x%)"
 					.format(*size));
-			this.assertFloatEquals(compass.width, 140 * geo[\scale],
-				"the reserved pad is §7.1's own 140 px (%x%)".format(*size), 0.001);
+			this.assertFloatEquals(pool[\rx],
+				CQNightMeasures.poolRx * geo[\scale],
+				"the pool carries §7.1's water at this scale (%x%)"
+					.format(*size), 0.001);
+			// the pool is TANGENT to the stage's lower edge — that edge is the
+			// waterline the roots already run past, and it is what says the
+			// plants and the pool are in one water without drawing a thing
+			this.assertFloatEquals(pool[\center].y + pool[\ry], size[1],
+				"the pool sits on the waterline (%x%)".format(*size), 0.001);
+			// ...and the shore's own wobble crosses it, so the water reads as
+			// continuing under the frame rather than stopping at a rim
+			this.assert(CQNightGeometry.sampleSegments(pool[\segments], 8)
+				.any { |p| p.y > size[1] },
+				"the shore runs past the waterline (%x%)".format(*size));
+			// the bodies are far apart, which is the whole point of §9's move
+			this.assert(CQNightGeometry.distance(moon, pool[\center])
+				> (size[1] * 0.5),
+				"the moon and the pool are two features, not a cluster (%x%)"
+					.format(*size));
+			this.assertFloatEquals(moon.y,
+				CQNightMeasures.birdAltitude * geo[\scale],
+				"the moon rides the birds' own altitude band (%x%)"
+					.format(*size), 0.001);
+			geo[\birds].do { |bird, i|
+				this.assertFloatEquals(moon.y, bird[\center].y,
+					"the sky reads bird — bird — moon (bird %, %x%)"
+						.format(i + 1, *size), 0.001);
+			};
 			// the moon is a body: the disc it draws is the disc it answers on,
 			// and its own layer holds the 120 ms flash halo whole
 			this.assert(box.contains(Rect.aboutPoint(moon,
-				moonR + CQNightGeometry.moonHalo,
-				moonR + CQNightGeometry.moonHalo)),
+				moonR + CQNightMeasures.moonHalo,
+				moonR + CQNightMeasures.moonHalo)),
 				"the moon and its flash halo fit inside their layer (%x%)"
 					.format(*size));
 			this.assert(CQNightGeometry.moonHit(almanac, moon)
@@ -400,23 +953,45 @@ CQNightGeometryTest : UnitTest {
 		};
 	}
 
-	// The compass water at G3: the §7.1 pad is drawn now, with its corner
-	// seeds and the weather row beneath — all inside their own layer box, all
-	// on water no body reaches, at both reference stage sizes.
-	test_compassWater {
+	// The tide pool since §9: the §7.1 water is a seeded, wobbled shore with
+	// its four memories seated on it at the diagonal winds and the weather
+	// scattered around it — all inside their own layer box, all on water no
+	// body reaches, at both reference stage sizes.
+	legacy_compassWater {
 		[[1280, 570], [1920, 855]].do { |size|
 			var geo = CQNightGeometry.compute(size[0], size[1]);
 			var almanac = geo[\almanac];
-			var pad = almanac[\compass], box = almanac[\compassBox];
+			var pool = almanac[\pool], box = almanac[\compassBox];
 			var names = CQMatrix.sourceNames ++ CQMatrix.destNames;
 			var marks = #[grow, breed, wither].collect { |n| almanac[\weather][n] };
+			var shore = CQNightGeometry.sampleSegments(pool[\segments], 8);
 			this.assert(box.left >= 0 and: { box.right <= size[0] }
 				and: { box.top >= 0 } and: { box.bottom <= size[1] },
 				"the compass layer stays on the stage (%x%)".format(*size));
-			this.assert(box.contains(pad),
-				"the layer holds the whole pad (%x%)".format(*size));
-			this.assert(box.left > geo[\cocos][1][\shellBox].right,
-				"the compass water opens right of coco 2's box (%x%)".format(*size));
+			// the layer holds every stretch of shore that is ON the stage; the
+			// lowest stretch runs past the waterline on purpose and Qt cutting
+			// it there IS the drawing (§9)
+			this.assert(shore.every { |point|
+				(point.y > size[1]) or: { box.containsPoint(point) } },
+				"the layer holds the shore down to the waterline (%x%)"
+					.format(*size));
+			// the pool's real neighbours in the bay's bottom pocket — every one
+			// of these is an opaque layer or an opaque view, so touching any of
+			// them means one body eating another's ink
+			this.assert(box.left > CQNightGeometry
+				.endpointBox(geo[\endpoints][\envA], \jack).right,
+				"the pool opens right of envA's own jack (%x%)".format(*size));
+			this.assert(box.right < geo[\ringBox].left,
+				"the pool stops before the river's own layer (%x%)".format(*size));
+			this.assert(box.top > geo[\cocos][0][\shellBox].bottom,
+				"the pool lies below coco 1's shell (%x%)".format(*size));
+			geo[\cocos][0][\crescents].do { |point, m|
+				var half = CQNightMeasures.crescentExtent * 0.5;
+				this.assert(box.intersects(
+					Rect.aboutPoint(point, half, half)).not,
+					"the pool clears coco 1's tide crescent % (%x%)"
+						.format(m, *size));
+			};
 			geo[\birds].do { |bird, i|
 				this.assert(box.intersects(bird[\dropRect]).not,
 					"bird %'s drop rect keeps clear of the compass (%x%)"
@@ -428,17 +1003,22 @@ CQNightGeometryTest : UnitTest {
 						.format(name, *size));
 			};
 			geo[\roots].do { |root, i|
-				(root[\points] ++ root[\branch]).do { |point|
+				(root[\sourceStrands].flat ++ root[\audioVein]
+					++ root[\envBranch]).do { |point|
 					this.assert(box.containsPoint(point).not,
 						"root % keeps out of the compass water (%x%)"
 							.format(i + 1, *size));
 				};
 			};
-			// the four seeds sit inside the pad in bilinear order TL TR BL BR,
-			// and each seed answers at its own point
+			// the four memories are seated ON the shore at the diagonal winds,
+			// in bilinear order TL TR BL BR, and each answers at its own point
 			almanac[\stamps].do { |stamp, c|
-				this.assert(pad.containsPoint(stamp),
-					"seed % sits inside the pad (%x%)".format(c, *size));
+				var reach = this.prPoolReach(pool, stamp);
+				this.assert(reach < 1,
+					"seed % is seated inside its own shore (%x%)".format(c, *size));
+				this.assert(reach > 0.6,
+					"seed % is ON the shore, not adrift in the pool (%x%)"
+						.format(c, *size));
 				this.assertEquals(CQNightGeometry.stampHit(almanac, stamp), c,
 					"seed % answers at its own point (%x%)".format(c, *size));
 			};
@@ -446,34 +1026,343 @@ CQNightGeometryTest : UnitTest {
 				and: { almanac[\stamps][0].y < almanac[\stamps][2].y },
 				"seed order is TL TR BL BR — the bilinear's own frame (%x%)"
 					.format(*size));
-			// the weather marks hang below the field, inside the layer, apart
-			// (the 24 px hit law), and answer as themselves
-			marks.do { |mark, i|
-				this.assert(mark.y > pad.bottom,
-					"weather mark % hangs below the field (%x%)".format(i, *size));
-				this.assert(box.containsPoint(mark),
-					"weather mark % lives inside the layer (%x%)".format(i, *size));
+			// The weather row is gone and the marks did not stay together: they
+			// went where each one ACTS (§9). Rain and sun grow and wither the
+			// live bay, so they are sky weather and they keep the moon company.
+			// The graft breeds two stamped memories and takes its parents as
+			// seed taps, so it stays on the water where those parents are.
+			#[grow, wither].do { |name|
+				var mark = almanac[\weather][name];
+				this.assertEquals(almanac[\skyMarks][name], mark,
+					"% is sky weather, on the moon's own layer (%x%)"
+						.format(name, *size));
+				this.assert(almanac[\box].containsPoint(mark),
+					"% lives inside the sky layer (%x%)".format(name, *size));
+				this.assert(CQNightGeometry.distance(mark, almanac[\moon])
+					< (almanac[\moonR] * 3),
+					"% keeps the moon company rather than drifting (%x%)"
+						.format(name, *size));
+				this.assert(this.prPoolReach(pool, mark) > 3,
+					"% is nowhere near the water (%x%)".format(name, *size));
 			};
-			marks.doAdjacentPairs { |a, b|
-				this.assert(CQNightGeometry.distance(a, b) >= 24,
-					"weather marks keep the 24 px hit law apart (%x%)".format(*size));
+			this.assert(almanac[\skyMarks][\breed].isNil,
+				"the graft did not follow them into the sky (%x%)".format(*size));
+			// the graft stands off the DRAWN shore, not the mean ellipse: the
+			// shore wobbles ±6 %, so a mark placed off the average can still
+			// land on the line it is supposed to stand beside
+			block { |done|
+				var mark = almanac[\weather][\breed];
+				var reach = shore.collect { |point|
+					CQNightGeometry.distance(mark, point) }.minItem;
+				this.assert(this.prPoolReach(pool, mark) > 1,
+					"the graft stands off the shore (%x%)".format(*size));
+				this.assert(reach >= 8,
+					"the graft keeps clear of the drawn shore (%x%)".format(*size));
+				this.assert(reach <= (40 * geo[\scale]),
+					"...but still belongs to this pool (%x%)".format(*size));
+				this.assert(box.containsPoint(mark),
+					"the graft lives inside the water's layer (%x%)".format(*size));
+				this.assert(mark.y > pool[\center].y
+					and: { mark.x > almanac[\stamps][2].x }
+					and: { mark.x > almanac[\stamps][3].x },
+					"the graft waits at the lower shore past its parents (%x%)"
+						.format(*size));
+			};
+			marks.do { |a, i|
+				marks.drop(i + 1).do { |b|
+					this.assert(CQNightGeometry.distance(a, b) >= 24,
+						"weather marks keep the 24 px hit law apart (%x%)"
+							.format(*size));
+				};
+			};
+			// A row is a row whatever you call it: leaving it means no weather
+			// mark may line up with another mark, with a seed or with the moon
+			// on either axis. This is the whole reason §9 scattered them.
+			#[grow, breed, wither].do { |name|
+				var mark = almanac[\weather][name];
+				(almanac[\stamps] ++ [almanac[\moon]]
+					++ marks.reject { |m| m == mark }).do { |other|
+					this.assert((mark.x - other.x).abs >= 6
+						or: { (mark.y - other.y).abs >= 6 },
+						"% shares no axis with % (%x%)"
+							.format(name, other, *size));
+				};
 			};
 			this.assertEquals(
 				CQNightGeometry.weatherHit(almanac, almanac[\weather][\breed]),
 				\breed, "the graft answers at its own mark (%x%)".format(*size));
-			// pad coordinates are the bilinear's 0..1 frame
+			// The tide is bilinear in a square poured on a round body: the shore
+			// at a diagonal wind IS a corner, and every corner is reachable —
+			// bit-exact, which is what makes a stamp recallable (rake 13).
+			4.do { |c|
+				var corner = Point(c % 2, c div: 2);
+				var place = CQNightGeometry.compassPointAt(almanac, corner);
+				var beyond = pool[\center]
+					+ ((place - pool[\center]) * 1.08);   // in the catch band
+				this.assertFloatEquals(this.prPoolReach(pool, place), 1.0,
+					"corner % lives on the shore (%x%)".format(c, *size), 0.001);
+				this.assertEquals(CQNightGeometry.compassNorm(almanac, place),
+					corner, "the shore at corner % is that corner (%x%)"
+						.format(c, *size));
+				this.assert(CQNightGeometry.compassHit(almanac, beyond),
+					"the catch band answers past corner % (%x%)".format(c, *size));
+				this.assertEquals(CQNightGeometry.compassNorm(almanac, beyond),
+					corner, "...and holds exactly at that corner (%x%)"
+						.format(c, *size));
+			};
 			this.assertEquals(
-				CQNightGeometry.compassNorm(almanac, pad.leftTop), Point(0, 0),
-				"pad TL is the norm origin (%x%)".format(*size));
-			this.assertEquals(
-				CQNightGeometry.compassNorm(almanac,
-					Point(pad.right, pad.bottom)), Point(1, 1),
-				"pad BR is norm (1,1) (%x%)".format(*size));
-			// the moon's sky layer and the compass layer never overlap: a moon
-			// flash may not re-ink the field, nor a voyage the moon
+				CQNightGeometry.compassNorm(almanac, pool[\center]),
+				Point(0.5, 0.5), "the pool's middle is the tide's middle (%x%)"
+					.format(*size));
+			// the moon's sky layer and the water's layer never overlap: a moon
+			// flash may not re-ink the pool, nor a voyage the moon
 			this.assert(box.intersects(almanac[\box]).not,
 				"the sky and the water are separate layers (%x%)".format(*size));
 		};
+	}
+
+	// The moon is no longer one item in an almanac panel. It is a solitary
+	// weather body beyond bird B: slightly higher than the birds, clear of the
+	// name/drop body, and large enough to play without becoming a second sun.
+	// Rain and sun are transient faces of its vertical gesture, so their
+	// anchors fit the moon layer but no static weather target survives.
+	test_moonIsASolitaryWeatherBody {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var moon = geo[\almanac][\moon];
+			var moonR = geo[\almanac][\moonR];
+			var box = geo[\almanac][\box];
+			var bird = geo[\birds][1];
+			var previews = geo[\almanac][\weatherPreview];
+			this.assert(box.left >= 0 and: { box.right <= size[0] }
+				and: { box.top >= 0 } and: { box.bottom <= size[1] },
+				"the remote moon stays inside the sky (%x%)".format(*size));
+			this.assert(moon.x > bird[\dropRect].right
+				and: { box.intersects(bird[\dropRect]).not },
+				"the moon lives beyond bird B, never beside the centred organism (%x%)"
+					.format(*size));
+			this.assert(moon.y < bird[\center].y,
+				"the moon is slightly above the birds, not aligned into a row (%x%)"
+					.format(*size));
+			this.assertFloatEquals(moonR,
+				CQNightMeasures.moonRadius * geo[\scale],
+				"the moon keeps the reduced playable body at this scale (%x%)"
+					.format(*size), 0.001);
+			this.assert(box.contains(Rect.aboutPoint(moon,
+				moonR + CQNightMeasures.moonHalo,
+				moonR + CQNightMeasures.moonHalo)),
+				"the moon and its flash halo fit the sky layer (%x%)"
+					.format(*size));
+			#[grow, wither].do { |name|
+				this.assert(box.contains(Rect.aboutPoint(previews[name],
+					CQNightMeasures.markHitReach,
+					CQNightMeasures.markHitReach)),
+					"the transient % face cannot clip at the moon (%x%)"
+						.format(name, *size));
+			};
+			this.assert(geo[\almanac][\skyMarks].isNil
+				and: { geo[\almanac][\weather].isNil }
+				and: { geo[\almanac][\pool].isNil },
+				"no almanac panel, static weather mark or pool body survives (%x%)"
+					.format(*size));
+			this.assert(CQNightGeometry.moonHit(geo[\almanac], moon)
+				and: { CQNightGeometry.moonHit(geo[\almanac],
+					moon + Point(moonR + 3, 0)).not },
+				"the moon answers on its drawn body only (%x%)".format(*size));
+		};
+	}
+
+	// The compass is now the bay's large invisible tide field. Its four memory
+	// seeds are the only resting marks: no shore, outline or graft. The field
+	// deliberately passes under the organism, while each seed itself lands in
+	// an open wind and maps directly to one exact bilinear corner.
+	test_tideFieldBelongsToTheWholeBay {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var tide = geo[\almanac][\compass];
+			var stamps = geo[\almanac][\stamps];
+			var gate = geo[\tideGate], gateBox = geo[\tideGateBox];
+			var endpointNames = CQMatrix.sourceNames ++ CQMatrix.destNames;
+			var seedReach = max(CQNightMeasures.stampRadius,
+				CQNightMeasures.seedHalo);
+			this.assert(tide.left >= 0 and: { tide.right <= size[0] }
+				and: { tide.top >= 0 } and: { tide.bottom <= size[1] },
+				"the tide's four winds stay on the stage (%x%)".format(*size));
+			this.assert(tide.width > (size[0] * 0.35)
+				and: { tide.height > (size[1] * 0.6) },
+				"the tide is a landscape field, not a disguised pad (%x%)"
+					.format(*size));
+			this.assertEquals(stamps,
+				[tide.leftTop, tide.rightTop, tide.leftBottom, tide.rightBottom],
+				"the four seeds ARE the tide's TL TR BL BR corners (%x%)"
+					.format(*size));
+			this.assertFloatEquals(tide.top,
+				size[1] * CQNightMeasures.tideTopFraction,
+				"the raised morph field uses its reviewed top fraction", 1e-9);
+			this.assertFloatEquals(tide.bottom,
+				size[1] * CQNightMeasures.tideBottomFraction,
+				"the raised morph field leaves deliberate lower air", 1e-9);
+			this.assert(CQNightMeasures.seedMoat >= 5,
+				"each leaf carries enough ground moat to pass unrelated bridges behind it");
+			stamps.do { |stamp, c|
+				var seedBox = Rect.aboutPoint(stamp, seedReach, seedReach);
+				this.assertEquals(CQNightGeometry.stampHit(
+					geo[\almanac], stamp), c,
+					"seed % answers at its own open wind (%x%)"
+						.format(c, *size));
+				geo[\castles].do { |castle, k|
+					this.assert(castle[\box].intersects(seedBox).not,
+						"seed %'s whole hand clears castle % (%x%)"
+							.format(c, k + 1, *size));
+				};
+				geo[\cocos].do { |coco, i|
+					this.assert(coco[\shellBox].intersects(seedBox).not,
+						"seed %'s whole hand clears cocoon % (%x%)"
+							.format(c, i + 1, *size));
+				};
+				geo[\birds].do { |bird, i|
+					this.assert(bird[\dropRect].intersects(seedBox).not,
+						"seed %'s whole hand clears bird % (%x%)"
+							.format(c, i + 1, *size));
+				};
+				geo[\roots].do { |root, i|
+					this.assert(root[\box].intersects(seedBox).not,
+						"seed %'s whole hand clears root %'s event paper (%x%)"
+							.format(c, i + 1, *size));
+				};
+				geo[\dusts].do { |dust, i|
+					this.assert(dust[\box].intersects(seedBox).not,
+						"seed %'s whole hand clears Dust veil % (%x%)"
+							.format(c, i + 1, *size));
+				};
+				endpointNames.do { |name|
+					var spec = CQGuiNightMap.endpointSpec(name);
+					this.assert(seedBox.intersects(CQNightGeometry.endpointBox(
+						geo[\endpoints][name], spec[\kind], spec[\lamp])
+						).not,
+						"seed %'s whole hand clears endpoint % (%x%)"
+							.format(c, name, *size));
+				};
+				geo[\cocos].do { |coco, i|
+					coco[\crescents].do { |center, m|
+						this.assert(seedBox.intersects(
+							CQNightGeometry.crescentViewBox(center, m > 0)).not,
+							"seed %'s whole hand clears coco % crescent % (%x%)"
+								.format(c, i + 1, m, *size));
+					};
+				};
+				geo[\birds].do { |bird, i|
+					this.assert(seedBox.intersects(
+						CQNightGeometry.crescentViewBox(
+							bird[\levelCrescent], false)).not,
+						"seed %'s whole hand clears bird % crescent (%x%)"
+							.format(c, i + 1, *size));
+				};
+				this.assert(seedBox.intersects(geo[\ringBox]).not
+					and: { seedBox.intersects(Rect.aboutPoint(geo[\eye],
+						CQNightMeasures.eyeLayerR,
+						CQNightMeasures.eyeLayerR)).not }
+					and: { seedBox.intersects(geo[\almanac][\box]).not }
+					and: { seedBox.intersects(gateBox).not },
+					"seed %'s whole hand remains in unclaimed water (%x%)"
+						.format(c, *size));
+				this.assertEquals(CQNightGeometry.compassNorm(
+					geo[\almanac], stamp), Point(c % 2, c div: 2),
+					"seed % recalls its corner bit-exact (%x%)"
+						.format(c, *size));
+			};
+			this.assert(CQNightGeometry.compassHit(geo[\almanac], tide.center),
+				"open water inside the four winds answers");
+			this.assert(CQNightGeometry.compassHit(geo[\almanac],
+				tide.leftTop - Point(2, 2)).not,
+				"water outside the four winds remains ordinary ground");
+			block { |done|
+				var middle = CQNightGeometry.compassNorm(
+					geo[\almanac], tide.center);
+				this.assertFloatEquals(middle.x, 0.5,
+					"the landscape's middle is the bilinear middle (x)", 1e-9);
+				this.assertFloatEquals(middle.y, 0.5,
+					"the landscape's middle is the bilinear middle (y)", 1e-9);
+			};
+			this.assertEquals(CQNightGeometry.compassPointAt(
+				geo[\almanac], Point(0.25, 0.75)),
+				Point(tide.left + (tide.width * 0.25),
+					tide.top + (tide.height * 0.75)),
+				"field and tide use one direct coordinate frame");
+			this.assertFloatEquals(gate.x, geo[\ringCenter].x,
+				"the tide gill grows on the organism's centre line", 0.001);
+			block { |done|
+				var ringBottom = geo[\ringSamples].collect(_.y).maxItem;
+				var lowerSeeds = stamps.copyRange(2, 3);
+				this.assert((gate.y - ringBottom)
+					>= (CQNightMeasures.tideGateHit + 20),
+					"the tide gill keeps a 44 px centreline breath below the ring (%x%)"
+						.format(*size));
+				this.assert(Rect(0, 0, size[0], size[1]).contains(gateBox)
+					and: { (size[1] - gateBox.bottom) >= 8 },
+					"the tide gill stays on stage with lower breathing room (%x%)"
+						.format(*size));
+				this.assert(gate.y > lowerSeeds.collect(_.y).maxItem,
+					"the tide gill is a focus organ below the lower morph leaves (%x%)"
+						.format(*size));
+			};
+			this.assert(CQNightGeometry.tideGateHit(geo, gate)
+				and: { CQNightGeometry.tideGateHit(geo,
+					gate + Point(CQNightMeasures.tideGateHit + 2, 0)).not },
+				"the gill answers on its one deliberate touch body (%x%)"
+					.format(*size));
+			geo[\castles].do { |castle, k|
+				this.assert(gateBox.intersects(castle[\box]).not,
+					"the tide gill clears castle % (%x%)".format(k + 1, *size));
+			};
+			geo[\cocos].do { |coco, i|
+				this.assert(gateBox.intersects(coco[\shellBox]).not,
+					"the tide gill clears cocoon % (%x%)".format(i + 1, *size));
+			};
+			geo[\dusts].do { |dust, i|
+				this.assert(gateBox.intersects(dust[\box]).not,
+					"the tide gill clears Dust veil % (%x%)".format(i + 1, *size));
+			};
+			stamps.do { |stamp, i|
+				this.assert(gateBox.intersects(Rect.aboutPoint(stamp,
+					CQNightMeasures.seedHalo, CQNightMeasures.seedHalo)).not,
+					"the tide gill clears morph seed % (%x%)".format(i, *size));
+			};
+			endpointNames.do { |name|
+				var spec = CQGuiNightMap.endpointSpec(name);
+				this.assert(gateBox.intersects(CQNightGeometry.endpointBox(
+					geo[\endpoints][name], spec[\kind], spec[\lamp])).not,
+					"the tide gill clears endpoint % (%x%)".format(name, *size));
+			};
+		};
+	}
+
+	// The full-scale polish is a hierarchy rather than one multiplier. These
+	// floors keep its primary hands from silently shrinking back to the first
+	// spring-flood draft while still allowing later visual tuning upward.
+	test_fullScalePolishKeepsItsPlayableHierarchy {
+		this.assert(CQNightMeasures.crescentExtent >= 44
+			and: { CQNightMeasures.crescentArcR >= 18 },
+			"the Coco and bird crescents keep a true 44 px-class hand");
+		this.assert(CQNightMeasures.castleRx >= 37
+			and: { CQNightMeasures.castleRy >= 33 }
+			and: { CQNightMeasures.clockRadius >= 18 }
+			and: { CQNightMeasures.rangeHitX >= 15 }
+			and: { CQNightMeasures.rangeHitY >= 12 },
+			"castle flesh, clock and ripple keep three readable target scales");
+		this.assert(CQNightMeasures.rootKnotHit >= 27
+			and: { CQNightMeasures.eyeHit >= 54 }
+			and: { CQNightMeasures.birdSpan >= 64 },
+			"roots, storm eye and birds retain their performance mass");
+		this.assert(CQNightMeasures.stampRadius >= 14
+			and: { CQNightMeasures.tideGateHit >= 24 }
+			and: { CQNightMeasures.moonRadius >= 35 },
+			"seeds, gill and moon remain deliberate rather than pin-sized");
+		this.assert(CQNightMeasures.jackExtent >= 34
+			and: { CQNightMeasures.socketExtent.x >= 28 }
+			and: { CQNightMeasures.endpointInkScale >= 1.2 }
+			and: { CQNightMeasures.endpointGlyphExtent >= 12 },
+			"patch points grow both their hands and their visible Night ink");
 	}
 
 	// The spesal coupling chord (§16.6): both ends stop outside their castle's
@@ -485,15 +1374,19 @@ CQNightGeometryTest : UnitTest {
 			var geo = CQNightGeometry.compute(size[0], size[1]);
 			var eye = geo[\eye], ringR = geo[\ringR];
 			var floor = ringR * CQNightGeometry.chordClearance;
+			this.assert(CQNightMeasures.eyeMaskR < CQNightMeasures.eyeLayerR,
+				"the iris masks a circle, never its repaint square (%x%)"
+					.format(*size));
 			5.do { |k|
 				(0..4).removing(k).do { |partner|
 					var path = CQNightGeometry.spesalChord(geo, k, partner);
 					var curveMid = (path[0] * 0.125) + (path[1] * 0.375)
 						+ (path[2] * 0.375) + (path[3] * 0.125);
-					this.assert(geo[\castles][k][\box].containsPoint(path[0]).not
-						and: { geo[\castles][partner][\box]
-							.containsPoint(path[3]).not },
-						"chord % -> % leaves both opaque boxes (%x%)"
+					this.assertEquals(path[0], geo[\castles][k][\center],
+						"chord % -> % begins beneath the source flesh (%x%)"
+							.format(k, partner, *size));
+					this.assertEquals(path[3], geo[\castles][partner][\center],
+						"chord % -> % ends beneath the reader flesh (%x%)"
 							.format(k, partner, *size));
 					this.assert(this.prDistance(path[1], eye) >= (floor - 0.001),
 						"chord % -> % keeps its distance from the eye (%x%)"
@@ -503,8 +1396,9 @@ CQNightGeometryTest : UnitTest {
 					this.assert(CQNightGeometry.ringDistance(geo, curveMid) > 12,
 						"chord % -> % never doubles the river's own line (%x%)"
 							.format(k, partner, *size));
-					// the storm iris draws out to roughly 20 px at full chaos
-					this.assert(this.prDistance(curveMid, eye) > 20,
+					// the storm iris' outer weather season is the full visual body
+					this.assert(this.prDistance(curveMid, eye)
+						> CQInkNight.irisWeatherRadii.last,
 						"chord % -> % passes clear of the iris itself (%x%)"
 							.format(k, partner, *size));
 				};
@@ -549,12 +1443,704 @@ CQNightGeometryTest : UnitTest {
 			"states 4..7 are track-and-hold, 0..3 sample-and-hold");
 	}
 
-	test_rangeLetter {
-		this.assertEquals(CQNightGeometry.rangeLetter(\infra), "i", "infra = i");
-		this.assertEquals(CQNightGeometry.rangeLetter(\balcium), "b", "balcium = b");
-		this.assertEquals(CQNightGeometry.rangeLetter(\audio), "a", "audio = a");
-		this.assertEquals(CQNightGeometry.rangeLetter(nil), "",
-			"an unknown range stays silent");
+	// The tide is bilinear in a square; the pool it is poured on is round (§9).
+	// The elliptical grid mapping carries one into the other, and the whole
+	// reason to use it instead of a radial squash is that **the rim at a
+	// diagonal is exactly a corner** — a stamped memory that cannot be reached
+	// bit-exact is a memory the pad has lost (rake 13). These fixed points are
+	// asserted on the pure math, with no window and no almanac anywhere near.
+	legacy_poolMappingKeepsItsCorners {
+		var root = 1 / 2.sqrt;
+		var corners = [Point(-1, -1), Point(1, -1), Point(-1, 1), Point(1, 1)];
+		this.assertEquals(CQNightGeometry.squareToDisc(Point(0, 0)), Point(0, 0),
+			"the pool's centre is the square's centre");
+		this.assertEquals(CQNightGeometry.discToSquare(Point(0, 0)), Point(0, 0),
+			"...and back again");
+		corners.do { |corner|
+			// the corner leaves the square at the diagonal rim of the disc
+			var rim = CQNightGeometry.squareToDisc(corner);
+			var back = CQNightGeometry.discToSquare(rim);
+			this.assertFloatEquals(rim.x, corner.x * root,
+				"corner % sits on the rim at its own diagonal (x)"
+					.format(corner), 1e-9);
+			this.assertFloatEquals(rim.y, corner.y * root,
+				"corner % sits on the rim at its own diagonal (y)"
+					.format(corner), 1e-9);
+			this.assertFloatEquals(sqrt(rim.x.squared + rim.y.squared), 1.0,
+				"corner % lands exactly ON the shore, not inside it"
+					.format(corner), 1e-9);
+			// and the round trip is exact, which is what makes a corner recall
+			// bit-exact rather than nearly
+			this.assertFloatEquals(back.x, corner.x,
+				"the diagonal rim maps back to corner % (x)".format(corner), 1e-9);
+			this.assertFloatEquals(back.y, corner.y,
+				"the diagonal rim maps back to corner % (y)".format(corner), 1e-9);
+		};
+		// the axes are fixed points too: the rim on an axis is an edge midpoint
+		[[Point(1, 0), Point(1, 0)], [Point(-1, 0), Point(-1, 0)],
+			[Point(0, 1), Point(0, 1)], [Point(0, -1), Point(0, -1)]].do { |pair|
+			var square = CQNightGeometry.discToSquare(pair[0]);
+			this.assertFloatEquals(square.x, pair[1].x,
+				"the rim at % is an edge, not a corner (x)".format(pair[0]), 1e-9);
+			this.assertFloatEquals(square.y, pair[1].y,
+				"the rim at % is an edge, not a corner (y)".format(pair[0]), 1e-9);
+		};
+		// interior round trip: the geography has to be one-to-one, or the same
+		// place on the pool would grow two different patches
+		[-0.9, -0.4, 0, 0.3, 0.75, 1].do { |x|
+			[-1, -0.6, -0.1, 0.5, 0.95].do { |y|
+				var square = Point(x, y);
+				var back = CQNightGeometry.discToSquare(
+					CQNightGeometry.squareToDisc(square));
+				this.assertFloatEquals(back.x, x,
+					"(%, %) survives the round trip (x)".format(x, y), 1e-6);
+				this.assertFloatEquals(back.y, y,
+					"(%, %) survives the round trip (y)".format(x, y), 1e-6);
+			};
+		};
+		// nothing inside the disc may map outside the square, at any angle
+		36.do { |i|
+			var angle = i / 36 * 2pi;
+			[0.25, 0.6, 0.99, 1.0].do { |r|
+				var square = CQNightGeometry.discToSquare(
+					Point(cos(angle) * r, sin(angle) * r));
+				this.assert(square.x.abs <= (1 + 1e-9)
+					and: { square.y.abs <= (1 + 1e-9) },
+					"the disc at angle % radius % stays in the square"
+						.format(i, r));
+			};
+		};
+	}
+
+	// ---- §8's collision matrix (NIGHT_STANDALONE_PLAN §8) ----
+	// The spring flood re-bases the night's measures, and a measure is safe only
+	// if the bodies it grows still miss each other. These asserts were written
+	// BEFORE any constant moved, at both reference stage sizes, so a measure
+	// that stops fitting fails here instead of in the user's hands. Every castle
+	// irregularity is seeded inside `compute`, so all of it is deterministic.
+
+	// every truly opaque body layer the night paints on, in z order
+	prOpaqueLayers { |geo|
+		var layers = List.new;
+		layers.add([\ring, geo[\ringBox]]);
+		geo[\cocos].do { |coco, i|
+			layers.add([("shell" ++ (i + 1)).asSymbol, coco[\shellBox]])
+		};
+		geo[\birds].do { |bird, i|
+			layers.add([("bird" ++ (i + 1)).asSymbol, bird[\box]])
+		};
+		layers.add([\almanac, geo[\almanac][\box]]);
+		^layers.asArray
+	}
+
+	// An opaque layer covers whatever is under it, so two of them overlapping
+	// means one body is quietly eating another's ink. Castles are intentionally
+	// absent: their paper is clear and only their irregular painted flesh masks
+	// the river. The storm iris also has clear rectangular paper and one round
+	// body mask, so it is absent from this rectangle-only occlusion list.
+	test_floodOpaqueLayersMissEachOther {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var stage = Rect(0, 0, size[0], size[1]);
+			var layers = this.prOpaqueLayers(geo);
+			layers.do { |a, i|
+				this.assert(stage.contains(a[1]),
+					"the % layer stays on the stage (%x%)".format(a[0], *size));
+				layers.drop(i + 1).do { |b|
+					this.assert(a[1].intersects(b[1]).not,
+						"opaque layers % and % keep off each other (%x%)"
+							.format(a[0], b[0], *size));
+				};
+			};
+		};
+	}
+
+	// §16.7's drop border is drawn around the bird AND its name, so that whole
+	// rect has to be free water: over a castle or the river it would ring ink
+	// that does not accept the file.
+	test_floodBirdsClearTheLandscape {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var stage = Rect(0, 0, size[0], size[1]);
+			geo[\birds].do { |bird, i|
+				var drop = bird[\dropRect];
+				this.assert(stage.contains(drop),
+					"bird %'s drop target stays on the stage (%x%)"
+						.format(i + 1, *size));
+				this.assert(drop.intersects(geo[\ringBox]).not,
+					"bird % flies clear of the river's own layer (%x%)"
+						.format(i + 1, *size));
+				geo[\castles].do { |castle, k|
+					this.assert(drop.intersects(castle[\box]).not,
+						"bird % keeps off castle %'s box (%x%)"
+							.format(i + 1, k + 1, *size));
+				};
+				geo[\cocos].do { |coco, c|
+					this.assert(drop.intersects(coco[\shellBox]).not,
+						"bird % keeps off coco %'s shell (%x%)"
+							.format(i + 1, c + 1, *size));
+				};
+			};
+		};
+	}
+
+	// The small opaque boxes are allowed to graze each other — 24 px of hit
+	// spacing is less than two grown views — but never so far that one swallows
+	// the other's drawn dot. A centre under a neighbour's box is a jack the eye
+	// can see and the hand cannot reach.
+	test_floodSmallBoxesNeverSwallowACentre {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var names = CQMatrix.sourceNames ++ CQMatrix.destNames;
+			var stage = Rect(0, 0, size[0], size[1]);
+			var crescents = List.new;
+			var boxes = names.collect { |name|
+				[name, this.prEndpointBox(name, geo[\endpoints][name]),
+					geo[\endpoints][name]]
+			};
+			var half = CQNightMeasures.crescentExtent * 0.5;
+			geo[\cocos].do { |coco, i|
+				coco[\crescents].do { |point, m|
+					crescents.add([("coco" ++ (i + 1) ++ "c" ++ m).asSymbol, point])
+				};
+			};
+			geo[\birds].do { |bird, i|
+				crescents.add([("deck" ++ (i + 1) ++ "level").asSymbol,
+					bird[\levelCrescent]])
+			};
+			boxes.do { |a|
+				this.assert(stage.contains(a[1]),
+					"% keeps its whole view on the stage (%x%)"
+						.format(a[0], *size));
+			};
+			boxes.do { |a, i|
+				boxes.drop(i + 1).do { |b|
+					this.assert(a[1].containsPoint(b[2]).not
+						and: { b[1].containsPoint(a[2]).not },
+						"neither % nor % swallows the other's centre (%x%)"
+							.format(a[0], b[0], *size));
+				};
+			};
+			// a tide crescent and the moon beside it are two different hands on
+			// two different values. Their opaque views are allowed to graze at a
+			// corner — the crescent is drawn last and the sliver it takes is
+			// empty paper — but never far enough to reach a drawn mark, which is
+			// what §16.10's 24 px between centres buys.
+			crescents.do { |c|
+				var box = Rect.aboutPoint(c[1], half, half);
+				this.assert(stage.contains(box),
+					"crescent % keeps its whole view on the stage (%x%)"
+						.format(c[0], *size));
+				boxes.do { |b|
+					this.assert(box.containsPoint(b[2]).not
+						and: { b[1].containsPoint(c[1]).not },
+						"neither crescent % nor % swallows the other's centre (%x%)"
+							.format(c[0], b[0], *size));
+					this.assert(CQNightGeometry.distance(c[1], b[2]) >= 24,
+						"crescent % keeps the 24 px hit law from % (%x%)"
+							.format(c[0], b[0], *size));
+				};
+			};
+			crescents.do { |a, i|
+				crescents.drop(i + 1).do { |b|
+					this.assert(CQNightGeometry.distance(a[1], b[1])
+						>= CQNightMeasures.crescentExtent,
+						"crescents % and % keep their views apart (%x%)"
+							.format(a[0], b[0], *size));
+				};
+			};
+		};
+	}
+
+	// N5 grows only the in/fb crescent owner, and only outward/downward. The
+	// old value hand keeps its exact centre and square; the oyster gets a
+	// disjoint tap below it and the complete opaque owner remains on paper.
+	test_dolbyOystersGrowAwayFromTheirMoons {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var stage = Rect(0, 0, size[0], size[1]);
+			var allCrescents = geo[\cocos].collect(_[\crescents]).flat
+				++ geo[\birds].collect(_[\levelCrescent]);
+			var endpointPoints = geo[\endpoints].values;
+			geo[\cocos].do { |coco, i|
+				2.do { |channel|
+					var m = channel + 1;
+					var center = coco[\crescents][m];
+					var moon = coco[\moons][m];
+					var view = CQNightGeometry.crescentViewBox(center, true);
+					var oldView = CQNightGeometry.crescentViewBox(center, false);
+					var oyster = CQNightGeometry.dolbyOysterAnchor(center);
+					this.assert(stage.contains(view),
+						"coco % channel % oyster stays on stage (%x%)"
+							.format(i + 1, channel, *size));
+					this.assertEquals(view.top, oldView.top,
+						"the grown owner never moves toward its moon");
+					this.assertEquals(view.width, oldView.width,
+						"the owner grows only downward");
+					this.assert(view.bottom > oldView.bottom,
+						"the extra paper is below the old crescent");
+					this.assert(CQNightGeometry.distance(center, oyster) >= 24,
+						"crescent and oyster keep the 24 px centre law");
+					this.assert(CQNightGeometry.dolbyOysterBox(center)
+						.intersects(oldView).not,
+						"oyster tap and value drag are disjoint");
+					this.assert(CQNightGeometry.distance(oyster, moon)
+						> CQNightGeometry.distance(center, moon),
+						"the oyster grows away from its moon");
+					allCrescents.do { |other|
+						if(other != center) {
+							this.assert(CQNightGeometry.distance(oyster, other) >= 24,
+								"oyster clears every neighbouring crescent centre");
+							this.assert(view.containsPoint(other).not,
+								"grown oyster paper swallows no neighbouring crescent");
+						};
+					};
+					endpointPoints.do { |other|
+						this.assert(CQNightGeometry.distance(oyster, other) >= 24,
+							"oyster keeps the 24 px hit law from every endpoint");
+						this.assert(view.containsPoint(other).not,
+							"grown oyster paper swallows no endpoint centre");
+					};
+				};
+			};
+		};
+	}
+
+	// The roots climb into the same lower water the shells hang their tide
+	// crescents in, and their tips carry jacks. Nothing down there may cross.
+	test_floodRootsClearTheLowerWater {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var stage = Rect(0, 0, size[0], size[1]);
+			geo[\roots].do { |root, i|
+				var envName = if(i == 0) { \envA } { \envB };
+				var tipBox = CQNightGeometry.endpointBox(
+					geo[\endpoints][envName], \jack);
+				var rootInk = this.prRootInk(root) ++ [root[\audioJoin]];
+				this.assert(stage.contains(tipBox),
+					"root %'s tip jack stays on the stage (%x%)"
+						.format(i + 1, *size));
+				this.assert(stage.contains(root[\maxLobeEnvelope])
+					and: { stage.contains(root[\knotHitBox]) },
+					"root %'s full bias body and hand stay on stage (%x%)"
+						.format(i + 1, *size));
+				geo[\cocos].do { |coco, c|
+					coco[\crescents].do { |point, m|
+						var box = CQNightGeometry.crescentViewBox(point, m > 0);
+						this.assert(rootInk.every { |sample|
+							box.containsPoint(sample).not },
+							"root % misses coco % crescent % (%x%)"
+								.format(i + 1, c + 1, m, *size));
+						if(c == i and: { m > 0 }) {
+							this.assert(this.prRectsDistance(
+								root[\maxLobeEnvelope], box)
+								>= CQNightMeasures.rootDolbyClear,
+								"root %'s worst bias lobes clear dolby % by % px (%x%)"
+									.format(i + 1, m,
+										CQNightMeasures.rootDolbyClear, *size));
+							this.assert(root[\knotHitBox].intersects(box).not,
+								"root %'s whole drive/bias hand clears dolby % (%x%)"
+									.format(i + 1, m, *size));
+						};
+					};
+					if(c == i) {
+						this.assert(CQNightGeometry.spiralDistance(coco,
+							root[\audioJoin]) < 0.001,
+							"root % terminates on its own Coco, not beside it (%x%)"
+								.format(i + 1, *size));
+					} {
+						this.assert(rootInk.every { |point|
+							coco[\shellBox].containsPoint(point).not },
+							"root % keeps clear of the other Coco (%x%)"
+								.format(i + 1, *size));
+					};
+				};
+				this.assert(rootInk.every { |point|
+					geo[\ringBox].containsPoint(point).not },
+					"root % stays outside the river's layer (%x%)"
+						.format(i + 1, *size));
+			};
+		};
+	}
+
+	// §16.10's hit law is not a minimum-stage courtesy: it holds wherever the
+	// window is dragged to.
+	test_floodHitSpacingAtBothSizes {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var names = CQMatrix.sourceNames ++ CQMatrix.destNames;
+			names.do { |a, i|
+				names.drop(i + 1).do { |b|
+					this.assert(this.prDistance(geo[\endpoints][a],
+						geo[\endpoints][b]) >= 24,
+						"% and % keep the 24 px hit spacing (%x%)"
+							.format(a, b, *size));
+				};
+			};
+		};
+	}
+
+	// The night's own playing targets, measured as the hand meets them: each
+	// one has to be findable without aiming, and none may reach into another.
+	test_floodTouchTargetsAreReachable {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			geo[\cocos].do { |coco, i|
+				var heart = coco[\heartRadius];
+				var mark = CQNightMeasures.markHitReach;
+				var scale = geo[\scale];
+				var inner = CQNightMeasures.spiralInnerR * scale;
+				// radial distance between two turns of the groove
+				var pitch = (coco[\outerR] - inner) / CQNightGeometry.turns;
+				var inkReach = [CQNightMeasures.notchHoverReach,
+					CQNightMeasures.struckBase + CQNightMeasures.struckRange,
+					CQNightMeasures.skipGlyphR].maxItem + 2;
+				this.assert(CQNightGeometry.distance(coco[\chevron],
+					coco[\skipMark]) >= (2 * mark),
+					"coco %'s flip and skip marks never share a press (%x%)"
+						.format(i + 1, *size));
+				this.assert(CQNightGeometry.distance(coco[\mouth],
+					coco[\chevron]) > (mark + (CQNightMeasures.jackExtent * 0.5)),
+					"coco %'s chevron clears the mouth jack's own view (%x%)"
+						.format(i + 1, *size));
+				// The heart is checked BEFORE the winding surface (§4.5's chain
+				// in CQGuiNightTouch.shellDown), so its disc quietly takes the
+				// innermost turn of the groove with it — which is right, since a
+				// speed grab there sits at norm 0 anyway. What it may never do is
+				// swallow a SECOND turn: past that, a visible stretch of groove
+				// would stop answering the winding gesture at all.
+				this.assert(heart < (inner + pitch),
+					"coco %'s heart takes the innermost turn and no more (%x%)"
+						.format(i + 1, *size));
+				// ...and the grab band has to stay inside one turn for the same
+				// reason, from the other side
+				this.assert(CQNightMeasures.windGrab < (pitch * 0.5),
+					"coco %'s winding grab answers one turn, not two (%x%)"
+						.format(i + 1, *size));
+				this.assert(coco[\shellBox].contains(
+					Rect.aboutPoint(coco[\skipMark], mark, mark)),
+					"coco %'s skip box stays inside the shell layer (%x%)"
+						.format(i + 1, *size));
+				// The layer's slack past the rim is trimmed to what the shell
+				// actually draws, because those pixels are what the castles and
+				// the almanac live on. So it has to be pinned: the widest mark
+				// leaving the rim is the hammered read head's arms, then the
+				// notch's hover reach, then the skip glyph — plus the seal ring's
+				// own stroke. If a future mark grows, this fails before it clips.
+				this.assert(coco[\shellBox].contains(Rect.aboutPoint(coco[\center],
+					coco[\outerR] + inkReach, coco[\outerR] + inkReach)),
+					"coco %'s layer holds every mark its rim carries (%x%)"
+						.format(i + 1, *size));
+			};
+			geo[\castles].do { |castle, k|
+				var flesh = min(castle[\bodyRx], castle[\bodyRy]);
+				// the inner clock and the body around it are two different taps.
+				// What is drawn — the face, its ticks and the lit state bead with
+				// its halo — has to sit inside the drawn blob, or the clock stops
+				// reading as the castle's own inside.
+				this.assert((castle[\dialR] + max(CQNightMeasures.clockTickReach,
+					CQNightMeasures.clockBeadHaloR)) < flesh,
+					"castle %'s clock is drawn inside its own flesh (%x%)"
+						.format(k + 1, *size));
+				// The complete visible seeded outline is now the clock's action;
+				// every sampled edge must still be island ground, never water.
+				this.assert(castle[\blobSamples].every { |point|
+					CQNightGeometry.bodyHit(castle, point)
+				}, "castle %'s full playable flesh steals no press from water (%x%)"
+					.format(k + 1, *size));
+			};
+			this.assert(CQNightMeasures.eyeHit
+				<= CQNightMeasures.eyeLayerR,
+				"the eye answers no further than its own layer draws (%x%)"
+					.format(*size));
+			this.assert(CQInkNight.irisWeatherRadii.last
+				<= CQNightMeasures.eyeHit,
+				"every visible weather season belongs to the eye's hit body (%x%)"
+					.format(*size));
+		};
+	}
+
+	test_rangeRippleGeometryAndClearance {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			geo[\castles].do { |castle, k|
+				var n = k + 1;
+				var hit = CQNightGeometry.rangeBox(castle);
+				var drawn = Rect.aboutPoint(castle[\rangeMark],
+					CQNightMeasures.rangeRippleWidth * 0.5,
+					CQNightMeasures.rangeRippleHeight);
+				var fmName = ("castle" ++ n ++ "_fm").asSymbol;
+				var spesalName = ("castle" ++ n ++ "_spesal").asSymbol;
+				var fm = this.prEndpointBox(fmName, geo[\endpoints][fmName]);
+				var spesal = this.prEndpointBox(spesalName,
+					geo[\endpoints][spesalName]);
+				this.assert(CQNightGeometry.rangeHit(castle, castle[\rangeMark]),
+					"castle % ripple answers on its drawn centre (%x%)"
+						.format(n, *size));
+				this.assert(CQNightGeometry.rangeHit(castle,
+					castle[\rangeMark]
+						+ Point(CQNightMeasures.rangeHitX + 1, 0)).not,
+					"castle % ripple answers no wider than its cue (%x%)"
+						.format(n, *size));
+				this.assert(hit.contains(drawn),
+					"castle % ripple ink fits inside its touch cue (%x%)"
+						.format(n, *size));
+				this.assert(castle[\box].contains(hit),
+					"castle % ripple fits its transparent paper (%x%)"
+						.format(n, *size));
+				this.assertFloatEquals(castle[\rangeMark].y
+					- castle[\blobBottom], CQNightMeasures.rangeBodyGap,
+					"castle % ripple breathes from its actual seeded edge (%x%)"
+						.format(n, *size), 0.0001);
+				this.assert(hit.intersects(fm).not,
+					"castle % ripple clears the fm socket (%x%)"
+						.format(n, *size));
+				this.assert(hit.intersects(spesal).not,
+					"castle % ripple clears the lamped spesal socket (%x%)"
+						.format(n, *size));
+				this.assert(
+					CQNightGeometry.distance(castle[\center], castle[\rangeMark])
+						- CQNightMeasures.rangeHitY
+						> (castle[\dialR] + max(CQNightMeasures.clockTickReach,
+							CQNightMeasures.clockBeadHaloR)),
+					"castle % ripple clears the drawn clock face (%x%)"
+						.format(n, *size));
+				this.assert(CQNightGeometry.bodyHit(castle,
+					castle[\rangeMark] - Point(0, CQNightMeasures.rangeHitY)),
+					"castle % ripple overlaps the body's cue and therefore needs priority (%x%)"
+						.format(n, *size));
+			};
+		};
+	}
+
+	// ---- PLAY-6.1: the internal drone streams ----
+
+	// the same sampling the give-way solver uses, so the clearance it promises
+	// and the clearance this asserts are one number, not two opinions
+	prDroneSamples { |path|
+		var n = CQNightGeometry.droneSamples;
+		^(0..n).collect { |i| CQNightGeometry.cubicPoint(path, i / n) }
+	}
+
+	prStreams { |geo|
+		^[[\coco1SlotQ, geo[\drone][\slotQPaths][0]],
+			[\coco2SlotQ, geo[\drone][\slotQPaths][1]],
+			[\coco1SlotX, geo[\drone][\slotXPaths][0]],
+			[\coco2SlotX, geo[\drone][\slotXPaths][1]]]
+	}
+
+	// The topmost edge a castle owns, derived through CQGuiNightMap's own spec
+	// table rather than the geometry's — so this also proves the arch measured
+	// the right endpoint kinds. Its outer transparent paper is not included:
+	// nothing is drawn in those corners and the river already crosses it.
+	prCastleOwnTop { |geo, k|
+		var n = k + 1;
+		var top = geo[\castles][k][\blobSamples].collect { |p| p.y }.minItem;
+		[("tri" ++ n).asSymbol, ("cas" ++ n).asSymbol,
+			("castle" ++ n ++ "_fm").asSymbol,
+			("castle" ++ n ++ "_spesal").asSymbol].do { |name|
+			top = min(top, this.prEndpointBox(name, geo[\endpoints][name]).top);
+		};
+		^top
+	}
+
+	test_droneStreamsLeaveTheRiverAtItsTwoEmptyGaps {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var left, right;
+			// the anchor choice rests entirely on this ordering
+			this.assertEquals(geo[\ringSegments][4].first, geo[\castles][4][\center],
+				"ring segment 5 leaves castle 5 (%x%)".format(*size));
+			this.assertEquals(geo[\ringSegments][4].last, geo[\castles][0][\center],
+				"ring segment 5 arrives at castle 1 (%x%)".format(*size));
+			this.assertEquals(geo[\ringSegments][0].first, geo[\castles][0][\center],
+				"ring segment 1 leaves castle 1 (%x%)".format(*size));
+			this.assertEquals(geo[\ringSegments][0].last, geo[\castles][1][\center],
+				"ring segment 1 arrives at castle 2 (%x%)".format(*size));
+			left = CQNightGeometry.cubicPoint(geo[\ringSegments][4], 0.5);
+			right = CQNightGeometry.cubicPoint(geo[\ringSegments][0], 0.5);
+			this.assertEquals(geo[\drone][\slotQPaths][0].first, left,
+				"coco 1's q stream begins on the seeded 5->1 gap itself (%x%)"
+					.format(*size));
+			this.assertEquals(geo[\drone][\slotQPaths][1].first, right,
+				"coco 2's q stream begins on the seeded 1->2 gap itself (%x%)"
+					.format(*size));
+			this.assert(left.x < geo[\castles][0][\center].x
+				and: { right.x > geo[\castles][0][\center].x },
+				"the two gaps lie on either side of castle 1 (%x%)".format(*size));
+			this.assert(left.y < geo[\ringCenter].y
+				and: { right.y < geo[\ringCenter].y },
+				"both gaps are in the river's upper half (%x%)".format(*size));
+			// the arch's shoulders are those same two gaps, drawn in only as far
+			// as the birds' name plates forced them
+			this.assert(geo[\drone][\slotXPaths][0][1].x <= right.x
+				and: { geo[\drone][\slotXPaths][0][2].x >= left.x },
+				"the bridge's shoulders stand between the two gaps (%x%)"
+					.format(*size));
+			// direction is unchanged: q arrives at its own gill, x keeps its
+			// destination-side valve (coco1SlotX is 2 -> 1, coco2SlotX is 1 -> 2)
+			2.do { |i|
+				this.assertEquals(geo[\drone][\slotQPaths][i].last,
+					geo[\cocos][i][\slotQValve],
+					"coco %'s q stream still arrives at its own gill (%x%)"
+						.format(i + 1, *size));
+			};
+			this.assertEquals(geo[\drone][\slotXPaths][0].first,
+				geo[\cocos][1][\slotXValve],
+				"coco1SlotX still starts at coco 2 (%x%)".format(*size));
+			this.assertEquals(geo[\drone][\slotXPaths][0].last,
+				geo[\cocos][0][\slotXValve],
+				"coco1SlotX still arrives at coco 1 (%x%)".format(*size));
+			this.assertEquals(geo[\drone][\slotXPaths][1].first,
+				geo[\cocos][0][\slotXValve],
+				"coco2SlotX still starts at coco 1 (%x%)".format(*size));
+			this.assertEquals(geo[\drone][\slotXPaths][1].last,
+				geo[\cocos][1][\slotXValve],
+				"coco2SlotX still arrives at coco 2 (%x%)".format(*size));
+		};
+	}
+
+	// What a stream must clear is what is actually DRAWN. The transparent
+	// castle papers are deliberately not bodies here — the river itself runs
+	// straight through them — so this asserts the jacks' own ink, the birds'
+	// name plates, the seeded flesh, the range ripples and the storm iris.
+	test_droneStreamsClearEveryDrawnBody {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var stage = Rect(0, 0, size[0], size[1]);
+			var clear = CQNightMeasures.flowBodyClear;
+			// the whole family mark, dot AND decoration: a `tri` jack's leaf
+			// reaches 15 px, which is what the first pass drew a stream through
+			var ink = CQNightMeasures.endpointInkReach;
+			var names = CQMatrix.sourceNames ++ CQMatrix.destNames;
+			this.prStreams(geo).do { |stream|
+				var points = this.prDroneSamples(stream[1]);
+				this.assert(points.every { |p| stage.containsPoint(p) },
+					"% draws entirely on the stage (%x%)".format(stream[0], *size));
+				names.do { |name|
+					this.assert(points.collect { |p|
+						this.prDistance(p, geo[\endpoints][name])
+					}.minItem >= (ink + clear),
+						"% keeps % px of paper past %'s drawn ink (%x%)"
+							.format(stream[0], clear, name, *size));
+				};
+				geo[\birds].do { |bird, i|
+					this.assert(points.collect { |p|
+						this.prRectDistance(p, bird[\labelRect])
+					}.minItem >= clear,
+						"% keeps % px off bird %'s name plate (%x%)"
+							.format(stream[0], clear, i + 1, *size));
+				};
+				geo[\castles].do { |castle, k|
+					this.assert(points.every { |p|
+						CQNightGeometry.polygonHit(p, castle[\blobSamples]).not },
+						"% never crosses castle %'s seeded flesh (%x%)"
+							.format(stream[0], k + 1, *size));
+					this.assert(points.every { |p|
+						CQNightGeometry.rangeBox(castle).containsPoint(p).not },
+						"% never crosses castle %'s range ripple (%x%)"
+							.format(stream[0], k + 1, *size));
+				};
+				this.assert(points.every { |p|
+					this.prDistance(p, geo[\ringCenter]) > CQNightMeasures.eyeHit },
+					"% leaves the storm iris its own reach (%x%)"
+						.format(stream[0], *size));
+			};
+		};
+	}
+
+	// The crown is stated as a clearance and solved backwards through the cubic
+	// (B(0.5).y = 0.125*(y0 + y1) + 0.75*cy), so t = 0.5 must land exactly on it.
+	test_droneBridgeArchesOverCastleOne {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			var scale = geo[\scale];
+			var crown = geo[\drone][\bridgeCrown];
+			var half = CQNightMeasures.slotXBridgeLaneGap * scale * 0.5;
+			var upper = CQNightGeometry.cubicPoint(geo[\drone][\slotXPaths][0], 0.5);
+			var lower = CQNightGeometry.cubicPoint(geo[\drone][\slotXPaths][1], 0.5);
+			var ownTop = this.prCastleOwnTop(geo, 0);
+			this.assertFloatEquals(upper.y, crown - half,
+				"the inbound lane's midpoint lands on its own crown (%x%)"
+					.format(*size), 0.001);
+			this.assertFloatEquals(lower.y, crown + half,
+				"the outbound lane's midpoint lands on its own crown (%x%)"
+					.format(*size), 0.001);
+			// the bridge's lowest ink is the outbound lane, so the clearance is
+			// its to spend — unless the stage is short enough that the top floor
+			// takes over, which is the one documented compromise
+			this.assert((lower.y
+				<= (ownTop - (CQNightMeasures.slotXBridgeClearance * scale) + 0.001))
+				or: { crown == (CQNightMeasures.slotXBridgeTopFloor * scale) },
+				"the lower lane clears everything castle 1 owns, or the arch is "
+				"held at its top floor (%x%)".format(*size));
+			this.assert(crown >= (CQNightMeasures.slotXBridgeTopFloor * scale),
+				"the arch never climbs past its top floor (%x%)".format(*size));
+			this.assert(crown < ownTop,
+				"the arch passes above castle 1, not through it (%x%)".format(*size));
+			this.assertFloatEquals(this.prDistance(upper, lower), half * 2,
+				"the two lanes stand exactly one lane gap apart at the crown (%x%)"
+					.format(*size), 0.001);
+			// One bridge, two directions: the lanes share exactly the two valves
+			// and stand apart everywhere the eye reads them as a pair. They must
+			// converge at the ends — that is what makes them one bridge — so the
+			// separation is asserted over the span where both are visibly lanes.
+			this.assertEquals(geo[\drone][\slotXPaths][0].first,
+				geo[\drone][\slotXPaths][1].last,
+				"both lanes meet at coco 2's valve (%x%)".format(*size));
+			this.assertEquals(geo[\drone][\slotXPaths][0].last,
+				geo[\drone][\slotXPaths][1].first,
+				"both lanes meet at coco 1's valve (%x%)".format(*size));
+			(25..75).do { |percent|
+				var t = percent / 100;
+				this.assert(this.prDistance(
+					CQNightGeometry.cubicPoint(geo[\drone][\slotXPaths][0], t),
+					CQNightGeometry.cubicPoint(geo[\drone][\slotXPaths][1], 1 - t))
+					>= (half * 1.5),
+					"the two lanes stay legibly apart across the arch (%x%)"
+						.format(*size));
+			};
+		};
+	}
+
+	// Both channel faders answer one upward drag with one upward reading. The
+	// mirror lives in the SWEEP'S SIGN, so ink, unity notch, pearl and hit truth
+	// all take it from one place and cannot disagree.
+	test_bothLevelShoresRiseTheSameWay {
+		[[1280, 570], [1920, 855]].do { |size|
+			var geo = CQNightGeometry.compute(size[0], size[1]);
+			geo[\cocos].do { |coco, i|
+				var first = coco[\levelSamples].first;
+				var last = coco[\levelSamples].last;
+				this.assert(first.y > last.y,
+					"coco %'s Level reads zero at the bottom and full at the top (%x%)"
+						.format(i + 1, *size));
+				this.assertFloatEquals(coco[\levelSweep].abs,
+					CQNightMeasures.levelShoreSweep,
+					"coco % keeps the reviewed shore span (%x%)"
+						.format(i + 1, *size), 0.0001);
+				this.assertEquals(coco[\levelSweep] > 0, i == 0,
+					"only coco 2's sweep is signed negative (%x%)".format(*size));
+				this.assertEquals(CQNightGeometry.shellFlowTargetAt(coco, first),
+					\level, "coco %'s empty end is its Level hand (%x%)"
+						.format(i + 1, *size));
+				this.assertEquals(CQNightGeometry.shellFlowTargetAt(coco, last),
+					\level, "coco %'s full end is its Level hand (%x%)"
+						.format(i + 1, *size));
+				coco[\levelSamples].do { |p|
+					this.assertFloatEquals(
+						this.prDistance(coco[\center], p), coco[\levelR],
+						"coco %'s shoreline stays on its own radius".format(i + 1),
+						0.001);
+				};
+				// the shore hugs the exterior, away from the river
+				this.assert(((coco[\levelSamples].collect { |p| p.x }.sum
+					/ coco[\levelSamples].size) - coco[\center].x).sign
+					== (coco[\side]).sign,
+					"coco %'s shore lies on its outward side (%x%)"
+						.format(i + 1, *size));
+			};
+		};
 	}
 
 	test_sproutState {

@@ -41,12 +41,37 @@ CQInkTest : UnitTest {
 		var required;
 		if(this.prRequireInk.not) { ^this };
 		required = #[ground, recess, line, whisper, spark, tri, cas, fm, input,
-			spaf, organ, pre, verso, inverso, danger, warning, lamp];
+			spaf, organ, pre, verso, inverso, danger, warning, lamp, undertow];
 		#[day, night].do { |skin|
 			required.do { |name|
 				this.assert(inkClass.palette(skin)[name].notNil,
 					"% palette defines %".format(skin, name));
 			};
+		};
+	}
+
+	// PLAY-6.1: the internal streams' under-ink is one centrally defined key,
+	// and it must stay a shadow rather than becoming a sixth signal family — if
+	// it ever equalled a family colour, the drone topology would have been
+	// recoloured instead of deepened.
+	test_undertowIsACentralShadowNotASixthFamily {
+		var families = #[tri, cas, fm, input, spaf, organ, line, whisper, spark];
+		if(this.prRequireInk.not) { ^this };
+		this.assertEquals(this.prRgb(inkClass.palette(\night)[\undertow]),
+			[102, 144, 151], "Night undertow is #669097");
+		this.assertEquals(this.prRgb(inkClass.palette(\day)[\undertow]),
+			[82, 111, 113], "Day undertow is #526F71");
+		#[day, night].do { |skin|
+			var undertow = inkClass.palette(skin)[\undertow];
+			families.do { |name|
+				this.assert(this.prRgb(inkClass.palette(skin)[name])
+					!= this.prRgb(undertow),
+					"% undertow replaces no signal family (%)".format(skin, name));
+			};
+			// low chroma: it may not shout louder than the line it lies under
+			this.assert((undertow.asHSV[1] < 0.5)
+				and: { undertow.asHSV[1] > 0.05 },
+				"% undertow keeps its low, non-grey chroma".format(skin));
 		};
 	}
 
@@ -107,5 +132,66 @@ CQInkTest : UnitTest {
 		this.assertEquals(points.last, Point(120, 0), "cable ends at its destination socket");
 		this.assert(points.collect(_.y).maxItem > 18,
 			"gravity sag carries long cables into the open paper field");
+	}
+
+	test_cableWeightMoonStatesMagnitudeAndPolarityExactly {
+		var verso = inkClass.cableWeightReadout(0.60);
+		var inverso = inkClass.cableWeightReadout(-0.37);
+		var clipped = inkClass.cableWeightReadout(4);
+		this.assertFloatEquals(verso[\magnitude], 0.60,
+			"moon orbit preserves the positive magnitude", 1e-12);
+		this.assertEquals([verso[\direction], verso[\family]], [1, \verso],
+			"clockwise amber states verso without a numeric badge");
+		this.assertEquals([inverso[\direction], inverso[\family]], [-1, \inverso],
+			"counter-clockwise blue states inverso without a numeric badge");
+		this.assertEquals(clipped[\magnitude], 1.0,
+			"readout follows the matrix's bounded weight range");
+		this.assert(verso[\label].isNil and: { inverso[\label].isNil },
+			"the hover moon remains pictorial: no percentage capsule returns");
+	}
+
+	test_feedbackCrescentRegionsSpeakInThreeSemanticColours {
+		var edges = CQSpec.mapBreakpoints(\coco1Fb).collect { |point| point[0] };
+		this.assertEquals(CQInkNight.feedbackCrescentFamilies,
+			#[input, warning, danger],
+			"feedback reads as echo green, bloom amber, mayhem red");
+		this.assertEquals(CQInkNight.feedbackCrescentFamilyAt(0.2, edges), \input,
+			"the fading echo country is green");
+		this.assertEquals(CQInkNight.feedbackCrescentFamilyAt(0.74, edges), \warning,
+			"unity and the broad riding band are amber");
+		this.assertEquals(CQInkNight.feedbackCrescentFamilyAt(0.95, edges), \danger,
+			"the compressed mayhem tail is red");
+	}
+
+	test_adjacentCrescentScalesKeepTheirOwnSemantics {
+		this.assertEquals(CQInkNight.spafCrescentFamilies,
+			#[inverso, verso],
+			"SP.AF reads as two signed directions, not a warning ramp");
+		this.assertEquals(CQInkNight.inputCrescentFamilies,
+			#[input, warning],
+			"input reads as normal gain followed by overdrive");
+		this.assertEquals(CQInkNight.levelCrescentFamilies, #[line, danger],
+			"bird level stays neutral through unity and warns only above it");
+		this.assertEquals(CQInkNight.levelCrescentFamilyAt(0.5, 0.5), \line,
+			"exact unity is still the normal listening level");
+		this.assertEquals(CQInkNight.levelCrescentFamilyAt(0.5001, 0.5), \danger,
+			"the travelled level past unity turns danger-red");
+	}
+
+	test_stormIrisCarriesFourPoeticButExactWeatherSeasons {
+		var norms = CQInkNight.irisWeatherNorms;
+		var radii = CQInkNight.irisWeatherRadii;
+		this.assertEquals(norms, #[0.25, 0.5, 0.75, 1.0],
+			"the four unlabelled growth rings still land on exact hand quarters");
+		this.assertEquals(radii, [28.0, 36.0, 44.0, 52.0],
+			"the weather seasons grow evenly inside the eye's own layer");
+		norms.do { |norm, i|
+			this.assertFloatEquals(CQInkNight.irisWeatherRadiusAt(norm), radii[i],
+				"season % owns its exact radius".format(i + 1), 1e-12);
+		};
+		this.assertEquals(CQInkNight.irisWeatherArcs.size, 4,
+			"every season is a distinct planted broken contour");
+		this.assert(CQInkNight.irisWeatherArcs.every { |arcs| arcs.size >= 3 },
+			"no weather ring collapses into a mechanical full circle");
 	}
 }

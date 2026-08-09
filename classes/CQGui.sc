@@ -1,45 +1,54 @@
-// CQGui — the panel window (SPEC §6.2, ARCH §5): one window, four columns
-// mirroring the hardware layout + master strip + banana-bay grid + keyboard
-// map. Pure view: it renders from CQState/CQMatrix dependant notifications
-// and server reports (OSCdefs \cq_gui_*, freed here), and every write goes
-// through the funnels (CQGuiWidgets -> CQState, grid -> CQMatrix, actions ->
-// Cocoquantus facade). All UI work happens inside { }.defer; no server polling
-// — the only language-side timer is the 2 Hz REC elapsed-time display.
+// CQGui — Yönpuoli's Night-only window (SPEC §6.2, ARCH §5): the Night
+// landscape, Drawer workbench, persistent Master strip and global keyboard
+// map. Pure view: CQState/CQMatrix notifications and namespaced OSC reports
+// drive it; every write returns through the funnels. All UI work happens
+// inside { }.defer; the only idle language timer is REC elapsed time.
 
 CQGui {
 	var state, matrix, config;
 	var <window, <widgets, updaters, <shellState, <shell, <drawer;
-	var stateCtl, gridPanel, meterFuncs, <audition;
-	var <bananaGrammar, <bananaController, <bananaBodies;
-	var <endpoints, <cableOverlay, <nightMap;
+	var <audioConfig;
+	var stateCtl, serverCtl, clockCtl, gridPanel, meterFuncs, <audition;
+	var <bananaGrammar, <nightMap;
 	var <inkControls;
-	var castleLeds, spesalView, <spesalStates, <castleValues;
-	// `/cq_phase`: the read head's address and, beside it, the read direction as
-	// an audio-rate mean (§9) — ±1 settled, near 0 shuttling. Both nil until the
-	// server reports.
+	var <spesalStates;
+	// `/cq_phase`: read-head address, audio-rate direction mean and skip rate,
+	// followed by the seven continuous Coco destinations' reduced live truth
+	// (§9): three crescents plus Organ/SlotQ/SlotX and Dust wakes. The
+	// reel fields remain nil until the server reports.
 	var <phaseNorms, <phaseDirs, <phaseSkipHz;
+	// AIO-4 caches raw hardware-input and post-safety master presence even while
+	// its Drawer page is hidden. Listeners are paced and notified only while the
+	// Audio tab is the visible workbench page.
+	var <ioInputPresence, <masterPresence, audioPresenceListeners;
+	var <audioPresenceNotifyCount = 0;
+	var audioPresencePending = false, audioPresenceGeneration = 0;
+	var lastAudioPresenceNotify = 0;
 	// GUI_SPEC §9: 16 source magnitudes, nil until the server has actually
 	// reported. No telemetry = no pulse, so serverless and headless surfaces
-	// keep exactly the reviewed static Day look.
+	// keep exactly the reviewed static Night look.
 	var <auraValues, auraPainted;
-	// GUI_SPEC §9 `/cq_charge`: the nine gate/trig sums, in three blocks (the
-	// two cocos and the castle row report their own). Same law as the aura —
-	// a slot stays nil until its synth has spoken.
-	var <chargeValues, chargePainted, <chargeNames, chargeIndex;
-	var deckLabels, deckNames, deckCtls, skipButtons;
+	// GUI_SPEC §9 `/cq_charge`: eleven paired pre-Schmitt charges and exact
+	// post-Schmitt gate/trig fires, in three owner blocks. Same law as the aura:
+	// each half of a slot stays nil until its synth has spoken.
+	var <chargeValues, chargePainted, <fireValues, firePainted;
+	var <chargeNames, chargeIndex;
+	var deckLabels, deckNames, deckCtls;
 	var noticeView, recBtn, recTimeView, recTask, hotTask;
 	// §16.7: which drop target a file drag is hovering, the view that draws it,
-	// and a function returning its global rect. One at a time across both
-	// skins — they are never visible together.
+	// and a function returning its global rect. One target at a time.
 	var <dropTarget, dropTargetView, dropTargetRect;
 	var dropTargetPolling = false, dropTargetArmed = 0;
 	var micLive = false, hotLive = false, cleaned = false;
+	var tabHeld = false;
 	var paramPending, paramFlushScheduled = false, lastParamFlush = 0;
 	// how much a shake sows (0..1), shared by the SHAKE button, the p key and the
 	// night's sowing moon; GUI-local because shake is an action argument, not a
 	// CQSpec param (SPEC §5.5 — the density clamp lives in CQMatrix.shake).
-	// The default is the **half moon**, which is exactly the v1.0 handful.
-	var <shakeAmount = 0.5;
+	// The default is a small crescent. Its visible phase remains linear, but
+	// sowDensity waxes cubically so most of the hand's travel belongs to the
+	// sparse patches PLAY-8 found most playable.
+	var <shakeAmount = 0.22;
 	// ...and its own watcher list, deliberately NOT the param registry: that one
 	// is keyed by CQSpec names and primes itself from CQState, which has no
 	// opinion about a gesture constant (GUI_SPEC §10).
@@ -60,14 +69,21 @@ CQGui {
 		^CQMatrix.destNames.select { |name|
 			var tail = name.asString;
 			tail.endsWith("_flip") or: { tail.endsWith("_skip") }
+				or: { tail.endsWith("_record") }
 				or: { tail.endsWith("_spesal") }
 		}
 	}
 
-	// which slots of the nine a given SendReply block carries (§9 order):
-	// the cocos report their own pair, the quantussy its five castles
+	*audioPresencePeriod { ^1 / 15 }
+
+	// which slots of the eleven a given SendReply block carries (§9 order):
+	// the cocos report flip/skip/record, the quantussy its five castles
 	*chargeBlock { |replyId|
-		^switch(replyId.asInteger, 1, { 0 }, 2, { 2 }, 3, { 4 }, { nil })
+		^switch(replyId.asInteger, 1, { 0 }, 2, { 3 }, 3, { 6 }, { nil })
+	}
+
+	*chargeBlockSize { |replyId|
+		^switch(replyId.asInteger, 1, { 3 }, 2, { 3 }, 3, { 5 }, { nil })
 	}
 
 	isClosed {
@@ -83,21 +99,29 @@ CQGui {
 
 	cancelAudition {
 		if(drawer.notNil) { drawer.panic } { bananaGrammar !? { bananaGrammar.panic } };
-		// the weather's hand comes off the wheel on the same paths as the
-		// audition (§4.1's spirit): an uncommitted voyage goes home
-		nightMap !? { nightMap.cancelWeather };
+		// Night's view-only cable hand and bodily gestures come off on the same
+		// lifecycle paths as the Drawer's precision audition (§4.1): a held punch
+		// is restored (a stuck one leaves a loop
+		// recording, §2) and an uncommitted weather voyage goes home. This is the
+		// path CQ.panic runs on the gui panel.
+		nightMap !? { nightMap.cancelGestures };
 	}
 	// GUI_SPEC §16.6, decided with the user 2026-07-22: the shared shake amount
 	// is **how much is sown**, not how hard. Strength already has a macro of its
 	// own (`patchDepth`), so mapping the moon's lit area onto the weight ceiling
 	// was both redundant and inaudible; density is reachable from nowhere else.
-	// Linear, so a half moon is exactly the v1.0 handful (10 % ≈ 35 bananas) and
-	// a full one is twice that — dense, but a fifth of `\mayhem`.
+	// Cubic fertility: quarter ≈ 0.31 %, half = 2.5 %, full = 20 %. The first
+	// two thirds give fine control over a handful of cables; the last gathers
+	// quickly without changing the full-moon ceiling.
 	*fullMoonDensity { ^0.2 }
-	*sowDensity { |norm| ^(norm ? 0).clip(0, 1) * this.fullMoonDensity }
+	*defaultShakeAmount { ^0.22 }
+	*sowDensity { |norm|
+		var t = (norm ? 0).clip(0, 1);
+		^(t * t * t) * this.fullMoonDensity
+	}
 
 	shake {
-		bananaGrammar.performUndoable({
+		bananaGrammar.performUndoableState(CQMatrix.shakeParamNames, {
 			// the weight stays the facade's documented default: the phase says
 			// how much, patchDepth says how alive
 			Cocoquantus.shake(origin: \gui,
@@ -106,9 +130,8 @@ CQGui {
 		^this
 	}
 
-	// One amount, three layers (GUI_SPEC §5/§6.1): the Day amount knob and the
-	// night's sowing moon are two views of this one number, so a write from
-	// either fans out to both. Every entry clamps, here as everywhere.
+	// One amount for every shake entrance: the Night moon shows it, while the
+	// p key and code may trigger it. Every entry clamps, here as everywhere.
 	shakeAmount_ { |value|
 		var next = (value ? 0).asFloat.clip(0, 1);
 		if(next == shakeAmount) { ^this };
@@ -125,68 +148,102 @@ CQGui {
 		^func
 	}
 
-	// ---- panel registration API (used by CQGuiPanels while building) ----
+	// ---- view registration API ----
 
 	setMeter { |key, func| meterFuncs[key] = func }
-	// both stages carry a filename label per deck (Day box, Night bird); each
-	// keeps its own skin's ink, so the hidden twin never wears the wrong color
+	addAudioPresenceListener { |owner, func|
+		audioPresenceListeners[owner] = func;
+		if(this.audioPageVisible) { this.prQueueAudioPresence };
+		^func
+	}
+	removeAudioPresenceListener { |owner|
+		audioPresenceListeners.removeAt(owner);
+		^this
+	}
+	audioPresenceListenerCount { ^audioPresenceListeners.size }
+	// One definition of "the hand can see this page", so a page cannot count as
+	// hidden for one purpose and visible for another.
+	drawerPageVisible { |tab|
+		^shellState.drawerOpen and: { shellState.drawerTab == tab }
+	}
+	audioPageVisible { ^this.drawerPageVisible(\audio) }
+	audioInputPresenceFrame { |values|
+		ioInputPresence = this.prPresenceValues(values, 3);
+		this.prQueueAudioPresence;
+		^this
+	}
+	masterPresenceFrame { |values|
+		masterPresence = this.prPresenceValues(values, 2);
+		this.prQueueAudioPresence;
+		^this
+	}
 	setDeckLabel { |which, view, ink|
 		deckLabels[which] = (deckLabels[which] ?? { List.new }).add(
-			(view: view, ink: ink ?? { CQInk.palette(\day)[\line] }));
+			(view: view, ink: ink ?? { CQInk.palette(\night)[\line] }));
 	}
 	deckLabel { |which| ^deckLabels[which] !? { |list| list.first[\view] } }
-	setSkipButton { |n, btn| skipButtons[n] = btn }
-	castleLeds_ { |views| castleLeds = views }
-	spesalView_ { |view| spesalView = view }
 	notice_ { |view| noticeView = view }
 	recButton_ { |btn| recBtn = btn }
 	recTime_ { |view| recTimeView = view }
 	registerInkControl { |control| inkControls.add(control); ^control }
-	registerEndpoint { |name, kind, endpointView, anchor|
-		endpoints[name] = (name: name, kind: kind, view: endpointView, anchor: anchor);
-		^endpointView
-	}
-	registerBananaBody { |name, bodyView, members|
-		bananaBodies[name] = (name: name, view: bodyView, members: members);
-		^bodyView
-	}
-	drawEndpoint { |name, kind, center, family, glyph, lamp = false, skin = \day|
-		var palette = CQInk.palette(skin), endpointState;
-		endpointState = if(kind == \jack) {
-			if(bananaGrammar.isSourceInHand(name)) { \inHand } {
+	endpointInkState { |name, kind|
+		if(kind == \jack) {
+			^if(bananaGrammar.isSourceInHand(name)) { \inHand } {
 				if(bananaGrammar.hoverEndpoint == name) { \hover } { \idle }
 			}
+		};
+		if(bananaGrammar.isCandidate(name)) { ^\candidate };
+		// A destination that cannot act does not promise an action on hover.
+		// Once a banana is in hand, every legal destination answers with one
+		// quiet static halo; the nearest/hovered candidate still grows stronger.
+		if(bananaGrammar.isInHand) {
+			^if(bananaGrammar.hoverEndpoint == name) { \hover } { \available }
+		};
+		^if(matrix.asArray.any { |patch| patch[1] == name }) {
+			\occupied
 		} {
-			if(bananaGrammar.isCandidate(name)) { \candidate } {
-				if(bananaGrammar.hoverEndpoint == name) { \hover } {
-					if(matrix.asArray.any { |patch| patch[1] == name }) {
-						\occupied
-					} {
-						\idle
-					}
-				}
-			}
+			\idle
+		}
+	}
+
+	drawEndpoint { |name, kind, center, family, glyph, lamp = false, skin = \night,
+		lampSide = 1|
+		var palette = CQInk.palette(skin);
+		var endpointState = this.endpointInkState(name, kind);
+		var inkScale = if(skin == \night) {
+			CQNightMeasures.endpointInkScale
+		} {
+			1
 		};
 		if(kind == \jack) {
-			CQInk.drawJack(center, family, skin, endpointState, this.auraFor(name) ? 0)
+			CQInk.drawJack(center, family, skin, endpointState,
+				this.auraFor(name) ? 0, inkScale)
 		} {
 			CQInk.drawSocket(center, family, skin, endpointState,
-				bananaGrammar.handWeight);
+				bananaGrammar.handWeight, inkScale);
 			glyph !? {
+				var glyphHalf = if(skin == \night) {
+					CQNightMeasures.endpointGlyphExtent * 0.5
+				} {
+					4
+				};
 				CQInk.drawGlyph(glyph,
-					Rect(center.x - 4, center.y - 4, 8, 8), palette[family])
+					Rect.aboutPoint(center, glyphHalf, glyphHalf), palette[family])
 			};
 			if(lamp) {
 				var charge = this.chargeFor(name) ? 0;
-				// §16.8: fill = charge / 0.5; at and above the Schmitt's on-threshold
-				// the lamp is lit (steady for a gate, a decaying bloom for a trig —
-				// the server's own peak-hold fall, no client-side timer)
-				CQInk.drawLamp(center + Point(16, 0), charge, charge >= 0.5, skin)
+				var fired = this.fireFor(name) ? 0;
+				// Amber fill is post-weight, pre-Schmitt charge. The separate pale
+				// flare is held from the exact gate/trig the DSP actually obeyed.
+				CQInk.drawLamp(center + Point(
+					(if(skin == \night) { CQNightMeasures.lampOffset } { 16 })
+						* lampSide.sign, 0),
+					charge, fired > 0.01, skin, inkScale, fired)
 			};
 		};
 		^this
 	}
-	currentSkin { ^shellState.viewMode }
+	currentSkin { ^\night }
 
 	// One source's live magnitude, or nil while the instrument is silent about
 	// it (headless, serverless preview, unbooted). Callers decide what "no
@@ -229,8 +286,8 @@ CQGui {
 			var previous = dropTargetView;
 			dropTarget = name;
 			dropTargetView = view;
-			previous !? { |v| v.refresh };
-			view !? { |v| v.refresh };
+			this.prRefreshDropTarget(previous);
+			this.prRefreshDropTarget(view);
 		};
 		dropTargetRect = rectFunc;
 		dropTargetArmed = Main.elapsedTime;
@@ -244,7 +301,16 @@ CQGui {
 			dropTarget = nil;
 			dropTargetView = nil;
 			dropTargetRect = nil;
-			if(cleaned.not) { previous !? { |v| v.refresh } };
+			if(cleaned.not) { this.prRefreshDropTarget(previous) };
+		};
+		^this
+	}
+
+	prRefreshDropTarget { |target|
+		if(target.isKindOf(SequenceableCollection)) {
+			target.do { |view| view !? { |v| v.refresh } };
+		} {
+			target !? { |view| view.refresh };
 		};
 		^this
 	}
@@ -281,38 +347,54 @@ CQGui {
 		^chargeValues[index]
 	}
 
-	// SPEC §7: persistent warning color while the mic is live (M2 GUI part)
+	// The exact post-Schmitt gate or trigger, peak-held on the server so a
+	// single-sample event reaches the 15 Hz eye. This is intentionally separate
+	// from `chargeFor`: threshold proximity and an event are different facts.
+	fireFor { |dest|
+		var index = chargeIndex[dest];
+		if(index.isNil) { ^nil };
+		^fireValues[index]
+	}
+
+	// SPEC §7: persistent warning color while the mic is live (M2 GUI part).
+	// Since N8 the one interactive mic control lives on the Workshop page, but
+	// this composition stays central: the notice belongs to the always-visible
+	// Master strip, so closing the Drawer can never silence the warning.
 	micNotice { |live|
 		micLive = live;
 		this.prUpdateNotice;
 	}
 
+	noticeText { ^noticeView !? { |view| view.string } }
+
 	// ---- private ----
 
 	prInit {
+		audioConfig = Cocoquantus.audioConfigForGui(config);
 		audition = CQAudition(matrix);
-		bananaGrammar = CQBananaGrammar(matrix, audition);
+		bananaGrammar = CQBananaGrammar(matrix, state: state);
 		shellState = CQGuiShellState(bananaGrammar);
 		updaters = IdentityDictionary.new;
 		meterFuncs = IdentityDictionary.new;
 		deckLabels = IdentityDictionary.new;
 		deckNames = IdentityDictionary.new;
-		skipButtons = IdentityDictionary.new;
 		spesalStates = Cocoquantus.spesalStates;
-		castleValues = [0, 0, 0, 0, 0];
 		phaseNorms = [nil, nil];   // nil until '/cq_phase' reports (§9: no telemetry ≠ 0)
 		phaseDirs = [nil, nil];
 		phaseSkipHz = [nil, nil];
+		ioInputPresence = [nil, nil, nil];
+		masterPresence = [nil, nil];
+		audioPresenceListeners = IdentityDictionary.new;
 		chargeNames = this.class.chargeNames;
 		chargeIndex = IdentityDictionary.new;
 		chargeNames.do { |name, i| chargeIndex[name] = i };
 		chargeValues = Array.newClear(chargeNames.size);   // same law as the aura
 		chargePainted = Array.newClear(chargeNames.size);
+		fireValues = Array.newClear(chargeNames.size);
+		firePainted = Array.newClear(chargeNames.size);
 		inkControls = List.new;
 		shakeWatchers = List.new;
 		compass = CQCompass(this.prCompassDir);
-		endpoints = IdentityDictionary.new;
-		bananaBodies = IdentityDictionary.new;
 		widgets = CQGuiWidgets(state, updaters, this);
 		{
 			if(cleaned.not and: { shellState.canBuild }) {
@@ -325,40 +407,33 @@ CQGui {
 	}
 
 	prBuild {
-		var dayContent, dayView, masterView;
-		var inspectorView, spellbookView, memoryView;
+		var masterView;
 		var minimum = shellState.minSize;
-		dayContent = View().background_(CQInk.palette(\day)[\ground]).layout_(
-			HLayout(
-				CQGuiPanels.sources(this),
-				CQGuiPanels.coco(this, 1),
-				CQGuiPanels.quantussy(this),
-				CQGuiPanels.coco(this, 2)
-			).margins_(8).spacing_(8));
-		cableOverlay = CQGuiCableOverlay(matrix, endpoints, bananaGrammar,
-			{ |src| this.auraFor(src) });
-		bananaController = CQGuiBananaController(
-			bananaGrammar, endpoints, bananaBodies, cableOverlay, inkControls);
-		bananaController.bindGround(dayContent);
-		dayView = View().background_(CQInk.palette(\day)[\ground]).layout_(
-			StackLayout(cableOverlay.view, dayContent).mode_(\stackAll));
 		nightMap = CQGuiNightMap(this, state, matrix, config);
-		// a hidden stage's gesture repaints are pure bridge waste; Qt repaints
-		// it in full the moment the hard cut shows it again
-		bananaController.refreshGate = { shellState.viewMode == \day };
-		nightMap.controller.refreshGate = { shellState.viewMode == \night };
 		masterView = CQGuiPanels.master(this);
-		drawer = CQGuiDrawer(this, state, matrix, audition, bananaGrammar);
+		drawer = CQGuiDrawer(this, state, matrix, audition, bananaGrammar,
+			audioConfig);
 		shellState.audition = drawer;
 		gridPanel = drawer.grid;
-		inspectorView = drawer.inspectorView;
-		spellbookView = drawer.spellbookView;
-		memoryView = drawer.memoryView;
-		shell = CQGuiShell(shellState, dayView, nightMap.stageView, masterView,
-			inspectorView, spellbookView, memoryView,
-			{ |skin| this.prApplySkin(skin) });
-		this.prApplySkin(shellState.viewMode);
-		window = Window("Cocoquantus · Archipelago",
+		shell = CQGuiShell(shellState, nightMap.stageView, masterView,
+			drawer.pages, { |skin| this.prApplySkin(skin) },
+			{ this.drawerShown });
+		// The workbench reads at two reviewed sizes (CQGuiScale): a windowed
+		// 1280x720 gives a Drawer page 1272x526, a maximized window far more,
+		// and a page that is nothing but text should spend that on legibility
+		// rather than on slate. Qt reports a new rect straight into the
+		// language, so the step follows the window with no timer and no polling.
+		//
+		// Two hooks, not one, because either alone has a hole: the drawer stage
+		// is a StackLayout page, and a hidden page is not laid out — maximizing
+		// with the Drawer closed would otherwise leave a stale size behind. The
+		// window's own view always resizes, and reopening the Drawer re-asks.
+		shell.drawerView.onResize = { this.prSyncDrawerScale };
+		// A GUI built while the clock is already stuck must not open clean: the
+		// guard's state is older than this window.
+		shell.audioAlert = Cocoquantus.audioClockAlert;
+		this.prApplySkin(\night);
+		window = Window("Yönpuoli",
 			Rect(50, 50, minimum[0], minimum[1]));
 		// SuperCollider's Qt backend suppresses child mouseOverAction callbacks
 		// unless the containing window explicitly enables mouse-over delivery.
@@ -368,15 +443,58 @@ CQGui {
 		window.view.keyDownAction = { |v, char, modifiers, unicode, keycode, key|
 			this.prKey(char, modifiers ? 0, unicode, keycode, key)
 		};
+		window.view.keyUpAction = { |v, char, modifiers, unicode, keycode, key|
+			var ascii = char !? { char.ascii };
+			if(ascii == 9 or: { unicode == 9 }) { tabHeld = false };
+		};
+		// the window's own view always resizes, even when the drawer stage is
+		// the hidden StackLayout page (see the two-hook note above)
+		window.view.onResize = { this.prSyncDrawerScale };
+		window.view.keyModifiersChangedAction = { |v, modifiers|
+			nightMap !? { |map|
+				map.modifierTideFocus_((modifiers ? 0).isShift)
+			}
+		};
 		window.onClose = { shellState.close; this.prCleanup };
 		window.view.children.do { |ch| this.prDefocus(ch) };
+		this.prUpdateNotice;
 		window.front;
+		if(Cocoquantus.consumeAudioReopen) {
+			shell.selectDrawer(\audio);
+			if(shellState.drawerOpen.not) { shell.toggleDrawer };
+		};
 	}
 
-	prDrawerPlaceholder { |label|
-		var palette = CQInk.palette(\day);
-		^StaticText().string_(label).align_(\center)
-			.font_(CQInk.font(\notice)).stringColor_(palette[\whisper])
+	// Re-ask the Drawer which size step its stage now deserves. Deferred by one
+	// GUI tick because a resize callback can arrive before Qt has finished
+	// laying the stage out, and the stale bounds would pick the wrong step.
+	// `applyScale` early-outs when nothing moved, so calling this often is free.
+	prSyncDrawerScale {
+		if(cleaned or: { drawer.isNil } or: { shell.isNil }) { ^this };
+		AppClock.sched(0, {
+			var stage, moved = false;
+			if(cleaned.not and: { drawer.notNil } and: { shell.notNil }) {
+				stage = shell.drawerView.bounds;
+				moved = drawer.applyScale(stage.width, stage.height);
+			};
+			// Qt can settle a layout over more than one pass — re-measuring the
+			// stage may itself change it — so a step that moved asks once more
+			// and stops as soon as nothing does. It converges by construction:
+			// the second pass returns false unless the size really changed again.
+			if(moved) { this.prSyncDrawerScale };
+			nil
+		});
+		^this
+	}
+
+	// the Drawer became visible (or changed page): its stage may have been
+	// resized while it was hidden and therefore never laid out
+	drawerShown {
+		this.prSyncDrawerScale;
+		this.prQueueAudioPresence;
+		// a page that skipped drawing while it was hidden catches up here
+		drawer !? { |page| page.pageShown };
+		^this
 	}
 
 	// Qt hands keyboard focus to any clicked widget, and space/tab then act on
@@ -396,22 +514,114 @@ CQGui {
 
 	// one SimpleController fans \param notifications out to the widget
 	// updaters; OSCdefs carry the server reports (meters, LEDs, spesal)
+	prPresenceValues { |values, size|
+		values = values ? [];
+		^Array.fill(size, { |index|
+			values[index] !? { |value| value.asFloat.abs }
+		})
+	}
+
+	// `/cq_meters` arrives at 20 Hz and `/cq_io_inputs` at 15 Hz. Coalesce both
+	// caches onto one page notification stream so their sum can never make the
+	// Audio workbench paint faster than its 15 Hz ambient ceiling.
+	prQueueAudioPresence {
+		var wait, generation;
+		if(cleaned or: { this.audioPageVisible.not }) { ^this };
+		if(audioPresencePending) { ^this };
+		wait = (this.class.audioPresencePeriod
+			- (Main.elapsedTime - lastAudioPresenceNotify)).max(0);
+		audioPresencePending = true;
+		audioPresenceGeneration = audioPresenceGeneration + 1;
+		generation = audioPresenceGeneration;
+		AppClock.sched(wait, {
+			if(generation == audioPresenceGeneration) {
+				audioPresencePending = false;
+				if(cleaned.not and: { this.audioPageVisible }) {
+					lastAudioPresenceNotify = Main.elapsedTime;
+					this.prNotifyAudioPresence;
+				};
+			};
+			nil
+		});
+		^this
+	}
+
+	prNotifyAudioPresence {
+		var inputs = ioInputPresence.copy, master = masterPresence.copy;
+		var gains = [state.get(\liveGain), state.get(\micGain)];
+		audioPresenceNotifyCount = audioPresenceNotifyCount + 1;
+		audioPresenceListeners.keysValuesDo { |owner, func|
+			func.value(inputs, master, gains)
+		};
+		^this
+	}
+
 	prListen {
 		stateCtl = SimpleController(state);
 		stateCtl.put(\param, { |obj, what, name, val|
-			{ this.prQueueParam(name, val) }.defer;
+			{
+				this.prQueueParam(name, val);
+				if(#[liveGain, micGain].includes(name)) {
+					this.prQueueAudioPresence
+				};
+			}.defer;
 		});
-		// momentary actions with no persistent state: skip fires a brief button flash
+		// SOAK-1 finding A: the dense write's single announcement. One deferred
+		// closure for the whole frame instead of one per parameter — the queue
+		// below is the same, so widgets still repaint at §10's paced rate.
+		stateCtl.put(\params, { |obj, what, event|
+			{
+				var presence = false;
+				event.keysValuesDo { |name, val|
+					this.prQueueParam(name, val);
+					if(#[liveGain, micGain].includes(name)) { presence = true };
+				};
+				if(presence) { this.prQueueAudioPresence };
+			}.defer;
+		});
+		// Momentary actions with no persistent state light their Night marks.
 		stateCtl.put(\action, { |obj, what, action, n|
 			if(action == \skip) { { this.prFlashSkip(n) }.defer };
-			// any shake, from any layer (`p`, the Day button, code, a pattern),
-			// flashes the night's sowing moon — one state, three layers, one
-			// light (§6.1), exactly as skip lights both of its marks
+			// Any shake (`p`, code, pattern) flashes the sowing moon.
 			if(action == \shake) { { this.prFlashShake }.defer };
 		});
+		// AUD-W: the runtime clock guard announces only when the *visible* truth
+		// changes, so this listener costs nothing while the clock is healthy.
+		clockCtl = SimpleController(Cocoquantus);
+		clockCtl.put(\audioClock, { |obj, what, alert|
+			{
+				// The retraction can arrive from a session teardown, so this
+				// deferred block can outlive the views it writes to.
+				if(cleaned.not) {
+					// The fault can strike with the Drawer closed, so the always
+					// visible toolbar carries it too (AUD-W, user decision
+					// 2026-07-31); the page states the measured rate.
+					shell !? { |current| current.audioAlert = alert };
+					drawer !? {
+						drawer.audioSetup !? { |page| page.serverHealthChanged }
+					};
+				};
+			}.defer;
+		});
+		Cocoquantus.server !? { |currentServer|
+			serverCtl = SimpleController(currentServer);
+			serverCtl.put(\serverRunning, {
+				{
+					drawer !? {
+						drawer.audioSetup !? { |page| page.serverHealthChanged }
+					}
+				}.defer;
+			});
+		};
 		OSCdef(\cq_gui_meters, { |msg|
-			{ meterFuncs[\master].value(msg[3], msg[5]) }.defer;
+			{
+				this.masterPresenceFrame([msg[3], msg[5]]);
+				meterFuncs[\master].value(msg[3], msg[5]);
+			}.defer;
 		}, '/cq_meters');
+		OSCdef(\cq_gui_io_inputs, { |msg|
+			{ this.audioInputPresenceFrame([msg[3], msg[5], msg[7]]) }.defer;
+		}, '/cq_io_inputs');
 		OSCdef(\cq_gui_gr, { |msg|
 			{ meterFuncs[\gr].value(max(msg[3] ? 0, msg[4] ? 0)) }.defer;
 		}, '/cq_gr');
@@ -420,17 +630,8 @@ CQGui {
 			{ meterFuncs[key].value(msg[3], msg[5]) }.defer;
 		}, '/cq_cocometers');
 		OSCdef(\cq_gui_castle, { |msg|
-			{
-				castleValues = msg.copyRange(3, 7).collect { |value|
-					(value ? 0).clip(-1, 1)
-				};
-				castleLeds !? {
-					castleLeds.do { |led, i|
-						led.value = ((castleValues[i] + 1) * 0.5).clip(0, 1);
-					};
-				};
-				spesalView !? { spesalView.refresh };
-			}.defer;
+			var rates = if(msg.size >= 13) { msg.copyRange(8, 12) } { nil };
+			{ nightMap !? { |map| map.castleFrame(msg.copyRange(3, 7), rates) } }.defer;
 		}, '/cq_castle');
 		// GUI_SPEC §9 `/cq_aura`: the server's own 15 Hz rate IS the §10 ambient
 		// ceiling — no extra timer, no polling. The repaint touches only the 16
@@ -444,22 +645,31 @@ CQGui {
 			}.defer;
 		}, '/cq_aura');
 		// GUI_SPEC §9 `/cq_charge`: three 15 Hz blocks (coco 1, coco 2, the five
-		// castles) fill one nine-slot cache. The send rate is the §10 ambient
-		// ceiling; the repaint gate below keeps a still panel free.
+		// castles) fill paired eleven-slot charge/fire caches. The send rate is the
+		// §10 ambient ceiling; the repaint gate below keeps a still panel free.
 		OSCdef(\cq_gui_charge, { |msg|
 			{ this.prChargeFrame(msg[2], msg.copyRange(3, msg.size - 1)) }.defer;
 		}, '/cq_charge');
 		OSCdef(\cq_gui_spesal, { |msg|
 			{
 				spesalStates = msg.copyRange(3, 7).collect { |v| v.asInteger };
-				spesalView !? { spesalView.refresh };
 				nightMap !? { nightMap.spesalChanged };
 			}.defer;
 		}, '/cq_spesal');
-		// GUI_SPEC §9 loop phase: the read head's own message; its 5 Hz send
-		// rate IS the night shells' repaint ceiling (§10) — no timer added
+		// GUI_SPEC §9 loop phase: the read head's own 15 Hz message. Night gives
+		// the comet its own cheap layer. The appended continuous-destination
+		// triples feed three tiny crescents plus Organ/SlotQ/SlotX and Dust wakes.
 		OSCdef(\cq_gui_phase, { |msg|
-			{ this.prPhaseFrame(msg[2], msg[3], msg[4], msg[5]) }.defer;
+			var values, spreads, activities;
+			if(msg.size >= 27) {
+				values = msg.copyRange(6, 12);
+				spreads = msg.copyRange(13, 19);
+				activities = msg.copyRange(20, 26);
+			};
+			{
+				this.prPhaseFrame(msg[2], msg[3], msg[4], msg[5],
+					values, spreads, activities)
+			}.defer;
 		}, '/cq_phase');
 		// watchdog notice (SPEC §5.6): same '/cq_hot' the facade acts on
 		OSCdef(\cq_gui_hot, { { this.prHotNotice }.defer }, '/cq_hot');
@@ -470,7 +680,10 @@ CQGui {
 				var ctl = SimpleController(deck);
 				deck.path !? { this.prPaintDeckLabel(which, deck.path) };
 				ctl.put(\file, { |obj, what, path|
-					{ this.prPaintDeckLabel(which, path) }.defer;
+					{
+						this.prPaintDeckLabel(which, path);
+						nightMap !? { |map| map.deckLoaded(which) };
+					}.defer;
 				});
 				deckCtls = deckCtls.add(ctl);
 			};
@@ -509,70 +722,60 @@ CQGui {
 		};
 	}
 
-	// A still instrument must not cost redraws: repaint only when some source
-	// actually moved (GUI_SPEC §16.9 — ambient motion is information, and there
-	// is none in silence). Cables repaint only when there are cables to pulse.
+	// A still instrument must not cost redraws: Night repaints only when some
+	// source actually moved (GUI_SPEC §16.9).
 	prPaintAura {
 		if(cleaned) { ^this };
 		if(auraPainted.notNil and: {
 			auraValues.every { |value, i| (value - auraPainted[i]).abs < 0.01 }
 		}) { ^this };
 		auraPainted = auraValues;
-		// only the visible stage spends the frame; the hidden twin repaints in
-		// full anyway the moment the hard cut shows it
-		if(shellState.viewMode == \night) {
-			nightMap !? { nightMap.auraFrame(auraValues) };
-			^this
-		};
-		CQMatrix.sourceNames.do { |src|
-			endpoints[src] !? { |endpoint| endpoint[\view].refresh };
-		};
-		cableOverlay !? { |overlay|
-			// a patch too dense to pulse inside the frame budget draws static ink,
-			// so an ambient frame must not repaint it either (auraCableLimit)
-			if(overlay.cableCount > 0 and: { overlay.auraPulses }) {
-				overlay.auraTick   // the alphas moved: the offscreen cache re-renders
-			};
-		};
+		nightMap !? { nightMap.auraFrame(auraValues) };
+		^this
 	}
 
-	// One '/cq_charge' block. Each lamp is repainted only when its own charge
-	// actually moved — the stillness law of §16.6 applied to the panel: an
-	// unpatched gate sums to exactly zero forever and costs nothing at all, and
-	// a steadily held gate is steady ink. Only the visible stage spends the
-	// frame; the hidden twin repaints in full at the hard cut.
+	// One '/cq_charge' block. Each Night lamp repaints only when its own charge
+	// or exact fire reading moved; an unchanged held gate costs nothing.
 	prChargeFrame { |replyId, values|
-		var base, night;
+		var base, count, charges, fires;
 		if(cleaned) { ^this };
 		base = this.class.chargeBlock(replyId ? 0);
-		if(base.isNil) { ^this };
-		night = shellState.viewMode == \night;
-		values.do { |value, i|
-			var slot = base + i, previous, charge;
+		count = this.class.chargeBlockSize(replyId ? 0);
+		if(base.isNil or: { count.isNil }) { ^this };
+		charges = values.keep(count);
+		fires = if(values.size >= (count * 2)) {
+			values.copyRange(count, (count * 2) - 1)
+		} {
+			Array.fill(count, 0)
+		};
+		count.do { |i|
+			var slot = base + i, previousCharge, previousFire, charge, fire;
 			if(slot < chargeValues.size) {
-				charge = (value ? 0).asFloat.clip(0, 1);   // every entry clamps
-				previous = chargePainted[slot];
+				charge = (charges.at(i) ? 0).asFloat.clip(0, 1);
+				fire = (fires.at(i) ? 0).asFloat.clip(0, 1);
+				previousCharge = chargePainted[slot];
+				previousFire = firePainted[slot];
 				chargeValues[slot] = charge;
-				if(previous.isNil or: { (charge - previous).abs >= 0.02 }) {
+				fireValues[slot] = fire;
+				if(previousCharge.isNil or: { previousFire.isNil }
+					or: { (charge - previousCharge).abs >= 0.02 }
+					or: { (fire - previousFire).abs >= 0.02 }) {
 					chargePainted[slot] = charge;
-					this.prPaintLamp(chargeNames[slot], night);
+					firePainted[slot] = fire;
+					this.prPaintLamp(chargeNames[slot]);
 				};
 			};
 		};
 	}
 
-	prPaintLamp { |name, night|
-		if(night) {
-			nightMap !? { |map| map.chargeChanged(name) };
-			^this
-		};
-		endpoints[name] !? { |endpoint| endpoint[\view].refresh };
+	prPaintLamp { |name|
+		nightMap !? { |map| map.chargeChanged(name) };
+		^this
 	}
 
-	// one '/cq_phase' frame: cache the clamped truth, and only the visible
-	// night stage spends a repaint (the hidden twin repaints in full at the
-	// hard cut). The night map's own delta gate thins a near-still reel.
-	prPhaseFrame { |n, value, dir, skipHz|
+	// One '/cq_phase' frame: cache the clamped truth. The Night map's own
+	// delta gate thins a near-still reel.
+	prPhaseFrame { |n, value, dir, skipHz, modValues, modSpreads, modActivities|
 		var i;
 		if(cleaned) { ^this };
 		i = (n ? 1).asInteger.clip(1, 2) - 1;
@@ -580,8 +783,10 @@ CQGui {
 		// an older frame without the direction value leaves the last one alone
 		dir !? { phaseDirs[i] = dir.asFloat.clip(-1, 1) };
 		skipHz !? { phaseSkipHz[i] = (skipHz.asFloat.max(0)) };
-		if(shellState.viewMode == \night) {
-			nightMap !? { nightMap.paintPhase(i) };
+		nightMap !? {
+			nightMap.paintPhase(i);
+			nightMap.crescentModulationFrame(i, modValues, modSpreads,
+				modActivities);
 		};
 	}
 
@@ -655,23 +860,46 @@ CQGui {
 
 	// SPEC §6.2 keyboard map
 	prKey { |char, modifiers = 0, unicode, keycode, key|
-		var ascii, undoKey;
+		var ascii, undoKey, handDownKey, handUpKey;
 		ascii = char !? { char.ascii };
 		undoKey = #[26, 90, 122].includes(ascii)
 			or: { #[26, 90, 122].includes(unicode) }
 			or: { key == 90 };
+		handDownKey = #[90, 122].includes(ascii)
+			or: { #[90, 122].includes(unicode) } or: { key == 90 };
+		handUpKey = #[88, 120].includes(ascii)
+			or: { #[88, 120].includes(unicode) } or: { key == 88 };
 		if(modifiers.isCtrl and: { undoKey }) {
 			bananaGrammar.undo;
 			^this
 		};
-		if(char.notNil and: { char.ascii == 27 }) {
-			drawer.escape;
-			nightMap !? { nightMap.cancelWeather };
+		// Laptop path for the held-cable attenuator. A touchpad commonly cannot
+		// scroll while its click is held, so the leftmost Z/X pair mirrors wheel
+		// down/up. Shift is the 0.01 fine step; plain keys use 0.05. Ctrl+Z keeps
+		// its existing undo priority above this branch.
+		if(bananaGrammar.isInHand and: { handDownKey or: { handUpKey } }) {
+			bananaGrammar.wheelHand(if(handDownKey) { -1 } { 1 }, modifiers.isShift);
 			^this
 		};
-		if(char.notNil and: { char.ascii == 9 }) {
-			nightMap !? { nightMap.cancelWeather };
-			shell.toggleView(this.prTextHasFocus);
+		if(char.notNil and: { char.ascii == 27 }) {
+			drawer.escape;
+			nightMap !? { nightMap.cancelGestures };
+			^this
+		};
+		if(ascii == 9 or: { unicode == 9 }) {
+			// Native key repeat must not open/close a toggle several times
+			// while one physical Tab press is held.
+			if(tabHeld) { ^this };
+			tabHeld = true;
+			// Night owns Tab: it opens/closes the same persistent water focus
+			// as the tide gill. Text entry and the Drawer keep it to themselves.
+			if(this.prTextHasFocus.not
+				and: { shellState.drawerOpen.not }) {
+				nightMap !? {
+					nightMap.cancelGestures;
+					nightMap.toggleTideFocus
+				};
+			};
 			^this
 		};
 		switch(char,
@@ -733,6 +961,9 @@ CQGui {
 				"OUTPUT HOT (> 5 s)"
 			});
 		};
+		if(Cocoquantus.audioFallbackActive) {
+			parts = parts.add("TEMPORARY AUDIO · drawer → audio")
+		};
 		noticeView !? { noticeView.string = parts.join(" · ") };
 	}
 
@@ -743,14 +974,9 @@ CQGui {
 		hotTask = Task { 12.wait; hotLive = false; this.prUpdateNotice }.play(AppClock);
 	}
 
-	// brief highlight on the SKIP button so code/pattern-driven skips are visible
-	// (skip is momentary — no lasting state like flip's toggle)
+	// A skip from any layer lights the shell's stationary mouth mark.
 	prFlashSkip { |n|
-		var b = skipButtons[n];
 		if(cleaned) { ^this };
-		b !? { b.flash };
-		// the night's mouth mark is momentary too, and hangs off this same
-		// notice — so a skip from the keys, code or a pattern shows in both
 		nightMap !? { |map| map.flashSkip(n) };
 	}
 
@@ -761,12 +987,12 @@ CQGui {
 		nightMap !? { |map| map.flashShake };
 	}
 
-	// each stage's cable overlay keeps its own fixed skin (Day ink, Night
-	// phosphor); only the shared chrome re-inks across the hard cut
+	// Night is the only runtime skin. One hook still keeps the Drawer and
+	// Master on the same palette choke point.
 	prApplySkin { |skin|
-		var palette = CQInk.palette(skin);
-		inkControls.do { |control| control.skin = skin };
-		drawer !? { drawer.applySkin(skin) };
+		var palette = CQInk.palette(\night);
+		inkControls.do { |control| control.skin = \night };
+		drawer !? { drawer.applySkin(\night) };
 		noticeView !? { noticeView.stringColor = palette[\whisper] };
 		recTimeView !? { recTimeView.stringColor = palette[\danger] };
 		shell !? {
@@ -778,8 +1004,13 @@ CQGui {
 
 	prReinkText { |view, palette|
 		if(view.isKindOf(StaticText)) { view.stringColor = palette[\whisper] };
-		if(view.isKindOf(TextField) or: { view.isKindOf(NumberBox) }
-			or: { view.isKindOf(PopUpMenu) }) {
+		if(view.isKindOf(TextField) or: { view.isKindOf(NumberBox) }) {
+			// one door for entry ink, so hover and selection colours survive a
+			// re-ink instead of reverting to the OS default (2026-07-30).
+			// Night is the only runtime skin, as prApplySkin declares.
+			CQInk.applyTextEntryInk(view, \night)
+		};
+		if(view.isKindOf(PopUpMenu)) {
 			view.stringColor = palette[\line];
 			view.background = palette[\ground];
 		};
@@ -795,24 +1026,27 @@ CQGui {
 		shellState.close;
 		stateCtl !? { stateCtl.remove };
 		stateCtl = nil;
+		serverCtl !? { serverCtl.remove };
+		serverCtl = nil;
+		clockCtl !? { clockCtl.remove };
+		clockCtl = nil;
 		deckCtls.do { |c| c.remove };
 		deckCtls = nil;
 		drawer !? { drawer.free };
 		drawer = nil;
 		gridPanel = nil;
-		bananaController !? { bananaController.free };
-		bananaController = nil;
-		cableOverlay !? { cableOverlay.free };
-		cableOverlay = nil;
 		nightMap !? { nightMap.free };
 		nightMap = nil;
 		recTask !? { recTask.stop };
 		recTask = nil;
 		hotTask !? { hotTask.stop };
 		hotTask = nil;
+		audioPresenceGeneration = audioPresenceGeneration + 1;
+		audioPresencePending = false;
+		audioPresenceListeners.clear;
 		#[cq_gui_meters, cq_gui_gr, cq_gui_coco, cq_gui_castle,
 			cq_gui_spesal, cq_gui_hot, cq_gui_aura, cq_gui_phase,
-			cq_gui_charge].do { |k|
+			cq_gui_charge, cq_gui_io_inputs].do { |k|
 			OSCdef.all[k] !? { |d| d.free }
 		};
 	}

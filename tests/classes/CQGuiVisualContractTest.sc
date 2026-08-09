@@ -1,19 +1,29 @@
-// GUI_SPEC §2/§5/§8/§16: pure layout inventory for the first Day skin.
-// The test prevents the old administrative controls from leaking back into
-// the persistent Master strip while the Qt composition evolves.
+// GUI_SPEC §2/§8/§16: pure visual and ownership contracts shared by the
+// Night-only instrument, Drawer and persistent Master.
 
 CQGuiVisualContractTest : UnitTest {
-	test_dayKeepsTheFourOrganOrder {
-		this.assertEquals(CQGuiPanels.dayRegions,
-			#[sources, coco1, quantussy, coco2],
-			"Day retains the four learned organ columns");
+	test_sowingMoonStartsAsACrescentAndWaxesSlowly {
+		this.assertFloatEquals(CQGui.defaultShakeAmount, 0.22,
+			"the instrument opens on an iconic small crescent", 1e-9);
+		this.assertFloatEquals(CQGui.sowDensity(0), 0,
+			"the new moon still clears the bay", 1e-9);
+		this.assertFloatEquals(CQGui.sowDensity(0.25), 0.003125,
+			"a quarter moon sows a genuinely small patch", 1e-9);
+		this.assertFloatEquals(CQGui.sowDensity(0.5), 0.025,
+			"the first half waxes slowly", 1e-9);
+		this.assertFloatEquals(CQGui.sowDensity(1), CQGui.fullMoonDensity,
+			"the full moon keeps the whole former ceiling", 1e-9);
+		this.assert(CQGui.sowDensity(0.75) > CQGui.sowDensity(0.5),
+			"the second half gathers fertility");
 	}
 
 	test_masterIsPersistentPerformanceOnly {
 		var items = CQGuiPanels.masterItems;
-		#[masterVol, masterDry, spaceMix, patchDepth, gr, notice, rec, panic].do { |item|
+		#[masterVol, masterDry, patchDepth, gr, notice, rec, panic].do { |item|
 			this.assert(items.includes(item), "Master keeps %".format(item));
 		};
+		this.assert(items.includes(\spaceMix).not,
+			"the retired Space control cannot return through the persistent strip");
 		#[snapshotName, snapshotSave, snapshotRecall, morph].do { |item|
 			this.assert(items.includes(item).not,
 				"Master never contains Drawer-memory item %".format(item));
@@ -21,29 +31,137 @@ CQGuiVisualContractTest : UnitTest {
 	}
 
 	test_snapshotToolsLiveInMemoryDrawer {
-		var items = CQGuiPanels.memoryItems;
+		var items = CQGuiMemory.ownedItems;
 		#[snapshotName, snapshotSave, snapshotRecall, morph].do { |item|
 			this.assert(items.includes(item), "Memory Drawer owns %".format(item));
 		};
 	}
 
-	test_drawerPublishesTheThreeNormativePages {
-		this.assertEquals(CQGuiDrawer.tabs, #[inspector, spellbook, memory],
-			"Drawer exposes Inspector, Spellbook and Memory in normative order");
+	// AIO-1 adds Audio without replacing a musical page; it remains last because
+	// it is the technical machine/engine boundary.
+	test_drawerPublishesTheFiveNormativePages {
+		this.assertEquals(CQGuiDrawer.tabs,
+			#[inspector, workshop, spellbook, memory, audio],
+			"Drawer exposes Inspector, Workshop, Spellbook, Memory and Audio in order");
 	}
 
-	test_inspectorPrototypeUsesPlayablePatchLoomCells {
-		this.assertEquals(CQGuiMatrix.cellSize, [48, 24],
-			"workbench prototype replaces the tiny ledger targets with playable knots");
-		this.assertEquals(CQGuiMatrix.loomSize, Size(1128, 384),
-			"the exact 16x22 loom fits the 1280x720 central workspace without scrolling");
+	// A page the shell state would refuse is a page the toolbar cannot reach:
+	// the whitelist and the published list are one list.
+	test_everyPublishedPageIsSelectable {
+		var shell = CQGuiShellState(CQAudition(CQMatrix(nil)));
+		CQGuiDrawer.tabs.do { |tab|
+			shell.selectDrawer(tab);
+			this.assertEquals(shell.drawerTab, tab,
+				"the shell accepts the published page %".format(tab));
+		};
+		shell.selectDrawer(\bogus);
+		this.assertEquals(shell.drawerTab, CQGuiDrawer.tabs.last,
+			"and still refuses a page that does not exist");
 	}
 
-	test_memoryPrototypeUsesTheLoomContentRail {
-		this.assertEquals(CQGuiMemory.contentWidth, CQGuiMatrix.loomSize.width,
-			"Memory seed bank aligns with the Inspector patch-loom rail");
-		this.assertEquals(CQGuiMemory.fingerprintSize, Size(840, 300),
-			"Memory gives the selected seed a substantial patch fingerprint");
+	test_audioPresenceUsesCoarseStableDisplaySteps {
+		this.assert(CQGuiAudioSetup.presenceNorm(0).isNumber
+			and: { CQGuiAudioSetup.presenceNorm(0) == 0 },
+			"silence sits at the start of the presence rail");
+		this.assertEquals(
+			CQGuiAudioSetup.presenceNorm(0.1),
+			CQGuiAudioSetup.presenceNorm(0.1001),
+			"sub-pixel amplitude noise does not request a new Qt frame");
+		this.assert(CQGuiAudioSetup.presenceThreshold > 0
+			and: { CQGuiAudioSetup.presenceThreshold < 0.01 },
+			"the signal/quiet threshold remains a low raw-port presence test");
+		this.assertEquals(CQGui.audioPresencePeriod, 1 / 15,
+			"combined input/master presence is paced to 15 Hz");
+	}
+
+	test_runtimeAudioCatalogUsesOnlyConfiguredEndpoints {
+		var input = "Windows WASAPI : Lake Mic";
+		var output = "Windows WASAPI : Lake Phones";
+		var split = CQGuiAudioSetup.configuredDeviceCatalog([input, output]);
+		var single = CQGuiAudioSetup.configuredDeviceCatalog(output);
+		var defaults = CQGuiAudioSetup.configuredDeviceCatalog(nil);
+		this.assertEquals(split[\inputs], [input],
+			"runtime split catalog keeps only the exact configured input");
+		this.assertEquals(split[\outputs], [output],
+			"runtime split catalog keeps only the exact configured output");
+		this.assertEquals(single[\inputs], [output],
+			"a configured single device remains bidirectional");
+		this.assertEquals(single[\outputs], [output],
+			"single-device output matches the same exact endpoint");
+		this.assert(defaults[\all].isEmpty,
+			"system default needs no host-device enumeration");
+	}
+
+	// The loom keeps large playable knots at every Drawer size step; its cell
+	// width is what sets the rail all five pages align to (CQGuiScale).
+	test_inspectorUsesPlayablePatchLoomCellsAtEveryStep {
+		CQGuiScale.steps.do { |step|
+			var page = if(step == \roomy) { 1434 } { 1272 };
+			var cell = CQGuiMatrix.cellSize(step, page);
+			var loom = CQGuiMatrix.loomSize(step, page);
+			this.assert(cell[0] >= 35 and: { cell[1] >= 24 },
+				"% : the 32-column loom keeps broad, at-least-35x24 precision knots"
+					.format(step));
+			this.assertEquals(loom.height,
+				CQMatrix.sourceNames.size * cell[1],
+				"% : the loom is exactly its 16 source rows".format(step));
+			this.assertEquals(loom.width, CQGuiScale.railWidth(step, page),
+				"% : the loom's width IS the shared content rail".format(step));
+		};
+		this.assert(CQGuiMatrix.cellSize(\roomy, 1434)[0]
+			> CQGuiMatrix.cellSize(\compact, 1272)[0],
+			"a maximized window gives the loom bigger cells, not just more slate");
+	}
+
+	test_inspectorDestinationHeadersCoverTheCanonical32Columns {
+		var groups = CQGuiMatrix.destGroups, cursor = 0;
+		this.assertEquals(groups.collect { |group| group[\title] },
+			["coco 1", "coco 2", "castle · fm", "castle · spesal", "decks"],
+			"the Inspector keeps its five semantic destination islands");
+		groups.do { |group|
+			this.assertEquals(group[\start], cursor,
+				"% starts exactly after the preceding island".format(group[\title]));
+			cursor = cursor + group[\count];
+		};
+		this.assertEquals(groups.collect { |group| group[\count] }, [10, 10, 5, 5, 2],
+			"both complete Coco islands include SlotX, Dust and Record");
+		this.assertEquals(cursor, CQMatrix.destNames.size,
+			"header spans and seam boundaries cover every canonical matrix column once");
+		this.assertEquals(CQMatrix.destNames[groups[0][\start] + groups[0][\count] - 1],
+			\coco1_record, "the coco 1 rule reaches through rec");
+		this.assertEquals(CQMatrix.destNames[groups[1][\start] + groups[1][\count] - 1],
+			\coco2_record, "the coco 2 rule reaches through rec");
+	}
+
+	test_inspectorShortensTheNewCocoDestinationLabels {
+		#[\coco1_slotX, \coco2_slotX].do { |dest|
+			this.assertEquals(CQGuiMatrix.destLabel(dest), "slotX",
+				"% uses the group-owned short label".format(dest));
+		};
+		#[\coco1_dust, \coco2_dust].do { |dest|
+			this.assertEquals(CQGuiMatrix.destLabel(dest), "dust",
+				"% uses the group-owned short label".format(dest));
+		};
+	}
+
+	test_memoryFillsTheSharedRailAtEveryStep {
+		CQGuiScale.steps.do { |step|
+			var page = if(step == \roomy) { 1434 } { 1272 };
+			var rail = CQGuiScale.railWidth(step, page);
+			var print = CQGuiMemory.fingerprintSize(step, rail);
+			var column = CQGuiMemory.snapshotColumnWidth(step);
+			this.assertEquals(print.width + column + 8, rail,
+				"% : the saved-snapshot column and the fingerprint fill the rail"
+					.format(step));
+			this.assert(print.width >= 840,
+				"% : the fingerprint keeps at least its reviewed width".format(step));
+		};
+		this.assert(
+			CQGuiMemory.fingerprintSize(\roomy, CQGuiScale.railWidth(\roomy, 1434))
+				.height
+			> CQGuiMemory.fingerprintSize(\compact,
+				CQGuiScale.railWidth(\compact, 1272)).height,
+			"a wider window buys patch detail rather than empty slate");
 	}
 
 	// GUI_SPEC §9: the aura is the spec's only server-side addition, and §16.8
@@ -55,18 +173,22 @@ CQGuiVisualContractTest : UnitTest {
 			"the graph ships a dedicated /cq_aura telemetry def");
 	}
 
-	// GUI_SPEC §9 `/cq_charge`: nine gate/trig sums in matrix destination order.
+	// GUI_SPEC §9 `/cq_charge`: eleven gate/trig charge/fire pairs in matrix order.
 	// The channel list is derived from CQMatrix, never re-typed, so the lamps
 	// cannot drift from the routing truth they report on.
-	test_chargeChannelsAreTheNineGateTrigDestinations {
+	test_chargeChannelsAreTheElevenGateTrigDestinations {
 		this.assertEquals(CQGui.chargeNames,
-			[\coco1_flip, \coco1_skip, \coco2_flip, \coco2_skip,
+			[\coco1_flip, \coco1_skip, \coco1_record,
+				\coco2_flip, \coco2_skip, \coco2_record,
 				\castle1_spesal, \castle2_spesal, \castle3_spesal,
 				\castle4_spesal, \castle5_spesal],
 			"charge channels = the matrix destination order filtered to gate/trigs");
-		this.assertEquals(CQGui.chargeBlock(1), 0, "coco 1 reports slots 0-1");
-		this.assertEquals(CQGui.chargeBlock(2), 2, "coco 2 reports slots 2-3");
-		this.assertEquals(CQGui.chargeBlock(3), 4, "the castle row reports slots 4-8");
+		this.assertEquals(CQGui.chargeBlock(1), 0, "coco 1 reports slots 0-2");
+		this.assertEquals(CQGui.chargeBlock(2), 3, "coco 2 reports slots 3-5");
+		this.assertEquals(CQGui.chargeBlock(3), 6, "the castle row reports slots 6-10");
+		this.assertEquals([CQGui.chargeBlockSize(1), CQGui.chargeBlockSize(2),
+			CQGui.chargeBlockSize(3)], [3, 3, 5],
+			"each reply splits into its canonical charge and fire channel count");
 		this.assert(CQGui.chargeBlock(9).isNil,
 			"an unknown replyID claims no lamp slot");
 	}
@@ -81,27 +203,35 @@ CQGuiVisualContractTest : UnitTest {
 		var castleCharge = quantussy.detect { |reply| reply[\name] == '/cq_charge' };
 		this.assert(cocoCharge.notNil and: { castleCharge.notNil },
 			"both the coco def and the quantussy def report their charges");
-		this.assertEquals(cocoCharge[\values], 2,
-			"each coco instance reports its own flip and skip sum");
-		this.assertEquals(castleCharge[\values], 5,
-			"the quantussy reports all five spesal sums at once");
-		this.assertEquals((2 * cocoCharge[\values]) + castleCharge[\values],
+		this.assertEquals(cocoCharge[\values], 6,
+			"each coco reports three charge sums plus their exact gate/trig facts");
+		this.assertEquals(castleCharge[\values], 10,
+			"the quantussy reports five spesal charges plus five exact triggers");
+		this.assertEquals((2 * (cocoCharge[\values] / 2))
+			+ (castleCharge[\values] / 2),
 			CQGui.chargeNames.size,
-			"the two coco instances and the castle row cover all nine lamps");
+			"the two cocos and castle row cover all eleven charge/fire lamp pairs");
 		this.assertEquals(castleCharge[\replyID], 3,
 			"the castle block claims replyID 3 — the cocos own 1 and 2");
 		// the sums the lamps report on must not have cost the DSP a second copy
 		this.assert(coco.collect { |reply| reply[\name] }.includes('/cq_phase'),
 			"extracting the sums left the read-head telemetry intact");
-		// address · direction mean · skip rate — the rate rides the message
-		// that already exists rather than opening a fourth stream (§15 leaves
-		// message merging free, and §10 counts messages, not floats)
+		// address · direction mean · skip rate, followed by slow-value / fast-
+		// excursion / connected-weight blocks ordered spaf, input, feedback,
+		// organ, SlotQ, SlotX and Dust. The
+		// continuous truth rides the existing message rather than opening another
+		// stream (§15 leaves message merging free, and §10 counts messages, not floats).
 		this.assertEquals(
-			coco.detect { |reply| reply[\name] == '/cq_phase' }[\values], 3,
-			"the phase message carries address, direction and skip rate");
+			coco.detect { |reply| reply[\name] == '/cq_phase' }[\values], 24,
+			"the phase message carries three reel values and seven modulation triples");
+		this.assertEquals(CQSynthDefs.phaseReplyHz, 15,
+			"the read head shares the 15 Hz ambient ceiling with castle motion");
 		this.assert(quantussy.collect { |reply| reply[\name] }
 			.includes('/cq_castle'),
 			"extracting the sums left the castle activity telemetry intact");
+		this.assertEquals(
+			quantussy.detect { |reply| reply[\name] == '/cq_castle' }[\values], 10,
+			"castle telemetry pairs five raw triangles with five realized rates");
 	}
 
 	// SendReply's UGen inputs are [trig, replyID, nameLength, name..., values...].
@@ -140,22 +270,7 @@ CQGuiVisualContractTest : UnitTest {
 			"before layout the box has no width and nothing is cut away");
 	}
 
-	// §16.7's dashed border is one law with two homes. Day and Night must name
-	// their targets apart, because one CQGui holds the mark for both skins and
-	// a collision would light the wrong box on the stage you cannot see.
-	test_bothSkinsNameTheirDropTargetsApart {
-		#[deckA, deckB].do { |which|
-			var day = CQGuiPanels.dropTargetName(which);
-			var night = CQGuiNightMap.dropTargetName(which);
-			this.assert(day.isKindOf(Symbol) and: { night.isKindOf(Symbol) },
-				"% names its drop targets with Symbols".format(which));
-			this.assert(day != night,
-				"Day's % box and the night's % bird are distinct targets"
-					.format(which, which));
-		};
-		this.assert(CQGuiPanels.dropTargetName(\deckA)
-			!= CQGuiPanels.dropTargetName(\deckB),
-			"the two Day deck boxes are distinct targets");
+	test_nightBirdsNameTheirDropTargetsApart {
 		this.assert(CQGuiNightMap.dropTargetName(\deckA)
 			!= CQGuiNightMap.dropTargetName(\deckB),
 			"the two birds are distinct targets");
@@ -196,26 +311,71 @@ CQGuiVisualContractTest : UnitTest {
 			"an out-of-range magnitude clamps instead of overdriving alpha");
 	}
 
-	test_dayEndpointInventoryMatchesTheMatrixExactly {
-		if(CQGuiPanels.respondsTo(\sourceEndpointNames).not
-			or: { CQGuiPanels.respondsTo(\destEndpointNames).not }) {
-			this.assert(false, "Day publishes its semantic cable endpoint inventory");
-			^this
+	// ---- text entry, user review 2026-07-30 (the morph bridge) ----
+
+	test_morphReadoutFitsEveryLabelItCanPrint {
+		#[10, 11, 12].do { |mono|
+			var width = CQGuiMemory.morphReadoutWidth(mono);
+			CQGuiMemory.morphMeterLabels.do { |label|
+				this.assert(width >= (CQGuiScale.textWidth(label, mono, true) + 2),
+					"the % px readout clips '%' at mono %"
+						.format(width.round(0.1), label, mono));
+			};
 		};
-		this.assertEquals(CQGuiPanels.sourceEndpointNames, CQMatrix.sourceNames,
-			"Day has exactly the canonical 16 source jacks");
-		this.assertEquals(CQGuiPanels.destEndpointNames, CQMatrix.destNames,
-			"Day has exactly the canonical 22 destination sockets");
+		// `includes` is identity on a String collection (CLAUDE.md pitfall)
+		this.assert(CQGuiMemory.morphMeterLabels.any { |l| l == "arrived" },
+			"the completion word is one of the sized labels");
 	}
 
-	test_columnsPublishFunctionalIslands {
-		this.assertEquals(CQGuiPanels.cocoIslands,
-			#[identity, performance, converter, output],
-			"Coco groups controls by signal and performance role");
-		this.assertEquals(CQGuiPanels.sourcesIslands, #[inputs, decks],
-			"Sources distinguishes live inputs from file decks");
-		this.assertEquals(CQGuiPanels.quantussyIslands,
-			#[macro, castles, topology],
-			"Quantussy gives its functional topology a deliberate region");
+	test_durationReadsWhatTheBoxShows {
+		// The morph button cannot take focus, so Enter may never be pressed and
+		// NumberBox's committed value can lag the text the user is looking at.
+		this.assertFloatEquals(CQGuiMemory.durationFrom("45", 90), 45,
+			"an uncommitted entry is the duration that runs");
+		this.assertFloatEquals(CQGuiMemory.durationFrom(" 12.5 ", 90), 12.5,
+			"surrounding whitespace does not defeat the reading");
+		this.assertFloatEquals(CQGuiMemory.durationFrom("", 90), 90,
+			"an empty box keeps the previous duration");
+		this.assertFloatEquals(CQGuiMemory.durationFrom("abc", 90), 90,
+			"a wordless entry keeps the previous duration");
+		this.assertFloatEquals(CQGuiMemory.durationFrom("9000", 90),
+			CQGuiMemory.morphDurationHi, "an over-long entry clamps to the ceiling");
+		this.assertFloatEquals(CQGuiMemory.durationFrom("-4", 90),
+			CQGuiMemory.morphDurationLo, "a negative entry clamps to the floor");
+		this.assertFloatEquals(CQGuiMemory.durationFrom("abc", nil),
+			CQGuiMemory.morphDurationDefault,
+			"with no previous value the default stands");
 	}
+
+	test_durationTextAnswersInTheUsersOwnTerms {
+		this.assertEquals(CQGuiMemory.durationText(20), "20",
+			"a whole number of seconds is not answered with a decimal point");
+		this.assertEquals(CQGuiMemory.durationText(12.5), "12.5",
+			"a fractional duration keeps its fraction");
+		this.assertEquals(
+			CQGuiMemory.durationText(CQGuiMemory.morphDurationDefault), "10",
+			"the box opens on a clean default");
+	}
+
+	test_textEntryBorrowsInkHoverAndSelection {
+		#[day, night].do { |skin|
+			var rest = CQInk.textEntryInk(skin, false);
+			var hovered = CQInk.textEntryInk(skin, true);
+			var palette = CQInk.palette(skin);
+			this.assertEquals(rest[\background], palette[\ground],
+				"a resting entry keeps the ordinary ground (%)".format(skin));
+			this.assert(hovered[\background] != rest[\background],
+				"hover is visible on a text entry at all (%)".format(skin));
+			// native highlight blue is Color(0.3, 0.5, 0.75) / (0.25, 0.37, 0.57)
+			this.assert(rest[\highlight] != Color(0.3, 0.5, 0.75)
+				and: { rest[\highlight] != Color(0.25, 0.37, 0.57) },
+				"selection never shows the OS highlight blue (%)".format(skin));
+			this.assertEquals(rest[\text], palette[\line],
+				"entry text is ordinary line ink, never Qt's red typing colour (%)"
+					.format(skin));
+			this.assertEquals(hovered[\text], rest[\text],
+				"hover moves the ground, not the type (%)".format(skin));
+		};
+	}
+
 }

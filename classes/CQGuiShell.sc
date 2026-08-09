@@ -1,72 +1,171 @@
-// CQGuiShell — Qt composition for GUI_SPEC §2 and the §8 workbench experiment.
-// Day/Night and Drawer share one central stage; the toolbar and Master remain
-// persistent. The shell never touches CQState, CQMatrix or the server.
+// CQGuiShell — Qt composition for Yönpuoli's Night-only instrument and the
+// Drawer workbench. Night and Drawer share the central stage; the toolbar and
+// Master remain persistent. The shell never touches musical state or server
+// objects.
 
 CQGuiShell {
 	var state;
-	var <view, <dayView, <nightView, <masterView, <drawerView;
+	var <view, <nightView, <masterView, <drawerView;
 	var <workspaceStack, <drawerButton;
-	var contentStack, drawerStack, drawerPages, toolbarView, toolbarTitle;
-	var modeButton, tabButtons, skinAction;
+	var drawerStack, drawerPages, toolbarView, toolbarTitle;
+	var tabButtons, skinAction, shownAction;
+	var toolbarInset = 6;
+	var <audioAlert = \none;
 
-	*new { |state, dayView, nightView, masterView, inspectorView, spellbookView,
-		memoryView, skinAction|
-		^super.new.prInit(state, dayView, nightView, masterView,
-			inspectorView, spellbookView, memoryView, skinAction)
+	*new { |state, nightView, masterView, pages, skinAction, shownAction|
+		^super.new.prInit(state, nightView, masterView, pages,
+			skinAction, shownAction)
 	}
 
-	prInit { |shellState, dayContent, nightContent, masterContent,
-		inspectorView, spellbookView, memoryView, applySkin|
-		var day = CQInk.palette(\day), tabRow, instrumentView;
+	prInit { |shellState, nightContent, masterContent, pages,
+		applySkin, onDrawerShown|
+		var night = CQInk.palette(\night), tabRow;
+		// The toolbar is persistent chrome: one type size, not the Drawer's
+		// steps, because its height and muscle-memory layout remain fixed.
+		var chrome = CQGuiScale.chrome;
 		state = shellState;
 		skinAction = applySkin;
-		dayView = dayContent;
+		shownAction = onDrawerShown;
 		nightView = nightContent;
 		masterView = masterContent;
-		modeButton = CQInkControl.button("night", 66).surface_(\recess)
-			.action_({ this.toggleView(false) });
-		drawerButton = CQInkControl.button("drawer", 92, \day, false,
+		drawerButton = CQInkControl.button("drawer",
+			CQGuiScale.buttonWidth(\compact, "drawer", true), \night, false,
 			false, \line, \collapse).surface_(\recess)
 			.action_({ this.toggleDrawer });
-		toolbarTitle = StaticText().string_("cocoquantus · archipelago")
-			.font_(CQInk.font(\label)).stringColor_(day[\line])
-			.align_(\left).fixedWidth_(180);
-		toolbarView = UserView().fixedHeight_(32).background_(day[\recess]);
+		drawerButton.scale = chrome;
+		drawerButton.view.fixedSize = Size(
+			CQGuiScale.buttonWidth(\compact, "drawer", true), chrome[\buttonHeight]);
+		toolbarTitle = StaticText().string_("yölahti")
+			.font_(CQInk.font(\label, chrome[\label])).stringColor_(night[\line])
+			.align_(\left).fixedWidth_(
+				(CQGuiScale.textWidth("yölahti", chrome[\label]) + 16)
+					.ceil.asInteger);
+		toolbarView = UserView()
+			.fixedHeight_(chrome[\buttonHeight] + (2 * toolbarInset))
+			.background_(night[\recess]);
 		toolbarView.drawFunc = {
-			var palette = CQInk.palette(state.viewMode);
-			Pen.strokeColor = palette[\whisper];
+			var y = toolbarView.bounds.height - 1, inset = toolbarInset;
+			Pen.strokeColor = CQInk.palette(\night)[\whisper];
 			Pen.width = CQInk.strokes[\hairline];
-			Pen.line(Point(8, 31), Point(toolbarView.bounds.width - 8, 31));
+			Pen.line(Point(inset, y), Point(toolbarView.bounds.width - inset, y));
 			Pen.stroke;
+			// AUD-W's always-visible surface (user decision 2026-07-31). The mark
+			// sits on the drawer button, which is the only route to the only
+			// remedy — cue and action share one geometry (GUI_SPEC §4.5). It is
+			// static ink: no blink, no pulse, and it exists only in danger.
+			if(audioAlert != \none) { this.prDrawClockDanger };
 		};
-		toolbarView.layout = HLayout(toolbarTitle, nil, modeButton.view, drawerButton.view)
-			.margins_(8).spacing_(6);
+		toolbarView.layout = HLayout(toolbarTitle, nil, drawerButton.view)
+			.margins_(toolbarInset).spacing_(6);
 
-		contentStack = StackLayout(dayView, nightView).mode_(\stackOne);
-		instrumentView = View().layout_(contentStack);
 		tabButtons = IdentityDictionary.new;
-		#[inspector, spellbook, memory].do { |tab|
-			tabButtons[tab] = CQInkControl.button(tab.asString, 86, \day, true)
+		CQGuiDrawer.tabs.do { |tab|
+			tabButtons[tab] = CQInkControl.button(tab.asString,
+				CQGuiScale.buttonWidth(\compact, tab.asString), \night, true)
 				.surface_(\recess).action_({ this.selectDrawer(tab) });
+			tabButtons[tab].scale = chrome;
+			tabButtons[tab].view.fixedSize = Size(
+				CQGuiScale.buttonWidth(\compact, tab.asString) + 16,
+				chrome[\tabHeight]);
 		};
-		tabRow = HLayout(tabButtons[\inspector].view, tabButtons[\spellbook].view,
-			tabButtons[\memory].view, nil).margins_(4).spacing_(4);
-		drawerPages = [inspectorView, spellbookView, memoryView];
+		tabRow = HLayout(
+			*(CQGuiDrawer.tabs.collect { |tab| tabButtons[tab].view } ++ [nil])
+		).margins_(4).spacing_(4);
+		drawerPages = pages;
 		drawerStack = StackLayout(*drawerPages).mode_(\stackOne);
-		drawerView = UserView().background_(day[\recess]);
+		drawerView = UserView().background_(night[\recess]);
 		drawerView.layout = VLayout(tabRow, drawerStack).margins_(4).spacing_(4);
-		workspaceStack = StackLayout(instrumentView, drawerView).mode_(\stackOne);
+		workspaceStack = StackLayout(nightView, drawerView).mode_(\stackOne);
 
-		view = View().background_(day[\ground]);
+		view = View().background_(night[\ground]);
 		view.layout = VLayout(toolbarView, View().layout_(workspaceStack), masterView)
 			.margins_(0).spacing_(0);
 		this.applyState;
 		^this
 	}
 
-	toggleView { |textHasFocus = false|
-		state.toggleView(textHasFocus);
-		this.applyState;
+	// One write door for the guard's visible truth. A repaint costs a Pen round
+	// trip (§10), so an unchanged state must not ask for one — the facade
+	// already announces only on change, and this refuses a second time.
+	audioClockDanger_ { |flag|
+		^this.audioAlert_(if(flag == true) { \clockStuck } { \none })
+	}
+
+	audioClockDanger { ^(audioAlert == \clockStuck) }
+
+	// SOAK-1 finding B (user decision 2026-07-31): one mark, one ink, one route
+	// to the only remedy — but two faults, so two sentences. A dead server told
+	// with the clock's words would be the next lie.
+	audioAlert_ { |kind|
+		kind = this.class.alertKind(kind);
+		if(kind == audioAlert) { ^this };
+		audioAlert = kind;
+		toolbarView !? { toolbarView.refresh };
+		^this
+	}
+
+	*alertKind { |kind|
+		^if(this.alertLabels.includesKey(kind)) { kind } { \none }
+	}
+
+	*alertLabels {
+		^(
+			clockStuck: "audio clock stuck",
+			serverDown: "server not responding"
+		)
+	}
+
+	// The words the Audio page uses for the same fault, so the two surfaces
+	// cannot disagree about what happened.
+	*alertLabel { |kind| ^this.alertLabels[this.alertKind(kind)] }
+
+	*clockDangerLabel { ^this.alertLabel(\clockStuck) }
+	*clockDangerDotRadius { ^4 }
+	*clockDangerGap { ^8 }
+
+	// Pure geometry, so the mark's placement can be tested without a paint
+	// event. `titleRight` is the floor it may never cross: the toolbar's title
+	// owns the left end, and a mark that slides under it would be unreadable
+	// exactly when it matters most. When the room runs out the words drop and
+	// the dot alone remains — the dot is the state, the words are the courtesy.
+	// `kind` decides the words, and the words decide the geometry: the longer
+	// "server not responding" must be measured, not assumed to fit where the
+	// clock's shorter sentence did.
+	*clockDangerLayout { |toolbarHeight, buttonLeft, titleRight = 0, labelSize = 11,
+		kind = \clockStuck|
+		var dotR = this.clockDangerDotRadius;
+		var gap = this.clockDangerGap;
+		var label = this.alertLabel(kind) ? this.alertLabel(\clockStuck);
+		var textW = CQGuiScale.textWidth(label, labelSize);
+		var cy = (toolbarHeight - 1) / 2;
+		var dotX = buttonLeft - gap - dotR;
+		var textLeft = dotX - dotR - gap - textW;
+		var showText = textLeft > (titleRight + gap);
+		^(
+			dotCenter: Point(dotX, cy),
+			dotRadius: dotR,
+			showText: showText,
+			textRect: Rect(textLeft, cy - (labelSize * 0.75), textW,
+				labelSize * 1.5),
+			label: label
+		)
+	}
+
+	prDrawClockDanger {
+		var palette = CQInk.palette(\night);
+		var chrome = CQGuiScale.chrome;
+		var size = chrome[\label];
+		var layout = this.class.clockDangerLayout(toolbarView.bounds.height,
+			drawerButton.view.bounds.left, toolbarTitle.bounds.right, size,
+			audioAlert);
+		if(layout[\showText]) {
+			Pen.stringRightJustIn(layout[\label], layout[\textRect],
+				CQInk.font(\label, size), palette[\danger]);
+		};
+		Pen.fillColor = palette[\danger];
+		Pen.addArc(layout[\dotCenter], layout[\dotRadius], 0, 2pi);
+		Pen.fill;
+		^this
 	}
 
 	toggleDrawer {
@@ -80,45 +179,37 @@ CQGuiShell {
 	}
 
 	applyState {
-		var skin = state.viewMode, palette = CQInk.palette(skin), tabIndex;
-		tabIndex = #[inspector, spellbook, memory].indexOf(state.drawerTab) ? 0;
+		var palette = CQInk.palette(\night), tabIndex;
+		tabIndex = CQGuiDrawer.tabs.indexOf(state.drawerTab) ? 0;
 		view.background = palette[\ground];
 		toolbarView.background = palette[\recess];
 		drawerView.background = palette[\recess];
 		drawerPages.do { |page| page.background = palette[\recess] };
 		masterView.background = palette[\recess];
 		toolbarTitle.stringColor = palette[\line];
-		modeButton.skin = skin;
-		modeButton.label = if(skin == \day) { "night" } { "day" };
-		drawerButton.skin = skin;
-		// The global destination keeps one name; the inner page tabs carry the
-		// Inspector/Spellbook/Memory labels. Down opens, up returns.
+		drawerButton.skin = \night;
 		drawerButton.label = "drawer";
 		drawerButton.glyph = if(state.drawerOpen) { \expand } { \collapse };
 		drawerButton.value = state.drawerOpen.binaryValue;
 		tabButtons.keysValuesDo { |tab, button|
-			button.skin = skin;
+			button.skin = \night;
 			button.value = (tab == state.drawerTab).binaryValue;
 		};
-		skinAction !? { skinAction.value(skin) };
+		skinAction !? { skinAction.value(\night) };
+		if(state.drawerOpen) { shownAction !? { shownAction.value } };
 		toolbarView.refresh;
 		drawerView.refresh;
 		masterView.refresh;
-		// last, and only after every blocking write above has returned
-		this.prSwapStage(if(skin == \day) { 0 } { 1 },
-			if(state.drawerOpen) { 1 } { 0 }, tabIndex);
+		// Only queued swaps are safe under a live pointer (GUI_SPEC §11).
+		this.prSwapStage(if(state.drawerOpen) { 1 } { 0 }, tabIndex);
 		^this
 	}
 
-	// QtCollider deadlock guard: hiding a view under the mouse pointer makes Qt
-	// deliver enter/leave back into the language, and a *direct* property write
-	// blocks the language thread inside the same Qt call — Tab with the pointer
-	// over the Day panel froze the whole window (found 2026-07-21). Queued
-	// writes (direct: false) return immediately, so the swap and its hover
-	// events happen while nothing is blocking. The stack index therefore
-	// settles one GUI tick later; CQGuiShellState stays the synchronous truth.
-	prSwapStage { |contentIndex, workspaceIndex, drawerIndex|
-		contentStack.setProperty(\currentIndex, contentIndex, false);
+	// QtCollider deadlock guard: hiding a view under the mouse pointer can
+	// synchronously deliver enter/leave back into the language. Queued writes
+	// return before those callbacks, so CQGuiShellState remains the synchronous
+	// truth and the native indices settle one GUI tick later.
+	prSwapStage { |workspaceIndex, drawerIndex|
 		workspaceStack.setProperty(\currentIndex, workspaceIndex, false);
 		drawerStack.setProperty(\currentIndex, drawerIndex, false);
 	}

@@ -1,8 +1,12 @@
 # Varmennetut löydökset
 
+> **Historiallinen rajaus:** löydökset varmennettiin 2026-07-19 baselinea vasten
+> ja ohjasivat myöhempää korjaustyötä. Nykyinen release-status on juuren
+> [`PLAN.md`](../PLAN.md)-tiedostossa.
+
 Auditointipäivä: 2026-07-19
 Arvioija: riippumaton pääarviointi
-[`prompts/AUDIT_EVAL.md`](prompts/AUDIT_EVAL.md):n mukaan
+[`history/prompts/AUDIT_EVAL.md`](history/prompts/AUDIT_EVAL.md):n mukaan
 
 Tässä tiedostossa ovat vain lähdekoodista tarkistetut ja joko ajolla toistetut tai
 deterministisesti toteutuksesta osoitetut löydökset. Prioriteetti kuvaa varmennettua

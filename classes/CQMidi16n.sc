@@ -37,6 +37,16 @@ CQMidi16n {
 				paramFader[name] !? { |i| engaged[i] = false };
 			};
 		});
+		// A morph's dense frame arrives as one event, and takeover must break for
+		// every fader it moved — otherwise a fader would keep writing values the
+		// snapshot has since overwritten (SOAK-1 finding A).
+		watcher.put(\params, { |obj, what, event|
+			if(writing.not) {
+				event.keysDo { |name|
+					paramFader[name] !? { |i| engaged[i] = false };
+				};
+			};
+		});
 		if(cfg[\enabled] == true) { this.prInitMidi };
 	}
 

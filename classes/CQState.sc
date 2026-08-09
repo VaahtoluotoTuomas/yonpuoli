@@ -30,12 +30,53 @@ CQState {
 		this.changed(\param, name, clamped);
 	}
 
+	// SOAK-1 finding A (measured 2026-07-31): one dense write per frame, the
+	// same primitive CQMatrix.writeMatrix already is for the other half of a
+	// morph. Per-param `set` costs a clamp, a server push AND a dependant
+	// notification each; every listener defers, so ~60 parameters at 15 Hz drove
+	// some 2 700 deferred closures a second into a Qt queue that filled faster
+	// than it drained. The window froze and PANIC could not be reached — safety
+	// invariant #3, reopened after MOR-1 fixed only the matrix side.
+	//
+	// The values still travel through exactly the same funnel: every one is
+	// clamped by CQSpec and pushed to its own synth. Only the announcement is
+	// collapsed, from one per parameter to one per write.
+	setAll { |event|
+		var applied = Event.new;
+		if(event.isNil) { ^applied };
+		event.keysValuesDo { |name, value|
+			var clamped;
+			if(CQSpec.includes(name)) {
+				clamped = CQSpec.clamp(name, value);
+				values[name] = clamped;
+				this.prSend(name, clamped);
+				applied[name] = clamped;
+			} {
+				("CQState: unknown parameter '" ++ name ++ "' ignored").warn;
+			};
+		};
+		if(applied.size > 0) { this.changed(\params, applied) };
+		^applied
+	}
+
 	get { |name| ^values[name] }
 
 	asEvent {
 		var e = Event.new;
 		values.keysValuesDo { |k, v| e[k] = v };
 		^e
+	}
+
+	// Read-only audit surface: every visible control must terminate at a real
+	// SynthDef argument. Returning a deep copy keeps the state funnel's routing
+	// table private while letting the release contract prove that no CQSpec knob
+	// is merely stored/displayed. micGain is intentionally absent when the graph
+	// has no configured mic channel (SPEC §7); with a mic-enabled config all 76
+	// parameters must appear.
+	routeManifest {
+		var copy = IdentityDictionary.new;
+		routes.keysValuesDo { |name, route| copy[name] = route.deepCopy };
+		^copy
 	}
 
 	// push every routed param's current value to the server (used once at boot)
@@ -70,25 +111,22 @@ CQState {
 		if(graph.notNil and: { graph.config[\micChan].notNil }) {
 			r[\micGain] = [\input, \micGain];   // control exists only when mic is configured
 		};
-		[\spaceMix, \masterDry, \masterVol].do { |n| r[n] = [\master, n] };
-		[\spaceSize, \spaceDamp].do { |n| r[n] = [\space, n] };   // FDN (ARCH §4.5)
+		[\masterDry, \masterVol].do { |n| r[n] = [\master, n] };
 		// matrix macro (ARCH §3.3): fans out to every matrix-consumer synth
 		r[\patchDepth] = [[\coco1, \patchDepth], [\coco2, \patchDepth],
 			[\quantussy, \patchDepth], [\deckA, \patchDepth], [\deckB, \patchDepth]];
 		r[\monitorMute] = [\master, \mute];
-		// pan drives the master's dry placement AND each Coco's pan-placed space
-		// send (SPEC §5.3) — one param, two synths (the patchDepth fan-out pattern)
-		r[\coco1Pan] = [[\master, \pan1], [\coco1, \pan]];
-		r[\coco2Pan] = [[\master, \pan2], [\coco2, \pan]];
-		// cocos (phase 2); cocoNSend routes to \cqSpace in phase 7
+		r[\coco1Pan] = [\master, \pan1];
+		r[\coco2Pan] = [\master, \pan2];
+		// cocos (phase 2)
 		[1, 2].do { |n|
 			var synthKey = ("coco" ++ n).asSymbol;
 			[
 				[\In, \inLevel], [\Fb, \fbLevel], [\Speed, \speed], [\Spaf, \spafKnob],
 				[\DolbyIn, \dolbyIn], [\DolbyFb, \dolbyFb], [\Hold, \hold],
 				[\Flip, \flip], [\Bits, \bits], [\Wrap, \wrap], [\Interp, \interp],
-				[\Dust, \dust], [\Organ, \organLvl], [\Level, \level],
-				[\Send, \spaceSend],                       // → \cqSpace (SPEC §5.3)
+				[\Dust, \dust], [\DustGrain, \dustGrain],
+				[\Organ, \organLvl], [\Level, \level],
 				[\SlotPre, \slotPre], [\SlotDeck, \slotDeck], [\SlotQ, \slotQ],
 				[\SlotX, \slotX]
 			].do { |pair|

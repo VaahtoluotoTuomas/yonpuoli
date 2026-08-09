@@ -1,7 +1,12 @@
 # Lopullinen auditointiarvio
 
+> **Historiallinen rajaus:** tämä arvio koskee 2026-07-19 auditoitua teknistä
+> `v1.0`-baselinea. Sen varmennetut korjaukset toteutettiin myöhemmissä vaiheissa;
+> nykyinen release-status on juuren [`PLAN.md`](../PLAN.md)-tiedostossa. Raporttia
+> ei pidä lukea nykyisen Yönpuoli-ehdokkaan uutena julkaisupäätöksenä.
+
 Auditointipäivä: 2026-07-19
-Ohje: [`prompts/AUDIT_EVAL.md`](prompts/AUDIT_EVAL.md)
+Ohje: [`history/prompts/AUDIT_EVAL.md`](history/prompts/AUDIT_EVAL.md)
 Laajuus: kaikki `audit/`-raportit, koko alkuperäinen lähdekoodi, testit ja keskeinen
 dokumentaatio. Lähdekoodia ei muutettu.
 
@@ -106,7 +111,7 @@ P0/P1-korjauksia tai muuttaa soundia visuaalisen commitin sivuvaikutuksena.
 - Parametri-, patch- ja toimintofunnelit ovat selkeät: `CQSpec`/`CQState`,
   `CQMatrix` ja `Cocoquantus`-facade. GUI, koodi, snapshot ja MIDI jakavat saman tilan.
 - Kaksi itsenäistä Coco-muistia, ristikytkentä, signed 16×22-matriisi, Quantussyn
-  castle/spesal-rakenne, Hold/Flip/Skip/Dolby ja digital dust muodostavat aidosti
+  castle/spesal-rakenne, Hold/Flip/Skip/dolby ja digital dust muodostavat aidosti
   omaleimaisen, emergentin instrumentin.
 - Normaali feedback on tarkoituksellisesti elävä mutta rajattu. Master- ja stem-
   ketjujen LeakDC→tanh→Limiter→bad-value-squelch, hiljainen boot-fade ja panic ovat
@@ -185,6 +190,6 @@ tuote-/estetiikkavalintoja vioiksi. Pääarvioinnin live- ja bad-value-testit po
 nämä väärät laajennukset.
 
 Autoritatiivinen jatkojärjestys on
-[`REMEDIATION_ROADMAP.md`](REMEDIATION_ROADMAP.md). GUI:n erillinen,
+[`history/REMEDIATION_ROADMAP.md`](history/REMEDIATION_ROADMAP.md). GUI:n erillinen,
 instrumentin estetiikkaa suojaava toteutusjärjestys on
-[`GUI_DEVELOPMENT_PLAN.md`](GUI_DEVELOPMENT_PLAN.md).
+[`history/GUI_DEVELOPMENT_PLAN.md`](history/GUI_DEVELOPMENT_PLAN.md).

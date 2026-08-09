@@ -1,10 +1,10 @@
-// CQGuiShellState — serverless local presentation state for the one-window
-// Archipelago shell (GUI_SPEC §2, §11). It owns no musical values and only
-// tells CQGui which already-derived view to show.
+// CQGuiShellState — serverless presentation state for Yönpuoli's one-window,
+// Night-only shell (GUI_SPEC §2, §11). It owns no musical values: Night is
+// the instrument, and this state only chooses between it and the workbench.
 
 CQGuiShellState {
 	var <>audition;
-	var <lifecycleState = \building, <viewMode = \day;
+	var <lifecycleState = \building, <viewMode = \night;
 	var <drawerOpen = false, <drawerTab = \inspector;
 
 	*new { |audition| ^super.newCopyArgs(audition) }
@@ -38,29 +38,21 @@ CQGuiShellState {
 		^this
 	}
 
-	toggleView { |textHasFocus = false|
-		if(textHasFocus or: { lifecycleState == \closed }) { ^this };
-		audition !? { audition.viewToggle };
-		// Day and Night are peer instrument destinations. Choosing either while
-		// the workbench is visible returns to the instrument in the same action.
-		if(drawerOpen) {
-			drawerOpen = false;
-			this.changed(\drawer, drawerOpen, drawerTab);
-		};
-		viewMode = if(viewMode == \day) { \night } { \day };
-		this.changed(\view, viewMode);
-		^this
-	}
-
 	toggleDrawer {
 		if(lifecycleState == \closed) { ^this };
+		// A stage change is an audition exit path just as the former view cut
+		// was: no hidden Night hand or Inspector preview may keep sounding.
+		audition !? { audition.viewToggle };
 		drawerOpen = drawerOpen.not;
 		this.changed(\drawer, drawerOpen, drawerTab);
 		^this
 	}
 
+	// The normative page list lives with the pages themselves
+	// (CQGuiDrawer.tabs), so a page cannot appear in the toolbar and be refused
+	// by presentation state.
 	selectDrawer { |tab|
-		if(#[inspector, spellbook, memory].includes(tab)) {
+		if(CQGuiDrawer.tabs.includes(tab)) {
 			drawerTab = tab;
 			this.changed(\drawer, drawerOpen, drawerTab);
 		};

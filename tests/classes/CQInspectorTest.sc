@@ -7,7 +7,7 @@ CQInspectorTest : UnitTest {
 		CQMatrix.postWarnings = false;
 		matrix = CQMatrix(nil);
 		audition = CQAudition(matrix);
-		grammar = CQBananaGrammar(matrix, audition);
+		grammar = CQBananaGrammar(matrix);
 		inspector = CQInspector(matrix, audition, grammar);
 	}
 
@@ -19,16 +19,18 @@ CQInspectorTest : UnitTest {
 
 	test_pressAuditionsByMouseSignAndLeftReleaseReverts {
 		inspector.press(\tri1, \coco1_spaf, 0, 1, 100);
-		this.assertEquals(matrix.getPatch(\tri1, \coco1_spaf), 0.3,
-			"left press auditions verso +0.3");
+		this.assertEquals(matrix.getPatch(\tri1, \coco1_spaf),
+			CQBananaGrammar.defaultHandStrength,
+			"left press auditions the shared first-touch verso strength");
 		inspector.release(0);
 		this.assertEquals(matrix.getPatch(\tri1, \coco1_spaf), 0.0,
 			"left release without a drag reverts the audition");
 		this.assertEquals(grammar.undoCount, 0,
 			"audition never enters GUI undo");
 		inspector.press(\tri1, \coco1_spaf, 1, 1, 100);
-		this.assertEquals(matrix.getPatch(\tri1, \coco1_spaf), -0.3,
-			"right press auditions inverso -0.3");
+		this.assertEquals(matrix.getPatch(\tri1, \coco1_spaf),
+			CQBananaGrammar.defaultHandStrength.neg,
+			"right press auditions the shared first-touch inverso strength");
 		inspector.release(1);
 		this.assertEquals(grammar.undoCount, 0,
 			"right-clicking an empty cell remains a no-op");
@@ -48,8 +50,9 @@ CQInspectorTest : UnitTest {
 
 	test_doubleClickPlantsFixedInspectorWeight {
 		inspector.press(\cas2, \castle3_fm, 0, 2, 50);
-		this.assertEquals(matrix.getPatch(\cas2, \castle3_fm), 0.3,
-			"double-click plants the normative fixed 0.3");
+		this.assertEquals(matrix.getPatch(\cas2, \castle3_fm),
+			CQBananaGrammar.defaultHandStrength,
+			"double-click uses the same audible first-touch strength as Night");
 		this.assertEquals(grammar.undoCount, 1,
 			"double-click plant is one GUI undo operation");
 	}

@@ -1,8 +1,10 @@
-// Serverless visual-review harness for the G1 workbench + patch-loom experiment.
+// Serverless visual-review harness for the workbench + patch-loom experiment.
 // It opens on the instrument. The Drawer tab beside Night opens the full central
-// Inspector; click Spellbook/Memory to inspect the other workbench pages.
+// Inspector; click Workshop/Spellbook/Memory to inspect the other pages.
 // Memory shows its truthful live-patch fingerprint here; saved-seed recall and
 // A→B morph use Cocoquantus.snapshots and are exercised with the booted instrument.
+// The Workshop is fully playable serverlessly: every row writes through CQState,
+// so the page can be judged without an audio server (its *sound* cannot).
 // Close the window to exit sclang. No audio server is started.
 
 (

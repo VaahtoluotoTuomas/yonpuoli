@@ -52,7 +52,7 @@ CQMatrixTransactionTest : UnitTest {
 			"batch clamps low weights");
 		this.assertEquals(matrix.getPatch(\tri3, \coco1_spaf), 0.0,
 			"batch converts NaN to an unpatched cell");
-		this.assertEquals(count, 1, "352-cell batch emits exactly one notification");
+		this.assertEquals(count, 1, "512-cell batch emits exactly one notification");
 		this.assertEquals(event, [\gui, true, \harvest],
 			"batch notification identifies origin, commit boundary and operation");
 	}
@@ -66,8 +66,8 @@ CQMatrixTransactionTest : UnitTest {
 		matrix.writeMatrix(dense, origin: \compass, committed: false,
 			operation: \compassFrame);
 		writes = CQMatrix.destNames.sum { |dest| graph.buses[dest].writes.size };
-		this.assertEquals(writes, 22,
-			"batch performs one setn per destination, never 352 per-cell pushes");
+		this.assertEquals(writes, CQMatrix.destNames.size,
+			"batch performs one setn per destination, never 512 per-cell pushes");
 	}
 
 	test_singleCellReportsTransientBoundary {

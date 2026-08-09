@@ -19,7 +19,8 @@ CQConfig {
 			outChans: [0, 1],
 			bufFrames: 131072,
 			sixteenN: (enabled: true, ccBase: 32, takeover: \jump),
-			folders: (samples: "samples", recordings: "recordings", presets: "presets"),
+			folders: (samples: "samples", recordings: "recordings",
+				presets: "presets", snapshots: "snapshots"),
 			autoTrim: false,    // watchdog: notice always; auto-trim is opt-in (SPEC §5.6)
 			recStems: false,
 			headless: false
@@ -72,7 +73,7 @@ CQConfig {
 	*prMergeSub { |cfg, key, val|
 		var allowed = switch(key,
 			\sixteenN, #[enabled, ccBase, chan, takeover],
-			\folders, #[samples, recordings, presets],
+			\folders, #[samples, recordings, presets, snapshots],
 			// GUI_SPEC §10's optional gui: (...) sub-event. compassDir redirects
 			// the §7.1 compass memories file — the smoke tests point it at a tmp
 			// dir so a test stamp can never overwrite the player's own corners.
@@ -146,7 +147,7 @@ CQConfig {
 
 		fol = cfg[\folders];
 		this.prAssert(fol.isKindOf(Event), "folders must be an Event");
-		#[samples, recordings, presets].do { |k|
+		#[samples, recordings, presets, snapshots].do { |k|
 			this.prAssert(fol[k].isString,
 				"folders.% must be a String path (got %)".format(k, fol[k]));
 		};

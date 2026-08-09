@@ -9,21 +9,139 @@
 // identifiers all say snapshot.
 
 CQGuiMemory {
-	classvar contentW = 1128, fingerprintW = 840, fingerprintH = 300;
+	classvar contentW = 1128;
 
 	var gui, state, matrix, snapshots, matrixCtl, morphCtl;
-	var skin = \day, snapshotNames, selectedData, labels, menus, panels;
-	var nameField, aMenu, bMenu, durationBox, detailTitle, detailHint;
-	var <view, <snapshotList, <fingerprint, <morphMeter, <selectedName;
+	var skin = \night, snapshotNames, selectedData, labels, menus, panels;
+	var detailHintText;
+	var <nameField, <aMenu, <bMenu, <durationBox, detailTitle, <detailHint;
+	// the last committed morph duration, so an unreadable edit can fall back to
+	// something true instead of to a widget's stale idea of itself
+	var durationValue;
+	var <view, <snapshotList, <fingerprint, <morphMeter, <selectedName, <header;
+	// the seed bank shares the workbench's content rail and size step
+	var <step = \compact, <railWidth, buttons, body, snapshotPanel, morphPanel;
+	var topPad, bottomPad;
 
 	*new { |gui, state, matrix, snapshots|
 		^super.newCopyArgs(gui, state, matrix, snapshots).prBuild
 	}
 
+	// the historical reference width, kept so older contracts still read; the
+	// live rail is `railWidth` and follows CQGuiScale
 	*contentWidth { ^contentW }
-	*fingerprintSize { ^Size(fingerprintW, fingerprintH) }
+	*ownedItems { ^#[snapshotName, snapshotSave, snapshotRecall, morph] }
+
+	// The a -> b separator doubles as the swap control. A two-headed arrow says
+	// "these two exchange places" without a word.
+	*swapGlyph { ^"⇄" }
+	*swapButtonWidth { ^28 }
+
+	*morphDurationDefault { ^10 }
+	*morphDurationLo { ^0.1 }
+	*morphDurationHi { ^600 }
+
+	// Every word the meter can print. Sizing the readout from "100%" alone
+	// clipped "arrived" to "rived" in the user's 2026-07-30 review.
+	*morphMeterLabels { ^#["100%", "arrived", "ready"] }
+
+	*morphReadoutWidth { |mono|
+		^(this.morphMeterLabels.collect { |label|
+			CQGuiScale.textWidth(label, mono, true)
+		}.maxItem + 12).ceil
+	}
+
+	// A box's live text is the truth, because the page is mouse-only and the
+	// buttons beside it cannot take focus -- so Enter may never be pressed and
+	// NumberBox's committed `value` can lag what the user is looking at.
+	// Anything without a digit in it is not a duration; keep the old value.
+	*durationFrom { |text, fallback|
+		var trimmed = text.asString.stripWhiteSpace;
+		var lo = this.morphDurationLo, hi = this.morphDurationHi;
+		if(trimmed.any { |ch| ch.isDecDigit }.not) {
+			^(fallback ? this.morphDurationDefault).clip(lo, hi)
+		};
+		^trimmed.asFloat.clip(lo, hi)
+	}
+
+	// A whole number of seconds reads as one, so the box does not answer "20"
+	// with "20.0".
+	*durationText { |dur|
+		^if(dur == dur.round) { dur.asInteger.asString } { dur.asString }
+	}
+	*detailMargins { ^[8, 0, 8, 0] }
+	*detailHintTexts {
+		^[
+			"select a saved snapshot to compare it with the live patch",
+			"outlined knots differ from the live patch",
+			"start the instrument before saving a snapshot",
+			"select a saved snapshot before recall",
+			"choose two saved snapshots before morph"
+		]
+	}
+
+	// The saved-snapshot column is a fixed reading width; the fingerprint takes
+	// whatever the rail has left, so a wider window buys patch detail rather
+	// than empty slate.
+	*snapshotColumnWidth { |step = \compact|
+		^if(step == \roomy) { 340 } { 280 }
+	}
+
+	*fingerprintSize { |step = \compact, rail = 1128|
+		var column = this.snapshotColumnWidth(step);
+		var height = if(step == \roomy) { 380 } { 300 };
+		^Size(rail - column - 8, height)
+	}
+
+	applyScale { |nextStep, width|
+		var m, column, print;
+		step = nextStep ? step;
+		railWidth = width ? railWidth;
+		m = CQGuiScale.metrics(step);
+		column = this.class.snapshotColumnWidth(step);
+		print = this.class.fingerprintSize(step, railWidth);
+		labels.do { |record|
+			record[\view].font = CQInk.font(record[\role],
+				this.prRoleSize(record[\role], m));
+			record[\view].fixedHeight = if(record[\role] == \tiny) {
+				CQGuiScale.textBandHeight(m[\tiny])
+			} {
+				m[\barHeight]
+			};
+		};
+		snapshotList.font = CQInk.font(\spellbook, m[\mono]);
+		snapshotList.rowHeight = m[\listRow];
+		snapshotList.fixedWidth = column - 14;
+		detailHint.fixedSize = Size(this.prDetailHintWidth(m), m[\barHeight]);
+		nameField.font = CQInk.font(\number, m[\mono]);
+		nameField.fixedSize = Size(column - 14 - CQGuiScale.buttonWidth(step,
+			"save snapshot") - 6, m[\boxHeight]);
+		durationBox.font = CQInk.font(\number, m[\mono]);
+		durationBox.fixedSize = Size(64, m[\boxHeight]);
+		menus.do { |menu|
+			menu.font = CQInk.font(\number, m[\mono]);
+			menu.fixedSize = Size(if(step == \roomy) { 210 } { 170 }, m[\boxHeight]);
+		};
+		buttons.do { |button|
+			button.scale = m;
+			button.resizeTo(CQGuiScale.buttonWidth(step, button.label),
+				m[\boxHeight]);
+		};
+		snapshotPanel.fixedWidth = column;
+		fingerprint.fixedWidth = print.width;
+		body.fixedWidth = railWidth;
+		morphPanel.fixedSize = Size(railWidth, m[\boxHeight] + 62);
+		morphMeter.fixedSize = Size(if(step == \roomy) { 380 } { 310 },
+			m[\boxHeight]);
+		topPad.fixedHeight = m[\vMargin];
+		bottomPad.fixedHeight = m[\vMargin];
+		panels.do { |panel| panel.refresh };
+		detailHint.refresh;
+		^this
+	}
 
 	free {
+		menus.do { |menu| menu.free };
 		matrixCtl !? { matrixCtl.remove };
 		morphCtl !? { morphCtl.remove };
 		matrixCtl = nil;
@@ -36,21 +154,20 @@ CQGuiMemory {
 		palette = CQInk.palette(skin);
 		view.background = palette[\recess];
 		panels.do { |panel| panel.background = palette[\recess]; panel.refresh };
-		labels.do { |label| label.stringColor = palette[\whisper] };
-		snapshotList.background = palette[\ground];
-		snapshotList.stringColor = palette[\line];
-		snapshotList.selectedStringColor = palette[\line];
-		snapshotList.hiliteColor = palette[\spaf].copy.alpha_(0.28);
-		menus.do { |menu|
-			menu.background = palette[\ground];
-			menu.stringColor = palette[\line];
+		labels.do { |record|
+			record[\view].stringColor = palette[record[\color]]
+				?? { palette[\whisper] };
 		};
-		nameField.background = palette[\ground];
-		nameField.stringColor = palette[\line];
-		durationBox.background = palette[\ground];
-		durationBox.stringColor = palette[\line];
+		snapshotList.skin = skin;
+		menus.do { |menu| menu.skin = skin };
+		// text entry carries hover and selection ink too, so a skin swap has to
+		// go through the same door the build used
+		this.prInkEntry(nameField);
+		this.prInkEntry(durationBox);
 		fingerprint.background = palette[\ground];
 		morphMeter.background = palette[\ground];
+		detailHint.background = palette[\ground];
+		detailHint.refresh;
 		fingerprint.refresh;
 		morphMeter.refresh;
 		^this
@@ -73,86 +190,158 @@ CQGuiMemory {
 	// ---- private ----
 
 	prBuild {
-		var palette = CQInk.palette(\day), snapshotPanel, morphPanel, header, body;
-		var saveButton, recallButton, refreshButton, morphButton;
+		var palette = CQInk.palette(\night);
+		var saveButton, recallButton, refreshButton, morphButton, swapButton;
+		var m = CQGuiScale.metrics(step), column, print, saveW;
 		labels = List.new;
 		menus = List.new;
 		panels = List.new;
+		buttons = List.new;
+		railWidth = CQGuiScale.railWidth(step, 1272);
+		column = this.class.snapshotColumnWidth(step);
+		print = this.class.fingerprintSize(step, railWidth);
+		saveW = CQGuiScale.buttonWidth(step, "save snapshot");
 
 		header = this.prLabel("memory · seed bank", \line, \notice)
-			.fixedWidth_(contentW);
-		nameField = TextField().string_("snapshot").font_(CQInk.font(\number))
-			.stringColor_(palette[\line]).background_(palette[\ground])
-			.fixedSize_(Size(154, 24)).action_({ |field| field.focus(false) });
-		snapshotList = ListView().selectionMode_(\single).font_(CQInk.font(\spellbook))
-			.stringColor_(palette[\line]).selectedStringColor_(palette[\line])
-			.hiliteColor_(palette[\spaf].copy.alpha_(0.28))
-			.background_(palette[\ground]).fixedSize_(Size(266, 194));
+			.fixedWidth_(railWidth);
+		nameField = TextField().string_("snapshot")
+			.font_(CQInk.font(\number, m[\mono]))
+			.fixedSize_(Size(column - 14 - saveW - 6, m[\boxHeight]))
+			.action_({ |field| field.focus(false) });
+		this.prInkEntry(nameField);
+		this.prWatchEntryHover(nameField);
+		snapshotList = CQInkList([], skin, m[\listRow])
+			.font_(CQInk.font(\spellbook, m[\mono]))
+			.fixedWidth_(column - 14);
 		snapshotList.action = { this.prSelectSnapshot };
 		snapshotList.selectionAction = { this.prSelectSnapshot };
-		saveButton = this.prButton("save snapshot", 104, \line, { this.prSave });
-		recallButton = this.prButton("recall", 66, \line, { this.prRecall });
-		refreshButton = this.prButton("refresh", 66, \line, { this.refresh });
+		saveButton = this.prButton("save snapshot", saveW, \line, { this.prSave });
+		recallButton = this.prButton("recall",
+			CQGuiScale.buttonWidth(step, "recall"), \line, { this.prRecall });
+		refreshButton = this.prButton("refresh",
+			CQGuiScale.buttonWidth(step, "refresh"), \line, { this.refresh });
 
-		snapshotPanel = UserView().fixedSize_(Size(280, fingerprintH))
+		snapshotPanel = UserView().fixedWidth_(column)
 			.background_(palette[\recess]);
 		snapshotPanel.drawFunc = {
-			CQInk.drawToolBox(snapshotPanel.bounds.moveTo(0, 0), "saved snapshots", skin)
+			CQInk.drawToolBox(snapshotPanel.bounds.moveTo(0, 0), "saved snapshots",
+				skin, false, CQGuiScale.metrics(step)[\label],
+				CQGuiScale.metrics(step)[\toolTitleTop])
 		};
 		snapshotPanel.layout = VLayout(
-			View().fixedHeight_(18),
-			HLayout(nameField, saveButton).spacing_(6),
-			snapshotList,
-			HLayout(recallButton, refreshButton, nil).spacing_(6)
+			View().fixedHeight_(m[\barHeight] - 4),
+			HLayout(nameField, saveButton.view).spacing_(6),
+			snapshotList.view,
+			HLayout(recallButton.view, refreshButton.view, nil).spacing_(6)
 		).margins_(7).spacing_(6);
 
 		detailTitle = this.prLabel("live patch · now", \line, \notice);
-		detailHint = this.prLabel(
-			"select a saved snapshot to compare it with the live patch", \whisper, \label);
-		fingerprint = UserView().fixedSize_(Size(fingerprintW, fingerprintH))
+		// explanatory info, not a heading: it sits one rank below the title it
+		// shares a row with (the user's N8 note)
+		detailHintText = "select a saved snapshot to compare it with the live patch";
+		detailHint = UserView()
+			.fixedSize_(Size(this.prDetailHintWidth(m), m[\barHeight]))
+			.background_(palette[\ground]);
+		detailHint.drawFunc = {
+			var rect = detailHint.bounds.moveTo(0, 0).insetBy(2, 2);
+			Pen.stringRightJustIn(detailHintText, rect,
+				CQInk.font(\range, CQGuiScale.metrics(step)[\tiny]),
+				CQInk.palette(skin)[\whisper])
+		};
+		fingerprint = UserView().fixedWidth_(print.width)
 			.background_(palette[\ground]);
 		fingerprint.drawFunc = {
 			try { this.prDrawFingerprint } { |error| CQInkControl.noteDrawError(error) }
 		};
+		// the box draws its own "patch fingerprint" title at the top, so this row
+		// starts below it rather than on top of it
 		fingerprint.layout = VLayout(
-			HLayout(detailTitle, nil, detailHint).margins_(8).spacing_(6), nil
+			View().fixedHeight_(m[\label] + 10),
+			// Horizontal inset only. The explanatory note itself is Pen-drawn
+			// in a roomy band, so Qt label internals cannot crop its glyphs.
+			HLayout(detailTitle, nil, detailHint)
+				.margins_(this.class.detailMargins).spacing_(6),
+			nil
 		).margins_(0).spacing_(0);
 
-		body = View().fixedSize_(Size(contentW, fingerprintH)).layout_(
+		// width fixed to the rail, height free: the body takes the page's
+		// remaining room instead of a constant
+		body = View().fixedWidth_(railWidth).layout_(
 			HLayout(snapshotPanel, fingerprint).margins_(0).spacing_(8));
 
 		aMenu = this.prMenu;
 		bMenu = this.prMenu;
 		menus = [aMenu, bMenu];
-		durationBox = NumberBox().value_(10).clipLo_(0.1).clipHi_(600)
-			.font_(CQInk.font(\number)).stringColor_(palette[\line])
-			.background_(palette[\ground]).fixedSize_(Size(54, 24))
-			.action_({ |box| box.focus(false) });
-		morphButton = this.prButton("morph", 66, \spaf, { this.prMorph });
-		morphMeter = UserView().fixedSize_(Size(310, 24)).background_(palette[\ground]);
+		// A plain text field, not a NumberBox: QcNumberBox spends a single click
+		// on its value-drag gesture, so the caret only appeared on a double
+		// click, and its committed `value` could lag its own text. This box is
+		// read as text anyway (`durationFrom` clamps it), so the numeric widget
+		// bought nothing and cost the ordinary click-to-type the name field
+		// beside it already had. User review 2026-07-30.
+		durationValue = this.class.morphDurationDefault;
+		durationBox = TextField()
+			.string_(this.class.durationText(this.class.morphDurationDefault))
+			.font_(CQInk.font(\number, m[\mono]))
+			.fixedSize_(Size(64, m[\boxHeight]))
+			.action_({ |field| this.prCommitDuration(field) });
+		durationBox.focusLostAction = { |field| this.prCommitDuration(field) };
+		this.prInkEntry(durationBox);
+		this.prWatchEntryHover(durationBox);
+		swapButton = this.prButton(this.class.swapGlyph,
+			this.class.swapButtonWidth, \line, { this.prSwapMorphEnds });
+		morphButton = this.prButton("morph",
+			CQGuiScale.buttonWidth(step, "morph"), \spaf, { this.prMorph });
+		morphMeter = UserView().fixedSize_(Size(310, m[\boxHeight]))
+			.background_(palette[\ground]);
 		morphMeter.drawFunc = {
 			try { this.prDrawMorphMeter } { |error| CQInkControl.noteDrawError(error) }
 		};
-		morphPanel = UserView().fixedSize_(Size(contentW, 86))
+		morphPanel = UserView().fixedSize_(Size(railWidth, m[\boxHeight] + 62))
 			.background_(palette[\recess]);
 		morphPanel.drawFunc = {
-			CQInk.drawToolBox(morphPanel.bounds.moveTo(0, 0), "morph bridge", skin)
+			CQInk.drawToolBox(morphPanel.bounds.moveTo(0, 0), "morph bridge",
+				skin, false, CQGuiScale.metrics(step)[\label],
+				CQGuiScale.metrics(step)[\toolTitleTop])
 		};
 		morphPanel.layout = VLayout(
-			View().fixedHeight_(18),
-			HLayout(this.prLabel("a", \whisper, \label), aMenu,
-				this.prLabel("→", \whisper, \label), bMenu,
-				durationBox, this.prLabel("seconds", \whisper, \label), morphButton,
+			View().fixedHeight_(m[\barHeight] - 4),
+			HLayout(this.prLabel("a", \whisper, \label).fixedWidth_(10), aMenu.view,
+				// the separator between the two ends IS the control that
+				// exchanges them, so the swap costs no extra rail (user request
+				// 2026-07-30)
+				swapButton.view, bMenu.view,
+				durationBox,
+				this.prLabel("seconds", \whisper, \label).fixedWidth_(58),
+				morphButton.view,
 				nil, morphMeter).spacing_(6)
 		).margins_(7).spacing_(4);
 
 		panels = [snapshotPanel, fingerprint, morphPanel, morphMeter];
-		view = View().background_(palette[\recess]).layout_(VLayout(
+		// Clicking bare page ends a text edit as well, so "click somewhere else"
+		// works everywhere and not only on the controls.
+		(panels ++ [detailHint]).do { |panel|
+			panel.mouseDownAction = { this.prReleaseEntries }
+		};
+		// the shared page frame (CQGuiScale.pageFrame). The body carries the
+		// stretch, so the saved-snapshot column and the fingerprint reach down
+		// to the morph bridge instead of stopping at a fixed height — the
+		// fingerprint's own cells and type then grow with the room it gets.
+		topPad = View().fixedHeight_(m[\vMargin]);
+		bottomPad = View().fixedHeight_(m[\vMargin]);
+		// spacing 0: a VLayout's spacing applies above the first item too, which
+		// pushed this page's whole content lower than every other Drawer page.
+		// The gaps are explicit spacers instead.
+		view = View().background_(palette[\recess]);
+		view.mouseDownAction = { this.prReleaseEntries };
+		view.layout_(VLayout(
+			topPad,
 			HLayout(nil, header, nil),
+			View().fixedHeight_(m[\rowGap]),
 			HLayout(nil, body, nil),
+			View().fixedHeight_(m[\rowGap]),
 			HLayout(nil, morphPanel, nil),
-			nil
-		).margins_(4).spacing_(8));
+			bottomPad
+		).margins_(0).spacing_(0));
 
 		matrixCtl = SimpleController(matrix);
 		#[patch, matrix, clear].do { |what|
@@ -167,39 +356,74 @@ CQGuiMemory {
 	}
 
 	prMenu {
-		var palette = CQInk.palette(skin);
-		^PopUpMenu().font_(CQInk.font(\number)).stringColor_(palette[\line])
-			.background_(palette[\ground]).fixedSize_(Size(170, 24))
+		var m = CQGuiScale.metrics(step);
+		^CQInkMenu([], skin).font_(CQInk.font(\number, m[\mono]))
+			.fixedSize_(Size(if(step == \roomy) { 210 } { 170 }, m[\boxHeight]))
+			.action_({ this.prReleaseEntries })
 	}
 
 	prLabel { |text, color = \whisper, role = \label|
 		var palette = CQInk.palette(skin), label;
-		label = StaticText().string_(text).font_(CQInk.font(role)).align_(\left)
-			.stringColor_(palette[color] ?? { palette[\whisper] }).fixedHeight_(18);
-		labels.add(label);
+		var m = CQGuiScale.metrics(step);
+		label = StaticText().string_(text)
+			.font_(CQInk.font(role, this.prRoleSize(role, m)))
+			.align_(\left)
+			.stringColor_(palette[color] ?? { palette[\whisper] })
+			.fixedHeight_(if(role == \tiny) {
+				CQGuiScale.textBandHeight(m[\tiny])
+			} {
+				m[\barHeight]
+			});
+		labels.add((view: label, role: role, color: color));
 		^label
 	}
 
+	prRoleSize { |role, m|
+		^switch(role,
+			\notice, { m[\notice] },
+			\range, { m[\tiny] },
+			\tiny, { m[\tiny] },
+			{ m[\label] })
+	}
+
+	prDetailHintWidth { |m|
+		var font = CQInk.font(\range, m[\tiny]);
+		^this.class.detailHintTexts.collect { |text| text.bounds(font).width }
+			.maxItem.ceil.asInteger + 8
+	}
+
+	prSetDetailHint { |text|
+		detailHintText = text;
+		detailHint.refresh;
+		^this
+	}
+
+	// returns the control: the page re-measures it when the size step changes
 	prButton { |label, width, accent, action|
-		var button = CQInkControl.button(label, width, \day, false, true, accent);
+		var button = CQInkControl.button(label, width, \night, false, true, accent);
 		button.surface = \recess;
-		button.action = action;
+		// pressing anything on the page also ends a text edit
+		button.action = { this.prReleaseEntries; action.value };
+		button.scale = CQGuiScale.metrics(step);
 		gui.registerInkControl(button);
-		^button.view
+		buttons.add(button);
+		^button
 	}
 
 	prSelectSnapshot {
 		var index = snapshotList.value ? 0;
+		this.prReleaseEntries;
 		if(index <= 0) {
 			selectedName = nil;
 			selectedData = nil;
 			detailTitle.string = "live patch · now";
-			detailHint.string = "select a saved snapshot to compare it with the live patch";
+			this.prSetDetailHint(
+				"select a saved snapshot to compare it with the live patch");
 		} {
 			selectedName = snapshotNames.at(index - 1);
 			selectedData = snapshots !? { snapshots.read(selectedName.asSymbol) };
 			detailTitle.string = selectedName.asString;
-			detailHint.string = "outlined knots differ from the live patch";
+			this.prSetDetailHint("outlined knots differ from the live patch");
 		};
 		fingerprint.refresh;
 		^this
@@ -207,7 +431,7 @@ CQGuiMemory {
 
 	prSave {
 		if(snapshots.isNil) {
-			detailHint.string = "start the instrument before saving a snapshot";
+			this.prSetDetailHint("start the instrument before saving a snapshot");
 			^this
 		};
 		snapshots.save(nameField.string);
@@ -219,16 +443,60 @@ CQGuiMemory {
 		if(snapshots.notNil and: { selectedName.notNil }) {
 			snapshots.recall(selectedName.asSymbol)
 		} {
-			detailHint.string = "select a saved snapshot before recall";
+			this.prSetDetailHint("select a saved snapshot before recall");
 		};
 		^this
 	}
 
+	// One place turns a hover flag into entry ink, so the build, the hover
+	// actions and a skin swap can never disagree.
+	prInkEntry { |entry, hovered = false|
+		CQInk.applyTextEntryInk(entry, skin, hovered);
+		^entry
+	}
+
+	prWatchEntryHover { |entry|
+		entry.acceptsMouseOver = true;
+		entry.mouseEnterAction = { this.prInkEntry(entry, true) };
+		entry.mouseLeaveAction = { this.prInkEntry(entry, false) };
+		^entry
+	}
+
+	// Reads the box's live text, remembers it, and writes the clamped value back
+	// so the box always shows the duration that will actually run.
+	prCommitDuration { |field|
+		durationValue = this.class.durationFrom(field.string, durationValue);
+		field.string = this.class.durationText(durationValue);
+		field.focus(false);
+		^durationValue
+	}
+
+	// Nothing else on this page can take focus (`CQGui.prDefocus` leaves only
+	// text entry focusable), so a caret would otherwise blink on until the
+	// window closed. Every other control on the page hands focus back here.
+	prReleaseEntries {
+		[nameField, durationBox].do { |entry|
+			if(entry.notNil and: { entry.hasFocus }) { entry.focus(false) }
+		};
+		^this
+	}
+
+	prSwapMorphEnds {
+		var a = aMenu.value, b = bMenu.value;
+		aMenu.value = b;
+		bMenu.value = a;
+		^this
+	}
+
 	prMorph {
+		var dur;
 		if(snapshots.notNil and: { aMenu.item.notNil } and: { bMenu.item.notNil }) {
-			snapshots.morph(aMenu.item.asSymbol, bMenu.item.asSymbol, durationBox.value)
+			// Read what the box shows, not what it last committed, then write it
+			// back so the box agrees with the morph it just started.
+			dur = this.prCommitDuration(durationBox);
+			snapshots.morph(aMenu.item.asSymbol, bMenu.item.asSymbol, dur)
 		} {
-			detailHint.string = "choose two saved snapshots before morph";
+			this.prSetDetailHint("choose two saved snapshots before morph");
 		};
 		^this
 	}
@@ -244,13 +512,28 @@ CQGuiMemory {
 
 	prDrawFingerprint {
 		var palette = CQInk.palette(skin), data = selectedData;
-		var left = 92, top = 50, cellW = 32, cellH = 14;
+		var box = fingerprint.bounds.moveTo(0, 0);
+		var m = CQGuiScale.metrics(step);
+		var left = if(step == \roomy) { 112 } { 92 };
+		// clear of the box title AND the title/hint row under it, so the column
+		// group names never crowd the explanatory text
+		var top = (m[\label] + 10) + m[\notice] + 16
+			+ m[\tiny] + 8 + (m[\rowGap] * 2);
+		// the fingerprint fills whatever the rail leaves it, so a wider window
+		// buys patch detail rather than a small picture in a big box
+		var cellW = ((box.width - left - 24) / CQMatrix.destNames.size)
+			.floor.clip(24, 48);
+		var cellH = ((box.height - top - 34) / CQMatrix.sourceNames.size)
+			.floor.clip(11, 26);
 		var width = CQMatrix.destNames.size * cellW;
 		var height = CQMatrix.sourceNames.size * cellH;
 		var active = 0, verso = 0, inverso = 0, changed = 0;
+		// the row labels are the fingerprint's own readable text, so they grow
+		// with the cells rather than staying at the page's smallest size
+		var rowSize = (cellH - 4).clip(m[\tiny], m[\label]);
 		var groups;
-		CQInk.drawToolBox(fingerprint.bounds.moveTo(0, 0), "patch fingerprint", skin,
-			selectedName.notNil);
+		CQInk.drawToolBox(box, "patch fingerprint", skin, selectedName.notNil,
+			m[\label], m[\toolTitleTop]);
 		groups = [(start: 0, count: 5, title: "coco 1"),
 			(start: 5, count: 5, title: "coco 2"),
 			(start: 10, count: 5, title: "castle fm"),
@@ -258,8 +541,9 @@ CQGuiMemory {
 			(start: 20, count: 2, title: "decks")];
 		groups.do { |group|
 			var x = left + (group[\start] * cellW);
-			Pen.stringCenteredIn(group[\title], Rect(x, top - 18,
-				group[\count] * cellW, 11), CQInk.font(\range), palette[\whisper]);
+			Pen.stringCenteredIn(group[\title],
+				Rect(x, top - m[\tiny] - 8, group[\count] * cellW, m[\tiny] + 4),
+				CQInk.font(\range, m[\tiny]), palette[\line]);
 		};
 		Pen.strokeColor = palette[\whisper].copy.alpha_(0.16);
 		Pen.width = CQInk.strokes[\hairline];
@@ -275,8 +559,9 @@ CQGuiMemory {
 		CQMatrix.sourceNames.do { |src, si|
 			var y = top + (si * cellH) + (cellH / 2);
 			var family = this.prSourceFamily(src);
-			Pen.stringAtPoint(this.prSourceLabel(src), 8@(y - 5), CQInk.font(\range),
-				palette[\whisper]);
+			Pen.stringAtPoint(this.prSourceLabel(src),
+				8@(y - (rowSize / 2) - 1),
+				CQInk.font(\range, rowSize), palette[\whisper]);
 			Pen.fillColor = palette[family];
 			Pen.fillOval(Rect(left - 12, y - 2.5, 5, 5));
 			CQMatrix.destNames.do { |dest, di|
@@ -301,14 +586,16 @@ CQGuiMemory {
 		};
 		Pen.stringRightJustIn("% routes · % verso · % inverso · % changed"
 			.format(active, verso, inverso, changed),
-			Rect(fingerprintW - 390, fingerprintH - 22, 378, 12),
-			CQInk.font(\number), palette[\line]);
+			Rect(box.width - 396, box.height - (m[\mono] + 12), 384, m[\mono] + 4),
+			CQInk.font(\number, m[\mono]), palette[\line]);
 	}
 
 	prDrawMorphMeter {
 		var palette = CQInk.palette(skin), progress, label, rail;
+		var m = CQGuiScale.metrics(step), box = morphMeter.bounds.moveTo(0, 0);
+		var readout = this.class.morphReadoutWidth(m[\mono]);
 		progress = if(snapshots.isNil) { 0.0 } { snapshots.morphProgress ? 0.0 };
-		rail = Rect(5, 7, morphMeter.bounds.width - 70, 10);
+		rail = Rect(5, (box.height / 2) - 5, box.width - readout - 12, 10);
 		Pen.fillColor = palette[\recess];
 		Pen.fillRect(rail);
 		Pen.fillColor = palette[\spaf].copy.alpha_(0.72);
@@ -321,8 +608,10 @@ CQGuiMemory {
 		} {
 			if(progress >= 1) { "arrived" } { "ready" }
 		};
-		Pen.stringRightJustIn(label, Rect(rail.right + 6, 4, 54, 14),
-			CQInk.font(\number), palette[\line]);
+		Pen.stringRightJustIn(label,
+			Rect(rail.right + 6, (box.height / 2) - (m[\mono] / 2) - 2,
+				readout, m[\mono] + 4),
+			CQInk.font(\number, m[\mono]), palette[\line]);
 	}
 
 	prSourceLabel { |src|

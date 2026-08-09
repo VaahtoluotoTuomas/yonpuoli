@@ -4,10 +4,10 @@
 
 CQGuiBananaController {
 	var grammar, endpoints, bodies, overlay, controls, controlViews;
+	var cableHoverControlViews, cablePriorityFuncs;
 	var gestureCtl, matrixCtl;
-	// With one grammar feeding two stages (Day and Night), the hidden stage's
-	// per-gesture endpoint refreshes are pure language-to-Qt bridge waste: Qt
-	// repaints the whole stage anyway when the hard cut shows it. nil = always.
+	// Presentation owners may gate per-gesture endpoint refreshes while their
+	// stage is hidden; Qt repaints it in full when shown. nil = always.
 	var <>refreshGate;
 
 	*new { |grammar, endpoints, bodies, overlay, controls|
@@ -48,7 +48,20 @@ CQGuiBananaController {
 
 	prInit {
 		controlViews = IdentitySet.new;
-		controls.do { |control| controlViews.add(control.view) };
+		cableHoverControlViews = IdentitySet.new;
+		cablePriorityFuncs = IdentityDictionary.new;
+		controls.do { |control|
+			var priority;
+			controlViews.add(control.view);
+			if(control.respondsTo(\at)
+				and: { control[\cableHover] == true }) {
+				cableHoverControlViews.add(control.view)
+			};
+			priority = if(control.respondsTo(\at)) {
+				control[\cablePriority]
+			} { nil };
+			priority !? { cablePriorityFuncs[control.view] = priority };
+		};
 		this.prBindEndpoints;
 		this.prBindBodies;
 		gestureCtl = SimpleController(grammar);
@@ -137,19 +150,24 @@ CQGuiBananaController {
 	}
 
 	// Qt does not propagate no-button mouse moves through child widgets. Every
-	// Day descendant therefore opts into tracking while retaining its own hover
-	// behavior; otherwise a cable crossing a knob or label can never be focused.
+	// Every descendant therefore opts into tracking while retaining its own
+	// hover behavior; otherwise a cable crossing a control can never be focused.
 	prBindHoverView { |view|
 		var previousOver = view.mouseOverAction, previousEnter = view.mouseEnterAction;
-		if(controlViews.includes(view)) {
+		var controlWins = controlViews.includes(view)
+			and: { cableHoverControlViews.includes(view).not };
+		var priority = cablePriorityFuncs[view];
+		if(controlWins) {
 			view.mouseEnterAction = { |v|
 				previousEnter.value(v);
 				grammar.hoverCable = nil
 			}
 		};
 		view.mouseOverAction = { |v, x, y|
+			var priorityWins = priority.notNil
+				and: { priority.value(v, x, y) == true };
 			previousOver.value(v, x, y);
-			if(controlViews.includes(v)) {
+			if(controlWins or: { priorityWins }) {
 				grammar.hoverCable = nil
 			} {
 				this.prHover(v, x, y)
@@ -197,7 +215,12 @@ CQGuiBananaController {
 
 	prEndpointWheel { |name, endpoint, view, x, y, modifiers, delta|
 		var patch, point;
-		if(endpoint[\kind] != \socket or: { delta == 0 }) { ^this };
+		if(delta == 0) { ^this };
+		if(grammar.isInHand) {
+			grammar.wheelHand(delta.sign, modifiers.isCtrl);
+			^this
+		};
+		if(endpoint[\kind] != \socket) { ^this };
 		point = this.prPoint(view, x, y);
 		patch = overlay.patchAtSocket(name, point);
 		patch !? {
@@ -241,6 +264,10 @@ CQGuiBananaController {
 	prGroundWheel { |view, x, y, modifiers, delta|
 		var patch;
 		if(delta == 0) { ^this };
+		if(grammar.isInHand) {
+			grammar.wheelHand(delta.sign, modifiers.isCtrl);
+			^this
+		};
 		patch = overlay.patchAt(this.prPoint(view, x, y));
 		patch !? {
 			grammar.wheel(patch[\src], patch[\dest], delta.sign, modifiers.isCtrl)

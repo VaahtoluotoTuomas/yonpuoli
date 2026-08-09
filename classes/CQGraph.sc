@@ -49,8 +49,6 @@ CQGraph {
 		buses[\qMix] = Bus.audio(server, 1);
 		buses[\coco1] = Bus.audio(server, 1);
 		buses[\coco2] = Bus.audio(server, 1);
-		buses[\space] = Bus.audio(server, 2);
-		buses[\spaceRet] = Bus.audio(server, 2);
 		buses[\dry] = Bus.audio(server, 2);
 		// post-safety Coco stems (SPEC §5.7): \cqMaster publishes each Coco through
 		// the identical safety chain here; hardware stem outs and the stem recorder
@@ -71,7 +69,6 @@ CQGraph {
 		groups[\sources] = Group(groups[\cq], \addToTail);
 		groups[\quantussy] = Group(groups[\cq], \addToTail);
 		groups[\cocos] = Group(groups[\cq], \addToTail);
-		groups[\fx] = Group(groups[\cq], \addToTail);
 		groups[\master] = Group(groups[\cq], \addToTail);
 		server.sync;
 	}
@@ -94,8 +91,8 @@ CQGraph {
 			 ("wSpesal" ++ k).asSymbol, buses[("castle" ++ k ++ "_spesal").asSymbol].index]
 		}.flatten, groups[\quantussy]);
 		// canonical aModSrc channels: coco taps 12/13, organs 14/15 (ARCH §3.2)
-		[[\coco1, \preA, \deckA, \coco2, 12, 14],
-		 [\coco2, \preB, \deckB, \coco1, 13, 15]].do { |row|
+		[[\coco1, \preA, \deckA, \coco2, 12, 14, 0],
+		 [\coco2, \preB, \deckB, \coco1, 13, 15, 1]].do { |row|
 			var n = row[0];
 			synths[n] = Synth(\cqCoco, [
 				\buf, buffers[n].bufnum,
@@ -104,21 +101,22 @@ CQGraph {
 				\qMixBus, buses[\qMix].index,
 				\crossBus, buses[row[3]].index,
 				\outBus, buses[n].index,
-				\spaceBus, buses[\space].index,
 				\modSrcBus, buses[\modSrc].index,
 				\modTapIdx, row[4], \modOrganIdx, row[5],
+				\cocoIndex, row[6],
 				\meterId, if(n == \coco1) { 1 } { 2 },   // '/cq_cocometers' replyID
 				\wSpafBus, buses[(n ++ "_spaf").asSymbol].index,
 				\wInVcaBus, buses[(n ++ "_inVca").asSymbol].index,
 				\wFbVcaBus, buses[(n ++ "_fbVca").asSymbol].index,
 				\wFlipBus, buses[(n ++ "_flip").asSymbol].index,
-				\wSkipBus, buses[(n ++ "_skip").asSymbol].index
+				\wSkipBus, buses[(n ++ "_skip").asSymbol].index,
+				\wOrganBus, buses[(n ++ "_organ").asSymbol].index,
+				\wSlotQBus, buses[(n ++ "_slotQ").asSymbol].index,
+				\wSlotXBus, buses[(n ++ "_slotX").asSymbol].index,
+				\wDustBus, buses[(n ++ "_dust").asSymbol].index,
+				\wRecordBus, buses[(n ++ "_record").asSymbol].index
 			], groups[\cocos]);
 		};
-		synths[\space] = Synth(\cqSpace, [
-			\inBus, buses[\space].index,
-			\outBus, buses[\spaceRet].index
-		], groups[\fx]);
 		// GUI_SPEC §9 telemetry: reads the completed 16-channel mod-source bus in
 		// the last group and only reports — it writes to no bus and no output
 		synths[\aura] = Synth(\cqAura, [
@@ -127,7 +125,6 @@ CQGraph {
 		synths[\master] = Synth(\cqMaster, [
 			\coco1Bus, buses[\coco1].index,
 			\coco2Bus, buses[\coco2].index,
-			\spaceRetBus, buses[\spaceRet].index,
 			\dryBus, buses[\dry].index,
 			\stem1Bus, buses[\stem1].index,
 			\stem2Bus, buses[\stem2].index

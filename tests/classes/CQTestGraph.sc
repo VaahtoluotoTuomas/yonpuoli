@@ -1,12 +1,13 @@
 // Minimal running graph double for recorder and matrix ownership tests.
 
 CQTestGraph {
-	var <server, <groups, <buses, <synths, <buffers;
+	var <server, <config, <groups, <buses, <synths, <buffers;
 	var <registeredSynths, <registeredBuffers;
 
-	*new { |server| ^super.newCopyArgs(server).prInit }
+	*new { |server, config| ^super.newCopyArgs(server, config).prInit }
 
 	prInit {
+		config = config ?? { CQConfig.validate(()) };
 		groups = IdentityDictionary.new;
 		buses = IdentityDictionary.new;
 		synths = IdentityDictionary.new;
