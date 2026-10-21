@@ -20,15 +20,17 @@ CQGuiPanels {
 		var meterL = this.prMeter(gui, false, false, \recess);
 		var meterR = this.prMeter(gui, false, false, \recess);
 		var grMeter = this.prMeter(gui, true, true, \recess);
-		var notice = this.prLabel("", \whisper, \left, \notice, chrome[\notice])
-			.fixedSize_(Size(420, chrome[\notice] + 8));
+		// One left edge for status and REC. Three lines leave room for combined
+		// audio/mic/output notices without moving the transport buttons.
+		var notice = this.prLabel("", \whisper, \topLeft, \notice, chrome[\notice])
+			.fixedSize_(Size(280, 52));
 		var recBtn = this.prButton(gui, "REC", 58, true, false,
 			\danger, \rec, \recess);
 		var recTime = this.prLabel("", \danger, \left, \number, chrome[\mono])
 			.fixedWidth_(56);
 		var panicBtn = this.prButton(gui, "PANIC", 82, true, false,
 			\danger, \panic, \recess);
-		var panel;
+		var panel, controls, help, transport;
 		[recBtn, panicBtn].do { |button| button.scale = chrome };
 		gui.setMeter(\master, { |pkL, pkR|
 			meterL.value = this.ampMeter(pkL);
@@ -38,6 +40,13 @@ CQGuiPanels {
 		gui.notice_(notice);
 		gui.recButton_(recBtn);
 		gui.recTime_(recTime);
+		gui.registerInfo(meterL.view, [\master, \out]);
+		gui.registerInfo(meterR.view, [\master, \out]);
+		gui.registerInfo(grMeter.view, [\master, \gr]);
+		gui.registerInfo(notice, [\master, \notice]);
+		gui.registerInfo(recBtn.view, [\master, \rec]);
+		gui.registerInfo(recTime, [\master, \rec]);
+		gui.registerInfo(panicBtn.view, [\master, \panic]);
 		recBtn.view.fixedSize = Size(88, 34);
 		panicBtn.view.fixedSize = Size(112, 34);
 		recBtn.action = { |b|
@@ -50,13 +59,21 @@ CQGuiPanels {
 		gui.widgets.register(\monitorMute, {
 			|v| panicBtn.value = (v ? 0).clip(0, 1)
 		});
+		help = UserView().fixedWidth_(400);
+		gui.hoverView = help;
+		controls = UserView().fixedWidth_(280);
+		gui.masterControls = controls;
+		controls.drawFunc = {
+			CQInk.drawToolHeader(controls.bounds.moveTo(0, 0), "master", \night, chrome[\label])
+		};
 		panel = UserView().fixedHeight_(118)
 			.background_(CQInk.palette(\night)[\recess]);
 		panel.drawFunc = {
-			CQInk.drawToolHeader(panel.bounds.moveTo(0, 0), "master",
-				\night, chrome[\label])
+			Pen.strokeColor = CQInk.palette(\night)[\whisper];
+			Pen.width = CQInk.strokes[\hairline];
+			Pen.line(8@0, Point(panel.bounds.width - 8, 0)); Pen.stroke;
 		};
-		panel.layout = VLayout(
+		controls.layout = VLayout(
 			View().fixedHeight_(chrome[\label] + 8),
 			HLayout(
 				VLayout(HLayout(meterL.view, meterR.view).spacing_(2),
@@ -67,15 +84,21 @@ CQGuiPanels {
 						chrome[\label] - 2)).spacing_(0),
 				w.knob(\masterVol, "vol", nil, \primary, \recess, chrome),
 				w.knob(\masterDry, "dry", nil, \standard, \recess, chrome),
-				w.knob(\patchDepth, "depth", c[\spaf], \standard, \recess, chrome),
-				// Deliberate air: the final mode phase may claim this stretch,
-				// but cleanup does not pre-design its control.
-				nil,
-				VLayout(notice,
-					HLayout(recBtn.view, recTime, panicBtn.view, nil)
-						.spacing_(8)).spacing_(6)
+				w.knob(\patchDepth, "depth", c[\spaf], \standard, \recess, chrome)
 			).margins_(6).spacing_(8)
 		).margins_(0).spacing_(0);
+		transport = UserView().fixedWidth_(296);
+		transport.drawFunc = {
+			CQInk.drawToolHeader(transport.bounds.moveTo(0, 0), "session", \night, chrome[\label])
+		};
+		transport.layout = VLayout(
+			View().fixedHeight_(chrome[\label] + 8), View().fixedHeight_(6),
+			HLayout(recBtn.view, recTime, nil, panicBtn.view).spacing_(8),
+			View().fixedHeight_(4), notice, nil).margins_(8, 0, 8, 0).spacing_(0);
+		// Transport is one compact group; the larger inter-group gap separates
+		// PANIC from the meter bank without inserting another box or divider.
+		panel.layout = HLayout(help, nil, HLayout(transport, controls).spacing_(40))
+			.margins_(6, 0, 6, 0).spacing_(16);
 		^panel
 	}
 

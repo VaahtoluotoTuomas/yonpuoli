@@ -117,7 +117,9 @@ The implementation MUST deliver these behaviors (these drive the acceptance test
    that can be caught into loops (self-noise source, level controllable in SC). A
    quiet 9 kHz-filtered bed carries continuity while sparse bipolar converter errors
    provide the chip-crackle; the RAM clock thins those errors so stored grain density
-   follows Speed (roughly 30–960 errors/s across 1.5–48 kHz).
+   follows Speed (roughly 30–960 errors/s across 1.5–48 kHz). On Night, vertical
+   drag sets amount (up = more); horizontal drag blends steady mist on the left
+   into sparse chip errors on the right. Both mirrored veils use these screen axes.
 6. **Lossless hold.** Loop-hold plays the buffer indefinitely with zero degradation,
    and Speed changes during hold re-pitch the loop without destroying it.
 7. **Quantussy feel.** Master Frequency + Chaos as the two-knob macro: 0 = stable
@@ -204,6 +206,11 @@ one server bundle, and the dry monitor preserves L/R rather than summing them to
 mono. Standalone deck loads remain dual mono in the dry monitor. Async loads are
 last-request-wins and cannot publish after deck/session teardown.
 
+On Night, a bird tap opens the file chooser; wheel steps the folder. A deliberate
+pull in any direction followed by release requests one random file through the
+same deck facade. The bounded spring/wiggle is GUI gesture feedback, independent
+of load success; cancellation before release does not load (GUI_SPEC §6.1).
+
 ### 5.2 Preamps A / B
 
 Two channels; A feeds Coco1's `pre` slot, B feeds Coco2's by default.
@@ -239,7 +246,7 @@ Per Coco `n` ∈ {1,2} (names shown for n=1):
 | `coco1DolbyIn` | enum | `\off` | — | `\off \gate \duck` — gate = downward expander on input; duck = input attenuated by feedback-channel envelope |
 | `coco1DolbyFb` | enum | `\off` | — | same, on feedback channel, keyed by input envelope |
 | `coco1Hold` | 0/1 | 1 at boot | — | 0 = recording (delay), 1 = loop-locked. Boot state mirrors hardware power-on |
-| `coco1Flip` | 0/1 | 0 | — | reverse head direction (works recording and holding). Matrix gate dest `coco1_flip` |
+| `coco1Flip` | 0/1 | 0 | — | hand direction bit, XOR with latched flip-trigger parity (recording and holding). Changing it reverses the current direction. Matrix trigger dest `coco1_flip` |
 | — skip — | trigger | — | — | resets loop phase to 0. Method `.skip(n)` + matrix trig dest `coco1_skip` |
 | `coco1Bits` | 3–12 | 8 | lin (int) | converter depth. 8 = authentic |
 | `coco1Wrap` | 0/1 | 0 | — | 0 = converter clips (authentic-safe); 1 = digital wraparound overflow (evil mode, still level-bounded downstream) |
@@ -297,7 +304,7 @@ Outputs published to the mod source bus: `tri1..tri5` (±1 triangle), `cas1..cas
   default 0.60 cable could never reach the common `+0.5` Schmitt threshold.
   The conditioned jack does, while remaining a bounded bipolar source.
 - **Destinations (32):** per Coco: `_spaf` (speed FM, scaled by `cocoNSpaf`), `_inVca`,
-  `_fbVca`, `_flip` (gate), `_skip` (trig), `_organ`, `_slotQ`, `_slotX`,
+  `_fbVca`, `_flip` (trig), `_skip` (trig), `_organ`, `_slotQ`, `_slotX`,
   `_dust`, `_record`;
   per castle: `_fm` (octaves), `_spesal` (trig); plus `deckA_rate`,
   `deckB_rate` (±1 rate offset). The first five Coco inputs preserve the real
@@ -319,8 +326,14 @@ Outputs published to the mod source bus: `tri1..tri5` (±1 triangle), `cas1..cas
   weight (`patch` defaults to 1.0). Shake has the separate ecological law below;
   its `amount` is the ceiling of continuous **decoration**, not a fixed weight
   and not the strength of its guaranteed skeleton.
-- Gate/trig destinations use a Schmitt threshold: rising through +0.5 fires (gates:
-  >+0.5 = on).
+- Gate/trig destinations use Schmitt hysteresis: rise above +0.5 fires;
+  fall below +0.3 rearms. Each `_flip` rising edge toggles persistent direction
+  parity once. Holding high and falling low do not change direction. Effective
+  reverse = hand Flip XOR trigger parity; hand toggles therefore always turn
+  the current direction around. Parity is runtime synth state (initially zero),
+  not a second language-side parameter or snapshot field. `/cq_phase` reports
+  effective direction; `/cq_charge` reports the one-sample flip trigger, not
+  the high interval. Record retains its separate hand-XOR-gate behavior.
 - **VCA law (`_inVca`, `_fbVca`, `_organ`, `_slotQ`, `_slotX`).** The knob is the valve's resting position and the
   matrix adds to it, but the modulation's contribution is **shaped, not linear**:
   `shaped = (1 + sum)² − 1`, with `sum` clamped to ±2 before the shaping. Fixed
@@ -520,6 +533,92 @@ The optional guided 16n exercise remains useful regression material, but the
 controller is not required for ordinary GUI use.
 
 ### 6.2 GUI panel
+
+An always-on, read-only hover note occupies the lower-left footer: a short title
+and explanation of the individual control, socket or cable under the pointer.
+It works during ordinary playing without enabling info; empty background clears
+it. It neither intercepts performance gestures nor writes musical state.
+While info is enabled, a stable mode instruction replaces individual hover
+notes and points to the upper-left guides and exit actions. The learning guide
+distinguishes playing from reading; leaving info restores the normal hover note.
+Master meters and controls sit at the far right, after REC and PANIC. The footer
+retains its height and full transport hit areas. Status and transport share
+aligned edges, with reserved space for combined notices and elapsed recording
+time, a matching **session** header, and a clear gap before Master
+(GUI_SPEC §2.0).
+
+Night has an optional **info** layer (GUI_SPEC §2.1), initially off. Click a
+component to read its illustrated overview; its individual controls and ports
+share that card. Coco shows its complete anatomy on one page, with a large picture
+and two text columns. Its three lower crescents have separate numbers in visual
+left-to-right order: SP.AF, input, feedback. Castles separate the shared ring/eye/network from a single
+castle's controls and ports, with a large picture on each page. Hover a numbered
+picture mark or text paragraph to locate the corresponding part on the surface.
+The toolbar contains **basics & first loop**, **organ & advanced**, then **shortcuts**:
+two illustrated, player-driven learning paths and a two-page keyboard reference.
+The combined guide introduces each concept before its exercise. It distinguishes
+fixed audio paths from control cables before teaching connections and editing.
+A cable click opens the port introduction in inspection; paging keeps it read-only.
+Each guide button starts its own path at the beginning with playing enabled.
+Guide symbol hover brightens all corresponding native surface
+parts, including both members of a pair, all matching ports and the entire
+cross-feed bridge with both ends. Concept pages have no square locators; practical
+pages retain their action brackets. Nothing
+highlighted behind an opaque card draws through it. Paragraphs have no hover fill.
+Multipage cards keep back/next/close in fixed slots, disabling boundary buttons,
+and also accept left/right arrows while open (outside text entry and Drawer).
+The combined guide has 23 pages: sources and memories; loading and preview;
+Coco anatomy before capture/hold/time; castles and ports before speed patching;
+depth/weight and cable editing; flip triggers; right-side capture; separate Input
+and Feedback lessons; dust; a cross-Coco cable and its use; record gating; moon
+random patches; further exploration. Input and Feedback each show the three lower
+crescents in context, brightening only the named middle or rightmost control.
+Right-side capture uses the already-open heart, not dry.
+Its illustrated steps remain user-driven. Brackets clear the crescent controls;
+the speed cue sits at the nine-o'clock notch.
+Cable-making explains pre-release strength/cancel before planting and defines
+why zero SP.AF depth prevents speed modulation. The next page separates local depth/weight from a
+second picture band for Master depth and the eye. Flip begins with the input
+picture and says explicitly that each trigger swaps forward and reverse.
+**Organ & advanced** has 27 pages. From a reset, the player clears a loop, builds
+an Organ voice, gives it castle-driven level and pitch, then uses a file through
+root B for audio and envelope control. Later steps explore dynamics, punch/skip,
+castle ranges/sends and Q capture, Organ-to-FM, the audio bridge, seed memories,
+blending/breeding/weather, and Drawer/saving/recording. The two seed variations
+change cable weights only: seeds do not recall parameters or loop audio, whereas
+Drawer snapshots also preserve parameter settings. New concepts precede their
+actions; reused routes have an explicit purpose, and temporary examples say when
+to remove them. No lesson automatically prepares a patch or enables microphone gain.
+Each guide's first page offers **fresh session**, followed by an explicit **reset now**
+confirmation on the same card. It calls `Cocoquantus.freshSession`: owned
+teardown/boot resets controls, matrix, loaded decks, loop buffers and runtime
+histories to startup defaults (including sealed dust-filled memories and muted
+microphone), stops recording/morphing and reopens step one of the same guide. It keeps the running
+audio server/configuration and saved files; it is not undoable. Reading and
+navigation alone cannot invoke this reset. Inactive/in-flight sessions reject it.
+Ctrl+Z undoes GUI patch operations; Ctrl+X redoes the exact operation, including
+sow's changed parameter subset. A new committed operation discards redo. Text
+fields retain native undo/cut behavior. Neither key restores overwritten audio.
+Tide teaches store/recall, focus, blend and breed with enlarged native pictures
+beside each row, rather than a miniature of the whole landscape. Q inlet and cross-feed
+bridge have separate numbered controls/sockets in the Coco overview.
+Only a learning guide entered from its toolbar button enables playing.
+Reading or navigating inspection cards, including the cable entry, never does.
+Enabling leaves Night exposed; inspection clicks explain rather than play.
+Clicking another target replaces the note immediately. Clicking empty background
+closes only the note and leaves inspection armed; the background has no card.
+Every info component reacts to pointer hover, including its empty input sockets
+and the Coco's lower crescents and gate/duck arcs;
+enabling info adds no persistent marks around available targets. The guide,
+entered from the toolbar, enables playing while its steps remain visible.
+The info button breathes slowly while the mode is on; stronger first-loop brackets
+use a two-second smooth pulse. The footer holds the sole mode instruction.
+No new musical write path is introduced. PANIC and performance keys remain live.
+Component cards open beside their subject, avoid all of its controls and ports,
+and remain inside Night. They may cover other components; the persistent Master
+strip and PANIC stay exposed. Coco has an enlarged illustration; moon/eye gesture
+leaders follow the actual horizontal or vertical direction.
+Its text and annotation ink are opt-in exceptions to Night's resting-label law.
 
 > GUI **structure, interaction grammar, visual language, motion and constants
 > are normative in

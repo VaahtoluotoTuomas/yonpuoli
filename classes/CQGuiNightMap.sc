@@ -13,7 +13,7 @@
 
 CQGuiNightMap {
 	var gui, state, matrix, config;
-	var <stageView, <container, <overlay, <routeView;
+	var <stageView, layerHost, <container, <overlay, <routeView;
 	var <controller, <touch, <endpoints, <bodies;
 	var <groundView, <rootViews, <ringView, <eyeView, <castleViews, <shellViews;
 	var <dustViews, <dustNorms, <dustGrainNorms, <dustActive, <dustHover;
@@ -31,6 +31,7 @@ CQGuiNightMap {
 	// paint count/size below still proves that Qt eventually ran the drawFunc.
 	var <routeLayoutRefreshCount = 0, <routeLayoutRefreshSize;
 	var <birdHover, <birdFlash, birdFlashGeneration, fileDialog, deckAction;
+	var <birdOffsets, <birdTilts, <birdHeld, <birdReturnTasks;
 	var <almanacView, <moonHover = false, <moonFlash = false;
 	// The tide is the full ground itself: four seeds, no pool body or outline.
 	var <compassView, <compassHover, <compassDragState;
@@ -1167,6 +1168,8 @@ CQGuiNightMap {
 		birdHover = [false, false];
 		birdFlash = [false, false];
 		birdFlashGeneration = [0, 0];
+		birdOffsets = [0@0, 0@0]; birdTilts = [0, 0]; birdHeld = [false, false];
+		birdReturnTasks = Array.newClear(2);
 		// Dialog.openPanel is asynchronous. Keeping the launcher injectable
 		// lets the headless smoke prove the tap route without opening native UI.
 		fileDialog = { |callback, path|
@@ -1248,9 +1251,20 @@ CQGuiNightMap {
 		this.prBindTideGround;
 		this.prBindTideGate;
 		this.prBindDrops;
-		stageView = View().background_(night[\ground]).layout_(
+		// Keep the outer stage free of a layout. Floating info cards are siblings
+		// of this host; QStackLayout must never stretch them to the whole stage
+		// on their first show. Only the instrument layers belong to its stack.
+		stageView = View().background_(night[\ground]);
+		layerHost = View(stageView, stageView.bounds.moveTo(0, 0)).layout_(
 			StackLayout(tideGestureView, overlay.view, routeView, container)
 				.mode_(\stackAll));
+		stageView.onResize = {
+			// Let Qt settle its nested layout without entering the language's
+			// container resize callback during a synchronous geometry write.
+			if(freed.not) {
+				layerHost.setProperty(\geometry, stageView.bounds.moveTo(0, 0), false)
+			}
+		};
 		container.onResize = { this.prLayout };
 		this.prRegisterUpdaters;
 		{ this.prLayout }.defer;
@@ -1310,10 +1324,11 @@ CQGuiNightMap {
 		var scale = this.class.crescentScaleFor(name);
 		view.drawFunc = {
 			this.prSafeDraw {
+				var infoHover = gui.info.notNil and: { gui.info.groupHighlighted([\param, name]) };
 				CQInkNight.drawCrescent(Point(extent * 0.5, extent * 0.5),
 					crescentNorms[name] ? 0,
 					family, activeCrescents.includes(name)
-						or: { hoverCrescents.includes(name) }, \night, scale,
+						or: { hoverCrescents.includes(name) } or: { infoHover }, \night, scale,
 					crescentModStates[name]);
 				if(carriesDolby) {
 					CQInkNight.drawDolbyOyster(
@@ -1321,7 +1336,7 @@ CQGuiNightMap {
 							+ CQNightMeasures.dolbyOysterDrop),
 						dolbyStates[this.class.dolbyNameForCrescent(name)] ? \off,
 						if(name.asString.endsWith("In")) { 1 } { -1 },
-						dolbyHover.includes(name), \night);
+						dolbyHover.includes(name) or: { infoHover }, \night);
 				};
 			}
 		};
@@ -1561,6 +1576,136 @@ CQGuiNightMap {
 
 	prStagePoint { |view, x, y|
 		^view.mapToGlobal(Point(x, y)) - container.mapToGlobal(0@0)
+	}
+
+	// Read AFTER the existing hover handler. Info observes the same mutually
+	// exclusive cues the next press will answer, including the narrow Q/X and
+	// tide-gill exceptions to cable-first priority. It never changes a gesture.
+	infoTarget { |view, x, y|
+		var point, patch, flow, name;
+		if(geometry.isNil or: { freed }) { ^nil };
+		point = this.prStagePoint(view, x, y);
+		if(view === tideGateView and: { tideGateHover }) { ^[\tideGate] };
+		endpoints.keysValuesDo { |key, endpoint|
+			if(view === endpoint[\view]) { ^[\endpoint, key] };
+		};
+		shellViews.do { |v, i|
+			if(v === view) {
+				flow = this.class.shellFlowNames(i).detect { |key| flowHover.includes(key) };
+				if(flow.notNil) { ^[\param, flow] };
+			};
+		};
+		patch = overlay.patchAt(point);
+		if(patch.notNil) { ^[\cable, patch[\src], patch[\dest]] };
+		shellViews.do { |v, i|
+			if(v === view) {
+				name = "coco" ++ (i + 1);
+				if(heartHover[i]) { ^[\param, (name ++ "Hold").asSymbol] };
+				if(shellHover[i]) { ^[\param, (name ++ "Speed").asSymbol] };
+				if(chevronHover[i]) { ^[\param, (name ++ "Flip").asSymbol] };
+				if(skipHover[i]) { ^[\skip, i] };
+				if(rimHover[i]) { ^[\body, name.asSymbol] };
+			};
+		};
+		crescentViews.keysValuesDo { |key, v|
+			if(v === view) {
+				if(dolbyHover.includes(key)) { ^[\param, this.class.dolbyNameForCrescent(key)] };
+				if(hoverCrescents.includes(key)) { ^[\param, key] };
+			};
+		};
+		castleViews.do { |v, k|
+			if(v === view) {
+				if(rangeHover[k]) { ^[\param, ("c" ++ (k + 1) ++ "Range").asSymbol] };
+				if(dialHover[k]) { ^[\castle, k] };
+			};
+		};
+		rootViews.do { |v, i|
+			if(v === view) {
+				if(preampHover[i]) { ^[\preamp, i] };
+				if(preampSourceHover[i].notNil) {
+					^[\source, i, geometry[\roots][i][\sourceValues][preampSourceHover[i]]]
+				};
+			};
+		};
+		dustViews.do { |v, i| if(v === view and: { dustHover[i] }) { ^[\dust, i] } };
+		birdViews.do { |v, i| if(v === view and: { birdHover[i] }) { ^[\bird, i] } };
+		if([eyeView, ringView].includes(view)) {
+			if(eyeHover) { ^[\eye] };
+			if(ringHover) { ^[\body, \quantussy] };
+		};
+		if(view === almanacView and: { moonHover }) { ^[\moon] };
+		if(view === groundView) {
+			if(compassHover.isArray) { ^[\seed, compassHover[1]] };
+		};
+		^nil
+	}
+
+	// Geometry samples for the inspection coverage audit, not painted marks.
+	// infoTarget and the native hover handlers remain the actual hit contract.
+	infoHitRegions {
+		var result = List.new, g = geometry, add, trace;
+		if(g.isNil or: { freed }) { ^[] };
+		add = { |target, view, point, rx = 14, ry|
+			result.add((target: target, view: view, point: point,
+				rect: Rect.aboutPoint(point, rx, ry ? rx)));
+		};
+		trace = { |target, view, points|
+			result.add((target: target, view: view, path: points,
+				point: points[points.size div: 2]));
+		};
+		endpoints.keysValuesDo { |key, e|
+			add.value([\endpoint, key], e[\view], g[\endpoints][key], 10);
+		};
+		g[\cocos].do { |coco, i|
+			var prefix = "coco" ++ (i + 1), view = shellViews[i];
+			add.value([\param, (prefix ++ "Hold").asSymbol], view, coco[\center], 19);
+			add.value([\param, (prefix ++ "Speed").asSymbol], view,
+				CQNightGeometry.spiralPoint(coco, 0.52), 16);
+			add.value([\param, (prefix ++ "Flip").asSymbol], view, coco[\chevron], 12);
+			add.value([\skip, i], view, coco[\skipMark], 12);
+			add.value([\body, prefix.asSymbol], view,
+				CQNightGeometry.polar(coco[\center], coco[\outerR], 0.25pi), 12);
+			trace.value([\param, (prefix ++ "Level").asSymbol], view, coco[\levelSamples]);
+			add.value([\param, (prefix ++ "Organ").asSymbol], view, coco[\orgCenter], 23);
+			#[slotQ, slotX].do { |key|
+				add.value([\param, this.class.shellFlowParam(i, key)], view,
+					coco[(key.asString ++ "Valve").asSymbol], 10);
+			};
+		};
+		crescentViews.keysValuesDo { |key, view|
+			var center = this.crescentCenter(key);
+			add.value([\param, key], view, center, 22);
+			if(this.class.hasDolbyCrescent(key)) {
+				add.value([\param, this.class.dolbyNameForCrescent(key)], view,
+					CQNightGeometry.dolbyOysterAnchor(center),
+					CQNightMeasures.dolbyOysterHitX, CQNightMeasures.dolbyOysterHitY);
+			};
+		};
+		g[\castles].do { |castle, i|
+			add.value([\castle, i], castleViews[i], castle[\center], castle[\dialR] + 4);
+			add.value([\param, ("c" ++ (i + 1) ++ "Range").asSymbol],
+				castleViews[i], castle[\rangeMark], 14, 9);
+		};
+		g[\roots].do { |root, i|
+			add.value([\preamp, i], rootViews[i], root[\knot], 18);
+			root[\sourceStrands].do { |strand, j|
+				trace.value([\source, i, root[\sourceValues][j]], rootViews[i],
+					(0.08, 0.12 .. 0.8).collect { |t| CQNightGeometry.cubicPoint(strand, t) });
+			};
+		};
+		g[\dusts].do { |dust, i|
+			add.value([\dust, i], dustViews[i], dust[\center], 18);
+		};
+		g[\birds].do { |bird, i|
+			add.value([\bird, i], birdViews[i], bird[\center],
+				bird[\box].width * 0.5, bird[\box].height * 0.5);
+		};
+		add.value([\eye], eyeView, g[\eye], 35);
+		add.value([\body, \quantussy], ringView, CQNightGeometry.fireflyPoint(g, 0.1), 12);
+		add.value([\moon], almanacView, g[\almanac][\moon], g[\almanac][\moonR] + 3);
+		g[\almanac][\stamps].do { |point, i| add.value([\seed, i], groundView, point, 12) };
+		add.value([\tideGate], tideGateView, g[\tideGate], 18, 8);
+		^result.asArray
 	}
 
 	prHoverPreamp { |i, view, x, y|
@@ -1815,6 +1960,53 @@ CQGuiNightMap {
 		^this
 	}
 
+	beginBirdPull { |index|
+		this.cancelBirdMotion(index);
+		birdHeld[index] = true;
+		birdViews[index].refresh;
+		^this
+	}
+
+	moveBirdPull { |index, delta|
+		birdOffsets[index] = CQGuiNightTouch.birdPullOffset(delta);
+		birdTilts[index] = birdOffsets[index].x * 0.006;
+		if(freed.not and: { birdViews[index].isClosed.not }) { birdViews[index].refresh };
+		^this
+	}
+
+	releaseBirdPull { |index, spring = false|
+		var offset = birdOffsets[index], tilt = birdTilts[index];
+		this.cancelBirdMotion(index);
+		if(spring.not or: { freed }) { ^this };
+		birdReturnTasks[index] = Routine {
+			var start = Main.elapsedTime, phase = 0, pose;
+			while { phase < 1 and: { freed.not } and: { birdViews[index].isClosed.not } } {
+				pose = CQGuiNightTouch.birdReturnPose(offset, phase);
+				birdOffsets[index] = pose[\offset];
+				birdTilts[index] = pose[\tilt] + (tilt * (1 - phase).squared);
+				birdViews[index].refresh;
+				CQGuiNightTouch.birdPollPeriod.wait;
+				phase = (Main.elapsedTime - start) / CQGuiNightTouch.birdReturnDuration;
+			};
+			birdOffsets[index] = 0@0; birdTilts[index] = 0;
+			birdReturnTasks[index] = nil;
+			if(freed.not and: { birdViews[index].isClosed.not }) { birdViews[index].refresh };
+		}.play(AppClock);
+		^this
+	}
+
+	// Shared exits, resize and re-press stop finite return work immediately.
+	cancelBirdMotion { |index|
+		if(birdReturnTasks.isNil) { ^this };
+		(if(index.isNil) { [0, 1] } { [index] }).do { |i|
+			birdReturnTasks[i] !? { |task| task.stop };
+			birdReturnTasks[i] = nil;
+			birdOffsets[i] = 0@0; birdTilts[i] = 0; birdHeld[i] = false;
+			if(freed.not and: { birdViews[i].isClosed.not }) { birdViews[i].refresh };
+		};
+		^this
+	}
+
 	prDeckAction { |which, action, value|
 		var deck;
 		if(freed) { ^this };
@@ -1835,7 +2027,7 @@ CQGuiNightMap {
 	}
 
 	// The deck's \file notice is the success authority shared by dialog, wheel,
-	// ruffle, drop and code. One 120 ms light therefore covers all five paths.
+	// pull/release, drop and code. One 120 ms light covers all five paths.
 	deckLoaded { |which|
 		var i = if(which == \deckA) { 0 } { 1 }, generation;
 		if(freed) { ^this };
@@ -1908,6 +2100,7 @@ CQGuiNightMap {
 		if(freed) { ^this };
 		bounds = container.bounds;
 		if(bounds.width < 200 or: { bounds.height < 200 }) { ^this };
+		touch !? { touch.cancelBird };
 		geometry = CQNightGeometry.compute(bounds.width, bounds.height);
 		groundView.bounds = Rect(0, 0, bounds.width, bounds.height);
 		rootViews.do { |view, i| view.bounds = geometry[\roots][i][\box] };
@@ -2139,8 +2332,13 @@ CQGuiNightMap {
 	}
 
 	prDrawRoutes {
+		var litFlows = flowHover.copy;
 		routePaintCount = routePaintCount + 1;
 		if(geometry.isNil) { routePaintSize = nil; ^this };
+		2.do { |i| #[slotQ, slotX, level].do { |kind|
+			var name = this.class.shellFlowParam(i, kind);
+			if(this.infoHighlights([\param, name])) { litFlows.add(name) };
+		} };
 		routePaintSize = Point(geometry[\width], geometry[\height]);
 		// Level's shore is drawn here rather than on its shell, for one reason:
 		// it runs along the exterior, where the in/fb crescents' deliberately
@@ -2153,12 +2351,12 @@ CQGuiNightMap {
 			var name = this.class.shellFlowParam(i, \level);
 			CQInkNight.drawLevelShore(coco, flowNorms[name] ? 0,
 				CQSpec.referenceNorm(name, \unity) ? 1,
-				flowActive.includes(name), flowHover.includes(name), \night);
+				flowActive.includes(name), litFlows.includes(name), \night);
 		};
 		CQInkNight.drawDroneRoutes(geometry,
 			2.collect { |i| flowNorms[this.class.shellFlowParam(i, \slotQ)] ? 0 },
 			2.collect { |i| flowNorms[this.class.shellFlowParam(i, \slotX)] ? 0 },
-			flowActive, flowHover, \night,
+			flowActive, litFlows, \night,
 			2.collect { |i|
 				flowModStates[this.class.shellFlowParam(i, \slotQ)]
 			},
@@ -2197,7 +2395,7 @@ CQGuiNightMap {
 		if(geometry.isNil) { ^this };
 		dust = geometry[\dusts][i];
 		CQInkNight.drawDust(dust, dust[\box].leftTop,
-			dustNorms[i], dustGrainNorms[i], dustActive[i], dustHover[i],
+			dustNorms[i], dustGrainNorms[i], dustActive[i], dustHover[i] or: { this.infoHighlights([\dust, i]) },
 			dustModStates[i], \night);
 	}
 
@@ -2306,12 +2504,11 @@ CQGuiNightMap {
 	}
 
 	// The read direction is what the loop is actually doing, and the FLIP param
-	// is only one of its two causes: `\cqCoco` takes `max(param, matrix gate)`,
-	// so a flip banana reverses the loop without ever touching the param.
+	// is only one of its two causes: `\cqCoco` takes hand XOR trigger parity.
+	// Each rising flip trigger reverses once without touching the hand param.
 	//
 	// Three readings, because two would have to lie (§16.6, amended after the
-	// G2.5 review). The param is instant and exact, so it decides on its own.
-	// Otherwise the direction comes from `/cq_phase`'s audio-rate mean — never
+	// G2.5 review). Direction comes from `/cq_phase`'s audio-rate mean — never
 	// from client-side guessing, which aliased badly once the gate fired faster
 	// than the 15 Hz frame: a settled loop reads ±1, and a loop being shuttled
 	// faster than an arrow can be read collapses toward 0, where the honest
@@ -2320,9 +2517,8 @@ CQGuiNightMap {
 
 	flipMode { |i|
 		var mean;
-		if(flipStates[i]) { ^\flipped };
 		mean = gui.phaseDirs[i];
-		if(mean.isNil) { ^\forward };   // no telemetry: the param is all we know
+		if(mean.isNil) { ^if(flipStates[i]) { \flipped } { \forward } };
 		if(mean > this.class.shuttleFloor) { ^\forward };
 		if(mean < this.class.shuttleFloor.neg) { ^\flipped };
 		^\shuttle
@@ -2344,13 +2540,16 @@ CQGuiNightMap {
 			level: flowNorms[levelName] ? 0,
 			organ: flowNorms[organName] ? 0,
 			organActive: flowActive.includes(organName),
-			organHover: flowHover.includes(organName),
+			organHover: flowHover.includes(organName) or: { this.infoHighlights([\param, organName]) },
 			organModulation: flowModStates[organName]
 		);
 		CQInkNight.drawShell(coco, coco[\shellBox].leftTop,
-			holdStates[i], this.flipMode(i), speedNorms[i], shellHover[i],
-			skipHover[i], skipFlash[i], rimHover[i], heartHover[i],
-			chevronHover[i], \night, geometry[\roots][i],
+			holdStates[i], this.flipMode(i), speedNorms[i],
+			shellHover[i] or: { this.infoHighlights([\param, ("coco" ++ (i + 1) ++ "Speed").asSymbol]) },
+			skipHover[i], skipFlash[i], rimHover[i],
+			heartHover[i] or: { this.infoHighlights([\param, ("coco" ++ (i + 1) ++ "Hold").asSymbol]) },
+			chevronHover[i] or: { this.infoHighlights([\param, ("coco" ++ (i + 1) ++ "Flip").asSymbol]) },
+			\night, geometry[\roots][i],
 			gui.auraFor(if(i == 0) { \envA } { \envB }) ? 0,
 			preampDriveNorms[i], preampSlotNorms[i], performance,
 			(gui.fireFor(("coco" ++ (i + 1) ++ "_record").asSymbol) ? 0) > 0.01);
@@ -2365,6 +2564,9 @@ CQGuiNightMap {
 			gui.phaseNorms[i], sparkDirs[i],
 			if(struckOn[i]) { struckNorms[i] }, struckBlink[i], \night);
 	}
+	infoHighlights { |target|
+		^gui.info.notNil and: { gui.info.groupHighlighted(target) }
+	}
 
 	// §16.7's one dashed drop-target mark, from the shared CQInk primitive.
 	*dropTargetName { |which| ^("night_" ++ which).asSymbol }
@@ -2374,10 +2576,11 @@ CQGuiNightMap {
 		if(geometry.isNil) { ^this };
 		bird = geometry[\birds][i];
 		which = if(i == 0) { \deckA } { \deckB };
-		active = birdHover[i]
+		active = birdHover[i] or: { birdHeld[i] } or: { birdReturnTasks[i].notNil }
 			or: { gui.dropTargetIs(this.class.dropTargetName(which)) };
 		CQInkNight.drawBird(bird, bird[\box].leftTop,
-			active, birdFlash[i], \night);
+			active, birdFlash[i], \night,
+			birdOffsets[i] * geometry[\scale], birdTilts[i]);
 	}
 
 	prDrawDecoration { |name, spec, anchor|

@@ -68,6 +68,10 @@ $requiredMarker = switch -Wildcard ($leaf) {
     "prototype_space_compile.scd" { "CQ_SPACE_LAB_COMPILE_OK"; break }
     "prototype_space_nrt.scd" { "CQ_SPACE_LAB_NRT_PASSED"; break }
     "gui_shell_smoke.scd" { "CQ_GUI_SHELL_PASSED"; break }
+    "gui_info_smoke.scd" { "CQ_GUI_INFO_PASSED"; break }
+    "nrt_flip_trigger.scd" { "CQ_FLIP_TRIGGER_PASSED"; break }
+    "gui_hover_smoke.scd" { "CQ_GUI_HOVER_PASSED"; break }
+    "gui_bird_smoke.scd" { "CQ_GUI_BIRD_PASSED"; break }
     "gui_drawer_smoke.scd" { "CQ_GUI_DRAWER_PASSED"; break }
     "gui_audio_setup_smoke.scd" { "CQ_GUI_AUDIO_PASSED"; break }
     "gui_audio_presence_smoke.scd" { "CQ_GUI_AUDIO_PRESENCE_PASSED"; break }

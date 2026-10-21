@@ -497,6 +497,56 @@ CQInk {
 			this.font(\label, labelSize), text);
 	}
 
+	// Info is an explicitly enabled interaction mode, not signal telemetry.
+	// Its four-second breath never goes dark and never moves the hit target.
+	*infoPulse { |seconds| ^(1 - cos(seconds * (2pi / 4))) * 0.5 }
+	*infoColor { |pulse|
+		var p = this.palette(\night);
+		^p[\undertow].blend(p[\spark], pulse.clip(0, 1).linlin(0, 1, 0.3, 0.9))
+	}
+	// A still underline for the single hovered Master target, including native
+	// read-only text. Night keeps its existing anatomical/family hover ink.
+	*drawInfoHover { |rect|
+		Pen.strokeColor = this.infoColor(0.5);
+		Pen.width = this.strokes[\strong];
+		Pen.moveTo(Point(rect.left, rect.bottom - 1));
+		Pen.lineTo(Point(rect.right, rect.bottom - 1));
+		Pen.stroke;
+	}
+	*drawInfoButton { |rect, pulse, hover = false|
+		var body = rect.insetBy(1, 2), color = this.infoColor(pulse);
+		Pen.fillColor = color; Pen.strokeColor = color;
+		Pen.width = this.strokes[if(hover) { \strong } { \normal }];
+		Pen.addRoundedRect(body, this.metrics[\buttonRadius], this.metrics[\buttonRadius]);
+		Pen.fillStroke;
+		Pen.stringCenteredIn("info", body, this.font(\label, CQGuiScale.chrome[\label]),
+			this.palette(\night)[\recess]);
+	}
+	*drawInfoBrackets { |rect, pulse, guided = false|
+		var color = if(guided) {
+			this.palette(\night)[\undertow].blend(this.palette(\night)[\spark], 0.65 + (pulse * 0.3))
+		} { this.infoColor(pulse) };
+		var inset = rect.insetBy(6.min(rect.width * 0.2), 6.min(rect.height * 0.2));
+		var arm = if(guided) { 8 } { 5 }.min(inset.width * 0.35);
+		var path = {
+			[-1, 1].do { |side|
+				var x = if(side < 0) { inset.left } { inset.right };
+				Pen.moveTo(Point(x - (side * arm), inset.top));
+				Pen.lineTo(Point(x, inset.top));
+				Pen.lineTo(Point(x, inset.bottom));
+				Pen.lineTo(Point(x - (side * arm), inset.bottom));
+			};
+		};
+		if(guided) {
+			Pen.strokeColor = this.palette(\night)[\recess]; Pen.width = 6.5;
+			path.value; Pen.stroke;
+		};
+		Pen.strokeColor = color.copy.alpha_(0.12 + (0.12 * pulse));
+		Pen.width = 5; path.value; Pen.stroke;
+		Pen.strokeColor = color; Pen.width = if(guided) { 2.8 } { this.strokes[\strong] };
+		path.value; Pen.stroke;
+	}
+
 	*drawSlider { |rect, value = 0, skin = \day, family, hover = false|
 		var palette = this.palette(skin), rail, x, accent;
 		value = value.clip(0, 1);

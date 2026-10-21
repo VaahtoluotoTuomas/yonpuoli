@@ -57,15 +57,235 @@ deferred): **GUI = the eyes + the hands. Code = the memory + the rituals.
 | region | role |
 |---|---|
 | **Night map** | the archipelago (§6): the sole topology-true performance landscape — bodies, gestures, jacks and bananas rather than transplanted knobs or numbers. |
-| **Master strip** | persistent, never covered: vol, dry, depth, GR meter, notice line, REC + elapsed, PANIC. |
+| **Master strip** | persistent, never covered: passive hover help at the left, notice line and REC + elapsed / PANIC toward the right, then output/GR meters and vol, dry, depth at the far right. |
 | **Drawer** | replaces Night in the central stage on demand (click, no key), never covers the Master strip. Tabs: **inspector** (the exact matrix loom), **workshop** (§8 — the ledger page completing SPEC §6.2 reachability), **spellbook** (§8), **memory** (snapshots + morph), **audio** (rightmost technical machine/engine boundary). |
 
 Keyboard: the sacred map is unchanged and global —
 `1/2` hold · `q/w` flip · `a/s` skip · `3..7` spesal · `r` rec · `space` panic
 · `p` shake. **Tab** = latch/unlatch water focus (§7.1; ignored while text
 entry or the Drawer has focus). **Esc** = drop the banana in hand / release solo-light,
-**Ctrl+Z** = matrix undo. Widgets stay non-focusable (existing focus law);
+**Ctrl+Z / Ctrl+X** = patch undo / redo, outside text entry. Widgets stay non-focusable (existing focus law);
 Esc and Ctrl+Z are window-level keys.
+
+### 2.0 Hover help — read while playing
+
+During ordinary playing, the lower-left corner offers a short title and
+explanation for the functional element under the pointer. Notes identify
+individual controls and sockets, including separate controls within a Coco;
+they explain what the part does and the relevant gesture in one to three lines.
+Birds, roots, castles, eye, moon, seeds, cables, Master, toolbar controls and
+Workshop parameters share this passive help. A filled output and hollow input
+receive different connection instructions.
+
+The help area is 400 logical px wide within the existing 118 px footer. It uses
+a quiet tinted title and readable bone prose, with no box or permanent heading.
+With info off, empty background, leaving the window, changing stage or resizing clears it
+completely. The space between it and transport remains open; it does not stretch
+to REC. Master controls sit to the right of PANIC, with their original sizes.
+REC and PANIC keep their 88×34 and 112×34 px hit areas. Transport forms a 296 px
+group with 280 px of content, headed **session** using the same typography and
+rule as **master**. Buttons follow the heading; status sits below them.
+The status area starts on REC's left edge and ends on PANIC's right edge.
+REC and its reserved elapsed-time field stay together; PANIC shares their button
+baseline. A 40 px gap separates this group from Master. The status area reserves
+52 px of height for wrapped, combined audio/mic/output notices, so neither a
+notice appearing nor recording starting moves the buttons.
+
+Help observes existing hover hits; it never consumes clicks, drags, wheel events
+or keys, opens a card, changes sound or runs a polling clock. In **info** mode,
+the footer instead holds one stable **info mode** instruction: click a shape
+to explore it; find the guides and shortcuts at top left; Esc or info
+returns to playing. Hovering shapes, cards or empty space never replaces this
+with a second element explanation. The guide uses **basics & first loop / play**
+and explains reading, trying controls, picture hover, next, close and Esc.
+The second guide uses **organ & advanced / play** with the same navigation.
+Entering from a cable uses **basics & first loop / reading**, directing the player
+to the toolbar to start guided play or Esc to leave inspection. Closing its
+card returns to the inspection instruction; leaving info restores ordinary
+hover help immediately. Prose lives in the footer, adding no labels to Night's
+landscape.
+
+### 2.1 Info — inspect a component
+
+The persistent **info** toggle beside **drawer** starts off. Enabling it keeps
+Night exposed without opening a card. The upper-left toolbar contains
+**basics & first loop**, **organ & advanced**, then **shortcuts**. From Drawer, info returns to Night;
+opening Drawer turns info off. The audio warning clears all three reading buttons.
+The mode instruction lives only in the lower-left footer;
+there is no repeated click/Esc hint before the guide.
+
+- Inspection selects meaningful components: each Coco, bird and root separately;
+  the five castles as one connected group; the central eye; moon; tide/seeds;
+  and Master. All controls and ports within a component open the same card.
+  Clicking another part of the selected component retains its current page.
+  A different component replaces the card in one click.
+- Whole Coco and castle bodies answer between their small playing controls.
+  Their inspection priority wins over a crossing cable; a cable in open space
+  opens the combined guide at its port introduction, in inspection mode.
+  Ordinary playing hit priority is unchanged.
+  The eye remains separate from the castle ring. Empty background has no topic.
+- Hover reveals the component with shape-following ink and its ports with their
+  family hover colours, including empty sockets. A Coco's three lower crescents
+  and paired gate/duck arcs brighten together with its body; leaving clears them.
+  A bird's level crescent also follows its group. Master gains a quiet underline.
+  There are no persistent boxes around all available targets. Hover alone never
+  opens, replaces or closes a card. PANIC retains its live action and safety ink.
+- Component cards have a short introduction, native vector picture and concise
+  numbered explanations. Coco is one complete page: a large picture on the left,
+  ten notes in two text columns on the right. Start with the heart/spiral, then
+  number the lower crescents separately, left to right: 2 SP.AF, 3 input,
+  4 feedback. Their leaders anchor the actual crescents, not the spiral or ports.
+  Q inlet (9) and cross-feed bridge (10) have separate numbered gills and hover
+  references to their hollow modulation sockets. The bridge names the other
+  Coco it receives; its opposite direction remains independently controlled.
+  Each note combines a hand control
+  with its related sockets; no page switching is needed to understand the whole.
+  Its picture area is at least 300 logical px wide and 360 high at the minimum
+  window, growing with the roomy layout. Prose keeps the normal readable type size.
+  Castles have two pages: **the shared ring** (outer ring, example sampling links,
+  central eye and sending sound into memory) and **one castle**. The overview
+  starts with sending sound into memory, then explains the ring and central eye.
+  Anatomy starts at the clock, then reads the upper outputs left-to-right,
+  lower inputs left-to-right, and finally the bottom range ripple.
+  Their compact picture bands are 250 and 190 logical px
+  high, growing to 320 and 240 with roomy type. The eye is actually drawn in the
+  overview; example links are static and identified as an example in the prose.
+  Other components have one page with three to four rows. Footer controls are
+  **back**, **next** and **close** in fixed horizontal slots on multipage cards.
+  Back/next stay visible but grey and inert at boundaries. Left/right arrow keys
+  also page an open multipage card; text entry and Drawer retain their keys.
+  Single-page cards, including Coco, have only **close**.
+  No nested detail cards or more/less toggle.
+- Tide uses four enlarged detail pictures beside their numbered text rows:
+  empty/stored native seeds, the actual water-focus gill, a four-corner blend
+  diagram and a two-seed breed diagram. They teach store/recall, open focus,
+  blend, then breed. No whole-landscape thumbnail or arrows from tiny dots.
+  Hovering a picture locates the same real controls as its row. Breeding creates
+  a live patch and leaves both stored memories intact.
+- Picture numbers sit beside their symbols with small leader lines. Hovering a
+  number or its text row locates the corresponding part(s) on the actual surface
+  with matching numbered rings; related ports brighten. Castle connection rows
+  locate the equivalent part on all five castles. The second-page picture
+  shows the top castle. Master rows locate their actual controls in the strip.
+  Leaving the card clears these part locators. Text paragraphs have no hover
+  background fill; these are reading aids, not controls.
+  The moon and eye's sideways leaders are horizontal; up/down leaders are
+  vertical. Tap may use a separate direction. Numbers remain separated.
+- A component card must not cover its subject, including that component's ports
+  and local controls. Placement tests the complete protected geometry, not the
+  press point. Prefer an adjacent side with a 12 logical px gap, aligned to the
+  subject's centre as far as the stage permits; use above/below when needed.
+  Other components may be covered. A Coco's own lower controls and all its
+  ports stay exposed; castle cards clear all five castles.
+  Tide protects its four disjoint seeds and gill. Width adapts to available space,
+  up to 960 logical px for Coco's picture and two columns, 500 for other cards,
+  using compact prose if a narrow side slot requires it.
+  Full text and footer fit at 1280x720 and 1528x900. Master and PANIC stay exposed.
+  Unsupported geometry never silently clips content or places it over the subject.
+- **basics & first loop** combines the overview and practical guide into one
+  23-page learning path. Introductions precede the actions that use them:
+  sources/memories; load the left bird and preview with dry; meet Coco's circular
+  memory, heart, spiral/playhead and shoreline; capture, seal and reshape time;
+  meet castles/eye, then fixed audio paths and solid/hollow control ports;
+  make a triangle-to-SP.AF cable, hear depth/weight, then edit that connection;
+  trigger flip; open the right memory and load its bird; explore Input, Feedback
+  and dust; connect Coco 1 to Coco 2 and use that connection; gate recording;
+  try the moon; continue with Organ, roots and Drawer. There are no separate
+  Basics or Patching buttons and no duplicated overview before the exercises.
+  Input and Feedback have consecutive pages, each with one larger picture of
+  all three lower crescents. Only the middle Input or rightmost Feedback is
+  bright; spatial context distinguishes their otherwise similar shapes.
+  Cable teaching retains polarity, pre-plant wheel/Z/X strength and Esc cancel,
+  wheel/Ctrl+wheel, Alt-click, moving a seated end, removing, undo/redo,
+  Master depth and fan-out/summing, at the steps where they become useful.
+  The right bird writes directly into its already-open memory, without dry.
+  Cable-making orders carrying/strength/cancel before release, then identifies
+  SP.AF as this socket's initially zero depth. The following lesson has two
+  picture bands: SP.AF and cable weight above their paragraph, Master depth and
+  the eye above theirs. Both bands support the same native hover references.
+  Flip's input picture precedes its source and weight; its text states the
+  forward/reverse swap explicitly. Dust diagrams use vertical amount and
+  horizontal grain arrows, with a quiet-input listening comparison.
+  Flip triggers toggle direction on each rise and retain it on a fall; Record
+  remains a gate. Guidance uses positive full cable weight and full Master depth.
+  The noise-fade lesson acknowledges the faint default dust; it does not promise silence.
+  Moon undo/redo restores settings/cables, not overwritten audio.
+  Page one has a visually distinct **fresh session** button at the lower right.
+  First click explains the reset and changes the button to **reset now**; second
+  click starts the owned session reset. Next/close/exit cancels confirmation.
+  Reset stops recording and replaces unsaved loop/deck/patch state with startup
+  defaults, preserves audio setup and saved files, then returns to page one.
+  Each page includes labelled native symbols. Concept pages use picture hover
+  without action brackets; practical pages add arrows for tap, up/down, sideways
+  or winding and brackets on the corresponding controls.
+  Heart illustrations show hollow write and red
+  hold states. Shoreline and speed pictures show the actual shore, speed notch
+  and separate playhead bead. The guide explains setting versus read position.
+  Surface brackets locate the actions, including cable midpoints and Master dry.
+  Crescent brackets are spaced outside the control; the wind cue is at nine o'clock.
+  Hovering a picture brightens all corresponding native parts: both members of
+  a pair or all matching ports in overview pictures; the specific named control
+  in exercises. The bridge lights along both full curves, valves and ends.
+  The weight picture includes the actual midpoint wheel. Picture hover adds no
+  extra brackets and does not replace practical action cues. Prose is inert.
+  Card ink always occludes underlying highlights.
+  The card stays opposite the active Coco and moves left for the right-side steps;
+  the two cross-Coco lessons sit centrally to expose both memories.
+  The toolbar always opens page one with playing enabled. A cable click enters
+  the port introduction in reading mode; paging preserves that inspection mode.
+  The footer distinguishes these entry modes. Back/next and arrow keys only change
+  the guide. Close or opening Shortcuts returns to inspection.
+- **organ & advanced** follows the first guide. Its 27 pages build another patch
+  from a fresh session: clear a left memory, introduce and tune Organ, animate
+  level and pitch, explore Spesal; load a file through the right root, capture it,
+  shape Drive/Bias and try bird-rate modulation; use the root envelope on Organ,
+  compare negative Feedback modulation and the dynamics arcs; punch and skip;
+  use castle range/send and the right Q inlet; connect Organ to castle FM and
+  print the left voice through the right bridge valve; store two cable-weight variations in seeds, blend,
+  breed and try moon weather; finish with Drawer and patch/audio saving. Seeds
+  recall cables only; snapshots also preserve controls. Neither restores loop audio.
+  Each new part is introduced before its action. Named ports, local controls and
+  native diagrams share hover references; Drawer pictures brighten its toolbar
+  control. Concept pages add no brackets. Both guides keep back/next/close,
+  keyboard paging, opaque cards and the same play/inspection boundary.
+  Fresh session is available only on page one, with the same two-click reset;
+  rebuilding reopens the originating guide, not always Basics.
+  Drawer pages explain the workflow before sending the player there at the end,
+  because opening Drawer deliberately closes info. Opening a guide never loads
+  a prepared patch or changes a musical value.
+- **shortcuts** follows both guides and opens two compact reference pages:
+  performance/capture keys, then contextual patching/navigation keys. It documents
+  Ctrl+Z undo / Ctrl+X redo and info's left/right page navigation.
+  The first page distinguishes 1/2 write/hold toggles from R's
+  stereo output recording; the second states the Tab, Shift and held-cable Z/X
+  contexts. Performance keys remain live, as on every other info page.
+  Reopening starts at page one; close leaves info enabled.
+- Inspection consumes complete press/drag/release/wheel/drop gestures, including
+  a release after exiting mid-press. Entering cancels held performance gestures
+  through the existing GUI cancellation path. Reading never changes sound.
+  PANIC and performance keys, including Space and R, remain live.
+- **close**, empty background, blank Master space or blank toolbar space closes only
+  the card. **Esc** or **info** exits the layer and restores ordinary playing.
+  All help controls remain nonfocusable; musical shortcuts are unchanged.
+- The filled info button breathes from water-teal to bone over four seconds,
+  using one GUI-owned 15 Hz clock while enabled. The first-loop subject brackets
+  use a stronger bone/teal stroke over a dark under-stroke, longer bracket arms
+  and a two-second smooth pulse from the same clock. Component outlines are quiet static ink; part locators
+  appear only under the reader's pointer. No full-landscape animation is added.
+- Cards use opaque slate, a thin border and the instrument's readable prose font.
+  The card remains outside the instrument's StackLayout; first show/reopen/resize
+  cannot turn it into a full-stage page. Geometry/visibility writes are queued.
+  Annotation ink is hit-transparent and reuses existing paint surfaces plus
+  small locator views. Teardown restores hooks and stops the clock.
+
+This opt-in reading layer is an exception to Night's resting-label/no-numbers
+laws (§16.4); the mode breath is an exception to telemetry-only motion (§16.9).
+`CQInfoGroups` owns read-only component mapping and protected geometry;
+`CQInfoPages` authors component/Shortcuts rows and semantic locator references;
+`CQInfoText` retains individual reference notes; `CQInfoTour` and `CQInfoAdvanced`
+own their guide's prose, picture bands, references and placement side.
+`CQInfoState` owns navigation; `CQGuiInfo` composes the card and intercepts
+inspection gestures. `CQInkInfo` and `CQInkInfoMap` reuse native vector recipes.
 
 ---
 
@@ -82,8 +302,9 @@ one law so implementers never have to decide case by case:
   glyph and a **charge/fire lamp** (§9).
 - **Direction is shape first, invitation second.**
   A solid, symbol-free jack is a source; a hollow ring carrying the receiving
-  control's symbol is a destination. An empty destination has no idle hover
-  highlight because it cannot act without a banana. As soon as a source or a
+  control's symbol is a destination. While playing, an empty destination has no
+  idle hover highlight because it cannot act without a banana. Info inspection
+  also highlights empty sockets for reading (§2.1). As soon as a source or a
   planted banana is in hand, every legal destination gains one quiet, static
   family-coloured halo; the nearest magnetic drop candidate answers more strongly.
   No blinking: Night reserves motion for changing signal/state.
@@ -116,7 +337,7 @@ one law so implementers never have to decide case by case:
 | `cocoN_spaf` | continuous | hollow purple ring | beside the spaf knob | spiral moon |
 | `cocoN_inVca` | continuous | hollow ink ring | beside the in knob | spiral moon |
 | `cocoN_fbVca` | continuous | hollow ink ring | beside the fb knob | spiral moon |
-| `cocoN_flip` | gate | ink ring ⇋ + lamp | beside FLIP | spiral moon + lamp |
+| `cocoN_flip` | rising trigger | ink ring ⇋ + lamp | beside FLIP | spiral moon + lamp |
 | `cocoN_skip` | trig | ink ring ✦ + lamp | beside SKIP | spiral moon + lamp |
 | `cocoN_organ` | continuous | hollow yellow ring | — software-native | immediately outside the organ fruit; short root |
 | `cocoN_slotQ` | continuous | hollow orange ring | — software-native | beside the Quantussy gill toward the central ring |
@@ -155,6 +376,7 @@ pale diamond shows the exact event, instead of leaving silence mysterious.
 | Alt+click socket/cable | polarity flip (verso ↔ inverso) | funnel; undo op |
 | double-click any jack/socket/body | **solo-light**: its bananas bright, everything else dim; repeat or Esc releases | view-only |
 | Ctrl+Z | undo the last committed matrix op | batched funnel write |
+| Ctrl+X | redo the last undone op, outside text entry (text retains cut) | batched funnel write |
 
 ### 4.1 Binary cable planting
 
@@ -180,14 +402,17 @@ value quieter without ever passing 0.60 through the DSP. The inspector's
 double-click plant uses the same fixed 0.60 first-touch strength; shake keeps
 its independent 0.3 weight law.
 
-### 4.3 Undo
+### 4.3 Undo / redo
 
 GUI-local ring (default 32) of full-matrix copies. One op = plant / rip / move
 / polarity flip / harvest / shake / preset apply via GUI / breed / one
 grow-or-wither hold / compass left-release. Elastic compass gestures (§7.1)
 and view-only held cables / Inspector auditions never enter the ring. Code-layer writes (`live.scd`) are not in
 this undo — the spellbook is their memory. Undo writes go through the batched
-funnel like any other client.
+funnel like any other client. Ctrl+X restores the exact undone matrix and, for
+a sow, only the parameters changed by that operation. Both rings share the
+configured depth; a new committed operation clears redo, while a no-op does not.
+Undo/redo drops an uncommitted held cable. Text fields retain native undo/cut.
 
 ### 4.4 Harvest — the lasso
 
@@ -317,12 +542,14 @@ eye but must keep the topology truths):
   with follower level (aura).
 - **Decks as birds** at the top: deckA / deckB. The bird itself fetches:
   **tap opens the system file dialog in the configured samples folder**, wheel
-  down/up walks to the next/previous file in the loaded folder, and a short
-  horizontal out-and-back ruffle chooses a random file. Dropping an audio file
+  down/up walks to the next/previous file in the loaded folder, and
+  **pulling in any direction and releasing** chooses a random file. The bird
+  brightens, yields slightly to the hand, then springs home with a small wiggle.
+  Dropping an audio file
   on the bird remains an equal loading
   path; the wing socket is the rate moon, and the filename is written small
   under the bird.
-  The complete tap, wheel, and Windows/Qt-safe ruffle grammar is part of the
+  The complete tap, wheel, and Windows/Qt-safe pull/release grammar is part of the
   current playing surface.
 - Cables follow the same grammar (§4), arcing around bodies, pulsing with
   their source's aura. Solo-light on a body lights everything touching it.
@@ -384,13 +611,13 @@ and Alt retain the banana rip/polarity grammar.
 | **Organ calyx** | vertical drag on the yellow flesh around the `orgN` seed. The calyx fill states the audible organ layer, while the central yellow jack never changes size or patchability — `Organ = 0` mutes the layer but never pretends the modulation source disappeared. Its unglyphed software-native Organ socket sits just outward from the fruit and needs only one short low-alpha root. Matrix activity appears as a separate effective-value pearl/wake on the calyx, never by moving the hand-set fill | `cocoNOrgan`, 0…1 · `cocoN_organ` matrix VCA |
 | **Quantussy tributary gill** | vertical drag on the short gill where the ring's faint amber side-river arrives at a shell. Zero leaves topology barely visible; pressure and pearl state the gain. The two shell gills are independent even though the default 16n performance fader links them. Inside the exact gill circle, hover and ordinary left press win a crossing cable; the rest of the shell does not. Its unglyphed software-native SlotQ socket sits immediately beside the gill toward the central ring, with only a tiny straight root; matrix activity adds a separate effective-value wake along the tributary | `cocoNSlotQ`, 0…1.5 gain from `qMix` into that Coco · `cocoN_slotQ` matrix VCA |
 | **two-lane cross-feed bridge** | vertical drag on either shell's own bridge valve. Arrowheads make the two simultaneous directions explicit and each lane keeps its own gain: the valve at Coco 1 receives Coco 2; the valve at Coco 2 receives Coco 1. It is never linked to SlotQ or to the opposite lane. Its exact valve circle has the same narrow hover/left-press priority through a cable. A neutral hollow SlotX socket stands 32 px above/outward from each valve, mirrored 15° away from vertical; matrix activity gets a separate pearl/wake and never moves the hand valve | `coco1SlotX`: Coco 2 → Coco 1; `coco2SlotX`: Coco 1 → Coco 2, each hand value plus bounded signed-square `cocoN_slotX` matrix VCA, clipped to 0…1.5 |
-| **converter Dust veil** | each Coco exhales into its own seeded irregular veil on the inner-lower shore, at a mirrored 240 body-px reach and 32° angle. Radial travel away from the Coco sets Dust amount; transverse travel crosses mist ↔ chip grain. Three short detached ownership strokes span 24 body-px toward the Coco without becoming a shell-to-Dust signal vein. The resting contour, vapour threads and 36 seeded slivers are static anatomy, never animation or a panel; amount reveals 0 / 13 / 22 / 31 / 36 slivers at normalized 0 / .25 / .5 / .8 / 1. A hollow socket on the Coco-side rim patches Dust amount; its telemetry pearl states effective DSP separately from the stored hand value | `cocoNDust`, 0…0.5 · `cocoNDustGrain`, 0…1 (0.5 is the exact legacy sound) · `cocoN_dust`: signed-square ±0.18 contribution clipped to 0…0.5 |
+| **converter Dust veil** | each Coco exhales into its own seeded irregular veil on the inner-lower shore, at a mirrored 240 body-px reach and 32° angle. Screen-vertical drag sets Dust amount (up adds, down removes); screen-horizontal drag blends steady mist on the left into sparse chip noise on the right. A straight drag changes only its own axis, identically on both mirrored veils; diagonal travel can change both. Three short detached ownership strokes span 24 body-px toward the Coco without becoming a shell-to-Dust signal vein. The resting contour, vapour threads and 36 seeded slivers are static anatomy, never animation or a panel; amount reveals 0 / 13 / 22 / 31 / 36 slivers at normalized 0 / .25 / .5 / .8 / 1. A hollow socket on the Coco-side rim patches Dust amount; its telemetry pearl states effective DSP separately from the stored hand value | `cocoNDust`, 0…0.5 · `cocoNDustGrain`, 0…1 (0.5 is the exact legacy sound) · `cocoN_dust`: signed-square ±0.18 contribution clipped to 0…0.5 |
 | **the ring's eye** | the storm iris at the ring's center (§16.6); grab and drag — vertical = pitch, horizontal = chaos, and the iris itself answers on both axes. The weather of five castles from one fingertip | `qFreq` (y) + `qChaos` (x), relative |
 | **castle tap / tributary pull** | press anywhere inside the castle's complete visible seeded blob, exact centre and rim flesh included (§16.6). Release within the shared 8 px tap boundary performs one spesal step (same act as keys 3…7). Travel beyond it becomes only a radial send gesture: pull inward to open and outward to close. The step is deliberately deferred until release, so beginning a drone ride can never perform a transient internal rewire. The central dial remains the mechanism/state display and hover reveals which castle it reads as an inner chord | tap: `spesal(k)`; radial drag: `cKSend`, 0…1 |
 | **range ripple** | tap the drawn rate at a castle's 6 o'clock: one slow swell → one full cycle → five tight half-waves → one slow swell. The form is the whole regime display; no legacy `i/b/a` caption remains. Cable-first remains absolute, and ripple/clock hover cues are exclusive | `cNRange`: `infra → balcium → audio → infra` (CQSpec enum order) |
 | **bird fetch + drop + wing crescent** | tap the bird with < 8 px travel to open the asynchronous system file dialog at the configured samples folder; cancelling is inert. Dropping an audio file remains an equal load path. The crescent under the wing is the deck's level and carries one exact CQSpec-derived unity tick: line ink through unity; only the travelled arc and pearl beyond that mark turn danger-red | deck load · `deckN level` |
 | **bird folder walk** | wheel down = next file, wheel up = previous. Qt momentum is gated to one sign-step per 150 ms so one flick cannot skip a handful of perches; before a load, the deck's own guard scans the samples folder | `deckN.next / prev` |
-| **bird ruffle** | horizontal drag travels ≥ 6 px and reverses once by ≥ 6 px — one natural out-and-back; release chooses a random file. Repeated or broad ruffling remains valid once that reversal is clear. A drag that is neither a tap nor a ruffle is inert | `deckN.random` |
+| **bird pull / release** | travel ≥ 16 logical px in any direction arms random; release requests exactly one random file. Held ink brightens and follows with resistance, bounded below 10 body px. Release springs home with a small damped wiggle over 460 ms. Travel from 8 to < 16 px is inert; a tap stays < 8 px. Esc, Tab, panic, info/Drawer entry, resize and teardown cancel the held gesture and return ink without a load | `deckN.random` |
 | **the sowing moon** | the bone moon in the top-right sky (§16.6). It opens as a small 0.22 crescent. A press that travels < 8 px — the lasso's own threshold — throws an ecological shake at the moon's starting phase, with a 120 ms bone flash on *any* shake (`p` key, moon, code or pattern: one action notice, one light). Every non-empty throw has one 3–5-cable audible core. A **horizontal** drag previews phase continuously from its first pixel, pouring fuller (right) or darker (left); a tap restores the exact start before throwing. The lit fraction controls only how much random detail grows around that core through the slow-first cubic fertility curve in §10, no number | `shake` (matrix + bounded musical preparation — one bundled undo, one spellbook entry) · `shakeAmount` (GUI constant, no undo) |
 
 > **Dust surface.** The SlotX row remains unchanged. The
@@ -789,11 +1016,12 @@ p = 0.08 mutate by ± U(0, 0.15); clamp. Children differ but rhyme.
     that ambient state moves only on real telemetry).
   - **The same danger also marks the persistent toolbar**, because the fault can
     strike with the Drawer closed. The mark
-    is static ink on the toolbar beside the `drawer` button — the one route to
-    the only remedy, so cue and action share one geometry (§4.5): a filled
-    danger dot plus the same words the Audio page uses, right-aligned against
-    the button. It exists only in danger, never blinks or pulses, and never
-    animates. Its placement is pure geometry (`CQGuiShell.clockDangerLayout`)
+    is static ink on the toolbar beside the `info` / `drawer` group. Drawer
+    remains the route to the Audio remedy (§4.5). The mark combines a filled
+    danger dot with the same words the Audio page uses, right-aligned against
+    the group and clear of both buttons. It exists only in danger, never blinks
+    or pulses, and never animates. Its placement is pure geometry
+    (`CQGuiShell.clockDangerLayout`)
     so it can be tested without a paint event; where the title would leave no
     room the words drop and the dot alone remains — the dot is the state, the
     words are the courtesy. A GUI built while the clock is already stuck opens
@@ -944,7 +1172,7 @@ meters:
 | G1 | `/cq_aura` | 16 source magnitudes (lagged \|amp\|, canonical source order) | jack glow, cable pulse and root glow |
 | PLAY-3 | `/cq_castle` | five instantaneous raw-tri values, then the five realized oscillator rates smoothed 0.15 s. At ≤3 Hz the sample can move a pearl; above it the GUI discards the aliased position and draws one stable full-reed blur | the five castle inner-clock reeds |
 | G2 | `/cq_phase` | replyID 1/2; first: coco read-head position 0..1, **the read direction as an audio-rate mean** (`Lag.ar(dir, 0.15)`) and **the skip rate in Hz** (combined reset `\t_skip + skipTrig`, smoothed 0.2 s). Then three seven-value blocks in destination order `[SP.AF, Input, Feedback, Organ, SlotQ, SlotX, Dust]`: low-passed effective centres, audio-rate peak excursions around those centres, and summed absolute destination weights after `patchDepth`. SP.AF reports the **realized** `log2(clockHz / speed)` after the 750 Hz…sample-rate clock clamp; the five VCAs and Dust contribution report their post-law, post-clip values. Both centre and excursion are reduced at audio rate before `A2K`: slow modulation may move, fast modulation becomes a stable range and never aliases into a false low-frequency gesture. Landed 2026-07-21 at 5 Hz; raised to the shared **15 Hz ambient ceiling** on 2026-07-29; Organ/SlotQ were appended with the six software-native destinations on 2026-08-02, and SlotX/Dust with the 16×32 expansion, without adding a message stream. Ordinary phase motion redraws only the dot/tail; quantized modulation changes redraw only the affected crescent, calyx, tributary, bridge valve or Dust veil. The direction remains a mean, not a sample: ±1 = settled, near 0 = shuttling | the spiral spark, comet tail and mouth chevron; skip rate drives the struck mark's weight; the blocks drive seven effective-value satellites/wakes |
-| G2 / PLAY-3 | `/cq_charge` | three 15 Hz producer blocks sent by the synths that own the decisions: coco 1/2 each send `[flipCharge, skipCharge, recordCharge, flipGate, skipTrig, recordGate]`; Quantussy sends five spesal charges followed by the five exact spesal triggers. Charge is post-weight/pre-Schmitt and peak-held 0.15 s; fire is the already-computed post-Schmitt gate/trigger, independently peak-held so one sample reaches the eye. The GUI never derives “fired” from brightness or copies the Schmitt. Amber bead fill remains charge; a pale diamond flare is actual fire | charge/fire lamps — both “how close?” and “did it happen?” — plus the skip struck-regime input and Record's temporary effective-seal inversion (§16.6) |
+| G2 / PLAY-3 | `/cq_charge` | three 15 Hz producer blocks sent by the synths that own the decisions: coco 1/2 each send `[flipCharge, skipCharge, recordCharge, flipTrig, skipTrig, recordGate]`; Quantussy sends five spesal charges followed by the five exact spesal triggers. Charge is post-weight/pre-Schmitt and peak-held 0.15 s; fire is the already-computed post-Schmitt gate/trigger, independently peak-held so one sample reaches the eye. The GUI never derives “fired” from brightness or copies the Schmitt. Amber bead fill remains charge; a pale diamond flare is actual fire | charge/fire lamps — both “how close?” and “did it happen?” — plus the skip struck-regime input and Record's temporary effective-seal inversion (§16.6) |
 | AIO-4 | `/cq_io_inputs` | one ≤15 Hz three-channel raw-input presence block from `\cqInput`, canonical order `[rawLiveL, rawLiveR, rawMic]`, missing mic = 0; the taps precede `liveGain`, `micGain` and preamp source selection and write no bus/output | Audio page's three “does anything reach this configured port?” tracks; never evidence for a draft device |
 
 `/cq_charge` canonical order inside **each half** = the matrix destination order
@@ -1213,8 +1441,8 @@ icon fonts, no external assets, ever.
 - **Night = phosphor on deep water.** Blue-black ground, pale bone linework,
   the family colors turned luminous. **Every light is information** — nothing
   glows, twinkles or drifts decoratively. No starfields.
-- The Master strip uses dark slate and keeps its permanent muscle-memory
-  layout; PANIC remains vermillion.
+- The Master strip uses dark slate, with quiet hover help at the left and a
+  stable transport/Master layout at the right (§2.0); PANIC remains vermillion.
 
 Rough Night geography:
 
@@ -1223,7 +1451,7 @@ Rough Night geography:
    coco1 spiral      ring of five       coco2 spiral
    (+moons)            castles          (+moons)
         roots envA ──┘        └── roots envB
-   [ master strip ──────────────────────── PANIC ]
+   [ hover help ─────── REC  PANIC  meters / master ]
 ```
 
 ### 16.2 Palette
@@ -1517,21 +1745,20 @@ view and the shell box edge at every scale (down = forward, up = flipped;
 amended
 2026-07-21 after the G2.3 review found the outward home clipped).
 **The chevron has three states, not two** (amended 2026-07-21 after the G2.5
-review): forward, flipped, and — when the flip gate is driven faster than an
+review): forward, flipped, and — when flip triggers arrive faster than an
 arrow can be read — §16.5's **opposed chevrons**, meaning *shuttling*. The
-FLIP param decides on its own when it is on (instant and exact); otherwise the
 state comes from `/cq_phase`'s audio-rate direction mean, settled past ±0.5.
+Before telemetry exists, the hand Flip value supplies the initial direction.
 This is the general law for any mark whose value outruns the eye: **show the
 regime, not the value.** A frozen arrow and a guessed arrow are both lies.
 **Read-head spark** = Ø 4 px bone **comet** at the loop's true address
 (`/cq_phase`, §9 — 15 Hz tick; not drawn until the server has reported — no
 telemetry is not zero): a dot with a short tail trailing where it came from, the
 tail's side read from the phase's actual travel (wrap-aware), so a
-matrix-driven flip shows truthfully — and the **mouth chevron reads that same
-travel OR-ed with the FLIP param**, exactly as `\cqCoco` takes
-`max(param, matrix gate)` (amended 2026-07-21: the chevron used to read the
-param alone, so a patched flip banana turned the loop and the comet while the
-chevron kept pointing the old way; §16.6 binds the two to one direction).
+matrix-driven flip shows truthfully. The **mouth chevron reads that same
+actual direction**: hand Flip XOR the parity of rising matrix triggers. A
+hand Flip value of one no longer forces a reverse arrow over contradictory
+telemetry. Each hand toggle still reverses actual travel.
 The comet is **display only** (2026-07-22, G2 gate — see §6.1): it is the only
 mark in the night that travels, and a moving target is not a control.
 It draws on its own transparent, mouse-pass-through layer over the reel notch
@@ -1768,17 +1995,21 @@ the wing, and beside it the deck-level tide crescent (§6.1). Dropping an
 audio file on the bird loads its deck (§6.1). The same body now carries three
 captionless hand acts: tap (< 8 px) opens `Dialog.openPanel` at the configured
 samples folder; wheel sign walks the loaded folder with a 150 ms momentum gate;
-one ≥ 6 px horizontal out-and-back ruffles to random; repeated or broad
-ruffling remains valid once that reversal is clear. While held, the bird owns
+one ≥ 16 px pull in any direction arms a single random request on release.
+The bird brightens and follows with soft resistance, below 10 body px of
+displacement and a slight tilt; its existing hit geometry stays fixed.
+Release springs it home and adds a small damped wiggle over 460 ms.
+This finite gesture feedback does not claim successful loading; only the
+deck's file notice does. While held, the bird owns
 the Qt drag and a 60 Hz global-cursor fallback preserves motion samples if the
 pointer leaves its small UserView on Windows.
-A different drag is inert. Cable
+A drag reaching 8 but not 16 px is inert. Cable
 hit-testing remains first inside the bird view, while the rate socket and level
 crescent keep their higher sibling views and own geometry. The level crescent
 has one unity tick at the exact position returned by its curved CQSpec map.
 Its travelled arc stays neutral through unity; gain beyond the tick and the
 current pearl turn danger-red, while the unused region remains uncoloured. Any successful
-`\file` notification — dialog, wheel, ruffle, drop or code — flashes that bird
+`\file` notification — dialog, wheel, pull/release, drop or code — flashes that bird
 for the shared 120 ms momentary interval and updates the one filename truth.
 Flutter = 1 px wing bob at ambient rate while the deck's level > 0.05
 (client-side state, no polling). Ordinary hover statically brightens the bird;
@@ -1971,20 +2202,25 @@ envelope side-growth, never multiplied decorative roots.
 | momentary flash, bloom | 120 ms |
 | solo-light fade | 150 ms |
 | plant wobble (optional garnish) | ≤ 300 ms damped |
+| bird pull / release return | 460 ms damped, ≤ 60 Hz only during the gesture/return |
 | compass elastic return | ~3 frames glide |
 | Night/Drawer stage destination | hard cut via queued Qt write |
 | tide focus (Tab / gill) | immediate state change |
 | ambient (aura, fireflies, reeds, sparks, flutter) | telemetry rate, ≤ 15 Hz |
 
-Easing: linear or single-pole decay only — no bounces, no overshoot. The one
-comedy allowed is the damped cable wobble on plant. Ambient motion whitelist:
+Easing: linear or single-pole decay, except the damped cable wobble on plant
+and the bird's explicitly pulled spring return. The latter is finite feedback
+for the player's gesture, cancelled on shared exits/resize and owned by the GUI;
+it never runs at rest or dispatches a load from its animation clock.
+Ambient motion whitelist:
 aura breathing, ring fireflies, **spesal coupling lights**, raw-triangle reeds,
 read-head sparks and deck flutter — all of them information. The coupling lights joined the list on
 2026-07-22 for the fireflies' own reason: the S&H sampling they depict never
 stops, and they ride the same phase, so every moving mark inside the ring
 advances on one set of telemetry frames. Nothing else moves uninvited.
 
-Every ambient motion is driven **by the telemetry frames themselves, never by
+Except for the explicitly enabled info-mode indicator (§2.1), every ambient
+motion is driven **by the telemetry frames themselves, never by
 a clock of its own** (made explicit 2026-07-22 with the struck read head).
 A mark that animates on its own timer keeps promising liveness after the
 server has stopped speaking, which is exactly what §9 forbids in stillness.

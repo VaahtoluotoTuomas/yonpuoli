@@ -325,6 +325,10 @@ CQGuiWorkshopTest : UnitTest {
 		};
 		this.assertEquals(owner.controls.size, 24,
 			"every row is registered with the GUI's Ink control list");
+		this.assertEquals(owner.hoverBindings.collect { |b| b[0] }.asArray, built,
+			"each row registers its own control for passive help");
+		this.assertEquals(owner.hoverBindings.collect { |b| b[1][1] }.asSet,
+			CQGuiWorkshop.paramNames.asSet, "hover notes use the exact manifest parameters");
 		CQGuiWorkshop.paramNames.do { |name|
 			this.assertEquals((updaters[name] ? []).size, 1,
 				"% registers exactly one row updater".format(name));

@@ -263,7 +263,7 @@ CQSynthDefs {
 			var selfModSources, cocoIndex;
 			var spafSum, inVcaSum, fbVcaSum, flipSum, skipSum;
 			var organSum, slotQSum, slotXSum, dustSum, recordSum;
-			var flipMatrixGate, flipGate, skipTrig, recordMatrixGate;
+			var flipMatrixGate, flipTrig, flipToggle, flipGate, skipTrig, recordMatrixGate;
 			var manualHold, effectiveHold;
 			var spafApplied, spafEffective, modActual, modSlow, modSpread, modActivity;
 			var phaseTelemetry;
@@ -304,7 +304,11 @@ CQSynthDefs {
 			skipSum = Mix(mods * wSkip);
 			flipMatrixGate = Schmidt.ar(flipSum, CQSynthDefs.gateOffThreshold,
 				CQSynthDefs.gateOnThreshold);
-			flipGate = max(\flip.kr(CQSpec.default(\coco1Flip)), flipMatrixGate);
+			// Each Schmitt rising edge reverses once and holds that direction
+			// through the falling edge. The hand remains a relative toggle too.
+			flipTrig = Trig1.ar(flipMatrixGate, SampleDur.ir);
+			flipToggle = ToggleFF.ar(flipTrig);
+			flipGate = (\flip.kr(CQSpec.default(\coco1Flip)) - flipToggle).abs;
 			skipTrig = Trig1.ar(Schmidt.ar(skipSum,
 				CQSynthDefs.gateOffThreshold, CQSynthDefs.gateOnThreshold), SampleDur.ir);
 			recordMatrixGate = Schmidt.ar(recordSum,
@@ -326,7 +330,7 @@ CQSynthDefs {
 				.clip(CQSpec.speedClampFloor, SampleRate.ir);
 			spafEffective = (clockHz / speed).log2;
 			ratio = clockHz / SampleRate.ir;
-			dir = 1 - (flipGate * 2);                  // flip = matrix gate OR param
+			dir = 1 - (flipGate * 2);                  // hand XOR trigger parity
 			phase = Phasor.ar(\t_skip.tr(0) + skipTrig, ratio * dir, 0, frames, 0); // address counter
 			here = BufRd.ar(1, buf, phase, loop: 1, interpolation: 1);   // ZOH DAC out
 			hereSmooth = BufRd.ar(1, buf, phase, loop: 1, interpolation: 4);
@@ -407,7 +411,7 @@ CQSynthDefs {
 			// repaints only a clear dot-and-tail layer, never either complete shell.
 			// ...plus the read DIRECTION as an audio-rate mean, not a sample.
 			// `dir` is what the chevron and the comet's tail must agree on, and
-			// it is driven by max(flip param, matrix gate) — so a flip banana can
+			// it is driven by hand direction XOR flip-trigger parity — so a banana can
 			// reverse it far faster than 15 Hz can sample. Averaging at audio rate
 			// before A2K (the same law as \cqAura's lag and the charge peak-hold)
 			// makes the value alias-free and gives the GUI a third, honest
@@ -456,7 +460,7 @@ CQSynthDefs {
 			SendReply.kr(Impulse.kr(15), '/cq_charge',
 				A2K.kr(LagUD.ar([flipSum, skipSum, recordSum], 0, 0.15))
 					++ A2K.kr(LagUD.ar(
-						[flipMatrixGate, skipTrig, recordMatrixGate], 0, 0.15)),
+						[flipTrig, skipTrig, recordMatrixGate], 0, 0.15)),
 				\meterId.ir(0));
 		})
 	}

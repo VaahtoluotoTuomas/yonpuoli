@@ -220,13 +220,13 @@ CQGuiNightMapTest : UnitTest {
 
 	test_dustVeilsOwnBothAxesThroughOneCocoLocalNameHelper {
 		this.assertEquals(CQGuiNightMap.dustParamName(0), \coco1Dust,
-			"left veil's radial axis owns coco1 Dust");
+			"left veil's vertical gesture owns coco1 Dust");
 		this.assertEquals(CQGuiNightMap.dustParamName(0, \DustGrain),
-			\coco1DustGrain, "left veil's transverse axis owns coco1 grain");
+			\coco1DustGrain, "left veil's horizontal gesture owns coco1 grain");
 		this.assertEquals(CQGuiNightMap.dustParamName(1), \coco2Dust,
 			"right veil mirrors the radial owner");
 		this.assertEquals(CQGuiNightMap.dustParamName(1, \DustGrain),
-			\coco2DustGrain, "right veil mirrors the transverse owner");
+			\coco2DustGrain, "right veil has its own grain parameter with the same screen axes");
 	}
 
 	test_crescentScalesNameOnlyHonestSemanticBoundaries {

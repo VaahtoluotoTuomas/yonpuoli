@@ -29,6 +29,10 @@ CQGuiWidgets {
 			k.value = CQSpec.unmap(name, v);
 			k.display = this.class.format(v);
 		});
+		if(CQGuiPanels.masterParamNames.includes(name)) {
+			owner !? { owner.registerInfo(k.view, [\master, name]) };
+		};
+		owner !? { owner.registerHover(k, [\param, name]) };
 		^k.view
 	}
 
@@ -40,6 +44,7 @@ CQGuiWidgets {
 		b.surface = surface;
 		b.action = { |bt| state.set(name, bt.value) };
 		this.register(name, { |v| b.value = (v ? 0).clip(0, 1) });
+		owner !? { owner.registerHover(b, [\param, name]) };
 		^b.view
 	}
 
@@ -52,6 +57,7 @@ CQGuiWidgets {
 		);
 		m.action = { |menu| state.set(name, values[menu.value]) };
 		this.register(name, { |v| m.value = values.indexOf(v) ? 0 });
+		owner !? { owner.registerHover(m, [\param, name]) };
 		^m.view
 	}
 
@@ -63,6 +69,7 @@ CQGuiWidgets {
 			b.value = CQSpec.unmap(name, v);
 			b.display = v.asInteger.asString;
 		});
+		owner !? { owner.registerHover(b, [\param, name]) };
 		^b.view
 	}
 
@@ -108,6 +115,8 @@ CQGuiWidgets {
 				});
 			}
 		);
+		// Register identity here; native hover hooks wait for GUI composition.
+		owner !? { owner.registerHover(row, [\param, name]) };
 		^row
 	}
 
@@ -154,6 +163,7 @@ CQGuiWidgets {
 		var s = this.prOwn(CQInkControl.slider(width, nil, \night));
 		s.action = { |sl| state.set(name, CQSpec.map(name, sl.value)) };
 		this.register(name, { |v| s.value = CQSpec.unmap(name, v) });
+		owner !? { owner.registerHover(s, [\param, name]) };
 		^s.view
 	}
 

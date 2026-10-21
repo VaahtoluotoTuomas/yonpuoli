@@ -504,6 +504,17 @@ Cocoquantus {
 		this.free({ this.prRebootServer(targetServer, path) });
 	}
 
+	// Explicit new instrument session on the SAME running audio server.
+	// Reuse owned teardown/boot so recorder, morph, MIDI, decks, buffers and
+	// GUI histories cannot survive as stale writers. Saved files are untouched.
+	*freshSession { |onReady, onFailure|
+		var activeConfig, path;
+		if(this.isBooted.not or: { config.isNil } or: { server !== Server.default }) { ^false };
+		activeConfig = config.deepCopy; path = configPath;
+		this.free({ this.boot(path, onReady, activeConfig, onFailure) });
+		^true
+	}
+
 	// CmdPeriod protocol: Cmd-. kills all nodes — that is silence, which is safe;
 	// the graph cannot be trusted afterwards, so require an explicit reboot (ARCH §6.9)
 	*cmdPeriod {

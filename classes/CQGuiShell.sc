@@ -7,9 +7,14 @@ CQGuiShell {
 	var state;
 	var <view, <nightView, <masterView, <drawerView;
 	var <workspaceStack, <drawerButton;
+	var <infoButton, <>infoAction;
+	var <infoGuideButton, <>infoGuideAction;
+	var <infoAdvancedButton, <>infoAdvancedAction;
+	var <infoShortcutsButton, <>infoShortcutsAction;
 	var drawerStack, drawerPages, toolbarView, toolbarTitle;
 	var tabButtons, skinAction, shownAction;
 	var toolbarInset = 6;
+	var infoControlsVisible = false;
 	var <audioAlert = \none;
 
 	*new { |state, nightView, masterView, pages, skinAction, shownAction|
@@ -35,6 +40,33 @@ CQGuiShell {
 		drawerButton.scale = chrome;
 		drawerButton.view.fixedSize = Size(
 			CQGuiScale.buttonWidth(\compact, "drawer", true), chrome[\buttonHeight]);
+		infoButton = CQInkControl.button("info",
+			CQGuiScale.buttonWidth(\compact, "info"), \night, true,
+			false, \line).surface_(\recess).action_({ infoAction.value });
+		infoButton.scale = chrome;
+		infoButton.view.fixedSize = Size(
+			CQGuiScale.buttonWidth(\compact, "info"), chrome[\buttonHeight]);
+		infoGuideButton = CQInkControl.button(CQInfoTour.label,
+			CQGuiScale.buttonWidth(\compact, CQInfoTour.label), \night)
+			.surface_(\recess).action_({ infoGuideAction.value });
+		infoGuideButton.scale = chrome;
+		infoGuideButton.view.fixedSize = Size(
+			CQGuiScale.buttonWidth(\compact, CQInfoTour.label), chrome[\buttonHeight]);
+		infoGuideButton.view.visible = false;
+		infoAdvancedButton = CQInkControl.button(CQInfoAdvanced.label,
+			CQGuiScale.buttonWidth(\compact, CQInfoAdvanced.label), \night)
+			.surface_(\recess).action_({ infoAdvancedAction.value });
+		infoAdvancedButton.scale = chrome;
+		infoAdvancedButton.view.fixedSize = Size(
+			CQGuiScale.buttonWidth(\compact, CQInfoAdvanced.label), chrome[\buttonHeight]);
+		infoAdvancedButton.view.visible = false;
+		infoShortcutsButton = CQInkControl.button("shortcuts",
+			CQGuiScale.buttonWidth(\compact, "shortcuts"), \night)
+			.surface_(\recess).action_({ infoShortcutsAction.value });
+		infoShortcutsButton.scale = chrome;
+		infoShortcutsButton.view.fixedSize = Size(
+			CQGuiScale.buttonWidth(\compact, "shortcuts"), chrome[\buttonHeight]);
+		infoShortcutsButton.view.visible = false;
 		toolbarTitle = StaticText().string_("yölahti")
 			.font_(CQInk.font(\label, chrome[\label])).stringColor_(night[\line])
 			.align_(\left).fixedWidth_(
@@ -50,12 +82,13 @@ CQGuiShell {
 			Pen.line(Point(inset, y), Point(toolbarView.bounds.width - inset, y));
 			Pen.stroke;
 			// AUD-W's always-visible surface (user decision 2026-07-31). The mark
-			// sits on the drawer button, which is the only route to the only
-			// remedy — cue and action share one geometry (GUI_SPEC §4.5). It is
+			// sits beside the info/drawer group, clear of both buttons. Drawer
+			// remains the route to the Audio remedy (GUI_SPEC §4.5). It is
 			// static ink: no blink, no pulse, and it exists only in danger.
 			if(audioAlert != \none) { this.prDrawClockDanger };
 		};
-		toolbarView.layout = HLayout(toolbarTitle, nil, drawerButton.view)
+		toolbarView.layout = HLayout(toolbarTitle, infoGuideButton.view, infoAdvancedButton.view, infoShortcutsButton.view,
+			nil, infoButton.view, drawerButton.view)
 			.margins_(toolbarInset).spacing_(6);
 
 		tabButtons = IdentityDictionary.new;
@@ -81,6 +114,29 @@ CQGuiShell {
 		view.layout = VLayout(toolbarView, View().layout_(workspaceStack), masterView)
 			.margins_(0).spacing_(0);
 		this.applyState;
+		^this
+	}
+
+	infoOutsideViews { ^[toolbarView, toolbarTitle] }
+	hoverBindings {
+		^[[infoButton.view, [\ui, \info]], [drawerButton.view, [\ui, \drawer]],
+			[infoGuideButton.view, [\ui, \tour]],
+			[infoAdvancedButton.view, [\ui, \advanced]],
+			[infoShortcutsButton.view, [\ui, \shortcuts]]]
+			++ CQGuiDrawer.tabs.collect { |tab| [tabButtons[tab].view, [\ui, tab]] }
+	}
+
+	infoStatus { |enabled, playing|
+		infoButton.value = enabled.binaryValue;
+		// Changing toolbar visibility can move a live pointer; use queued Qt writes.
+		// Compare the requested state, not Qt's not-yet-applied visibility.
+		// A quick on/off must still queue the final hide after the pending show.
+		if(infoControlsVisible != enabled) {
+			infoControlsVisible = enabled;
+			[infoGuideButton.view, infoAdvancedButton.view, infoShortcutsButton.view].do { |v|
+				v.setProperty(\visible, enabled, false)
+			};
+		};
 		^this
 	}
 
@@ -151,13 +207,19 @@ CQGuiShell {
 		)
 	}
 
+	audioAlertLayout {
+		var contentRight = if(infoShortcutsButton.view.visible) {
+			infoShortcutsButton.view.bounds.right
+		} { toolbarTitle.bounds.right };
+		^this.class.clockDangerLayout(toolbarView.bounds.height,
+			infoButton.view.bounds.left, contentRight, CQGuiScale.chrome[\label],
+			audioAlert);
+	}
+
 	prDrawClockDanger {
 		var palette = CQInk.palette(\night);
-		var chrome = CQGuiScale.chrome;
-		var size = chrome[\label];
-		var layout = this.class.clockDangerLayout(toolbarView.bounds.height,
-			drawerButton.view.bounds.left, toolbarTitle.bounds.right, size,
-			audioAlert);
+		var size = CQGuiScale.chrome[\label];
+		var layout = this.audioAlertLayout;
 		if(layout[\showText]) {
 			Pen.stringRightJustIn(layout[\label], layout[\textRect],
 				CQInk.font(\label, size), palette[\danger]);

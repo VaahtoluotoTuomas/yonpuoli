@@ -94,28 +94,48 @@ birdChecks = { |map|
 	check.value(view.mouseDownAction.value(view,
 			local.x, local.y, 0, 0, 1) == true
 		and: { view.mouseMoveAction.value(view,
-			local.x + 7, local.y, 0) == true }
-		and: { view.mouseMoveAction.value(view,
-			local.x, local.y, 0) == true }
+			local.x + 32, local.y, 0) == true }
+		and: { routes.size == before }
+		and: { map.birdHeld[0] and: { map.birdOffsets[0].x > 0 } }
 		and: { view.mouseUpAction.value(view,
-			local.x, local.y, 0, 0) == true },
+			local.x + 32, local.y, 0, 0) == true },
 		"the bird claims the complete Qt drag instead of leaking it to the stage");
 	check.value(routes.size == (before + 1)
 		and: { routes.last == [\deckA, \random, nil] },
-		"one natural out-and-back ruffle routes random on release");
+		"one straight pull routes random only on release");
+	check.value(map.birdHeld[0].not and: { map.birdReturnTasks[0].notNil },
+		"release starts one finite spring return");
+	view.mouseUpAction.value(view, local.x + 32, local.y, 0, 0);
+	check.value(routes.size == (before + 1), "a repeated release cannot choose a second file");
 	before = routes.size;
 	view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
 	view.mouseMoveAction.value(view, local.x + 10, local.y, 0);
 	view.mouseUpAction.value(view, local.x + 10, local.y, 0, 0);
 	check.value(routes.size == before,
-		"a plain non-tap, non-ruffle drag does nothing");
+		"the neutral band between tap and deliberate pull does nothing");
 	view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
+	view.mouseMoveAction.value(view, local.x, local.y - 40, 0);
 	check.value(map.touch.birdGestureActive,
 		"a pressed bird owns transient gesture state");
 	map.cancelGestures;
 	view.mouseUpAction.value(view, local.x, local.y, 0, 0);
-	check.value(map.touch.birdGestureActive.not and: { routes.size == before },
+	check.value(map.touch.birdGestureActive.not and: { routes.size == before }
+		and: { map.birdOffsets.every { |p| p == (0@0) } }
+		and: { map.birdReturnTasks.every(_.isNil) } and: { map.birdHeld.every(_.not) },
 		"the shared exit choke point cancels a half-finished bird gesture");
+	// The right bird owns its own deck, also for a vertical release outside
+	// its original bounds. A second press and the shared exits stop old ink.
+	{
+		var right = map.birdViews[1], at = right.bounds.moveTo(0, 0).center;
+		right.mouseDownAction.value(right, at.x, at.y, 0, 0, 1);
+		right.mouseUpAction.value(right, at.x, at.y + 40, 0, 0);
+		check.value(routes.size == (before + 1) and: { routes.last == [\deckB, \random, nil] },
+			"vertical pull with release outside the right bird chooses only deck B");
+		right.mouseDownAction.value(right, at.x, at.y, 0, 0, 1);
+		check.value(map.birdReturnTasks.every(_.isNil) and: { map.birdHeld[1] },
+			"a new press cancels the old return before taking the bird");
+		map.cancelGestures;
+	}.value;
 	map.deckLoaded(\deckA);
 	check.value(map.birdFlash[0] and: { map.birdFlash[1].not },
 		"a successful deck notification flashes only its own bird");
@@ -143,7 +163,7 @@ birdChecks = { |map|
 		before = routes.size;
 		view.mouseDownAction.value(view, local.x, local.y, 0, 0, 1);
 		check.value(gui.bananaGrammar.isInHand and: { routes.size == before },
-			"a crossing cable takes the press before fetch/ruffle");
+			"a crossing cable takes the press before fetch/pull");
 		gui.bananaGrammar.escape;
 	};
 	matrix.load(savedMatrix);
@@ -644,8 +664,7 @@ droneChecks = { |map|
 	check.value(state.get(\coco1SlotX) > 0
 		and: { state.get(\coco2SlotX) > 0 },
 		"the two SlotX bridge valves remain independently directional");
-	// The veil is one two-axis hand: radial travel changes amount while the
-	// transverse grain travels independently, with no labels or hidden widget.
+	// Both veils use the same screen axes: vertical amount, horizontal grain.
 	dust = map.geometry[\dusts][0];
 	dustView = map.dustViews[0];
 	dustLocal = dust[\center] - dust[\box].leftTop;
@@ -660,17 +679,46 @@ droneChecks = { |map|
 		dustLocal.x, dustLocal.y, 0, 0, 1);
 	check.value(map.touch.performanceGestureActive and: { map.dustActive[0] },
 		"Dust captures one continuous two-axis Night hand");
-	dustFinish = dustLocal + (dust[\axis] * 36) + (dust[\tangent] * 24);
+	dustFinish = dustLocal + (24@(-36));
 	dustView.mouseMoveAction.value(dustView, dustFinish.x, dustFinish.y, 0);
 	dustView.mouseUpAction.value(dustView, dustFinish.x, dustFinish.y, 0, 0);
 	check.value(state.get(\coco1Dust) > 0.1
 		and: { state.get(\coco1DustGrain) > 0.5 }
 		and: { map.dustActive[0].not },
-		"radial Dust amount and transverse mist-to-chip grain write independently");
+		"screen-up Dust amount and screen-right grain write through their shared funnels");
 	state.set(\coco1Dust, dustSaved[0]);
 	state.set(\coco1DustGrain, dustSaved[1]);
 	map.paintDust(0, CQSpec.unmap(\coco1Dust, dustSaved[0]),
 		CQSpec.unmap(\coco1DustGrain, dustSaved[1]));
+	2.do { |index|
+		var amount = CQGuiNightMap.dustParamName(index);
+		var grain = CQGuiNightMap.dustParamName(index, \DustGrain);
+		var saved = [state.get(amount), state.get(grain)];
+		var geom = map.geometry[\dusts][index];
+		var view = map.dustViews[index];
+		var start = geom[\center] - geom[\box].leftTop;
+		[0@(-24), 24@0].do { |delta, axis|
+			var finish = start + delta;
+			state.set(amount, 0.1);
+			state.set(grain, 0.5);
+			map.paintDust(index, CQSpec.unmap(amount, 0.1), 0.5);
+			view.mouseDownAction.value(view, start.x, start.y, 0, 0, 1);
+			view.mouseMoveAction.value(view, finish.x, finish.y, 0);
+			view.mouseUpAction.value(view, finish.x, finish.y, 0, 0);
+			check.value(if(axis == 0) {
+				(state.get(amount) > 0.1) and: {
+					(state.get(grain) - 0.5).abs < 0.00001 }
+			} {
+				(state.get(grain) > 0.5) and: {
+					(state.get(amount) - 0.1).abs < 0.00001 }
+			}, "Coco % Dust % axis leaves the other value unchanged"
+				.format(index + 1, if(axis == 0) { "vertical" } { "horizontal" }));
+		};
+		state.set(amount, saved[0]);
+		state.set(grain, saved[1]);
+		map.paintDust(index, CQSpec.unmap(amount, saved[0]),
+			CQSpec.unmap(grain, saved[1]));
+	};
 	// PLAY-7 feedback: the exact Q/X gills, unlike the surrounding shell,
 	// remain controls through a crossing banana. Find a real crossing for each
 	// of the four valves so the assertion cannot accidentally pass in clear sky.
@@ -1695,7 +1743,7 @@ punchChecks = { |map|
 																and: { map.struckBlink[0].not },
 																"a released skip returns the comet to a still point");
 															// ---- the chevron reads the real travel ----
-															// \cqCoco takes max(param, matrix gate), so a
+															// \cqCoco toggles on each rising trigger; a
 															// patched flip reverses the loop without ever
 															// touching the param — chevron and comet must
 															// still agree (§16.6)
@@ -1711,7 +1759,7 @@ punchChecks = { |map|
 															gui.prPhaseFrame(1, 0.5, -1.0);
 															check.value(map.flipMode(0) == \flipped
 																and: { map.sparkDirs[0] == -1 },
-																"a matrix flip gate turns the chevron though the param never moved");
+																"a matrix flip trigger turns the chevron though the param never moved");
 															// the answer to a gate too fast to draw as an
 															// arrow: show the regime, not the value
 															gui.prPhaseFrame(1, 0.5, 0.1);
@@ -1723,9 +1771,9 @@ punchChecks = { |map|
 																"the tail keeps its last settled direction while shuttling");
 															state.set(\coco1Flip, 1);
 															gui.prFlushParams;
-															gui.prPhaseFrame(1, 0.56, 0.0);
-															check.value(map.flipMode(0) == \flipped,
-																"the param alone still turns the chevron (max, like the DSP)");
+															gui.prPhaseFrame(1, 0.56, 1.0);
+															check.value(map.flipMode(0) == \forward,
+																"trigger parity can make playback forward while the hand Flip is on");
 															// ---- §6 body solo-light ----
 															castleView = map.castleViews[1];
 															castleTwo = map.geometry[\castles][1];

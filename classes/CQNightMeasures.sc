@@ -102,12 +102,12 @@ CQNightMeasures {
 	*organPodOuter { ^32 }                  // px — annular audible-organ hand
 
 	// Each converter exhales into its own inner-lower veil. The body grows from
-	// the shell toward the bay; a transverse seed carries the mist↔chip axis.
+	// the shell toward the bay; a transverse seed shapes the mist/chip drawing, independent of hand axes.
 	// Its ownership root is deliberately detached from the crowded shell: the
 	// mirrored body and its inward-pointing breath say which Coco owns it.
 	*dustBodyReach { ^240 }                  // body — Coco centre to veil centre
 	*dustBodyAngle { ^32 }                   // degrees below the inward axis
-	*dustRx { ^53 }                          // body — along the radial amount axis
+	*dustRx { ^53 }                          // body — along the drawn radial axis
 	*dustRy { ^36 }                          // body — across the grain axis
 	*dustSocketInset { ^48 }                 // body — Coco-side rim from veil centre
 	*dustTailLength { ^24 }                  // body — detached root back toward Coco

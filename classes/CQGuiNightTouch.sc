@@ -35,11 +35,11 @@ CQGuiNightTouch {
 	*preampSensitivity { ^1 / 240 }
 	*dustSensitivity { ^1 / CQNightMeasures.dustSensitivity }
 
-	*dustAxisNorms { |amount, grain, delta, axis, tangent|
-		var radial = (delta.x * axis.x) + (delta.y * axis.y);
-		var across = (delta.x * tangent.x) + (delta.y * tangent.y);
-		^[(amount + (radial * this.dustSensitivity)).clip(0, 1),
-			(grain + (across * this.dustSensitivity)).clip(0, 1)]
+	*dustAxisNorms { |amount, grain, delta|
+		// Screen axes stay identical on both mirrored veils: up adds material,
+		// right blends toward chips. A straight gesture changes only one value.
+		^[(amount - (delta.y * this.dustSensitivity)).clip(0, 1),
+			(grain + (delta.x * this.dustSensitivity)).clip(0, 1)]
 	}
 
 	// SP.AF is bipolar and its musically useful home is exact zero. A secondary
@@ -80,51 +80,40 @@ CQGuiNightTouch {
 	// and told apart by the same number the lasso already teaches.
 	*tapTravel { ^CQBananaGrammar.lassoTravel }
 
-	// The fetch birds use the same tap boundary, plus a deliberately small
-	// horizontal swing. A ruffle is recognized from a direction change rather
-	// than time, so a slow deliberate shake and a quick one are the same act.
-	*ruffleSwing { ^6 }
+	// A deliberate pull arms random; release commits it once. Any direction
+	// works. Keep a small neutral band beyond the shared tap boundary.
+	*birdPullTravel { ^16 }
 	*birdPollPeriod { ^1/60 }
 	*birdWheelCooldown { ^0.15 }
+	*birdReturnDuration { ^0.46 }
 
-	*newRuffle { |point, index = 0|
-		^(index: index, start: point, extremeX: point.x,
-			direction: 0, reversals: 0, maxTravel: 0)
+	*newBirdPull { |point, index = 0|
+		^(index: index, start: point, delta: 0@0, maxTravel: 0)
 	}
 
-	*advanceRuffle { |gesture, point|
-		var direction = gesture[\direction], dx;
+	*advanceBirdPull { |gesture, point|
+		gesture[\delta] = point - gesture[\start];
 		gesture[\maxTravel] = max(gesture[\maxTravel],
 			CQNightGeometry.distance(gesture[\start], point));
-		dx = point.x - gesture[\extremeX];
-		if(direction == 0) {
-			if(dx.abs >= this.ruffleSwing) {
-				gesture[\direction] = dx.sign;
-				gesture[\extremeX] = point.x;
-			};
-		} {
-			if((dx * direction) > 0) {
-				gesture[\extremeX] = point.x;
-			} {
-				if((dx * direction) <= this.ruffleSwing.neg) {
-					gesture[\direction] = direction.neg;
-					gesture[\reversals] = gesture[\reversals] + 1;
-					gesture[\extremeX] = point.x;
-				};
-			};
-		};
 		^gesture
 	}
 
-	// Ruffle wins the deliberately tiny overlap where a careful 6 px out-and-
-	// back stays inside the 8 px tap radius: the reversal proves the hand asked
-	// for "anything", while a tap contains no such evidence. One reversal is
-	// the natural hand act; the first version required two and made an ordinary
-	// left-right ruffle look like an inert drag in live review.
 	*birdGestureAction { |gesture|
-		if(gesture[\reversals] >= 1) { ^\random };
+		if(gesture[\maxTravel] >= this.birdPullTravel) { ^\random };
 		if(gesture[\maxTravel] < this.tapTravel) { ^\fetch };
 		^nil
+	}
+
+	// Soft resistance, bounded inside the bird's existing paint/hit layer.
+	// The pose is visual only; neither motion nor its return touches a deck.
+	*birdPullOffset { |delta|
+		^delta * (10 / (28 + CQNightGeometry.distance(0@0, delta)))
+	}
+
+	*birdReturnPose { |offset, phase|
+		var t = phase.clip(0, 1), envelope = (1 - t).squared;
+		^(offset: offset * (cos(t * 3pi) * envelope),
+			tilt: sin(t * 5pi) * 0.12 * envelope)
 	}
 
 	// Qt reports positive y for wheel-up and negative for wheel-down.
@@ -302,7 +291,7 @@ CQGuiNightTouch {
 
 	preampGestureActive { ^preampDrag.notNil }
 
-	// ---- birds: tap fetch · wheel folder · horizontal ruffle random (§11) ----
+	// ---- birds: tap fetch · wheel folder · pull/release random (§11) ----
 
 	birdDown { |index, view, x, y, modifiers = 0, button = 0, clicks = 1|
 		var point = this.prPoint(view, x, y);
@@ -313,7 +302,9 @@ CQGuiNightTouch {
 			or: { overlay.patchAt(point).notNil }) {
 			^this.forwardDown(view, x, y, modifiers, button, clicks, nil)
 		};
-		birdDrag = this.class.newRuffle(point, index);
+		this.cancelBird;
+		birdDrag = this.class.newBirdPull(point, index);
+		map.beginBirdPull(index);
 		this.prBirdWatch(birdDrag);
 		^this
 	}
@@ -322,7 +313,7 @@ CQGuiNightTouch {
 		if(birdDrag.isNil or: { birdDrag[\index] != index }) {
 			^this.forwardMove(view, x, y, modifiers)
 		};
-		this.class.advanceRuffle(birdDrag, this.prPoint(view, x, y));
+		this.prAdvanceBird(birdDrag, this.prPoint(view, x, y));
 		^this
 	}
 
@@ -332,8 +323,9 @@ CQGuiNightTouch {
 			^this.forwardUp(view, x, y, modifiers, button)
 		};
 		birdDrag = nil;
-		this.class.advanceRuffle(gesture, this.prPoint(view, x, y));
+		this.prAdvanceBird(gesture, this.prPoint(view, x, y));
 		action = this.class.birdGestureAction(gesture);
+		map.releaseBirdPull(index, action == \random);
 		switch(action,
 			\fetch, { map.fetchDeck(index) },
 			\random, { map.randomDeck(index) }
@@ -360,6 +352,7 @@ CQGuiNightTouch {
 
 	cancelBird {
 		birdDrag = nil;
+		map.cancelBirdMotion;
 		^this
 	}
 
@@ -661,7 +654,7 @@ CQGuiNightTouch {
 		^this
 	}
 
-	// ---- converter breath: radial amount · transverse mist↔chip grain ----
+	// ---- converter breath: vertical amount · horizontal mist↔chip grain ----
 
 	dustDown { |index, view, x, y, modifiers = 0, button = 0, clicks = 1|
 		var point = this.prPoint(view, x, y), geo = map.geometry, dust;
@@ -682,14 +675,13 @@ CQGuiNightTouch {
 	}
 
 	dustMove { |index, view, x, y, modifiers = 0|
-		var point, dust, norms;
+		var point, norms;
 		if(dustDrag.isNil or: { dustDrag[\index] != index }) {
 			^this.landscapeMove(view, x, y, modifiers)
 		};
 		point = this.prPoint(view, x, y);
-		dust = map.geometry[\dusts][index];
 		norms = this.class.dustAxisNorms(dustDrag[\amount], dustDrag[\grain],
-			point - dustDrag[\startPoint], dust[\axis], dust[\tangent]);
+			point - dustDrag[\startPoint]);
 		this.prSet(dustDrag[\amountName], norms[0]);
 		this.prSet(dustDrag[\grainName], norms[1]);
 		map.paintDust(index, this.prNorm(dustDrag[\amountName]),
@@ -1076,18 +1068,27 @@ CQGuiNightTouch {
 	// live-window safety net and synthetic tests stay deterministic.
 	prBirdWatch { |gesture|
 		AppClock.sched(this.class.birdPollPeriod, {
-			var cursor;
-			if(birdDrag === gesture) {
+			var cursor, origin;
+			if(birdDrag === gesture and: { map.container.isClosed.not }) {
 				cursor = try { QtGUI.cursorPosition };
-				cursor !? {
-					this.class.advanceRuffle(gesture,
-						cursor - map.container.mapToGlobal(0@0))
+				origin = try { map.container.mapToGlobal(0@0) };
+				// Native close can destroy Qt paper before the onClose cleanup
+				// reaches us. A removed view may return itself, not a Point.
+				if(cursor.isKindOf(Point) and: { origin.isKindOf(Point) }) {
+					this.prAdvanceBird(gesture, cursor - origin)
 				};
 				this.class.birdPollPeriod
 			} {
+				if(birdDrag === gesture) { this.cancelBird };
 				nil
 			}
 		});
+		^this
+	}
+
+	prAdvanceBird { |gesture, point|
+		this.class.advanceBirdPull(gesture, point);
+		map.moveBirdPull(gesture[\index], gesture[\delta]);
 		^this
 	}
 

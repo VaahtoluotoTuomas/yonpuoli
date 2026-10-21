@@ -93,23 +93,21 @@ abort = { |error|
 					and: { gui.chargeFor(\coco1_flip).isNil },
 					"missing telemetry never invents aura or charge");
 				// AUD-W's always-visible surface. The mark is static ink drawn
-				// on the toolbar beside the drawer button — the route to the
+				// on the toolbar beside info/drawer — Drawer is the route to the
 				// only remedy — and it may exist only in danger.
 				check.value(gui.shell.audioClockDanger.not,
 					"a healthy clock leaves no danger mark on the toolbar");
 				gui.shell.audioClockDanger = true;
 				check.value(gui.shell.audioClockDanger,
 					"the guard's danger reaches the always-visible chrome");
-				clockLayout = CQGuiShell.clockDangerLayout(34,
-					gui.shell.drawerButton.view.bounds.left,
-					0, CQGuiScale.chrome[\label]);
+				clockLayout = gui.shell.audioAlertLayout;
 				check.value(clockLayout[\showText]
 					and: { clockLayout[\textRect].left > 0 }
 					and: { clockLayout[\textRect].right
-						< gui.shell.drawerButton.view.bounds.left }
+						< gui.shell.infoButton.view.bounds.left }
 					and: { clockLayout[\dotCenter].x
-						< gui.shell.drawerButton.view.bounds.left },
-					"at the 1280 minimum the mark fits left of the drawer button");
+						+ clockLayout[\dotRadius] < gui.shell.infoButton.view.bounds.left },
+					"at the 1280 minimum the drawn mark clears both info and drawer");
 				check.value(CQGuiShell.clockDangerLayout(34, 120, 100,
 					CQGuiScale.chrome[\label])[\showText].not,
 					"and where the title leaves no room the dot survives alone");
@@ -120,9 +118,7 @@ abort = { |error|
 				check.value(gui.shell.audioAlert == \serverDown
 					and: { gui.shell.audioClockDanger.not },
 					"a silent server lights the mark without claiming a stuck clock");
-				downLayout = CQGuiShell.clockDangerLayout(34,
-					gui.shell.drawerButton.view.bounds.left,
-					0, CQGuiScale.chrome[\label], \serverDown);
+				downLayout = gui.shell.audioAlertLayout;
 				check.value(downLayout[\label] == "server not responding"
 					and: { downLayout[\label] != clockLayout[\label] },
 					"two faults, two sentences, one mark");
@@ -130,7 +126,7 @@ abort = { |error|
 					and: { downLayout[\textRect].left > 0 }
 					and: { downLayout[\textRect].width > clockLayout[\textRect].width }
 					and: { downLayout[\textRect].right
-						< gui.shell.drawerButton.view.bounds.left }
+						< gui.shell.infoButton.view.bounds.left }
 					and: { downLayout[\dotCenter] == clockLayout[\dotCenter] },
 					"the longer sentence still fits at 1280 and the dot never moves");
 				gui.shell.audioAlert = \none;

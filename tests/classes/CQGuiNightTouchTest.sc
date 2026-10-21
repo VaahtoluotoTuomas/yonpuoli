@@ -87,35 +87,51 @@ CQGuiNightTouchTest : UnitTest {
 			"continuous moon motion still clamps at the new moon", 1e-9);
 	}
 
-	// A bird has three acts but no new glyphs: a still press fetches, one
-	// deliberate horizontal reversal chooses random, and an ordinary drag is
-	// inert. Recognition is distance-based, never timer-based.
-	test_birdTapRuffleAndInertDrag {
-		var tap = CQGuiNightTouch.newRuffle(Point(0, 0));
-		var edge = CQGuiNightTouch.newRuffle(Point(0, 0));
-		var ruffle = CQGuiNightTouch.newRuffle(Point(0, 0));
-		var repeated = CQGuiNightTouch.newRuffle(Point(0, 0));
-		CQGuiNightTouch.advanceRuffle(tap, Point(7, 0));
+	test_birdTapAndOmnidirectionalPull {
+		var tap = CQGuiNightTouch.newBirdPull(0@0);
+		var edge = CQGuiNightTouch.newBirdPull(0@0);
+		CQGuiNightTouch.advanceBirdPull(tap, Point(7, 0));
 		this.assertEquals(CQGuiNightTouch.birdGestureAction(tap), \fetch,
 			"less than the shared 8 px threshold is a fetch tap");
-		CQGuiNightTouch.advanceRuffle(edge, Point(8, 0));
+		CQGuiNightTouch.advanceBirdPull(edge, Point(8, 0));
 		this.assert(CQGuiNightTouch.birdGestureAction(edge).isNil,
-			"the exact boundary is already a drag, not a tap");
-		[Point(7, 0), Point(0, 0)].do { |point|
-			CQGuiNightTouch.advanceRuffle(ruffle, point)
+			"8 px leaves the tap but does not accidentally choose random");
+		CQGuiNightTouch.advanceBirdPull(edge, Point(15.99, 0));
+		this.assert(CQGuiNightTouch.birdGestureAction(edge).isNil,
+			"the neutral band ends at the deliberate pull threshold");
+		[16@0, -16@0, 0@16, 0 @ -16, 12@12].do { |point|
+			var pull = CQGuiNightTouch.newBirdPull(100@200, 1);
+			CQGuiNightTouch.advanceBirdPull(pull, (100@200) + point);
+			this.assertEquals(CQGuiNightTouch.birdGestureAction(pull), \random,
+				"one straight pull arms random in every direction");
+			CQGuiNightTouch.advanceBirdPull(pull, 100@200);
+			this.assertEquals(CQGuiNightTouch.birdGestureAction(pull), \random,
+				"returning toward home before release does not turn a pull into a tap");
 		};
-		this.assertEquals(ruffle[\reversals], 1,
-			"one 6 px out-and-back is counted as the natural ruffle");
-		this.assertEquals(CQGuiNightTouch.birdGestureAction(ruffle), \random,
-			"the ruffle wins even when its compact shape stays inside the tap radius");
 		this.assert(CQGuiNightTouch.birdPollPeriod > 0
 			and: { CQGuiNightTouch.birdPollPeriod <= (1/30) },
-			"the live cursor fallback samples quickly enough to catch a hand reversal");
-		[Point(80, 0), Point(-80, 0), Point(80, 0), Point(-80, 0)].do { |point|
-			CQGuiNightTouch.advanceRuffle(repeated, point)
+			"the live cursor fallback follows the held bird smoothly");
+	}
+
+	test_birdSpringIsBoundedAndSettles {
+		var offset = CQGuiNightTouch.birdPullOffset(80@40), pose;
+		this.assertEquals(CQGuiNightTouch.birdPullOffset(0@0), 0@0, "no pull has no displacement");
+		[1, 16, 100, 10000].do { |distance|
+			var p = CQGuiNightTouch.birdPullOffset(Point(distance, distance.neg));
+			this.assert(p.x > 0 and: { p.y < 0 }
+				and: { CQNightGeometry.distance(0@0, p) < 10 },
+				"bird follows the hand with bounded resistance");
 		};
-		this.assertEquals(CQGuiNightTouch.birdGestureAction(repeated), \random,
-			"repeated or wide ruffling stays recognized once the reversal is clear");
+		this.assertEquals(CQGuiNightTouch.birdReturnPose(offset, 0)[\offset], offset, "return begins at the held position");
+		this.assert(CQGuiNightTouch.birdReturnPose(offset, 1/3)[\offset].x < 0, "spring crosses home once visibly");
+		101.do { |i|
+			pose = CQGuiNightTouch.birdReturnPose(offset, i / 100);
+			this.assert(CQNightGeometry.distance(0@0, pose[\offset]) <= CQNightGeometry.distance(0@0, offset)
+				and: { pose[\tilt].abs <= 0.12 }, "spring and wiggle remain bounded");
+		};
+		pose = CQGuiNightTouch.birdReturnPose(offset, 2);
+		this.assertEquals(pose[\offset], 0@0, "return clamps at exact home");
+		this.assertEquals(pose[\tilt], 0, "no permanent tilt after return");
 	}
 
 	test_birdWheelDirectionAndMomentumGate {
@@ -279,25 +295,20 @@ CQGuiNightTouchTest : UnitTest {
 			"tangential travel invents no send change", 1e-9);
 	}
 
-	test_dustVeilSeparatesRadialAmountFromTangentialGrain {
-		var axis = Point(1, 0), tangent = Point(0, 1), mixed, radial, across;
-		mixed = CQGuiNightTouch.dustAxisNorms(
-			0.2, 0.5, Point(60, -30), axis, tangent);
+	test_dustVeilUsesIndependentScreenAxes {
+		var mixed, vertical, horizontal;
+		mixed = CQGuiNightTouch.dustAxisNorms(0.2, 0.5, Point(-30, -60));
 		this.assertFloatEquals(mixed[0], 0.7,
-			"60 px outward adds half of the Dust amount range", 1e-9);
+			"60 px up adds half of the Dust amount range", 1e-9);
 		this.assertFloatEquals(mixed[1], 0.25,
-			"30 px across toward mist removes one quarter of grain", 1e-9);
-		radial = CQGuiNightTouch.dustAxisNorms(
-			0.2, 0.5, Point(120, 0), axis, tangent);
-		this.assertFloatEquals(radial[0], 1,
-			"a full radial span clamps amount at its ceiling", 1e-9);
-		this.assertFloatEquals(radial[1], 0.5,
-			"a purely radial pull leaves grain exactly at home", 1e-9);
-		across = CQGuiNightTouch.dustAxisNorms(
-			0.2, 0.5, Point(0, 120), axis, tangent);
-		this.assertFloatEquals(across[0], 0.2,
-			"a purely tangential pull leaves amount untouched", 1e-9);
-		this.assertFloatEquals(across[1], 1,
-			"one tangential span reaches the chip end", 1e-9);
+			"30 px left blends toward mist", 1e-9);
+		vertical = CQGuiNightTouch.dustAxisNorms(0.2, 0.5, Point(0, -120));
+		this.assertFloatEquals(vertical[0], 1, "upward amount clamps at its ceiling", 1e-9);
+		this.assertFloatEquals(vertical[1], 0.5, "vertical movement leaves grain untouched", 1e-9);
+		horizontal = CQGuiNightTouch.dustAxisNorms(0.2, 0.5, Point(120, 0));
+		this.assertFloatEquals(horizontal[0], 0.2, "horizontal movement leaves amount untouched", 1e-9);
+		this.assertFloatEquals(horizontal[1], 1, "right reaches the chip end", 1e-9);
+		this.assertEquals(CQGuiNightTouch.dustAxisNorms(0.2, 0.5, -240@240), [0, 0],
+			"down and left clamp at zero without reversing either axis");
 	}
 }
