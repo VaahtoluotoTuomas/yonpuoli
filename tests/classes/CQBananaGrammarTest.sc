@@ -227,11 +227,38 @@ CQBananaGrammarTest : UnitTest {
 		grammar.polarityFlip(\tri1, \coco1_spaf);
 		grammar.polarityFlip(\tri1, \coco1_spaf);
 		this.assertEquals(grammar.undoCount, 2, "undo ring drops entries beyond its depth");
+		3.do { grammar.undo };
+		this.assertEquals(grammar.redoCount, 2, "redo retains only the bounded undo history");
+		3.do { grammar.redo };
+		this.assertEquals(grammar.undoCount, 2, "redo returns entries to the same bounded history");
+	}
+
+	test_redoRestoresMovesAndANewEditReplacesTheBranch {
+		var before, moved;
+		matrix.patch(\tri1, \coco1_spaf, 0.42);
+		before = matrix.fullMatrix;
+		grammar.grab(\tri1, \coco1_spaf);
+		grammar.updateCandidate(\coco2_spaf, 0); grammar.releaseCandidate;
+		moved = matrix.fullMatrix;
+		grammar.undo;
+		this.assertEquals(matrix.fullMatrix, before, "undo restores both ends");
+		grammar.instantRip(\tri5, \coco2_spaf);
+		this.assertEquals(grammar.redoCount, 1, "an empty rip does not discard redo");
+		grammar.startSource(\cas1, 1);
+		grammar.redo;
+		this.assertEquals(matrix.fullMatrix, moved, "redo restores the exact moved route and weight");
+		this.assert(grammar.isInHand.not, "redo cancels an uncommitted held cable");
+		grammar.undo;
+		grammar.polarityFlip(\tri1, \coco1_spaf);
+		before = matrix.fullMatrix;
+		this.assertEquals(grammar.redoCount, 0, "a new committed edit discards the redo branch");
+		grammar.redo;
+		this.assertEquals(matrix.fullMatrix, before, "redo cannot resurrect the discarded branch");
 	}
 
 	test_guiShakeUndoRestoresItsMatrixAndPreparedControlsTogether {
 		var state = CQState(nil), beforeMatrix, beforeParams, plan;
-		var stableName, changedNames, handValue;
+		var stableName, changedNames, handValue, afterMatrix, afterParams;
 		grammar.free;
 		state.setAll((patchDepth: 0.2, coco1Level: 0.1, coco2Level: 0.2,
 			coco1Hold: 0, coco2Hold: 0));
@@ -244,6 +271,7 @@ CQBananaGrammarTest : UnitTest {
 			state.setAll(matrix.lastShakePlan[\params]);
 		});
 		plan = matrix.lastShakePlan.deepCopy;
+		afterMatrix = matrix.fullMatrix; afterParams = state.asEvent.copy;
 		changedNames = plan[\params].keys.select { |name|
 			beforeParams[name] != state.get(name)
 		};
@@ -271,6 +299,14 @@ CQBananaGrammarTest : UnitTest {
 		};
 		this.assertEquals(state.get(stableName), CQSpec.clamp(stableName, handValue),
 			"undo leaves a later hand edit to an unchanged planned control intact");
+		state.set(\masterVol, -19);
+		grammar.redo;
+		this.assertEquals(matrix.fullMatrix, afterMatrix, "redo restores the exact sow, without randomizing again");
+		changedNames.do { |name|
+			this.assertEquals(state.get(name), afterParams[name], "redo restores prepared control " ++ name);
+		};
+		this.assertEquals(state.get(stableName), CQSpec.clamp(stableName, handValue), "redo preserves unchanged planned controls");
+		this.assertEquals(state.get(\masterVol), CQSpec.clamp(\masterVol, -19), "redo preserves unrelated later hand edits");
 	}
 
 	test_visibleSocketCatchesTheFullGateCapablePlant {

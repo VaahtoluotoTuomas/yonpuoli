@@ -235,8 +235,9 @@ CQInkNight {
 	}
 
 	// Each Coco's converter breathes into one deterministic veil. Amount grows
-	// the inner body away from the shell; Grain crosses it tangentially from mist
-	// to chip debris. Nothing animates by itself: every fleck is seeded geometry,
+	// the inner body away from the shell; Grain's drawn point crosses it from mist
+	// to chip debris. These are drawing axes; the hand uses screen y/x. Nothing
+	// animates by itself: every fleck is seeded geometry,
 	// and the hollow radial pearl is matrix DSP truth rather than the stored hand.
 	*drawDust { |dust, origin, amountNorm = 0, grainNorm = 0.5,
 		active = false, hover = false, modulation, skin = \night|
@@ -1693,10 +1694,15 @@ CQInkNight {
 
 	// deck bird: two wing béziers and a body dot (§16.6), span ≈ 64 px,
 	// drawn by the bird's own opaque layer (origin = its box corner)
-	*drawBird { |bird, origin, active = false, flash = false, skin = \night|
+	*drawBird { |bird, origin, active = false, flash = false, skin = \night, offset, tilt = 0|
 		var palette = CQInk.palette(skin), c = bird[\center], span = bird[\span];
 		var color = if(active or: { flash }) { palette[\spark] } { palette[\line] };
 		origin !? { Pen.translate(origin.x.neg, origin.y.neg) };
+		offset !? {
+			Pen.translate(c.x + offset.x, c.y + offset.y);
+			Pen.rotate(tilt);
+			Pen.translate(c.x.neg, c.y.neg);
+		};
 		if(flash) {
 			Pen.fillColor = palette[\spark].copy.alpha_(0.13);
 			Pen.addOval(Rect.aboutPoint(c, CQNightMeasures.birdBodyR + 7,

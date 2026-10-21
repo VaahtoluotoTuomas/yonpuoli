@@ -6,7 +6,7 @@ CQBananaGrammar {
 	var <matrix, <state;
 	var <hand, <candidateDest, <candidateWeight, <cursor;
 	var <hoverEndpoint, <hoverCable, <soloTarget, <lassoPath, caught;
-	var undoRing, handStrength, <dropRadius, undoDepth;
+	var undoRing, redoRing, handStrength, <dropRadius, undoDepth;
 
 	// PLAN playability measurement 2026-08-01: an exact 0.5 banana only
 	// touches the production Schmitt's +0.5 boundary and never fires it. 0.55
@@ -28,6 +28,7 @@ CQBananaGrammar {
 		dropRadius = radius.max(1);
 		undoDepth = depth.asInteger.max(1);
 		undoRing = List.new;
+		redoRing = List.new;
 		caught = [];
 		^this
 	}
@@ -48,6 +49,7 @@ CQBananaGrammar {
 	// one threshold for "I pressed" versus "I dragged" across the whole night.
 	*lassoTravel { ^8 }
 	undoCount { ^undoRing.size }
+	redoCount { ^redoRing.size }
 	handSource { ^hand !? { hand[\src] } }
 	handWeight {
 		^candidateWeight ?? { hand !? { hand[\weight] } }
@@ -283,18 +285,28 @@ CQBananaGrammar {
 	}
 
 	undo {
-		var previous;
+		^this.prRestoreHistory(undoRing, redoRing, \undo)
+	}
+	redo { ^this.prRestoreHistory(redoRing, undoRing, \redo) }
+	prRestoreHistory { |from, to, operation|
+		var previous, current, params;
 		this.prDropHand;
-		if(undoRing.isEmpty) { ^this };
-		previous = undoRing.removeAt(undoRing.size - 1);
+		if(from.isEmpty) { ^this };
+		previous = from.removeAt(from.size - 1);
+		current = matrix.fullMatrix;
 		if(previous.isKindOf(Event) and: { previous[\matrix].notNil }) {
+			params = Event.new;
+			state !? { previous[\params].keysDo { |name| params[name] = state.get(name) } };
+			to.add((matrix: current, params: params));
 			matrix.writeMatrix(previous[\matrix], origin: \gui, committed: true,
-				operation: \undo);
+				operation: operation);
 			state !? { state.setAll(previous[\params]) };
 		} {
+			to.add(current);
 			matrix.writeMatrix(previous, origin: \gui, committed: true,
-				operation: \undo);
+				operation: operation);
 		};
+		while { to.size > undoDepth } { to.removeAt(0) };
 		this.changed(\gesture);
 		^this
 	}
@@ -434,6 +446,7 @@ CQBananaGrammar {
 
 	prRemember { |before|
 		if(this.prMatricesEqual(before, matrix.fullMatrix).not) {
+			redoRing.clear;
 			undoRing.add(before.collect { |row| row.copy });
 			while { undoRing.size > undoDepth } { undoRing.removeAt(0) };
 		};
@@ -448,6 +461,7 @@ CQBananaGrammar {
 			};
 		};
 		if(changed) {
+			redoRing.clear;
 			undoRing.add((matrix: before.collect { |row| row.copy },
 				params: params.copy));
 			while { undoRing.size > undoDepth } { undoRing.removeAt(0) };

@@ -1079,7 +1079,7 @@ CQNightGeometry {
 		};
 		// Two converter-local breaths, mirrored in placement but independently
 		// seeded in contour. Their radial axis points away from the owning Coco;
-		// the perpendicular axis is the hand's mist↔chip grain gesture.
+		// the perpendicular axis shapes the drawing; hand gestures use screen x/y.
 		dusts = this.prSeeded(7719, {
 			2.collect { |i|
 				var coco = cocos[i];

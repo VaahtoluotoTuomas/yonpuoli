@@ -43,6 +43,18 @@ CQSessionLifecycleTest : UnitTest {
 		this.assert(Cocoquantus.graph.isNil, "stopped session owns no graph");
 	}
 
+	test_freshSessionRejectsInactiveAndInFlightSessions {
+		var callbacks = 0;
+		this.assert(Cocoquantus.freshSession({ callbacks = callbacks + 1 }).not,
+			"fresh session cannot create an unowned session while stopped");
+		Cocoquantus.boot(configPath);
+		this.assert(Cocoquantus.freshSession({ callbacks = callbacks + 1 }).not,
+			"fresh session cannot replace a boot already in progress");
+		this.assertEquals(Cocoquantus.lifecycleState, \booting, "rejection leaves the existing boot intact");
+		this.assertEquals(callbacks, 0, "rejected reset never publishes a ready callback");
+		this.assertEquals(server.quitCount, 0, "reset rejection never restarts the audio server");
+	}
+
 	test_bootThenFreeInvalidatesLateCallback {
 		var ready = false;
 		Cocoquantus.boot(configPath, { ready = true });

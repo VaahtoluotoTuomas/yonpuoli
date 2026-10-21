@@ -10,6 +10,8 @@ CQGui {
 	var <audioConfig;
 	var stateCtl, serverCtl, clockCtl, gridPanel, meterFuncs, <audition;
 	var <bananaGrammar, <nightMap;
+	var <info, <infoBindings;
+	var <hoverHelp, <hoverBindings, <>hoverView, <>masterControls;
 	var <inkControls;
 	var <spesalStates;
 	// `/cq_phase`: read-head address, audio-rate direction mean and skip rate,
@@ -186,7 +188,13 @@ CQGui {
 	recButton_ { |btn| recBtn = btn }
 	recTime_ { |view| recTimeView = view }
 	registerInkControl { |control| inkControls.add(control); ^control }
+	registerInfo { |view, target| infoBindings.add([view, target]); ^view }
+	registerHover { |control, target| hoverBindings.add([control, target]); ^control }
 	endpointInkState { |name, kind|
+		// Reading a socket is an action even when no banana is in hand.
+		// Reuse its own family-coloured hover ink, only during inspection.
+		if(info.notNil and: { info.model.inspecting }
+			and: { info.endpointHighlighted(name) }) { ^\hover };
 		if(kind == \jack) {
 			^if(bananaGrammar.isSourceInHand(name)) { \inHand } {
 				if(bananaGrammar.hoverEndpoint == name) { \hover } { \idle }
@@ -393,6 +401,8 @@ CQGui {
 		fireValues = Array.newClear(chargeNames.size);
 		firePainted = Array.newClear(chargeNames.size);
 		inkControls = List.new;
+		infoBindings = List.new;
+		hoverBindings = List.new;
 		shakeWatchers = List.new;
 		compass = CQCompass(this.prCompassDir);
 		widgets = CQGuiWidgets(state, updaters, this);
@@ -457,6 +467,9 @@ CQGui {
 		};
 		window.onClose = { shellState.close; this.prCleanup };
 		window.view.children.do { |ch| this.prDefocus(ch) };
+		hoverHelp = CQGuiHover(this, hoverView);
+		info = CQGuiInfo(this, matrix);
+		hoverHelp.bindTree(info.card, { nil });
 		this.prUpdateNotice;
 		window.front;
 		if(Cocoquantus.consumeAudioReopen) {
@@ -490,6 +503,7 @@ CQGui {
 	// the Drawer became visible (or changed page): its stage may have been
 	// resized while it was hidden and therefore never laid out
 	drawerShown {
+		nightMap !? { nightMap.cancelGestures };
 		this.prSyncDrawerScale;
 		this.prQueueAudioPresence;
 		// a page that skipped drawing while it was hidden catches up here
@@ -859,9 +873,25 @@ CQGui {
 	}
 
 	// SPEC §6.2 keyboard map
+	freshSession {
+		var bounds = window.bounds, guideKind = info.model.guideKind ? \tour;
+		if(Cocoquantus.state !== state) { ^false };
+		this.cancelAudition;
+		^Cocoquantus.freshSession({ |facade|
+			var next = facade.gui;
+			next !? {
+				next.window.bounds = bounds;
+				next.info.enabled = true;
+				next.info.activate(guideKind);
+			};
+		})
+	}
+
 	prKey { |char, modifiers = 0, unicode, keycode, key|
-		var ascii, undoKey, handDownKey, handUpKey;
+		var ascii, undoKey, redoKey, handDownKey, handUpKey;
 		ascii = char !? { char.ascii };
+		if(this.prTextHasFocus.not and: { shellState.drawerOpen.not } and: { info.notNil }
+			and: { info.pageKey(key ? unicode) }) { ^this };
 		undoKey = #[26, 90, 122].includes(ascii)
 			or: { #[26, 90, 122].includes(unicode) }
 			or: { key == 90 };
@@ -869,14 +899,17 @@ CQGui {
 			or: { #[90, 122].includes(unicode) } or: { key == 90 };
 		handUpKey = #[88, 120].includes(ascii)
 			or: { #[88, 120].includes(unicode) } or: { key == 88 };
-		if(modifiers.isCtrl and: { undoKey }) {
-			bananaGrammar.undo;
+		redoKey = handUpKey or: { ascii == 24 or: { unicode == 24 } };
+		if(modifiers.isCtrl and: { undoKey or: { redoKey } }) {
+			if(this.prTextHasFocus.not) {
+				if(redoKey) { bananaGrammar.redo } { bananaGrammar.undo };
+			};
 			^this
 		};
 		// Laptop path for the held-cable attenuator. A touchpad commonly cannot
 		// scroll while its click is held, so the leftmost Z/X pair mirrors wheel
-		// down/up. Shift is the 0.01 fine step; plain keys use 0.05. Ctrl+Z keeps
-		// its existing undo priority above this branch.
+		// down/up. Shift is the 0.01 fine step; plain keys use 0.05. Ctrl+Z/X
+		// retain undo/redo (or native text editing) priority above this branch.
 		if(bananaGrammar.isInHand and: { handDownKey or: { handUpKey } }) {
 			bananaGrammar.wheelHand(if(handDownKey) { -1 } { 1 }, modifiers.isShift);
 			^this
@@ -884,6 +917,7 @@ CQGui {
 		if(char.notNil and: { char.ascii == 27 }) {
 			drawer.escape;
 			nightMap !? { nightMap.cancelGestures };
+			info !? { info.enabled = false };
 			^this
 		};
 		if(ascii == 9 or: { unicode == 9 }) {
@@ -920,7 +954,7 @@ CQGui {
 					{ Cocoquantus.resume } { Cocoquantus.panic };
 			},
 			{
-				if(char.isDecDigit and: { char.digit.inclusivelyBetween(3, 7) }) {
+				if(char.notNil and: { char.isDecDigit } and: { char.digit.inclusivelyBetween(3, 7) }) {
 					Cocoquantus.spesal(char.digit - 2);
 				};
 			}
@@ -1023,6 +1057,9 @@ CQGui {
 		bananaGrammar !? { bananaGrammar.free };
 		if(cleaned) { ^this };
 		cleaned = true;
+		info !? { info.free };
+		info = nil;
+		hoverHelp !? { hoverHelp.free }; hoverHelp = nil;
 		shellState.close;
 		stateCtl !? { stateCtl.remove };
 		stateCtl = nil;

@@ -242,7 +242,10 @@ analog ring; do not "fix". All castle work at audio rate — ranges reach audio.
 var clockHz = (speed * (2 ** (spafSum * spafKnob)))
     .clip(CQSpec.speedClampFloor, SampleRate.ir);       // 750 Hz, SPEC §5.3
 var ratio   = clockHz / SampleRate.ir;               // ≤ 1.0
-var dir     = Select.ar(flipGate, [DC.ar(1), DC.ar(-1)]);   // flip = matrix gate OR param
+var flipTrig = Trig1.ar(Schmidt.ar(flipSum, CQSynthDefs.gateOffThreshold,
+    CQSynthDefs.gateOnThreshold), SampleDur.ir);
+var reverse = (handFlip - ToggleFF.ar(flipTrig)).abs; // hand XOR latched trigger parity
+var dir     = 1 - (reverse * 2);
 var phase   = Phasor.ar(skipTrig, ratio * dir, 0, BufFrames.ir(buf)); // address counter
 var here    = BufRd.ar(1, buf, phase, loop: 1, interpolation: 1);
 // ^ MUST be created before BufWr: reads the cell value BEFORE overwrite = the DAC out
@@ -325,6 +328,133 @@ Language side on `\cq_hot`: engage −6 dB trim (a lagged synth arg), GUI notice
 ---
 
 ## 5. Class layer (language side)
+
+`CQGuiHover` owns the always-on lower-left help view and its passive callbacks.
+`CQHoverText` authors short notes for existing semantic identities; Night resolves
+the original individual playing hit after its native hover handler, while Master,
+widgets and shell controls register their existing views. This is a read-only
+observer, with no new setter, server resource, hit layer or timer. It wraps only
+hover/leave and resize callbacks, suppresses repeated text layout for an unchanged
+target and clears ordinary hover on stage changes, background or leave.
+`CQGuiInfo.render` synchronizes only the presentation mode: inspection and
+the combined guide replace individual hover notes with stable instructions,
+including distinct play and cable-entry reading modes. `CQGuiHover` retains the latest pointer target separately, so
+leaving info restores it without a timer or an extra musical listener.
+`CQGuiPanels` keeps the 118 px footer and its 400 px help area. A 280 px transport
+group aligns the status area's edges to REC and PANIC, reserves 52 px for combined
+notices and a fixed elapsed-time field, then leaves 40 px before the rightmost
+Master controls. Status changes do not change button geometry.
+`CQGui` constructs hover help before `CQGuiInfo` and frees them in reverse order,
+so nested callbacks restore first the observer, then the original native handlers.
+Teardown releases every hook and the shell-state listener. The hover smoke checks
+native semantic coverage, text fit, footer order and callback restoration at both
+supported sizes.
+
+The optional info layer is GUI-owned; reading and navigation are read-only. `CQInfoGroups` maps existing
+semantic identities into component topics, supplies protected subject bounds,
+and chooses a non-overlapping card position. It gives whole Coco/castle bodies
+inspection priority over crossing cables, without changing playing hit tests.
+`CQInfoPages` authors concise rows with references to those same identities;
+`CQInfoText` retains individual reference text and delegates the combined guide to
+`CQInfoTour` / `CQInfoAdvanced`, whose read-only steps own stable lesson IDs, prose, symbols, semantic
+references, concept/action cue policy and placement side together. Cable entry
+and special cue placement use lesson IDs instead of ordinal page numbers. No parallel
+parameter registry, setter or server resource is introduced.
+Each guide's first page alone offers a two-click session reset. `CQGuiInfo` owns
+confirmation; `CQGui` delegates to `Cocoquantus.freshSession`, which uses the
+existing owned free/boot lifecycle with a copy of the active audio config and
+the same running server. Recorder, morph, deck loads, graph buffers, listeners
+and GUI histories are torn down before defaults are rebuilt. Saved files remain.
+The GUI captures the guide identity before teardown and reopens its page one.
+
+
+`CQInfoState` bounds navigation: one page for Coco, two for castles and Shortcuts,
+23 for basics & first loop and 27 for organ & advanced. A shared guide-class
+lookup supplies counts, lesson data and references without parallel controllers.
+It owns footer availability and
+bounded navigation; `CQGui.prKey` delegates left/right to an open multipage card
+outside text entry and Drawer. Only toolbar entry to either learning guide enables
+playing; `page` preserves its entry mode. `CQGuiInfo`
+wraps existing mouse/drop callbacks, consumes complete inspection gestures,
+and owns all listeners, callbacks and one enabled-only 15 Hz mode-breath clock.
+PANIC bypasses inspection. Background closes the card; another component replaces
+it directly; another control within the same component retains the current page.
+The shell owns both guide buttons and Shortcuts; the controller releases all
+three actions on teardown. A cable's semantic owner enters the first guide
+at its port introduction in inspection; the toolbar resets it to page one in play
+mode. Shortcuts describes the existing
+`CQGui.prKey` map, including the context-limited info page keys and Ctrl+X redo.
+`CQBananaGrammar` owns bounded undo/redo rings. It captures exact inverse matrix
+states and only the changed parameter keys of compound operations; all restores
+use the same CQMatrix/CQState funnels. New commits clear redo; view-only work does not.
+Guide illustration hover reuses native ink brightness, including Drawer and
+Master controls. Optional `detailItems` form a second picture band immediately
+before the corresponding paragraph; they join the same reference/cue inventory.
+Concept pages have only
+hover references; practical pages also supply action cue references. The card is raised
+after guide locators and fills an opaque background; no surface cue bleeds through.
+
+Component geometry samples come from `CQGuiNightMap.infoHitRegions`, refreshed
+after native layout. The card tries bounded widths and adjacent subject edges,
+scoring subject distance before stage-edge preference and keeping centre alignment
+where space permits. Other components may be covered. Coco spends a wider card on
+one large picture and two independently wrapped text columns. Each line carries
+its own x coordinate and width; paragraph hover bounds follow those columns.
+Castles use enlarged ring/network and single-castle pictures on separate pages.
+Their native diagram includes the central eye and a labelled, fixed example of
+sampling links; no telemetry or new animation is introduced.
+Moon/eye rows carry an explicit gesture axis,
+so their miniature leaders cannot rotate into a misleading diagonal. The layout
+protects the whole subject and keeps the footer above Master. No subject overlap
+or silent text clipping is accepted. A native-window smoke audits every page at both
+supported sizes. `CQInkInfoMap` draws miniatures using the existing geometry and
+Pen recipes; numbered leader lines connect the picture to row hover locators.
+The first semantic reference is the miniature anchor: Coco's SP.AF, input and
+feedback each own a row anchored to their crescent, while related ports remain
+in that row's hover references. Q and cross-feed now also have separate gill/socket
+rows. Castle ports read upper outputs then lower inputs,
+left-to-right; its range ripple finishes the anatomy page.
+`CQInkInfo` lays out the combined guide's lesson-specific symbols/action arrows
+and maps general overview symbols to all matching surface parts. It reuses native
+bird, knob, heart, crescent, winding and chevron recipes as static examples.
+Input and Feedback lessons each enlarge a three-crescent context picture and
+brighten only the named middle/rightmost control. Neither drawing class allocates
+image resources or extra clocks. The guide introduces fixed audio paths versus
+control cables before its connection/editing lessons, authored in `CQInfoTour`.
+`CQInfoAdvanced` inherits only the common read-only lesson helpers and authors
+the second progression. Its port pictures use `CQGuiNightMap.endpointSpec`, so
+their family colours and event glyphs cannot diverge from the playing surface.
+Tide uses four row-bound close-ups through `CQInkInfo`, with native
+`drawTideField` / `drawTideGate` recipes rather than shrinking the landscape or
+substituting source-jack leaves. Hovering these pictures shares the row locator.
+
+Dust gestures use screen-space deltas in `CQGuiNightTouch`: negative y raises
+normalized amount, positive x raises grain. Both use the existing sensitivity,
+clamp to 0..1 and write through CQSpec/CQState. The mirrored visual anatomy does
+not rotate these input axes. Grain's DSP blend and all parameter maps stay unchanged.
+
+Bird pull recognition and bounded return-pose math live in `CQGuiNightTouch`.
+Mouse-up alone dispatches the existing deck random action; the global-cursor
+fallback only tracks the held hand. `CQGuiNightMap` owns the per-bird finite
+return Routines and pose arrays. Its shared gesture cancellation, resize and
+free stop them and restore home. `CQInkNight.drawBird` applies the small pose
+inside the existing bird layer without moving hit targets or touching audio.
+
+Shape-following group outlines append to the existing route paint surface.
+Endpoint hover is derived from the inspected group or referenced row, via the
+same endpoint ink function. Native crescent and gate/duck painting also reads
+group hover; its existing sibling views refresh when the group changes.
+Up to eight small, hit-transparent locator views
+mark the referenced parts. Master reuses its existing paint surfaces rather
+than adding children to its box layout. The selected component outline is static;
+the clock redraws only the info button and visible small annotations. Card rows,
+miniatures and landscape do not repaint on every tick. Disable, Drawer, leave,
+resize and teardown clear transient locators/hover; teardown restores original
+handlers, paint callbacks and mouse tracking.
+Night's outer stage has no layout. An inner host owns the instrument's
+StackLayout; the card and annotation layer are siblings of that host. This
+prevents Qt from stretching the first shown card over the instrument. Resize
+follows the inner container's completed geometry pass.
 
 | Class | Role | Key methods / notes |
 |---|---|---|
