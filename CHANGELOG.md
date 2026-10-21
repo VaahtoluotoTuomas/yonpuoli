@@ -3,7 +3,7 @@
 This file records public releases and the earlier milestones that shaped
 Yönpuoli. The Git history carries the detailed implementation story.
 
-## Unreleased
+## yonpuoli-1.1.0 — 2026-10-21
 
 ### Added
 

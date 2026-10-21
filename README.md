@@ -6,7 +6,7 @@
 
 *Memory circulates until it becomes weather.*
 
-[Download Yönpuoli 1.0.0](https://github.com/VaahtoluotoTuomas/yonpuoli/releases/tag/yonpuoli-1.0.0)
+[Download Yönpuoli 1.1.0](https://github.com/VaahtoluotoTuomas/yonpuoli/releases/tag/yonpuoli-1.1.0)
 
 ![Yönpuoli Night performance surface](docs/media/yonpuoli-night.png)
 
@@ -43,10 +43,14 @@ The launcher finds an installed SuperCollider, prepares missing local folders,
 and starts Yönpuoli without requiring the SuperCollider IDE. It never overwrites
 an existing local configuration.
 
-> **New to Yönpuoli?** Open the
-> **[Night field guide / Quick Reference](docs/QUICK_REFERENCE.md)**. It maps the
-> Night landmarks, gestures, Drawer pages, and shortcuts, beginning with the
-> sample-to-loop workflow at the centre of the instrument.
+> **New to Yönpuoli?** Click **info → basics & first loop** for an illustrated
+> guide you can play through. **Organ & advanced** builds a second patch with
+> Organ, roots and modulation. Hover the pictures to locate their controls.
+> The **[Night field guide / Quick Reference](docs/QUICK_REFERENCE.md)** also
+> maps the landmarks, gestures, Drawer pages and shortcuts.
+
+While playing, hovering a control shows a short explanation in the lower-left
+corner. Turn on **info** and click a component for its illustrated anatomy.
 
 ## Make the first loop
 
@@ -193,7 +197,7 @@ hardware evaluation.
 - **[Night field guide / Quick Reference](docs/QUICK_REFERENCE.md)** — the
   sample-to-loop path and a map of the complete playing surface.
 - [`docs/16N_MAP.md`](docs/16N_MAP.md) — optional 16n fader layout.
-- [`docs/RELEASE_NOTES_1.0.0.md`](docs/RELEASE_NOTES_1.0.0.md) — release notes.
+- [`docs/RELEASE_NOTES_1.1.0.md`](docs/RELEASE_NOTES_1.1.0.md) — release notes.
 
 ### Design and development
 

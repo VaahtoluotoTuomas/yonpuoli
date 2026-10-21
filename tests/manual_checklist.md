@@ -68,9 +68,10 @@ and callback checks do not replace this hands-on acceptance.
 ### Info field notes (manual visual and playing acceptance)
 
 Maintainer checkpoint, 2026-10-21: the Dust axis change and latest
-**basics & first loop** updates were accepted. **Organ & advanced** has not yet
-been read or played through by the maintainer; that review is deferred to a
-later session. Its automated checks are complete; the human checks below remain open.
+**basics & first loop** updates were accepted. The maintainer subsequently
+approved **Organ & advanced** for the 1.1.0 release after viewing it. A detailed
+play-through and optional wording refinements may follow in 1.1.1; they do not
+block 1.1.0. This release decision does not mark the individual checks below as run.
 
 Start a fresh session at 1280x720, then repeat the layout checks maximized.
 The automated `gui_info_smoke.scd` produces native-window review PNGs under
